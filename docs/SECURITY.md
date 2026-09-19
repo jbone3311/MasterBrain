@@ -1,0 +1,75 @@
+# Security
+
+## Security objectives
+
+Protect message confidentiality, tenant isolation, provider credentials, mailbox integrity, and the trustworthiness of derived state. Assume every email, attachment, link, web result, and model response may be adversarial.
+
+## Threat model
+
+| Threat | Primary controls |
+|---|---|
+| Cross-tenant data access | Tenant IDs, API checks, PostgreSQL RLS, negative tests, scoped caches |
+| Stolen provider token | OAuth/app password vault, narrow scopes, envelope encryption, rotation/revocation |
+| Prompt injection in mail | Data/instruction separation, reader without tools, schema allowlists, action policy |
+| Assistant overreach | Per-tool scopes, bounded result sets, approval tokens, no token passthrough |
+| Malicious/buggy rule | Simulation, review tiers, immutable versions, protected classes, rollback |
+| Duplicate/destructive action | Idempotency, outbox state machine, confirmation, reconciliation |
+| Database/operator compromise | Private networking, KMS, least privilege, audit export, backups, break-glass alerts |
+| Backup leakage | Client/provider encryption, separate key access, retention, restore audit |
+| Supply-chain compromise | Pinned dependencies, SBOM, signature/provenance checks, staged upgrades |
+
+## Identity and authorization
+
+- Use an OIDC identity provider with MFA/passkeys; short-lived access tokens; server-side sessions where appropriate.
+- Resolve `tenant_id`, `user_id`, roles, grants, and purpose at ingress. Never accept tenant identity from an unverified request body.
+- Enforce authorization in service code and PostgreSQL RLS. Enable and `FORCE ROW LEVEL SECURITY` on tenant tables; runtime roles must not own tables and must not have `BYPASSRLS`. PostgreSQL RLS defaults to deny when enabled without a policy ([documentation](https://www.postgresql.org/docs/17/ddl-rowsecurity.html)).
+- Separate roles: migration owner, runtime API, read connector, action executor, audit reader, and backup operator.
+- Use object keys prefixed and authorized by tenant; signed URLs are short-lived and single-purpose.
+
+## Network and remote access
+
+- Database and internal services have no public ingress.
+- Put API ingress behind a managed WAF/reverse proxy and OIDC; optionally require a device-aware private overlay for owner/operator access. Tailscale Grants are deny-by-default and can combine network and application permissions ([docs](https://tailscale.com/docs/features/access-control/grants)). A Cloudflare Access or equivalent Zero Trust deployment is an acceptable alternative.
+- Require TLS in transit, certificate verification, egress allowlists for provider/model endpoints, and separate subnets/security groups for actions and inference.
+- Never expose Ollama/llama.cpp or a local MCP server to the LAN/Internet without authentication and policy enforcement.
+
+## Secrets and cryptography
+
+- Store OAuth refresh tokens and iCloud app-specific passwords in a managed secret vault, encrypted with KMS envelope keys; keep only secret references in PostgreSQL.
+- Prefer per-environment KMS keys and consider per-tenant data-encryption keys for high-sensitivity deployments.
+- Managed database/storage encryption is mandatory; encrypted backups and key rotation are tested.
+- Redact secrets, auth headers, body text, and attachment contents from logs. Hash identifiers only when correlation is necessary.
+
+## Prompt-injection defense
+
+OWASP recommends separating instructions from data, least privilege, output validation, monitoring, and—at higher risk—a quarantined reader/privileged actor split ([cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html)). Apply it as architecture:
+
+1. Parse and label message content as `UNTRUSTED_EMAIL_DATA`; never interpolate it into system/tool instructions.
+2. The inference reader has no provider write token, shell, arbitrary URL fetch, secret access, or broad database tool.
+3. Permit only versioned JSON Schemas; reject extra fields, URLs/tool calls, oversize output, and unknown enums.
+4. The policy engine evaluates proposed actions from original user intent + structured facts, not raw email instructions.
+5. High-impact actions require a fresh human approval bound to exact preview/hash/expiry.
+6. Sanitize rendered HTML/Markdown, proxy or disable remote images, and scan attachments before parsing.
+7. Maintain injection/red-team fixtures and alert on suspicious phrases, encoding, exfiltration patterns, and policy denial spikes.
+
+## MCP/API security
+
+The current MCP authorization guidance requires token audience validation and forbids token passthrough ([MCP security considerations](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/basic/authorization/security-considerations.mdx)). Therefore:
+
+- Remote MCP uses OAuth with PKCE/resource indicators, audience-bound tokens, exact redirect URIs, short lifetimes, and per-tool scopes.
+- The MCP gateway translates identity into a tenant-scoped service context; it never forwards a client bearer token to providers.
+- Tool descriptions and server packages are pinned/approved; tool-list changes are treated as security-sensitive.
+- Search and evidence tools are read-only by default. Mutation tools are separate and approval-aware.
+
+## Audit and privacy
+
+Append-only audit events record who/what/when/tenant/request, policy version, proposal/action hashes, approval, provider result, and correlation ID. Store minimal content in audit; evidence is referenced by ID. Export audit events to an access-restricted immutable sink.
+
+Support consented account connection, data export, retention settings, account disconnect, tenant deletion, and deletion propagation into replicas/backups according to documented retention. Legal/privacy obligations depend on deployment jurisdiction and require counsel before broad team deployment.
+
+## Backup and incident readiness
+
+- Managed PITR plus daily encrypted logical/object manifests; quarterly restore drills.
+- Separate backup credentials and deletion protection; document key-loss consequences.
+- Emergency controls: disable all mailbox writes, disable remote inference, revoke one account, revoke one assistant client, put service read-only, rotate credentials.
+- See [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) for playbooks.

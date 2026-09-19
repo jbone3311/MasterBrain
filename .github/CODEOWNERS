@@ -1,0 +1,7 @@
+# Replace with the real owner/team before enabling required reviews.
+* @jbone3311
+
+/migrations/ @jbone3311
+/src/email_brain/security/ @jbone3311
+/src/email_brain/actions/ @jbone3311
+/docs/SECURITY.md @jbone3311
