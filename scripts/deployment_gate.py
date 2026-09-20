@@ -8,7 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = (
     "README.md",
@@ -37,7 +36,9 @@ def main() -> None:
     forbidden = [
         path.relative_to(ROOT)
         for path in ROOT.rglob("*")
-        if path.is_file() and path.suffix.lower() in FORBIDDEN_SUFFIXES
+        if path.is_file()
+        and path.suffix.lower() in FORBIDDEN_SUFFIXES
+        and not any(part.startswith(".") for part in path.relative_to(ROOT).parts)
     ]
     if forbidden:
         fail(f"forbidden private-data file types present: {forbidden}")

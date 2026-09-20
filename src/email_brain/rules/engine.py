@@ -7,9 +7,8 @@ need bounded-complexity validation and adversarial tests.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Mapping, Sequence
-
 
 ALLOWED_FIELDS = frozenset(
     {
@@ -104,15 +103,14 @@ class RuleEngine:
                 elif effects[key] != value:
                     conflicts.append(f"{key}:{owners[key]}!={identity}")
 
-        if effects.get("importance") in PROTECTED_KEEP_VALUES:
+        # Safety protection is a veto, not an ordinary priority-wins effect.
+        if any(rule.effects.get("importance") in PROTECTED_KEEP_VALUES for rule in matched):
             if effects.get("canonical_mailbox") == "review_delete":
                 effects.pop("canonical_mailbox")
                 conflicts.append("protected_keep_overrode_review_delete")
 
         return RuleEvaluation(
             effects=effects,
-            matched_rule_versions=tuple(
-                f"{rule.rule_id}:v{rule.version}" for rule in matched
-            ),
+            matched_rule_versions=tuple(f"{rule.rule_id}:v{rule.version}" for rule in matched),
             conflicts=tuple(conflicts),
         )

@@ -6,7 +6,8 @@ checkpoint before every event it covers is durable.
 
 from __future__ import annotations
 
-from typing import Mapping, Protocol
+from collections.abc import Mapping
+from typing import Protocol
 from uuid import UUID
 
 from email_brain.domain.models import ActionCommand, ChangePage, Provider
@@ -21,9 +22,7 @@ class Connector(Protocol):
 
     def changes(self, tenant_id: UUID, account_id: UUID, cursor: str) -> ChangePage: ...
 
-    def fetch_raw(
-        self, tenant_id: UUID, account_id: UUID, provider_object_id: str
-    ) -> bytes: ...
+    def fetch_raw(self, tenant_id: UUID, account_id: UUID, provider_object_id: str) -> bytes: ...
 
     def reconcile(
         self, tenant_id: UUID, account_id: UUID, watermark: str | None

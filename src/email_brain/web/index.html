@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Email Brain · Evidence & review</title><link rel="stylesheet" href="/style.css"></head>
+<body><main>
+<header><span class="eyebrow">CW / EMAIL BRAIN</span><h1>Your mail. A clearer picture.</h1>
+<p>Search evidence and review proposed changes. This prototype cannot send, move, or delete mail.</p></header>
+<section aria-label="Connection"><label for="token">Local owner access token</label>
+<input id="token" type="password" autocomplete="off" placeholder="Token stays only in this page's memory">
+<button id="connect">Check connection</button><button id="disconnect">Clear session</button>
+<p id="status" role="status">Local prototype · synthetic data recommended</p></section>
+<section><h2>Find the evidence</h2><form id="search-form"><label for="query">Search</label>
+<div class="row"><input id="query" maxlength="500" required placeholder="Try: Melron"><button>Search</button></div></form>
+<div id="results" aria-live="polite"></div></section>
+<section><h2>Propose a project</h2><p>For example: “Make Melron a project.” Nothing is applied automatically.</p>
+<form id="project-form"><label for="project-name">Project name</label><input id="project-name" maxlength="120" required>
+<label for="project-reason">Why add it?</label><textarea id="project-reason" maxlength="2000" required></textarea>
+<button>Save proposal</button></form></section>
+<section><div class="row"><h2>Review queue</h2><button id="refresh">Refresh</button></div>
+<p>Approval records your decision only. Applying rules and mailbox changes is a later milestone.</p>
+<div id="proposals" aria-live="polite"></div></section>
+<footer>No external scripts, images, model calls, or browser storage.</footer>
+</main><script src="/app.js"></script></body></html>

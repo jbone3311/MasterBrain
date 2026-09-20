@@ -6,29 +6,45 @@ Email Brain incrementally synchronizes supported mail providers, preserves immut
 
 ## Repository status
 
-This repository is at **Phase 0 / executable architecture scaffold**. It includes:
+This repository is an **executable, synthetic-data-only prototype**, not a production
+mail service. It includes:
 
 - the full product and architecture pack in [`docs/`](docs/README.md);
 - Factory-facing product and agent contracts;
 - a dependency-light Python domain core;
 - a safe declarative rule evaluator with tests;
 - connector and event contracts;
-- the initial PostgreSQL tenant/RLS migration;
-- CI and a local deployment gate.
+- PostgreSQL tenant/RLS migrations, atomic ingestion, immutable evidence versions,
+  full-text search, attachment receipts and bounded plain-text extraction;
+- expiring tenant-bound bootstrap credentials, REST API and a small owner review UI;
+- idempotent typed proposals and optimistic-concurrency human review;
+- a read-only JMAP protocol parser with cursor-expiry handling (not a live sync worker);
+- model-routing/output-validation and rank-fusion helpers (no model is called);
+- locked dependencies, CI with a real PostgreSQL service, and a repository gate.
 
-It deliberately does **not** contain production credentials, real email, provider OAuth apps, mailbox-write code, remote-model calls, or deployment configuration.
+It does **not** connect to your mail, send anything, change folders, delete mail,
+apply approved proposals, or deploy paid cloud resources. Hosted OIDC, full team
+permissions, binary attachment extraction, provider enrollment, and production
+operations remain launch gates. See [implementation status](docs/IMPLEMENTATION_STATUS.md).
 
 ## Start here
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 scripts/deployment_gate.py
+uv sync --locked --extra dev
+uv run pytest -q
+uv run ruff check .
+uv run mypy src
+uv run python scripts/deployment_gate.py
 ```
 
-For development commands after installing the package:
+The PostgreSQL tests require a disposable database named `email_brain_test*` and
+`EMAIL_BRAIN_TEST_ADMIN_DSN`; CI provides it. Local absence is reported as skipped,
+never as database verification. Start the synthetic demo using [LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md).
+
+For available application commands:
 
 ```bash
-python3 -m pip install -e .
+uv run email-brain --help
 ```
 
 ## Binding documents

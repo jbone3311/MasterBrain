@@ -5,10 +5,11 @@ These types intentionally contain no provider SDK or model SDK imports.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Mapping
+from typing import Any
 from uuid import UUID
 
 

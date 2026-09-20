@@ -67,6 +67,84 @@ This is a concise ADR index. Each decision should become an individual immutable
 
 ## Deferred decisions
 
+### ADR-013 — Executable foundation and bounded bootstrap (2026-09-19)
+
+**Decision:** ship a loopback-only developer service with synthetic ingestion,
+PostgreSQL FTS/evidence, atomic cursor checkpoints, idempotent reviewed proposals,
+and a read-only Fastmail protocol adapter. Do not connect real accounts, provision
+paid hosting, execute mailbox writes, or enable remote inference during bootstrap.
+The user authorized private repository creation, publication, and implementation.
+
+**Auth boundary:** bootstrap credentials are random bearer tokens mapped by their
+SHA-256 digests to server-configured tenant/actor/scopes, with an expiry. Only
+existing owner memberships are supported; invited members and resource sharing
+remain disabled until grant-aware authorization and OIDC are implemented. This
+is not production authentication. Tenant/actor never come from request bodies.
+Runtime DB credentials must be non-owner, non-superuser, and non-BYPASSRLS.
+
+**Evidence boundary:** bounded raw MIME is retained in a tenant-isolated PostgreSQL
+table for this synthetic prototype, atomically with its projection and checkpoint.
+Encrypted object storage is still the production target. No public raw-byte API.
+Raw objects are immutable while retained, not exempt from authorized retention/purge.
+
+**Review boundary:** proposals are immutable requests. A human owner can mark them
+approved/rejected with optimistic version checks; approval does not apply a rule
+or execute an action. Feature requests stay data until Factory explicitly adopts
+them. This avoids mistaking a review queue for a completed action executor.
+
+**Factory boundary:** a sibling Dropbox source checkout is the desired final local
+layout; live databases, venvs, secrets, indexes, and worker state must live outside
+Dropbox. Prepare registration artifacts but do not modify Factory itself or claim
+its bind/audit passed. Email Brain runtime never imports Factory.
+
+**Verification:** pure unit/API tests plus a real PostgreSQL CI service test RLS,
+composite tenant/account foreign keys, replay, transaction rollback, stale cursors,
+idempotency conflicts, proposal transitions, and least-privileged runtime roles.
+
+**Rollback:** API is additive; stop it and restore the database from backup if
+required. Do not down-migrate/delete retained evidence. No mailbox compensation
+is needed because no provider write path exists.
+
+Sources: [Psycopg transactions](https://www.psycopg.org/psycopg3/docs/basic/transactions.html),
+[PostgreSQL RLS and bypass behavior](https://www.postgresql.org/docs/17/ddl-rowsecurity.html),
+[FastAPI test client](https://fastapi.tiangolo.com/tutorial/testing/).
+
+## Deferred decisions (tracked without blocking bootstrap)
+
+### ADR-014 — Factory-shaped attachment receipts, bounded extraction (2026-09-19)
+
+**Decision:** extend the transactional ingestion slice with per-MIME-part attachment
+receipts and append-only intake events; keep every occurrence, link duplicates
+within an account, and retain original bytes in the raw MIME evidence. Extract
+bounded plain-text attachments without models. PDFs, Office files, images, archives,
+executables, and nested emails receive explicit deferred/skipped status. They are
+not executed, unpacked, OCRed, or marked safe by the API process. No raw download
+or outbound SMTP capability is introduced.
+
+**Rationale:** Factory's intake standards require receipt accounting, provenance,
+per-document outcomes, and no filename-only embeddings. Its document/archive
+tools are valuable but currently path/config/CLI-oriented, with optional imports
+and some logging that can contain private paths. A long-running multi-tenant
+service needs an isolated, deterministic worker contract first. Do not make the
+hosted service import a sibling Factory checkout or copy its governance runtime.
+See [Factory intake review](FACTORY_INTAKE_REVIEW.md).
+
+**Limit:** complete MIME is currently capped at 1 MiB; attachments at 256 KiB for
+plain-text extraction, 64 recorded attachment parts per message, MIME depth 20.
+These are prototype limits, not final product limits. Oversized/over-complex MIME
+aborts the page without advancing its cursor. Durable poison-message quarantine
+and larger encrypted object storage must precede real mailbox backfill.
+
+**Retention:** preserving evidence does not grant infinite retention. A separately
+authorized purge workflow must remove message bodies, attachment projections,
+objects, vectors, and cache copies; no such destructive workflow runs in v0.1.
+
+**Tests:** path traversal filenames, executable signatures under misleading names,
+binary disguised as text, duplicate receipts, archive/nested handling, MIME limits,
+attachment FTS, RLS, immutable receipt-event history, and reconciliation counts.
+
+## Owner decisions pending
+
 - Cloud/managed Postgres vendor and region.
 - OIDC/Zero Trust vendor.
 - First provider and exact backfill window.
