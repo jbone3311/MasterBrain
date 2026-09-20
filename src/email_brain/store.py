@@ -171,8 +171,13 @@ class Store:
         prepared = [(item, normalize(item.raw) if item.raw is not None else None) for item in items]
         inserted = 0
         with self.transaction(ctx) as conn:
+            # Serialize this account without granting UPDATE on account credentials/config.
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:{account_id}",),
+            )
             account = conn.execute(
-                "SELECT id FROM mail_accounts WHERE id=%s AND status='active' FOR UPDATE",
+                "SELECT id FROM mail_accounts WHERE id=%s AND status='active'",
                 (account_id,),
             ).fetchone()
             if not account:
