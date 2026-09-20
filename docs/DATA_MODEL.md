@@ -111,7 +111,7 @@ PostgreSQL holds transactional data and vectors together via [pgvector](https://
 
 The migrations currently implement tenants/memberships/accounts/cursors/events,
 raw MIME, current messages, immutable normalized message versions, typed proposals,
-proposal evidence links, audit, attachment receipts and intake events. People,
+proposal evidence links, audit, attachment receipts and intake events.
 Worker leases/outcomes are in `sync_workers` and append-only `sync_runs`; enrolled
 accounts have administrator-set `provider_account_id`. Current mailbox/keyword
 metadata is separate from immutable raw-body evidence snapshots. People,

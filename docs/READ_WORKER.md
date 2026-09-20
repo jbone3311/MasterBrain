@@ -34,7 +34,8 @@ step budget checked between requests; HTTP has separate connect/read timeouts an
 a streamed-response deadline (checked as chunks arrive). These are cooperative
 bounds, not a hard process kill. No network call runs in a DB transaction.
 
-The commit locks and validates the current lease token before writing. A replaced
+The commit locks and validates the current lease token and rechecks its stored
+provider-account binding against current enrollment before writing. A replaced
 or expired process cannot commit; direct ingestion without a token is also denied
 once that account has a worker row. The DB transaction's row lock prevents takeover
 during the short commit. Crash after commit/before outcome logging leaves the durable
@@ -63,7 +64,8 @@ and can be absent after such a crash. Do not treat run counts as ingestion truth
 
 ## Migration and rollback
 
-Apply `0004_sync_workers.sql` with the administrator migrator, then reapply the
+Apply all migrations through `0005_worker_status_compatibility.sql` with the
+administrator migrator, then reapply the
 explicit runtime grants using `grant_runtime` for the installed runtime role.
 The normal API migration command does not silently expand existing role grants.
 Fresh demo/CI provisioning already receives the new grants. No existing provider

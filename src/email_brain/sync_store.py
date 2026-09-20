@@ -54,11 +54,11 @@ class SyncStore:
             )
             token = uuid4()
             worker = conn.execute(
-                "UPDATE sync_workers SET lease_token=%s,"
+                "UPDATE sync_workers SET lease_token=%s,provider_account_id=%s,"
                 "lease_until=clock_timestamp()+make_interval(secs=>%s),updated_at=now() "
                 "WHERE account_id=%s AND NOT paused AND lease_until<=clock_timestamp() "
                 "AND next_attempt_at<=clock_timestamp() RETURNING failures",
-                (token, LEASE_SECONDS, account_id),
+                (token, account["provider_account_id"], LEASE_SECONDS, account_id),
             ).fetchone()
             if not worker:
                 return None
@@ -101,7 +101,7 @@ class SyncStore:
         paused = outcome in {"auth_required", "protocol_error", "parse_error", "resync_required"}
         with self.store.transaction(ctx) as conn:
             row = conn.execute(
-                "UPDATE sync_workers SET lease_token=NULL,lease_until='-infinity',"
+                "UPDATE sync_workers SET lease_token=NULL,lease_until=clock_timestamp(),"
                 "next_attempt_at=clock_timestamp()+make_interval(secs=>%s),"
                 "failures=CASE WHEN %s THEN least(failures+1,1000) ELSE 0 END,"
                 "paused=%s,last_outcome=%s,updated_at=now() WHERE account_id=%s "

@@ -186,7 +186,7 @@ class Store:
                 (f"{ctx.tenant_id}:{account_id}",),
             )
             account = conn.execute(
-                "SELECT id FROM mail_accounts WHERE id=%s AND status='active'",
+                "SELECT id,provider_account_id FROM mail_accounts WHERE id=%s AND status='active'",
                 (account_id,),
             ).fetchone()
             if not account:
@@ -194,12 +194,16 @@ class Store:
             # All ingestion for an enrolled worker account is fenced, including
             # direct library calls. A stale process cannot bypass the worker lease.
             worker = conn.execute(
-                "SELECT lease_token,lease_until>clock_timestamp() AS live "
+                "SELECT lease_token,provider_account_id,lease_until>clock_timestamp() AS live "
                 "FROM sync_workers WHERE account_id=%s FOR UPDATE",
                 (account_id,),
             ).fetchone()
             if worker and (
-                lease_token is None or worker["lease_token"] != lease_token or not worker["live"]
+                lease_token is None
+                or worker["lease_token"] != lease_token
+                or not worker["live"]
+                or worker["provider_account_id"] != account["provider_account_id"]
+                or worker["provider_account_id"] is None
             ):
                 raise Conflict("worker lease is not current")
             if lease_token is not None and worker is None:

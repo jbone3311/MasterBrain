@@ -666,3 +666,41 @@ def test_worker_requires_enrollment_and_scope(database, tenant):
         SyncStore(store).acquire(ctx, account)
     with pytest.raises(AccessDenied):
         SyncStore(store).acquire(replace(ctx, scopes=frozenset()), account)
+
+
+def test_worker_enrollment_change_fences_old_binding(database, tenant):
+    worker, _, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    _, admin = database
+    try:
+        lease = worker.jobs.acquire(ctx, account)
+        assert lease
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "UPDATE mail_accounts SET provider_account_id='replacement' WHERE id=%s", (account,)
+            )
+        with pytest.raises(Conflict):
+            worker.store.ingest_page(ctx, account, None, "no", [item()], lease_token=lease.token)
+        with worker.store.transaction(ctx) as conn:
+            assert conn.execute("SELECT count(*) AS n FROM messages").fetchone()["n"] == 0
+    finally:
+        client.close()
+
+
+def test_worker_tables_rls_and_append_only_runs(database, tenant):
+    worker, _, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    _, admin = database
+    try:
+        worker.step(ctx, account)
+        with psycopg.connect(worker.store.dsn) as conn:
+            assert conn.execute("SELECT count(*) FROM sync_workers").fetchone() == (0,)
+            assert conn.execute("SELECT count(*) FROM sync_runs").fetchone() == (0,)
+            conn.execute("SELECT set_config('email_brain.tenant_id',%s,true)", (str(uuid4()),))
+            assert conn.execute("SELECT count(*) FROM sync_workers").fetchone() == (0,)
+        with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+            conn.execute(
+                "UPDATE sync_runs SET outcome='retry' WHERE tenant_id=%s", (ctx.tenant_id,)
+            )
+    finally:
+        client.close()
