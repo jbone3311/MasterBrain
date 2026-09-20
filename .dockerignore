@@ -1,0 +1,13 @@
+**
+!pyproject.toml
+!uv.lock
+!README.md
+!src/
+!src/**
+!migrations/
+!migrations/**
+!scripts/
+!scripts/**
+**/__pycache__
+**/*.pyc
+**/*.egg-info

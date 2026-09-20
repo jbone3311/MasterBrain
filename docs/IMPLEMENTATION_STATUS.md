@@ -12,7 +12,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
 | Feedback | Typed proposals, evidence links, idempotency conflict detection, human-only reviews | Rule activation/simulation/rollback and temporal projection application |
-| Providers | Read-only JMAP protocol slice with synthetic contracts | Secure HTTP transport, enrollment and worker; Gmail/Graph/IMAP implementations |
+| Providers | JMAP protocol plus bounded Fastmail HTTPS session/metadata/blob transport with mock tests | Enrollment, live acceptance and worker; Gmail/Graph/IMAP implementations |
 | Models | Closed classification schema, source-excerpt validation, code/local/remote/human policy | Real local runtime, calibrated eval corpus, remote disclosures/budgets |
 | UI | Local owner search/evidence and project-proposal/review page | Login, pagination, full accessible review workflows, live UI acceptance |
 | MCP | Planned typed REST-backed surface | Official SDK adapter, OAuth, actual client compatibility matrix |
@@ -26,3 +26,9 @@ dependencies. CI additionally runs real PostgreSQL integration tests against a
 disposable database and non-owner runtime role. Check the repository's CI status
 for the exact tested commit. No real mailbox, production restore, cloud deployment,
 live model, or Factory bind has been tested by this bootstrap.
+
+First verified database slice: [CI run 35479970496](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35479970496)
+at commit `4515417`: **52 tests passed**, lint/type/repository gate passed. An earlier
+run caught an ingestion-lock permission issue, fixed with an account-scoped advisory
+transaction lock instead of granting account mutation privileges. Later additions
+require their own newer CI run; this receipt covers the exact named commit.

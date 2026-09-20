@@ -4,7 +4,7 @@
 
 - UUID primary keys; UTC `timestamptz`; canonical JSON only for provider/versioned payloads that do not merit columns.
 - Every tenant-owned table includes `tenant_id NOT NULL`; most include `created_at`, `updated_at`, `version`, and soft-delete/tombstone fields.
-- Raw evidence is immutable. Derived projections are replaceable. Audit is append-only.
+- Raw evidence is immutable while retained, subject to an authorized purge policy. Derived projections are replaceable. Audit is append-only while retained.
 - External IDs are unique only within `(tenant_id, account_id, provider)`.
 - Facts use both event/valid time and system/recorded time when truth can change.
 
@@ -96,7 +96,7 @@ Rule predicates are a safe declarative AST—not executable Python/SQL/regex wit
 
 ## Search
 
-- A generated PostgreSQL `tsvector` combines weighted subject, people, organization/project names, clean body, and attachment text.
+- A same-row generated PostgreSQL `tsvector` weights message subject, sender and clean body. Joined people/project names and attachment chunks require separate authorized search rows or a maintained search projection; a generated column cannot aggregate other tables.
 - `message_embeddings` and `entity_embeddings` include model/version/dimension/hash; never mix incompatible embeddings in one index.
 - Search documents/chunks reference message evidence and character offsets.
 - Retrieval logs store query fingerprint, filters, candidates/scores, selected evidence, feedback, and version—not plaintext query where policy forbids it.
@@ -107,6 +107,20 @@ PostgreSQL holds transactional data and vectors together via [pgvector](https://
 
 `audit_events` fields: event ID, tenant, actor kind/id, request/correlation IDs, event type, resource type/id, before/after hashes, policy/version, purpose, outcome, timestamp, and minimal metadata. Use chained hashes or immutable external storage for tamper evidence where required.
 
-## Retention and deletion
+## Implemented schema versus target
+
+The migrations currently implement tenants/memberships/accounts/cursors/events,
+raw MIME, current messages, immutable normalized message versions, typed proposals,
+proposal evidence links, audit, attachment receipts and intake events. People,
+projects, obligations, temporal facts, actions, grants and vectors above are target
+tables, not yet implemented. Source bytes are inline PostgreSQL in the synthetic
+prototype; hosted object storage is pending. See [status](IMPLEMENTATION_STATUS.md).
+
+Composite tenant/account keys prevent mismatched ownership links. The bootstrap API
+only serves owner memberships; generic members/reviewers/operators have no access
+until role/grant-aware paths are implemented. All actual tenant-owned tables have
+forced RLS. Runtime roles have no delete privileges or raw/audit event updates.
+
+## Retention and deletion policy
 
 Separate policies for raw bodies, attachments, normalized text, derived facts, embeddings, audit, and backups. Disconnecting an account stops sync but does not silently erase data. Tenant deletion creates a tracked purge job, removes search/vector rows and object blobs, invalidates replicas, and records a non-content deletion certificate; backups age out under the published window.

@@ -43,7 +43,7 @@ A tenant may be one person or a household/team. Accounts and records belong to e
 ### Search and answers
 
 - Filter by tenant, account, mailbox, person, project, date, category, action state, and attachment metadata.
-- Combine PostgreSQL full-text/BM25-like lexical ranking, exact/entity lookup, vector similarity, recency, and diversity; expose component scores.
+- Combine PostgreSQL full-text ranking, exact/entity lookup, vector similarity, recency, and diversity; expose component scores. Native PostgreSQL FTS is not BM25; any BM25 extension requires a separate measured decision.
 - Return citations using stable message/thread/evidence identifiers.
 - Bound every assistant result by count, bytes, token estimate, and authorization.
 

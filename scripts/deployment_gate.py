@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fast, dependency-free repository gate for Factory and CI."""
+"""Repository quality gate for Factory/CI; not a production-launch certificate."""
 
 from __future__ import annotations
 
@@ -19,6 +19,11 @@ REQUIRED = (
     "docs/DECISIONS.md",
     "docs/FACTORY_HANDOFF.md",
     "migrations/0001_core.sql",
+    "docs/PRD.md",
+    "docs/API_MCP_SPEC.md",
+    "docs/IMPLEMENTATION_STATUS.md",
+    "docs/OPEN_QUESTIONS.md",
+    "docs/LOCAL_DEVELOPMENT.md",
 )
 FORBIDDEN_SUFFIXES = {".eml", ".mbox", ".pst", ".ost", ".sqlite", ".db"}
 
@@ -33,12 +38,14 @@ def main() -> None:
     if missing:
         fail(f"missing required files: {', '.join(missing)}")
 
+    # Inspect versioned content, including hidden folders; never scan generated venvs.
+    tracked = (
+        subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, check=True, capture_output=True)
+        .stdout.decode()
+        .split("\0")
+    )
     forbidden = [
-        path.relative_to(ROOT)
-        for path in ROOT.rglob("*")
-        if path.is_file()
-        and path.suffix.lower() in FORBIDDEN_SUFFIXES
-        and not any(part.startswith(".") for part in path.relative_to(ROOT).parts)
+        name for name in tracked if name and Path(name).suffix.lower() in FORBIDDEN_SUFFIXES
     ]
     if forbidden:
         fail(f"forbidden private-data file types present: {forbidden}")
@@ -46,15 +53,17 @@ def main() -> None:
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(ROOT / "src")
     completed = subprocess.run(
-        [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
+        [sys.executable, "-m", "pytest", "-q"],
         cwd=ROOT,
         env=environment,
         check=False,
     )
     if completed.returncode:
-        fail("unit tests failed")
+        fail("tests failed")
 
-    print("PASS: repository deployment gate")
+    print(
+        "PASS: repository quality gate; production launch gates remain in IMPLEMENTATION_STATUS.md"
+    )
 
 
 if __name__ == "__main__":

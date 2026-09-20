@@ -1,5 +1,41 @@
 # API and MCP Specification
 
+## Implemented bootstrap surface (v0.1)
+
+The rest of this document is the target contract. The actual bounded service exposes:
+
+| Method/path | Required scope | Behavior |
+|---|---|---|
+| `GET /healthz` | none | Process liveness only; not DB readiness |
+| `GET /readyz` | `email.search` | Verifies runtime DB access/current owner membership |
+| `POST /v1/search` | `email.search` | Lexical message/attachment search, optional account filter, limit 1–50 |
+| `GET /v1/evidence/{uuid}` | `email.evidence.read` | Version-stable excerpt/hash, attachment receipts/accounting; no raw download |
+| `POST /v1/proposals` | `email.proposal.create` | Closed discriminated payload; UUID `Idempotency-Key` header required |
+| `GET /v1/proposals` | `email.proposal.read` | Latest 50 proposals; full pagination pending |
+| `POST /v1/proposals/{uuid}/reviews` | `email.review` + human credential | Expected-version approve/reject; **applies nothing** |
+
+All content routes also require an existing owner membership. No tenant/user IDs
+are accepted in payloads. Auth is expiring server-bound bootstrap tokens, not the
+target OIDC system. Requests cap at 32 KiB before JSON decoding; schemas reject
+extra fields. Evidence excerpts cap at 4,000 characters plus bounded per-attachment
+excerpts. Validation errors do not echo input. No action/send/delete/raw SQL/MCP
+transport endpoint exists. The service is loopback-only and not Internet-ready.
+
+Example project proposal:
+
+```json
+{
+  "payload": {"kind": "project", "name": "Melron", "description": "Track the investment"},
+  "reason": "Owner requested a dedicated project",
+  "source": "owner-review-ui",
+  "evidence_ids": []
+}
+```
+
+`evidence_ids` means immutable message-version UUIDs returned by search, not
+provider IDs or current message IDs. A correction additionally identifies its
+current internal message UUID. REST schemas are available at `/openapi.json`.
+
 ## Principles
 
 - REST/JSON is the stable service contract; MCP is a narrow adapter over it.

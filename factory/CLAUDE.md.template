@@ -1,0 +1,16 @@
+# CW-EmailBrain
+
+**Product id:** `emailbrain` · **Domain:** email intelligence and reviewed control · **Unit of work:** mailbox
+
+@../CW-Factory/FACTORY.md
+
+Product-specific contract: `PRODUCT.md`.
+
+This is a staged template, not an activated binding. Install through the current
+Factory onboarding workflow after identity, descriptor, hooks and paths are ready.
+If the live Factory import is unavailable, stop the bound development session;
+do not copy Factory code/contract or pretend compatibility passed.
+
+`Q: Start` must first execute the current Factory launcher bind for this Product.
+Only a measured PASS can be recorded as verified. No Product session writes Factory.
+The deployed Email Brain application itself has no runtime dependency on Factory.

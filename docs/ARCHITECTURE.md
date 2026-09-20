@@ -38,12 +38,13 @@ Gmail describes partial sync using `history.list`, with a full sync required aft
 ```text
 authenticated request
   -> resolve tenant/user/grants
+  -> enforce grants within every candidate query/cache lookup
   -> parse filters and entities
   -> exact/structured SQL candidates
   -> PostgreSQL FTS candidates
   -> optional pgvector candidates
   -> reciprocal-rank/weighted fusion
-  -> authorization + diversity + recency rerank
+  -> defense-in-depth authorization check + diversity + recency rerank
   -> bounded evidence bundle
   -> optional answer/draft model
   -> cited response

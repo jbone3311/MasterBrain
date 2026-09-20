@@ -145,6 +145,25 @@ attachment FTS, RLS, immutable receipt-event history, and reconciliation counts.
 
 ## Owner decisions pending
 
+### ADR-015 — Fastmail read-only HTTP transport (2026-09-19)
+
+**Decision:** implement and mock-test a Fastmail-specific HTTPS transport with a
+fixed `api.fastmail.com` host boundary, no redirects/environment proxy inheritance,
+timeouts, bounded streamed responses, and JMAP read-method allowlist. Session
+discovery, metadata fetch and raw-blob reads are available as a library. Tokens are
+supplied by the caller; no token is discovered or stored by the adapter.
+
+**Boundary:** no live account is contacted during the build; no write/submission
+methods or SMTP exist. This is not yet a backfill scheduler or credential enrollment
+flow. State/checkpoint policy remains in the ingestion worker design, not HTTP code.
+Provider errors are typed and scrubbed, with explicit throttling/auth/expired-state
+outcomes. Disposable-account authorization is still required for live acceptance.
+
+Sources: [Fastmail JMAP](https://www.fastmail.com/dev/),
+[JMAP blob download](https://jmap.io/spec-core.html#downloading-binary-data).
+
+## Pending owner choices
+
 - Cloud/managed Postgres vendor and region.
 - OIDC/Zero Trust vendor.
 - First provider and exact backfill window.

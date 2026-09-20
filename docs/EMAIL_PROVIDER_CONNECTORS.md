@@ -21,6 +21,18 @@ Provider IDs/cursors remain opaque. Notifications enqueue synchronization but ne
 
 ## Fastmail: JMAP first
 
+Implemented: read-only JMAP protocol and bounded HTTPS session/metadata/blob
+transport with mock tests. Not yet a scheduler, OAuth enrollment flow, full backfill
+or reconciliation implementation. No real mailbox was contacted. Fastmail's `mail`
+OAuth scope covers read/manage: do not assume a universal read-only OAuth scope.
+The adapter excludes `set` and submission methods. Use the least capable token
+actually available. Distributed OAuth apps need Fastmail client registration;
+personal API-token testing is a separate path.
+
+Never substitute `queryState` for an `Email/changes` state. Capture a baseline
+Email state before full listing and validate query-state stability during paging;
+ordinary positional paging can miss untouched items when earlier items are deleted.
+
 Use Fastmail JMAP for Email, Thread, Mailbox, SearchSnippet, and submission/drafts; Fastmail documents its JMAP session endpoint and supported mail types ([API docs](https://www.fastmail.com/dev/)). Follow `Email/changes`, `Mailbox/changes`, or query-state change methods defined by JMAP; RFC 8621 specifies mail synchronization and `Email/queryChanges` ([RFC](https://www.rfc-editor.org/rfc/rfc8621)).
 
 Design notes:
@@ -56,6 +68,11 @@ Apple exposes iCloud Mail over IMAP/SMTP with TLS; IMAP is `imap.mail.me.com:993
 - SMTP/send is outside v1; create provider drafts or keep draft content internal until explicitly implemented.
 
 ## Failure and throttling behavior
+
+SMTP is outbound, not synchronization. Email Brain does not run a replacement mail
+server. If sending is separately approved later, prefer provider-native drafts and
+submission; SMTP would require its own approval/idempotency/uncertain-delivery
+adapter. No SMTP credentials or sending capability are currently added.
 
 - Respect `Retry-After`, provider quota headers, and exponential backoff with jitter.
 - Quarantine malformed MIME/provider payloads while allowing cursor progress only when the event and failure record are durable.

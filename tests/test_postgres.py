@@ -5,19 +5,24 @@ CI supplies the database; no real credentials/accounts/mailboxes are involved.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import secrets
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
 from pathlib import Path
 from uuid import UUID, uuid4
 
 import psycopg
 import pytest
+from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
+from email_brain.api import create_app
+from email_brain.auth import Credential, TokenRegistry
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.schemas import FeaturePayload, ProposalRequest, ReviewRequest, SearchRequest
@@ -288,3 +293,87 @@ def test_rls_after_transaction_context_reset(database, tenant) -> None:
             )
             assert conn.execute("SELECT count(*) FROM mail_accounts").fetchone() == (1,)
         assert conn.execute("SELECT count(*) FROM mail_accounts").fetchone() == (0,)
+
+
+def test_concurrent_page_replays_commit_once(database, tenant) -> None:
+    store, _ = database
+    ctx, account = tenant
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(
+            pool.map(lambda _: store.ingest_page(ctx, account, None, "s1", [item()]), range(2))
+        )
+    assert sorted(results) == [0, 1]
+    assert len(store.search(ctx, SearchRequest(query="Melron"))) == 1
+
+
+def test_valid_other_tenant_owner_cannot_access_content(database, tenant) -> None:
+    store, admin = database
+    first_ctx, account = tenant
+    store.ingest_page(first_ctx, account, None, "s1", [item()])
+    evidence = store.search(first_ctx, SearchRequest(query="Melron"))[0]["evidence_id"]
+    other_id, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Other synthetic tenant')", (other_id,)
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_id, other_actor),
+        )
+    other = replace(first_ctx, tenant_id=other_id, actor_id=other_actor)
+    assert store.search(other, SearchRequest(query="Melron")) == []
+    with pytest.raises(NotFound):
+        store.evidence(other, evidence)
+    with pytest.raises(NotFound):
+        store.ingest_page(other, account, None, "not-allowed", [item()])
+
+
+def test_http_to_real_database_and_correlated_audit(database, tenant) -> None:
+    store, admin = database
+    ctx, account = tenant
+    store.ingest_page(ctx, account, None, "s1", [item()])
+    token = secrets.token_urlsafe(40)
+    registry = TokenRegistry(
+        [
+            Credential(
+                token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+                tenant_id=ctx.tenant_id,
+                actor_id=ctx.actor_id,
+                scopes=set(ctx.scopes),
+                client_kind="human",
+                expires_at=datetime.now(UTC) + timedelta(minutes=5),
+            )
+        ]
+    )
+    client = TestClient(create_app(store, registry))
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.get("/").status_code == 200
+    assert client.get("/readyz", headers=headers).status_code == 200
+    result = client.post("/v1/search", headers=headers, json={"query": "Melron"})
+    assert result.status_code == 200 and len(result.json()["results"]) == 1
+    evidence_id = result.json()["results"][0]["evidence_id"]
+    assert client.get(f"/v1/evidence/{evidence_id}", headers=headers).status_code == 200
+    proposed = client.post(
+        "/v1/proposals",
+        headers={**headers, "Idempotency-Key": str(uuid4())},
+        json={
+            "payload": {"kind": "project", "name": "Melron"},
+            "reason": "Synthetic user request",
+            "source": "test",
+            "evidence_ids": [evidence_id],
+        },
+    )
+    assert proposed.status_code == 201
+    review = client.post(
+        f"/v1/proposals/{proposed.json()['id']}/reviews",
+        headers=headers,
+        json={"decision": "approved", "expected_version": 1},
+    )
+    assert review.status_code == 200 and review.json()["applied"] is False
+    with psycopg.connect(admin) as conn:
+        audit = conn.execute(
+            "SELECT request_id FROM audit_events WHERE tenant_id=%s "
+            "AND event_type='proposal.approved'",
+            (ctx.tenant_id,),
+        ).fetchone()
+    assert audit is not None and str(audit[0]) == review.headers["X-Request-ID"]

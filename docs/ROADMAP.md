@@ -2,6 +2,12 @@
 
 The roadmap is gated by verified outcomes. Dates depend on team size and provider approval; phases are sequential where safety requires it.
 
+Current progress: a bounded portion of Phases 0–2 is executable with synthetic
+data, including real PostgreSQL CI, attachment accounting/search and a review
+queue. No phase is complete: live sync, quarantine, restore, production identity
+and cloud setup remain gates. [BACKLOG.md](BACKLOG.md) is the concrete work queue.
+Tenant isolation starts now; Phase 7 expands sharing rather than retrofitting tenancy.
+
 ## Phase 0 — Decisions and threat model
 
 Deliver:

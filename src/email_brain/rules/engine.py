@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from types import MappingProxyType
 
 ALLOWED_FIELDS = frozenset(
     {
@@ -70,6 +71,15 @@ class Rule:
         unknown = set(self.effects) - ALLOWED_EFFECTS
         if unknown:
             raise ValueError(f"unsupported effects: {sorted(unknown)}")
+        if not self.effects:
+            raise ValueError("at least one effect required")
+        for key, value in self.effects.items():
+            if key == "request_extraction":
+                if not isinstance(value, bool):
+                    raise ValueError("request_extraction must be boolean")
+            elif not isinstance(value, str) or not 1 <= len(value) <= 120:
+                raise ValueError("metadata effects must be bounded nonempty strings")
+        object.__setattr__(self, "effects", MappingProxyType(dict(self.effects)))
 
     def matches(self, facts: Mapping[str, str | Sequence[str]]) -> bool:
         return all(predicate.matches(facts) for predicate in self.all_of)

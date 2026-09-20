@@ -1,11 +1,17 @@
 # Email Brain / Email OS
 
-Status: implementation-ready architecture pack  
+Status: target architecture plus an executable bounded prototype  
 Research reviewed: 2026-09-19
 
 Email Brain is a private, multi-user intelligence layer over email. It continuously synchronizes mail, normalizes and indexes it once, maintains people/project/thread/obligation state, and gives Grok, ChatGPT, Claude, or another client small evidence-backed answers instead of entire mailboxes. Repeated judgments are compiled into reviewed data-driven rules so the system becomes cheaper and more deterministic over time.
 
 ## Executive architecture review
+
+Start with [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md),
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md),
+[FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md), and
+[HOSTING_DECISION.md](HOSTING_DECISION.md). Production controls below are requirements,
+not a claim that all integrations are implemented or deployed.
 
 The design is sound after five refinements:
 
@@ -81,6 +87,11 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) | Routine operations and incidents |
 | [DECISIONS.md](DECISIONS.md) | Accepted ADRs and deferred choices |
 | [FACTORY_HANDOFF.md](FACTORY_HANDOFF.md) | Build order and acceptance gates |
+| [BACKLOG.md](BACKLOG.md) | Concrete build tickets |
+| [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) | Owner decisions parked without blocking synthetic work |
+| [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) | Run/test the prototype |
+| [OSS_HEALTH.md](OSS_HEALTH.md) | Stars/watchers/commits and maintenance evidence |
+| [COMMUNITY_RESEARCH.md](COMMUNITY_RESEARCH.md) | User reports and evaluation implications |
 
 ## Explicit non-goals for v1
 
@@ -93,4 +104,6 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 
 ## License and data note
 
-Choose a repository license before implementation. Mail, credentials, exports, fixtures derived from real mail, databases, vector indexes, and backups never belong in Git. Synthetic fixtures only.
+The private Product remains proprietary; no public OSS license is granted. Review
+dependency licenses before distribution. Mail, credentials, real-mail fixtures,
+databases, private vectors and backups never belong in Git. Synthetic fixtures only.

@@ -1,0 +1,27 @@
+{
+  "product_id": "emailbrain",
+  "display_name": "CW-EmailBrain",
+  "domain": "provider-neutral email intelligence, evidence, attachments and reviewed control",
+  "unit_noun": "mailbox",
+  "repo": {
+    "name": "CW-EmailBrain",
+    "path": "../CW-EmailBrain",
+    "remote": "https://github.com/jbone3311/CW-EmailBrain.git"
+  },
+  "lifecycle": "building",
+  "factory_contract_version": 2,
+  "compat_status": {
+    "state": "BLOCK",
+    "checked_at": null,
+    "factory_commit": null,
+    "findings": [
+      "Registration proposal only. No live Factory binding or current compatibility check has run.",
+      "Factory-scope session must register the Product; Product session must install current hooks and contract files through supported tooling.",
+      "Resolve requested Dropbox sibling source layout versus Factory code/content split. Do not copy Factory governance."
+    ]
+  },
+  "capabilities_enabled": [],
+  "capabilities_disabled": [],
+  "product_only_capabilities": [],
+  "hooks_provided": []
+}

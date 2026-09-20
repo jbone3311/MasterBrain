@@ -2,6 +2,10 @@
 
 ## Method
 
+See [measured repository activity](OSS_HEALTH.md) and the retained JSON snapshot
+for exact stars, forks, watchers, 90-day commit counts and dates. These are
+prospective dependency selections, not a claim every package is installed.
+
 Projects are assessed on demonstrated maintenance/release activity, tests/documentation, community/adoption, license, security posture, architectural fit, and replacement cost. “Reuse” means a pinned production dependency behind an adapter. “Pilot” means optional and removable. “Reference” means borrow concepts/tests only. Repository activity and licenses must be reverified before adoption.
 
 ## Recommended disposition
@@ -11,10 +15,10 @@ Projects are assessed on demonstrated maintenance/release activity, tests/docume
 | PostgreSQL | Very mature, large ecosystem, managed everywhere | PostgreSQL | **Reuse directly** as multi-user authority, RLS, transactions, FTS |
 | [pgvector](https://github.com/pgvector/pgvector) | Active, widely deployed; exact/HNSW/IVFFlat, WAL/PITR benefits | PostgreSQL-style | **Reuse directly** behind repository interface |
 | [notmuch](https://notmuchmail.org/) | Long-lived, fast Maildir/MH indexing on Xapian | GPLv3+ | **Reference/pilot only**; excellent search/tagging patterns, but file-centric and copyleft/core mismatch for hosted multi-tenant service |
-| [mail-memex](https://github.com/queelius/mail-memex) | Explicitly alpha v0.6; tiny community; clear SQLite/FTS5/MCP design | MIT | **Reference only** for archive contract, stable URIs, soft delete, idempotent import; not a production foundation |
+| [mail-memex](https://github.com/queelius/mail-memex) | Alpha; tiny community; clear SQLite/FTS5/MCP design | License grant not verified; GitHub reports none | **Reference only** for architecture ideas; do not copy code until an actual license is established |
 | [Mailgun Talon](https://github.com/mailgun/talon) | Established quote/signature parser and dataset; visible modernization work remains open | Apache-2.0 | **Pilot behind adapter**; benchmark on real multilingual/HTML mail and maintain fallback/replacement |
 | Python `email` stdlib | Mature, maintained with Python | PSF | **Reuse directly** for MIME baseline; retain raw bytes and fuzz parsers |
-| [IMAPClient](https://github.com/mjs/imapclient) | Mature, production-oriented, UID-first, current 3.x releases | BSD | **Preferred direct dependency** for iCloud/generic IMAP protocol layer |
+| [IMAPClient](https://github.com/mjs/imapclient) | Mature, production-oriented, UID-first; active September 2026 | BSD (verify distribution license) | **Preferred prospective dependency** for iCloud/generic IMAP protocol layer |
 | [imap-tools](https://github.com/ikvk/imap_tools) | Active, ergonomic, no external dependencies, broad operations/IDLE | Apache-2.0 | **Evaluate as alternative**; useful for operations, but avoid dual IMAP stacks in production |
 | [sqlite-vec](https://github.com/asg017/sqlite-vec) | Portable and promising; comparatively young/small maintainer surface | MIT/Apache-2.0 | **Optional edge-cache pilot**, never hosted authority; pin, benchmark, keep lexical fallback |
 | SQLite FTS5 | Mature SQLite feature | Public domain SQLite | **Reuse** in optional local replica; PostgreSQL FTS in hosted core |
@@ -60,3 +64,23 @@ Borrow Graphiti’s episodes/provenance/validity concepts. Do not adopt a graph 
 ## Dependency acceptance checklist
 
 Before merge: verify license/NOTICE, current release/commits, maintainer bus factor, security policy/advisories, transitive dependencies, supported platforms, tests, deterministic behavior, data-egress behavior, SBOM/provenance, upgrade/rollback plan, and a contract-test escape hatch. Pin by lockfile/digest and schedule review.
+
+## Additional current alternatives and cautions
+
+- [Inbox Zero](https://github.com/elie222/inbox-zero) is an actively maintained
+  product with useful feedback/reply-tracking UX. Its [license](https://github.com/elie222/inbox-zero/blob/main/LICENSE)
+  contains additional commercial/organizational restrictions alongside AGPL text.
+  Treat it as source-available reference material, not a permissive dependency.
+- [Mail-0/Zero](https://github.com/Mail-0/Zero) has substantial stars and MIT metadata,
+  but its default branch has no commits in the measured 90-day window and its last
+  commit is August 2025. Do not make it our maintained backend foundation.
+- [ThunderAI](https://github.com/micz/ThunderAI) offers local-email-client workflow
+  ideas, not a substitute for provider-independent synchronization and tenant storage.
+- `imap-tools` fetching can mark mail Seen by default; an ingestion adapter must
+  explicitly use read-only/PEEK behavior and test it. This is a connector correctness
+  issue even though the package itself is legitimate.
+- Runtime licenses do not grant model-weight rights. Review each local model's
+  license separately. No production model has been selected from benchmarks alone.
+- Factory's PDF toolkit optionally imports PyMuPDF; review its AGPL/commercial
+  terms before enabling it. Prefer a separately evaluated permissively licensed
+  extraction backend if our distribution model cannot meet its conditions.

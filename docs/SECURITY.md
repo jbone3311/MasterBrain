@@ -1,5 +1,20 @@
 # Security
 
+## Current release boundary
+
+The v0.1 service is loopback-only, synthetic-data-first, owner-only per tenant.
+Bootstrap tokens are hashed, expiring, scope-bound, and revocation is via the private
+registry plus restart; they are not production OAuth/OIDC. The schema is tenant-isolated
+but team/account-grant sharing is not implemented. Binary attachments remain deferred,
+not malware-scanned. No send/delete/action/model network path is enabled. OIDC,
+rate limiting, grant-aware sharing, denial audit, external immutable audit export,
+full retention/purge, cloud encryption and restore proof are production blockers.
+
+RLS is defense in depth against missing query filters, not protection against a fully
+compromised server with arbitrary SQL execution and shared runtime credentials.
+The trusted server sets transaction-local tenant context only after token resolution.
+Separate per-tenant service credentials may be required by a stronger threat model.
+
 ## Security objectives
 
 Protect message confidentiality, tenant isolation, provider credentials, mailbox integrity, and the trustworthiness of derived state. Assume every email, attachment, link, web result, and model response may be adversarial.

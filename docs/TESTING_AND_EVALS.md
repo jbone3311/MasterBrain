@@ -1,5 +1,17 @@
 # Testing and Evaluations
 
+## Current executable checks
+
+`uv run pytest -q` covers unit/API, JMAP/Fastmail mock transport, normalization,
+hostile attachment/type/filename cases and, with a disposable DB, real Postgres
+migrations, RLS, membership, composite ownership, raw-history protection, replay,
+rollback, stale cursors, proposal conflicts and attachment FTS. Type/lint commands
+are `uv run mypy src` and `uv run ruff check .`. CI requires the Postgres suite and
+builds/smokes the developer container. Local skipped database tests are not passes.
+
+Targets below still need private-corpus and production-like testing. No live
+provider, malware sandbox, cloud restore or model evaluation is implied by unit tests.
+
 ## Test layers
 
 ### Unit and property tests

@@ -3,6 +3,7 @@
 import logging
 import time
 from collections.abc import Awaitable, Callable
+from dataclasses import replace
 from pathlib import Path
 from typing import Annotated, Any
 from uuid import UUID, uuid4
@@ -61,12 +62,15 @@ class BodyLimit:
 
 
 def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
-    app = FastAPI(title="Email Brain — local prototype", version="0.1.0", docs_url="/docs")
+    app = FastAPI(
+        title="Email Brain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
+    )
     app.add_middleware(BodyLimit)
     bearer = HTTPBearer(auto_error=False)
 
     def require(scope: str, *, human: bool = False) -> Callable[..., Principal]:
         def dependency(
+            request: Request,
             credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
         ) -> Principal:
             principal = registry.authenticate(credentials.credentials) if credentials else None
@@ -78,7 +82,10 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
                 human and principal.client_kind != "human"
             ):
                 raise HTTPException(403, "scope_denied")
-            return principal
+            return replace(
+                principal,
+                context=replace(principal.context, request_id=UUID(request.state.request_id)),
+            )
 
         return dependency
 
@@ -88,6 +95,7 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
     ) -> Response:
         started = time.monotonic()
         request_id = str(uuid4())
+        request.state.request_id = request_id
         response = await call_next(request)
         response.headers.update(
             {

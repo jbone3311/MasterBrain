@@ -1,5 +1,10 @@
 # Deployment
 
+This is the production target, not a deployed environment. See
+[HOSTING_DECISION.md](HOSTING_DECISION.md) for AWS/Supabase/Neon tradeoffs and
+[LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) for the executable synthetic prototype.
+No cloud infrastructure, real email connection or paid resource has been provisioned.
+
 ## Recommended production topology
 
 ```text

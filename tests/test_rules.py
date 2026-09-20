@@ -56,6 +56,36 @@ class RuleEngineTests(unittest.TestCase):
                 source="model",
             )
 
+    def test_protected_keep_is_a_veto_even_at_lower_priority(self) -> None:
+        predicate = (Predicate("sender_domain", frozenset({"example.invalid"})),)
+        rules = [
+            Rule(
+                "promo",
+                1,
+                100,
+                predicate,
+                {"importance": "low", "canonical_mailbox": "review_delete"},
+                "model",
+            ),
+            Rule("protected", 1, 1, predicate, {"importance": "always_keep"}, "user"),
+        ]
+        result = RuleEngine().evaluate(rules, {"sender_domain": "example.invalid"})
+        self.assertNotIn("canonical_mailbox", result.effects)
+        self.assertIn("protected_keep_overrode_review_delete", result.conflicts)
+
+    def test_rule_effects_cannot_be_mutated_after_validation(self) -> None:
+        effects = {"category": "investment"}
+        rule = Rule(
+            "safe",
+            1,
+            1,
+            (Predicate("sender_domain", frozenset({"example.invalid"})),),
+            effects,
+            "user",
+        )
+        effects["category"] = "changed"
+        self.assertEqual(rule.effects["category"], "investment")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,7 +16,7 @@ CW-EmailBrain is the code-first intelligence and control layer over email. It co
 
 - PostgreSQL is the multi-user source of truth; local SQLite is optional cache only.
 - Every tenant-owned record is tenant-scoped in application logic and forced RLS.
-- Raw evidence is immutable; projections are versioned and rebuildable.
+- Raw evidence is immutable while retained under an explicit retention/purge policy; projections are versioned and rebuildable.
 - Cursor advancement cannot skip an undurably processed change.
 - Every write/effect is idempotent and auditable.
 - Untrusted email/model content cannot authorize tools or mailbox effects.

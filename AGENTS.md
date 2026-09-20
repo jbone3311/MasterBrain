@@ -23,8 +23,12 @@ Before changing behavior, read `PRODUCT.md`, `docs/SECURITY.md`, `docs/ARCHITECT
 Run:
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 scripts/deployment_gate.py
+uv sync --locked --extra dev
+uv run ruff check .
+uv run mypy src
+uv run pytest -q
+uv run python scripts/deployment_gate.py
+uv run python scripts/check_docs.py
 ```
 
 Do not claim completion while required checks fail. Live provider tests must use disposable accounts/folders and require explicit operator authorization.

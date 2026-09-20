@@ -2,6 +2,17 @@
 
 ## Mission
 
+Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md),
+[EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
+and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
+
+Repository: `jbone3311/CW-EmailBrain`, private. Product ID proposed: `emailbrain`.
+Registration descriptor and thin CLAUDE template are staged under `factory/`;
+they are not evidence of a successful binding. A Factory-scope session must register
+the product; Product proposals never write Factory's registry/KB. No Factory bind
+or hooks installation has been claimed. Inspect the current contract before adopting
+older blueprint commands or copied-tool instructions.
+
 Build the smallest secure vertical slice of Email Brain while preserving the boundaries and invariants in this pack. The target is an evidence-backed service, not a demo chatbot.
 
 ## Read order
@@ -105,7 +116,7 @@ Each PR must state affected trust boundary, data migration, provider/API behavio
 - Runbook handles auth failure, cursor expiry, poison message, and database restore.
 - Documentation and ADRs match deployed behavior.
 
-## Questions Factory must resolve before coding
+## Questions to resolve before live rollout, not before synthetic coding
 
 1. First provider/account and authorized historical backfill window?
 2. Selected hosting region/provider and data residency constraints?
@@ -114,7 +125,8 @@ Each PR must state affected trust boundary, data migration, provider/API behavio
 5. Which OAuth app registrations/consent path are available?
 6. Is local edge inference required at launch or later?
 
-Record answers as ADRs; do not invent them in code.
+Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
+[OPEN_QUESTIONS.md](OPEN_QUESTIONS.md). Continue synthetic work without waiting.
 
 ## Guardrails for coding agents
 
