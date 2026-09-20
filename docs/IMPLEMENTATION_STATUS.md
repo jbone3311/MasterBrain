@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated 2026-09-19. This file distinguishes shipped prototype behavior from the
+Updated 2026-09-20. This file distinguishes shipped prototype behavior from the
 ultimate product described in the PRD. A passing CI run does not make this production-ready.
 
 | Capability | Current implementation | Remaining gate |

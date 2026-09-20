@@ -164,7 +164,7 @@ Sources: [Fastmail JMAP](https://www.fastmail.com/dev/),
 
 ## Pending owner choices
 
-### ADR-016 — Resumable read worker with fenced leases (2026-09-19)
+### ADR-016 — Resumable read worker with fenced leases (2026-09-20)
 
 **Decision:** add a bounded, one-page-at-a-time Fastmail worker. Persist a versioned
 checkpoint containing the import generation, baseline Email state, query state,

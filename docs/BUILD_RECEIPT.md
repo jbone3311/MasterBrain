@@ -1,8 +1,37 @@
 # Build and validation receipt
 
-Recorded 2026-09-19 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Tested implementation
+## Read-worker refinement pass
+
+Code commit: `01eb47d`.
+[GitHub Actions run 35501983332](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35501983332)
+completed successfully:
+
+- **119 tests passed**, including 29 real PostgreSQL integration cases; none skipped in CI.
+- Strict typing passed across 20 source modules; lint and all document/link gates passed.
+- Developer Docker image build and CLI smoke test passed.
+- Full Git-history secret scan found no leaks through this code commit.
+- Locally: 90 passed, 29 database tests explicitly skipped (no local Postgres).
+
+Added durable listing/change checkpoints, leased single-account orchestration,
+stale-worker/account-binding fencing, restart after query churn, retry deadlines,
+failure pauses and content-free run receipts. Tests include eight simultaneous
+lease contenders, process recreation, crash-after-commit replay, deleted messages
+during listing, wrong-account tokens, provider failures, expired cursors and MIME
+rollback. Retry bounds cover 15,015 combinations. This is bounded fault/pressure
+testing, **not** a long-running soak, production load test or live-provider trial.
+
+The first CI attempt caught PostgreSQL infinity timestamps that Python could not
+decode in status rows; a forward migration replaced those sentinels. Review also
+prevented an unsafe cursor-expiry reset: that path now explicitly pauses pending
+the inventory-diff reconciler. [Worker limits and recovery](READ_WORKER.md).
+
+Remaining warnings: two upstream Python test-client deprecations and CI action/
+runner upgrade notices. They do not fail this run; dependency/runtime upgrades
+remain in the supply-chain backlog. No additional mailbox/cloud privileges were added.
+
+## Earlier foundation verification
 
 Code commit: `3612ac5`.
 [GitHub Actions run 35480784089](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35480784089)
