@@ -1,5 +1,14 @@
 # Operations Runbook
 
+## Current worker implementation
+
+The worker library stores `sync_workers` state and append-only `sync_runs` outcomes;
+it is not scheduled or connected to real accounts. See [READ_WORKER.md](READ_WORKER.md)
+for lease expiry, retry deadlines, paused errors and migration/grant instructions.
+`resync_required` is a safe pause: the full inventory reconciler is not implemented.
+Do not follow the target full-resync procedure below until that gate is delivered.
+No manual cursor advancement, baseline replacement or silent error clearing.
+
 ## Daily checks
 
 - Sync lag and last successful cursor per account/scope.

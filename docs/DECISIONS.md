@@ -164,6 +164,41 @@ Sources: [Fastmail JMAP](https://www.fastmail.com/dev/),
 
 ## Pending owner choices
 
+### ADR-016 — Resumable read worker with fenced leases (2026-09-19)
+
+**Decision:** add a bounded, one-page-at-a-time Fastmail worker. Persist a versioned
+checkpoint containing the import generation, baseline Email state, query state,
+position and total. Restart listing when query state changes; do not infer deletion
+from an incomplete listing. Replay changes from the baseline after listing finishes.
+Keep the original Email baseline when restarting a changed query. An expired change
+cursor pauses with `resync_required`: a complete inventory-diff reconciler is still
+needed before safely replacing the baseline. Explicit provider tombstones hide
+current search while retained evidence remains available.
+
+**Concurrency:** acquire a database-clock lease before network work, renew between
+bounded requests, and fence commits with the exact lease token. Network requests
+never run inside a database transaction. Checkpoint and evidence commit together;
+an expired/replaced lease cannot commit. A configured provider-account binding is
+required and checked against session discovery before reading messages.
+
+**Failure:** persist bounded, content-free run outcomes, retry deadlines and auth/
+protocol pauses. No sleeping retry loop in the worker. MIME failures and oversized
+messages still stop the page without advancing: durable byte-preserving quarantine
+and larger object storage are separate gates, not simulated as successful imports.
+Partial full imports are searchable but never advertised as a complete mailbox.
+
+**Boundary:** library orchestration and synthetic/provider-mock tests only initially;
+no automatic discovery of credentials, enrollment, real mailbox contact or mailbox
+writes. Operator enrollment, scheduler and disposable-account acceptance remain gates.
+No inference or binary extraction is enabled by synchronization.
+
+**Rollback:** stop workers; leases expire. Preserve new tables/checkpoints and deploy
+forward-compatible code. Older code must not interpret the worker's JSON checkpoints
+as provider state. No destructive down migration or provider compensation is required.
+
+Sources: [JMAP query-state contract](https://www.rfc-editor.org/rfc/rfc8620#section-5.5),
+[JMAP mail changes](https://www.rfc-editor.org/rfc/rfc8621#section-4.2).
+
 - Cloud/managed Postgres vendor and region.
 - OIDC/Zero Trust vendor.
 - First provider and exact backfill window.

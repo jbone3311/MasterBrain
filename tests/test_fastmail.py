@@ -52,6 +52,9 @@ def test_discovery_and_blob_download_are_bounded_and_read_only() -> None:
         "https://api.fastmail.com.evil.invalid/jmap/api",
         "https://api.fastmail.com:444/jmap/api",
         "https://user:pass@api.fastmail.com/jmap/api",
+        "https://api.fastmail.com:bad/jmap/api",
+        "https://api.fastmail.com/jmap/\\evil",
+        "https://api.fastmail.com/jmap/\napi",
     ],
 )
 def test_session_cannot_redirect_credentials(url: str) -> None:
@@ -100,5 +103,22 @@ def test_oversized_response_refused() -> None:
     try:
         with pytest.raises(ProtocolError, match="byte limit"):
             client.discover()
+    finally:
+        client.close()
+
+
+def test_invalid_session_capabilities_scrubbed():
+    client = FastmailReadClient(
+        TOKEN,
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200, json=session(accounts={"a": {"accountCapabilities": None}})
+            )
+        ),
+    )
+    try:
+        with pytest.raises(ProtocolError):
+            client.discover()
+        assert client.account_id is None
     finally:
         client.close()

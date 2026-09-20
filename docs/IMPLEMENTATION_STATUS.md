@@ -6,13 +6,13 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Capability | Current implementation | Remaining gate |
 |---|---|---|
 | Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks | Managed deployment, encryption/KMS, purge and restore drills |
-| Ingestion | Atomic page/event/evidence/checkpoint transaction; duplicate/replay/stale-cursor checks | Live worker, leases, full backfill, reconciliation, poison-event quarantine |
+| Ingestion | Atomic page/event/evidence/checkpoint; resumable Fastmail worker library, fenced leases, bounded retries and paused errors | Enrollment/scheduler, cursor-expiry inventory reconciliation, poison quarantine, live acceptance |
 | Evidence | Raw MIME up to 1 MiB; immutable normalized snapshots; version-stable citations | Encrypted object store and larger messages |
 | Attachments | Per-part receipts/events, duplicate links, bounded text extraction, FTS, explicit deferred/failed outcomes | Malware scanner, sandboxed PDF/Office/OCR/archive extraction; raw download policy |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
 | Feedback | Typed proposals, evidence links, idempotency conflict detection, human-only reviews | Rule activation/simulation/rollback and temporal projection application |
-| Providers | JMAP protocol plus bounded Fastmail HTTPS session/metadata/blob transport with mock tests | Enrollment, live acceptance and worker; Gmail/Graph/IMAP implementations |
+| Providers | JMAP protocol, bounded Fastmail transport, durable listing/incremental orchestration with synthetic HTTP-to-DB tests | Enrollment, live acceptance, full reconciliation; Gmail/Graph/IMAP implementations |
 | Models | Closed classification schema, source-excerpt validation, code/local/remote/human policy | Real local runtime, calibrated eval corpus, remote disclosures/budgets |
 | UI | Local owner search/evidence and project-proposal/review page | Login, pagination, full accessible review workflows, live UI acceptance |
 | MCP | Planned typed REST-backed surface | Official SDK adapter, OAuth, actual client compatibility matrix |

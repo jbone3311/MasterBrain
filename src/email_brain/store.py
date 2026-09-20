@@ -47,12 +47,19 @@ class IngestItem:
     received_at: datetime
     raw: bytes | None = None  # None is an explicit provider tombstone.
     thread_id: str | None = None
+    mailbox_ids: tuple[str, ...] = ()
+    keywords: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not all(0 < len(v) <= 1000 for v in (self.event_key, self.provider_id, self.version)):
             raise ValueError("event identifiers must contain 1..1000 characters")
         if self.received_at.tzinfo is None:
             raise ValueError("received_at must be timezone-aware")
+        if self.thread_id is not None and not 0 < len(self.thread_id) <= 512:
+            raise ValueError("invalid thread identifier")
+        for values in (self.mailbox_ids, self.keywords):
+            if len(values) > 100 or any(not 0 < len(v) <= 512 or "\x00" in v for v in values):
+                raise ValueError("invalid provider metadata")
 
 
 class Store:
@@ -162,6 +169,8 @@ class Store:
         expected_cursor: str | None,
         next_cursor: str,
         items: Sequence[IngestItem],
+        *,
+        lease_token: UUID | None = None,
     ) -> int:
         if "email.ingest" not in ctx.scopes:
             raise AccessDenied("ingest scope required")
@@ -182,6 +191,19 @@ class Store:
             ).fetchone()
             if not account:
                 raise NotFound()
+            # All ingestion for an enrolled worker account is fenced, including
+            # direct library calls. A stale process cannot bypass the worker lease.
+            worker = conn.execute(
+                "SELECT lease_token,lease_until>clock_timestamp() AS live "
+                "FROM sync_workers WHERE account_id=%s FOR UPDATE",
+                (account_id,),
+            ).fetchone()
+            if worker and (
+                lease_token is None or worker["lease_token"] != lease_token or not worker["live"]
+            ):
+                raise Conflict("worker lease is not current")
+            if lease_token is not None and worker is None:
+                raise Conflict("worker lease is missing")
             cursor = conn.execute(
                 "SELECT opaque_cursor FROM sync_cursors WHERE account_id=%s AND scope='email'",
                 (account_id,),
@@ -270,6 +292,13 @@ class Store:
                         ),
                     ).fetchone()
                     assert message is not None
+                    conn.execute(
+                        "UPDATE messages SET provider_metadata=%s WHERE id=%s",
+                        (
+                            Jsonb({"mailbox_ids": item.mailbox_ids, "keywords": item.keywords}),
+                            message["id"],
+                        ),
+                    )
                     snapshot = {
                         "subject": normalized.subject,
                         "sender": normalized.sender,
@@ -313,14 +342,16 @@ class Store:
 
     @staticmethod
     def _event_hash(item: IngestItem) -> str:
-        return digest(
-            {
-                "id": item.provider_id,
-                "version": item.version,
-                "raw": hashlib.sha256(item.raw).hexdigest() if item.raw is not None else None,
-                "thread": item.thread_id,
-            }
-        )
+        payload: dict[str, Any] = {
+            "id": item.provider_id,
+            "version": item.version,
+            "raw": hashlib.sha256(item.raw).hexdigest() if item.raw is not None else None,
+            "thread": item.thread_id,
+        }
+        # Preserve hashes for pre-worker events with no provider membership snapshot.
+        if item.mailbox_ids or item.keywords:
+            payload.update(mailbox_ids=item.mailbox_ids, keywords=item.keywords)
+        return digest(payload)
 
     def search(self, ctx: TenantContext, request: SearchRequest) -> list[dict[str, Any]]:
         self.require(ctx, "email.search")

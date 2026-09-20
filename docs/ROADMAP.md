@@ -8,6 +8,20 @@ queue. No phase is complete: live sync, quarantine, restore, production identity
 and cloud setup remain gates. [BACKLOG.md](BACKLOG.md) is the concrete work queue.
 Tenant isolation starts now; Phase 7 expands sharing rather than retrofitting tenancy.
 
+## Refined next-build order
+
+The read-worker library now has durable import/change checkpoints, fenced leases,
+query-churn restart, retries and safe pauses. The next gates, in dependency order:
+
+1. Inventory-diff reconciliation and durable poison-byte quarantine; adaptive batches.
+2. Encrypted large-object storage, isolated binary extraction and byte-preserving restore.
+3. Audited enrollment/recovery, scheduler/lag alerts, disposable-mailbox conformance.
+4. Production identity, member/account grants, infrastructure and restore acceptance.
+5. Persistent rules/state and evaluation-backed inference; then controlled actions.
+
+Do not promote on test count alone. Each gate needs failure injection, negative
+authorization tests, actual acceptance evidence and a documented rollback path.
+
 ## Phase 0 — Decisions and threat model
 
 Deliver:

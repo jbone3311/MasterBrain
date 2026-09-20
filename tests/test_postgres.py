@@ -13,8 +13,10 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
 from pathlib import Path
+from typing import Any
 from uuid import UUID, uuid4
 
+import httpx
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
@@ -23,10 +25,13 @@ from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
+from email_brain.connectors.fastmail import MAIL, FastmailReadClient
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.schemas import FeaturePayload, ProposalRequest, ReviewRequest, SearchRequest
 from email_brain.store import AccessDenied, Conflict, IngestItem, NotFound, Store
+from email_brain.sync import Checkpoint, ReadWorker
+from email_brain.sync_store import SyncStore
 
 pytestmark = pytest.mark.postgres
 
@@ -377,3 +382,287 @@ def test_http_to_real_database_and_correlated_audit(database, tenant) -> None:
             (ctx.tenant_id,),
         ).fetchone()
     assert audit is not None and str(audit[0]) == review.headers["X-Request-ID"]
+
+
+class SyntheticMailbox:
+    """Stateful HTTP fixture, never a real mailbox or provider credential."""
+
+    def __init__(self) -> None:
+        self.mail = {"m1": b"Subject: Melron\r\n\r\nSynthetic investment"}
+        self.query_state = "q1"
+        self.email_state = "e0"
+        self.account = "provider-a"
+        self.deleted: list[str] = []
+        self.updated: list[str] = []
+        self.expired = False
+        self.status = 200
+        self.calls: list[str] = []
+        self.keywords: dict[str, bool] = {}
+
+    def handle(self, request: httpx.Request) -> httpx.Response:
+        import json
+
+        self.calls.append(request.method)
+        if self.status != 200:
+            return httpx.Response(self.status, headers={"Retry-After": "120"})
+        if request.method == "GET" and request.url.path.endswith("session"):
+            return httpx.Response(
+                200,
+                json={
+                    "primaryAccounts": {MAIL: self.account},
+                    "accounts": {self.account: {"accountCapabilities": {MAIL: {}}}},
+                    "apiUrl": "https://api.fastmail.com/jmap/api/",
+                    "downloadUrl": "https://api.fastmail.com/jmap/download/{blobId}",
+                },
+            )
+        if request.method == "GET":
+            return httpx.Response(200, content=self.mail[request.url.path.rsplit("/", 1)[1]])
+        method, args, call_id = json.loads(request.content)["methodCalls"][0]
+        assert args["accountId"] == self.account
+        result: dict[str, Any] = {"accountId": self.account}
+        if method == "Email/query":
+            position = args["position"]
+            ids = sorted(self.mail)[position : position + 1]
+            result.update(
+                ids=ids, total=len(self.mail), queryState=self.query_state, position=position
+            )
+        elif method == "Email/get":
+            result.update(
+                state=self.email_state,
+                list=[
+                    {
+                        "id": key,
+                        "blobId": key,
+                        "threadId": "thread-1",
+                        "receivedAt": "2026-09-19T00:00:00Z",
+                        "mailboxIds": {"inbox": True},
+                        "keywords": self.keywords,
+                    }
+                    for key in args["ids"]
+                    if key in self.mail
+                ],
+                notFound=[key for key in args["ids"] if key not in self.mail],
+            )
+        elif method == "Email/changes":
+            if self.expired:
+                return httpx.Response(
+                    200,
+                    json={
+                        "methodResponses": [["error", {"type": "cannotCalculateChanges"}, call_id]]
+                    },
+                )
+            result.update(
+                oldState=args["sinceState"],
+                newState="e1",
+                created=[],
+                updated=self.updated,
+                destroyed=self.deleted,
+                hasMoreChanges=False,
+            )
+        else:
+            pytest.fail("write/unknown provider method")
+        return httpx.Response(200, json={"methodResponses": [[method, result, call_id]]})
+
+
+def bind_synthetic(database, tenant):
+    store, admin = database
+    ctx, account = tenant
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE mail_accounts SET provider_account_id='provider-a' WHERE id=%s", (account,)
+        )
+    fixture = SyntheticMailbox()
+    client = FastmailReadClient(
+        "synthetic-transport-token", transport=httpx.MockTransport(fixture.handle)
+    )
+    return ReadWorker(store, client, jitter=lambda: 0.0), fixture, client
+
+
+def test_worker_http_to_database_search_and_metadata(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    try:
+        assert worker.step(ctx, account) == "progress"  # Durable baseline.
+        assert worker.step(ctx, account) == "progress"  # Durable listing.
+        mail.keywords = {"$seen": True}
+        mail.updated = ["m1"]
+        assert worker.step(ctx, account) == "caught_up"
+        hits = worker.store.search(ctx, SearchRequest(query="Melron"))
+        assert len(hits) == 1
+        with worker.store.transaction(ctx) as conn:
+            state = conn.execute("SELECT provider_metadata FROM messages").fetchone()
+            assert state["provider_metadata"] == {"mailbox_ids": ["inbox"], "keywords": ["$seen"]}
+            assert conn.execute("SELECT count(*) AS n FROM sync_runs").fetchone()["n"] == 3
+        before = len(mail.calls)
+        assert worker.step(ctx, account) == "not_due"
+        assert len(mail.calls) == before
+    finally:
+        client.close()
+
+
+def test_worker_restart_and_query_churn_preserve_baseline(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    mail.mail["m2"] = b"Subject: Survives\r\n\r\nStill present"
+    try:
+        assert worker.step(ctx, account) == "progress"
+        assert worker.step(ctx, account) == "progress"  # First of two listing pages.
+        del mail.mail["m1"]
+        mail.deleted = ["m1"]
+        mail.query_state = "q2"
+        mail.email_state = "later-state-do-not-replace-baseline"
+        restarted = ReadWorker(worker.store, client)
+        assert restarted.step(ctx, account) == "progress"  # Discard stale query position.
+        with worker.store.transaction(ctx) as conn:
+            cursor = conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()[
+                "opaque_cursor"
+            ]
+            checkpoint = Checkpoint.model_validate_json(cursor)
+            assert checkpoint.position == 0 and checkpoint.email_state == "e0"
+        assert restarted.step(ctx, account) == "progress"
+        assert restarted.step(ctx, account) == "caught_up"
+        assert worker.store.search(ctx, SearchRequest(query="Melron")) == []
+        assert len(worker.store.search(ctx, SearchRequest(query="Survives"))) == 1
+    finally:
+        client.close()
+
+
+@pytest.mark.parametrize("status,outcome", [(401, "auth_required"), (429, "retry"), (500, "retry")])
+def test_worker_failures_durable_and_no_spin(database, tenant, status, outcome):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    mail.status = status
+    try:
+        assert worker.step(ctx, account) == outcome
+        assert worker.step(ctx, account) == "not_due"
+        assert len(mail.calls) == 1
+        with worker.store.transaction(ctx) as conn:
+            assert conn.execute("SELECT count(*) AS n FROM sync_cursors").fetchone()["n"] == 0
+            result = conn.execute("SELECT * FROM sync_workers").fetchone()
+            assert result["failures"] == 1 and result["last_outcome"] == outcome
+    finally:
+        client.close()
+
+
+def test_worker_account_mismatch_fails_before_mail_reads(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    mail.account = "other-account"
+    try:
+        assert worker.step(ctx, account) == "protocol_error"
+        assert mail.calls == ["GET"]
+    finally:
+        client.close()
+
+
+def test_worker_expired_cursor_pauses_without_reset_or_delete(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    try:
+        worker.step(ctx, account)
+        worker.step(ctx, account)
+        mail.expired = True
+        assert worker.step(ctx, account) == "resync_required"
+        assert worker.step(ctx, account) == "not_due"
+        assert len(worker.store.search(ctx, SearchRequest(query="Melron"))) == 1
+        with worker.store.transaction(ctx) as conn:
+            cursor = conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()[
+                "opaque_cursor"
+            ]
+            assert Checkpoint.model_validate_json(cursor).email_state == "e0"
+    finally:
+        client.close()
+
+
+def test_worker_bad_mime_does_not_advance(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    try:
+        worker.step(ctx, account)
+        mail.mail["m1"] = b""
+        assert worker.step(ctx, account) == "parse_error"
+        with worker.store.transaction(ctx) as conn:
+            cursor = conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()[
+                "opaque_cursor"
+            ]
+            assert Checkpoint.model_validate_json(cursor).phase == "listing"
+            assert conn.execute("SELECT count(*) AS n FROM messages").fetchone()["n"] == 0
+    finally:
+        client.close()
+
+
+def test_worker_leases_competing_and_expired_process_fenced(database, tenant):
+    worker, _, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    _, admin = database
+    try:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(
+                pool.map(lambda _: SyncStore(worker.store).acquire(ctx, account), range(8))
+            )
+        acquired = [lease for lease in results if lease]
+        assert len(acquired) == 1
+        old = acquired[0]
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "UPDATE sync_workers SET lease_until=now()-interval '1 second' WHERE account_id=%s",
+                (account,),
+            )
+        new = worker.jobs.acquire(ctx, account)
+        assert new is not None and new.token != old.token
+        with pytest.raises(Conflict):
+            worker.jobs.renew(ctx, account, old.token)
+        with pytest.raises(Conflict):
+            worker.store.ingest_page(ctx, account, None, "bad", [item()], lease_token=old.token)
+        with pytest.raises(Conflict):
+            worker.store.ingest_page(ctx, account, None, "bad", [item()])
+        assert (
+            worker.store.ingest_page(ctx, account, None, "ok", [item()], lease_token=new.token) == 1
+        )
+        with pytest.raises(Conflict):
+            worker.jobs.finish(ctx, account, old.token, "caught_up")
+        worker.jobs.finish(ctx, account, new.token, "progress", 1)
+    finally:
+        client.close()
+
+
+def test_worker_db_commit_crash_replay_is_harmless(database, tenant):
+    worker, _, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    _, admin = database
+    try:
+        lease = worker.jobs.acquire(ctx, account)
+        assert lease
+        assert (
+            worker.store.ingest_page(
+                ctx, account, None, "committed", [item()], lease_token=lease.token
+            )
+            == 1
+        )
+        # Crash after commit and before finish; expire the abandoned lease.
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "UPDATE sync_workers SET lease_until=now()-interval '1 second' WHERE account_id=%s",
+                (account,),
+            )
+        fresh = worker.jobs.acquire(ctx, account)
+        assert fresh and fresh.cursor == "committed"
+        assert (
+            worker.store.ingest_page(
+                ctx, account, None, "committed", [item()], lease_token=fresh.token
+            )
+            == 0
+        )
+        with worker.store.transaction(ctx) as conn:
+            assert conn.execute("SELECT count(*) AS n FROM messages").fetchone()["n"] == 1
+    finally:
+        client.close()
+
+
+def test_worker_requires_enrollment_and_scope(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    with pytest.raises(NotFound):
+        SyncStore(store).acquire(ctx, account)
+    with pytest.raises(AccessDenied):
+        SyncStore(store).acquire(replace(ctx, scopes=frozenset()), account)

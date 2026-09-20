@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 from urllib.parse import quote, urlsplit
 
 import httpx
 
-from email_brain.connectors.jmap import JmapReader, ProtocolError
+from email_brain.connectors.jmap import JmapReader, ProtocolError, id_list, identifier
 from email_brain.normalize import MAX_RAW_BYTES
 
 MAIL = "urn:ietf:params:jmap:mail"
@@ -30,15 +31,21 @@ class ProviderThrottled(Exception):
 
 
 def _safe_url(url: str) -> str:
-    parts = urlsplit(url)
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+    except ValueError:
+        raise ProtocolError("invalid provider URL") from None
     if (
         parts.scheme != "https"
         or parts.hostname != "api.fastmail.com"
-        or parts.port not in {None, 443}
+        or port not in {None, 443}
         or parts.username
         or parts.password
         or parts.fragment
         or not parts.path.startswith("/jmap/")
+        or any(ord(char) < 33 or ord(char) > 126 for char in url)
+        or "\\" in url
     ):
         raise ProtocolError("provider URL is outside the Fastmail boundary")
     return url
@@ -49,7 +56,7 @@ class FastmailReadClient:
         if not 16 <= len(token) <= 4096 or "\n" in token or "\r" in token:
             raise ValueError("invalid provider token")
         self._client = httpx.Client(
-            headers={"Authorization": f"Bearer {token}"},
+            headers={"Authorization": f"Bearer {token}", "Accept-Encoding": "identity"},
             timeout=httpx.Timeout(20, connect=5),
             follow_redirects=False,
             trust_env=False,
@@ -64,6 +71,7 @@ class FastmailReadClient:
 
     def _request(self, method: str, url: str, payload: dict[str, Any] | None = None) -> bytes:
         safe = _safe_url(url)
+        started = time.monotonic()
         try:
             with self._client.stream(method, safe, json=payload) as response:
                 if response.status_code in {401, 403}:
@@ -74,9 +82,13 @@ class FastmailReadClient:
                     raise ProviderThrottled(delay)
                 if response.status_code != 200:
                     raise ProviderUnavailable("provider returned non-success status")
+                if response.headers.get("Content-Encoding", "identity").lower() != "identity":
+                    raise ProtocolError("compressed provider responses are not supported")
                 parts: list[bytes] = []
                 count = 0
                 for chunk in response.iter_bytes(chunk_size=65536):
+                    if time.monotonic() - started > 30:
+                        raise ProviderUnavailable("provider response deadline exceeded")
                     count += len(chunk)
                     if count > MAX_RAW_BYTES:
                         raise ProtocolError("provider response exceeds prototype byte limit")
@@ -89,13 +101,15 @@ class FastmailReadClient:
     def _json(self, raw: bytes) -> dict[str, Any]:
         try:
             parsed = json.loads(raw)
-        except (ValueError, UnicodeError):
+        except (ValueError, UnicodeError, RecursionError):
             raise ProtocolError("invalid provider JSON") from None
         if not isinstance(parsed, dict):
             raise ProtocolError("provider JSON is not an object")
         return parsed
 
     def discover(self) -> str:
+        # A failed refresh must not leave a previously discovered identity usable.
+        self.account_id = self._api_url = self._download_template = None
         data = self._json(self._request("GET", SESSION))
         primary = data.get("primaryAccounts", {})
         accounts = data.get("accounts", {})
@@ -107,7 +121,8 @@ class FastmailReadClient:
             not isinstance(account_id, str)
             or not account_id
             or not isinstance(account, dict)
-            or MAIL not in account.get("accountCapabilities", {})
+            or not isinstance(account.get("accountCapabilities"), dict)
+            or MAIL not in account["accountCapabilities"]
         ):
             raise ProtocolError("no primary mail account")
         api_url = data.get("apiUrl")
@@ -116,7 +131,7 @@ class FastmailReadClient:
             raise ProtocolError("missing endpoint URLs")
         _safe_url(api_url)
         _safe_url(download)
-        self.account_id = account_id
+        self.account_id = identifier(account_id)
         self._api_url = api_url
         self._download_template = download
         return account_id
@@ -144,7 +159,7 @@ class FastmailReadClient:
         return JmapReader(self.account_id, self._call)
 
     def metadata(self, ids: list[str]) -> dict[str, Any]:
-        if not 1 <= len(ids) <= 100 or any(not 0 < len(value) <= 1000 for value in ids):
+        if not id_list(ids):
             raise ValueError("1..100 bounded provider IDs required")
         # Keep notFound in the result: callers must reconcile, not silently drop it.
         return self.reader()._call(
@@ -158,8 +173,7 @@ class FastmailReadClient:
     def download_blob(self, blob_id: str) -> bytes:
         if not self._download_template or not self.account_id:
             raise ProtocolError("discover session first")
-        if not 0 < len(blob_id) <= 1000:
-            raise ValueError("invalid blob ID")
+        identifier(blob_id)
         url = self._download_template
         for key, value in {
             "accountId": self.account_id,

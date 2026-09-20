@@ -9,6 +9,13 @@ rollback, stale cursors, proposal conflicts and attachment FTS. Type/lint comman
 are `uv run mypy src` and `uv run ruff check .`. CI requires the Postgres suite and
 builds/smokes the developer container. Local skipped database tests are not passes.
 
+The worker suite additionally tests synthetic HTTP → real DB → search, query-list
+churn with deletions, process recreation, eight competing lease claimants, stale
+worker fencing, crash-after-commit replay, malformed metadata/checkpoints, account
+mismatch, auth/throttle/outage pauses, cursor expiry, metadata flag changes and
+poison MIME rollback. Retry bounds are checked over 15,015 combinations. These are
+bounded fault/pressure tests, not a multi-day load/soak test or live-provider proof.
+
 Targets below still need private-corpus and production-like testing. No live
 provider, malware sandbox, cloud restore or model evaluation is implied by unit tests.
 
@@ -28,7 +35,10 @@ For Gmail, explicitly test `historyId` HTTP 404 recovery described in the [sync 
 
 - Migrations up/down or forward-repair rehearsal on production-sized snapshots.
 - RLS matrix for every role/table/operation, including missing tenant context and guessed IDs.
-- Runtime role cannot own tables, set another tenant, bypass RLS, read raw objects, or invoke unsafe functions.
+- Runtime role cannot own tables or bypass RLS; test all API scope/account boundaries.
+  The prototype trusted server can set tenant context and read raw evidence for
+  processing. RLS does not contain a server compromise with arbitrary SQL access;
+  role splitting and a stronger service-principal boundary remain production gates.
 - Backup restore, constraint checking, object/hash reconciliation, replica revocation.
 
 ### Action tests

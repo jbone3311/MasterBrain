@@ -9,6 +9,8 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "sync_workers",
+    "sync_runs",
     "attachment_receipts",
     "intake_events",
     "tenants",
@@ -23,6 +25,8 @@ RUNTIME_SELECT = (
     "proposal_evidence",
 )
 RUNTIME_INSERT = (
+    "sync_workers",
+    "sync_runs",
     "attachment_receipts",
     "intake_events",
     "sync_cursors",
@@ -83,7 +87,7 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
     for privilege, tables in (
         ("SELECT", RUNTIME_SELECT),
         ("INSERT", RUNTIME_INSERT),
-        ("UPDATE", ("messages", "sync_cursors", "proposals")),
+        ("UPDATE", ("messages", "sync_cursors", "proposals", "sync_workers")),
     ):
         conn.execute(
             sql.SQL("GRANT {} ON {} TO {}").format(

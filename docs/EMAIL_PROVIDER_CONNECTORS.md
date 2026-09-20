@@ -22,8 +22,11 @@ Provider IDs/cursors remain opaque. Notifications enqueue synchronization but ne
 ## Fastmail: JMAP first
 
 Implemented: read-only JMAP protocol and bounded HTTPS session/metadata/blob
-transport with mock tests. Not yet a scheduler, OAuth enrollment flow, full backfill
-or reconciliation implementation. No real mailbox was contacted. Fastmail's `mail`
+transport and a resumable worker library with synthetic HTTP-to-database tests.
+Stable-query listing, incremental pages, leases and bounded retries are implemented;
+scheduler, OAuth enrollment, full inventory reconciliation and live acceptance are not.
+Expired state pauses explicitly rather than pretending resync succeeded.
+See [worker contract](READ_WORKER.md). No real mailbox was contacted. Fastmail's `mail`
 OAuth scope covers read/manage: do not assume a universal read-only OAuth scope.
 The adapter excludes `set` and submission methods. Use the least capable token
 actually available. Distributed OAuth apps need Fastmail client registration;

@@ -18,7 +18,8 @@ mail service. It includes:
   full-text search, attachment receipts and bounded plain-text extraction;
 - expiring tenant-bound bootstrap credentials, REST API and a small owner review UI;
 - idempotent typed proposals and optimistic-concurrency human review;
-- a read-only JMAP protocol parser with cursor-expiry handling (not a live sync worker);
+- a read-only Fastmail HTTP transport and resumable worker library with fenced leases,
+  stable-query import, incremental changes, bounded retries and explicit failure pauses;
 - model-routing/output-validation and rank-fusion helpers (no model is called);
 - locked dependencies, CI with a real PostgreSQL service, and a repository gate.
 
@@ -32,6 +33,9 @@ operations remain launch gates. See [implementation status](docs/IMPLEMENTATION_
 [Executive review](docs/EXECUTIVE_REVIEW.md) · [Build receipt](docs/BUILD_RECEIPT.md) ·
 [Factory intake review](docs/FACTORY_INTAKE_REVIEW.md) ·
 [Hosting recommendation](docs/HOSTING_DECISION.md) · [Open decisions](docs/OPEN_QUESTIONS.md)
+
+The worker is exercised through synthetic HTTP → PostgreSQL tests, not a real
+mailbox. See [worker contract and recovery limits](docs/READ_WORKER.md).
 
 ```bash
 uv sync --locked --extra dev
