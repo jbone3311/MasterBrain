@@ -29,6 +29,10 @@ operations remain launch gates. See [implementation status](docs/IMPLEMENTATION_
 
 ## Start here
 
+[Executive review](docs/EXECUTIVE_REVIEW.md) · [Build receipt](docs/BUILD_RECEIPT.md) ·
+[Factory intake review](docs/FACTORY_INTAKE_REVIEW.md) ·
+[Hosting recommendation](docs/HOSTING_DECISION.md) · [Open decisions](docs/OPEN_QUESTIONS.md)
+
 ```bash
 uv sync --locked --extra dev
 uv run pytest -q

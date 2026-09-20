@@ -31,6 +31,9 @@ No Factory files, registries, databases, or other Products were modified.
    mirrored there, but **never** the live database, secrets, venv, or indexes. The
    observed local Dropbox Factory folder contains content/reports, not the verified
    GitHub checkout needed to bind. Do not claim a sibling bind has passed.
+   The actual local Factory source was subsequently located at
+   `~/CW-Systems/CW-Factory`; local placement remains Q08 rather than a
+   silent relocation of Jim's existing folders.
 3. “ABSORB then delete carrier” and “intake ends empty” concern the drop-zone, not
    permission to delete mailbox messages or evidentiary attachments. Email Brain
    preserves source evidence while retained; safe relocation or completed receipt
