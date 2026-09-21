@@ -15,7 +15,7 @@ from email.parser import BytesParser
 from pathlib import PurePosixPath
 
 from email_brain.calendar_attachment import CalendarInvalid, CalendarUnsupported, extract_calendar
-from email_brain.normalize import MAX_RAW_BYTES
+from email_brain.normalize import MAX_RAW_BYTES, validate_raw_budget
 
 MAX_ATTACHMENTS = 64
 MAX_TEXT_BYTES = 262144
@@ -112,8 +112,9 @@ def _classify(part: Message, path: str) -> Attachment:
     return replace(base, status="extracted", reason="bounded_text_v1", text=text)
 
 
-def receive_attachments(raw: bytes) -> list[Attachment]:
-    if not raw or len(raw) > MAX_RAW_BYTES:
+def receive_attachments(raw: bytes, *, max_raw_bytes: int = MAX_RAW_BYTES) -> list[Attachment]:
+    validate_raw_budget(max_raw_bytes)
+    if not isinstance(raw, bytes) or not raw or len(raw) > max_raw_bytes:
         raise ValueError("MIME byte limit")
     root = BytesParser(policy=policy.default).parsebytes(raw)
     results: list[Attachment] = []

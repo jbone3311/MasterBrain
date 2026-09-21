@@ -1,5 +1,10 @@
 # Deployment
 
+The optional [isolated MIME controller](ISOLATED_MIME_RECOVERY.md) is a separate
+trusted-worker privilege. Do not add the Docker socket to the API image/deployment.
+Hosted scheduling, per-job authorization and isolation verification remain gates;
+the checked local/CI Docker controls are not an Azure deployment template.
+
 The opt-in [encrypted local object backend](LARGE_EVIDENCE_STORAGE.md) is an
 executable storage contract, not Azure Blob deployment. Migration 0009 requires
 upgrading API, workers and backup/recovery readers together. Keep object roots

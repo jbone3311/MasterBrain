@@ -1,5 +1,10 @@
 # Encrypted large-email evidence
 
+Next increment: an explicit trusted worker can use
+[isolated MIME recovery](ISOLATED_MIME_RECOVERY.md) to recover searchable body and
+safe text attachments up to the 16 MiB retained-message limit. Default ingestion
+and UI retry still use the 1 MiB parser; binary extraction remains deferred.
+
 Implemented as an explicitly injected local/CI library, not a hosted service or
 automatically enabled CLI option. See [ADR-028](adr/028_encrypted_large_evidence.md).
 

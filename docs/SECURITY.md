@@ -2,6 +2,13 @@
 
 ## New local prototype boundaries
 
+[Isolated MIME recovery](ISOLATED_MIME_RECOVERY.md) runs explicitly on a trusted
+controller with an image-bound parser, no network/mounts, disabled logs and enforced
+resource/output limits. Default API retry cannot select or launch it. Docker daemon
+access must never be given to the API or parser. This extracts bounded source text,
+not binary documents; cloud queue authorization and sandbox operational acceptance
+remain gates. Infrastructure failures cannot be cached as successful/rejected mail.
+
 [Encrypted large evidence](LARGE_EVIDENCE_STORAGE.md) adds an opt-in tenant/account
 bound AES-GCM filesystem backend, immutable SQL manifests and verified reads.
 Only raw external objects are encrypted here; normalized database text and legacy

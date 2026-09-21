@@ -39,3 +39,7 @@ jobs:
       - run: uv run python scripts/check_docs.py
       - run: docker build -t email-brain-ci .
       - run: docker run --rm email-brain-ci --help
+      - name: Actual isolated large-MIME recovery
+        run: |
+          image_id="$(docker image inspect email-brain-ci --format '{{.Id}}')"
+          EMAIL_BRAIN_SANDBOX_IMAGE_ID="$image_id" uv run pytest -q tests/container_mime_checks.py

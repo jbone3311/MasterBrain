@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any
+import re
+from typing import Any, Protocol
 from uuid import UUID
 
 import psycopg
@@ -11,6 +12,7 @@ import psycopg
 from email_brain import store as persistence
 from email_brain.attachments import Attachment
 from email_brain.auth import Principal
+from email_brain.normalize import NormalizedMessage
 from email_brain.store import AccessDenied, Conflict, IngestItem, NotFound, Store
 
 
@@ -18,9 +20,38 @@ class RecoveryUnavailable(Exception):
     """Unexpected parser failure; no content or parser exception crosses the boundary."""
 
 
+class MimeProcessor(Protocol):
+    """Trusted worker injection; never selected by an email or HTTP request."""
+
+    @property
+    def parser_version(self) -> str: ...
+
+    @property
+    def max_raw_bytes(self) -> int: ...
+
+    def prepare(self, raw: bytes) -> tuple[NormalizedMessage | None, list[Attachment], bool]: ...
+
+
 class Recovery:
-    def __init__(self, store: Store) -> None:
+    def __init__(self, store: Store, *, processor: MimeProcessor | None = None) -> None:
         self.store = store
+        self.processor = processor
+        self._processor_version: str | None = None
+        self._processor_limit = persistence.MAX_RAW_BYTES
+        if processor is not None:
+            version, limit = processor.parser_version, processor.max_raw_bytes
+            if (
+                not isinstance(version, str)
+                or not re.fullmatch(r"sandbox-mime-v1-[a-f0-9]{64}", version)
+                or type(limit) is not int
+                or not 1 <= limit <= 16 * 1024 * 1024
+            ):
+                raise ValueError("invalid isolated MIME processor contract")
+            self._processor_version, self._processor_limit = version, limit
+
+    @property
+    def parser_version(self) -> str:
+        return self._processor_version or persistence.PARSER_VERSION
 
     @staticmethod
     def attempt(
@@ -68,7 +99,7 @@ class Recovery:
         ctx = principal.context
         self.store.require(ctx, "email.review")
         self.store.require(ctx, "email.evidence.read")
-        if parser != persistence.PARSER_VERSION:
+        if parser != self.parser_version:
             raise Conflict("deployed parser version changed; refresh before retrying")
         with self.store.transaction(ctx) as conn:
             row = self.receipt(conn, account_id, receipt_id)
@@ -80,18 +111,33 @@ class Recovery:
 
         # No open SQL transaction while processing untrusted data. Revalidate below.
         raw = self.store.load_raw(ctx, account_id, row["raw_sha256"])
-        if len(raw) > persistence.MAX_RAW_BYTES:
+        limit = self._processor_limit if self.processor else persistence.MAX_RAW_BYTES
+        if len(raw) > limit:
             raise Conflict("retained message exceeds the current parser budget")
         valid = (
             raw is not None
-            and len(raw) <= persistence.MAX_RAW_BYTES
+            and len(raw) <= limit
             and hashlib.sha256(raw).hexdigest() == row["raw_sha256"]
         )
         attachments: list[Attachment] = []
         normalized, rejected = None, True
         if valid:
             try:
-                normalized, attachments, rejected = persistence.prepare_mime(raw)
+                if self.processor is None:
+                    normalized, attachments, rejected = persistence.prepare_mime(raw)
+                else:
+                    # Contract/image binding cannot change midway through an approved retry.
+                    if (
+                        self.processor.parser_version != parser
+                        or self.processor.max_raw_bytes != limit
+                    ):
+                        raise RecoveryUnavailable()
+                    normalized, attachments, rejected = self.processor.prepare(raw)
+                    if (
+                        self.processor.parser_version != parser
+                        or self.processor.max_raw_bytes != limit
+                    ):
+                        raise RecoveryUnavailable()
             except Exception:
                 raise RecoveryUnavailable() from None
         outcome = "integrity_failed" if not valid else "mime_rejected"
@@ -127,6 +173,7 @@ class Recovery:
                     normalized,
                     attachments,
                     source_metadata_known=current["source_metadata"] is not None,
+                    parser_version=parser,
                 )
                 conn.execute(
                     "UPDATE message_sync_state SET status='ready',updated_at=now() "

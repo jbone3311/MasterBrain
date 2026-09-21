@@ -2,6 +2,12 @@
 
 ## Latest executable additions
 
+[Isolated large-MIME recovery](ISOLATED_MIME_RECOVERY.md) lets a trusted worker
+inject an exact-image processor into human-authorized Recovery. Existing SQL fences
+and immutable parser versions publish bounded body/text-attachment evidence from
+retained messages up to 16 MiB. This does not give the public API Docker privileges
+or enable binary extraction; an authenticated hosted job channel is still required.
+
 [Encrypted large-email storage](LARGE_EVIDENCE_STORAGE.md) stages verified external
 objects before atomic SQL manifest/event/checkpoint publication. The explicit
 local backend preserves up to 16 MiB; mail above the 1 MiB parser budget is held,

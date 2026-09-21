@@ -1,5 +1,13 @@
 # Testing and Evaluations
 
+Isolated MIME adds strict parent-envelope, input/output/complexity/resource bounds,
+Docker pre-disclosure isolation inspection, exact ownership cleanup and processor
+version/race tests. The explicit post-image-build `tests/container_mime_checks.py`
+suite runs actual Docker, then encrypted source -> isolated recovery -> real
+PostgreSQL -> body/attachment search. Its results are counted separately from the
+default Python suite; mocked isolation never substitutes for this check.
+See [contract](ISOLATED_MIME_RECOVERY.md).
+
 Encrypted evidence tests cover authenticated context, tampering, wrong keys,
 rotation, concurrent publication, private paths, symlinks, ownership, crash/fsync
 failure and bounded inventory. `tests/test_large_evidence.py` adds API error

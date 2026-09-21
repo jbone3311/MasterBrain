@@ -11,6 +11,7 @@ from email.utils import getaddresses
 from html.parser import HTMLParser
 
 MAX_RAW_BYTES = 1_048_576
+MAX_ISOLATED_RAW_BYTES = 16 * 1024 * 1024
 MAX_TEXT_CHARS = 100_000
 PARSER_VERSION = "stdlib-mime-v4"
 
@@ -47,9 +48,15 @@ class NormalizedMessage:
     truncated: bool
 
 
-def normalize(raw: bytes) -> NormalizedMessage:
-    if not raw or len(raw) > MAX_RAW_BYTES:
-        raise ValueError("raw MIME must contain 1..1048576 bytes")
+def validate_raw_budget(max_raw_bytes: int) -> None:
+    if type(max_raw_bytes) is not int or not 1 <= max_raw_bytes <= MAX_ISOLATED_RAW_BYTES:
+        raise ValueError("invalid bounded MIME budget")
+
+
+def normalize(raw: bytes, *, max_raw_bytes: int = MAX_RAW_BYTES) -> NormalizedMessage:
+    validate_raw_budget(max_raw_bytes)
+    if not isinstance(raw, bytes) or not raw or len(raw) > max_raw_bytes:
+        raise ValueError("raw MIME outside configured byte budget")
     mail = BytesParser(policy=policy.default).parsebytes(raw)
     if not isinstance(mail, EmailMessage):
         raise ValueError("invalid MIME parser result")

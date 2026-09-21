@@ -6,7 +6,13 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest increment: [encrypted large evidence](LARGE_EVIDENCE_STORAGE.md), optional
+Latest increment: [isolated large-MIME recovery](ISOLATED_MIME_RECOVERY.md), using
+approved local image IDs, resource/output limits and image-bound immutable evidence.
+Default API has no Docker access; a trusted worker must explicitly inject it into
+human-authorized Recovery. CI adds actual post-build container/SQL pipeline checks.
+Review controller privilege and the still-missing hosted job channel before rollout.
+
+Previous increment: [encrypted large evidence](LARGE_EVIDENCE_STORAGE.md), optional
 16 MiB local objects, atomic SQL manifests, held large mail and two-part restore
 verification. Migration 0009 requires compatible API/workers/backup readers; no
 Azure adapter or large binary parser is implied. Review key custody, orphan

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
@@ -285,8 +286,12 @@ class Store:
         attachments: list[Attachment],
         *,
         source_metadata_known: bool = True,
+        parser_version: str | None = None,
     ) -> UUID:
         """Publish one parser-versioned projection inside the caller's account lock."""
+        parser = PARSER_VERSION if parser_version is None else parser_version
+        if not re.fullmatch(r"[A-Za-z0-9._:-]{1,100}", parser):
+            raise ValueError("invalid parser provenance")
         assert item.raw is not None
         raw_hash = hashlib.sha256(item.raw).hexdigest()
         message = conn.execute(
@@ -314,7 +319,7 @@ class Store:
                 Jsonb(list(normalized.recipients)),
                 normalized.text,
                 raw_hash,
-                PARSER_VERSION,
+                parser,
                 item.received_at,
             ),
         ).fetchone()
@@ -336,7 +341,7 @@ class Store:
             "text": normalized.text,
             "truncated": normalized.truncated,
             "received_at": item.received_at.isoformat(),
-            "parser_version": PARSER_VERSION,
+            "parser_version": parser,
         }
         created = conn.execute(
             "INSERT INTO message_versions(tenant_id,account_id,message_id,raw_sha256,"
@@ -354,7 +359,7 @@ class Store:
         version = conn.execute(
             "SELECT id,snapshot FROM message_versions WHERE message_id=%s AND raw_sha256=%s "
             "AND parser_version=%s",
-            (message["id"], raw_hash, PARSER_VERSION),
+            (message["id"], raw_hash, parser),
         ).fetchone()
         assert version is not None and item.raw is not None
         if created:

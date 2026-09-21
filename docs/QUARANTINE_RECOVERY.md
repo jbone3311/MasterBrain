@@ -1,5 +1,10 @@
 # Held-message recovery
 
+An explicit trusted worker can now use an [isolated image-bound MIME processor](ISOLATED_MIME_RECOVERY.md)
+for retained mail up to 16 MiB. This is an operator/library path, not an HTTP image
+selector; the default UI/API behavior below stays at 1 MiB. Successful isolated
+recovery creates separately versioned evidence and leaves binary attachments deferred.
+
 The local owner review screen can retry parsing one current held message from its
 retained MIME. This does not contact a provider, accept invitations, scan malware,
 execute binary attachments, run a model, or modify the source mailbox.

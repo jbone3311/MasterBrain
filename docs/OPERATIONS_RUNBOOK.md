@@ -1,5 +1,15 @@
 # Operations Runbook
 
+## Isolated MIME controller
+
+Run only on an explicitly trusted local worker/controller with an approved immutable
+image; never mount Docker into the API. Inspect [worker contract](ISOLATED_MIME_RECOVERY.md)
+before invoking library recovery. Timeouts, unavailable images, oversized/malformed
+output or failed ownership-checked cleanup leave mail held with no cached attempt.
+Do not raise limits silently. Verify no owned orphan remains after a killed host
+process; never prune or delete unrelated containers. A successful recovery does
+not mean binary attachments were extracted or scanned: inspect receipt accounting.
+
 ## Encrypted evidence failures
 
 For the opt-in [local object backend](LARGE_EVIDENCE_STORAGE.md), preserve SQL,

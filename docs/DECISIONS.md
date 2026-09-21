@@ -4,6 +4,11 @@ This is a concise ADR index. Each decision should become an individual immutable
 
 ## Accepted
 
+[ADR-029](adr/029_isolated_large_mime_recovery.md) adds a restricted, image-bound
+large-MIME processor for the human-authorized Recovery library. Default API parsing
+and binary-extraction deferral remain unchanged. Docker control is a separate
+trusted worker privilege, never granted to the API or untrusted parser.
+
 [ADR-028](adr/028_encrypted_large_evidence.md) adds opt-in encrypted filesystem raw
 evidence and SQL manifests (0009), large-message holding and coordinated synthetic
 object/database restore. It supersedes historical small-message-only preservation

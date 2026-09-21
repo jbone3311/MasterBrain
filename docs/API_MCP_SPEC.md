@@ -2,6 +2,11 @@
 
 ## External evidence storage
 
+The [isolated large-MIME processor](ISOLATED_MIME_RECOVERY.md) is injected only by
+a trusted operator/worker into the Recovery library. Default HTTP/UI retry does
+not launch it, accept image IDs or grant daemon privileges. Its future hosted job
+control needs separate scoped authorization; this change adds no HTTP/MCP tool.
+
 Opt-in [large evidence storage](LARGE_EVIDENCE_STORAGE.md) adds quarantine reason
 `mime_too_large`; retry is 409 while retained mail exceeds the parser budget.
 Unavailable/corrupt encrypted storage returns scrubbed 503

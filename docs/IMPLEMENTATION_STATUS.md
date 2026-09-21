@@ -6,8 +6,8 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Capability | Current implementation | Remaining gate |
 |---|---|---|
 | Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks; verified synthetic logical dump/restore | Managed deployment, encryption/KMS, purge, offsite/PITR disaster-recovery drills |
-| Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/scheduler, isolated large-MIME parsing, live acceptance and soak |
-| Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB with SQL manifests; larger mail held; immutable snapshots and stable citations | Hosted Blob/KMS, production key recovery, larger isolated parser and retention/purge |
+| Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/scheduler, queued isolated processing, live acceptance and soak |
+| Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; explicit trusted-worker isolated MIME recovery to image-bound searchable evidence | Hosted Blob/KMS, production key recovery, authorized processing job channel and retention/purge |
 | Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, sandboxed PDF/Office/OCR/archive extraction; versioned historical reprocessing and raw download policy |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |

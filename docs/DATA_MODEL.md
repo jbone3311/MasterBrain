@@ -1,5 +1,11 @@
 # Data Model
 
+Isolated recovery reuses migration 0008 parser-versioned snapshots/attempts and 0009
+encrypted raw manifests. Parser provenance `sandbox-mime-v1-<full image SHA-256>`
+distinguishes isolated output from ordinary `stdlib-mime-v4` without rewriting old
+citations. No schema migration, provider event or cursor mutation is introduced.
+See [isolated recovery](ISOLATED_MIME_RECOVERY.md).
+
 ## Implemented external evidence (0009)
 
 `raw_objects` permits exactly one of inline `raw_mime` or a typed `blob_ref` JSON
