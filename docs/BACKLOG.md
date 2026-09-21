@@ -3,7 +3,7 @@
 Ordered by dependency and risk, not calendar promises. The broad roadmap remains
 the product sequence; these are buildable handoff tickets.
 
-Reviewed 2026-09-21 against runtime/test commit `4286504`. A partly implemented
+Reviewed 2026-09-21 through ADR-035; exact verified commits remain in the build receipt. A partly implemented
 ticket stays open until its stated production/acceptance gates are met.
 
 | ID | Work package | Acceptance / dependency |
@@ -43,17 +43,22 @@ seeding and isolated format fixtures remain supported. Milestone ordering is in
 
 ### EB-006 next: source-bound document processing
 
-ADR-034 now implements the [separate PDF worker contract/profile](PDF_WORKER.md)
-and synthetic checks for the processor portion of steps 1–2 below. Durable
-approval/schema/publication, scan policy and the integrated steps 3–4 remain open.
-Do not reimplement the worker or broaden the old MIME queue to make it callable.
+ADR-034 implements the [separate PDF worker contract/profile](PDF_WORKER.md).
+ADR-035 now implements the [synthetic approval/API/SQL/search slice](DOCUMENT_PROCESSING.md)
+of steps 1–4 below, with actual-container integration and restore tests. UI/CLI,
+scanner/live policy, broader quality and hosted operations remain open. Do not
+reimplement the reader or broaden the old MIME queue to make it callable.
 
-Write and review a new ADR before changing behavior. Existing `recovery_jobs`
+Write and review an ADR before new behavior beyond the accepted contract. Existing `recovery_jobs`
 approve a quarantine receipt, not arbitrary attachments in ready mail. Do not
 fabricate quarantine rows, broaden the MIME result contract silently or remove
 working message search to reuse that queue.
 
 Deliver in independently verified slices:
+
+The original acceptance checklist follows; it is not a fresh blank-slate assignment.
+Next deliver explicit document UI/CLI with their own session/configuration tests,
+then scanner/live and hosted acceptance. Keep those distinct from API/library proof.
 
 1. Define the attachment source/approval/result contract and decide whether a
    separate queue/schema is needed. Bind tenant/account, evidence version, part

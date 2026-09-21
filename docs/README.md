@@ -45,9 +45,9 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 The latest documentation review adds a worked project scenario, attachment-format
 coverage and failure examples; aligns hosting/search guidance with lexical-first
 delivery; and defines [documentation ownership/status terms](DOCUMENTATION_STANDARD.md).
-The standalone PDF worker is implemented and tested, but its approval/result/search
-workflow is not. This refresh changes no runtime behavior, permissions or cloud
-resources and does not refresh third-party activity counts or claim a Factory audit.
+ADR-035 subsequently connects the restricted PDF worker to a synthetic approval/
+result/search API/library; UI/CLI and live/scanner policy remain pending. Research
+counts remain dated observations; no hosted deployment or Factory audit is claimed.
 
 ## Executive architecture review
 
@@ -129,7 +129,8 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [PRODUCT_WALKTHROUGH.md](PRODUCT_WALKTHROUGH.md) | Worked owner scenario, format coverage, failure behavior and deployment split |
 | [DOCUMENTATION_STANDARD.md](DOCUMENTATION_STANDARD.md) | Status vocabulary, authoritative records and maintenance checklist |
 | [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
-| [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF groundwork, limits and missing approval/search integration |
+| [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF reader, isolation and format limits |
+| [DOCUMENT_PROCESSING.md](DOCUMENT_PROCESSING.md) | Separate synthetic approval API/library, durable results, opt-in search and remaining operator/live gates |
 | [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) | Executable fictional generator/export/replay, attachment formats, answer keys and remaining soak gaps |
 | [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md) | External corpus shortlist and adoption gates |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Authoritative current capability boundaries |

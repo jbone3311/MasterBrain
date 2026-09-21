@@ -42,8 +42,9 @@ correction updates derived state, not the original email. Filing or drafting nee
 its own permission and review.
 
 **Today:** synthetic ingestion, receipts, FTS, proposal review and narrow virtual
-rules work. A restricted standalone PDF reader is tested, but integrated document
-search, automatic project state and mailbox actions in this example remain planned.
+rules work. Restricted PDF processing now has a synthetic approval API/library,
+immutable results and opt-in search. Its owner UI/CLI, live/scanner policy,
+automatic project state and mailbox actions remain planned.
 [Features and methods](FEATURES_AND_METHODS.md).
 
 ## What the owner will actually use
@@ -67,12 +68,11 @@ already know a PDF arrived and can preserve it. We cannot yet extract/index its
 text in production. Existing processing approvals refer to quarantined **messages**;
 they are not general permission to process every deferred attachment.
 
-The next intake design must support an ordinary searchable email containing an
-unprocessed document. Bind approval to tenant/account, immutable message evidence,
-part path/hash and processor version; retain the working body index throughout.
-Approve the ADR and exact contract before implementation. An isolated PDF reader
-alone is a foundation, not a finished source-to-search feature. Scanning, extraction
-and OCR need distinct outcomes and acceptance evidence.
+ADR-035 now supports that ordinary searchable email through a separate synthetic
+document approval API/library. It binds source/part/processor identity and preserves
+the body index, then saves immutable extraction evidence for opt-in search. Next
+complete the owner/operator interface and accepted live/scanner policy. Scanning,
+extraction and OCR remain distinct outcomes and acceptance gates.
 
 ## Build sequence
 

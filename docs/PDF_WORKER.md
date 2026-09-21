@@ -1,7 +1,8 @@
 # Source-bound PDF worker
 
 Updated 2026-09-21. Explicit synthetic/local-worker library and dedicated container,
-not automatic ingestion, a public upload endpoint or completed searchable-PDF support.
+not automatic ingestion or a public upload endpoint. ADR-035 now connects this
+reader to a separate [synthetic approval/result/search workflow](DOCUMENT_PROCESSING.md).
 [ADR-034](adr/034_source_bound_pdf_worker.md) defines the accepted boundary.
 
 ## What it does
@@ -81,32 +82,29 @@ image. CI still verifies that the default image contains no pypdf/Office/XML fix
 readers, then builds and tests the PDF image separately. Development in-process
 parser tests receive only independently authored synthetic data.
 
-## Integration still required
+## Integration boundary
 
-No DB schema/grants, approval queue, attachment extraction cache, UI/API/MCP,
-automatic invocation, scanner or FTS publication is added. Existing mail receipts
-still defer PDFs; the test mailbox's PDF-only search marker remains absent.
-The worker has byte identity, not user authorization. A trusted future caller must
-resolve tenant/account/evidence ownership and bind approval to that source before
-disclosure, then fence publication against expiry, revocation, cancellation and
-changed evidence. Do not manufacture a quarantine receipt for ready mail.
-
-Next: implement that durable source-to-search workflow under a separate ADR,
-including independent extraction versions, safe historical citations, explicit
-scan policy, SQL/RLS/restore tests and body-search preservation. Do not close
-EB-006 on standalone worker checks. [Work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
+The reader itself owns byte identity, not user authorization. ADR-035/migration
+0012 adds a separate synthetic-only approval queue, immutable result cache and
+revision selection, page citations and opt-in FTS. Existing ingestion receipts
+still defer PDFs; only a successful explicitly approved result makes PDF-only text
+available to document search. Source/body state is preserved. See
+[document contract](DOCUMENT_PROCESSING.md) for scopes, routes and operational controls.
+UI, document CLI/supervision, scanning and live acceptance remain open; do not
+close EB-006 on parser or synthetic integration checks alone.
 
 Schema inspection confirms current receipts are unique per message-evidence/part,
 and current attachment search reads their original extracted text. Do not overwrite
 those receipts to add a new PDF interpretation: define independent immutable
 extraction versions and explicit citation/query selection. The old SQL scanner
 value is `not_scanned`; the new worker contract uses `unscanned`. The integration
-must map these deliberately without treating either as clearance.
+keeps both visible as their original independent records; neither is clearance.
 
 ## Operations and rollback
 
 No supervisor is installed. Omit the worker image/caller to disable the capability;
-there is no migration or persistent result to undo. Keep the default MIME image and
+the separate job channel now has migration/result state and its own cancellation
+and forward-repair rules. Keep the default MIME image and
 its recovery jobs separate. Routine reporting may include fixed status/reason and
 counts only, never document text, request envelopes or parser diagnostics. No new
 metrics backend or persistent telemetry is claimed.

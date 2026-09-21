@@ -25,7 +25,7 @@ independent hosted operation is a delivery target, not today's deployment state.
 | A broker sends a project introduction, PDF and rent-roll spreadsheet | Preserve source bytes and hashes; give every attachment a receipt; commit provider progress with durable outcomes | Implemented synthetic ingestion; no live enrollment |
 | Search finds the introduction immediately | PostgreSQL full-text search over current authorized body and supported attachment text; retain evidence-version citations | Implemented; PDF/Excel text is not yet indexed |
 | See that a PDF arrived but has not been understood | Attachment outcome distinguishes preservation from extraction; do not call a deferred document successfully read | Implemented receipts |
-| Approve processing of this particular PDF | Bind permission to tenant/account, immutable source/part/hash and processor; restricted worker; validate and publish a new extraction atomically | PDF worker groundwork only; job/result/search integration next |
+| Approve processing of this particular PDF | Bind permission to tenant/account, immutable source/part/hash and processor; restricted worker; validate and publish a new extraction atomically | Synthetic approval API/library and opt-in search implemented; UI/CLI and live/scanner policy pending |
 | A correction replaces an earlier rent figure | Keep both source versions; future project facts explicitly supersede earlier claims and cite the correction | Evidence history implemented; financial facts/projectors planned |
 | Ask “what are we waiting on for Melron?” | Combine authorized thread evidence with evidence-backed open obligations; show uncertainty and unavailable documents | Planned state and assistant workflow |
 | Say “make Melron a project and treat these senders as important” | Separate a project proposal from a rule proposal; validate scope and show reviewable effects | Generic proposals implemented; project application planned; narrow sender rules implemented |
@@ -47,7 +47,7 @@ outcome. [Attachment contracts](CALENDAR_ATTACHMENTS.md) and
 |---|---|---|
 | Supported plain text / CSV | Bounded text can be extracted and searched | No spreadsheet calculation or inferred business facts |
 | Supported calendar parts | Bounded source text can be searched | No RSVP, calendar write or recurrence execution |
-| Text-bearing PDF | Receipt retained; extraction deferred | Standalone restricted worker can return page text; not yet searchable through the application |
+| Text-bearing PDF | Receipt retained; ordinary extraction deferred | Explicit synthetic document approval can produce separately stored, opt-in searchable page text |
 | Image-only PDF / image attachment | No OCR text indexed | OCR is planned; image-only is not proof of successful extraction |
 | Encrypted PDF | Deferred | Standalone worker refuses password/decryption processing, including empty-password encryption |
 | Excel / Word | Receipt and explicit outcome; no application text extraction | Generated files are independently validated in tests; that does not enable production readers |
@@ -126,9 +126,9 @@ live-provider, cloud disaster-recovery, model-quality or multi-day soak acceptan
 
 ## What the team builds next
 
-First connect the existing PDF worker to explicit durable attachment approval,
-immutable results and authorized search, preserving the original body and evidence.
-Then finish the secure read-only service: identity, account enrollment, hosted
+First complete owner UI/operator controls for the new approved PDF API/library,
+immutable results and opt-in search, preserving the original body and evidence.
+Then finish the secure read-only service: scanner policy, identity, enrollment, hosted
 storage/key recovery, supervision and operational acceptance. State, assistant/team
 access and controlled mailbox effects follow their own gates.
 

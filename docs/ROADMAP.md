@@ -24,13 +24,11 @@ worker supervision, binary extraction, operational acceptance and Factory bind r
    manifests, export and paced/restarted database replay are implemented (EB-023).
    Expand held-out variety, scanned-text/password-protected cases and sustained
    load measurement; existing format checks do not prove binary extraction quality.
-3. **Binary intake:** define approved processing for deferred attachments in
-   ready messages; today's quarantine-recovery queue does not cover them. Reuse
-   the existing restricted PDF worker, define its scanner policy, preserve receipts and
-   prove authorized source-to-search results before Office/OCR expansion (EB-006).
-   See the [concrete work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
-   ADR-034 now supplies a standalone source-bound PDF worker/profile; it does not
-   close the durable approval, result storage, scanner or FTS integration gates.
+3. **Binary intake:** ADR-035 now connects the restricted PDF worker to separate
+   synthetic approval jobs, immutable results and opt-in FTS. Next add document
+   UI/operator controls and scanner/live policy, then broader Office/OCR intake.
+   Quarantine-recovery permissions remain unchanged. See the
+   [contract](DOCUMENT_PROCESSING.md) and [work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
 4. **Production foundation:** OIDC/grants, Azure adapters/private resources,
    secrets/key recovery, enrollment, rate limits, audit and restore (EB-007–009).
 5. **Read-only acceptance:** owner-authorized disposable mailbox plus staging soak,

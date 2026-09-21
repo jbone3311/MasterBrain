@@ -214,6 +214,7 @@ def test_changes_during_processing_fence_publication(database, tenant, monkeypat
     jobs, human, worker, _, job = setup(database, tenant)
     processor = FakePdf()
     extract = processor.extract
+    changed_state = []
 
     def changed(raw, **kw):
         result = extract(raw, **kw)
@@ -224,7 +225,15 @@ def test_changes_during_processing_fence_publication(database, tenant, monkeypat
         elif mutation == "version":
             processor.processor_version = "sandbox-pdf-v1-" + "b" * 64
         elif mutation == "hash":
-            return replace(result, source=replace(result.source, part_sha256="b" * 64))
+            result = replace(result, source=replace(result.source, part_sha256="b" * 64))
+        elif mutation in {"source", "delete"}:
+            store.ingest_page(
+                ctx,
+                account,
+                "document-ready",
+                "changed",
+                [replace(pg.item("changed"), raw=None if mutation == "delete" else raw)],
+            )
         else:
             with psycopg.connect(admin) as conn:
                 if mutation in {"owner", "worker"}:
@@ -242,18 +251,32 @@ def test_changes_during_processing_fence_publication(database, tenant, monkeypat
                         "UPDATE mail_accounts SET provider_account_id='new-binding' WHERE id=%s",
                         (account,),
                     )
-                elif mutation == "source":
-                    conn.execute(
-                        "UPDATE message_sync_state SET event_key='changed' WHERE account_id=%s",
-                        (account,),
-                    )
                 else:
-                    conn.execute("UPDATE messages SET deleted=true WHERE account_id=%s", (account,))
+                    raise AssertionError("unknown mutation")
+        changed_state.append(mutation)
         return result
 
     monkeypatch.setattr(processor, "extract", changed)
     jobs.run_once(worker, account, processor)
+    assert changed_state == [mutation], "fault setup must succeed rather than become a parser error"
     with psycopg.connect(admin) as conn:
+        expected = {
+            "cancel": "cancelled",
+            "owner": "revoked",
+            "worker": "running",
+            "account": "revoked",
+            "enroll": "stale",
+            "source": "stale",
+            "delete": "stale",
+            "lease": "running",
+            "approval": "expired",
+            "version": "retry_wait",
+            "hash": "retry_wait",
+        }
+        assert (
+            conn.execute("SELECT status FROM document_jobs WHERE id=%s", (job["id"],)).fetchone()[0]
+            == expected[mutation]
+        )
         assert (
             conn.execute(
                 "SELECT count(*) FROM document_extractions WHERE tenant_id=%s", (ctx.tenant_id,)
@@ -481,3 +504,70 @@ def test_rest_approval_result_search_history_and_validation(database, tenant):
     )
     assert api.post(f"/v1/accounts/{account}/documents/execute").status_code == 404
     assert UUID(done["id"].hex) == done["id"]
+
+
+def test_cached_result_still_requires_current_owner_and_eligible_source(database, tenant):
+    store, admin = database
+    ctx, account = tenant
+    jobs, human, worker, receipt, _ = setup(database, tenant)
+    jobs.run_once(worker, account, FakePdf())
+    jobs.enqueue(human, account, receipt, VERSION, POLICY, uuid4())
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "DELETE FROM tenant_memberships WHERE tenant_id=%s AND user_id=%s",
+            (ctx.tenant_id, ctx.actor_id),
+        )
+    processor = FakePdf()
+    processor.extract = Mock(side_effect=AssertionError("must not process"))
+    assert jobs.run_once(worker, account, processor)["status"] == "revoked"
+    processor.extract.assert_not_called()
+    with psycopg.connect(admin) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) FROM document_extractions WHERE tenant_id=%s", (ctx.tenant_id,)
+            ).fetchone()[0]
+            == 1
+        )
+
+
+def test_unfinished_queue_limit_and_same_tenant_account_boundaries(database, tenant):
+    store, admin = database
+    ctx, account = tenant
+    jobs, human, _, receipt, first = setup(database, tenant)
+    for _ in range(99):
+        jobs.enqueue(human, account, receipt, VERSION, POLICY, uuid4())
+    with pytest.raises(Conflict, match="queue"):
+        jobs.enqueue(human, account, receipt, VERSION, POLICY, uuid4())
+    other = uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO mail_accounts(id,tenant_id,provider,address,secret_ref) "
+            "VALUES (%s,%s,'fastmail','other@example.invalid','synthetic:none')",
+            (other, ctx.tenant_id),
+        )
+    for call in (
+        lambda: jobs.get(ctx, other, first["id"]),
+        lambda: jobs.list(ctx, other, after=first["id"]),
+        lambda: jobs.enqueue(human, other, receipt, VERSION, POLICY, uuid4()),
+    ):
+        with pytest.raises(NotFound):
+            call()
+
+
+def test_document_page_excerpt_bound_and_missing_scope(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    jobs, _, worker, _, _ = setup(database, tenant)
+    processor = FakePdf()
+    original = processor.extract
+    processor.extract = lambda raw, **kw: replace(
+        original(raw, **kw), pages=(PdfPage(1, "x" * 3000),)
+    )
+    done = jobs.run_once(worker, account, processor)
+    page = store.document_evidence(ctx, done["extraction_id"])["pages"][0]
+    assert len(page["excerpt"]) == 2000 and page["truncated"] and page["offsets"] == [0, 2000]
+    assert page["excerpt_sha256"] == hashlib.sha256(page["excerpt"].encode()).hexdigest()
+    with pytest.raises(AccessDenied):
+        store.document_evidence(
+            replace(ctx, scopes=frozenset({"email.search"})), done["extraction_id"]
+        )

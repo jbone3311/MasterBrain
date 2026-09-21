@@ -9,7 +9,12 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest increment: [source-bound restricted PDF worker](PDF_WORKER.md), ADR-034.
+Latest increment: [approved document jobs/search](DOCUMENT_PROCESSING.md), ADR-035,
+migration 0012. Review separate worker scope, synthetic policy, fresh source/owner/
+lease fences, immutable revisions and latest-result FTS selection. UI/CLI and
+live/scanner policy remain open; do not rebuild the now-integrated backend.
+
+Previous increment: [source-bound restricted PDF worker](PDF_WORKER.md), ADR-034.
 Review the dedicated image, hash/part binding, strict result validation, shared
 fixed-profile container controller and partial/unscanned semantics. It has no SQL,
 HTTP or existing-job integration. Next implement durable approval/results/search
@@ -179,21 +184,17 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 
 ## Suggested next issue
 
-> Implement the first approved PDF attachment-processing slice from
-> [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing). Start with an
-> ADR: existing recovery jobs require a quarantine receipt and do not cover an
-> ordinary ready email with a deferred PDF. Preserve its searchable body; bind new
-> processing to immutable evidence/part/hash and an exact processor version. Use
-> the existing known-answer mailbox, keeping test-only readers out of the API
-> image. Verify restricted execution, fenced publication, authorized search,
-> cancellation/revocation/restart and explicit unsupported/failure outcomes.
-> Extraction is not scanning. Do not enroll accounts, provision paid services or
-> mutate Factory. Record standalone parser work as groundwork until the approved
-> source-to-search path is integrated and verified.
+> Build the explicit owner/operator workflow over ADR-035's document API/library:
+> safe attachment selection, exact processor/policy approval, bounded history and
+> cancellation, document search/evidence rendering, and separately configured
+> worker execution. Add the required workflow ADR first. Preserve session/account
+> fencing, retained request keys, worker-scope separation and no automatic consent.
+> Keep existing MIME controls unchanged. Test stale UI, revocation, restart and
+> restricted worker/SQL behavior. Do not enroll mail, buy resources or mutate Factory.
 
-ADR-034 now supplies the standalone worker portion. Reuse it; the next ADR and
-implementation must add the durable authorization/publication workflow above,
-not build another reader. `process-jobs` still supports only the MIME recovery profile.
+ADR-034 supplies the reader; ADR-035 supplies durable approval/publication/search.
+`process-jobs` still supports only MIME recovery. Extend the product deliberately,
+not by selecting a PDF image for that incompatible MIME contract.
 
 The operator recovery command and bounded known-answer generator already exist;
 do not reimplement either. Hosted supervision, a read-worker operator path and
