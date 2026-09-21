@@ -2,6 +2,55 @@
 
 Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Durable human-approved isolated processing jobs
+
+Implementation **bbca37f**, final pressure-test commit **decf1b0**.
+[CI 35566333798](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35566333798)
+passed at decf1b0. The unchanged runtime/restore code passed
+[restore 35566144268](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35566144268)
+at bbca37f. Verified 2026-09-20 Pacific (September 21 UTC).
+
+- **1,220 standard Python tests passed**, including **150 real PostgreSQL cases**,
+  no CI skips. **Four additional actual-container tests passed**, including API
+  approval -> encrypted retained MIME -> restricted image -> atomic job/evidence
+  completion -> body/attachment search. **25 Node UI tests passed**. Repeated gate
+  suites and the restore safety subset are not counted twice.
+- Local: **1,070 passed, 150 PostgreSQL skips**; no local Docker/PG acceptance is
+  claimed. Locked dependencies, Ruff, strict typing across 33 source modules,
+  separately typed restore script, repository gate, all 16 pack docs/local links,
+  container build and CLI smoke passed. Full Git-history secret scan was clean
+  through decf1b0.
+- Restore: **24 tables, 118 rows, two tenants, four encrypted objects**, equal SQL
+  and raw hashes, restored tenant isolation/search/recovery/rules, and unchanged
+  completed/cancelled/pending job states. Database-only and missing-object recovery
+  were refused. **16.41 seconds** includes disposable cluster startup, not production
+  RTO. Owned container and temporary archive/object trees were cleaned up.
+
+The increment adds 67 standard tests (35 PostgreSQL) and one actual-container
+pipeline test. Coverage includes human/worker scope separation, immutable approval
+identity, actor-bound idempotency, concurrent claim/admission, 100-job account limit,
+cancellation, both actors' revocation, account disablement, provider deletion,
+expired/replaced leases, fresh wall-clock expiry within a transaction, three-claim
+crash/retry exhaustion, parser drift and cached-result fencing. The SQL helper's
+search path, lack of PUBLIC execution, explicit tenant boundary and inability to
+grant membership/account UPDATE were verified against PostgreSQL.
+
+Migration 0010 and a narrow privileged read/lock helper avoid granting runtime
+authority to edit memberships. Publication and job completion share a final
+fenced transaction; no database lock survives the untrusted processing interval.
+The API can enqueue/check/cancel without Docker privileges or encrypted blob keys.
+Approval lasts one hour and remains a durable grant after the submitting login
+token expires; cancellation/revocation/expiry controls are documented explicitly.
+
+This is an opt-in **local/CI API and worker library**, not an automatically running
+hosted service. Worker supervision, credential enrollment, production OIDC/grants,
+Azure Blob/KMS/deployment, UI job controls, scanning and PDF/Office/OCR/archive
+extraction, retention/purge, live mailbox acceptance and extended soak remain open.
+No live mailbox, paid service, provider write, model disclosure or Factory mutation
+was performed. Two upstream test deprecations and action/runner notices remain in
+the supply-chain backlog. See [job contract](RECOVERY_JOBS.md),
+[ADR-030](adr/030_durable_recovery_jobs.md) and [status](IMPLEMENTATION_STATUS.md).
+
 ## Image-bound isolated large-MIME recovery
 
 Code/test commit **bc7ea12**, initial implementation **b860d2e**.
