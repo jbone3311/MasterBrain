@@ -76,10 +76,12 @@ MIME/ZIP/PDF metadata; independent dev-only readers validate generated formats:
 | [python-docx](https://pypi.org/project/python-docx/) | 1.2.0 / MIT | Independent paragraph read; release June 16, 2025; small maintainer base and limited fixture scope |
 
 Versions observed September 21, 2026 and pinned with hashes in `uv.lock`; this is
-not a fresh vulnerability audit. These mature readers are used **only for tests of
-our generated files**, not recommended here as unsandboxed production intake.
+not a fresh vulnerability audit. These readers validate our generated files,
+not unsandboxed production intake. ADR-034 subsequently adds pypdf to a separate
+optional [restricted PDF worker](PDF_WORKER.md); Office readers remain dev-only.
 CI checks they and the added `lxml` dependency are absent from the runtime image.
-No new core runtime dependencies. See [PDF text limits](https://pypdf.readthedocs.io/en/stable/user/extract-text.html),
+No new core runtime dependencies. The separate PDF worker does not change this
+generator's current ingestion/search expectations. See [PDF text limits](https://pypdf.readthedocs.io/en/stable/user/extract-text.html),
 [read-only workbook API](https://openpyxl.readthedocs.io/en/stable/api/openpyxl.reader.excel.html),
 and [DOCX stream support](https://python-docx.readthedocs.io/en/stable/user/documents.html).
 

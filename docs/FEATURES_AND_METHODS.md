@@ -59,6 +59,11 @@ collapsed into one green checkmark.
 MIME parser. A recovered message can still contain deferred documents. A ready
 message containing a PDF is not automatically eligible for that recovery queue.
 
+[ADR-034's separate worker](PDF_WORKER.md) now verifies exact MIME/part bytes and
+extracts bounded PDF page text in an optional restricted image. That is groundwork:
+no durable tenant approval, document result storage or FTS publication is connected.
+Its always-unscanned result is never a replacement for scanner policy.
+
 **Required next:** an approved attachment job must identify the immutable source
 version, exact MIME part and bytes, as well as the processor/image and policy.
 The worker needs resource limits and no network or provider credentials; the parent

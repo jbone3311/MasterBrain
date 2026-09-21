@@ -12,8 +12,10 @@ import re
 import selectors
 import subprocess
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 from uuid import uuid4
 
 from email_brain.attachments import Attachment
@@ -24,6 +26,8 @@ from email_brain.mime_sandbox import (
     decode_response,
 )
 from email_brain.normalize import NormalizedMessage
+from email_brain.pdf_contract import MAX_OUTPUT_BYTES as PDF_OUTPUT_BYTES
+from email_brain.pdf_contract import MAX_REQUEST_BYTES as PDF_REQUEST_BYTES
 
 _IMAGE = re.compile(r"sha256:[a-f0-9]{64}\Z", re.ASCII)
 _CONTAINER = re.compile(r"[a-f0-9]{64}\Z", re.ASCII)
@@ -38,6 +42,21 @@ _ENV = {
     "PYTHON_SHA256": "",
 }
 _COMMAND = ["-I", "-B", "-m", "email_brain.mime_sandbox"]
+_T = TypeVar("_T")
+
+
+@dataclass(frozen=True)
+class _Profile:
+    name: str
+    command: tuple[str, ...]
+    input_bytes: int
+    output_bytes: int
+
+
+_MIME_PROFILE = _Profile("mime", tuple(_COMMAND), MAX_INPUT_BYTES, MAX_OUTPUT_BYTES)
+_PDF_PROFILE = _Profile(
+    "pdf", ("-I", "-B", "-m", "email_brain.pdf_worker"), PDF_REQUEST_BYTES, PDF_OUTPUT_BYTES
+)
 
 
 def _pump(args: list[str], raw: bytes, *, limit: int, timeout: float) -> bytes:
@@ -127,12 +146,11 @@ def _environment(value: Any) -> dict[str, str]:
     return parsed
 
 
-class DockerMimeProcessor:
-    max_raw_bytes = MAX_INPUT_BYTES
-
-    def __init__(self, image_id: str, *, docker_binary: Path = Path("/usr/bin/docker")) -> None:
+class _DockerPipe:
+    def __init__(self, image_id: str, *, docker_binary: Path, profile: _Profile) -> None:
         if (
-            not isinstance(image_id, str)
+            profile not in (_MIME_PROFILE, _PDF_PROFILE)
+            or not isinstance(image_id, str)
             or not _IMAGE.fullmatch(image_id)
             or not isinstance(docker_binary, Path)
             or not docker_binary.is_absolute()
@@ -141,10 +159,8 @@ class DockerMimeProcessor:
             raise MimeUnavailable()
         self._image_id = image_id
         self._docker_binary = docker_binary
-
-    @property
-    def parser_version(self) -> str:
-        return "sandbox-mime-v1-" + self._image_id.removeprefix("sha256:")
+        self._profile = profile
+        self._label = f"org.cw.email-brain.{profile.name}-run"
 
     def _invoke(
         self,
@@ -196,7 +212,7 @@ class DockerMimeProcessor:
             or (expected is not None and identifier != expected)
             or state["Name"] != "/" + name
             or state["Image"] != self._image_id
-            or state["Config"].get("Labels", {}).get(_LABEL) != name
+            or state["Config"].get("Labels", {}).get(self._label) != name
         ):
             raise MimeUnavailable()
         return identifier
@@ -210,7 +226,7 @@ class DockerMimeProcessor:
             or config.get("User") != "10001:10001"
             or config.get("WorkingDir") != "/app"
             or config.get("Entrypoint") != ["/app/.venv/bin/python"]
-            or config.get("Cmd") != _COMMAND
+            or config.get("Cmd") != list(self._profile.command)
             or config.get("Healthcheck", {}).get("Test") != ["NONE"]
             or not config.get("OpenStdin")
             or config.get("Tty")
@@ -247,12 +263,12 @@ class DockerMimeProcessor:
         if self._invoke(["container", "rm", "--force", identifier]).strip() != identifier.encode():
             raise MimeUnavailable()
 
-    def prepare(self, raw: bytes) -> tuple[NormalizedMessage | None, list[Attachment], bool]:
+    def _run(self, raw: bytes, decode: Callable[[bytes], _T]) -> _T:
         try:
-            if not isinstance(raw, bytes) or len(raw) > MAX_INPUT_BYTES:
+            if not isinstance(raw, bytes) or len(raw) > self._profile.input_bytes:
                 raise MimeUnavailable()
             self._image()
-            name = "eb-mime-" + uuid4().hex
+            name = f"eb-{self._profile.name}-" + uuid4().hex
             identifier = None
             try:
                 args = [
@@ -262,7 +278,7 @@ class DockerMimeProcessor:
                     "--name",
                     name,
                     "--label",
-                    f"{_LABEL}={name}",
+                    f"{self._label}={name}",
                     "--network=none",
                     "--read-only",
                     "--cap-drop=ALL",
@@ -282,7 +298,11 @@ class DockerMimeProcessor:
                 ]
                 for key, value in _ENV.items():
                     args.extend(["--env", f"{key}={value}"])
-                result = self._invoke([*args, self._image_id, *_COMMAND]).decode("ascii").strip()
+                result = (
+                    self._invoke([*args, self._image_id, *self._profile.command])
+                    .decode("ascii")
+                    .strip()
+                )
                 if not _CONTAINER.fullmatch(result):
                     raise MimeUnavailable()
                 identifier = result
@@ -292,7 +312,7 @@ class DockerMimeProcessor:
                 output = self._invoke(
                     ["container", "start", "--attach", "--interactive", identifier],
                     raw,
-                    limit=MAX_OUTPUT_BYTES,
+                    limit=self._profile.output_bytes,
                     timeout=30,
                 )
                 completed = self._inspect("container", identifier)
@@ -305,8 +325,22 @@ class DockerMimeProcessor:
                     or status.get("OOMKilled") is not False
                 ):
                     raise MimeUnavailable()
-                return decode_response(output, raw)
+                return decode(output)
             finally:
                 self._cleanup(name, identifier)
         except Exception:
             raise MimeUnavailable() from None
+
+
+class DockerMimeProcessor(_DockerPipe):
+    max_raw_bytes = MAX_INPUT_BYTES
+
+    def __init__(self, image_id: str, *, docker_binary: Path = Path("/usr/bin/docker")) -> None:
+        super().__init__(image_id, docker_binary=docker_binary, profile=_MIME_PROFILE)
+
+    @property
+    def parser_version(self) -> str:
+        return "sandbox-mime-v1-" + self._image_id.removeprefix("sha256:")
+
+    def prepare(self, raw: bytes) -> tuple[NormalizedMessage | None, list[Attachment], bool]:
+        return self._run(raw, lambda output: decode_response(output, raw))

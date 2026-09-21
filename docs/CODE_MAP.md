@@ -17,6 +17,7 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 | Recovery/jobs | [recovery.py](../src/email_brain/recovery.py), [recovery_jobs.py](../src/email_brain/recovery_jobs.py) |
 | Restricted processor/controller | [mime_sandbox.py](../src/email_brain/mime_sandbox.py), [sandbox_runner.py](../src/email_brain/sandbox_runner.py) |
 | Approved-processing operator CLI | [processing_controller.py](../src/email_brain/processing_controller.py) |
+| Separate PDF worker groundwork | [pdf_contract.py](../src/email_brain/pdf_contract.py), [pdf_worker.py](../src/email_brain/pdf_worker.py), [pdf_processor.py](../src/email_brain/pdf_processor.py), [Dockerfile.pdf](../Dockerfile.pdf) |
 | Local candidates | [inference.py](../src/email_brain/inference.py), [local_model.py](../src/email_brain/local_model.py) |
 | Fictional inbox/file bytes | [synthetic.py](../src/email_brain/synthetic.py), [attachment_samples.py](../tests/attachment_samples.py) |
 | Coherent mailbox/manifest/replay | [synthetic_mailbox.py](../src/email_brain/synthetic_mailbox.py), [synthetic_formats.py](../src/email_brain/synthetic_formats.py) |
@@ -30,7 +31,8 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 
 Known-answer generation/replay is in [synthetic_mailbox.py](../src/email_brain/synthetic_mailbox.py);
 minimal document bytes are authored by [synthetic_formats.py](../src/email_brain/synthetic_formats.py).
-The ordinary parser is unchanged. Independent PDF/Office readers are test-only.
+The ordinary parser is unchanged. Independent Office readers remain test-only;
+pypdf is also in a dedicated optional worker image, not the default API/MIME image.
 
 The executable approved-job entry point is [processing_controller.py](../src/email_brain/processing_controller.py),
 wired through `process-jobs` in [cli.py](../src/email_brain/cli.py).

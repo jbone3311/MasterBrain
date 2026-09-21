@@ -304,6 +304,9 @@ dev = [
     { name = "python-docx" },
     { name = "ruff" },
 ]
+pdf-worker = [
+    { name = "pypdf" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -315,12 +318,13 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
     { name = "pydantic", specifier = ">=2.9,<3" },
     { name = "pypdf", marker = "extra == 'dev'", specifier = ">=6.19,<7" },
+    { name = "pypdf", marker = "extra == 'pdf-worker'", specifier = "==6.19.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8,<10" },
     { name = "python-docx", marker = "extra == 'dev'", specifier = ">=1.2,<2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "uvicorn", specifier = ">=0.30,<1" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["pdf-worker", "dev"]
 
 [[package]]
 name = "et-xmlfile"

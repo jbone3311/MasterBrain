@@ -48,3 +48,9 @@ jobs:
         run: |
           image_id="$(docker image inspect email-brain-ci --format '{{.Id}}')"
           EMAIL_BRAIN_SANDBOX_IMAGE_ID="$image_id" uv run pytest -q tests/container_mime_checks.py
+      - name: Build dedicated PDF worker (not the API image)
+        run: docker build -f Dockerfile.pdf -t email-brain-pdf-ci .
+      - name: Actual source-bound restricted PDF extraction
+        run: |
+          pdf_image_id="$(docker image inspect email-brain-pdf-ci --format '{{.Id}}')"
+          EMAIL_BRAIN_PDF_IMAGE_ID="$pdf_image_id" uv run pytest -q tests/container_pdf_checks.py

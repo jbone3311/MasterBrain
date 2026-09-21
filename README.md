@@ -10,8 +10,7 @@ recovery code. Live enrollment, production identity, document extraction,
 supervision and acceptance testing remain launch requirements. No real mailbox,
 paid cloud resource or remote model is enabled by this repository.
 
-Documentation synchronized September 21, 2026 against runtime/test commit
-`4286504`. [Verification receipts](docs/BUILD_RECEIPT.md) identify exactly what
+Documentation updated September 21, 2026. [Verification receipts](docs/BUILD_RECEIPT.md) identify exactly what
 passed; documentation updates do not certify new functionality.
 
 ## Understand the product
@@ -51,6 +50,11 @@ sending and deletion are not implemented.
 `_GrokBot/Review Delete` is a virtual search label—not a provider folder or deletion
 queue. Processing completion does not mean PDF/Office extraction succeeded;
 every attachment has its own outcome.
+
+A separate [restricted PDF worker](docs/PDF_WORKER.md) now provides source-bound,
+page-level extraction groundwork with explicit partial/deferred outcomes. It is
+not wired into approval jobs, ingestion or search; the default image still has no
+PDF reader, and no malware-safety claim is made.
 
 ## What comes next
 

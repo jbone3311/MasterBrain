@@ -2,14 +2,20 @@
 
 ## Mission
 
-Handoff refreshed 2026-09-21 against runtime/test commit `4286504`. This is a
-documentation alignment, not a Factory bind, permission expansion or new release.
+Handoff refreshed 2026-09-21. Exact tested revisions and limits are in the
+[build receipt](BUILD_RECEIPT.md); this is not a Factory bind or production release.
 
 Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md),
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest increment: [known-answer mailbox](TEST_MAILBOX_PLAN.md), ADR-033,
+Latest increment: [source-bound restricted PDF worker](PDF_WORKER.md), ADR-034.
+Review the dedicated image, hash/part binding, strict result validation, shared
+fixed-profile container controller and partial/unscanned semantics. It has no SQL,
+HTTP or existing-job integration. Next implement durable approval/results/search
+under a separate ADR; preserve ready-body search and do not invent quarantine.
+
+Previous increment: [known-answer mailbox](TEST_MAILBOX_PLAN.md), ADR-033,
 coherent conversations/document corrections, real formats, independent dev-only
 readers, manifest/export and bounded paced SQL feed. Review restart/checkpoint and
 unenrolled-account safeguards; no binary intake/parser permission is added.
@@ -178,6 +184,10 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 > Extraction is not scanning. Do not enroll accounts, provision paid services or
 > mutate Factory. Record standalone parser work as groundwork until the approved
 > source-to-search path is integrated and verified.
+
+ADR-034 now supplies the standalone worker portion. Reuse it; the next ADR and
+implementation must add the durable authorization/publication workflow above,
+not build another reader. `process-jobs` still supports only the MIME recovery profile.
 
 The operator recovery command and bounded known-answer generator already exist;
 do not reimplement either. Hosted supervision, a read-worker operator path and

@@ -7,12 +7,21 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-034's PDF worker](PDF_WORKER.md) is a separately opted-in synthetic/local
+processing profile, not an API or broadened recovery permission. Whole-MIME and
+decoded-part hashes bind input; closed page-level output is parent-validated.
+It carries no provider/DB credentials, network or mounts and always reports
+`unscanned`. Durable tenant authorization/job/publication remains unimplemented.
+Pypdf is present only in the dedicated worker/development environments, not the
+default API/MIME image. Do not run the pure child helper on real mail in-process.
+
 [Known-answer mailbox tooling](TEST_MAILBOX_PLAN.md) authors fictional files only;
 it accepts no recipients or external document inputs. Export refuses existing
 paths and symlinks. Paced replay uses existing synthetic-only account checks on
 every ingestion transaction, without provider writes. New PDF/Office readers are
-dev-only validators of generated data and absent from the runtime image; they are
-not a new unsandboxed production extraction path. No public corpus is imported.
+validators of generated data and absent from the default runtime image. Pypdf's
+separate optional worker adoption above is not an unsandboxed production extraction
+path. No public corpus is imported.
 
 Future PDF/Office support requires an approved source/part-bound processing design;
 today's MIME recovery permission must not silently expand to binary readers or

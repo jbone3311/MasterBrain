@@ -1,8 +1,8 @@
 # Email Brain / Email OS
 
 Status: target architecture plus an executable bounded prototype  
-Documentation synchronized: 2026-09-21 against runtime/test commit `4286504`;
-source health measurements and historical validation retain their own dates.
+Documentation updated: 2026-09-21; exact tested revisions are in the build receipt.
+Source health measurements and historical validation retain their own dates.
 
 Email Brain's target is a private, multi-user intelligence layer that synchronizes
 mail, maintains people/project/thread/obligation state and gives assistants bounded
@@ -116,6 +116,7 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [GAME_PLAN.md](GAME_PLAN.md) | Finished experience, delivery sequence and release bar |
 | [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) | Feature-by-feature methods and current limitations |
 | [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
+| [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF groundwork, limits and missing approval/search integration |
 | [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) | Executable fictional generator/export/replay, attachment formats, answer keys and remaining soak gaps |
 | [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md) | External corpus shortlist and adoption gates |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Authoritative current capability boundaries |

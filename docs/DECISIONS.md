@@ -12,6 +12,11 @@ accepted by this documentation change; ADR-029/030 remain bounded MIME recovery.
 
 ## Accepted
 
+[ADR-034](adr/034_source_bound_pdf_worker.md) adds an explicit source-bound restricted
+PDF worker, separate image/contract and synthetic tests. No attachment queue,
+publication, scanner, API or broader MIME recovery authority is granted. The next
+durable approval-to-search design remains open.
+
 [ADR-033](adr/033_known_answer_synthetic_mailbox.md) adds coherent fictional MIME,
 independent format checks, known-answer manifests and bounded/paced synthetic
 ingestion through existing transactions. No live delivery or binary extraction.

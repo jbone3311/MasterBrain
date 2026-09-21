@@ -53,8 +53,16 @@ def state(name):
     }
 
 
-def fake_docker(monkeypatch, *, mutate=None, image_config=None, started_error=False):
-    processor = runner.DockerMimeProcessor(IMAGE)
+def fake_docker(
+    monkeypatch,
+    *,
+    mutate=None,
+    image_config=None,
+    started_error=False,
+    processor=None,
+    output=b"bounded child response",
+):
+    processor = processor or runner.DockerMimeProcessor(IMAGE)
     calls = []
     name = None
     finished = False
@@ -78,6 +86,8 @@ def fake_docker(monkeypatch, *, mutate=None, image_config=None, started_error=Fa
             return CID.encode() + b"\n"
         if args[:2] == ["container", "inspect"]:
             result = deepcopy(state(name))
+            result["Config"]["Cmd"] = list(processor._profile.command)
+            result["Config"]["Labels"] = {processor._label: name}
             if finished:
                 result["State"] = {"Status": "exited", "ExitCode": 0, "OOMKilled": False}
             if mutate:
@@ -87,7 +97,7 @@ def fake_docker(monkeypatch, *, mutate=None, image_config=None, started_error=Fa
             if started_error:
                 raise RuntimeError("private input secret")
             finished = True
-            return b"bounded child response"
+            return output
         if args[:2] == ["container", "rm"]:
             return CID.encode() + b"\n"
         pytest.fail(f"unexpected command {args[0:2]}")

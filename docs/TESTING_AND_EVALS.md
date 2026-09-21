@@ -58,6 +58,15 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[PDF worker tests](PDF_WORKER.md) independently exercise the source-bound request
+and strict parent response, known-answer PDF text, selected MIME paths/hashes,
+encrypted/empty-password/damaged/image-only/mixed-page inputs and logical budgets.
+Parent tests cover fixed-profile pre-disclosure isolation, ownership cleanup,
+crashes, forged results and absence of eager PDF imports. The separate explicit
+`tests/container_pdf_checks.py` runs the dedicated real image in CI; it is not
+counted in the standard test suite or evidence of database/search integration.
+Default-image exclusion and existing MIME/SQL/container tests remain required.
+
 [Known-answer mailbox tests](TEST_MAILBOX_PLAN.md) now independently read generated
 PDF/XLSX/DOCX, validate PNG/ZIP/MIME/calendar structure, check authored current-parser
 outcomes and run the same sources through four mocked provider read contracts.

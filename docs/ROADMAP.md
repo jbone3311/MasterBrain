@@ -29,6 +29,8 @@ worker supervision, binary extraction, operational acceptance and Factory bind r
    isolate selected PDF extraction, add its scanner policy, preserve receipts and
    prove authorized source-to-search results before Office/OCR expansion (EB-006).
    See the [concrete work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
+   ADR-034 now supplies a standalone source-bound PDF worker/profile; it does not
+   close the durable approval, result storage, scanner or FTS integration gates.
 4. **Production foundation:** OIDC/grants, Azure adapters/private resources,
    secrets/key recovery, enrollment, rate limits, audit and restore (EB-007–009).
 5. **Read-only acceptance:** owner-authorized disposable mailbox plus staging soak,

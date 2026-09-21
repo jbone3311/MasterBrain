@@ -43,6 +43,11 @@ seeding and isolated format fixtures remain supported. Milestone ordering is in
 
 ### EB-006 next: source-bound document processing
 
+ADR-034 now implements the [separate PDF worker contract/profile](PDF_WORKER.md)
+and synthetic checks for the processor portion of steps 1–2 below. Durable
+approval/schema/publication, scan policy and the integrated steps 3–4 remain open.
+Do not reimplement the worker or broaden the old MIME queue to make it callable.
+
 Write and review a new ADR before changing behavior. Existing `recovery_jobs`
 approve a quarantine receipt, not arbitrary attachments in ready mail. Do not
 fabricate quarantine rows, broaden the MIME result contract silently or remove

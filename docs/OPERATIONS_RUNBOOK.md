@@ -28,6 +28,12 @@ edit approval identity or reset claim counters to force work through.
 
 ## Isolated MIME controller
 
+The new [PDF worker](PDF_WORKER.md) is a separate synthetic test/library profile,
+not an option in `process-jobs`. Do not pass its image as the configured MIME
+processor, manually rewrite a job parser ID or fabricate a held-message receipt.
+It has no persistence to repair; disable its caller/image to stop new work. Parser
+text is unscanned, and source/contract/container errors are not cached document failures.
+
 Use [the operator command](PROCESSING_CONTROLLER.md) for private preflight and
 bounded job polling. Check success does not certify Docker readiness; exit 0 can
 include retry/terminal failure results. SIGINT/SIGTERM finish in-flight bounded

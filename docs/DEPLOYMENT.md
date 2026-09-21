@@ -29,8 +29,9 @@ No cloud infrastructure, real email connection or paid resource has been provisi
 
 The current default image deliberately excludes the PDF/Office fixture readers.
 Do not install development extras in a production API image to enable document
-intake. A future binary processor needs a separately approved image/profile and
-source-bound job integration. The local Docker isolation checks are not proof that
+intake. ADR-034 adds [Dockerfile.pdf](../Dockerfile.pdf), a dedicated opt-in synthetic
+worker image/profile, but durable source-bound job integration remains open.
+The local Docker isolation checks are not proof that
 an arbitrary managed container service provides equivalent isolation.
 
 ## Recommended production topology

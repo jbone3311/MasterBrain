@@ -8,6 +8,11 @@ exact tested commits and results.
 
 ### Evidence, processing and review
 
+- Added separate source-bound restricted PDF worker/image and strict page-level
+  contract, with hash/part validation, partial/deferred/failed outcomes and explicit
+  unscanned status. No approval-job/SQL/FTS integration; ordinary ingestion still
+  defers binary documents. PDF dependency stays out of the default API/MIME image.
+
 - Added certified inventory reconciliation and durable malformed/oversized MIME
   quarantine, with human retry and immutable parser-versioned evidence.
 - Added optional tenant-bound encrypted local source objects up to 16 MiB and
@@ -18,8 +23,8 @@ exact tested commits and results.
   CLI with private configuration, preflight, credential refresh and graceful stop.
 - Added reviewed sender-rule simulation, explicit activation, immutable rollback
   and virtual search labels. No provider folders or mailbox contents are changed.
-- Added bounded calendar text extraction and attachment receipts/FTS; binary
-  PDF/Office/OCR/archive extraction and malware scanning remain unimplemented.
+- Added bounded calendar text extraction and attachment receipts/FTS; integrated
+  PDF/Office/OCR/archive intake and malware scanning remain unimplemented.
 
 ### Providers, models and test data
 

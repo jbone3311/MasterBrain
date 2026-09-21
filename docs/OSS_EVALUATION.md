@@ -1,12 +1,32 @@
 # Open-Source Evaluation
 
+## Dedicated PDF worker adoption (2026-09-21)
+
+ADR-034 adds **exactly pypdf 6.19.0**, BSD-3-Clause, to an opt-in `pdf-worker`
+extra/image, behind a closed source-bound adapter. No default API/MIME dependency
+or automatic intake is added. This extends the fixture-only usage below; Office
+readers remain dev-only. Independent structure/text fit and a small pure-Python
+surface favor this bounded first reader, not a claim of universal PDF/OCR quality.
+
+Reviewed upstream advisories for
+[appearance streams](https://github.com/py-pdf/pypdf/security/advisories/GHSA-php9-fj8v-98fj),
+[alphabetical page labels](https://github.com/py-pdf/pypdf/security/advisories/GHSA-w23x-9jrw-r45c),
+[embedded-file enumeration](https://github.com/py-pdf/pypdf/security/advisories/GHSA-v247-6f48-mgcj)
+and [malformed Flate streams](https://github.com/py-pdf/pypdf/security/advisories/GHSA-jw7q-gvrg-4vj3).
+Their documented fixes are in 6.19.0 or earlier. We do not invoke the first three
+features; decompression/text parsing still requires hard resource isolation. This
+is a selected-advisory review, not exhaustive vulnerability clearance. Keep release
+scanning, maintainer/replacement review and real-world extraction evaluation open.
+See the [worker limits and integration gaps](PDF_WORKER.md).
+
 ## Added development-only format validators (2026-09-21)
 
 The [known-answer mailbox](TEST_MAILBOX_PLAN.md) uses pypdf 6.19.0 (BSD-3-Clause),
 openpyxl 3.1.5 and python-docx 1.2.0 (both MIT) as independent readers of our own
 generated fixtures. Reuse directly for bounded development tests, not as an
 unsandboxed production intake stack. Runtime generation remains standard-library
-code and the deployment image excludes these readers and their added XML dependency.
+code and the default deployment image excludes these readers and their added XML
+dependency. The later dedicated PDF worker exception is described above.
 
 [pypdf's release history](https://pypi.org/project/pypdf/) shows recent September
 2026 releases. [openpyxl](https://pypi.org/project/openpyxl/) last released the chosen
