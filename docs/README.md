@@ -134,6 +134,20 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 - A graph database before relational temporal facts prove insufficient.
 - Exposing PostgreSQL, provider tokens, or an unauthenticated MCP server to the public internet.
 
+## Keeping this pack current
+
+- Change a feature's contract, implementation, tests, status, roadmap and rollback
+  notes in the same work package. Add an ADR before new permissions/schema/workflows.
+- Run `scripts/check_docs.py`: it requires the original 16 pack documents plus
+  the four product guides and checks local Markdown paths. It does not verify
+  remote URL availability, factual correctness or browser accessibility.
+- Keep test counts in exact-commit receipts. Preserve historical results and source
+  snapshot dates; a documentation edit is not a fresh benchmark or OSS activity scan.
+- Proposed fixtures/services must remain labeled proposed until code, provenance
+  and acceptance evidence exist. Never count unsupported extraction as success.
+- Preserve concurrent GitHub contributions; integrate and recheck rather than
+  overwriting main. Factory remains an independent reviewer.
+
 ## License and data note
 
 The private Product remains proprietary; no public OSS license is granted. Review

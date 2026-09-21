@@ -2,6 +2,64 @@
 
 Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Modernized product pack and owner processing review
+
+Implementation/documentation **814197a**, final test correction **98bb6f2**.
+[CI 35568932837](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35568932837)
+passed at 98bb6f2. The unchanged runtime/schema/restore implementation passed
+[restore 35568746120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35568746120)
+at 814197a. Verified 2026-09-20 Pacific (September 21 UTC).
+
+- **1,238 standard Python tests passed**, including **156 PostgreSQL cases**, no
+  CI skips. **52 Node tests passed** (25 existing and 27 processing contracts).
+  **Four additional actual-container tests passed**. Repeated repository-gate tests
+  and the restore safety subset are not counted again.
+- Local: **1,082 passed, 156 explicit database skips**, plus all 52 Node tests.
+  Locked dependency sync, Ruff, strict typing over 33 source modules, separately
+  typed restore script, repository gate and diff checks passed.
+- Documentation gate verified the original **16 pack documents plus four new
+  guides** and local Markdown paths. This is not remote-link availability or
+  independent factual/accessibility certification.
+- Restore: **24 tables, 119 rows, two tenants and four encrypted objects**; equal
+  content hashes, tenant authorization/search, processing history and original
+  completed/cancelled/queued states. Missing-object/database-only recovery refused.
+  **23.77 seconds** includes disposable cluster startup, not production RTO.
+- Full Git-history secret scan through 98bb6f2: **35 commits**, no detected leaks.
+  Repository visibility rechecked private. Existing concurrent competitive-research
+  commits were preserved during integration; no force push.
+
+The initial CI at 814197a caught a new test trying to SELECT audit rows with the
+deliberately restricted runtime role. The test-only fix inspects via disposable
+test admin, filters the tenant, and explicitly asserts runtime denial. Application
+permissions were not broadened. The corrected full CI passed.
+
+ADR-031/migration 0011 add bounded account-scoped history, manual owner refresh,
+explicit isolated approval/cancellation, same-key uncertain retries and strict
+session/account/view binding. Independent review found and fixed a pending-card
+replacement race and a history-pagination row omission; both have regressions.
+No new real-browser or accessibility acceptance is claimed: the included visual
+preview serves real assets with simulated in-memory jobs, not a database/worker.
+
+Documentation now explains the finished experience, feature-by-feature methods,
+actual module layout, delivery dependencies, current versus target capabilities,
+hosting independence, operations and the proposed known-answer mailbox feed.
+Start at [GAME_PLAN.md](GAME_PLAN.md), [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md),
+[CODE_MAP.md](CODE_MAP.md) and [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md).
+All 16 requested pack documents were updated; historical source snapshots and
+receipts retain their observed dates instead of being relabeled freshly measured.
+
+Remaining gates: supervised worker commands/deployment, production OIDC/resource
+grants, live enrollment, Azure Blob/KMS/independent key recovery, scanner and binary
+PDF/Office/OCR/archive extraction, retention/purge, full browser/accessibility,
+MCP/state/vector/model-quality work, disposable-provider acceptance and soak.
+The richer continuous fictional feed is planned, not running. No public corpus
+download, real mailbox use, provider write, paid resource, model disclosure or
+Factory mutation. Two upstream test deprecations and CI action/runner migration
+notices remain in the supply-chain backlog.
+
+Subsequent receipt/navigation-only documentation edits do not change tested runtime.
+Historical entries below describe their named earlier commits, not current limits.
+
 ## Durable human-approved isolated processing jobs
 
 Implementation **bbca37f**, final pressure-test commit **decf1b0**.

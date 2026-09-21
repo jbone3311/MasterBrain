@@ -1,13 +1,17 @@
 # Synthetic PostgreSQL backup/restore drill
 
-Latest verified implementation: **bbca37f**, [run 35566144268](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35566144268),
-passed 2026-09-20 Pacific. Mixed inline/external evidence: **24 tables, 118 rows,
+Latest verified implementation: **814197a**, [run 35568746120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35568746120),
+passed 2026-09-20 Pacific. Mixed inline/external evidence: **24 tables, 119 rows,
 two tenants, four encrypted objects**, equal hashes and restored authorization.
 Completed, cancelled and queued processing grants retained their exact state and
-expiry; cross-tenant status was denied. The restore's empty-MIME synthetic processor
+expiry; bounded processing history survived restoration and cross-tenant status
+was denied. The restore's empty-MIME synthetic processor
 tests job durability, not isolation (actual-container checks run separately in CI).
-Database-only and empty-object restores were refused. Elapsed 16.41 seconds
+Database-only and empty-object restores were refused. Elapsed 23.77 seconds
 includes container startup; not a production RTO. See [build receipt](BUILD_RECEIPT.md).
+
+The following test-only correction (`98bb6f2`) changes no runtime, schema or restore
+code. This restore receipt applies to its unchanged implementation, not a new run.
 
 Historical verification: code `e3695d8`,
 [restore run 35560344225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35560344225),

@@ -120,7 +120,7 @@ Each PR must state affected trust boundary, data migration, provider/API behavio
 - API/schema compatibility;
 - performance regression for indexing/search paths.
 
-## Definition of done: phase 1
+## Read-only release acceptance
 
 - Crash at every cursor boundary cannot skip mail or duplicate canonical records.
 - Cursor expiry/full resync path is tested.
