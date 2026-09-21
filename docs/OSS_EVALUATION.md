@@ -95,7 +95,13 @@ Projects are assessed on demonstrated maintenance/release activity, tests/docume
 
 ### Hosted retrieval
 
-Use PostgreSQL built-in full-text search plus `pgvector`, not SQLite/vector extensions or a separate vector database. It keeps tenant policy, filters, facts, FTS, vectors, transactions, and backups in one operational system. `pgvector` supports exact search and HNSW/IVFFlat when scale requires it ([documentation](https://github.com/pgvector/pgvector)). Add a dedicated search engine only after measured recall/latency/operability demands it.
+Use PostgreSQL built-in full-text search first. If measured retrieval gaps justify
+vectors, prefer adding `pgvector` behind the same authorization/data boundary over
+introducing a separate vector database. It supports exact and approximate search
+([documentation](https://github.com/pgvector/pgvector), rechecked 2026-09-21).
+The prospective reuse decision above is conditional, not a requirement to install
+it for the read-only pilot. A dedicated search engine needs separate measured
+recall/latency/operations justification; a SQLite cache is not hosted authority.
 
 ### IMAP
 

@@ -6,6 +6,13 @@ along with the remaining quality/soak gaps. [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_E
 governs outside samples. Runtime verification is tied to exact commits below and
 in [BUILD_RECEIPT.md](BUILD_RECEIPT.md), not inferred from test-plan requirements.
 
+Use the [worked product scenario](PRODUCT_WALKTHROUGH.md) as a cross-feature
+acceptance checklist: import, body/attachment coverage, historical corrections,
+search authorization, reviewed changes and eventual actions. Each step must keep
+its current status until its own tests pass; a generated expected answer is not a
+measured model answer. [Documentation rules](DOCUMENTATION_STANDARD.md) prevent
+test plans, skipped checks and prior receipts from being presented as new results.
+
 Processing history/owner controls add Python account/cursor/read-only tests and
 27 independent Node cases, alongside 25 existing UI cases. Run both suites:
 

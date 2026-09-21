@@ -95,7 +95,7 @@ The bounded synthetic Fastmail path already implements much of this sequence:
 incremental read-only sync
 -> immutable raw evidence
 -> deterministic normalization/dedupe/threading
--> managed PostgreSQL with forced RLS
+-> PostgreSQL with forced RLS (disposable CI, not managed cloud yet)
 -> lexical search and evidence endpoint
 -> replay/reconciliation/audit/metrics
 -> backup restore proof
@@ -115,6 +115,12 @@ are in the existing flat `tests/` tree. Do not create duplicate modules based on
 the original aspirational directory layout.
 
 ## Required engineering practices
+
+Use the [worked product scenario](PRODUCT_WALKTHROUGH.md) to review user-visible
+behavior and the [documentation standard](DOCUMENTATION_STANDARD.md) for each
+increment. Update current status and next work without rewriting historical receipts.
+The original read-order filenames above refer to this `docs/` directory; the root
+README, PRODUCT and AGENTS files supply repository entry points and working rules.
 
 - Python type checking/linting/formatting, locked dependencies, reproducible containers.
 - Alembic or equivalent reviewed migrations using expand/backfill/contract.

@@ -24,9 +24,9 @@ worker supervision, binary extraction, operational acceptance and Factory bind r
    manifests, export and paced/restarted database replay are implemented (EB-023).
    Expand held-out variety, scanned-text/password-protected cases and sustained
    load measurement; existing format checks do not prove binary extraction quality.
-3. **Binary intake:** first define approved processing for deferred attachments in
-   ready messages; today's quarantine-recovery queue does not cover them. Then
-   isolate selected PDF extraction, add its scanner policy, preserve receipts and
+3. **Binary intake:** define approved processing for deferred attachments in
+   ready messages; today's quarantine-recovery queue does not cover them. Reuse
+   the existing restricted PDF worker, define its scanner policy, preserve receipts and
    prove authorized source-to-search results before Office/OCR expansion (EB-006).
    See the [concrete work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
    ADR-034 now supplies a standalone source-bound PDF worker/profile; it does not
@@ -107,6 +107,10 @@ candidate retrieval; model version/quality/disclosure receipts; offline edge
 behavior and revocation tested. Do not add a graph database without measured need.
 
 ## Continuous release gates
+
+The [worked product scenario](PRODUCT_WALKTHROUGH.md) is a useful acceptance
+walkthrough, not proof of implementation. Update its status alongside the
+[documentation maintenance checklist](DOCUMENTATION_STANDARD.md) when a milestone advances.
 
 - Every behavior change: ADR where required, implementation/tests/docs together,
   migration compatibility, telemetry, rollback and exact-commit evidence.

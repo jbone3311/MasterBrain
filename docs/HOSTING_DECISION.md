@@ -1,6 +1,7 @@
 # Hosting recommendation
 
-Updated 2026-09-20 for Jim's preference to avoid multiple hosting accounts.
+Decision direction recorded 2026-09-20; explanation reviewed 2026-09-21 for Jim's
+preference to avoid multiple hosting accounts. No new provider/budget decision.
 **Preferred planning target: the same Azure account used for RealEstateOS, if Azure
 is its selected host.** This supersedes the earlier AWS-first recommendation below.
 It does not mean adopting Microsoft mail, SharePoint, or Microsoft-only software.
@@ -22,6 +23,11 @@ is created by this recommendation.
 [App Service identity versus authorization](https://learn.microsoft.com/en-us/azure/app-service/configure-authentication-provider-aad))
 
 ## Consolidated Azure shape
+
+In plain terms: one approved hosting billing home, with separate Email Brain
+application workers, database, file storage and permissions. Mail accounts still
+need their own authorization. The [worked product/deployment split](PRODUCT_WALKTHROUGH.md#where-it-runs)
+explains what remains on the development computer and what must run independently.
 
 - Container Apps for the API and separately scoped read workers; it supports API
   endpoints and scheduled/background jobs. The current loopback CLI/developer image
@@ -110,6 +116,6 @@ object bytes. Model charges are separate from hosting on every option.
 | Inference cache/optional replica | Device-private encrypted storage | Outside Dropbox; disposable and scoped |
 | Factory feedback | Product proposal files in Git | Factory pulls/reviews; runtime stays independent |
 
-Pending owner decisions: budget ceiling, region/data residency, existing AWS
-operations, first account/backfill, retention and sharing model. No paid cloud
+Pending owner decisions: budget ceiling, region/data residency, actual existing
+Azure or AWS subscription, first account/backfill, retention and sharing model. No paid cloud
 resources or billing commitments were created during this build.

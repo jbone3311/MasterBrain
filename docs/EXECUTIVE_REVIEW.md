@@ -56,10 +56,14 @@ effects make this feedback loop useful without permitting self-modifying automat
 7. Expand providers, evaluated hybrid vectors and approved
    remote escalation. Avoid graph infrastructure unless relational limits are measured.
 
-Not yet production-ready: live sync, provider credentials, attachment binary
-extraction, OIDC, full team grants, production backup/purge and authenticated MCP
+Not yet production-ready: live sync, provider enrollment, integrated document
+extraction/search, OIDC, full team grants, production backup/purge and authenticated MCP
 remain unfinished. See [status](IMPLEMENTATION_STATUS.md), [backlog](BACKLOG.md),
 [hosting recommendation](HOSTING_DECISION.md), and [open choices](OPEN_QUESTIONS.md).
+
+The standalone restricted PDF worker is tested groundwork, not an integrated
+document workflow. The [owner walkthrough](PRODUCT_WALKTHROUGH.md) makes this and
+the other current-versus-target boundaries explicit for the team.
 
 The detailed delivery sequence is maintained in [ROADMAP.md](ROADMAP.md): secure
 read-only operation, useful understanding, scoped assistant/team access, then

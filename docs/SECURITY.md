@@ -111,8 +111,9 @@ or evidence erasure is involved. Demo corpus loading refuses enrolled accounts.
 The v0.1 service is loopback-only, synthetic-data-first, owner-only per tenant.
 Bootstrap tokens are hashed, expiring, scope-bound, and revocation is via the private
 registry plus restart; they are not production OAuth/OIDC. The schema is tenant-isolated
-but team/account-grant sharing is not implemented. Binary attachments remain deferred,
-not malware-scanned. No send/delete/action/model network path is enabled. OIDC,
+but team/account-grant sharing is not implemented. Ordinary ingestion still defers
+binary documents; the separate standalone PDF profile above does not add integrated
+extraction or scanning. No send/delete/action/model network path is enabled by default. OIDC,
 rate limiting, grant-aware sharing, denial audit, external immutable audit export,
 full retention/purge, cloud encryption and restore proof are production blockers.
 

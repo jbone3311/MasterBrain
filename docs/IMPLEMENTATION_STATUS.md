@@ -8,7 +8,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks; verified synthetic logical dump/restore | Managed deployment, encryption/KMS, purge, offsite/PITR disaster-recovery drills |
 | Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/scheduler, hosted processing supervision, live acceptance and soak |
 | Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
-| Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, sandboxed PDF/Office/OCR/archive extraction; versioned historical reprocessing and raw download policy |
+| Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, integrated PDF intake, Office/OCR/archive extraction; versioned historical document reprocessing and raw download policy |
 | PDF worker groundwork | Separate source/part/hash-bound PDF contract, fixed restricted profile and dedicated optional image; bounded page text/partial/deferred outcomes | Durable tenant-authorized approval/job/result/FTS integration, scanner policy and real-world quality; ingestion still defers PDFs |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
@@ -37,11 +37,11 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 The processing CLI/API/UI operate on approved held-message recovery, not arbitrary
 PDF/Office parts in ready messages. Ready-body search and deferred-attachment
-accounting can coexist. Source-bound attachment jobs and binary extraction still
-need their own approved design and integrated tests; no new PDF capability is
-claimed by this documentation refresh. [Next contract](BACKLOG.md#eb-006-next-source-bound-document-processing).
+accounting can coexist. Source-bound attachment jobs and extraction publication
+still need their own approved design and integrated tests. This documentation
+review changes no executable capability. [Next contract](BACKLOG.md#eb-006-next-source-bound-document-processing).
 
-Subsequent ADR-034 adds the [standalone PDF worker](PDF_WORKER.md), not that durable
+ADR-034 supplies the [standalone PDF worker](PDF_WORKER.md), not that durable
 workflow. It grants no current UI/API processing action for a ready-message PDF.
 Exact-commit acceptance is recorded in the build receipt, not inferred from this row.
 

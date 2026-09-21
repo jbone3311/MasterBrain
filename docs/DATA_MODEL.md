@@ -5,6 +5,12 @@ describe executable storage. Entity/project/obligation/grant/vector sketches are
 target design, not existing tables. [Migrations](../migrations/) are authoritative
 for deployed schema; see [code map](CODE_MAP.md) and [status](IMPLEMENTATION_STATUS.md).
 
+Read the sketches below as a target information model, not ready-to-run SQL.
+For example, proposed `mail_accounts`/`tenant_memberships` names do not rename the
+implemented `accounts`/`memberships` tables. The [worked project scenario](PRODUCT_WALKTHROUGH.md)
+explains why original evidence, current derived state and proposed actions need
+separate records. No document extraction table is added by the standalone PDF worker.
+
 ADR-033's known-answer generator adds no schema. The next attachment-processing
 design is still pending: `recovery_jobs` references quarantine receipts, not arbitrary
 parts of ready messages. Do not reinterpret that foreign key or fabricate quarantine

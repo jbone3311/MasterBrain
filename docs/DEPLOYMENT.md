@@ -46,10 +46,10 @@ Internet/provider webhooks
    |-- query/control workers
    |-- connector workers (egress to mail providers)
    |-- inference quarantine (local model, no action credentials)
-   |-- action executor (provider-write egress, no model access)
-   |-- managed queue/cache
+   |-- future action executor (separately approved; absent in read-only pilot)
+   |-- optional managed queue/cache (only if measured need)
           |
-   managed PostgreSQL + pgvector (private endpoint, PITR)
+   managed PostgreSQL / FTS (private endpoint, PITR; vectors optional later)
    encrypted object storage (raw MIME/attachments, versioning)
    KMS + secrets manager
    immutable log/metrics destination
@@ -63,10 +63,15 @@ Users access only HTTPS API/MCP, authenticated through OIDC. Operators and owner
 
 ## Database
 
-- Managed PostgreSQL 17+ (or supported current version), `pgvector`, Multi-AZ where budget permits.
+- Managed PostgreSQL on a supported, provider-available version verified with our
+  migrations/extensions. PostgreSQL 17 is the current CI baseline, not a newest-version
+  recommendation. Choose the provider's high-availability configuration for the
+  accepted availability target and budget; it is not already provisioned.
 - Private endpoint, TLS required, connection pooler, automated PITR, deletion protection, maintenance window.
 - Separate migration owner and runtime roles; RLS on tenant tables; runtime does not own tables or bypass RLS.
-- Start with exact vector search. Add HNSW only after production-sized tests; `pgvector` documents the recall/build-memory tradeoff ([project](https://github.com/pgvector/pgvector)).
+- Start with FTS. If measured retrieval gaps justify `pgvector`, benchmark exact
+  search before approximate indexes such as HNSW. Keep permission filters and recall
+  tests in every comparison ([pgvector](https://github.com/pgvector/pgvector)).
 - Nightly logical schema/data export is supplementary; PITR is primary. Verify restoration, not just backup status.
 
 ## Object storage
@@ -94,6 +99,11 @@ No production data copies to development. Committed/CI fixtures stay synthetic.
 Any external-data exception requires the explicit [adoption gate](PUBLIC_EMAIL_TEST_DATA.md).
 
 ## Delivery
+
+The following are production delivery requirements, not a list of completed CI
+features. See [status](IMPLEMENTATION_STATUS.md) and [receipts](BUILD_RECEIPT.md)
+for checks actually implemented and run. In particular, infrastructure-as-code,
+SBOM/signature automation, cloud rollout and production acceptance remain gates.
 
 - Infrastructure as code; immutable container images by digest; minimal non-root images.
 - Migrations are backward-compatible: expand → deploy → backfill → contract.

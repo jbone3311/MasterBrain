@@ -6,6 +6,10 @@ Sections titled logical components, flows and reliability patterns describe the
 target architecture; not every component is implemented. Current boundaries are
 explicit in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
+The [worked product walkthrough](PRODUCT_WALKTHROUGH.md) follows the same boundaries
+from the owner's perspective. Keep evidence, interpretation, approval and external
+execution distinct in both diagrams and implementation.
+
 ## Latest executable additions
 
 [Source-bound PDF worker groundwork](PDF_WORKER.md) adds a separate closed pipe
@@ -111,7 +115,9 @@ Begin as a modular monolith plus workers. Separate deployable services only for 
 3. Changes and the new cursor commit atomically, or the cursor commits only after every covered change is durable.
 4. Normalizer creates canonical messages and cleaned “new content,” retaining raw hashes and parser versions.
 5. Deterministic rules classify, extract obvious fields, and decide whether a model is necessary.
-6. The local model receives only bounded untrusted content and a schema; uncertainty or high consequence may escalate to an approved remote model.
+6. The local model receives only bounded untrusted content and a schema. Uncertainty
+   or high consequence can request escalation, but disclosure permission and budget
+   must also permit a remote call; otherwise defer or request human review.
 7. Validated results update derived tables through versioned projectors. Candidate durable facts go to the Librarian proposal queue.
 8. Proposed mailbox actions pass policy/review and enter an idempotent outbox. The executor performs them and later reconciles provider state.
 

@@ -12,6 +12,7 @@ bounded portion: synthetic ingestion/search, review, virtual rules and recovery.
 ## Reading paths
 
 - **Owner:** [game plan](GAME_PLAN.md), [features/methods](FEATURES_AND_METHODS.md),
+  [worked product walkthrough](PRODUCT_WALKTHROUGH.md),
   [status](IMPLEMENTATION_STATUS.md), [hosting](HOSTING_DECISION.md), [open choices](OPEN_QUESTIONS.md).
 - **Builder/Factory:** [code map](CODE_MAP.md), [handoff](FACTORY_HANDOFF.md),
   [architecture](ARCHITECTURE.md), [ADRs](DECISIONS.md), [roadmap](ROADMAP.md), [backlog](BACKLOG.md).
@@ -41,10 +42,12 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 | What has actually passed? | [Exact-commit build receipt](BUILD_RECEIPT.md), not roadmap targets |
 | Which decisions still need Jim? | [Open questions](OPEN_QUESTIONS.md); safe synthetic work can continue |
 
-The latest refresh fixes the changelog and stale generator/handoff language, adds
-the message-to-evidence walkthrough and identifies the ready-message attachment
-workflow still to design. It does not implement PDF extraction, refresh third-party
-activity counts, grant new authority or claim a Factory audit.
+The latest documentation review adds a worked project scenario, attachment-format
+coverage and failure examples; aligns hosting/search guidance with lexical-first
+delivery; and defines [documentation ownership/status terms](DOCUMENTATION_STANDARD.md).
+The standalone PDF worker is implemented and tested, but its approval/result/search
+workflow is not. This refresh changes no runtime behavior, permissions or cloud
+resources and does not refresh third-party activity counts or claim a Factory audit.
 
 ## Executive architecture review
 
@@ -77,7 +80,8 @@ Gmail / Graph / Fastmail / iCloud
                                       |
                                uncertain/high risk
                                       v
-                               remote model
+                         disclosure/budget permission?
+                         yes: remote; no: defer/review
                                       |
                          schema validation + policy
                                       v
@@ -105,7 +109,14 @@ Gmail / Graph / Fastmail / iCloud
 
 ## Recommended v1
 
-A modular Python service with FastAPI-compatible HTTP endpoints, background workers, managed PostgreSQL 17+ with `pgvector`, object storage for encrypted raw MIME/attachments, and a transactional outbox. Start with one Gmail or Fastmail account, read-only sync, normalization, PostgreSQL full-text search, evidence display, and review folders. Add model extraction only after replay and deletion handling are reliable. Add semantic retrieval only after lexical retrieval misses are measured.
+A modular Python service with HTTP endpoints, separate privileged workers, managed
+PostgreSQL and encrypted private object storage. PostgreSQL 17 is the current CI
+baseline, not a claim that it is the newest release. Start with one explicitly
+enrolled read-only provider, FTS, evidence and virtual review categories. Fastmail
+is the engineering default; the owner's first account is still undecided. Add
+`pgvector` only after measured lexical misses justify semantic retrieval; it is not
+a first-release prerequisite. Add a transactional action outbox with the separately
+approved mailbox executor, not an implied write path in the read-only pilot.
 
 Use provider-native change tracking: Gmail partial sync through `history.list` ([Google sync guide](https://developers.google.com/workspace/gmail/api/guides/sync)); Microsoft Graph per-folder delta links ([message delta](https://learn.microsoft.com/en-us/graph/api/message-delta?view=graph-rest-1.0)); JMAP changes/queryChanges for Fastmail ([RFC 8621](https://www.rfc-editor.org/rfc/rfc8621)); and UID/UIDVALIDITY plus periodic reconciliation for iCloud IMAP ([Apple settings](https://support.apple.com/en-ie/102525)). Notifications are hints; stored cursors are truth.
 
@@ -115,6 +126,8 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 |---|---|
 | [GAME_PLAN.md](GAME_PLAN.md) | Finished experience, delivery sequence and release bar |
 | [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) | Feature-by-feature methods and current limitations |
+| [PRODUCT_WALKTHROUGH.md](PRODUCT_WALKTHROUGH.md) | Worked owner scenario, format coverage, failure behavior and deployment split |
+| [DOCUMENTATION_STANDARD.md](DOCUMENTATION_STANDARD.md) | Status vocabulary, authoritative records and maintenance checklist |
 | [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
 | [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF groundwork, limits and missing approval/search integration |
 | [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) | Executable fictional generator/export/replay, attachment formats, answer keys and remaining soak gaps |
@@ -154,6 +167,9 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 - Exposing PostgreSQL, provider tokens, or an unauthenticated MCP server to the public internet.
 
 ## Keeping this pack current
+
+Follow [DOCUMENTATION_STANDARD.md](DOCUMENTATION_STANDARD.md) for ownership,
+status language, evidence and the per-feature update checklist.
 
 New operator workflow: [approved-processing command](PROCESSING_CONTROLLER.md),
 with private configuration, preflight, bounded polling, results and rollback.

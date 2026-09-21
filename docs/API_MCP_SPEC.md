@@ -5,6 +5,20 @@ MCP, entity/state and action examples are target contracts, not callable tools.
 No Grok/ChatGPT/Claude end-to-end connection is certified by this specification.
 See [status](IMPLEMENTATION_STATUS.md) and [features/methods](FEATURES_AND_METHODS.md).
 
+## Reading this contract
+
+Implemented routes must be checked against [api.py](../src/email_brain/api.py),
+its generated OpenAPI and route tests. Target tool names, example identifiers and
+pagination conventions later in this document are design sketches, not requests
+that can be sent to the bootstrap service. Existing recovery history uses bounded
+UUID keysets; it is not the future signed-cursor protocol.
+
+MCP implementation must follow the official [security guidance](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices),
+including audience validation and no upstream token passthrough. Rechecked
+2026-09-21; this does not implement OAuth/MCP or establish client compatibility.
+See the [worked feedback flow](PRODUCT_WALKTHROUGH.md#what-learning-means) for the
+owner intent behind these interfaces.
+
 ## Durable isolated processing jobs
 
 [Processing history and owner controls](PROCESSING_REVIEW_SCREEN.md) add

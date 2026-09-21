@@ -1,6 +1,6 @@
 # Rules and Feedback Control Plane
 
-Updated 2026-09-20. [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) explains
+Explanation reviewed 2026-09-21; rule behavior unchanged. [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) explains
 knowledge, dynamic configuration and software changes in plain language. The
 working subset below is separate from the broader target policy. Processing
 approvals use the distinct [recovery-job contract](RECOVERY_JOBS.md), not rule activation.
@@ -95,7 +95,9 @@ Show the proposed behavior, why, supporting/counter evidence, estimated historic
 
 ## Rollback and correction
 
-- Deactivate the new version and reactivate the previous version atomically.
+- Current virtual-rule rollback appends a new revision containing the prior rules;
+  historical rows are not edited or reactivated in place. The newest revision wins.
+- Future broader rule/action workflows must likewise preserve decision history.
 - Recompute affected derived classifications.
 - Generate previewed compensating mailbox commands for reversible moves/labels.
 - Never pretend a sent email or permanent deletion can be rolled back.
@@ -116,7 +118,10 @@ _GrokBot/Events
 _GrokBot/Receipts
 ```
 
-Gmail labels and Outlook/Fastmail/iCloud folders differ; connectors implement the canonical mapping. Initially, `Review Delete` stages mail only and never schedules automatic purge.
+Gmail labels and Outlook/Fastmail/iCloud folders differ; future write connectors
+must implement the canonical mapping. Today these are virtual categories only:
+no provider folder is created and no mail is staged outside its existing mailbox.
+Future `Review Delete` filing must never schedule automatic purge in the initial release.
 
 ## Feedback quality metrics
 

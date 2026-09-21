@@ -34,13 +34,21 @@ exact tested commits and results.
   no actual-model quality claim, automatic ingestion hook or remote inference.
 - Added seeded coherent conversations, actual synthetic document formats, hashes
   and answer keys, exclusive packet export and bounded paced/resumable SQL replay.
-  Development-only PDF/Office readers verify generated files and are excluded from
-  the runtime image. No public corpus or external mail delivery is enabled.
+  Independent PDF/Office readers verify generated files; Office readers remain
+  development-only and pypdf is additionally available in the dedicated optional
+  PDF image, never the default API/MIME image. No external mail delivery is enabled.
 - Extended real PostgreSQL, UI-contract, actual-container and disposable restore
   testing. Results at `4286504`: 1,392 standard Python, 52 Node and five additional
   container cases passed; these are not live-provider, model-quality or soak results.
 
 ### Documentation and delivery plan
+
+- Added a worked owner scenario covering arrival, attachment formats, evidence,
+  corrections, learning and future actions, plus documented failure behavior.
+- Added status vocabulary, authoritative-document ownership and a per-feature
+  documentation checklist. Aligned database/vector and remote-escalation language
+  with the lexical-first, explicit-permission plan; corrected standalone versus
+  integrated PDF claims and managed-cloud versus disposable-CI wording.
 
 - Refreshed the owner game plan, feature/method walkthrough, current code map,
   roadmap, test scope and Factory handoff; distinguished current behavior from targets.

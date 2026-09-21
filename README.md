@@ -16,6 +16,8 @@ passed; documentation updates do not certify new functionality.
 ## Understand the product
 
 - [Game plan](docs/GAME_PLAN.md): the finished product and how we get there.
+- [Worked product walkthrough](docs/PRODUCT_WALKTHROUGH.md): follow a fictional
+  project through incoming mail, attachments, search, corrections and future actions.
 - [Features and methods](docs/FEATURES_AND_METHODS.md): workflows, implementation and limits.
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md): working capabilities versus launch gates.
 - [Roadmap](docs/ROADMAP.md): dependency-ordered milestones and measurable exits.
@@ -119,6 +121,10 @@ See the [build receipt](docs/BUILD_RECEIPT.md) for exact tested commits and limi
 
 [Code map](docs/CODE_MAP.md) · [Factory handoff](docs/FACTORY_HANDOFF.md) ·
 [Backlog](docs/BACKLOG.md) · [Open decisions](docs/OPEN_QUESTIONS.md)
+
+[Documentation maintenance](docs/DOCUMENTATION_STANDARD.md) defines status terms,
+authoritative records and the updates required alongside each feature. A tested
+component, integrated workflow and live-accepted service are different milestones.
 
 Read [PRODUCT.md](PRODUCT.md), [AGENTS.md](AGENTS.md), security, architecture and
 accepted [ADRs](docs/DECISIONS.md) before changing behavior. Security invariants and

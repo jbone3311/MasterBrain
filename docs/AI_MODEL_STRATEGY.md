@@ -1,6 +1,6 @@
 # AI Model Strategy
 
-Updated 2026-09-20. Current implementation is the opt-in, candidate-only
+Explanation reviewed 2026-09-21; no new model benchmark or selection. Current implementation is the opt-in, candidate-only
 [Ollama library](LOCAL_MODEL_RUNTIME.md), tested with fake responses and not wired
 into ingestion. No real-model quality result, embedding index or remote adapter
 is claimed. All broader tasks below are requirements for evaluated future work.
@@ -13,11 +13,17 @@ Every inference task has an escalation ladder:
 deterministic code/rules
   -> local constrained model
   -> stronger local model (optional)
-  -> approved remote model
+  -> remote model only with disclosure permission and budget
   -> human review for consequence, not just uncertainty
 ```
 
 No task defaults to the largest/remote model unless its risk or measured quality requires it. Provider/model names are configuration; evaluation results select production versions.
+
+This ladder is a routing design, not an automatic fallback chain. High stakes or
+low confidence alone never authorize disclosure. At every model step, lack of
+permission, capacity or acceptable quality can instead yield defer/abstain/review.
+Code and lexical search remain available without a model. See the
+[owner-facing explanation](PRODUCT_WALKTHROUGH.md#how-the-system-avoids-rereading-everything-with-ai).
 
 ## What code should do
 

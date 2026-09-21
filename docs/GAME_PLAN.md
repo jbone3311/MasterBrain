@@ -6,6 +6,9 @@ Updated 2026-09-21. Product direction, not a claim that all features are availab
 
 ## The finished experience
 
+For a concrete example, read the [Melron product walkthrough](PRODUCT_WALKTHROUGH.md).
+It explains each user-visible step, the method underneath and its current status.
+
 Email Brain maintains a searchable, evidence-backed view of authorized mail. It
 knows which conversations relate to a project, which requests remain open and
 where a fact came from. An assistant gets compact cited context instead of having
@@ -39,8 +42,9 @@ correction updates derived state, not the original email. Filing or drafting nee
 its own permission and review.
 
 **Today:** synthetic ingestion, receipts, FTS, proposal review and narrow virtual
-rules work. Binary extraction, automatic project state and mailbox actions in
-this example remain planned. [Features and methods](FEATURES_AND_METHODS.md).
+rules work. A restricted standalone PDF reader is tested, but integrated document
+search, automatic project state and mailbox actions in this example remain planned.
+[Features and methods](FEATURES_AND_METHODS.md).
 
 ## What the owner will actually use
 

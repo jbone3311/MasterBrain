@@ -16,6 +16,10 @@ current behavior; [status](IMPLEMENTATION_STATUS.md) identifies remaining gates.
 Use [GAME_PLAN.md](GAME_PLAN.md) for owner intent and [ROADMAP.md](ROADMAP.md)
 for the current dependency order. Numeric quality/SLO goals below are targets.
 
+The [product walkthrough](PRODUCT_WALKTHROUGH.md) translates these requirements
+into an owner scenario with explicit implementation boundaries. The PRD is the
+destination; it does not override missing features recorded in implementation status.
+
 ## Product statement
 
 Email Brain turns multiple mailboxes into a secure, searchable, current operating memory while keeping repetitive work in deterministic code. It is a service beneath assistants, not another assistant that rereads mail.
@@ -70,6 +74,8 @@ A tenant may be one person or a household/team. Accounts and records belong to e
 ### AI and control plane
 
 - Route tasks through deterministic code → local model → remote model based on ambiguity, impact, privacy, and measured confidence.
+- Remote escalation also requires explicit disclosure permission and budget; an
+  unavailable or uncertain local model must be allowed to defer without remote use.
 - Require JSON Schema output and server-side validation for every inference.
 - Accept assistant proposals for rules, entity/fact updates, relationships, priorities, category/folder mappings, corrections, and feature requests.
 - Auto-apply only low-impact reversible changes under explicit policy; review attention-changing behavior; route structural changes to Factory.

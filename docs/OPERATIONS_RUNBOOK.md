@@ -5,6 +5,11 @@ Daily checks, incident playbooks and SLOs below are production requirements;
 their dashboards, alert delivery, OIDC and provider-action controls are not all
 implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
 
+For owner-facing symptoms, see [failure examples](PRODUCT_WALKTHROUGH.md#what-failures-should-look-like).
+Report import freshness, attachment extraction, scanning and interpretation
+separately. A responsive API or completed MIME job does not establish that all
+documents are understood, a worker is online, or the provider is current.
+
 ## Owner processing screen
 
 Choose the account and refresh processing history manually. Approve only the
