@@ -1,9 +1,9 @@
 # Synthetic PostgreSQL backup/restore drill
 
-Latest verified implementation: **cefce1d**, [run 35563364090](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35563364090),
+Latest verified implementation: **bc7ea12**, [run 35564748495](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35564748495),
 passed 2026-09-20 Pacific. Mixed inline/external evidence: **23 tables, 95 rows,
 two tenants, four encrypted objects**, equal hashes and restored authorization.
-Database-only and empty-object restores were refused. Elapsed 12.43 seconds
+Database-only and empty-object restores were refused. Elapsed 15.16 seconds
 includes container startup; not a production RTO. See [build receipt](BUILD_RECEIPT.md).
 
 Historical verification: code `e3695d8`,

@@ -84,5 +84,5 @@ Rollback means stopping new imports and keeping compatible readers, SQL, objects
 and keys; never down-migrate or delete retained evidence.
 
 Still required: Azure Blob/KMS adapter, independent key-backup drills, production
-IAM/identity, larger isolated MIME parsing, binary extraction/scanning, authorized
+IAM/identity, authorized queued MIME processing, binary extraction/scanning, authorized
 retention/purge, real-mailbox acceptance and load/soak testing.

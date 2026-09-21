@@ -9,7 +9,7 @@ the product sequence; these are buildable handoff tickets.
 | EB-002 | Authenticated Fastmail transport and read-only worker | TLS/host allowlist, bounded responses/downloads, token vault, no mutating methods; mock HTTP conformance then authorized disposable account |
 | EB-003 | Resumable backfill/reconciliation | Baseline Email state before listing; query-state-safe pagination; catches concurrent creates/deletes; durable leases; expired cursor reset; no partial-list deletions |
 | EB-004 | Durable poison-message quarantine | Preserve source/error receipt before advancing past bad message; retry independently; accounting/alerts; no stalled account or silent skip |
-| EB-005 | Encrypted object storage — local slice implemented | Local tenant-bound AES-GCM, 16 MiB preservation, transactional manifests and non-deleting inventory implemented; hosted IAM/KMS, key backup, authorized GC/purge and larger isolated parsing remain |
+| EB-005 | Encrypted object storage — local slice implemented | Local tenant-bound AES-GCM, 16 MiB preservation, transactional manifests and non-deleting inventory implemented; hosted IAM/KMS, key backup, authorized GC/purge and isolated processing jobs remain |
 | EB-006 | Sandboxed attachment extraction | Restricted large-MIME text/receipt worker implemented with image provenance and operator recovery; scanner, PDF/Office/OCR/archives, hosted job authorization and sandbox acceptance remain |
 | EB-007 | Production identity/grants | OIDC/MFA, JWT issuer/audience/expiry, invite/revoke, account/project grants before candidate retrieval, permission-cache invalidation, negative role matrix |
 | EB-008 | Hosted infrastructure and restore | Owner-approved region/budget; private Postgres/object storage, KMS/secrets, TLS ingress, CI artifacts by digest, actual restore of DB and bytes |
@@ -45,7 +45,7 @@ counts without stalling healthy mail. Migration 0008 adds explicit human retry o
 current held evidence, immutable outcomes and parser-versioned search; bulk
 historical reprocessing, automated alerts and live acceptance remain.
 These tickets are not production-closed: enrollment, scheduling, live acceptance,
-hosted object storage, larger isolated parsing and soak remain. Local encrypted
+hosted object storage, authorized isolated processing jobs and soak remain. Local encrypted
 preservation is implemented; see [READ_WORKER.md](READ_WORKER.md).
 
 Mock/provider transport tests, quarantine state machine, worker leases, synthetic

@@ -2,6 +2,55 @@
 
 Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Image-bound isolated large-MIME recovery
+
+Code/test commit **bc7ea12**, initial implementation **b860d2e**.
+[CI 35564748494](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35564748494)
+and [restore 35564748495](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35564748495)
+passed on 2026-09-20 Pacific (September 21 UTC).
+
+- **1,153 standard Python tests passed**, including **115 PostgreSQL cases**, no
+  CI skips. **Three additional actual-container tests passed**, one exercising
+  encrypted objects -> restricted MIME worker -> real PostgreSQL recovery -> body
+  and text-attachment search. **25 Node UI tests passed**. Repeated gate runs and
+  the restore safety subset are not double-counted.
+- Local: **1,038 passed, 115 explicit PostgreSQL skips**. No local Docker acceptance
+  is claimed. Ruff, strict typing across 32 source modules, locked dependency sync,
+  all 16 pack documents/local links, image build and CLI smoke passed. The restore
+  script separately passed strict typing. Full Git-history secret scan was clean
+  through bc7ea12.
+- Restore regression: **23 tables, 95 rows, two tenants, four encrypted objects**,
+  matching hashes and tenant authorization; database-only/missing-object recovery
+  refused. Elapsed **15.16 seconds** includes disposable container startup and is
+  not a production RTO. Owned test container/archive/object trees were cleaned up.
+
+The increment adds **119 MIME/contract tests**, **54 controller/pipe tests**, **15
+recovery-boundary tests** (10 real database), and the three explicit post-build
+container cases. Independent review found an injected-adapter contract gap:
+inconsistent tuples could have become cached MIME rejections. The final code
+validates types, hashes, fields, collection/Unicode/serialization budgets and
+outcome consistency before publication or caching; four SQL tests prove malformed
+adapter results leave mail held with no attempt. Processor changes and newer provider
+events during parsing also prevent publication. No blocking review finding remains.
+
+Actual Docker acceptance verifies fixed local image identity, checked isolation
+before raw-byte disclosure, no network/host mounts, read-only filesystem, dropped
+capabilities, unprivileged UID, resource limits, disabled logs, bounded pipes and
+exact-owned cleanup. The synthetic attachment-heavy message becomes searchable;
+its large PDF stays deferred, not falsely extracted. Empty MIME is a deterministic
+rejection. This is not a kernel escape audit or real-mail scale/soak certificate.
+
+The feature is an **explicit trusted operator/worker library**, not a public API
+Docker endpoint. Default UI/HTTP retry still uses the 1 MiB parser; the isolated
+processor can handle retained MIME up to 16 MiB and uses full image hash provenance.
+No new SQL migration, provider writes, raw download, model call, real mailbox,
+cloud resource or Factory mutation. Hosted authenticated jobs, scanning and
+PDF/Office/OCR/archive extraction, OIDC/grants, Azure storage/KMS, retention/purge
+and live acceptance remain gates. Two upstream test deprecations and CI action/
+runner notices remain tracked supply-chain work. See
+[isolated recovery](ISOLATED_MIME_RECOVERY.md), [ADR-029](adr/029_isolated_large_mime_recovery.md)
+and [implementation status](IMPLEMENTATION_STATUS.md).
+
 ## Encrypted large-email preservation and two-part restore
 
 Implementation commit **cefce1d**, follow-up pressure tests **0e50870**.
