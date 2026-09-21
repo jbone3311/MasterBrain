@@ -32,13 +32,13 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
-Latest verified runtime/test commit: **eaeca7a**, [CI 35570703531](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35570703531).
-1,304 Python tests (164 real PostgreSQL), 52 Node UI contracts and five additional
-actual-container cases passed. Restore of unchanged runtime at 0f01724 verified
+Latest verified runtime/test commit: **4286504**, [CI 35572975435](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35572975435).
+1,392 Python tests (178 real PostgreSQL), 52 Node UI contracts and five additional
+actual-container cases passed. Restore at the same runtime commit verified
 24 tables, 119 rows, two tenants and four encrypted objects. See
 [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for exact scope, warnings and limitations.
-Later known-answer mailbox changes and new browser/accessibility acceptance
-are not included in those historical commit counts.
+These include bounded known-answer mailbox generation/replay, not sustained live
+feed service, real model accuracy or new browser/accessibility acceptance.
 
 Local unit/API/protocol/attachment tests, type checking and linting run with locked
 dependencies. CI additionally runs real PostgreSQL integration tests against a

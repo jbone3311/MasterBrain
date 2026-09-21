@@ -2,6 +2,56 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Known-answer synthetic mailbox and paced replay
+
+Implementation **4286504** passed [CI 35572975435](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35572975435)
+and [restore 35572975472](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35572975472).
+Subsequent receipt/status-only documentation edits do not change tested runtime.
+
+- **1,392 standard Python tests**, including **178 real PostgreSQL cases**, passed
+  without CI skips. **52 Node contracts** and **five additional actual-container
+  tests** passed. Repeated repository-gate tests/restore subsets are not added again.
+- New coverage: **26 generator/format/export tests**, **48 provider-wrapper cases**
+  and **14 actual SQL workflow cases**. An independently read PDF/XLSX/DOCX subset,
+  PNG/ZIP/MIME/calendar checks, fixed manifest golden, matching hashes, source-date
+  disorder, duplicate delivery, simulated metadata/deletion, corruption, interruption,
+  ambiguous commit responses, competing feeders and enrollment/scope denial are covered.
+- Local: **1,214 passed, 178 explicit PostgreSQL skips**, two existing upstream
+  test deprecations. Ruff, strict typing over **36 modules**, separately typed
+  restore script, 52 Node checks, documentation/repository gates and diff checks passed.
+- CI verified the dev-only pypdf/openpyxl/python-docx/lxml readers are **absent from
+  the built runtime image**. Production MIME/binary-extraction permissions are unchanged.
+- Restore: **24 tables, 119 rows, two tenants and four encrypted objects**, equal
+  content hashes and RLS; database-only restore refused. **20.64 seconds** includes
+  disposable cluster startup, not a production RTO or restoration of this new corpus.
+- Full Git-history secret scan through 4286504: **40 commits**, no detected leaks.
+
+[ADR-033](adr/033_known_answer_synthetic_mailbox.md) and the updated
+[test-mailbox guide](TEST_MAILBOX_PLAN.md) document two commands: exclusive offline
+packet export and bounded/optionally paced ingestion into a fresh unenrolled
+synthetic account. Cursor identity hashes the exact authored manifest. No model,
+provider token, external document input, public corpus or SMTP service is used.
+
+Produced sample: seed 42, three projects, **36 `.eml` sources, 48 attachment
+occurrences and 45 scheduled events**. Source packet manifest hash:
+`3c8586ccafe4d0b6d259e7d8f372601091691ec45df15a02576f4db3453d2702`.
+The packet includes explicitly malformed inputs. ZIP integrity was checked; it
+contains fictional data only and is not committed as a mailbox dump.
+
+One local generation measurement with Python 3.14/tracemalloc enabled:
+50 projects/750 events: **2.07 s**, **4.48 MiB** peak traced allocations;
+500 projects/7,500 events (configured cap): **21.66 s**, **27.73 MiB**.
+These measure manifest generation, including source hashing, not total process RSS,
+database throughput, provider latency, production load or a sustained soak/SLO.
+
+Still open: broader held-out business layouts, scanned-text/OCR and password-protected
+fixtures, multi-day workload measurement, selected live-provider replay/acceptance,
+production scanner/binary extraction, OIDC/grants, hosted supervision/Blob/KMS,
+retention/purge, model/state/MCP work and Factory audit. Semantic labels in the
+manifest remain **unevaluated targets**; deferred documents do not count as extracted.
+Dependency releases/licenses were checked from primary sources, not vulnerability-
+certified. No new runtime dependencies, SQL grants, schema or mailbox effects.
+
 ## Operator-run approved processing
 
 Implementation **0f01724** passed [CI 35570568792](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35570568792)
