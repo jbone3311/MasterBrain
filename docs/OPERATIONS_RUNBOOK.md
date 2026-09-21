@@ -29,6 +29,13 @@ documents are understood, a worker is online, or the provider is current.
 
 ## Owner processing screen
 
+Provider/local-model body readers check elapsed time on each incoming chunk and
+after EOF ([ADR-041](adr/041_stream_deadline_checks.md)). Slow replies remain
+scrubbed unavailable outcomes; oversized replies remain protocol rejections.
+Inspect existing retry/pause status and connectivity without logging mail or
+credentials. Do not raise budgets to conceal repeated failures. These cooperative
+checks do not replace network timeouts or the still-required hosted supervisor.
+
 The separate [read operator](READ_CONTROLLER.md) has non-consuming preflight and
 explicit bounded execution. Exit 2 requires attention to a persisted pause; exit 1
 is a scrubbed operation failure. Exit 0 still requires inspecting progress/retry/

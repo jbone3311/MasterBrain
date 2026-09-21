@@ -2,7 +2,52 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Configured API identity — local implementation checkpoint
+## Verified identity foundation and response hardening
+
+Runtime **88af6332012af820eedcede9ae78adff34a930df** passed
+[CI 35596527992](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596527992)
+and [restore 35596528021](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596528021),
+observed 2026-09-21 Pacific. Later receipt-only documentation does not change this
+runtime and must not be described as the commit tested by these runs.
+
+- **1,947 standard Python tests passed, including 284 real PostgreSQL cases**,
+  with no CI skips. **84 Node contracts**, **five actual MIME-container** and
+  **15 actual PDF-container** cases passed. Repeated release-gate suites and
+  restore subsets are not additional tests. Both images, CLI smoke, reader
+  exclusion, locked dependencies, lint and typing over **43 source modules** passed.
+- ADR-040/migration 0013 provides configured RFC/Entra access-token verification,
+  server-owned identity mappings, current transaction authority and administrator
+  audit. **124 offline identity cases and 35 SQL/API cases** cover the increment;
+  fake issuers/generated keys do not establish real-issuer acceptance. Duplicate
+  Authorization headers are rejected and missing credentials get a plain challenge.
+- ADR-041 adds **16 transport cases** across Fastmail/Gmail/Graph/Ollama. Five
+  tests failed the old buffered code before the correction; all pass afterward.
+  The identity reader has its own equivalent regression proof. Incoming fragments
+  now trigger cooperative checks without an extra fixed-size application buffer;
+  byte caps and stream closure hold. This is not a hard DNS/TLS/process deadline.
+- Restore verified **27 tables, 147 rows, two tenants, four encrypted objects and
+  two identity bindings**. Hash equality, tenant/identity isolation, revoked-context
+  denial and database-only refusal passed. **14.39 seconds** includes disposable
+  startup; it is not production RTO/PITR. The **29 restore-safety cases** passed.
+- Local: **1,663 Python passes, 284 explicit SQL skips**, 84 Node passes, locked
+  sync, lint, source/restore-script typing, repository/docs/diff checks. CI supplies
+  the real SQL/container evidence unavailable locally. Two existing deprecation
+  warnings and GitHub action/runner migration notices remain non-failing work.
+- Runtime documentation checks covered **89 Markdown files and 749 local paths/
+  fragments**. Incremental secret scanning from 84997c4 through 88af633 found no
+  leaks. This is not an exhaustive dependency, security or accessibility audit.
+
+The documentation pack explains the game plan, current-versus-target features,
+processing methods, identity/authorization, hosting boundaries, test feeds,
+operations and Factory's next assignment. Historical receipts and source-health
+observations retain their original dates rather than becoming fresh claims.
+
+**Next:** browser sign-in/session lifecycle on the implemented token/mapping
+foundation, then independent-service acceptance. No real issuer/app registration,
+mailbox, paid hosting, public listener, MFA policy, team grant or mailbox-write
+authority was enabled. The full product goal remains active.
+
+## Historical configured API identity — local implementation checkpoint
 
 ADR-040/migration 0013 adds RFC/Entra access-token verification, administrator-owned
 identity mappings and current SQL authority. This checkpoint was checked locally

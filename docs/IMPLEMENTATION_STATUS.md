@@ -33,6 +33,18 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
+### Latest verified runtime
+
+**88af633** passed [CI 35596527992](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596527992):
+1,947 Python tests including 284 real SQL cases, 84 Node contracts, five actual
+MIME-container and 15 actual PDF-container cases. The same revision passed
+[restore 35596528021](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596528021):
+27 tables, 147 rows, two tenants, four encrypted objects and two identity bindings,
+including revoked-context denial. Exact scope, local skips and limitations are in
+the [build receipt](BUILD_RECEIPT.md). Receipt-only edits are not a new runtime test.
+
+### Increment boundaries
+
 ADR-041 closes buffered response deadline gaps in Fastmail, Gmail, Graph and the
 local Ollama adapter. Sixteen controlled-clock transport cases include slow-drip
 and delayed-empty regression tests, fragmentation, byte caps and stream closure.

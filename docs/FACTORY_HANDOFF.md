@@ -24,7 +24,13 @@ operational acceptance; live promotion has its own [gate record](RELEASE_ACCEPTA
 
 ## Completed increments to review, not rebuild
 
-Latest increment: [ADR-040/API identity](IDENTITY_AUTH.md), migration 0013 and
+Latest correction: [ADR-041/response streaming](adr/041_stream_deadline_checks.md)
+removes application chunk buffering from Fastmail/Gmail/Graph/Ollama deadline
+checks and bounds accumulation. Sixteen controlled-clock cases include five
+regression failures demonstrated against the old implementation. Review the
+cooperative timeout limitation; no new live/network acceptance is claimed.
+
+Latest feature increment: [ADR-040/API identity](IDENTITY_AUTH.md), migration 0013 and
 PyJWT 2.14.0. Review fixed RFC/Entra profiles, exact discovery/key trust, bounded
 cache/outage semantics, administrator-only mappings/audit and fresh transaction
 revocation. Restore now includes populated identity bindings. No browser login,

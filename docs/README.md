@@ -43,7 +43,7 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 | What actually works, and how? | [Features/methods](FEATURES_AND_METHODS.md), [status](IMPLEMENTATION_STATUS.md), [code map](CODE_MAP.md) |
 | What do the technical methods mean for me? | [Methods guide](METHODS_GUIDE.md): evidence, retries, search, corrections and permission boundaries |
 | Where will it run and what stays local? | [Hosting decision](HOSTING_DECISION.md), [deployment](DEPLOYMENT.md) |
-| What is the team building next? | [Identity foundation](BACKLOG.md#eb-007-next-production-identity-foundation), [roadmap sequence](ROADMAP.md#next-build-packages), [Factory assignment](FACTORY_HANDOFF.md#suggested-next-issue) |
+| What is the team building next? | [Browser/session lifecycle](BACKLOG.md#eb-007-next-production-identity-foundation), [roadmap sequence](ROADMAP.md#next-build-packages), [Factory assignment](FACTORY_HANDOFF.md#suggested-next-issue) |
 | How do we test believable mail and attachments? | [Runnable mailbox guide](TEST_MAILBOX_PLAN.md), [evaluation plan](TESTING_AND_EVALS.md) |
 | What has actually passed? | [Exact-commit build receipt](BUILD_RECEIPT.md), not roadmap targets |
 | How should a developer contribute? | [Contributor guide](../CONTRIBUTING.md), [Factory handoff](FACTORY_HANDOFF.md) |
@@ -52,7 +52,7 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 
 The documentation review explains the owner scenario, methods, attachment coverage,
 failure behavior and dependency-ordered delivery plan. The latest consistency pass
-aligns current claims through ADR-040, explains the methods in plain language,
+aligns current claims through ADR-041, explains the methods in plain language,
 and checks contribution/release guides and GitHub review templates automatically.
 It separates completed synthetic PDF/read-operator and API token/mapping work from
 browser identity lifecycle, hosted operation and live acceptance. The

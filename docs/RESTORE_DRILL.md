@@ -4,7 +4,16 @@ ADR-040 now adds populated identity bindings for both fictional tenants. The dri
 checks preserved binding IDs/scopes, identity-lookup RLS, tenant search isolation,
 disable/re-enable revision and rejection of stale contexts after restore. This is
 SQL authority proof, not a real issuer handshake; signatures have separate fake-issuer
-tests. New exact counts/results must be recorded after the updated drill runs.
+tests.
+
+Latest verified runtime: **88af6332012af820eedcede9ae78adff34a930df**,
+[run 35596528021](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596528021),
+passed 2026-09-21: **27 tables, 147 rows, two tenants, four encrypted objects and
+two identity bindings**. Hash equality, tenant/identity RLS, revoked-context denial
+and database-only restore refusal passed. The 29 restore-safety tests also passed.
+Elapsed **14.39 seconds** includes disposable startup; it is not production RTO,
+managed PITR, real issuer acceptance or hosted key-loss recovery. Receipt-only
+documentation changes do not change that runtime or turn it into a new drill.
 
 Previously verified runtime recheck: **0b4f0d3**,
 [run 35590968376](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968376),
