@@ -3,12 +3,14 @@ import pytest
 
 from email_brain.connectors.fastmail import (
     MAIL,
+    MAX_BLOB_BYTES,
     FastmailReadClient,
     ProviderAuthRequired,
     ProviderThrottled,
     ProviderUnavailable,
 )
 from email_brain.connectors.jmap import ProtocolError
+from email_brain.normalize import MAX_RAW_BYTES
 
 TOKEN = "synthetic-provider-token-not-real"
 
@@ -120,5 +122,80 @@ def test_invalid_session_capabilities_scrubbed():
         with pytest.raises(ProtocolError):
             client.discover()
         assert client.account_id is None
+    finally:
+        client.close()
+
+
+@pytest.mark.parametrize(
+    "limit", [None, True, False, "2097152", 2097152.0, MAX_RAW_BYTES - 1, MAX_BLOB_BYTES + 1]
+)
+def test_blob_budget_requires_explicit_bounded_integer(limit):
+    with pytest.raises(ValueError, match="raw byte limit"):
+        FastmailReadClient(TOKEN, max_raw_bytes=limit)
+
+
+@pytest.mark.parametrize(
+    "limit,size,accepted",
+    [
+        (MAX_RAW_BYTES, MAX_RAW_BYTES, True),
+        (MAX_RAW_BYTES, MAX_RAW_BYTES + 1, False),
+        (2 * MAX_RAW_BYTES, MAX_RAW_BYTES + 1, True),
+        (2 * MAX_RAW_BYTES, 2 * MAX_RAW_BYTES, True),
+        (2 * MAX_RAW_BYTES, 2 * MAX_RAW_BYTES + 1, False),
+        (MAX_BLOB_BYTES, MAX_BLOB_BYTES, True),
+        (MAX_BLOB_BYTES, MAX_BLOB_BYTES + 1, False),
+    ],
+)
+def test_configured_blob_download_budget(limit, size, accepted):
+    raw = b"x" * size
+
+    def handler(request):
+        if request.url.path.endswith("session"):
+            return httpx.Response(200, json=session())
+        return httpx.Response(200, content=raw)
+
+    client = FastmailReadClient(
+        TOKEN, max_raw_bytes=limit, transport=httpx.MockTransport(handler)
+    )
+    try:
+        client.discover()
+        if accepted:
+            assert client.download_blob("blob") == raw
+        else:
+            with pytest.raises(ProtocolError, match="byte limit"):
+                client.download_blob("blob")
+    finally:
+        client.close()
+
+
+@pytest.mark.parametrize("control", ["session", "metadata"])
+def test_larger_blob_budget_does_not_expand_control_responses(control):
+    def handler(request):
+        if control == "metadata" and request.url.path.endswith("session"):
+            return httpx.Response(200, json=session())
+        return httpx.Response(200, content=b" " * (MAX_RAW_BYTES + 1))
+
+    client = FastmailReadClient(
+        TOKEN, max_raw_bytes=MAX_BLOB_BYTES, transport=httpx.MockTransport(handler)
+    )
+    try:
+        with pytest.raises(ProtocolError, match="byte limit"):
+            client.discover()
+            client.metadata(["message"])
+    finally:
+        client.close()
+
+
+def test_default_blob_download_stays_small():
+    def handler(request):
+        if request.url.path.endswith("session"):
+            return httpx.Response(200, json=session())
+        return httpx.Response(200, content=b"x" * (MAX_RAW_BYTES + 1))
+
+    client = FastmailReadClient(TOKEN, transport=httpx.MockTransport(handler))
+    try:
+        client.discover()
+        with pytest.raises(ProtocolError, match="byte limit"):
+            client.download_blob("blob")
     finally:
         client.close()

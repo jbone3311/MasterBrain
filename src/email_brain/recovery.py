@@ -77,13 +77,11 @@ class Recovery:
                 self.store.audit(conn, ctx, "recovery.read", "recovery", str(cached["id"]))
                 return self.result(cached)
             self.current(row)
-            source = conn.execute(
-                "SELECT raw_mime FROM raw_objects WHERE account_id=%s AND sha256=%s",
-                (account_id, row["raw_sha256"]),
-            ).fetchone()
 
         # No open SQL transaction while processing untrusted data. Revalidate below.
-        raw = bytes(source["raw_mime"]) if source else None
+        raw = self.store.load_raw(ctx, account_id, row["raw_sha256"])
+        if len(raw) > persistence.MAX_RAW_BYTES:
+            raise Conflict("retained message exceeds the current parser budget")
         valid = (
             raw is not None
             and len(raw) <= persistence.MAX_RAW_BYTES

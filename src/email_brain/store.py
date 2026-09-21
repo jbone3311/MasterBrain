@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from email.errors import MessageError
 from typing import Any
@@ -17,6 +17,7 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from email_brain.attachments import Attachment, receive_attachments, reconcile
+from email_brain.blobs import MAX_BLOB_BYTES, BlobError, BlobRef, EncryptedBlobStore
 from email_brain.domain.models import TenantContext
 from email_brain.normalize import MAX_RAW_BYTES as MAX_RAW_BYTES
 from email_brain.normalize import PARSER_VERSION as PARSER_VERSION
@@ -111,8 +112,114 @@ class IngestItem:
 
 
 class Store:
-    def __init__(self, dsn: str) -> None:
+    def __init__(self, dsn: str, *, blobs: EncryptedBlobStore | None = None) -> None:
         self.dsn = dsn
+        self.blobs = blobs
+
+    @property
+    def max_raw_bytes(self) -> int:
+        return MAX_BLOB_BYTES if self.blobs is not None else MAX_RAW_BYTES
+
+    def stage_raw(
+        self,
+        ctx: TenantContext,
+        account_id: UUID,
+        items: Sequence[IngestItem],
+        *,
+        synthetic_only: bool = False,
+    ) -> dict[str, BlobRef | None]:
+        """Authorize, then stage immutable encrypted objects outside SQL transactions."""
+        self.require(ctx, "email.ingest")
+        if len(items) > 100:
+            raise ValueError("bounded pages required")
+        if any(i.raw is not None and len(i.raw) > self.max_raw_bytes for i in items):
+            raise ValueError("raw evidence exceeds configured durable storage limit")
+        if sum(len(i.raw) for i in items if i.raw is not None) > MAX_BLOB_BYTES:
+            raise ValueError("ingestion page exceeds byte budget")
+        sources = {hashlib.sha256(i.raw).hexdigest(): i.raw for i in items if i.raw is not None}
+        if not sources:
+            return {}
+        with self.transaction(ctx) as conn:
+            account = conn.execute(
+                "SELECT provider_account_id,secret_ref FROM mail_accounts "
+                "WHERE id=%s AND status='active'",
+                (account_id,),
+            ).fetchone()
+            if not account:
+                raise NotFound()
+            if synthetic_only and (
+                account["provider_account_id"] is not None
+                or not account["secret_ref"].startswith("synthetic:")
+            ):
+                raise ValueError("unenrolled synthetic account required")
+            rows = conn.execute(
+                "SELECT sha256,blob_ref,raw_mime FROM raw_objects "
+                "WHERE account_id=%s AND sha256=ANY(%s)",
+                (account_id, list(sources)),
+            ).fetchall()
+        existing = {row["sha256"]: row for row in rows}
+        staged: dict[str, BlobRef | None] = {}
+        for sha, raw in sources.items():
+            if sha in existing:
+                saved = existing[sha]
+                ref = BlobRef(**saved["blob_ref"]) if saved["blob_ref"] is not None else None
+                if ref:
+                    if self.blobs is None:
+                        raise BlobError()
+                    if self.blobs.get(ctx.tenant_id, account_id, ref) != raw:
+                        raise BlobError()
+                elif bytes(saved["raw_mime"]) != raw:
+                    raise BlobError()
+                staged[sha] = ref
+            else:
+                staged[sha] = self.blobs.put(ctx.tenant_id, account_id, raw) if self.blobs else None
+        return staged
+
+    def load_raw(self, ctx: TenantContext, account_id: UUID, sha: str) -> bytes:
+        """Internal authorized evidence read. Never exposed as a raw HTTP/MCP tool."""
+        self.require(ctx, "email.evidence.read")
+        with self.transaction(ctx) as conn:
+            row = conn.execute(
+                "SELECT r.raw_mime,r.blob_ref FROM raw_objects r JOIN mail_accounts a "
+                "ON a.tenant_id=r.tenant_id AND a.id=r.account_id "
+                "WHERE r.account_id=%s AND r.sha256=%s AND a.status='active'",
+                (account_id, sha),
+            ).fetchone()
+        if row is None:
+            raise NotFound()
+        if row["blob_ref"] is None:
+            return bytes(row["raw_mime"])
+        if self.blobs is None:
+            raise BlobError()
+        return self.blobs.get(ctx.tenant_id, account_id, BlobRef(**row["blob_ref"]))
+
+    def object_inventory(self, ctx: TenantContext, account_id: UUID) -> dict[str, Any]:
+        """Read-only operator/library report; never authorizes garbage collection."""
+        self.require(ctx, "email.evidence.read")
+        if self.blobs is None:
+            raise BlobError()
+        with self.transaction(ctx) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM mail_accounts WHERE id=%s", (account_id,)
+            ).fetchone():
+                raise NotFound()
+            rows = conn.execute(
+                "SELECT blob_ref FROM raw_objects WHERE account_id=%s AND blob_ref IS NOT NULL "
+                "ORDER BY sha256 LIMIT 10001",
+                (account_id,),
+            ).fetchall()
+        if len(rows) > 10000:
+            raise BlobError()
+        referenced = {row["blob_ref"]["object_key"] for row in rows}
+        present = set(self.blobs.object_keys(ctx.tenant_id, account_id))
+        return {
+            "referenced": len(referenced),
+            "present": len(present),
+            "missing": sorted(referenced - present),
+            "unreferenced": sorted(present - referenced),
+            "deletion_authorized": False,
+            "snapshot_consistent": False,
+        }
 
     @staticmethod
     def require(ctx: TenantContext, scope: str) -> None:
@@ -353,7 +460,22 @@ class Store:
             items
         ):
             raise ValueError("one event per provider ID per page required")
-        prepared = [(item, *prepare_mime(item.raw)) for item in items]
+        if any(i.raw is not None and len(i.raw) > self.max_raw_bytes for i in items):
+            raise ValueError("raw evidence exceeds configured durable storage limit")
+        if sum(len(i.raw) for i in items if i.raw is not None) > MAX_BLOB_BYTES:
+            raise ValueError("ingestion page exceeds byte budget")
+        staged = self.stage_raw(ctx, account_id, items, synthetic_only=synthetic_only)
+        prepared = [
+            (
+                item,
+                *(
+                    prepare_mime(item.raw)
+                    if item.raw is None or len(item.raw) <= MAX_RAW_BYTES
+                    else (None, [], True)
+                ),
+            )
+            for item in items
+        ]
         inserted = 0
         with self.transaction(ctx) as conn:
             # Serialize this account without granting UPDATE on account credentials/config.
@@ -475,23 +597,33 @@ class Store:
                     ),
                 )
                 if item.raw is not None:
+                    ref = staged[str(raw_hash)]
                     conn.execute(
-                        "INSERT INTO raw_objects(tenant_id,account_id,sha256,raw_mime) "
-                        "VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING",
-                        (ctx.tenant_id, account_id, raw_hash, item.raw),
+                        "INSERT INTO raw_objects(tenant_id,account_id,sha256,raw_mime,blob_ref) "
+                        "VALUES (%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+                        (
+                            ctx.tenant_id,
+                            account_id,
+                            raw_hash,
+                            None if ref else item.raw,
+                            Jsonb(asdict(ref)) if ref else None,
+                        ),
                     )
                 if quarantined:
                     conn.execute(
                         "INSERT INTO quarantine_receipts"
                         "(tenant_id,account_id,event_key,provider_id,"
                         "raw_sha256,reason,parser_version,source_metadata) "
-                        "VALUES (%s,%s,%s,%s,%s,'mime_rejected',%s,%s)",
+                        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
                         (
                             ctx.tenant_id,
                             account_id,
                             item.event_key,
                             item.provider_id,
                             raw_hash,
+                            "mime_too_large"
+                            if item.raw is not None and len(item.raw) > MAX_RAW_BYTES
+                            else "mime_rejected",
                             PARSER_VERSION,
                             Jsonb(
                                 {

@@ -12,6 +12,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -28,6 +29,7 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
 from email_brain.auth import Principal
+from email_brain.blobs import BlobError, BlobRef, EncryptedBlobStore
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.normalize import PARSER_VERSION
@@ -236,7 +238,13 @@ def synthetic_mime(keyword: str) -> bytes:
     return message.as_bytes()
 
 
-def seed(admin: str, store: Store) -> list[SeededTenant]:
+def seed(
+    admin: str,
+    store: Store,
+    *,
+    object_root: Path | None = None,
+    keys: dict[tuple[UUID, str], bytes] | None = None,
+) -> list[SeededTenant]:
     tenants = []
     for keyword in ("restorealphazebra", "restorebetazebra"):
         tenant, actor, account = uuid4(), uuid4(), uuid4()
@@ -271,15 +279,38 @@ def seed(admin: str, store: Store) -> list[SeededTenant]:
             IngestItem("good-event", "good-message", "v1", now, synthetic_mime(keyword)),
             IngestItem("poison-event", "poison-message", "v1", now, b""),
         ]
+        cursor = None
+        if object_root is not None:
+            assert keys is not None
+            # Keep a legacy inline receipt alongside externally archived good/large mail.
+            store.blobs = None
+            store.ingest_page(context, account, None, "inline-checkpoint", [items.pop()])
+            cursor = "inline-checkpoint"
+            keys[(tenant, "drill-v1")] = secrets.token_bytes(32)
+            store.blobs = EncryptedBlobStore(object_root, keys, {t: key for t, key in keys})
+            items.append(
+                IngestItem(
+                    "large-event",
+                    "large-message",
+                    "v1",
+                    now,
+                    b"Subject: Synthetic large raw\r\n\r\n" + b"x" * (1024 * 1024),
+                )
+            )
         require(
-            store.ingest_page(context, account, None, "synthetic-checkpoint", items) == 2,
+            store.ingest_page(context, account, cursor, "synthetic-checkpoint", items) == 2,
             "synthetic seed accounting failed",
         )
-        held = store.quarantines(context, account)["results"][0]["id"]
+        held = next(
+            q["id"]
+            for q in store.quarantines(context, account)["results"]
+            if q["provider_id"] == "poison-message"
+        )
         require(
             Recovery(store).retry(Principal(context, "human"), account, held, PARSER_VERSION)[
                 "outcome"
-            ] == "mime_rejected",
+            ]
+            == "mime_rejected",
             "synthetic recovery attempt seed failed",
         )
         hits = store.search(context, SearchRequest(query=keyword, include_attachments=False))
@@ -346,7 +377,7 @@ def seed(admin: str, store: Store) -> list[SeededTenant]:
     return tenants
 
 
-def snapshot(admin: str) -> dict[str, tuple[int, str]]:
+def snapshot(admin: str, blobs: EncryptedBlobStore | None = None) -> dict[str, tuple[int, str]]:
     """Hash every public table row without exporting content into diagnostics."""
     results = {}
     with psycopg.connect(admin) as conn:
@@ -360,10 +391,15 @@ def snapshot(admin: str) -> dict[str, tuple[int, str]]:
                 )
             ).fetchall()
             results[table] = (len(rows), stable_digest(rows))
-        for expected, raw in conn.execute("SELECT sha256,raw_mime FROM raw_objects"):
-            require(
-                hashlib.sha256(bytes(raw)).hexdigest() == expected, "raw evidence hash mismatch"
-            )
+        objects = conn.execute(
+            "SELECT tenant_id,account_id,sha256,raw_mime,blob_ref FROM raw_objects"
+        ).fetchall()
+    for tenant, account, expected, raw, ref in objects:
+        if ref is not None:
+            require(blobs is not None, "external evidence storage is required")
+            assert blobs is not None
+            raw = blobs.get(tenant, account, BlobRef(**ref))
+        require(hashlib.sha256(bytes(raw)).hexdigest() == expected, "raw evidence hash mismatch")
     return results
 
 
@@ -432,15 +468,21 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         else:
             raise DrillFailure("foreign evidence was exposed")
         status = store.sync_status(ctx, current.account_id)
-        held = store.quarantines(ctx, current.account_id)["results"][0]["id"]
+        held = next(
+            q["id"]
+            for q in store.quarantines(ctx, current.account_id)["results"]
+            if q["provider_id"] == "poison-message"
+        )
         require(
             Recovery(store).retry(
                 Principal(ctx, "human"), current.account_id, held, PARSER_VERSION
-            )["outcome"] == "mime_rejected",
+            )["outcome"]
+            == "mime_rejected",
             "restored recovery attempt changed",
         )
         require(
-            status["message_counts"]["ready"] == 1 and status["message_counts"]["quarantined"] == 1,
+            status["message_counts"]["ready"] == 1
+            and status["message_counts"]["quarantined"] == (2 if store.blobs else 1),
             "quarantine state changed",
         )
         proposals = store.proposals(ctx)
@@ -498,6 +540,11 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
 
 
 def run_drill() -> dict[str, object]:
+    with tempfile.TemporaryDirectory(prefix="email-brain-objects-", dir="/tmp") as directory:
+        return _run_drill(Path(directory).resolve())
+
+
+def _run_drill(storage: Path) -> dict[str, object]:
     require(
         not any(key.startswith("PG") for key in os.environ),
         "ambient PostgreSQL settings are forbidden for this disposable drill",
@@ -564,8 +611,11 @@ def run_drill() -> dict[str, object]:
         stage("migrate_and_seed_synthetic_source")
         migrate(source_dsn, root / "migrations")
         source_store = make_runtime(source_dsn, "restore_source_runtime")
-        tenants = seed(source_dsn, source_store)
-        before = snapshot(source_dsn)
+        keys: dict[tuple[UUID, str], bytes] = {}
+        tenants = seed(source_dsn, source_store, object_root=storage / "source", keys=keys)
+        before = snapshot(source_dsn, source_store.blobs)
+        # Separate encrypted-byte backup; key material remains independently in memory.
+        shutil.copytree(storage / "source", storage / "backup")
         with psycopg.connect(target_dsn) as conn:
             target_tables = conn.execute(
                 "SELECT count(*) FROM pg_tables WHERE schemaname='public'"
@@ -614,9 +664,27 @@ def run_drill() -> dict[str, object]:
                     stdin=incoming,
                 )
         stage("verify_restored_data_and_authorization")
-        require(snapshot(target_dsn) == before, "restored table counts or content digests differ")
+        try:
+            snapshot(target_dsn)
+        except DrillFailure:
+            pass
+        else:
+            raise DrillFailure("database-only restore accepted absent external evidence")
+        target_blobs = EncryptedBlobStore(storage / "target", keys, {t: key for t, key in keys})
+        try:
+            snapshot(target_dsn, target_blobs)
+        except BlobError:
+            pass
+        else:
+            raise DrillFailure("empty object restore accepted missing evidence")
+        shutil.copytree(storage / "backup", storage / "target", dirs_exist_ok=True)
+        require(
+            snapshot(target_dsn, target_blobs) == before,
+            "restored table counts or content digests differ",
+        )
         require(migrate(target_dsn, root / "migrations") == [], "restored migrations differ")
         restored_store = make_runtime(target_dsn, "restore_target_runtime")
+        restored_store.blobs = target_blobs
         verify_restored(target_dsn, restored_store, tenants)
         return {
             "status": "passed",
@@ -627,6 +695,10 @@ def run_drill() -> dict[str, object]:
             "tenants_verified": len(tenants),
             "content_hashes_equal": True,
             "rls_verified": True,
+            "database_only_restore_refused": True,
+            "external_objects_verified": sum(
+                len(target_blobs.object_keys(t.context.tenant_id, t.account_id)) for t in tenants
+            ),
             "elapsed_seconds": round(time.monotonic() - started, 2),
         }
     finally:

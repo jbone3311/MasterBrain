@@ -14,6 +14,8 @@ from email_brain.normalize import MAX_RAW_BYTES
 
 MAIL = "urn:ietf:params:jmap:mail"
 SESSION = "https://api.fastmail.com/jmap/session"
+# Explicit opt-in for encrypted object-backed ingestion; control JSON stays bounded.
+MAX_BLOB_BYTES = 16 * 1024 * 1024
 
 
 class ProviderUnavailable(Exception):
@@ -52,9 +54,18 @@ def _safe_url(url: str) -> str:
 
 
 class FastmailReadClient:
-    def __init__(self, token: str, *, transport: httpx.BaseTransport | None = None) -> None:
+    def __init__(
+        self,
+        token: str,
+        *,
+        transport: httpx.BaseTransport | None = None,
+        max_raw_bytes: int = MAX_RAW_BYTES,
+    ) -> None:
         if not 16 <= len(token) <= 4096 or "\n" in token or "\r" in token:
             raise ValueError("invalid provider token")
+        if type(max_raw_bytes) is not int or not MAX_RAW_BYTES <= max_raw_bytes <= MAX_BLOB_BYTES:
+            raise ValueError("raw byte limit must be an integer between 1 and 16 MiB")
+        self._max_raw_bytes = max_raw_bytes
         self._client = httpx.Client(
             headers={"Authorization": f"Bearer {token}", "Accept-Encoding": "identity"},
             timeout=httpx.Timeout(20, connect=5),
@@ -69,7 +80,14 @@ class FastmailReadClient:
     def close(self) -> None:
         self._client.close()
 
-    def _request(self, method: str, url: str, payload: dict[str, Any] | None = None) -> bytes:
+    def _request(
+        self,
+        method: str,
+        url: str,
+        payload: dict[str, Any] | None = None,
+        *,
+        byte_limit: int = MAX_RAW_BYTES,
+    ) -> bytes:
         safe = _safe_url(url)
         started = time.monotonic()
         try:
@@ -90,7 +108,7 @@ class FastmailReadClient:
                     if time.monotonic() - started > 30:
                         raise ProviderUnavailable("provider response deadline exceeded")
                     count += len(chunk)
-                    if count > MAX_RAW_BYTES:
+                    if count > byte_limit:
                         raise ProtocolError("provider response exceeds prototype byte limit")
                     parts.append(chunk)
                 return b"".join(parts)
@@ -184,4 +202,4 @@ class FastmailReadClient:
             url = url.replace("{" + key + "}", quote(value, safe=""))
         if "{" in url or "}" in url:
             raise ProtocolError("unsupported download template")
-        return self._request("GET", url)
+        return self._request("GET", url, byte_limit=self._max_raw_bytes)

@@ -14,6 +14,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from email_brain.blobs import BlobError
 from email_brain.connectors.fastmail import (
     ProviderAuthRequired,
     ProviderThrottled,
@@ -27,6 +28,7 @@ from email_brain.connectors.jmap import (
     identifier,
 )
 from email_brain.domain.models import TenantContext
+from email_brain.normalize import MAX_RAW_BYTES
 from email_brain.store import IngestItem, InventoryError, Store, digest
 from email_brain.sync_store import Outcome, SyncStore
 
@@ -124,6 +126,11 @@ class ReadWorker:
     ) -> None:
         import random
 
+        max_raw_bytes = getattr(store, "max_raw_bytes", MAX_RAW_BYTES)
+        if type(max_raw_bytes) is not int or not MAX_RAW_BYTES <= max_raw_bytes <= MAX_PAGE_BYTES:
+            raise ValueError("store raw byte limit must be an integer between 1 and 16 MiB")
+        self._max_raw_bytes = max_raw_bytes
+        self._page_limit = 1 if max_raw_bytes > MAX_RAW_BYTES else 8
         self.store = store
         self.jobs = SyncStore(store)
         self.client = client
@@ -155,7 +162,7 @@ class ReadWorker:
             if checkpoint is None or checkpoint.schema_version == 1:
                 next_checkpoint = self._baseline(reader)
             elif checkpoint.phase == "listing":
-                page = reader.query_page(checkpoint.position, limit=8)
+                page = reader.query_page(checkpoint.position, limit=self._page_limit)
                 if checkpoint.query_state is not None and (
                     checkpoint.query_state != page.query_state or checkpoint.total != page.total
                 ):
@@ -203,7 +210,7 @@ class ReadWorker:
                 )
             else:
                 try:
-                    changes = reader.changes(checkpoint.email_state, limit=8)
+                    changes = reader.changes(checkpoint.email_state, limit=self._page_limit)
                 except ResyncRequired:
                     next_checkpoint = self._baseline(reader)
                 else:
@@ -249,7 +256,9 @@ class ReadWorker:
             # while reporting a successful fresh sync.
             self.jobs.finish(ctx, account_id, lease.token, "resync_required")
             return "resync_required"
-        except (ProviderUnavailable, ProviderThrottled) as error:
+        except (ProviderUnavailable, ProviderThrottled, BlobError) as error:
+            # Unavailable evidence storage must not become a permanent MIME pause.
+            # Staging failures leave the cursor unchanged; retry remains bounded.
             delay = retry_delay(
                 lease.failures,
                 error.retry_after_seconds if isinstance(error, ProviderThrottled) else None,
@@ -309,6 +318,8 @@ class ReadWorker:
                 if received.tzinfo is None:
                     raise ProtocolError("receive timestamp is not timezone aware")
                 raw = self.client.download_blob(blob)
+                if len(raw) > self._max_raw_bytes:
+                    raise ProtocolError("message exceeds configured store byte limit")
                 total_bytes += len(raw)
                 if total_bytes > MAX_PAGE_BYTES:
                     raise ProtocolError("page byte budget exceeded; smaller batches required")

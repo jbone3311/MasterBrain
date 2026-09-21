@@ -1,6 +1,6 @@
 # Synthetic PostgreSQL backup/restore drill
 
-Latest verification: code `e3695d8`,
+Historical verification: code `e3695d8`,
 [restore run 35560344225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35560344225),
 passed on 2026-09-20 Pacific. The expanded fixture includes searchable calendar
 attachments: 22 tables, 77 rows, two tenants, equal hashes and recovered search/RLS.
@@ -17,6 +17,15 @@ production RTO or large-mailbox performance measurement. The exact owned test
 container and temporary synthetic archive were removed by the drill.
 
 ## Scope
+
+The current expanded drill seeds mixed legacy inline and encrypted external raw
+objects, including two messages above the parser budget. Ciphertext is copied to
+an independent temporary backup and restored to a fresh object directory. Keys are
+random, tenant-bound, held separately in memory and never archived/uploaded.
+Database-only restoration must fail; supplying an empty object tree must also
+fail. Only after ciphertext restoration may all raw hashes and application checks
+pass. This checks the local object contract, not Azure Blob/KMS or key-backup recovery.
+See the current [build receipt](BUILD_RECEIPT.md) for the last verified commit.
 
 This is an executable **logical dump and restore**, not merely a manifest check.
 It creates a completely new PostgreSQL 17 Docker cluster, seeds two fake tenants,
@@ -96,8 +105,8 @@ without Docker can run the guards but must not claim the real drill passed.
 
 ## Still not solved
 
-This proves neither cloud encryption/KMS nor managed snapshots/PITR, object-store
-consistency, disaster-region recovery, key-loss handling, real-mail scale or
+This proves neither cloud encryption/KMS nor managed snapshots/PITR, live concurrent
+cloud object-store consistency, disaster-region recovery, key-loss handling, real-mail scale or
 production RPO/RTO. The reported elapsed time is a tiny synthetic drill, not a
 service recovery guarantee. No production backup command or retention system is
 introduced. Future operational drills need explicit authorization and independently

@@ -16,6 +16,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from email_brain.auth import Principal, TokenRegistry
+from email_brain.blobs import BlobError
 from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.rules.control import RuleControl
 from email_brain.schemas import (
@@ -130,6 +131,10 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
             (time.monotonic() - started) * 1000,
         )
         return response
+
+    @app.exception_handler(BlobError)
+    async def storage_handler(request: Request, exc: BlobError) -> JSONResponse:
+        return JSONResponse(status_code=503, content={"error": "evidence_storage_unavailable"})
 
     @app.exception_handler(RecoveryUnavailable)
     async def recovery_handler(request: Request, exc: RecoveryUnavailable) -> JSONResponse:

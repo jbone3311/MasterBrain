@@ -1,5 +1,14 @@
 # Data Model
 
+## Implemented external evidence (0009)
+
+`raw_objects` permits exactly one of inline `raw_mime` or a typed `blob_ref` JSON
+manifest: object key, plaintext SHA-256, byte count, ciphertext SHA-256 and key ID.
+Generated `raw_size` is non-null and at most 16 MiB; inline bytes retain their
+original 1 MiB bound. Contextual object paths and lowercase hashes are constrained
+in SQL. Legacy rows, FORCE RLS and immutable triggers remain unchanged.
+Quarantine adds `mime_too_large`. See [storage contract](LARGE_EVIDENCE_STORAGE.md).
+
 ## Implemented held-message recovery (0008)
 
 `message_versions.parser_version` is generated from the immutable snapshot;
@@ -148,8 +157,9 @@ Worker leases/outcomes are in `sync_workers` and append-only `sync_runs`; enroll
 accounts have administrator-set `provider_account_id`. Current mailbox/keyword
 metadata is separate from immutable raw-body evidence snapshots. People,
 projects, obligations, temporal facts, actions, grants and vectors above are target
-tables, not yet implemented. Source bytes are inline PostgreSQL in the synthetic
-prototype; hosted object storage is pending. See [status](IMPLEMENTATION_STATUS.md).
+tables, not yet implemented. Source bytes are inline PostgreSQL by default or
+explicitly injected encrypted local objects; hosted object storage is pending.
+See [status](IMPLEMENTATION_STATUS.md).
 
 Composite tenant/account keys prevent mismatched ownership links. The bootstrap API
 only serves owner memberships; generic members/reviewers/operators have no access

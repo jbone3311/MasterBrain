@@ -1,5 +1,15 @@
 # Testing and Evaluations
 
+Encrypted evidence tests cover authenticated context, tampering, wrong keys,
+rotation, concurrent publication, private paths, symlinks, ownership, crash/fsync
+failure and bounded inventory. `tests/test_large_evidence.py` adds API error
+scrubbing, direct staging limits and real PostgreSQL authorization/manifest/rollback
+tests, mixed inline/external evidence, large-message holding and restarted Fastmail
+worker progress. The restore drill requires restored SQL and ciphertext, rejecting
+missing objects before verifying raw hashes. Local database skips are not proof;
+CI supplies PostgreSQL. See [storage](LARGE_EVIDENCE_STORAGE.md) and the exact-commit
+[receipt](BUILD_RECEIPT.md).
+
 Held-message recovery adds human/scope/API denial, real PostgreSQL retry races,
 newer-provider-event fences, atomic publication rollback, raw hash failure,
 same-parser idempotency, parser-versioned search, immutable historical citations,

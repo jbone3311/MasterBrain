@@ -2,6 +2,13 @@
 
 ## New local prototype boundaries
 
+[Encrypted large evidence](LARGE_EVIDENCE_STORAGE.md) adds an opt-in tenant/account
+bound AES-GCM filesystem backend, immutable SQL manifests and verified reads.
+Only raw external objects are encrypted here; normalized database text and legacy
+inline bytes still need managed database encryption. Missing/corrupt storage fails
+closed, without checkpoint advancement or destructive cleanup. Cloud IAM/KMS and
+key-loss recovery remain gates.
+
 [Held-message recovery](QUARANTINE_RECOVERY.md) requires a human owner with review
 and evidence scopes at the library boundary. Hash verification precedes parsing;
 account locking and latest-event checks prevent stale recovery from resurrecting
@@ -35,7 +42,9 @@ Bounded malformed MIME is stored byte-for-byte behind the same tenant RLS as raw
 evidence, not rendered, executed or exposed by the status API. Receipts contain a
 fixed reason rather than parser exception text. NUL bytes are removed only from
 normalized text fields; original bytes and their hash remain unchanged. This is
-not malware scanning or an isolated binary extractor. Oversized mail still pauses.
+not malware scanning or an isolated binary extractor. Default raw storage remains
+1 MiB; opt-in encrypted Fastmail ingestion preserves up to 16 MiB and holds mail
+above the parser budget. Beyond the configured download/storage limit still pauses.
 Only a certified complete provider inventory can hide absent current projections;
 partial or duplicate-ID inventories cannot authorize absence. No provider deletion
 or evidence erasure is involved. Demo corpus loading refuses enrolled accounts.

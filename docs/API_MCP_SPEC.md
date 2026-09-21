@@ -1,5 +1,13 @@
 # API and MCP Specification
 
+## External evidence storage
+
+Opt-in [large evidence storage](LARGE_EVIDENCE_STORAGE.md) adds quarantine reason
+`mime_too_large`; retry is 409 while retained mail exceeds the parser budget.
+Unavailable/corrupt encrypted storage returns scrubbed 503
+`evidence_storage_unavailable`, without a cached recovery attempt. No raw-download,
+key-management, object-inventory or storage-configuration HTTP/MCP endpoint is added.
+
 ## Calendar attachment evidence
 
 Existing search/evidence responses now include bounded extracted source text from

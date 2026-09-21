@@ -9,7 +9,7 @@ the product sequence; these are buildable handoff tickets.
 | EB-002 | Authenticated Fastmail transport and read-only worker | TLS/host allowlist, bounded responses/downloads, token vault, no mutating methods; mock HTTP conformance then authorized disposable account |
 | EB-003 | Resumable backfill/reconciliation | Baseline Email state before listing; query-state-safe pagination; catches concurrent creates/deletes; durable leases; expired cursor reset; no partial-list deletions |
 | EB-004 | Durable poison-message quarantine | Preserve source/error receipt before advancing past bad message; retry independently; accounting/alerts; no stalled account or silent skip |
-| EB-005 | Encrypted object storage | Tenant-bound keys/IAM, byte/hash verification, DB/object two-stage commit, orphan GC, larger MIME support, transactional manifests |
+| EB-005 | Encrypted object storage — local slice implemented | Local tenant-bound AES-GCM, 16 MiB preservation, transactional manifests and non-deleting inventory implemented; hosted IAM/KMS, key backup, authorized GC/purge and larger isolated parsing remain |
 | EB-006 | Sandboxed attachment extraction | Factory-reviewed package contract; scanner; PDF/Office/OCR/archives; no egress, bounded CPU/time/memory/disk/depth; per-child receipts and timeouts |
 | EB-007 | Production identity/grants | OIDC/MFA, JWT issuer/audience/expiry, invite/revoke, account/project grants before candidate retrieval, permission-cache invalidation, negative role matrix |
 | EB-008 | Hosted infrastructure and restore | Owner-approved region/budget; private Postgres/S3, KMS/secrets, TLS ingress, CI artifacts by digest, actual restore of DB and bytes |

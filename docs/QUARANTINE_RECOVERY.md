@@ -4,6 +4,13 @@ The local owner review screen can retry parsing one current held message from it
 retained MIME. This does not contact a provider, accept invitations, scan malware,
 execute binary attachments, run a model, or modify the source mailbox.
 
+With [encrypted storage](LARGE_EVIDENCE_STORAGE.md), migration **0009** is also
+required. Retained mail above the parser's 1 MiB limit stays held as
+`mime_too_large`; retry returns 409 without an attempt. Missing backend/key/object
+or encrypted integrity failure returns 503 `evidence_storage_unavailable`, also
+without a cached attempt. Restore storage before retrying. Existing inline evidence
+continues to use the checks below; no raw-download endpoint is introduced.
+
 ## Operator workflow
 
 1. Sign in with a human owner bootstrap credential carrying `email.review` and

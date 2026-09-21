@@ -6,7 +6,13 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest local increment: [audited held-message retry](QUARANTINE_RECOVERY.md), with
+Latest increment: [encrypted large evidence](LARGE_EVIDENCE_STORAGE.md), optional
+16 MiB local objects, atomic SQL manifests, held large mail and two-part restore
+verification. Migration 0009 requires compatible API/workers/backup readers; no
+Azure adapter or large binary parser is implied. Review key custody, orphan
+inventory and missing-object recovery before any hosted implementation.
+
+Previous local increment: [audited held-message retry](QUARANTINE_RECOVERY.md), with
 human authorization, immutable parser versions, stale-event fencing, output-drift
 refusal and review UI. Migration 0008 requires stopping pre-0008 binaries; do not
 mix old workers with its changed evidence uniqueness key.

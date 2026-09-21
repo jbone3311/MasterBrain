@@ -1,5 +1,11 @@
 # Deployment
 
+The opt-in [encrypted local object backend](LARGE_EVIDENCE_STORAGE.md) is an
+executable storage contract, not Azure Blob deployment. Migration 0009 requires
+upgrading API, workers and backup/recovery readers together. Keep object roots
+outside Git/Dropbox and supply tenant keys separately; neither is discovered by
+the CLI. Hosted IAM/KMS, offsite backups and production ingress remain gates.
+
 This is the production target, not a deployed environment. See
 [HOSTING_DECISION.md](HOSTING_DECISION.md) for the consolidated Azure planning target
 and AWS/other alternatives, and

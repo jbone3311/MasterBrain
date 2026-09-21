@@ -32,8 +32,10 @@ Implemented: read-only JMAP protocol and bounded HTTPS session/metadata/blob
 transport and a resumable worker library with synthetic HTTP-to-database tests.
 Stable-query listing, certified inventory reconciliation, incremental pages, leases,
 bounded quarantine and retries are implemented. Expired history starts a fresh
-certified inventory before absence inference. Scheduler, credential enrollment,
-large objects and live acceptance are not implemented.
+certified inventory before absence inference. Explicit encrypted storage and larger
+Fastmail downloads preserve up to 16 MiB, holding mail beyond the parser budget;
+see [storage limits](LARGE_EVIDENCE_STORAGE.md). Scheduler, credential enrollment,
+hosted storage and live acceptance are not implemented.
 See [worker contract](READ_WORKER.md). No real mailbox was contacted. Fastmail's `mail`
 OAuth scope covers read/manage: do not assume a universal read-only OAuth scope.
 The adapter excludes `set` and submission methods. Use the least capable token

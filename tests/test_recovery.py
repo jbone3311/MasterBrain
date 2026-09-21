@@ -427,11 +427,18 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
         with pytest.raises(psycopg.errors.RaiseException, match="parser provenance mismatch"):
             migrate(dsn, directory)
         with psycopg.connect(dsn) as conn:
-            assert conn.execute(
-                "SELECT count(*) FROM schema_migrations WHERE name='0008_quarantine_recovery.sql'"
-            ).fetchone()[0] == 0
+            assert (
+                conn.execute(
+                    "SELECT count(*) FROM schema_migrations "
+                    "WHERE name='0008_quarantine_recovery.sql'"
+                ).fetchone()[0]
+                == 0
+            )
             conn.execute("UPDATE messages SET parser_version='synthetic-old'")
-        assert migrate(dsn, directory) == ["0008_quarantine_recovery.sql"]
+        assert migrate(dsn, directory) == [
+            "0008_quarantine_recovery.sql",
+            "0009_external_raw_evidence.sql",
+        ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
                 "SELECT id,snapshot,parser_version FROM message_versions"

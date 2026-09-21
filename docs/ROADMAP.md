@@ -1,5 +1,11 @@
 # Roadmap
 
+EB-005 now has an opt-in encrypted filesystem backend, immutable SQL manifests,
+16 MiB preservation with explicit parser-budget quarantine and coordinated
+synthetic object/database restore checks. Next: hosted Blob/KMS, independent key
+recovery and isolated large-MIME/binary processing; preservation is not extraction.
+See [storage contract](LARGE_EVIDENCE_STORAGE.md).
+
 The roadmap is gated by verified outcomes. Dates depend on team size and provider approval; phases are sequential where safety requires it.
 
 Current progress: a bounded portion of Phases 0–2 is executable with synthetic

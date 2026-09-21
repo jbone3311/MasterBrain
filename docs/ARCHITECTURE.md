@@ -2,6 +2,12 @@
 
 ## Latest executable additions
 
+[Encrypted large-email storage](LARGE_EVIDENCE_STORAGE.md) stages verified external
+objects before atomic SQL manifest/event/checkpoint publication. The explicit
+local backend preserves up to 16 MiB; mail above the 1 MiB parser budget is held,
+not indexed. Failed transactions may leave encrypted orphans, never automatically
+deleted. Restore checks now require SQL, ciphertext and independently supplied keys.
+
 [Human-requested held-message recovery](QUARANTINE_RECOVERY.md) rechecks retained
 hashes and current provider state, then atomically publishes parser-versioned
 evidence and an immutable attempt. It neither advances sync nor writes mailboxes.

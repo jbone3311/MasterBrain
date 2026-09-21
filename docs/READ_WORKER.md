@@ -48,15 +48,18 @@ and can be absent after such a crash. Do not treat run counts as ingestion truth
 
 ## Limits and explicit unfinished behavior
 
-- Raw MIME ≤1 MiB each; cumulative downloaded page ≤16 MiB; worker batches ≤8 IDs
-  (protocol parser supports caller-selected limits up to 100). Large encrypted
-  objects are not implemented. Binary attachments are still deferred.
+- Default raw MIME ≤1 MiB each; cumulative downloaded page ≤16 MiB; worker batches
+  ≤8 IDs. Explicit encrypted Store plus separately configured Fastmail download
+  supports ≤16 MiB per message, with one-ID pages and unchanged control JSON limit.
+  Above the 1 MiB parser bound is preserved/held, not parsed. See
+  [large evidence](LARGE_EVIDENCE_STORAGE.md). Binary attachments remain deferred.
 - Auth errors pause as `auth_required`; invalid protocol pauses as `protocol_error`;
   known MIME parser rejections within the byte bound are retained byte-for-byte in
   quarantine and advance the checkpoint. Invalid updates hide old searchable
   projections but retain historical evidence; later valid input resolves current
-  quarantine status without erasing receipts. Oversize still pauses because it
-  cannot be preserved. Failure telemetry omits bodies, tokens and exception text.
+  quarantine status without erasing receipts. Beyond configured storage/download
+  limits still pauses. Blob/key/disk failures use bounded retry without cursor
+  advancement. Failure telemetry omits bodies, tokens and exception text.
 - Expired history starts a new baseline/full inventory. No missing-ID inference
   occurs until that inventory is certified complete. v1 checkpoints similarly
   restart; corrupt/unknown checkpoints fail closed. Never manually advance cursors.
@@ -73,7 +76,7 @@ and can be absent after such a crash. Do not treat run counts as ingestion truth
 
 ## Migration and rollback
 
-Apply all migrations through `0006_reconciliation_quarantine.sql` with the
+Apply all migrations through `0009_external_raw_evidence.sql` with the
 administrator migrator, then reapply the
 explicit runtime grants using `grant_runtime` for the installed runtime role.
 The normal API migration command does not silently expand existing role grants.

@@ -1,5 +1,14 @@
 # Open-Source Evaluation
 
+## Implemented authenticated encryption dependency
+
+The optional raw-object backend directly reuses the maintained
+[`cryptography` AESGCM implementation](https://cryptography.io/en/latest/hazmat/primitives/aead/)
+instead of implementing cryptographic primitives. Version 50.0.1 is locked for this
+increment; authenticated-context, wrong-key, tampering, rotation and publication
+tests wrap its use. This library supplies encryption, not cloud KMS, IAM, key
+backup or an independently certified deployment. See [storage](LARGE_EVIDENCE_STORAGE.md).
+
 ## Method
 
 See [measured repository activity](OSS_HEALTH.md) and the retained JSON snapshot

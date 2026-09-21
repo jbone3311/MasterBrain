@@ -1,5 +1,16 @@
 # Operations Runbook
 
+## Encrypted evidence failures
+
+For the opt-in [local object backend](LARGE_EVIDENCE_STORAGE.md), preserve SQL,
+ciphertext and key custody. Storage failures cause bounded worker retry with no
+cursor advance; retry API returns scrubbed 503 without caching an attempt. Restore
+missing bytes/keys and verify hashes before resuming. A 409 for `mime_too_large`
+means the current parser cannot handle retained mail, not that bytes were lost.
+Owner-scoped `Store.object_inventory` is read-only and non-snapshot: missing or
+unreferenced names are investigation signals, never permission to delete objects.
+Back up both stores with separately recoverable keys; database-only restore fails.
+
 ## Executable prototype recovery checks
 
 Run the [synthetic logical restore drill](RESTORE_DRILL.md) on a disposable Docker

@@ -4,6 +4,11 @@ This is a concise ADR index. Each decision should become an individual immutable
 
 ## Accepted
 
+[ADR-028](adr/028_encrypted_large_evidence.md) adds opt-in encrypted filesystem raw
+evidence and SQL manifests (0009), large-message holding and coordinated synthetic
+object/database restore. It supersedes historical small-message-only preservation
+statements, not parser limits. No hosted storage or binary extraction is implied.
+
 [ADR-027](adr/027_quarantine_recovery.md) adds audited, human-requested retry of
 current held MIME and parser-versioned evidence (migration 0008). It supersedes
 the no-retry UI boundary in ADR-021; no raw-download or mailbox permission is added.

@@ -33,6 +33,9 @@ mail service. It includes:
 - opt-in loopback Ollama classification library with fake-response tests and
   model-digest checks (no daemon contacted or model enabled by default);
 - a disposable PostgreSQL logical backup/restore drill workflow;
+- opt-in encrypted raw objects up to 16 MiB, atomic database manifests and
+  coordinated object/database restore checks; large mail remains held until a
+  larger isolated parser is implemented ([storage contract](docs/LARGE_EVIDENCE_STORAGE.md));
 - locked dependencies, CI with a real PostgreSQL service, and a repository gate.
 
 It does **not** connect to your mail, send anything, change folders, delete mail,
