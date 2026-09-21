@@ -37,6 +37,11 @@ fixtures are its starting point. Milestone ordering is in [ROADMAP.md](ROADMAP.m
 
 ## What can proceed without owner answers
 
+EB-006/009 now include the [approved-processing operator command](PROCESSING_CONTROLLER.md):
+private config, exact worker scope, non-claiming preflight, bounded polling, fixed
+counts and graceful stop. This closes the recovery-library invocation gap, not
+hosted supervision, Fastmail enrollment, service principals or alert delivery.
+
 EB-010 now has a working narrow human-reviewed sender-rule loop, bounded simulation,
 revisioned activation/rollback and virtual search labels. Rich policy/protected-class
 configuration and autonomous application remain open. EB-011 now has an opt-in

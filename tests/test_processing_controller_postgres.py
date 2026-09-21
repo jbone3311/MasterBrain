@@ -57,7 +57,8 @@ def test_preflight_denial_never_claims(database, tenant, monkeypatch, tmp_path, 
     store, admin = database
     ctx, account = tenant
     if denial == "foreign":
-        config["account_id"] = str(uuid4())
+        _, foreign_account = pg.tenant.__wrapped__(database)
+        config["account_id"] = str(foreign_account)
         private_write(path, config)
     elif denial == "nonowner":
         creds[0]["actor_id"] = str(uuid4())

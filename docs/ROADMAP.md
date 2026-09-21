@@ -15,9 +15,11 @@ worker supervision, binary extraction, operational acceptance and Factory bind r
 
 ## Next build packages
 
-1. **Operator processing path:** explicit configuration/commands and supervision for
-   existing workers; bounded job scheduling, shutdown/restart, cancellation and
-   content-free health. The API never receives Docker authority.
+1. **Operator processing path:** [bounded approved-job command](PROCESSING_CONTROLLER.md),
+   private configuration/preflight, fresh worker credentials and graceful stop are
+   implemented. Hosted supervision, enrollment, service identities and health/alerts
+   remain; the ingestion worker still needs its own operator workflow. The API
+   never receives Docker authority.
 2. **Known-answer mailbox:** extend current generator with coherent scenarios,
    real file formats, versioned manifests and failure/replay schedules (EB-023).
 3. **Binary intake:** isolate and scan selected PDF/Office/image formats, enforce
