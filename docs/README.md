@@ -92,6 +92,7 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) | Run/test the prototype |
 | [OSS_HEALTH.md](OSS_HEALTH.md) | Stars/watchers/commits and maintenance evidence |
 | [COMMUNITY_RESEARCH.md](COMMUNITY_RESEARCH.md) | User reports and evaluation implications |
+| [COMPETITIVE_LANDSCAPE.md](COMPETITIVE_LANDSCAPE.md) | Commercial/OSS landscape, differentiation, and product implications |
 
 ## Explicit non-goals for v1
 
