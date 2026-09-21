@@ -7,7 +7,7 @@ mail forever, share it with others, or disclose it to remote models.
 | ID | Decision to revisit | Safe working assumption | Blocks |
 |---|---|---|---|
 | Q01 | First provider/account and historical backfill window | Fastmail JMAP protocol first; synthetic mail only | Live sync enrollment |
-| Q02 | AWS/Supabase/Neon, region, existing cloud operations, monthly ceiling | AWS target design; portable Postgres; spend nothing | Cloud provisioning |
+| Q02 | Confirm existing hosting home/subscription, region and monthly ceiling | Prefer same Azure home as RealEstateOS if selected there; isolated resources, portable Postgres; spend nothing | Cloud provisioning |
 | Q03 | One private owner or household/team at launch? | Owner-only access per tenant; no sharing | Invitations/member grants |
 | Q04 | Retention for raw mail, attachments, facts, logs, backups | No production ingestion until policy selected | Production ingestion/purge |
 | Q05 | Allowed remote model providers, content classes, region, budget | Remote inference disabled | Any remote mail disclosure |

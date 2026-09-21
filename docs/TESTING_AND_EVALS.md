@@ -15,7 +15,10 @@ The worker suite additionally tests synthetic HTTP → real DB → search, query
 churn with deletions, process recreation, eight competing lease claimants, stale
 worker fencing, crash-after-commit replay, malformed metadata/checkpoints, account
 mismatch, auth/throttle/outage pauses, cursor expiry, metadata flag changes and
-poison MIME rollback. Retry bounds are checked over 15,015 combinations. These are
+durable poison MIME quarantine. The larger corpus exercises full import, mixed
+incremental updates/deletes, expired-history recovery and multi-page absence
+reconciliation. Offline fuzzing uses 1,000 seeded bounded random byte inputs.
+Retry bounds are checked over 15,015 combinations. These are
 bounded fault/pressure tests, not a multi-day load/soak test or live-provider proof.
 
 Targets below still need private-corpus and production-like testing. No live

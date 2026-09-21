@@ -6,6 +6,12 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
+Latest read-only increment: certified full-inventory reconciliation, history-expiry
+recovery, bounded raw MIME quarantine, owner-scoped sync status, and resumable
+fictional-inbox seeding. Review [test coverage and gaps](TEST_COVERAGE_MATRIX.md)
+and the exact [build receipt](BUILD_RECEIPT.md) before promotion. These tests use
+synthetic HTTP plus real disposable PostgreSQL, not real provider accounts.
+
 Repository: `jbone3311/CW-EmailBrain`, private. Product ID proposed: `emailbrain`.
 Registration descriptor and thin CLAUDE template are staged under `factory/`;
 they are not evidence of a successful binding. A Factory-scope session must register

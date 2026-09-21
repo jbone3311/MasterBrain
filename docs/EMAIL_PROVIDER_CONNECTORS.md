@@ -2,6 +2,13 @@
 
 ## Shared contract
 
+This section describes the target contract, not active provider enrollment.
+Implemented offline library slices: [Gmail](GMAIL_READ_CONTRACT.md),
+[Microsoft Graph](GRAPH_READ_CONTRACT.md), and [IMAP](IMAP_READ_CONTRACT.md).
+Only Fastmail currently has database-backed worker orchestration. No provider
+has been connected to a real account in this build. Read slices expose no writes;
+the target action methods below remain separately gated.
+
 Every connector implements:
 
 ```text
@@ -23,9 +30,10 @@ Provider IDs/cursors remain opaque. Notifications enqueue synchronization but ne
 
 Implemented: read-only JMAP protocol and bounded HTTPS session/metadata/blob
 transport and a resumable worker library with synthetic HTTP-to-database tests.
-Stable-query listing, incremental pages, leases and bounded retries are implemented;
-scheduler, OAuth enrollment, full inventory reconciliation and live acceptance are not.
-Expired state pauses explicitly rather than pretending resync succeeded.
+Stable-query listing, certified inventory reconciliation, incremental pages, leases,
+bounded quarantine and retries are implemented. Expired history starts a fresh
+certified inventory before absence inference. Scheduler, credential enrollment,
+large objects and live acceptance are not implemented.
 See [worker contract](READ_WORKER.md). No real mailbox was contacted. Fastmail's `mail`
 OAuth scope covers read/manage: do not assume a universal read-only OAuth scope.
 The adapter excludes `set` and submission methods. Use the least capable token

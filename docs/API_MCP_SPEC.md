@@ -1,5 +1,18 @@
 # API and MCP Specification
 
+## Implemented held-message review
+
+`GET /v1/accounts/{account_id}/quarantine?limit=50&after={receipt_uuid}` requires
+`email.evidence.read` and current owner membership. Returns only current unresolved
+receipt metadata: ID, provider ID, SHA-256, fixed reason, parser version and time.
+`results` has at most 50 entries; `next_after` is null or a receipt UUID. This is
+a live UUID-keyset list, not a stable export snapshot. New receipts can appear
+before an existing cursor; refresh from the first page after changes. Unknown or
+foreign accounts return 404, absent scope 403, invalid cursor/limit 422.
+Responses declare `raw_access: false` and `reprocessing: false`. Historical failure
+receipts remain stored after repair/deletion but leave this current queue. There
+are no dismiss, raw-download, reprocess or delete routes.
+
 ## Implemented sync status
 
 `GET /v1/accounts/{account_id}/sync-status` requires `email.search` and current

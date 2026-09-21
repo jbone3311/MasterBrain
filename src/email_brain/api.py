@@ -9,7 +9,7 @@ from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 import psycopg
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -172,6 +172,15 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
             "untrusted_content": True,
             "results": store.search(principal.context, body),
         }
+
+    @app.get("/v1/accounts/{account_id}/quarantine")
+    def quarantine(
+        account_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+        after: UUID | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 50,
+    ) -> dict[str, Any]:
+        return store.quarantines(principal.context, account_id, after=after, limit=limit)
 
     @app.get("/v1/accounts/{account_id}/sync-status")
     def sync_status(

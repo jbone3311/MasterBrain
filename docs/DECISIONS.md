@@ -257,6 +257,32 @@ subscriptions or migration have been created or authorized by this planning choi
 Region, costs, identity design and deployment approval remain gates. See the
 updated [hosting recommendation and sources](HOSTING_DECISION.md).
 
+### ADR-021 — Read-only quarantine review surface
+
+Related provider decisions are maintained in focused records:
+[ADR-019: Gmail](adr/019_gmail_read_contract.md),
+[ADR-020: Graph](adr/020_graph_read_contract.md), and
+[ADR-022: injected IMAP](adr/022_imap_read_contract.md).
+
+Expose current quarantine receipt metadata to an authenticated owner with
+`email.evidence.read`, scoped to one account. Return at most 50 entries per page,
+using receipt UUID keyset pagination; this is a live list, not a complete export
+snapshot. Include fixed reason/parser version/hash and source ID, never raw MIME,
+exception text, provider credentials or active attachments. Quarantine review is
+informational: no dismiss, delete, reprocess or mailbox action capability is added.
+Show this and aggregate sync state in the local owner UI. Clear visible evidence
+on credential changes and reject stale asynchronous results after session changes.
+
+Adversarial review additionally requires all persisted MIME projection strings to
+be NUL-free and strict UTF-8 encodable before SQL. Decoder-produced invalid strings
+must quarantine their unchanged source bytes. Both synthetic seed commands verify
+unenrolled synthetic account status again inside each ingestion transaction; future
+administrative enrollment must use the same account lock and stop worker callers.
+
+Tests cover absent/foreign account identifiers, scope denial, bounded paging,
+current-status filtering and the no-raw-data API contract. Production login,
+audited reprocessing and browser accessibility acceptance remain gates.
+
 ## Explicitly rejected for initial build
 
 SQLite as multi-user source of truth; public database/model/MCP endpoints; vector-only retrieval; automatic send/delete; direct assistant SQL; direct model provider credentials; rules as executable code; graph database by default; whole-mailbox prompts; Git storage of email/live secrets.

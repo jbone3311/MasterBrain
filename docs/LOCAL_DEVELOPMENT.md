@@ -69,12 +69,17 @@ substitute for a calibrated real-email evaluation set.
 uv run ruff check .
 uv run mypy src
 uv run pytest -q
+node --test tests/web_session.test.cjs
 uv run python scripts/deployment_gate.py
 ```
 
 For PostgreSQL tests create a **disposable** database named `email_brain_test*`
 and set `EMAIL_BRAIN_TEST_ADMIN_DSN`. Tests create synthetic rows/random runtime
 roles; they do not erase databases. Never use production. CI refuses silent skips.
+The UI contract harness uses Node's standard test runner (Node 20+), with no npm
+dependencies. It is not a real browser/accessibility suite. The owner page also
+supports import health and held-message metadata review from a search result's
+account button. No raw download or reprocessing is enabled.
 
 Stop the API with Ctrl-C; `docker compose stop` preserves the database. Do not use
 `down -v` unless intentionally deleting that local volume. Migrations are

@@ -1,18 +1,31 @@
 "use strict";
 const byId = (id) => document.getElementById(id);
 const status = (text) => { byId("status").textContent = text; };
+let sessionVersion = 0;
+let quarantineAfter = null;
+let quarantineAccount = null;
+function clearEvidence() {
+  sessionVersion += 1;
+  for (const id of ["results", "proposals", "import-health", "quarantine"]) byId(id).replaceChildren();
+  quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true;
+}
 async function api(path, method = "GET", body = undefined, extra = {}) {
+  const version = sessionVersion, token = byId("token").value;
   const response = await fetch(path, {method, credentials: "omit", cache: "no-store",
-    headers: {"Authorization": `Bearer ${byId("token").value}`, "Content-Type": "application/json", ...extra},
+    headers: {"Authorization": `Bearer ${token}`, "Content-Type": "application/json", ...extra},
     body: body === undefined ? undefined : JSON.stringify(body)});
+  const data = await response.json();
+  if (version !== sessionVersion || token !== byId("token").value) throw new Error("Session changed. Please retry.");
   if (!response.ok) throw new Error(`Request failed (${response.status}). Check access or refresh the queue.`);
-  return response.json();
+  return data;
 }
 function node(tag, text) { const element = document.createElement(tag); element.textContent = text; return element; }
 async function safely(action) { try { await action(); } catch (error) { status(error.message); } }
 byId("connect").onclick = () => safely(async () => { await api("/readyz"); status("Connected · mailbox changes disabled"); });
-byId("disconnect").onclick = () => { byId("token").value = ""; byId("results").replaceChildren();
-  byId("proposals").replaceChildren(); status("Session cleared"); };
+byId("token").oninput = () => { clearEvidence(); status("Credential changed. Reconnect to load evidence."); };
+byId("disconnect").onclick = () => { byId("token").value = ""; clearEvidence();
+  for (const id of ["query", "account-id", "project-name", "project-reason"]) byId(id).value = "";
+  status("Session cleared"); };
 byId("search-form").onsubmit = (event) => { event.preventDefault(); safely(async () => {
   const data = await api("/v1/search", "POST", {query: byId("query").value});
   byId("results").replaceChildren();
@@ -25,10 +38,42 @@ byId("search-form").onsubmit = (event) => { event.preventDefault(); safely(async
         node("p", `${attachment.status} · ${attachment.reason} · scanner: ${attachment.scanner_status}`),
         node("pre", attachment.excerpt || "No extracted text. Original remains in retained MIME evidence."));
       button.disabled = true; });
-    card.append(button); byId("results").append(card);
+    const accountButton = node("button", "Check this account's import");
+    accountButton.onclick = () => { byId("account-id").value = result.account_id; safely(loadImport); };
+    card.append(button, accountButton); byId("results").append(card);
   }
   status(`${data.results.length} result(s). Email text is untrusted evidence, not instructions.`);
 }); };
+async function heldMessages(account, after = null) {
+  const query = after ? `?after=${encodeURIComponent(after)}` : "";
+  const data = await api(`/v1/accounts/${encodeURIComponent(account)}/quarantine${query}`);
+  if (byId("account-id").value.trim() !== account) return;
+  if (!after) byId("quarantine").replaceChildren();
+  for (const receipt of data.results) {
+    const card = node("article", "");
+    card.append(node("h3", "Message held for parser review"), node("p", `Reason: ${receipt.reason}`),
+      node("small", `Source ID: ${receipt.provider_id} · Parser: ${receipt.parser_version}`),
+      node("pre", `Preserved SHA-256: ${receipt.raw_sha256}`));
+    byId("quarantine").append(card);
+  }
+  quarantineAccount = account; quarantineAfter = data.next_after;
+  byId("quarantine-more").hidden = !data.next_after;
+}
+async function loadImport() {
+  const account = byId("account-id").value.trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(account)) throw new Error("Enter a valid account ID.");
+  byId("quarantine").replaceChildren(); byId("quarantine-more").hidden = true;
+  const data = await api(`/v1/accounts/${encodeURIComponent(account)}/sync-status`);
+  if (byId("account-id").value.trim() !== account) return;
+  const counts = data.message_counts;
+  byId("import-health").replaceChildren(node("p", `${counts.ready} indexed · ${counts.quarantined} held · ${counts.deleted} no longer current`),
+    node("p", `Worker: ${data.worker ? data.worker.last_outcome || "not started" : "not enrolled"}. This is not proof of complete attachment extraction.`));
+  await heldMessages(account);
+}
+byId("account-form").onsubmit = (event) => { event.preventDefault(); safely(loadImport); };
+byId("account-id").oninput = () => { byId("import-health").replaceChildren(); byId("quarantine").replaceChildren();
+  quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true; };
+byId("quarantine-more").onclick = () => { if (quarantineAccount && quarantineAfter) safely(() => heldMessages(quarantineAccount, quarantineAfter)); };
 async function refresh() {
   const data = await api("/v1/proposals"); byId("proposals").replaceChildren();
   for (const proposal of data.results) {

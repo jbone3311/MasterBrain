@@ -90,6 +90,20 @@ def test_sync_status_auth_scope_and_server_bound_context():
     assert denied.get(path, headers={"Authorization": f"Bearer {TOKEN}"}).status_code == 403
 
 
+def test_quarantine_api_limits_and_no_raw_download():
+    store = MagicMock(spec=Store)
+    store.quarantines.return_value = {"results": [], "next_after": None, "raw_access": False}
+    client = TestClient(create_app(store, registry({"email.evidence.read"})))
+    path = f"/v1/accounts/{uuid4()}/quarantine"
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    assert client.get(path).status_code == 401
+    assert client.get(path, headers=headers).json()["raw_access"] is False
+    for query in ("?limit=51", "?limit=0", "?after=not-a-uuid"):
+        assert client.get(path + query, headers=headers).status_code == 422
+    for suffix in ("/raw", "/reprocess", "/delete"):
+        assert client.post(path + suffix, headers=headers).status_code == 404
+
+
 def test_big_body_rejected(client: TestClient) -> None:
     response = client.post("/v1/search", content=b"x" * 32769)
     assert response.status_code == 413

@@ -22,6 +22,9 @@ mail service. It includes:
   certified inventory reconciliation, expired-history recovery, incremental changes,
   bounded retries, durable MIME quarantine and owner-scoped processing status;
 - resumable fictional-inbox seeding with varied mail and attachments;
+- offline-tested Gmail/Graph read libraries and an injected-session IMAP contract
+  (not live connectors or durable provider workers yet);
+- owner import-health and held-message review with bounded metadata-only paging;
 - model-routing/output-validation and rank-fusion helpers (no model is called);
 - locked dependencies, CI with a real PostgreSQL service, and a repository gate.
 

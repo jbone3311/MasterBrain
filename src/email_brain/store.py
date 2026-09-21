@@ -45,7 +45,34 @@ def prepare_mime(raw: bytes | None) -> tuple[NormalizedMessage | None, list[Atta
         raise ValueError("raw evidence exceeds durable storage limit")
     try:
         attachments = receive_attachments(raw)
-        return normalize(raw), attachments, False
+        normalized = normalize(raw)
+        # Python decoders can produce NUL or lone surrogates even when the source
+        # MIME contains neither (e.g. UTF-7 or unicode_escape). Validate projections
+        # before SQL so one poison part cannot repeatedly block a healthy page.
+        values = [
+            normalized.subject,
+            normalized.sender,
+            normalized.text,
+            normalized.internet_message_id or "",
+            *normalized.recipients,
+        ]
+        for attachment in attachments:
+            values.extend(
+                (
+                    attachment.part_id,
+                    attachment.original_filename,
+                    attachment.safe_filename,
+                    attachment.media_type,
+                    attachment.status,
+                    attachment.reason,
+                    attachment.text,
+                )
+            )
+        for value in values:
+            if "\x00" in value:
+                raise ValueError("projection contains NUL")
+            value.encode("utf-8", errors="strict")
+        return normalized, attachments, False
     except (ValueError, UnicodeError, RecursionError, MessageError):
         # Never store exception text: malformed headers can put content in diagnostics.
         return None, [], True
@@ -191,6 +218,7 @@ class Store:
         lease_token: UUID | None = None,
         inventory_generation: UUID | None = None,
         inventory_total: int | None = None,
+        synthetic_only: bool = False,
     ) -> int:
         if "email.ingest" not in ctx.scopes:
             raise AccessDenied("ingest scope required")
@@ -215,11 +243,17 @@ class Store:
                 (f"{ctx.tenant_id}:{account_id}",),
             )
             account = conn.execute(
-                "SELECT id,provider_account_id FROM mail_accounts WHERE id=%s AND status='active'",
+                "SELECT id,provider_account_id,secret_ref FROM mail_accounts "
+                "WHERE id=%s AND status='active'",
                 (account_id,),
             ).fetchone()
             if not account:
                 raise NotFound()
+            if synthetic_only and (
+                account["provider_account_id"] is not None
+                or not account["secret_ref"].startswith("synthetic:")
+            ):
+                raise ValueError("unenrolled synthetic account required")
             # All ingestion for an enrolled worker account is fenced, including
             # direct library calls. A stale process cannot bypass the worker lease.
             worker = conn.execute(
@@ -443,6 +477,34 @@ class Store:
         if item.mailbox_ids or item.keywords:
             payload.update(mailbox_ids=item.mailbox_ids, keywords=item.keywords)
         return digest(payload)
+
+    def quarantines(
+        self, ctx: TenantContext, account_id: UUID, *, after: UUID | None = None, limit: int = 50
+    ) -> dict[str, Any]:
+        self.require(ctx, "email.evidence.read")
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError("quarantine page limit must be 1..50")
+        with self.transaction(ctx) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM mail_accounts WHERE id=%s", (account_id,)
+            ).fetchone():
+                raise NotFound()
+            rows = conn.execute(
+                "SELECT q.id,q.provider_id,q.raw_sha256,q.reason,q.parser_version,q.recorded_at "
+                "FROM quarantine_receipts q JOIN message_sync_state h "
+                "ON h.tenant_id=q.tenant_id AND h.account_id=q.account_id "
+                "AND h.provider_id=q.provider_id AND h.event_key=q.event_key "
+                "WHERE q.account_id=%s AND h.status='quarantined' "
+                "AND (%s::uuid IS NULL OR q.id>%s) ORDER BY q.id LIMIT %s",
+                (account_id, after, after, limit + 1),
+            ).fetchall()
+            return {
+                "results": rows[:limit],
+                "next_after": rows[limit - 1]["id"] if len(rows) > limit else None,
+                "limit": limit,
+                "raw_access": False,
+                "reprocessing": False,
+            }
 
     def sync_status(self, ctx: TenantContext, account_id: UUID) -> dict[str, Any]:
         self.require(ctx, "email.search")

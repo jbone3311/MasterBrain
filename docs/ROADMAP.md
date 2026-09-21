@@ -4,16 +4,18 @@ The roadmap is gated by verified outcomes. Dates depend on team size and provide
 
 Current progress: a bounded portion of Phases 0–2 is executable with synthetic
 data, including real PostgreSQL CI, attachment accounting/search and a review
-queue. No phase is complete: live sync, quarantine, restore, production identity
+queue, bounded MIME quarantine and certified inventory recovery. No phase is
+complete: live sync, large-object recovery, restore, production identity
 and cloud setup remain gates. [BACKLOG.md](BACKLOG.md) is the concrete work queue.
 Tenant isolation starts now; Phase 7 expands sharing rather than retrofitting tenancy.
 
 ## Refined next-build order
 
 The read-worker library now has durable import/change checkpoints, fenced leases,
-query-churn restart, retries and safe pauses. The next gates, in dependency order:
+query-churn restart, retries, quarantine and certified inventory recovery. The next
+gates, in dependency order:
 
-1. Inventory-diff reconciliation and durable poison-byte quarantine; adaptive batches.
+1. Independent quarantine replay/review, inventory retention policy and extended soak.
 2. Encrypted large-object storage, isolated binary extraction and byte-preserving restore.
 3. Audited enrollment/recovery, scheduler/lag alerts, disposable-mailbox conformance.
 4. Production identity, member/account grants, infrastructure and restore acceptance.

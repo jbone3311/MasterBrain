@@ -122,7 +122,7 @@ def seed(state: Path) -> None:
         for index, (subject, body) in enumerate(contents)
     ]
     count = Store(_env("EMAIL_BRAIN_DSN")).ingest_page(
-        ctx, UUID(data["account_id"]), None, "synthetic-complete-v1", items
+        ctx, UUID(data["account_id"]), None, "synthetic-complete-v1", items, synthetic_only=True
     )
     print(f"Synthetic page committed: {count} new events (replays are no-ops).")
 
@@ -169,7 +169,7 @@ def seed_corpus(state: Path, count: int) -> None:
             for index in range(position, stop)
         ]
         next_cursor = f"{prefix}{stop}"
-        store.ingest_page(ctx, account, cursor, next_cursor, items)
+        store.ingest_page(ctx, account, cursor, next_cursor, items, synthetic_only=True)
         position, cursor = stop, next_cursor
     print(f"Synthetic corpus ready: {count} fictional messages; no provider or model contacted.")
 
