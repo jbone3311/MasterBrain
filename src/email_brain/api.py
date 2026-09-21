@@ -21,6 +21,8 @@ from email_brain.blobs import BlobError
 from email_brain.browser_auth import SESSION_COOKIE, BrowserAuth, BrowserDenied
 from email_brain.browser_routes import browser_cookie, browser_principal, browser_router
 from email_brain.document_jobs import DocumentJobs
+from email_brain.memory import Memory
+from email_brain.memory_schema import MemoryWrite
 from email_brain.message_reader import MessageReader, ReaderUnavailable
 from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.recovery_jobs import RecoveryJobs
@@ -100,6 +102,7 @@ def create_app(
     recovery_jobs = RecoveryJobs(store, recovery_parser_version)
     document_jobs = DocumentJobs(store, document_processor_version)
     message_reader = MessageReader(store)
+    memory = Memory(store)
     if browser_auth is not None:
         if browser_auth.authenticator.store is not store:
             raise ValueError("browser and API must share the same Store")
@@ -254,6 +257,66 @@ def create_app(
         principal: Annotated[Principal, Depends(require("email.evidence.read", human=True))],
     ) -> dict[str, Any]:
         return message_reader.read(principal, evidence_id)
+
+    @app.get("/memory", include_in_schema=False)
+    def memory_page() -> FileResponse:
+        return FileResponse(WEB / "memory.html")
+
+    @app.get("/memory.js", include_in_schema=False)
+    def memory_script() -> FileResponse:
+        return FileResponse(WEB / "memory.js", media_type="text/javascript")
+
+    @app.get("/v1/accounts/{account_id}/memory/summary")
+    def memory_summary(
+        account_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+    ) -> dict[str, Any]:
+        return memory.summary(principal.context, account_id)
+
+    @app.get("/v1/accounts/{account_id}/memory/changes")
+    def memory_changes(
+        account_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+        after: UUID | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return memory.changes(principal.context, account_id, after=after, limit=limit)
+
+    @app.get("/v1/accounts/{account_id}/memory/records")
+    def memory_records(
+        account_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+        after: UUID | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return memory.records(principal.context, account_id, after=after, limit=limit)
+
+    @app.get("/v1/accounts/{account_id}/memory/records/{record_id}")
+    def memory_record(
+        account_id: UUID,
+        record_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+        at: UUID | None = None,
+    ) -> dict[str, Any]:
+        return memory.get(principal.context, account_id, record_id, at=at)
+
+    @app.post("/v1/accounts/{account_id}/memory/candidates/{evidence_id}")
+    def memory_candidate(
+        account_id: UUID,
+        evidence_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        return memory.candidate(principal, account_id, evidence_id)
+
+    @app.put("/v1/accounts/{account_id}/memory/records/{record_id}")
+    def memory_publish(
+        account_id: UUID,
+        record_id: UUID,
+        body: MemoryWrite,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        return memory.publish(principal, account_id, record_id, body, idempotency_key)
 
     def download_response(data: bytes, name: str) -> Response:
         return Response(

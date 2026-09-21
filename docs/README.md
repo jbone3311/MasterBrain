@@ -15,6 +15,8 @@ selection/approval/history/cancellation and cited pages; live acceptance is pend
 
 ## Reading paths
 
+- **Trips/bills and assistant change polling:** [structured memory](STRUCTURED_MEMORY.md).
+
 - **Try the latest reader:** [user testing](USER_TESTING.md), [reading and download limits](MESSAGE_READER.md).
 
 - **Current build:** [browser session backend](BROWSER_AUTH.md) and explicit

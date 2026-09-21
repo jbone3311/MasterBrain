@@ -7,6 +7,13 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[Structured memory](STRUCTURED_MEMORY.md) uses human review/evidence authority to
+publish owner-attributed claims; assistant readers cannot publish. Source quotes
+are bound to current retained evidence, but are not independent semantic proof.
+Account locks and tenant commit-order locks protect revisions; three tables force
+RLS and prohibit mutation. No model, provider write, payment or check-in execution.
+The development editor renders text only and persists no credentials/cursors.
+
 [ADR-045 owner reader](MESSAGE_READER.md) adds human-only source-bound reading
 and consented downloads, not a general raw-object tool. Hash/length and current
 authority are checked before release. Small MIME retains the 1 MiB API parser

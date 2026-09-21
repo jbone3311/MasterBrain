@@ -38,6 +38,7 @@ jobs:
       - run: node --test tests/web_processing.test.cjs
       - run: node --test tests/web_documents.test.cjs
       - run: node --test tests/web_reader.test.cjs
+      - run: node --test tests/web_memory.test.cjs
       - run: uv run python scripts/deployment_gate.py
       - run: uv run python scripts/check_docs.py
       - run: docker build -t email-brain-ci .

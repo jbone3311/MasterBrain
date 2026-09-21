@@ -1,5 +1,11 @@
 # Factory Handoff
 
+New ADR-046 increment: [structured travel/bill memory](STRUCTURED_MEMORY.md),
+migration 0014, reviewed REST publication and independent change cursors. Audit
+tenant/account source binding, concurrent stream publication, no-op/retry semantics,
+and the explicit partial/manual interpretation claim. Guided UI and evaluated
+general-email extraction remain next; no Grok/MCP enrollment or hosted operation.
+
 ## Mission
 
 Handoff refreshed 2026-09-21. Exact tested revisions and limits are in the

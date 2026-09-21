@@ -9,6 +9,9 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "memory_records",
+    "memory_revisions",
+    "memory_receipts",
     "external_identities",
     "document_jobs",
     "document_extractions",
@@ -36,6 +39,9 @@ RUNTIME_SELECT = (
     "proposal_evidence",
 )
 RUNTIME_INSERT = (
+    "memory_records",
+    "memory_revisions",
+    "memory_receipts",
     "document_jobs",
     "document_extractions",
     "recovery_jobs",

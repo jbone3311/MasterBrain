@@ -7,6 +7,13 @@ for deployed schema; see [code map](CODE_MAP.md) and [status](IMPLEMENTATION_STA
 
 Read the sketches below as a target information model, not ready-to-run SQL.
 
+Migration 0014 now implements `memory_records`, `memory_revisions` and
+`memory_receipts` for typed trip/flight/hotel/bill claims. These are distinct from
+the general entity/obligation sketches below. Full append-only revisions carry
+account-bound evidence/quote/trip links; actor-bound idempotency receipts cover
+changes and no-ops. RLS and composite foreign keys protect tenant/account ownership.
+See [structured memory](STRUCTURED_MEMORY.md). No general entity graph is added.
+
 ADR-045's [owner reader](MESSAGE_READER.md) adds no columns or tables. It resolves
 existing immutable message versions/raw objects/attachment receipts, verifies
 source hashes and appends identifier-only read/export events. Complete small-body

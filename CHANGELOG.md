@@ -8,6 +8,12 @@ exact tested commits and results.
 
 ### Owner email reader (ADR-045)
 
+Latest addition: [ADR-046 structured memory](docs/STRUCTURED_MEMORY.md) implements
+reviewed trip/flight/hotel/bill records, immutable source-linked revisions,
+non-consuming change cursors, partial freshness summaries, labelled-format
+candidates and a separate developer editor. Additive migration 0014; no new
+dependency, provider writes, live model or automatic interpretation claim.
+
 The later [ADR-045 owner reader](docs/MESSAGE_READER.md) adds complete selected
 body text for MIME up to 1 MiB, bounded headers and explicit human-only verified
 original/leaf-part downloads. Large messages keep explicit projection limits;

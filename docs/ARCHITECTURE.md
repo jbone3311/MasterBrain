@@ -12,6 +12,11 @@ execution distinct in both diagrams and implementation.
 
 ## Latest executable additions
 
+[Structured memory](STRUCTURED_MEMORY.md), ADR-046, adds typed owner-reviewed
+travel/bill records, source-bound full revisions and a commit-ordered, non-consuming
+change feed. Candidate extraction is a narrow labelled-format parser, not an LLM
+or automatic ingestion stage. Freshness explicitly separates sync from interpretation.
+
 [Owner message reading](MESSAGE_READER.md), ADR-045, resolves immutable evidence
 to verified retained bytes under current human/owner/account authority. Small
 messages are read beyond search-excerpt limits, with inert text and bounded

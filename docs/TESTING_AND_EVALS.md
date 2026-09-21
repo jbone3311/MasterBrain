@@ -1,5 +1,13 @@
 # Testing and Evaluations
 
+ADR-046 adds [structured-memory tests](../tests/test_memory.py),
+[actual SQL/API tests](../tests/test_memory_postgres.py), and
+[owner-interface contracts](../tests/web_memory.test.cjs). They cover typed claims,
+abstention, review authority, source/tenant/account binding, idempotency/no-ops,
+history, concurrent updates and independent change cursors. The restore fixture
+now populates memory revisions/receipts. This is not general airline extraction
+quality, live assistant acceptance or actual browser/accessibility certification.
+
 Updated 2026-09-21. [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) documents the
 implemented bounded fictional generator, answer keys, export and database replay,
 along with the remaining quality/soak gaps. [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md)

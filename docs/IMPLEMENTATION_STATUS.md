@@ -5,6 +5,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 
 | Capability | Current implementation | Remaining gate |
 |---|---|---|
+| Structured memory | Typed reviewed trips/flights/hotels/bills, immutable evidence-backed revisions, idempotent publication, compact independent change cursors, partial freshness summary and developer UI | General email/LLM extraction, automatic interpretation coverage, guided editor, live/assistant acceptance, cross-account grouping, investment/project state |
 | Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks; verified synthetic logical dump/restore | Managed deployment, encryption/KMS, purge, offsite/PITR disaster-recovery drills |
 | Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker and bounded private-configured read CLI; fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/resume administration, hosted supervision/alerts, live acceptance and soak |
 | Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
@@ -33,6 +34,10 @@ do not create entities. Virtual labels do not change provider folders. A configu
 parser does not certify an online worker, and a completed job can have deferred attachments.
 
 ## Validation
+
+ADR-046 adds [structured memory](STRUCTURED_MEMORY.md). Its new exact-commit
+verification must be recorded in the build receipt; the reader receipt below
+predates this increment and does not certify the new schema/API.
 
 ADR-045 adds the [owner reader](MESSAGE_READER.md) and [fictional user test](USER_TESTING.md).
 The latter is a usability fixture, not database/live-mail acceptance. Its automated

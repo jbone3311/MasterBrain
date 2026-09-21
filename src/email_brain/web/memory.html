@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Email Brain · Structured memory</title><link rel="stylesheet" href="/style.css"></head>
+<body><main><header><h1>Trips, reservations and bills</h1>
+<p>Reviewed email claims—not live airline or bank information. Automatic interpretation is not enabled.</p>
+<a href="/">Back to email search</a></header>
+<section><h2>Connect to your test account</h2>
+<label for="memory-token">Owner access token</label><input id="memory-token" type="password" autocomplete="off">
+<label for="memory-account">Account ID</label><input id="memory-account" maxlength="36">
+<button id="memory-refresh">Refresh records and coverage</button><button id="memory-clear">Clear session</button>
+<p id="memory-status" role="status">Use a database-backed synthetic test account. The fictional reader-only preview is separate.</p></section>
+<section><h2>What we know</h2><div id="memory-summary"></div><div id="memory-records"></div>
+<button id="memory-more" hidden>More records</button></section>
+<section><h2>Changes since this page last checked</h2><button id="memory-changes">Check for changes</button>
+<p>This page keeps its own cursor in memory. Other assistants are unaffected. Reloading starts from the beginning.</p>
+<div id="memory-events"></div></section>
+<section><h2>Review a source email</h2>
+<label for="memory-evidence">Evidence ID from an email search result</label><input id="memory-evidence" maxlength="36">
+<button id="memory-extract">Suggest from labelled email</button>
+<p>The first parser understands only the labelled test format. Unsupported email stays unknown.
+You can instead enter a reviewed record manually. For updates, choose a record above first.</p>
+<label for="memory-quote">Exact supporting passage from the normalized email</label><textarea id="memory-quote" maxlength="2000"></textarea>
+<label for="memory-parent">Related trip ID (optional, flight/hotel only)</label><input id="memory-parent" maxlength="36">
+<label for="memory-payload">Record fields (JSON, developer preview)</label><textarea id="memory-payload" rows="16" maxlength="16000"></textarea>
+<p id="memory-editing">New record</p><button id="memory-new">Start new record</button>
+<label><input id="memory-reviewed" type="checkbox"> I reviewed these fields against the email. This is not independent verification.</label>
+<button id="memory-save">Save reviewed record</button></section>
+<footer>No provider writes, remote model calls or browser storage. Normal sign-in and a guided field editor remain future work.</footer>
+</main><script src="/memory.js"></script></body></html>

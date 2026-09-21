@@ -33,6 +33,8 @@ from email_brain.auth import Principal
 from email_brain.blobs import BlobError, BlobRef, EncryptedBlobStore
 from email_brain.document_jobs import POLICY, DocumentJobs
 from email_brain.domain.models import TenantContext
+from email_brain.memory import Memory
+from email_brain.memory_schema import MemoryWrite, Trip
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.normalize import PARSER_VERSION, NormalizedMessage
 from email_brain.oidc import AccessTokenVerifier, OIDCAuthenticator, OIDCConfig, VerifiedToken
@@ -381,6 +383,31 @@ def seed(
         require(len(hits) == 1, "synthetic seed search failed")
         evidence_id = hits[0]["evidence_id"]
         evidence = store.evidence(context, evidence_id)
+        # Populated memory/history/receipt tables must survive the same hash restore.
+        memory = Memory(store)
+        memory_request = MemoryWrite(
+            expected_revision=0,
+            evidence_id=evidence_id,
+            source_quote=keyword,
+            payload=Trip(kind="trip", title="Fictional restore trip"),
+            reviewed=True,
+        )
+        memory_record = uuid4()
+        memory.publish(human, account, memory_record, memory_request, uuid4())
+        memory.publish(
+            human,
+            account,
+            memory_record,
+            memory_request.model_copy(
+                update={
+                    "expected_revision": 1,
+                    "payload": Trip(
+                        kind="trip", title="Fictional restore trip", status="cancelled"
+                    ),
+                }
+            ),
+            uuid4(),
+        )
         require(len(evidence["attachments"]) == 3, "synthetic attachment seed failed")
         document_processor = SyntheticDocumentProcessor()
         documents = DocumentJobs(store, document_processor.processor_version)

@@ -7,6 +7,12 @@ See [status](IMPLEMENTATION_STATUS.md) and [features/methods](FEATURES_AND_METHO
 
 ## Reading this contract
 
+[ADR-046 structured memory](STRUCTURED_MEMORY.md#http-contract) now implements
+account-scoped `/memory/summary`, `/changes`, `/records`, record/history reads,
+human-only candidate extraction and reviewed PUT publication. This narrow REST
+slice supersedes the blanket planned-state statement above for travel/bills only.
+No MCP or real assistant connection is certified.
+
 [ADR-045 reader/export routes](MESSAGE_READER.md#http-contract) add a human-only
 `GET /v1/reader/{evidence_uuid}`, explicit `POST .../original` and
 `POST .../attachments/{receipt_uuid}`. They require current owner/evidence scope;

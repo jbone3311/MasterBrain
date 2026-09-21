@@ -15,6 +15,13 @@ worker supervision, production binary-intake policy, operational acceptance and 
 
 ## Next build packages
 
+Alongside identity/hosting, ADR-046 now supplies a synthetic owner-reviewed
+[travel/bill memory slice](STRUCTURED_MEMORY.md), with independent assistant
+change cursors. Next prove a complete travel correction/cancellation workflow,
+replace the developer JSON editor with guided fields, and evaluate candidate
+extraction on held-out realistic mail. Do not equate this slice with automatic
+mailbox interpretation or delay all product usability learning until hosting.
+
 These are the remaining delivery packages, not a list of components to rebuild.
 
 ADR-042 now supplies the optional [browser session backend](BROWSER_AUTH.md).

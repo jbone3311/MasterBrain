@@ -16,6 +16,11 @@ passed; documentation updates do not certify new functionality.
 
 ## The game plan in one minute
 
+New: [reviewed travel and bill memory](docs/STRUCTURED_MEMORY.md) stores typed
+trips/reservations/bills, evidence-backed revisions and independent change cursors.
+The `/memory` developer screen requires the database-backed service and migration
+0014; it is not automatic airline-email interpretation or a connected Grok tool.
+
 **Build a dependable read-only service first, then add understanding, then actions.**
 The destination is a hosted product that keeps working without Jim's computer,
 Factory or an available AI model. The current implementation runs locally or in

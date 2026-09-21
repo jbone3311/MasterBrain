@@ -5,6 +5,7 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 
 | Responsibility | Actual files |
 |---|---|
+| Structured travel/bill memory | [memory.py](../src/email_brain/memory.py), [memory_schema.py](../src/email_brain/memory_schema.py), [memory_extract.py](../src/email_brain/memory_extract.py), [memory.js](../src/email_brain/web/memory.js), [migration 0014](../migrations/0014_structured_memory.sql) |
 | Demo/migrate/serve | [cli.py](../src/email_brain/cli.py) |
 | REST/request boundary | [api.py](../src/email_brain/api.py), [schemas.py](../src/email_brain/schemas.py) |
 | Bootstrap identity | [auth.py](../src/email_brain/auth.py) |

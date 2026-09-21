@@ -7,6 +7,13 @@ implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
 
 ## API identity operations
 
+For [structured memory](STRUCTURED_MEMORY.md), stop writers, apply migration 0014
+and regrant runtime SELECT/INSERT before deploying. A 409 means stale intent/source
+or idempotency conflict: reload and review rather than silently forcing an update.
+A missing change cursor after restore requires re-bootstrap. Interpret no changes
+as no **reviewed memory** changes, never as complete email coverage. Rollback keeps
+the append-only tables and disables memory UI/routes; no mailbox action is involved.
+
 For owner reading/export failures, follow [MESSAGE_READER.md](MESSAGE_READER.md).
 `message.read`, `message.original_export`, `message.attachment_export` are
 identifier-only audit events, not proof a browser saved a file. A scrubbed 503 can

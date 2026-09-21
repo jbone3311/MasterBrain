@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-046](adr/046_structured_memory.md) adds reviewed trip/flight/hotel/bill memory,
+immutable revisions, independent change cursors and explicit partial freshness.
+Migration 0014 and bounded REST/developer UI do not imply automatic interpretation.
+
 [ADR-045](adr/045_owner_message_reader.md) adds a human-only full small-message
 reader, explicit original/leaf-part exports and source/authority verification.
 Large messages retain explicit projection limits and intact original downloads;
