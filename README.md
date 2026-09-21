@@ -55,14 +55,16 @@ every attachment has its own outcome.
 
 A separate [restricted PDF worker](docs/PDF_WORKER.md) now provides source-bound,
 page-level extraction groundwork with explicit partial/deferred outcomes. It is
-not wired into approval jobs, ingestion or search; the default image still has no
-PDF reader, and no malware-safety claim is made.
+now connected to a separate [synthetic document approval API/library](docs/DOCUMENT_PROCESSING.md),
+immutable results and opt-in document search. Ordinary ingestion still defers PDFs;
+UI/CLI controls are pending. The default image has no PDF reader and no malware-safety
+claim is made.
 
 ## What comes next
 
-1. Extend safe intake from held-message recovery to approved extraction of
-   deferred attachments in otherwise searchable messages. Preserve source and
-   attachment identity; do not hide good mail to force it through quarantine.
+1. Finish the document-processing owner/operator experience around the new
+   approved API/library: safe UI, explicit bounded CLI and operational controls.
+   Preserve body/evidence identity and separately resolve scanner/live policy.
 2. Complete supervised read-only operation, production identity, managed storage,
    recoverable keys and operator alerts; then accept one disposable live provider.
 3. Build evaluated project/reply state and assistant access; add separately

@@ -6,17 +6,18 @@ target design, not existing tables. [Migrations](../migrations/) are authoritati
 for deployed schema; see [code map](CODE_MAP.md) and [status](IMPLEMENTATION_STATUS.md).
 
 Read the sketches below as a target information model, not ready-to-run SQL.
-For example, proposed `mail_accounts`/`tenant_memberships` names do not rename the
-implemented `accounts`/`memberships` tables. The [worked project scenario](PRODUCT_WALKTHROUGH.md)
+`mail_accounts` and `tenant_memberships` already exist; their target field sketches
+are not a migration adding all proposed fields. The [worked project scenario](PRODUCT_WALKTHROUGH.md)
 explains why original evidence, current derived state and proposed actions need
-separate records. No document extraction table is added by the standalone PDF worker.
+separate records. The standalone reader adds no table; ADR-035 now adds its separate
+durable approval/result model.
 
-ADR-033's known-answer generator adds no schema. The next attachment-processing
-design is still pending: `recovery_jobs` references quarantine receipts, not arbitrary
-parts of ready messages. Do not reinterpret that foreign key or fabricate quarantine
-to implement document extraction. Any new source/part-bound approval or extraction
-version model requires an ADR, reviewed migration/grants and restore tests first.
-See [next work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
+Migration 0012 adds `document_jobs` and append-only `document_extractions`, receipt
+immutability, tenant/account/source composite keys, forced RLS, protected approval
+identity/transitions, and generated PDF text/FTS. Jobs bind a current source event,
+receipt, processor, policy and expiring human approval; results have per-receipt
+monotonic revisions and independent citations. The original `recovery_jobs` still
+references quarantine receipts. See [contract](DOCUMENT_PROCESSING.md).
 
 Migration 0011 adds `recovery_jobs_history` over tenant, account and descending
 immutable creation time/UUID. This supports all-state bounded history without

@@ -9,6 +9,8 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "document_jobs",
+    "document_extractions",
     "recovery_jobs",
     "recovery_attempts",
     "rule_simulations",
@@ -33,6 +35,8 @@ RUNTIME_SELECT = (
     "proposal_evidence",
 )
 RUNTIME_INSERT = (
+    "document_jobs",
+    "document_extractions",
     "recovery_jobs",
     "recovery_attempts",
     "rule_simulations",
@@ -117,6 +121,7 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
                 "sync_workers",
                 "message_sync_state",
                 "recovery_jobs",
+                "document_jobs",
             ),
         ),
     ):

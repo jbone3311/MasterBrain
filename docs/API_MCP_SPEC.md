@@ -21,6 +21,12 @@ owner intent behind these interfaces.
 
 ## Durable isolated processing jobs
 
+ADR-035 adds a **separate** [document approval/result API](DOCUMENT_PROCESSING.md):
+account document capabilities, attachment jobs, bounded job history/status/cancel
+and `GET /v1/documents/{document_id}`. Search accepts `include_documents: true`
+(default false). Human review/evidence approval and worker-only
+`email.document.process` are distinct; no HTTP execution or arbitrary upload.
+
 [Processing history and owner controls](PROCESSING_REVIEW_SCREEN.md) add
 `GET /v1/accounts/{account_id}/processing/jobs`, before the dynamic job-ID route.
 Owner/evidence scope, limit 1–50, same-account UUID cursor, immutable time/ID order;
@@ -32,11 +38,9 @@ The client cannot choose images, commands, sockets or storage. A separate
 owner-bound worker claims jobs through the library, not an HTTP execution endpoint.
 The ordinary synchronous retry route remains unchanged. No MCP transport is added.
 
-These grants target quarantine receipts. They are not a general API for extracting
-PDFs or processing deferred parts of ready messages. No attachment-extract endpoint,
-arbitrary file upload, password submission or binary worker selection is currently
-exposed. The source-bound document workflow remains a
-[separate design task](BACKLOG.md#eb-006-next-source-bound-document-processing).
+These MIME grants target quarantine receipts, not deferred parts of ready messages.
+The new document channel above handles approved synthetic PDFs independently.
+Neither channel exposes arbitrary file upload, passwords or binary worker selection.
 The synthetic packet/export/replay tooling is CLI-only, not an API/MCP addition.
 
 ## External evidence storage

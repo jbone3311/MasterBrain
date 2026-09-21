@@ -9,7 +9,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/scheduler, hosted processing supervision, live acceptance and soak |
 | Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
 | Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, integrated PDF intake, Office/OCR/archive extraction; versioned historical document reprocessing and raw download policy |
-| PDF worker groundwork | Separate source/part/hash-bound PDF contract, fixed restricted profile and dedicated optional image; bounded page text/partial/deferred outcomes | Durable tenant-authorized approval/job/result/FTS integration, scanner policy and real-world quality; ingestion still defers PDFs |
+| Approved PDF processing | Separate restricted worker; synthetic-only approval API/library, durable fenced jobs, immutable result revisions, opt-in document FTS and cited page excerpts | Owner UI/document CLI, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
 | Feedback | Typed proposals; human-reviewed sender rule simulation/activation; immutable revisions and rollback; virtual search labels | Rich predicates/protected-sender configuration, temporal/entity application, drift evaluation |
@@ -37,13 +37,13 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 The processing CLI/API/UI operate on approved held-message recovery, not arbitrary
 PDF/Office parts in ready messages. Ready-body search and deferred-attachment
-accounting can coexist. Source-bound attachment jobs and extraction publication
-still need their own approved design and integrated tests. This documentation
-review changes no executable capability. [Next contract](BACKLOG.md#eb-006-next-source-bound-document-processing).
+accounting can coexist. ADR-035 now adds a separate synthetic-only document-job
+API/library and extraction publication; it does not expand MIME approvals or the
+existing operator CLI. [Document contract](DOCUMENT_PROCESSING.md).
 
-ADR-034 supplies the [standalone PDF worker](PDF_WORKER.md), not that durable
-workflow. It grants no current UI/API processing action for a ready-message PDF.
-Exact-commit acceptance is recorded in the build receipt, not inferred from this row.
+ADR-034 supplies the [restricted PDF worker](PDF_WORKER.md); ADR-035 supplies the
+separate API/SQL/search workflow. UI controls remain absent. Exact-commit acceptance
+is recorded in the build receipt, not inferred from this row.
 
 ### Verified runtime
 

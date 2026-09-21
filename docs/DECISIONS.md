@@ -5,12 +5,15 @@ live in [adr/](adr/). Later explicit decisions supersede earlier limitations wit
 rewriting their history. The current status is in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 The documentation refresh changes explanations/navigation, not runtime privileges.
 
-September 21 alignment identifies the next unresolved boundary: approved binary
-attachment processing in ready mail. [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing)
-records the required design/acceptance work. No ADR for that behavior has been
-accepted by this documentation change; ADR-029/030 remain bounded MIME recovery.
+ADR-035 now defines the separate approved PDF source-to-search channel for ready
+mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion.
 
 ## Accepted
+
+[ADR-035](adr/035_approved_document_processing.md) adds synthetic-only document
+approval/jobs, immutable extraction revisions, opt-in FTS and cited results.
+Migration 0012 and a separate worker scope preserve source/body state. UI/operator
+integration, live/scanner policy and hosted acceptance remain separate gates.
 
 [ADR-034](adr/034_source_bound_pdf_worker.md) adds an explicit source-bound restricted
 PDF worker, separate image/contract and synthetic tests. No attachment queue,

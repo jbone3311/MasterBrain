@@ -1,6 +1,10 @@
 # Deployment
 
 Updated 2026-09-21. [GAME_PLAN.md](GAME_PLAN.md) explains the delivery stages.
+Migration 0012 and updated runtime grants are required for the separate
+[document channel](DOCUMENT_PROCESSING.md). Configure its exact processor only
+after the restricted worker is available; API configuration grants no Docker access.
+UI/document CLI and hosted deployment are not added by this increment.
 Migration 0011 adds the owner history index; ship compatible API/assets together
 and account for index-build locking. Hiding controls does not cancel existing
 approvals. The production topology below is planned, not provisioned.
@@ -30,7 +34,7 @@ No cloud infrastructure, real email connection or paid resource has been provisi
 The current default image deliberately excludes the PDF/Office fixture readers.
 Do not install development extras in a production API image to enable document
 intake. ADR-034 adds [Dockerfile.pdf](../Dockerfile.pdf), a dedicated opt-in synthetic
-worker image/profile, but durable source-bound job integration remains open.
+worker image/profile; ADR-035 adds a separate synthetic approval/result/search path.
 The local Docker isolation checks are not proof that
 an arbitrary managed container service provides equivalent isolation.
 

@@ -7,11 +7,19 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-035 document jobs](DOCUMENT_PROCESSING.md) bind synthetic-only human consent
+to a current attachment/source event, exact processor and fixed unscanned policy.
+The new worker-only scope cannot reuse MIME grants. Database-clock lease/approval,
+current-owner/account and source fences protect immutable publication/cached reuse.
+Document FTS is opt-in and current-source/latest-revision; historical reads remain
+owner-scoped. No scanner or real-mail authorization is implied. Original attachment
+receipts are now SQL append-only as well as runtime SELECT/INSERT-only.
+
 [ADR-034's PDF worker](PDF_WORKER.md) is a separately opted-in synthetic/local
 processing profile, not an API or broadened recovery permission. Whole-MIME and
 decoded-part hashes bind input; closed page-level output is parent-validated.
 It carries no provider/DB credentials, network or mounts and always reports
-`unscanned`. Durable tenant authorization/job/publication remains unimplemented.
+`unscanned`. ADR-035 now supplies its separate synthetic authorization/publication channel.
 Pypdf is present only in the dedicated worker/development environments, not the
 default API/MIME image. Do not run the pure child helper on real mail in-process.
 
@@ -23,7 +31,7 @@ validators of generated data and absent from the default runtime image. Pypdf's
 separate optional worker adoption above is not an unsandboxed production extraction
 path. No public corpus is imported.
 
-Future PDF/Office support requires an approved source/part-bound processing design;
+Live PDF/Office support still requires accepted scanner/processing policy;
 today's MIME recovery permission must not silently expand to binary readers or
 ready-message attachments. Keep parser success, malware-scan status and semantic
 trust independent. Preserve valid body search when an attachment fails. The

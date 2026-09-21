@@ -17,10 +17,12 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from email_brain.auth import Principal, TokenRegistry
 from email_brain.blobs import BlobError
+from email_brain.document_jobs import DocumentJobs
 from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.recovery_jobs import RecoveryJobs
 from email_brain.rules.control import RuleControl
 from email_brain.schemas import (
+    DocumentRequest,
     ProposalRequest,
     RecoveryRequest,
     ReviewRequest,
@@ -74,7 +76,11 @@ class BodyLimit:
 
 
 def create_app(
-    store: Store, registry: TokenRegistry, *, recovery_parser_version: str | None = None
+    store: Store,
+    registry: TokenRegistry,
+    *,
+    recovery_parser_version: str | None = None,
+    document_processor_version: str | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="Email Brain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
@@ -84,6 +90,7 @@ def create_app(
     rule_control = RuleControl(store)
     recovery_control = Recovery(store)
     recovery_jobs = RecoveryJobs(store, recovery_parser_version)
+    document_jobs = DocumentJobs(store, document_processor_version)
 
     def require(scope: str, *, human: bool = False) -> Callable[..., Principal]:
         def dependency(
@@ -267,6 +274,62 @@ def create_app(
         principal: Annotated[Principal, Depends(require("email.review", human=True))],
     ) -> dict[str, Any]:
         return recovery_jobs.cancel(principal, account_id, job_id)
+
+    @app.get("/v1/accounts/{account_id}/documents")
+    def document_capabilities(
+        account_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+    ) -> dict[str, Any]:
+        return document_jobs.capabilities(principal.context, account_id)
+
+    @app.post("/v1/accounts/{account_id}/attachments/{receipt_id}/jobs", status_code=202)
+    def enqueue_document(
+        account_id: UUID,
+        receipt_id: UUID,
+        body: DocumentRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        return document_jobs.enqueue(
+            principal,
+            account_id,
+            receipt_id,
+            body.expected_processor_version,
+            body.policy_version,
+            idempotency_key,
+        )
+
+    @app.get("/v1/accounts/{account_id}/documents/jobs")
+    def document_history(
+        account_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+        after: UUID | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 50,
+    ) -> dict[str, Any]:
+        return document_jobs.list(principal.context, account_id, limit=limit, after=after)
+
+    @app.get("/v1/accounts/{account_id}/documents/jobs/{job_id}")
+    def document_status(
+        account_id: UUID,
+        job_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+    ) -> dict[str, Any]:
+        return document_jobs.get(principal.context, account_id, job_id)
+
+    @app.post("/v1/accounts/{account_id}/documents/jobs/{job_id}/cancel")
+    def cancel_document(
+        account_id: UUID,
+        job_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        return document_jobs.cancel(principal, account_id, job_id)
+
+    @app.get("/v1/documents/{document_id}")
+    def document_evidence(
+        document_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+    ) -> dict[str, Any]:
+        return store.document_evidence(principal.context, document_id)
 
     @app.get("/v1/evidence/{evidence_id}")
     def evidence(

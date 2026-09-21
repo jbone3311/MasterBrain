@@ -784,11 +784,45 @@ class Store:
                 for row in attachment_rows:
                     row["result_type"] = "attachment"
                 rows.extend(attachment_rows)
+            if request.include_documents:
+                documents = conn.execute(
+                    "SELECT m.id,m.account_id,m.subject,m.sender,m.received_at,a.evidence_id,"
+                    "a.id AS attachment_id,a.safe_filename,d.id AS document_id,d.revision,"
+                    "d.processor_version,d.policy_version,d.status,d.reason,d.scanner_status,"
+                    "left(d.extracted_text,500) AS excerpt,"
+                    "ts_rank_cd(d.search_document,websearch_to_tsquery('simple',%s)) AS score "
+                    "FROM document_extractions d JOIN attachment_receipts a "
+                    "ON a.tenant_id=d.tenant_id AND a.account_id=d.account_id "
+                    "AND a.id=d.receipt_id "
+                    "JOIN message_versions v ON v.tenant_id=a.tenant_id AND v.id=a.evidence_id "
+                    "JOIN messages m ON m.tenant_id=v.tenant_id AND m.id=v.message_id "
+                    "AND m.raw_sha256=v.raw_sha256 AND m.parser_version=v.parser_version "
+                    "WHERE NOT m.deleted AND NOT m.quarantined "
+                    "AND (%s::uuid IS NULL OR m.account_id=%s) "
+                    "AND NOT EXISTS (SELECT 1 FROM document_extractions newer "
+                    "WHERE newer.tenant_id=d.tenant_id AND newer.receipt_id=d.receipt_id "
+                    "AND newer.revision>d.revision) "
+                    "AND d.status IN ('extracted','partial') "
+                    "AND d.search_document @@ websearch_to_tsquery('simple',%s) "
+                    "ORDER BY score DESC,m.received_at DESC,d.id LIMIT %s",
+                    (
+                        request.query,
+                        request.account_id,
+                        request.account_id,
+                        request.query,
+                        request.limit,
+                    ),
+                ).fetchall()
+                for row in documents:
+                    row["result_type"] = "document"
+                    row["untrusted_content"] = True
+                rows.extend(documents)
+            if request.include_attachments or request.include_documents:
                 rows.sort(
                     key=lambda row: (
                         -row["score"],
                         -row["received_at"].timestamp(),
-                        str(row.get("attachment_id", row["id"])),
+                        str(row.get("document_id", row.get("attachment_id", row["id"]))),
                     )
                 )
                 rows = rows[: request.limit]
@@ -797,9 +831,49 @@ class Store:
             for row in rows:
                 row["classification"] = classify(active["rules"], active["revision"], row["sender"])
                 row["citation"] = f"emailbrain://evidence/{row['evidence_id']}"
-                if row.get("attachment_id"):
+                if row.get("document_id"):
+                    row["citation"] = f"emailbrain://document/{row['document_id']}"
+                elif row.get("attachment_id"):
                     row["citation"] += f"#attachment={row['attachment_id']}"
             return rows
+
+    def document_evidence(self, ctx: TenantContext, document_id: UUID) -> dict[str, Any]:
+        self.require(ctx, "email.evidence.read")
+        with self.transaction(ctx) as conn:
+            row = conn.execute(
+                "SELECT d.id,d.account_id,d.receipt_id,d.processor_version,d.policy_version,"
+                "d.revision,d.created_at,d.status,d.reason,d.scanner_status,d.result,"
+                "a.evidence_id,a.safe_filename FROM document_extractions d "
+                "JOIN attachment_receipts a ON a.tenant_id=d.tenant_id "
+                "AND a.account_id=d.account_id AND a.id=d.receipt_id WHERE d.id=%s",
+                (document_id,),
+            ).fetchone()
+            if row is None:
+                raise NotFound()
+            result = row.pop("result")
+            pages = []
+            for page in result["pages"]:
+                excerpt = page["text"][:2000]
+                pages.append(
+                    {
+                        "number": page["number"],
+                        "excerpt": excerpt,
+                        "excerpt_sha256": hashlib.sha256(excerpt.encode()).hexdigest(),
+                        "offsets": [0, len(excerpt)],
+                        "truncated": len(page["text"]) > len(excerpt),
+                    }
+                )
+            row.update(
+                {
+                    "pages": pages,
+                    "page_count": result["page_count"],
+                    "source": result["source"],
+                    "untrusted_content": True,
+                    "citation": f"emailbrain://document/{document_id}",
+                }
+            )
+            self.audit(conn, ctx, "document.evidence_read", "document_extraction", str(document_id))
+            return row
 
     def evidence(self, ctx: TenantContext, evidence_id: UUID) -> dict[str, Any]:
         self.require(ctx, "email.evidence.read")

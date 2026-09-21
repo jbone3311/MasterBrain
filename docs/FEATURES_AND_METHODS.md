@@ -12,7 +12,7 @@ specific product outcome; none grants new mailbox or remote-model authority.
 | Incremental import | Native cursors, bounded pages, atomic checkpoint, leased worker, certified inventory | Fastmail worker; offline Gmail/Graph libraries; injected IMAP contract; no live enrollment |
 | Search with sources | PostgreSQL FTS, account filters, immutable evidence IDs, bounded excerpts | Working; no vectors or project/entity filters |
 | Account for attachments | Per-part receipts, source hashes, duplicate links, explicit outcomes | Plain/CSV/calendar text; binary PDF/Office/image/archive extraction deferred |
-| Read selected PDFs safely | Source/part/hash verification, restricted image, bounded page text and strict parent validation | Standalone tested worker; no integrated approval, stored extraction, FTS or malware scanner |
+| Read selected PDFs safely | Separate source-bound approvals, fenced restricted worker, immutable result revisions and opt-in FTS | Synthetic API/library; no document UI/CLI, live/scanner policy or hosted service |
 | Recover held mail | Owner retry; parser versions; isolated jobs bound to receipt/parser/expiry | API/UI, worker library and explicit bounded operator CLI; no hosted supervision |
 | Organize senders | Declarative match, review, bounded simulation, activation and immutable rollback | Narrow exact-domain persisted rules; virtual search labels only |
 | Send feedback | Typed evidence-linked proposals with idempotency and review state | REST works; most approved proposal types apply nothing; MCP absent |
@@ -66,10 +66,10 @@ message containing a PDF is not automatically eligible for that recovery queue.
 
 [ADR-034's separate worker](PDF_WORKER.md) now verifies exact MIME/part bytes and
 extracts bounded PDF page text in an optional restricted image. That is groundwork:
-no durable tenant approval, document result storage or FTS publication is connected.
+ADR-035 now connects separate synthetic tenant approval, result storage and opt-in FTS.
 Its always-unscanned result is never a replacement for scanner policy.
 
-**Required next:** an approved attachment job must identify the immutable source
+**Implemented API/library contract:** an approved attachment job identifies the immutable source
 version, exact MIME part and bytes, as well as the processor/image and policy.
 The worker needs resource limits and no network or provider credentials; the parent
 must validate returned text and provenance before publishing a new extraction.

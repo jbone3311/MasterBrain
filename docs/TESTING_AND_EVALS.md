@@ -65,6 +65,12 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[Document jobs](DOCUMENT_PROCESSING.md) add real-SQL lifecycle/race/authorization,
+API, immutable revision and current-versus-historical search tests. The PDF container
+suite now also runs source -> approval -> restricted PDF -> SQL -> cited search.
+Restore seeds completed/cancelled/pending document jobs and text/evidence revisions.
+These do not certify a document UI/CLI, malware scanner or live processing policy.
+
 [PDF worker tests](PDF_WORKER.md) independently exercise the source-bound request
 and strict parent response, known-answer PDF text, selected MIME paths/hashes,
 encrypted/empty-password/damaged/image-only/mixed-page inputs and logical budgets.
@@ -123,7 +129,7 @@ provider, malware scanner, cloud restore or model-quality evaluation is implied 
 
 ## Test layers
 
-### First binary-extraction acceptance gate (planned)
+### First binary-extraction acceptance gate (ADR-035 synthetic slice)
 
 Use a ready message from the existing known-answer packet whose PDF-only marker
 is currently absent from search. Prove explicit source/part/parser approval,

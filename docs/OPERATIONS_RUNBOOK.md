@@ -12,6 +12,13 @@ documents are understood, a worker is online, or the provider is current.
 
 ## Owner processing screen
 
+The new [document job API/library](DOCUMENT_PROCESSING.md) has independent approval,
+history, cancellation and result reads. It is not yet part of the owner screen or
+`process-jobs`. Inspect document `status` separately from extraction outcome and
+scan status. Stopping a worker does not cancel saved consent; disabling configuration
+only prevents new approvals. Cancel pending jobs explicitly and retain immutable
+results. Restore and expiry rules apply to both channels without merging permissions.
+
 Choose the account and refresh processing history manually. Approve only the
 displayed receipt/parser; inspect fixed status/outcomes and each attachment result.
 If submission is uncertain, retry with the retained key in the unchanged context
@@ -36,7 +43,7 @@ edit approval identity or reset claim counters to force work through.
 The new [PDF worker](PDF_WORKER.md) is a separate synthetic test/library profile,
 not an option in `process-jobs`. Do not pass its image as the configured MIME
 processor, manually rewrite a job parser ID or fabricate a held-message receipt.
-It has no persistence to repair; disable its caller/image to stop new work. Parser
+The reader itself has no persistence; ADR-035's separate document channel does. Parser
 text is unscanned, and source/contract/container errors are not cached document failures.
 
 Use [the operator command](PROCESSING_CONTROLLER.md) for private preflight and

@@ -12,6 +12,12 @@ execution distinct in both diagrams and implementation.
 
 ## Latest executable additions
 
+[Approved document processing](DOCUMENT_PROCESSING.md), ADR-035/migration 0012,
+connects the PDF worker to synthetic-only source-bound approvals, separate worker
+scope, immutable result revisions, opt-in document FTS and bounded page citations.
+The ADR-034 groundwork paragraph below describes that earlier increment only.
+No source/body mutation, default PDF parsing, UI controls or hosted service is added.
+
 [Source-bound PDF worker groundwork](PDF_WORKER.md) adds a separate closed pipe
 contract and optional restricted image. The child verifies retained MIME and part
 hashes before bounded extraction; the parent validates page-level outcomes. The
@@ -81,12 +87,11 @@ receipt. Ready status is accepted there only for a recorded same-parser recovery
 attempt, not as a general attachment-processing entry point. A ready message may
 have deferred binary attachments and no quarantine receipt at all.
 
-The next design must explicitly represent approved processing of such a part,
-including source-version/hash identity, independent result provenance and fenced
-publication. Do not manufacture quarantine or drop a valid body projection to fit
-the existing queue. Require an ADR before schema/API/permission changes. A separate
-isolated reader is not sufficient until authorized extraction/search/recovery is
-integrated. See [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing).
+ADR-035 represents approved processing of such a part with source/event identity,
+independent result revisions and fenced publication. Never manufacture quarantine
+or drop a valid body projection to fit the old queue. The synthetic API/library
+integration is distinct from pending UI/operator/live acceptance. See
+[document processing](DOCUMENT_PROCESSING.md) and [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing).
 
 ### Deployment style
 

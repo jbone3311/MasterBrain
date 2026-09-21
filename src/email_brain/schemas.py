@@ -29,6 +29,12 @@ class SearchRequest(ClosedModel):
     account_id: UUID | None = None
     limit: int = Field(default=10, ge=1, le=50)
     include_attachments: bool = True
+    include_documents: bool = False
+
+
+class DocumentRequest(ClosedModel):
+    expected_processor_version: str = Field(pattern=r"^sandbox-pdf-v1-[a-f0-9]{64}$")
+    policy_version: Literal["synthetic-unscanned-pdf-v1"]
 
 
 class RecoveryRequest(ClosedModel):

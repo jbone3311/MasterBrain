@@ -8,6 +8,11 @@ exact tested commits and results.
 
 ### Evidence, processing and review
 
+- Added a separate synthetic-only PDF approval API/library, worker scope, fenced
+  durable jobs, immutable extraction revisions, opt-in document FTS and bounded
+  page evidence. Migration 0012 protects receipts/results and approval identity.
+  No document UI/CLI, scanner, live-mail policy or hosted service is added.
+
 - Added separate source-bound restricted PDF worker/image and strict page-level
   contract, with hash/part validation, partial/deferred/failed outcomes and explicit
   unscanned status. No approval-job/SQL/FTS integration; ordinary ingestion still

@@ -31,9 +31,11 @@ from psycopg.conninfo import make_conninfo
 from email_brain.attachments import Attachment
 from email_brain.auth import Principal
 from email_brain.blobs import BlobError, BlobRef, EncryptedBlobStore
+from email_brain.document_jobs import POLICY, DocumentJobs
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.normalize import PARSER_VERSION, NormalizedMessage
+from email_brain.pdf_contract import PdfPage, PdfResult, source_for
 from email_brain.recovery import Recovery
 from email_brain.recovery_jobs import RecoveryJobs
 from email_brain.rules.control import RuleControl
@@ -45,6 +47,7 @@ from email_brain.schemas import (
     SearchRequest,
 )
 from email_brain.store import AccessDenied, IngestItem, NotFound, Store
+from email_brain.synthetic_formats import pdf_bytes
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 LABEL = "com.cw-email-brain.synthetic-restore"
@@ -207,6 +210,24 @@ class SeededTenant:
     keyword: str
     evidence_digest: str
     job_ids: tuple[UUID, UUID, UUID]
+    document_jobs: tuple[UUID, UUID, UUID]
+    document_id: UUID
+    document_digest: str
+
+
+class SyntheticDocumentProcessor:
+    """Known-answer result for restore, not real extraction/isolation acceptance."""
+
+    processor_version = "sandbox-pdf-v1-" + "a" * 64
+
+    def extract(self, raw: bytes, *, part_path: str, part_sha256: str) -> PdfResult:
+        return PdfResult(
+            source_for(raw, part_path, part_sha256),
+            "extracted",
+            "bounded_pdf_v1",
+            1,
+            (PdfPage(1, "restoredocumentproof"),),
+        )
 
 
 class SyntheticRestoreProcessor:
@@ -238,7 +259,10 @@ def synthetic_mime(keyword: str) -> bytes:
         filename="proof.txt",
     )
     message.add_attachment(
-        b"%PDF-synthetic-deferred", maintype="application", subtype="pdf", filename="unparsed.pdf"
+        pdf_bytes(("restoredocumentproof",)),
+        maintype="application",
+        subtype="pdf",
+        filename="unparsed.pdf",
     )
     calendar = (
         "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Synthetic restore//EN\r\n"
@@ -349,6 +373,29 @@ def seed(
         evidence_id = hits[0]["evidence_id"]
         evidence = store.evidence(context, evidence_id)
         require(len(evidence["attachments"]) == 3, "synthetic attachment seed failed")
+        document_processor = SyntheticDocumentProcessor()
+        documents = DocumentJobs(store, document_processor.processor_version)
+        attachment = next(
+            a["id"] for a in evidence["attachments"] if a["media_type"] == "application/pdf"
+        )
+        saved = documents.enqueue(
+            human, account, attachment, document_processor.processor_version, POLICY, uuid4()
+        )
+        output = documents.run_once(
+            Principal(replace(context, scopes=frozenset({"email.document.process"})), "worker"),
+            account,
+            document_processor,
+        )
+        require(output is not None and output["status"] == "completed", "document seed failed")
+        assert output is not None
+        document_id = output["extraction_id"]
+        cancelled = documents.enqueue(
+            human, account, attachment, document_processor.processor_version, POLICY, uuid4()
+        )
+        documents.cancel(human, account, cancelled["id"])
+        pending = documents.enqueue(
+            human, account, attachment, document_processor.processor_version, POLICY, uuid4()
+        )
         proposal = store.propose(
             context,
             ProposalRequest(
@@ -404,6 +451,9 @@ def seed(
                 keyword,
                 stable_digest(evidence),
                 job_ids,
+                (saved["id"], cancelled["id"], pending["id"]),
+                document_id,
+                stable_digest(store.document_evidence(context, document_id)),
             )
         )
     return tenants
@@ -450,6 +500,32 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         )
     for current, foreign in ((tenants[0], tenants[1]), (tenants[1], tenants[0])):
         ctx = current.context
+        documents = DocumentJobs(store, SyntheticDocumentProcessor.processor_version)
+        for job_id, expected in zip(
+            current.document_jobs, ("completed", "cancelled", "queued"), strict=True
+        ):
+            require(
+                documents.get(ctx, current.account_id, job_id)["status"] == expected,
+                "restored document job changed",
+            )
+        require(
+            stable_digest(store.document_evidence(ctx, current.document_id))
+            == current.document_digest,
+            "restored document evidence changed",
+        )
+        document_hits = store.search(
+            ctx, SearchRequest(query="restoredocumentproof", include_documents=True)
+        )
+        require(
+            len(document_hits) == 1 and document_hits[0]["document_id"] == current.document_id,
+            "restored document search failed",
+        )
+        try:
+            store.document_evidence(ctx, foreign.document_id)
+        except NotFound:
+            pass
+        else:
+            raise DrillFailure("foreign restored document accessible")
         jobs = RecoveryJobs(store, SyntheticRestoreProcessor.parser_version)
         history = jobs.list(ctx, current.account_id)
         require(
