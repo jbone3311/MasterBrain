@@ -9,6 +9,21 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
+## Start here: the next delivery
+
+Build the [production identity foundation](#suggested-next-issue), beginning with
+its ADR and explicit acceptance tests. The
+[backlog slice](BACKLOG.md#eb-007-next-production-identity-foundation) and
+[roadmap](ROADMAP.md#next-build-packages) agree on this priority. A signature
+verifier alone does not finish browser login, sharing or hosted operation.
+
+Preserve the working read/MIME/PDF operator paths, owner review and test mailbox.
+No new cloud registration, real account or mailbox privilege is authorized. After
+identity, the next delivery work is hosted storage/key recovery, supervision and
+operational acceptance; live promotion has its own [gate record](RELEASE_ACCEPTANCE.md).
+
+## Completed increments to review, not rebuild
+
 Latest runtime increment: [ADR-039](adr/039_read_worker_controller.md) adds the
 [bounded read command](READ_CONTROLLER.md). Review exact ingest-only worker
 identity, non-consuming preflight, fixed provider/secret binding, per-request/step
@@ -36,8 +51,9 @@ dependency, hosted supervision, owner PDF UI or live-mail policy is added.
 
 Previous increment: [approved document jobs/search](DOCUMENT_PROCESSING.md), ADR-035,
 migration 0012. Review separate worker scope, synthetic policy, fresh source/owner/
-lease fences, immutable revisions and latest-result FTS selection. UI and
-live/scanner policy remain open; do not rebuild the now-integrated backend.
+lease fences, immutable revisions and latest-result FTS selection. UI was absent
+at that increment; ADR-038 now supplies it. Live/scanner and browser acceptance
+remain open; do not rebuild the integrated backend or owner screen.
 
 Previous increment: [source-bound restricted PDF worker](PDF_WORKER.md), ADR-034.
 Review the dedicated image, hash/part binding, strict result validation, shared

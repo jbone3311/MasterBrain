@@ -41,7 +41,30 @@ seeding and isolated format fixtures remain supported. Milestone ordering is in
 
 ## What can proceed without owner answers
 
-### EB-006 next: source-bound document processing
+### EB-007 next: production identity foundation
+
+This is the next implementation assignment, not a completed feature. Write the
+ADR before adding authentication behavior or schema. See the
+[Factory contract](FACTORY_HANDOFF.md#suggested-next-issue).
+
+- Verify access tokens only against an explicitly configured issuer and API
+  audience; bound key discovery/cache behavior and fail closed on invalid tokens.
+- Resolve verified identity through server-owned tenant/actor permissions. No
+  automatic enrollment, request-selected tenant or authority from email content.
+- Recheck current authorization and test revocation across the actual API/database
+  boundary, not only a standalone signature-verification helper.
+- Keep local bootstrap mode explicit. Specify the browser/session and worker
+  boundaries; a verifier does not finish login, MFA, team grants or MCP OAuth.
+- Use a fake issuer and disposable SQL for rotation, outage, stale authority and
+  cross-tenant tests. No real app registration, identity account or public service.
+
+After this foundation, complete independent operation and owner acceptance in the
+[roadmap order](ROADMAP.md#next-build-packages). Broader EB-007 sharing/lifecycle
+requirements remain open even when a bounded token-verification slice passes.
+
+<a id="eb-006-next-source-bound-document-processing"></a>
+
+### EB-006: implemented document workflow and remaining acceptance
 
 ADR-034 implements the [separate PDF worker contract/profile](PDF_WORKER.md).
 ADR-035 now implements the [synthetic approval/API/SQL/search slice](DOCUMENT_PROCESSING.md)
@@ -58,7 +81,9 @@ working message search to reuse that queue.
 
 Deliver in independently verified slices:
 
-The original acceptance checklist follows; it is not a fresh blank-slate assignment.
+The original acceptance checklist follows; it is not a fresh blank-slate assignment
+or the next identity work package. The legacy section link is retained for existing
+references to the document-processing contract.
 The explicit document UI now has session/account/view and same-request tests;
 next complete browser, scanner/live and hosted acceptance. Keep those distinct from API/library proof.
 The separate document controller/configuration tests are now implemented; do not

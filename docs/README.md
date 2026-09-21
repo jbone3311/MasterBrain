@@ -43,7 +43,7 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 | What actually works, and how? | [Features/methods](FEATURES_AND_METHODS.md), [status](IMPLEMENTATION_STATUS.md), [code map](CODE_MAP.md) |
 | What do the technical methods mean for me? | [Methods guide](METHODS_GUIDE.md): evidence, retries, search, corrections and permission boundaries |
 | Where will it run and what stays local? | [Hosting decision](HOSTING_DECISION.md), [deployment](DEPLOYMENT.md) |
-| What is the team building next? | [Roadmap](ROADMAP.md), [EB-006 contract gap](BACKLOG.md#eb-006-next-source-bound-document-processing), [Factory handoff](FACTORY_HANDOFF.md) |
+| What is the team building next? | [Identity foundation](BACKLOG.md#eb-007-next-production-identity-foundation), [roadmap sequence](ROADMAP.md#next-build-packages), [Factory assignment](FACTORY_HANDOFF.md#suggested-next-issue) |
 | How do we test believable mail and attachments? | [Runnable mailbox guide](TEST_MAILBOX_PLAN.md), [evaluation plan](TESTING_AND_EVALS.md) |
 | What has actually passed? | [Exact-commit build receipt](BUILD_RECEIPT.md), not roadmap targets |
 | How should a developer contribute? | [Contributor guide](../CONTRIBUTING.md), [Factory handoff](FACTORY_HANDOFF.md) |
@@ -52,8 +52,11 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 
 The documentation review explains the owner scenario, methods, attachment coverage,
 failure behavior and dependency-ordered delivery plan. The latest consistency pass
-aligns current claims with ADR-035/036/038, explains the methods in plain language,
+aligns current claims through ADR-039, explains the methods in plain language,
 and checks contribution/release guides and GitHub review templates automatically.
+It separates completed synthetic PDF/read-operator work from the next identity,
+hosted-operation and live-acceptance packages. Authentication research is not an
+implemented login feature; the current API still uses local bootstrap credentials.
 [Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
 keep future changes traceable. Browser/accessibility and live/scanner policy remain
 pending for the document channel. Research counts retain their actual observation dates; no hosted

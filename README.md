@@ -14,6 +14,25 @@ paid cloud resource or remote model is enabled by this repository.
 Documentation updated September 21, 2026. [Verification receipts](docs/BUILD_RECEIPT.md) identify exactly what
 passed; documentation updates do not certify new functionality.
 
+## The game plan in one minute
+
+**Build a dependable read-only service first, then add understanding, then actions.**
+The destination is a hosted product that keeps working without Jim's computer,
+Factory or an available AI model. The current implementation runs locally or in
+test environments; it is not that hosted service yet.
+
+| Stage | What the owner gets | Where we stand |
+|---|---|---|
+| Preserve and find | Search mail and supported attachments with traceable sources | Synthetic prototype implemented and tested |
+| Run independently | Secure remote access, supervised sync, backups and failure alerts | Next delivery milestone; identity is the next build assignment |
+| Understand and learn | Current projects, people, commitments and reviewed preferences | Narrow sender rules exist; richer state and evaluated inference remain planned |
+| Connect and act | Scoped assistant/team access, then previewed filing and drafts | Planned; no assistant integration or mailbox-write path enabled |
+
+For each feature, the [feature guide](docs/FEATURES_AND_METHODS.md) explains its
+benefit, method and limitations. The [roadmap](docs/ROADMAP.md#next-build-packages)
+identifies the next work; the [release gates](docs/RELEASE_ACCEPTANCE.md) explain
+what must be proved before it can be used on real mail.
+
 ## Understand the product
 
 - [Game plan](docs/GAME_PLAN.md): the finished product and how we get there.
@@ -67,17 +86,17 @@ claim is made.
 
 ## What comes next
 
-1. Build the production identity boundary, operational visibility and supervision. The
-   [bounded read command](docs/READ_CONTROLLER.md) and synthetic PDF owner workflow
-   now exist; browser/accessibility acceptance, scanner/live policy and hosted
-   worker supervision remain distinct gates.
-2. Complete production identity, managed storage,
-   recoverable keys and operator alerts; then accept one disposable live provider.
+1. Build the production identity boundary with fake-issuer and real-database tests.
+   A valid identity must map to server-controlled permissions, not choose a tenant.
+2. Complete managed storage/key recovery, worker supervision, operator alerts and
+   browser/document-policy acceptance; then accept one authorized disposable provider.
 3. Build evaluated project/reply state and assistant access; add separately
    approved mailbox actions only after those foundations.
 
 See [roadmap acceptance gates](docs/ROADMAP.md) and the
 [Factory next assignment](docs/FACTORY_HANDOFF.md#suggested-next-issue).
+The [bounded read command](docs/READ_CONTROLLER.md) and synthetic PDF owner
+workflow already exist; the next assignment must build on them, not rebuild them.
 
 ## What the finished product adds
 

@@ -42,11 +42,14 @@ effects make this feedback loop useful without permitting self-modifying automat
 
 1. Prove synthetic ingestion → Postgres → FTS/evidence → review, including replay,
    RLS and attachment accounting. This prototype implements that bounded slice.
-2. Complete one read-only connector, durable poison-message quarantine, encrypted
-   objects, reconciliation and backup restore. Fastmail JMAP is the provisional
-   engineering default, not a claim Jim's first account is enrolled.
-3. Add OIDC, owner review UX, rate limits, audit export, attachment sandbox/scanner
-   and operational health. Ship no Internet-facing service before these gates.
+2. Preserve the implemented Fastmail worker/operator, quarantine, local encrypted
+   objects, reconciliation and synthetic restore. Complete identity first, then
+   managed storage/key recovery, enrollment and supervised operation. Fastmail is
+   the engineering default, not a claim Jim's first account is enrolled.
+3. Complete browser acceptance of existing owner controls, rate limits, audit export,
+   deployed attachment isolation/scanner policy and operational health. Accept an
+   authorized disposable-provider pilot before real-mail rollout. Ship no
+   Internet-facing service before the applicable release gates.
 4. Expand the implemented narrow reviewed virtual rules; calibrate local extraction
    on approved labeled data. Add people/projects/obligations as evidence-backed projections.
 5. Add scoped assistant/team access with production authorization and independently
@@ -57,7 +60,7 @@ effects make this feedback loop useful without permitting self-modifying automat
    remote escalation. Avoid graph infrastructure unless relational limits are measured.
 
 Not yet production-ready: live sync, provider enrollment, production document
-intake/owner controls, OIDC, full team grants, production backup/purge and authenticated MCP
+policy and browser acceptance, OIDC, full team grants, production backup/purge and authenticated MCP
 remain unfinished. See [status](IMPLEMENTATION_STATUS.md), [backlog](BACKLOG.md),
 [hosting recommendation](HOSTING_DECISION.md), and [open choices](OPEN_QUESTIONS.md).
 

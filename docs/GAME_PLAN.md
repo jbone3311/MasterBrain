@@ -81,7 +81,22 @@ does not import mail. Connectors read provider changes; a future separately appr
 executor would handle provider drafts/filing. Factory builds and audits the product,
 but is not in the deployed request or processing path.
 
-## The immediate implementation gap
+## The immediate implementation gap: identity and independent operation
+
+The next build assignment is the production identity boundary: verify the caller
+against a configured trust source, map that identity to existing server-controlled
+access and enforce current permissions when data is used. Unknown identities must
+not create tenants or grant themselves access. The existing bootstrap token file
+is for local operation, not a completed remote sign-in experience.
+
+After that foundation, complete hosted storage/key recovery, supervised workers,
+enrollment administration and alerts. Browser/document-policy acceptance and a
+disposable-provider pilot are separate proofs. The [roadmap](ROADMAP.md#next-build-packages)
+and [Factory assignment](FACTORY_HANDOFF.md#suggested-next-issue) define this order.
+No account registration, hosting purchase or real-mail connection follows merely
+from approving the product plan.
+
+### Attachment coverage is still a release gate
 
 Attachment accounting and attachment understanding are separate milestones. We
 already know a PDF arrived and can preserve it. We cannot yet extract/index its
@@ -103,7 +118,7 @@ remaining browser/live gates; the team should not rebuild the completed backend/
 
 ## Build sequence
 
-### The next complete user outcome
+### Reuse the completed synthetic owner workflow
 
 The implemented owner-visible path is: find a synthetic message, select its eligible PDF,
 see the exact processor/policy and explicitly approve it, inspect or cancel the

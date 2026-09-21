@@ -6,8 +6,9 @@ current behavior; [status](IMPLEMENTATION_STATUS.md) identifies remaining gates.
 
 ## Release boundaries
 
-- **Current prototype:** synthetic read/search/evidence/review, narrow virtual
-  sender rules, bounded attachment handling, durable recovery API/UI/libraries and
+- **Current prototype:** synthetic read/search/evidence/review, bounded read-worker
+  operator command, narrow virtual sender rules, bounded attachment handling,
+  durable recovery API/UI/libraries and
   separate synthetic PDF approval/result/search API/library and operator command
   with a separate document owner review/search/evidence screen.
 - **First live release:** one explicitly enrolled read-only provider, hosted

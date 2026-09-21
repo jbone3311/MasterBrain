@@ -72,6 +72,12 @@ exact tested commits and results.
 
 ### Documentation and delivery plan
 
+- Refined the GitHub landing page with a one-minute product/delivery map, explained
+  identity versus permission, and aligned roadmap/backlog/Factory priority on the
+  next identity foundation. Kept completed read/PDF/operator work separate from
+  remaining browser, scanner, hosted and live gates; preserved legacy document
+  links and historical verification/research. No authentication or runtime change.
+
 - Added a plain-language methods guide and a specific next owner-workflow outcome.
   Strengthened offline documentation checks to cover required guides and GitHub
   issue/PR templates, local paths and supported section links, with synthetic

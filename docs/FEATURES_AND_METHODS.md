@@ -26,6 +26,12 @@ For a less technical explanation of the methods and why they are separate, use
 | Share securely | API checks and tenant RLS, then explicit account/project grants | Owner foundation works; OIDC/invitations/team grants pending |
 | Run independently | Supervised workers, managed storage, alerts, restores, deployment artifacts | Local/CI and restore drill; no hosted service |
 
+The next work is the [identity foundation](BACKLOG.md#eb-007-next-production-identity-foundation),
+followed by the independent-service gates in the [roadmap](ROADMAP.md#next-build-packages).
+“Owner foundation works” does not mean remote sign-in, team sharing or assistant
+connections work. [Identity versus permission](METHODS_GUIDE.md#identity-is-not-the-same-as-permission)
+explains the method and why a token verifier cannot substitute for authorization.
+
 ## Code first, models second
 
 The [read command](READ_CONTROLLER.md) supplies private preflight, a separate

@@ -101,3 +101,10 @@ The current product/status/roadmap pages now distinguish that implemented UI fro
 pending browser accessibility, live-document policy and hosted acceptance. Its
 verification receipt also records the SQL-to-UI scan-status mismatch and correction;
 passing hand-authored UI fixtures alone was not sufficient acceptance.
+
+The post-ADR-039 editorial pass adds a one-minute product map and aligns the
+landing pages, game plan, roadmap, backlog and Factory assignment on identity as
+the next build package. Completed read/PDF operator and owner workflows stay
+marked implemented; browser/live/hosted gates stay open. The old EB-006 section
+anchor remains valid for existing links. This pass changes documentation only,
+does not implement authentication and does not refresh external research counts.

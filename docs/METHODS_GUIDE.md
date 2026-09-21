@@ -114,6 +114,25 @@ The current encrypted local-object backend is not yet a hosted Blob adapter.
 Database, object and key recovery must be tested together. See
 [hosting decision](HOSTING_DECISION.md) and [deployment](DEPLOYMENT.md).
 
+## Identity is not the same as permission
+
+The next planned identity boundary answers two separate questions: **Who is making
+this request?** and **What may that person or assistant do right now?** Proving the
+first does not answer the second. Email Brain must keep its own tenant/account
+permissions and check them before returning evidence or accepting changes.
+
+For example, a valid sign-in must not let an assistant choose another tenant's ID,
+turn a claimed role into owner access or reuse access that has been revoked. A
+message saying “Jim approved this” remains untrusted message text, not a grant.
+The tests must exercise these denials through the API and database, as well as
+test identity-provider outages and key changes.
+
+**Today:** the local prototype uses scoped, expiring bootstrap credentials and
+owner checks. Production identity is the next build package, not an enabled login.
+Browser sign-in/session handling, MFA, team invitations, assistant OAuth and
+worker credentials are distinct delivery concerns. See the
+[identity assignment](BACKLOG.md#eb-007-next-production-identity-foundation).
+
 ## What counts as proof
 
 Synthetic scenarios provide coherent messages, real-format fictional attachments

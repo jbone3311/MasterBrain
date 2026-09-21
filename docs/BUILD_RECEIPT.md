@@ -2,6 +2,33 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Documentation-only next-delivery review
+
+Reviewed 2026-09-21 from clean base **c721f52a7811e236cc3de704e397f48eda602f01**.
+That base's [CI 35591511467](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35591511467)
+was observed successful. The following local results cover the editorial working
+tree, not an already-published revision or a new runtime feature:
+
+- Root product map, feature/method explanations, roadmap, backlog and Factory
+  handoff now agree: identity is next; existing synthetic PDF/read commands and
+  owner controls must not be rebuilt. Hosting, browser, scanner/live acceptance
+  and broader grants remain separate gates. No source/schema/dependency change.
+- All **86 Markdown documents** passed required-inventory and local-link/heading
+  checks; **28 documentation-checker tests** passed. Legacy EB-006 navigation is
+  retained. Link checks do not prove factual freshness or rendered accessibility.
+- Locked offline dependency sync, lint, typing over **42 source modules**, repository
+  quality gate and diff checks passed. Full local Python: **1,523 passed, 249 SQL
+  cases explicitly skipped**, with two existing deprecation warnings. **84 Node
+  contracts passed**. Repeated gate suites are not extra tests.
+- No local database/container/live tests were newly run. The runtime's real SQL,
+  restricted-container and restore evidence remains attached to 0b4f0d3 below.
+  Public-source activity/pricing was not rescanned and its measurement dates are
+  unchanged. No identity provider, mailbox or hosted resource was contacted.
+
+Publication CI must be checked against the resulting documentation commit; the
+prior runtime receipt is not a substitute for that check. This is a documentation
+refresh, not completion of the active product build or production identity work.
+
 ## Bounded read-worker operator
 
 Runtime **0b4f0d33bbdfedaad42dbbc7b2f09991cc2af923** passed
