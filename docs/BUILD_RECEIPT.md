@@ -2,6 +2,30 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Browser session backend — local checkpoint
+
+ADR-042's optional backend/REST slice was checked from base **611ee2dd87a30b0e334e69fbb834234b96d504d9**.
+That base's [documentation CI 35597127919](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35597127919)
+passed; it does not verify the new backend. Publication CI/restore must supply
+exact-commit SQL/container evidence before this increment is accepted.
+
+- **1,766 local Python passes, 294 explicit SQL skips**, two existing deprecation
+  warnings; **84 Node contracts** pass. Lint, typing over **45 source modules**,
+  separate restore-script typing, locked sync, repository gate and diff checks pass.
+- **102 new offline browser cases**, **ten new SQL/API cases**, and one added
+  key-reader EOF deadline regression are present. The SQL cases are not local
+  passes. Fake authorization/token/key HTTP and generated RSA keys only.
+- Coverage includes state/PKCE/issuer/client, unexpected ID/refresh token denial,
+  expiry/capacity/restart, concurrent callbacks/reads, logout and late cancellation,
+  current mapping, cookie/Host/Origin/CSRF/fetch metadata and private configuration
+  redaction. SQL cases exercise both profiles, search/evidence isolation and binding
+  revision/membership/expiry. Key retrieval now checks EOF time and caps before append.
+- Documentation checks cover **91 Markdown files and 774 local paths/fragments**
+  before receipt-only additions. No schema, dependency, grant or restore fixture changes.
+- Default CLI/UI remain unchanged. Next wire private operator/TLS configuration
+  and owner UI, then prove actual browser behavior. No real issuer, MFA policy,
+  refresh/ID-token login, distributed sessions, public hosting or mailbox enabled.
+
 ## Verified identity foundation and response hardening
 
 Runtime **88af6332012af820eedcede9ae78adff34a930df** passed

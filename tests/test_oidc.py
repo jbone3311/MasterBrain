@@ -519,6 +519,16 @@ def test_weak_rsa_key_rejected(issuer):
         issuer.verifier().verify(token(issuer.key, issuer.config))
 
 
+def test_completed_metadata_response_still_obeys_deadline(issuer, monkeypatch):
+    times = iter([0.0, 1.0, 11.0])
+    monkeypatch.setattr(
+        identity_module, "time", SimpleNamespace(time=time.time, monotonic=lambda: next(times))
+    )
+    with pytest.raises(AuthenticationUnavailable):
+        issuer.verifier().verify(token(issuer.key, issuer.config))
+    assert issuer.urls == [issuer.config.discovery_url]
+
+
 def test_mixed_key_set_ignores_unsupported_keys(issuer):
     issuer.entries.append({"kid": "unsupported", "kty": "EC", "alg": "ES256"})
     assert issuer.verifier().verify(token(issuer.key, issuer.config))

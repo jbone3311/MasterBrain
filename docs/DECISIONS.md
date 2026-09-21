@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-042](adr/042_browser_authorization_sessions.md) defines the explicit browser
+code/PKCE and server-side session flow. The optional backend/REST boundary exists;
+operator CLI, owner UI and actual browser/TLS acceptance remain required.
+
 [ADR-041](adr/041_stream_deadline_checks.md) closes application chunk-buffering
 gaps in the four HTTP readers, with bounded accumulation and delayed-EOF checks.
 Existing scopes, response limits and connector availability remain unchanged.

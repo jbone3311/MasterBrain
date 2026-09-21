@@ -9,6 +9,11 @@ specific product outcome; none grants new mailbox or remote-model authority.
 For a less technical explanation of the methods and why they are separate, use
 [How Email Brain works](METHODS_GUIDE.md).
 
+The [browser session backend](BROWSER_AUTH.md) now exists by explicit library
+injection: it trades a one-use code for verified API authority, discards the API
+token and uses a short-lived opaque cookie. Operator/TLS wiring and owner UI are
+next; the default screen has not become a complete sign-in experience.
+
 | Owner benefit | Method | Current boundary |
 |---|---|---|
 | Incremental import | Native cursors, bounded pages, atomic checkpoint, leased worker, certified inventory | Fastmail worker plus explicit bounded read CLI; offline Gmail/Graph libraries; injected IMAP contract; no live enrollment |

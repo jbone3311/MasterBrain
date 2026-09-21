@@ -20,6 +20,11 @@ identity is immutable; administrator mutations emit existing audit events with
 database-role attribution, not tokens/subjects. Saved request contexts recheck
 binding revision, scope/kind, expiry and owner membership. See [identity](IDENTITY_AUTH.md).
 
+ADR-042's optional [browser sessions](BROWSER_AUTH.md) add no migration: bounded
+ephemeral process-memory records hold hashed random handles, current-principal
+snapshots and expiries, never API tokens. Restart discards sessions/flows. SQL
+identity bindings remain authoritative; this is not distributed session storage.
+
 Migration 0012 adds `document_jobs` and append-only `document_extractions`, receipt
 immutability, tenant/account/source composite keys, forced RLS, protected approval
 identity/transitions, and generated PDF text/FTS. Jobs bind a current source event,

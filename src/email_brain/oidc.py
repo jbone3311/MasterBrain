@@ -197,9 +197,11 @@ class AccessTokenVerifier:
             # Do not buffer up to a caller-selected chunk size: a slow drip could
             # otherwise postpone the elapsed-time check until that buffer fills.
             for chunk in response.iter_bytes():
-                data.extend(chunk)
-                if len(data) > limit or time.monotonic() - started > 10:
+                if len(data) + len(chunk) > limit or time.monotonic() - started > 10:
                     raise ValueError("issuer response limit")
+                data.extend(chunk)
+            if time.monotonic() - started > 10:
+                raise ValueError("issuer response deadline exceeded")
             return _object(bytes(data))
 
     def _refresh(self) -> dict[str, RSAPublicKey]:

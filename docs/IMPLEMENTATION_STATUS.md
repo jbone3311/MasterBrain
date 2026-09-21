@@ -33,6 +33,12 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
+ADR-042 now supplies the optional [browser authorization/session backend](BROWSER_AUTH.md),
+including fake code exchange, current mapping, cookie/Origin/CSRF, expiry and
+cancellation/replay fences. It is available through explicit `create_app` injection,
+not default `serve` or the owner UI. Operator/TLS wiring and browser acceptance
+are the next integration; no production sign-in or hosted availability is claimed.
+
 ### Latest verified runtime
 
 **88af633** passed [CI 35596527992](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596527992):

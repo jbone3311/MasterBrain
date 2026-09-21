@@ -5,6 +5,10 @@ This is a loopback **access-token resource server**, not a complete sign-in syst
 or permission to expose the application publicly. Verification belongs in the
 [exact-commit receipt](BUILD_RECEIPT.md).
 
+ADR-042 subsequently adds an optional [delegated browser session backend](BROWSER_AUTH.md)
+over this verifier. CLI/UI and actual browser acceptance remain next. It requests
+API scopes only and does not convert ID tokens into API credentials.
+
 ## What it does
 
 ```text

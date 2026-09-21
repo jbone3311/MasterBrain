@@ -17,6 +17,8 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from email_brain.auth import AuthenticationUnavailable, Authenticator, Principal
 from email_brain.blobs import BlobError
+from email_brain.browser_auth import SESSION_COOKIE, BrowserAuth, BrowserDenied
+from email_brain.browser_routes import browser_cookie, browser_principal, browser_router
 from email_brain.document_jobs import DocumentJobs
 from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.recovery_jobs import RecoveryJobs
@@ -81,7 +83,10 @@ def create_app(
     *,
     recovery_parser_version: str | None = None,
     document_processor_version: str | None = None,
+    browser_auth: BrowserAuth | None = None,
 ) -> FastAPI:
+    if browser_auth is not None and browser_auth.authenticator is not registry:
+        raise ValueError("browser and API must share the same authenticator")
     app = FastAPI(
         title="Email Brain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
     )
@@ -91,6 +96,10 @@ def create_app(
     recovery_control = Recovery(store)
     recovery_jobs = RecoveryJobs(store, recovery_parser_version)
     document_jobs = DocumentJobs(store, document_processor_version)
+    if browser_auth is not None:
+        if browser_auth.authenticator.store is not store:
+            raise ValueError("browser and API must share the same Store")
+        app.include_router(browser_router(browser_auth))
 
     def require(scope: str, *, human: bool = False) -> Callable[..., Principal]:
         def dependency(
@@ -98,11 +107,15 @@ def create_app(
             credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
         ) -> Principal:
             authorization = request.headers.getlist("authorization")
-            principal = (
-                registry.authenticate(credentials.credentials)
-                if credentials and len(authorization) == 1
-                else None
-            )
+            principal: Principal | None
+            if browser_auth is not None and browser_cookie(request, SESSION_COOKIE) is not None:
+                principal = browser_principal(request, browser_auth)
+            else:
+                principal = (
+                    registry.authenticate(credentials.credentials)
+                    if credentials and len(authorization) == 1
+                    else None
+                )
             if principal is None:
                 raise HTTPException(
                     401,
@@ -163,6 +176,10 @@ def create_app(
         request: Request, exc: AuthenticationUnavailable
     ) -> JSONResponse:
         return JSONResponse(status_code=503, content={"error": "authentication_unavailable"})
+
+    @app.exception_handler(BrowserDenied)
+    async def browser_denied_handler(request: Request, exc: BrowserDenied) -> JSONResponse:
+        return JSONResponse(status_code=401, content={"error": "browser_session_denied"})
 
     @app.exception_handler(RecoveryUnavailable)
     async def recovery_handler(request: Request, exc: RecoveryUnavailable) -> JSONResponse:

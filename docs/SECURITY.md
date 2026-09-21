@@ -7,6 +7,13 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-042 browser backend](BROWSER_AUTH.md) adds fixed code/PKCE exchange and
+opaque server-side sessions only by explicit library injection. Current human
+mapping/SQL checks, one-use browser state, cancellation fences, cookie/Origin/CSRF
+and bounded process storage apply. No API/ID/refresh token is persisted in the
+browser. Private CLI/TLS wiring, owner UI and actual browser acceptance remain
+next; this is not a deployed sign-in/MFA system or authorization for public ingress.
+
 [ADR-040 identity foundation](IDENTITY_AUTH.md) adds explicit configured access-token
 verification and administrator-owned SQL identity mappings. Fixed issuer/audience/
 client/profile, bounded public-key retrieval, current binding revision/scope/expiry

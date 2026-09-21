@@ -7,6 +7,13 @@ See [status](IMPLEMENTATION_STATUS.md) and [features/methods](FEATURES_AND_METHO
 
 ## Reading this contract
 
+ADR-042 adds an explicitly injected [browser session backend](BROWSER_AUTH.md):
+`GET /auth/session`, `POST /auth/login`, `GET /auth/callback`, `POST /auth/logout`.
+These are absent from default `serve`; CLI/UI integration remains next. Cookie
+requests retain SQL authority and require exact Origin/CSRF for unsafe methods;
+cookie plus bearer is rejected. The following ADR-040 paragraph describes that
+earlier increment, not the new optional browser routes.
+
 [ADR-040](IDENTITY_AUTH.md) adds explicit `serve --oidc-config` authentication, not
 new data routes. RFC access tokens or configured Entra v2 tokens map to existing
 administrator-owned SQL bindings; local scopes/current owner access govern requests.
@@ -140,8 +147,9 @@ the bootstrap examples describe the target, not implemented MCP/actions:
 
 All content routes also require an existing owner membership. No tenant/user IDs
 are accepted in payloads. Auth is either expiring server-bound bootstrap tokens or
-the explicit configured access-token/mapping mode above; browser OIDC/session
-lifecycle is not implemented. Requests cap at 32 KiB before JSON decoding; schemas reject
+the explicit configured access-token/mapping mode above. Optional injected cookie
+sessions are described above; full operator/UI browser lifecycle is unfinished.
+Requests cap at 32 KiB before JSON decoding; schemas reject
 extra fields. Evidence excerpts cap at 4,000 characters plus bounded per-attachment
 excerpts. Validation errors do not echo input. No action/send/delete/raw SQL/MCP
 transport endpoint exists. The service is loopback-only and not Internet-ready.

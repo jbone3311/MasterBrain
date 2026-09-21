@@ -17,6 +17,11 @@ worker supervision, production binary-intake policy, operational acceptance and 
 
 These are the remaining delivery packages, not a list of components to rebuild.
 
+ADR-042 now supplies the optional [browser session backend](BROWSER_AUTH.md).
+Package 1 next wires private operator/TLS configuration and owner UI, followed by
+actual browser acceptance. A fake HTTPS test client does not prove browser cookies,
+deployed TLS, MFA or hosted availability.
+
 | Order | Package | Completion evidence |
 |---|---|---|
 | 1 | **Identity lifecycle (EB-007/021):** browser sign-in/session and enrollment/revocation controls over ADR-040's implemented API token/mapping foundation | New ADR; fake authorization server, callback/session/CSRF and revocation tests; browser acceptance; real issuer policy/enrollment only with approval |

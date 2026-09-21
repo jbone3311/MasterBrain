@@ -2,6 +2,12 @@
 
 Updated 2026-09-21. [GAME_PLAN.md](GAME_PLAN.md) explains the delivery stages.
 
+ADR-042's [optional browser backend](BROWSER_AUTH.md) is library-injected only;
+operator/TLS and UI wiring remain next. It requires a single API process, fixed
+HTTPS origin/redirect and private confidential-client configuration. Restart
+invalidates sessions. Do not expose it publicly or scale replicas based only on
+fake-issuer tests; it provisions no TLS, issuer, MFA policy or hosted session store.
+
 ADR-040 adds [configured API identity](IDENTITY_AUTH.md). Apply migration 0013 and
 refresh runtime SELECT grants before `serve --oidc-config`; reject simultaneous
 bootstrap registry configuration. Private configuration, fixed issuer/key URLs and

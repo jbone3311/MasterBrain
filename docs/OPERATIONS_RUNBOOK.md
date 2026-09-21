@@ -7,6 +7,13 @@ implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
 
 ## API identity operations
 
+The optional [browser session backend](BROWSER_AUTH.md) has no default CLI/UI
+wiring yet. If explicitly injected for synthetic acceptance, process restart logs
+everyone out; current SQL revocation and session logout remain distinct from
+cancelling durable processing grants. Capacity denies new sessions rather than
+evicting live ones. Never log cookies, CSRF/state, codes or confidential-client
+configuration; public ingress, lifecycle alerts and TLS/browser acceptance remain gates.
+
 Use [identity configuration/revocation](IDENTITY_AUTH.md) for ADR-040's explicit
 mode. Apply 0013 and SELECT grants before startup. Unknown identities never enroll;
 401 means invalid/unmapped credential, 403 current permission denial, and scrubbed

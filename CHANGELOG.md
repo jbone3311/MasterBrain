@@ -24,6 +24,18 @@ exact tested commits and results.
 - No browser login/session, MFA enforcement, real issuer enrollment, team sharing,
   service-principal lifecycle, public ingress or mailbox privilege was added.
 
+### Browser session backend (ADR-042)
+
+- Added optional fixed code/PKCE exchange, one-use browser-bound state, human SQL
+  identity resolution, opaque bounded process sessions and cookie/Origin/CSRF REST
+  boundaries. API tokens are discarded, not sent to browser storage.
+- Added expiry/logout/current-revocation and concurrent request/callback tests;
+  cancelled/replaced flows cannot publish late sessions. The key reader now also
+  checks elapsed time after EOF and validates size before extending its buffer.
+- Default CLI/owner UI are unchanged; private operator/TLS wiring and actual
+  browser acceptance remain next. No ID/refresh-token flow, MFA policy, real issuer,
+  new dependency/schema/grant, mailbox or hosted listener was introduced.
+
 ### Response streaming correction (ADR-041)
 
 - Fastmail, Gmail, Graph and Ollama now check incoming chunks without extra

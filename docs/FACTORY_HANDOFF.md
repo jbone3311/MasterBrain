@@ -11,8 +11,9 @@ and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
 ## Start here: the next delivery
 
-Build the [browser sign-in/session lifecycle](#suggested-next-issue) on ADR-040's
-existing token/mapping foundation, beginning with its own ADR and acceptance tests. The
+Complete the [browser sign-in/session lifecycle](#suggested-next-issue) using
+ADR-042's optional backend and ADR-040's token/mapping foundation. Next wire
+private operator/TLS configuration and the owner UI, then actual browser tests. The
 [backlog slice](BACKLOG.md#eb-007-next-production-identity-foundation) and
 [roadmap](ROADMAP.md#next-build-packages) agree on this priority. A signature
 verifier alone does not finish browser login, sharing or hosted operation.
@@ -23,6 +24,11 @@ identity, the next delivery work is hosted storage/key recovery, supervision and
 operational acceptance; live promotion has its own [gate record](RELEASE_ACCEPTANCE.md).
 
 ## Completed increments to review, not rebuild
+
+Latest backend slice: [ADR-042/browser sessions](BROWSER_AUTH.md), fixed code/PKCE
+exchange, one-use state, bounded process-memory sessions, cookie/Origin/CSRF,
+current human mapping and revocation. Review callback/logout/cancellation races.
+This is not default CLI wiring, owner UI, ID-token/MFA login or public operation.
 
 Latest correction: [ADR-041/response streaming](adr/041_stream_deadline_checks.md)
 removes application chunk buffering from Fastmail/Gmail/Graph/Ollama deadline
@@ -243,10 +249,13 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 
 ## Suggested next issue
 
-> Build the browser sign-in/session lifecycle on ADR-040, with a new ADR before
-> implementation: fixed registered client/redirect configuration, authorization
-> code + PKCE/state/nonce handling as applicable, server-controlled session storage,
-> cookie/CSRF boundaries, logout/expiry/revocation and no browser token persistence.
+> Complete ADR-042's browser feature: wire its existing backend through explicit
+> private operator/TLS configuration and the owner UI, preserving manual bearer
+> mode separately. No downgrade on failed browser authentication. Exercise actual
+> browser cookies, Origin/CSRF, safe navigation, logout/expiry/revocation and stale
+> evidence clearing with no browser token persistence. Do not rebuild code/PKCE or
+> opaque session storage. ID-token/OIDC/MFA policy remains separate from the
+> implemented delegated API flow; any scope/protocol expansion needs a new ADR.
 > Exercise a fake authorization server, malicious callbacks, stolen/stale sessions,
 > token/issuer failures and real SQL isolation. Preserve current database mappings;
 > never auto-enroll unknown identities or substitute ID tokens for API access tokens.
