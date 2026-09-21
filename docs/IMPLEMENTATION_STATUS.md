@@ -47,12 +47,13 @@ Exact-commit acceptance is recorded in the build receipt, not inferred from this
 
 ### Verified runtime
 
-Latest verified runtime/test commit: **4286504**, [CI 35572975435](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35572975435).
-1,392 Python tests (178 real PostgreSQL), 52 Node UI contracts and five additional
-actual-container cases passed. Restore at the same runtime commit verified
+Latest verified runtime/test commit: **a041647**, [CI 35576368521](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35576368521).
+1,502 Python tests (178 real PostgreSQL), 52 Node UI contracts, five existing MIME
+and 13 additional PDF actual-container cases passed. Restore at the same commit verified
 24 tables, 119 rows, two tenants and four encrypted objects. See
 [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for exact scope, warnings and limitations.
-These include bounded known-answer mailbox generation/replay, not sustained live
+These include source-bound standalone PDF processing and known-answer mailbox
+generation/replay, not integrated PDF approvals/search, scanning, sustained live
 feed service, real model accuracy or new browser/accessibility acceptance.
 
 Local unit/API/protocol/attachment tests, type checking and linting run with locked

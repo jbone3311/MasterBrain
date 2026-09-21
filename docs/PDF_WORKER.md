@@ -96,6 +96,13 @@ including independent extraction versions, safe historical citations, explicit
 scan policy, SQL/RLS/restore tests and body-search preservation. Do not close
 EB-006 on standalone worker checks. [Work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
 
+Schema inspection confirms current receipts are unique per message-evidence/part,
+and current attachment search reads their original extracted text. Do not overwrite
+those receipts to add a new PDF interpretation: define independent immutable
+extraction versions and explicit citation/query selection. The old SQL scanner
+value is `not_scanned`; the new worker contract uses `unscanned`. The integration
+must map these deliberately without treating either as clearance.
+
 ## Operations and rollback
 
 No supervisor is installed. Omit the worker image/caller to disable the capability;

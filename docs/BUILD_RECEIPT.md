@@ -2,6 +2,52 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Source-bound restricted PDF worker groundwork
+
+Implementation **a041647** passed [CI 35576368521](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35576368521)
+and [restore 35576368531](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35576368531).
+Subsequent receipt/status documentation does not change tested runtime.
+
+- **1,502 standard Python tests**, including **178 real PostgreSQL cases**, passed
+  without CI skips. **52 Node UI contracts**, **five existing actual MIME-container
+  cases** and **13 additional actual PDF-container cases** passed. Repeated gate
+  tests and restore subsets are not double-counted.
+- New standard coverage: **110 PDF worker/parent contract cases**. Known-answer
+  source text, exact MIME/part/hash binding, wrong sources, strict envelopes,
+  encrypted/empty-password refusal, damaged/image-only/mixed-page documents,
+  feature deferral, stream/text/page limits, unexpected failures, isolation before
+  disclosure, exact-owned cleanup and lazy dependency loading are covered.
+- Actual PDF containers verified the known-answer mailbox marker, page text,
+  partial/no-text, encrypted/damaged/unsupported/over-budget outcomes and a
+  substituted attachment hash. They do **not** publish PDF text into SQL/search.
+- Local: **1,324 passed, 178 explicit PostgreSQL skips**, two existing upstream
+  deprecations; locked sync, lint, strict typing over **39 source modules**, separate
+  restore-script typing, 52 Node tests, repository/docs gates and diff checks passed.
+- Both images built. CI verified pypdf/openpyxl/docx/lxml stay absent from the
+  default API/MIME image; only the separate optional PDF image adds pinned pypdf.
+- Restore: **24 tables, 119 rows, two tenants, four encrypted objects**, equal
+  hashes and tenant RLS, database-only refusal, **14.91 seconds** including disposable
+  startup. No PDF result table exists yet; this is not new PDF-result restoration
+  or a production RTO/PITR claim.
+- Git-history secret scan through a041647: **43 commits**, no detected leaks.
+
+Review found pypdf's implicit empty-password initialization. The pinned worker
+overrides that narrow hook to defer encryption before password work; negative
+tests verify it is not invoked. Selected upstream advisories were reviewed, not
+exhaustively vulnerability-certified. The private hook needs upgrade regression.
+
+[ADR-034](adr/034_source_bound_pdf_worker.md) and [worker guide](PDF_WORKER.md)
+define fixed byte/page/resource bounds, independent partial/unscanned outcomes
+and separate profile+image provenance. No API/schema/grants, queue integration,
+scanner, OCR, mail action, private input or cloud deployment is added. Existing
+ingestion receipts and PDF-only search expectations remain deferred/absent.
+Durable tenant-authorized approval, versioned results/citations and FTS integration
+are the next EB-006 requirement; standalone parser tests do not close it.
+
+Known warnings remain: Starlette/httpx and anyio aliases; GitHub's Node 20 action
+migration and upcoming Ubuntu runner migration. Supply-chain modernization and
+production operational/security/live-service gates remain in the backlog.
+
 ## September 21 documentation alignment
 
 Documentation-only changes follow `c0e2aec` (whose
