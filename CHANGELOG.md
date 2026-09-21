@@ -6,6 +6,17 @@ The package remains version 0.1.0, a synthetic-data prototype. These entries do
 not announce a production release. [Build receipts](docs/BUILD_RECEIPT.md) retain
 exact tested commits and results.
 
+### Review corrections (ADR-044)
+
+- Signing-key refresh no longer holds the cache lock during network I/O. Valid
+  cached requests proceed; cold/unknown/expired waiters are bounded and single-flight.
+- Normalization preserves sender ambiguity as ineligibility rather than silently
+  selecting the first author. Search and simulation require exact snapshot proof,
+  including attachment/PDF hits. Legacy records remain readable but cannot match
+  sender rules until explicitly reprocessed. Ordinary parser advances to v5.
+- Added concurrency, malformed-header, strict worker-envelope and real SQL regression
+  cases. No migration, dependency, mailbox authority or real service is added.
+
 ### Private browser-mode TLS startup (ADR-043)
 
 - Added explicit `serve --browser-config --tls-cert --tls-key` and browser-only

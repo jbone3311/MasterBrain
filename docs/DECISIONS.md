@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-044](adr/044_review_fixes.md) fixes signing-key cache contention and lost
+sender ambiguity. Single-flight refresh preserves valid cached access; source-bound
+sender-rule eligibility fails closed for historical evidence without validation.
+
 [ADR-043](adr/043_browser_operator_tls.md) adds explicit private browser-mode TLS
 startup, mutually exclusive authentication flags and non-consuming preflight.
 It preserves loopback-only binding; UI and actual browser acceptance remain gates.

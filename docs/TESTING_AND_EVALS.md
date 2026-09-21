@@ -28,6 +28,15 @@ history pagination. It is not browser/accessibility acceptance. The optional
 and restore runs prove database durability separately. Exact verified counts and
 commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
+## Review regressions
+
+[Review regressions](../tests/test_review_fixes.py) exercise cache hits during
+blocked refresh, bounded waiters, cold/expired rotation and failure; source MIME
+with duplicate/multiple/malformed From headers; strict/legacy worker envelopes;
+SQL simulation and body/attachment/PDF search; and legacy immutable snapshots.
+Generated keys and fictional mail only. Database cases are local skips without
+PostgreSQL; CI must supply actual acceptance before publication is called verified.
+
 ## Private browser operator and TLS
 
 [Browser operator tests](../tests/test_browser_operator.py) generate fictional TLS

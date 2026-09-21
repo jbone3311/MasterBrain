@@ -177,6 +177,8 @@ class AccessTokenVerifier:
         self._transport = transport
         self._clock = monotonic
         self._lock = threading.Lock()
+        self._changed = threading.Condition(self._lock)
+        self._refreshing = False
         self._keys: dict[str, RSAPublicKey] = {}
         self._expires = 0.0
         self._retry = 0.0
@@ -259,24 +261,42 @@ class AccessTokenVerifier:
         return keys
 
     def _key(self, kid: str) -> RSAPublicKey | None:
-        with self._lock:
+        with self._changed:
             now = self._clock()
             if now < self._expires and kid in self._keys:
                 return self._keys[kid]
+            if self._refreshing:
+                if not self._changed.wait_for(lambda: not self._refreshing, timeout=5):
+                    raise AuthenticationUnavailable() from None
+                # A waiter uses the published result, never starts a second refresh.
+                now = self._clock()
+                if now < self._expires and kid in self._keys:
+                    return self._keys[kid]
+                if now >= self._expires or self._failed:
+                    raise AuthenticationUnavailable() from None
+                return None
             if now < self._retry:
                 if now >= self._expires and self._failed:
                     raise AuthenticationUnavailable() from None
                 return None
             self._retry = now + 30
-            try:
-                keys = self._refresh()
-            except (ValueError, TypeError, RecursionError, httpx.HTTPError, jwt.PyJWTError):
+            self._refreshing = True
+        try:
+            # Network I/O must not hold the cache lock: valid hits remain available.
+            keys = self._refresh()
+            with self._changed:
+                self._keys = keys
+                self._expires = self._clock() + 300
+                self._failed = False
+                return keys.get(kid)
+        except (ValueError, TypeError, RecursionError, httpx.HTTPError, jwt.PyJWTError):
+            with self._changed:
                 self._failed = True
-                raise AuthenticationUnavailable() from None
-            self._keys = keys
-            self._expires = self._clock() + 300
-            self._failed = False
-            return keys.get(kid)
+            raise AuthenticationUnavailable() from None
+        finally:
+            with self._changed:
+                self._refreshing = False
+                self._changed.notify_all()
 
     def verify(self, token: str) -> VerifiedToken | None:
         try:

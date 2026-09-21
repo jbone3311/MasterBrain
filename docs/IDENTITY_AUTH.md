@@ -117,8 +117,11 @@ token. This identifies the DB administrator role, not an invented end-user actor
 - A transaction already admitted is not retroactively cancelled. Existing one-hour
   document/MIME approvals are separate durable consent: cancel their jobs or revoke
   owner membership using existing controls. Token expiry alone does not cancel them.
-- Keys cache for five minutes. Refresh attempts are globally serialized and limited
-  to one per 30 seconds; unknown key IDs are not accumulated. Publish overlapping
+- Keys cache for five minutes. One refresh may run at a time, limited to one per
+  30 seconds; network work does not hold the cache lock. Unexpired known keys keep
+  working during refresh. Cold/unknown/expired-key callers may wait at most five
+  seconds, then receive scrubbed 503; expiry is rechecked after waiting. Unknown
+  key IDs are not accumulated. Publish overlapping
   rotation keys with distinct IDs. Replacing a key with the same ID may require
   cache expiry. Removing a key is not instant revocation of a valid cached key.
 - If refresh fails, an already cached known key is usable only until its original

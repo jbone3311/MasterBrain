@@ -342,6 +342,7 @@ class Store:
             "truncated": normalized.truncated,
             "received_at": item.received_at.isoformat(),
             "parser_version": parser,
+            "sender_rule_eligible": normalized.sender_rule_eligible,
         }
         created = conn.execute(
             "INSERT INTO message_versions(tenant_id,account_id,message_id,raw_sha256,"
@@ -372,6 +373,11 @@ class Store:
                 for key in ("subject", "sender", "text", "truncated", "parser_version")
             ):
                 raise Conflict("parser output changed without a version change")
+            if (
+                version["snapshot"].get("sender_rule_eligible", False)
+                is not snapshot["sender_rule_eligible"]
+            ):
+                raise Conflict("sender eligibility changed without a parser version change")
             existing = conn.execute(
                 "SELECT part_id,original_filename,safe_filename,media_type,sha256,byte_size,"
                 "status,reason,extracted_text FROM attachment_receipts WHERE evidence_id=%s "
@@ -772,6 +778,7 @@ class Store:
         with self.transaction(ctx) as conn:
             rows = conn.execute(
                 "SELECT m.id,m.account_id,m.subject,m.sender,m.received_at,v.id AS evidence_id,"
+                "(v.snapshot->'sender_rule_eligible' = 'true'::jsonb) AS sender_rule_eligible,"
                 "left(m.clean_text,500) AS excerpt,"
                 "ts_rank_cd(m.search_document,websearch_to_tsquery('simple',%s)) AS score "
                 "FROM messages m JOIN message_versions v ON v.tenant_id=m.tenant_id "
@@ -795,6 +802,7 @@ class Store:
                 attachment_rows = conn.execute(
                     "SELECT m.id,m.account_id,m.subject,m.sender,m.received_at,"
                     "a.evidence_id,a.id AS attachment_id,a.safe_filename,"
+                    "(v.snapshot->'sender_rule_eligible' = 'true'::jsonb) AS sender_rule_eligible,"
                     "left(a.extracted_text,500) AS excerpt,"
                     "ts_rank_cd(a.search_document,websearch_to_tsquery('simple',%s)) AS score "
                     "FROM attachment_receipts a JOIN message_versions v ON "
@@ -822,6 +830,7 @@ class Store:
                     "SELECT m.id,m.account_id,m.subject,m.sender,m.received_at,a.evidence_id,"
                     "a.id AS attachment_id,a.safe_filename,d.id AS document_id,d.revision,"
                     "d.processor_version,d.policy_version,d.status,d.reason,d.scanner_status,"
+                    "(v.snapshot->'sender_rule_eligible' = 'true'::jsonb) AS sender_rule_eligible,"
                     "left(d.extracted_text,500) AS excerpt,"
                     "ts_rank_cd(d.search_document,websearch_to_tsquery('simple',%s)) AS score "
                     "FROM document_extractions d JOIN attachment_receipts a "
@@ -862,7 +871,8 @@ class Store:
             self.audit(conn, ctx, "search.read", "message")
             active = current_rules(conn)
             for row in rows:
-                row["classification"] = classify(active["rules"], active["revision"], row["sender"])
+                sender = row["sender"] if row.pop("sender_rule_eligible", False) is True else ""
+                row["classification"] = classify(active["rules"], active["revision"], sender)
                 row["citation"] = f"emailbrain://evidence/{row['evidence_id']}"
                 if row.get("document_id"):
                     row["citation"] = f"emailbrain://document/{row['document_id']}"
@@ -919,6 +929,7 @@ class Store:
             if not row:
                 raise NotFound()
             snapshot = row.pop("snapshot")
+            snapshot.pop("sender_rule_eligible", None)
             excerpt = snapshot.pop("text")[:4000]
             row.update(snapshot)
             row.update(

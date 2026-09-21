@@ -6,6 +6,12 @@ target design, not existing tables. [Migrations](../migrations/) are authoritati
 for deployed schema; see [code map](CODE_MAP.md) and [status](IMPLEMENTATION_STATUS.md).
 
 Read the sketches below as a target information model, not ready-to-run SQL.
+
+ADR-044 adds internal boolean `sender_rule_eligible` to immutable JSON snapshots,
+not a new column/table or SQL migration. Current search/simulation require exact
+JSON true; missing/false/non-boolean legacy values deny sender-rule matching.
+Ordinary parser provenance is now `stdlib-mime-v5`. Old snapshots and citations
+remain unchanged. Public evidence/search envelopes omit this internal field.
 `mail_accounts` and `tenant_memberships` already exist; their target field sketches
 are not a migration adding all proposed fields. The [worked project scenario](PRODUCT_WALKTHROUGH.md)
 explains why original evidence, current derived state and proposed actions need
@@ -45,7 +51,7 @@ the narrowly scoped owner/account lock helper, not UPDATE on authority tables.
 
 Isolated recovery reuses migration 0008 parser-versioned snapshots/attempts and 0009
 encrypted raw manifests. Parser provenance `sandbox-mime-v1-<full image SHA-256>`
-distinguishes isolated output from ordinary `stdlib-mime-v4` without rewriting old
+distinguishes isolated output from ordinary `stdlib-mime-v5` without rewriting old
 citations. No schema migration, provider event or cursor mutation is introduced.
 See [isolated recovery](ISOLATED_MIME_RECOVERY.md).
 

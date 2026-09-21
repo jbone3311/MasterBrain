@@ -70,6 +70,13 @@ still requires operator supervision on a long-lived host.
 
 ## Verification and rollout
 
+ADR-044 extends normalized worker output with strict boolean `sender_rule_eligible`.
+The new parent accepts the closed legacy envelope without it only as false; other
+extra fields and non-boolean values remain errors. Deploy the parent first, then
+configure the new immutable image digest. Old parents reject the extended output.
+No source parsing is moved into the parent/API. Old images and historical snapshots
+cannot grant sender-rule eligibility; retained body/attachment evidence stays usable.
+
 Ordinary tests exercise strict decoding, limits, parent process controls and recovery
 fences with synthetic data. `tests/container_mime_checks.py` is an **explicit post-build
 CI suite**: it runs the actual restricted image and proves encrypted raw evidence ->

@@ -43,7 +43,7 @@ It now includes `reprocessing: true` and `retry_parser_version` at the top level
 `POST /v1/accounts/{account_id}/quarantine/{receipt_id}/retry` accepts only:
 
 ```json
-{"expected_parser_version":"stdlib-mime-v4"}
+{"expected_parser_version":"stdlib-mime-v5"}
 ```
 
 The example version is not a permanent API constant: use the version from the

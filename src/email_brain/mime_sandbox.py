@@ -53,6 +53,7 @@ _NORMALIZED_FIELDS = {
     "text",
     "raw_sha256",
     "truncated",
+    "sender_rule_eligible",
 }
 _ATTACHMENT_FIELDS = {
     "part_id",
@@ -88,6 +89,9 @@ def _fields(value: Any, expected: set[str]) -> dict[str, Any]:
 
 
 def _normalized(value: Any, digest: str) -> NormalizedMessage:
+    # Old immutable images did not preserve source-header ambiguity. Never infer it.
+    if isinstance(value, dict) and set(value) == _NORMALIZED_FIELDS - {"sender_rule_eligible"}:
+        value = {**value, "sender_rule_eligible": False}
     value = _fields(value, _NORMALIZED_FIELDS)
     recipients = value["recipients"]
     if not isinstance(recipients, list) or len(recipients) > 100:
@@ -97,6 +101,8 @@ def _normalized(value: Any, digest: str) -> NormalizedMessage:
         type(value["raw_sha256"]) is not str
         or value["raw_sha256"] != digest
         or type(value["truncated"]) is not bool
+        or type(value["sender_rule_eligible"]) is not bool
+        or (value["sender_rule_eligible"] and not value["sender"])
         or (value["truncated"] and len(text) != MAX_TEXT_CHARS)
     ):
         raise MimeUnavailable()
@@ -109,6 +115,7 @@ def _normalized(value: Any, digest: str) -> NormalizedMessage:
         text=text,
         raw_sha256=digest,
         truncated=value["truncated"],
+        sender_rule_eligible=value["sender_rule_eligible"],
     )
 
 

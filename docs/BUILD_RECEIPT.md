@@ -2,6 +2,26 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Review corrections — local checkpoint
+
+ADR-044 is implemented from base **3ac67711f11d50a56468b17b1ed77ed8cd7515d9**.
+Publication CI/restore must verify the new exact commit; prior receipts do not
+certify the new runtime. No real account or service is used.
+
+- **1,850 local Python passes, 306 explicit SQL skips**, two existing warnings;
+  **84 Node contracts**, lint, 46-module typing, restore-script typing, locked sync,
+  repository quality gate and diff checks pass. Docs: **93 Markdown files / 785
+  local paths and fragments** before receipt-only additions.
+- **53 new regression cases: 41 offline and 12 SQL**. Two cache tests failed the
+  old lock-held network path before correction. The review also reproduced first-
+  sender selection from ambiguous raw headers; new tests cover ordinary/isolated
+  normalization, legacy worker fallback and strict boolean status.
+- SQL acceptance covers body/attachment/PDF search, rule previews, legacy snapshot
+  eligibility, unchanged public envelopes and retained body/raw bytes. These are
+  not local passes. Existing tenant/identity and recovery suites remain required.
+- No dependency or SQL migration. Ordinary parser advances to v5; parent-first
+  isolated-worker rollout and historical-label behavior are documented in ADR-044.
+
 ## Verified private browser TLS/operator
 
 Runtime **69e52e037c7d842f010e417d3f3e57466b55a2a7** passed

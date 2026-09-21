@@ -88,7 +88,7 @@ def test_calendar_ingestion_search_evidence_replay_and_historical_preservation(d
     hits = store.search(ctx, SearchRequest(query="calendaruniquefind"))
     assert len(hits) == 1 and hits[0]["result_type"] == "attachment"
     evidence = store.evidence(ctx, hits[0]["evidence_id"])
-    assert evidence["parser_version"] == "stdlib-mime-v4"
+    assert evidence["parser_version"] == "stdlib-mime-v5"
     assert evidence["attachments"][0]["reason"] == "bounded_calendar_v1"
     assert "calendaruniquefind" in evidence["attachments"][0]["excerpt"]
     assert evidence["attachments"][0]["scanner_status"] == "not_scanned"

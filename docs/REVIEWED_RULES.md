@@ -41,6 +41,20 @@ are snapshots; refresh after any rule change. Domain matches are exact and do no
 include subdomains; one active rule per domain, with explicit replacement via a new
 proposal. Header domains can be spoofed and must never grant access or hide mail.
 
+[ADR-044](adr/044_review_fixes.md) requires source-derived sender eligibility in
+the current immutable snapshot. Exactly one defect-free From header with one
+valid mailbox is eligible; duplicate headers, multiple authors, groups, missing,
+malformed or overlength senders are not. Ambiguous sender becomes empty in the
+normalized projection, but original MIME, valid body and attachments remain intact.
+Search (including attachment/PDF hits) and simulation use the same exact-boolean
+gate. This checks syntax/ambiguity, **not sender authenticity**.
+
+Historical snapshots without the flag no longer receive sender-rule effects.
+They remain searchable/readable; separately authorized reprocessing must publish
+a new version before they can match. No automatic bulk backfill or evidence edit
+is performed. Old simulation receipts remain historical samples, not proof that
+current results will match. Rule schemas and mailbox permissions are unchanged.
+
 ## Database / deployment / rollback
 
 Apply new migration `0007_reviewed_rules.sql` using the administrator migration path,

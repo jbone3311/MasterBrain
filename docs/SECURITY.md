@@ -7,6 +7,12 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-044](adr/044_review_fixes.md) keeps unexpired cached signing keys available
+during single-flight refresh without extending expired authority. Sender rules
+now require source-derived single-sender eligibility, including legacy fail-closed
+behavior in search and simulation. This is header syntax, not sender authentication.
+No new privilege, model disclosure or mailbox action is introduced.
+
 [ADR-042 browser backend](BROWSER_AUTH.md) adds fixed code/PKCE exchange and
 opaque server-side sessions only by explicit configuration. Current human
 mapping/SQL checks, one-use browser state, cancellation fences, cookie/Origin/CSRF

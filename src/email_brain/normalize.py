@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from email import policy
+from email.headerregistry import AddressHeader
 from email.message import EmailMessage
 from email.parser import BytesParser
 from email.utils import getaddresses
@@ -13,7 +14,7 @@ from html.parser import HTMLParser
 MAX_RAW_BYTES = 1_048_576
 MAX_ISOLATED_RAW_BYTES = 16 * 1024 * 1024
 MAX_TEXT_CHARS = 100_000
-PARSER_VERSION = "stdlib-mime-v4"
+PARSER_VERSION = "stdlib-mime-v5"
 
 
 class _TextOnly(HTMLParser):
@@ -46,6 +47,33 @@ class NormalizedMessage:
     text: str
     raw_sha256: str
     truncated: bool
+    sender_rule_eligible: bool = False
+
+
+def _sender(mail: EmailMessage) -> tuple[str, bool]:
+    """Keep ambiguity visible as ineligibility instead of picking a first author."""
+    headers = mail.get_all("from", [])
+    if len(headers) != 1:
+        return "", False
+    header = headers[0]
+    if (
+        not isinstance(header, AddressHeader)
+        or getattr(header, "defects", True)
+        or len(header.addresses) != 1
+        or any(group.display_name is not None for group in header.groups)
+    ):
+        return "", False
+    address = header.addresses[0]
+    sender = address.addr_spec
+    if (
+        not address.username
+        or not address.domain
+        or not 1 <= len(sender) <= 320
+        or not sender.isprintable()
+    ):
+        return "", False
+    sender.encode("utf-8", errors="strict")
+    return sender, True
 
 
 def validate_raw_budget(max_raw_bytes: int) -> None:
@@ -77,10 +105,10 @@ def normalize(raw: bytes, *, max_raw_bytes: int = MAX_RAW_BYTES) -> NormalizedMe
             text = "".join(parser.parts)
     text = text.replace("\x00", "").strip()
     addresses = getaddresses([str(v) for v in mail.get_all("to", []) + mail.get_all("cc", [])])
-    sender = getaddresses([str(mail.get("from", ""))])
+    sender, sender_rule_eligible = _sender(mail)
     return NormalizedMessage(
         subject=str(mail.get("subject", "")).replace("\x00", "")[:2000],
-        sender=(sender[0][1] if sender else "").replace("\x00", "")[:320],
+        sender=sender,
         recipients=tuple(address.replace("\x00", "")[:320] for _, address in addresses[:100]),
         internet_message_id=(
             str(mail["message-id"]).replace("\x00", "")[:1000] if mail["message-id"] else None
@@ -88,4 +116,5 @@ def normalize(raw: bytes, *, max_raw_bytes: int = MAX_RAW_BYTES) -> NormalizedMe
         text=text[:MAX_TEXT_CHARS],
         raw_sha256=hashlib.sha256(raw).hexdigest(),
         truncated=len(text) > MAX_TEXT_CHARS,
+        sender_rule_eligible=sender_rule_eligible,
     )

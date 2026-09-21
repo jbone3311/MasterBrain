@@ -81,8 +81,11 @@ class RuleControl:
             current = current_rules(conn)
             candidate = self.candidate(current, proposal)
             rows = conn.execute(
-                "SELECT id,sender FROM messages WHERE NOT deleted AND NOT quarantined "
-                "ORDER BY id LIMIT 50"
+                "SELECT m.id,CASE WHEN v.snapshot->'sender_rule_eligible' = 'true'::jsonb "
+                "THEN m.sender ELSE '' END AS sender FROM messages m "
+                "JOIN message_versions v ON v.tenant_id=m.tenant_id AND v.message_id=m.id "
+                "AND v.raw_sha256=m.raw_sha256 AND v.parser_version=m.parser_version "
+                "WHERE NOT m.deleted AND NOT m.quarantined ORDER BY m.id LIMIT 50"
             ).fetchall()
             sample = [
                 {

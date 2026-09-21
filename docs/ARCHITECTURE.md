@@ -12,6 +12,11 @@ execution distinct in both diagrams and implementation.
 
 ## Latest executable additions
 
+[ADR-044 review fixes](adr/044_review_fixes.md) separate key-refresh network I/O
+from cached-key access and carry source sender eligibility through versioned MIME
+results into search/rule simulation. Legacy evidence remains immutable and readable;
+missing sender provenance denies rule matching until explicit reprocessing.
+
 [Browser authorization sessions](BROWSER_AUTH.md), ADR-042, implement an optional
 code/PKCE exchange and process-local session/CSRF backend over ADR-040's current
 human mapping boundary. No new table/grant. ADR-043 adds explicitly selected

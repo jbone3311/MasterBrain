@@ -7,6 +7,15 @@ implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
 
 ## API identity operations
 
+ADR-044 permits unexpired cached keys during issuer refresh. Cold/unknown/expired
+requests wait at most five seconds before generic unavailability; do not extend
+key TTL or add bootstrap fallback to hide an outage.
+
+After the sender fix, historical snapshots lacking source eligibility have no
+sender-rule labels. This does not hide/delete mail. Deploy updated API/controllers
+before new immutable MIME images. Do not edit old snapshots or migrations; only
+separately authorized reprocessing may publish validated replacement projections.
+
 The optional [browser session backend](BROWSER_AUTH.md) has explicit private
 CLI/TLS startup and a non-consuming preflight; owner UI wiring remains next.
 Use its documented certificate/configuration checks before startup. Process restart logs

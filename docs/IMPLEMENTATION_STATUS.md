@@ -33,6 +33,11 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
+ADR-044 corrects cache-refresh contention and sender ambiguity. Current search and
+rule previews require source-derived sender eligibility; historical snapshots
+without it remain readable but do not match rules. Ordinary parser is v5; no
+automatic reprocessing or schema change. Exact verification is in the build receipt.
+
 ADR-042 now supplies the optional [browser authorization/session backend](BROWSER_AUTH.md),
 including fake code exchange, current mapping, cookie/Origin/CSRF, expiry and
 cancellation/replay fences. ADR-043 adds explicit `serve --browser-config` with
