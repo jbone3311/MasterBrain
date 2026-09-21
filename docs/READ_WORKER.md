@@ -84,6 +84,9 @@ checkpoints; they pause for reviewed conversion.
 Stop worker callers before code rollback. Do not roll back to a version that treats
 these JSON checkpoints as provider cursors. Keep the additive schema and retained
 evidence; no destructive down migration. No mailbox compensation is necessary.
+The API must also retain the quarantined-projection exclusion: a pre-0006 search
+implementation would incorrectly show an old current projection after a failed
+update. Roll back only to a forward-compatible worker and API pair.
 
 Sources: [JMAP query-state rules](https://www.rfc-editor.org/rfc/rfc8620#section-5.5),
 [Email changes](https://www.rfc-editor.org/rfc/rfc8621#section-4.2).

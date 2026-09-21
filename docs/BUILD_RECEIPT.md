@@ -2,6 +2,55 @@
 
 Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Parallel implementation and pressure-test pass
+
+Code/test commit: `3b7d972` (integrated implementation `c9e1829`).
+[GitHub Actions run 35555204407](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35555204407)
+completed successfully:
+
+- **485 Python tests passed**, including 52 real PostgreSQL integration cases;
+  no CI database skips. Six additional Node UI-contract tests passed.
+- Strict typing passed across 24 source modules; lint, document/link gates,
+  developer container build and CLI smoke passed.
+- Locally: 433 Python tests passed; 52 database cases explicitly skipped; six
+  Node tests passed. Full Git-history secret scan found no leaks through this commit.
+- Four agents total worked on implementation and independent adversarial review.
+  Changes were integrated and checked together, not counted as isolated successes.
+
+Shipped in this increment: certified inventory reconciliation and expired-history
+recovery; exact-byte bounded MIME quarantine; resumable fictional-inbox seeding;
+owner import-health and paginated held-message metadata; Gmail/Graph read-only
+libraries and an injected-session IMAP contract. Only Fastmail currently has durable
+database worker orchestration. New provider libraries are not enrolled live connectors.
+
+The fake-mailbox lifecycle imports 256 varied messages, applies seven changed IDs,
+then recovers twenty unseen deletions after expired history. Parser checks include
+1,000 seeded bounded random byte inputs. These are not a multi-day soak or measured
+production throughput benchmark. [Coverage and gaps](TEST_COVERAGE_MATRIX.md).
+
+Independent review found and verified fixes for decoder-produced NUL/surrogate
+strings reaching SQL, inconsistent demo-account guards including a preflight race,
+Gmail quota 403 misclassification, Graph non-ASCII Retry-After values and empty-body
+deadline bypass. Integration review also corrected real provider/library contract
+assumptions: Gmail minimal responses need not contain timestamps/history/thread,
+and IMAPClient may consume the inner UID into its response dictionary key.
+
+A temporary loopback UI with a mocked Store was checked in the actual browser:
+connect, fictional search, evidence inspection, held-message status, and session
+clearing all worked. The temporary server and tab were closed. This was not a live
+database/browser integration run or full accessibility acceptance; CI separately
+exercises real PostgreSQL and the HTTP API.
+
+Remaining warnings are upstream test-client deprecations and GitHub runner/action
+upgrade notices. Production OIDC, cloud infrastructure, restore drills, larger
+encrypted objects, binary extraction, durable additional-provider workers, actual
+model inference/MCP, action execution and Factory binding remain release gates.
+No real mailbox, model, paid cloud service or Factory runtime was activated.
+
+Prior recovery-only pass: `9173e26`,
+[CI 35553409905](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35553409905),
+180 passing Python tests. The receipt above supersedes its test totals.
+
 ## Read-worker refinement pass
 
 Code commit: `01eb47d`.
