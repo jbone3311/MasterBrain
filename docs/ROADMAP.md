@@ -11,7 +11,7 @@ RLS/FTS, immutable evidence, attachment receipts, narrow reviewed virtual rules,
 encrypted local objects, restricted MIME jobs and owner processing controls.
 Real PostgreSQL, actual restricted-container and disposable restore tests run in
 CI. No production phase is complete. Live enrollment, hosted identity/storage,
-worker supervision, binary extraction, operational acceptance and Factory bind remain.
+worker supervision, production binary-intake policy, operational acceptance and Factory bind remain.
 
 ## Next build packages
 
@@ -67,7 +67,9 @@ Scope: richer reviewed rules/protected classes, supported PDF/Office/OCR extract
 evaluated local candidates, relational people/projects/threads/obligations, temporal
 corrections and reversible merges. Keep lexical search and no-model operation.
 
-Current: narrow virtual sender rules and fake-tested optional local adapter only.
+Current: narrow virtual sender rules, a fake-tested optional local adapter and a
+separate synthetic PDF approval/extraction/search backend. State projectors,
+document UI/operator controls and evaluated production interpretation remain open.
 
 Exit: held-out retrieval/extraction/classification results with sample sizes,
 abstention and error costs; evidence links valid; stale facts supersede correctly;
@@ -123,3 +125,5 @@ walkthrough, not proof of implementation. Update its status alongside the
 
 See [PRD](PRD.md) for numeric quality/SLO targets and [open choices](OPEN_QUESTIONS.md)
 for decisions that block live rollout but not safe synthetic implementation.
+Use the [release acceptance record](RELEASE_ACCEPTANCE.md) to collect evidence for
+each promotion; passing a component suite does not close a whole milestone.

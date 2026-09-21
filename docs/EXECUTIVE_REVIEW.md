@@ -56,8 +56,8 @@ effects make this feedback loop useful without permitting self-modifying automat
 7. Expand providers, evaluated hybrid vectors and approved
    remote escalation. Avoid graph infrastructure unless relational limits are measured.
 
-Not yet production-ready: live sync, provider enrollment, integrated document
-extraction/search, OIDC, full team grants, production backup/purge and authenticated MCP
+Not yet production-ready: live sync, provider enrollment, production document
+intake/owner controls, OIDC, full team grants, production backup/purge and authenticated MCP
 remain unfinished. See [status](IMPLEMENTATION_STATUS.md), [backlog](BACKLOG.md),
 [hosting recommendation](HOSTING_DECISION.md), and [open choices](OPEN_QUESTIONS.md).
 

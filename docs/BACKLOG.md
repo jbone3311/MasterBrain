@@ -13,7 +13,7 @@ ticket stays open until its stated production/acceptance gates are met.
 | EB-003 | Resumable backfill/reconciliation | Baseline Email state before listing; query-state-safe pagination; catches concurrent creates/deletes; durable leases; expired cursor reset; no partial-list deletions |
 | EB-004 | Durable poison-message quarantine | Preserve source/error receipt before advancing past bad message; retry independently; accounting/alerts; no stalled account or silent skip |
 | EB-005 | Encrypted object storage — local slice implemented | Local tenant-bound AES-GCM, 16 MiB preservation, transactional manifests and non-deleting inventory implemented; hosted IAM/KMS, key backup, authorized GC/purge and offsite acceptance remain |
-| EB-006 | Sandboxed attachment extraction | Restricted large-MIME text/receipt worker, image provenance and durable human-approved jobs implemented; scanner, PDF/Office/OCR/archives, hosted identity/supervision and sandbox acceptance remain |
+| EB-006 | Sandboxed attachment extraction — synthetic PDF backend implemented | Restricted MIME recovery plus separate synthetic PDF approvals/results/FTS implemented; document UI/CLI, scanner/live policy, Office/OCR/archives, hosted identity/supervision and production sandbox acceptance remain |
 | EB-007 | Production identity/grants | OIDC/MFA, JWT issuer/audience/expiry, invite/revoke, account/project grants before candidate retrieval, permission-cache invalidation, negative role matrix |
 | EB-008 | Hosted infrastructure and restore | Owner-approved region/budget; private Postgres/object storage, KMS/secrets, TLS ingress, CI artifacts by digest, actual restore of DB and bytes |
 | EB-009 | Operations baseline | Rate limits, connection pool, job SLOs/counters, denial audit, immutable audit export, dashboards, alert ownership, budget caps |
@@ -75,10 +75,11 @@ then scanner/live and hosted acceptance. Keep those distinct from API/library pr
    a document safe because text was extracted. Actual-container, real-SQL, tenant
    denial, restart, revocation, stale-source and restore tests are required.
 
-Exit for the first integrated PDF slice: a PDF-only marker currently absent from
+The first integrated PDF backend exit is verified at the commits in the
+[build receipt](BUILD_RECEIPT.md): a PDF-only marker initially absent from
 search becomes searchable **only** after the authorized successful extraction;
 other tenants never see it; failure has an explicit outcome and leaves body search
-intact. A standalone parser can be merged as groundwork but does not close EB-006.
+intact. This closes the bounded backend slice, not the full EB-006 production ticket.
 
 ### Other safe parallel work packages
 

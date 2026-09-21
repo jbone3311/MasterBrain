@@ -2,6 +2,26 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Documentation and handoff consistency pass
+
+Documentation-only follow-up to **25f69de**, whose
+[CI 35580992550](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35580992550)
+was observed successful. Runtime/schema remains a2c5957 with test follow-up 9a99dfa,
+covered by the exact receipts below. No new runtime, migration, dependency, workflow
+permission or cloud deployment is introduced by this documentation pass.
+
+Corrected stale PDF/search/security/runbook claims, explained the separate ingestion,
+MIME recovery, document and candidate-model paths, aligned the next build assignment,
+expanded contribution guidance and added release acceptance/evidence requirements.
+GitHub build/PR templates now request implementation boundaries and exact test scope.
+Historical OSS counts and historical test receipts retain their observation dates.
+
+Local recheck: locked development sync, lint, strict typing across 40 modules,
+**1,342 Python passes / 211 explicit PostgreSQL skips**, **52 Node passes**, docs and
+repository gates. The two existing upstream Python deprecation warnings remain.
+Real PostgreSQL/actual-container/restore proof is the linked CI evidence, not the
+local skipped cases. This record does not claim CI on a later documentation SHA.
+
 ## Approved PDF source-to-search integration
 
 Runtime/schema implementation **a2c5957**, test/document follow-up **9a99dfa**.

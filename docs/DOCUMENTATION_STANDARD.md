@@ -12,6 +12,7 @@ permission, deployment or Factory-policy change.
 | What is executable now? | [Implementation status](IMPLEMENTATION_STATUS.md), linked source/contracts |
 | What passed, at which revision? | [Build receipt](BUILD_RECEIPT.md), linked exact-commit CI/restore runs |
 | What comes next and why? | [Roadmap](ROADMAP.md), [backlog](BACKLOG.md), [Factory handoff](FACTORY_HANDOFF.md) |
+| How should changes be contributed and accepted? | [Contributor guide](../CONTRIBUTING.md), [release acceptance](RELEASE_ACCEPTANCE.md) |
 | Why was a boundary chosen? | [Accepted decisions](DECISIONS.md) and applicable ADR |
 | What still needs the owner? | [Open questions](OPEN_QUESTIONS.md) |
 | How healthy was an external dependency when inspected? | [OSS health](OSS_HEALTH.md), with its actual measurement date |
@@ -58,6 +59,9 @@ Run the repository checks in [AGENTS.md](../AGENTS.md). The current
 not validate heading fragments, external URL availability, factual accuracy,
 source freshness or rendered accessibility. Those require separate review; a green
 documentation check alone is not proof that every claim is correct.
+The contributor and release guides and hidden GitHub issue/PR templates also need
+review: the current script does not enforce their inventory or traverse `.github/`.
+Do not assume a passing check guarantees those files were inspected.
 
 ## Research and citations
 
@@ -73,3 +77,8 @@ not refresh OSS popularity/activity counts, obtain a cloud quote or certify any
 assistant client. References remain beside the relevant architecture/interface
 claims. Source-only downloads must exclude credentials, environments, private data,
 logs and database/object backups.
+
+The follow-up consistency pass preserves the original OSS/research observations
+and historical receipts. It updates ADR-035's current PDF/search/security/operations
+descriptions and adds explicit contribution/release evidence paths. No runtime,
+schema, dependency, permission or hosting decision is changed by this pass.

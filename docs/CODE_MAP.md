@@ -18,7 +18,7 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 | Approved document jobs/results | [document_jobs.py](../src/email_brain/document_jobs.py), [migration 0012](../migrations/0012_document_jobs.sql); opt-in search/evidence in Store |
 | Restricted processor/controller | [mime_sandbox.py](../src/email_brain/mime_sandbox.py), [sandbox_runner.py](../src/email_brain/sandbox_runner.py) |
 | Approved-processing operator CLI | [processing_controller.py](../src/email_brain/processing_controller.py) |
-| Separate PDF worker groundwork | [pdf_contract.py](../src/email_brain/pdf_contract.py), [pdf_worker.py](../src/email_brain/pdf_worker.py), [pdf_processor.py](../src/email_brain/pdf_processor.py), [Dockerfile.pdf](../Dockerfile.pdf) |
+| Separate restricted PDF reader | [pdf_contract.py](../src/email_brain/pdf_contract.py), [pdf_worker.py](../src/email_brain/pdf_worker.py), [pdf_processor.py](../src/email_brain/pdf_processor.py), [Dockerfile.pdf](../Dockerfile.pdf) |
 | Local candidates | [inference.py](../src/email_brain/inference.py), [local_model.py](../src/email_brain/local_model.py) |
 | Fictional inbox/file bytes | [synthetic.py](../src/email_brain/synthetic.py), [attachment_samples.py](../tests/attachment_samples.py) |
 | Coherent mailbox/manifest/replay | [synthetic_mailbox.py](../src/email_brain/synthetic_mailbox.py), [synthetic_formats.py](../src/email_brain/synthetic_formats.py) |
@@ -45,8 +45,11 @@ See [configuration and shutdown](PROCESSING_CONTROLLER.md).
   injected blob storage can retain larger raw MIME.
 - Rule: proposal/review -> simulation -> activation -> immutable revision ->
   search-time virtual labels. No provider API call.
-- Processing: approval -> durable grant -> separately authorized controller ->
+- MIME recovery: approval -> durable grant -> separately authorized controller ->
   restricted image -> versioned recovery and fenced atomic job completion.
+- PDF document: separate synthetic approval -> document job -> restricted PDF
+  processor -> immutable extraction revision -> opt-in document FTS/page evidence.
+  The existing MIME operator command and owner UI do not run this second path.
 
 ## Contract versus code
 

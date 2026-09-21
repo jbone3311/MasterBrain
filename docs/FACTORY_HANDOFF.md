@@ -121,6 +121,11 @@ the original aspirational directory layout.
 
 ## Required engineering practices
 
+Use [CONTRIBUTING.md](../CONTRIBUTING.md) for local checks and review preparation;
+[release acceptance](RELEASE_ACCEPTANCE.md) consolidates the evidence needed to
+promote an increment, disposable pilot or production capability. These guides do
+not grant Factory bind, live account, paid-resource or mailbox-write authority.
+
 Use the [worked product scenario](PRODUCT_WALKTHROUGH.md) to review user-visible
 behavior and the [documentation standard](DOCUMENTATION_STANDARD.md) for each
 increment. Update current status and next work without rewriting historical receipts.

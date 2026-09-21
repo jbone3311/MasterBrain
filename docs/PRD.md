@@ -7,7 +7,8 @@ current behavior; [status](IMPLEMENTATION_STATUS.md) identifies remaining gates.
 ## Release boundaries
 
 - **Current prototype:** synthetic read/search/evidence/review, narrow virtual
-  sender rules, bounded attachment handling and durable recovery API/UI/libraries.
+  sender rules, bounded attachment handling, durable recovery API/UI/libraries and
+  separate synthetic PDF approval/result/search API/library (document UI/CLI pending).
 - **First live release:** one explicitly enrolled read-only provider, hosted
   identity/storage/supervision, safe processing policy, recovery and operator acceptance.
 - **Later capabilities:** evaluated state/inference, team grants/MCP and separately
@@ -122,3 +123,5 @@ as deferred—not successful extraction. Generated scenarios supplement, not rep
 authorized disposable-provider, model-quality, security, accessibility and soak testing.
 
 See [ROADMAP.md](ROADMAP.md) and [TESTING_AND_EVALS.md](TESTING_AND_EVALS.md). No phase advances on demo quality alone; replay, tenant isolation, rollback, and recovery evidence are required.
+Use [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md) for the gate/evidence record;
+numeric targets above remain unproven until the specified evaluation is run.

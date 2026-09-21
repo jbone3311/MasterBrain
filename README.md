@@ -6,7 +6,8 @@ without handing them the keys to the mailbox.
 
 **Status: working synthetic-data prototype, not a hosted or live-mail product.**
 The repository contains executable ingestion, PostgreSQL search, review and
-recovery code. Live enrollment, production identity, document extraction,
+recovery code, plus a separately approved synthetic PDF-to-search pipeline.
+Live enrollment, production identity, production document-processing policy,
 supervision and acceptance testing remain launch requirements. No real mailbox,
 paid cloud resource or remote model is enabled by this repository.
 
@@ -31,6 +32,7 @@ passed; documentation updates do not certify new functionality.
 | Ingest | Fastmail worker library; synthetic HTTP-to-Postgres tests; atomic checkpoints, fenced leases, quarantine and inventory reconciliation |
 | Preserve | Immutable raw/evidence versions; bounded inline MIME; opt-in encrypted local objects up to 16 MiB |
 | Search | PostgreSQL FTS over messages and supported text/calendar attachments, with stable evidence references |
+| Read PDFs | Separate synthetic approval API/library, restricted PDF worker, immutable page evidence and opt-in document FTS; document UI/CLI still pending |
 | Review | Owner-only local UI: search, proposals, virtual sender rules, held mail, processing history/approval/cancellation |
 | Recover | Human-authorized retries and separate restricted MIME worker; bounded jobs, expiry, cancellation and atomic results |
 | Isolate | Tenant RLS, ownership constraints, scoped expiring bootstrap credentials and negative authorization tests |
@@ -72,6 +74,14 @@ claim is made.
 
 See [roadmap acceptance gates](docs/ROADMAP.md) and the
 [Factory next assignment](docs/FACTORY_HANDOFF.md#suggested-next-issue).
+
+## What the finished product adds
+
+Project/person/thread memory and open commitments; evaluated local classification;
+Grok/ChatGPT/Claude query and feedback tools; explicit team permissions; and
+previewed mailbox filing/drafts through a separately approved executor. These are
+delivery targets, not enabled features. Cloud inference and vector search are
+optional enhancements, not prerequisites for keeping mail searchable.
 
 ## How the design works
 
@@ -122,7 +132,8 @@ See the [build receipt](docs/BUILD_RECEIPT.md) for exact tested commits and limi
 ## For the implementation team
 
 [Code map](docs/CODE_MAP.md) · [Factory handoff](docs/FACTORY_HANDOFF.md) ·
-[Backlog](docs/BACKLOG.md) · [Open decisions](docs/OPEN_QUESTIONS.md)
+[Backlog](docs/BACKLOG.md) · [Open decisions](docs/OPEN_QUESTIONS.md) ·
+[Contributing](CONTRIBUTING.md) · [Release acceptance](docs/RELEASE_ACCEPTANCE.md)
 
 [Documentation maintenance](docs/DOCUMENTATION_STANDARD.md) defines status terms,
 authoritative records and the updates required alongside each feature. A tested

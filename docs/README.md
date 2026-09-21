@@ -8,6 +8,8 @@ Email Brain's target is a private, multi-user intelligence layer that synchroniz
 mail, maintains people/project/thread/obligation state and gives assistants bounded
 evidence instead of whole mailboxes. The current prototype implements only a
 bounded portion: synthetic ingestion/search, review, virtual rules and recovery.
+It also connects approved synthetic PDFs to restricted extraction, immutable page
+evidence and opt-in search through a separate API/library, not yet owner UI/CLI.
 
 ## Reading paths
 
@@ -40,14 +42,17 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 | What is the team building next? | [Roadmap](ROADMAP.md), [EB-006 contract gap](BACKLOG.md#eb-006-next-source-bound-document-processing), [Factory handoff](FACTORY_HANDOFF.md) |
 | How do we test believable mail and attachments? | [Runnable mailbox guide](TEST_MAILBOX_PLAN.md), [evaluation plan](TESTING_AND_EVALS.md) |
 | What has actually passed? | [Exact-commit build receipt](BUILD_RECEIPT.md), not roadmap targets |
+| How should a developer contribute? | [Contributor guide](../CONTRIBUTING.md), [Factory handoff](FACTORY_HANDOFF.md) |
+| What must pass before a release? | [Release acceptance/evidence](RELEASE_ACCEPTANCE.md), [security](SECURITY.md) |
 | Which decisions still need Jim? | [Open questions](OPEN_QUESTIONS.md); safe synthetic work can continue |
 
-The latest documentation review adds a worked project scenario, attachment-format
-coverage and failure examples; aligns hosting/search guidance with lexical-first
-delivery; and defines [documentation ownership/status terms](DOCUMENTATION_STANDARD.md).
-ADR-035 subsequently connects the restricted PDF worker to a synthetic approval/
-result/search API/library; UI/CLI and live/scanner policy remain pending. Research
-counts remain dated observations; no hosted deployment or Factory audit is claimed.
+The documentation review explains the owner scenario, methods, attachment coverage,
+failure behavior and dependency-ordered delivery plan. The latest consistency pass
+aligns current claims with ADR-035 and adds contributor/release-evidence guides and
+GitHub review templates. [Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
+keep future changes traceable. UI/CLI and live/scanner policy remain pending for the
+document channel. Research counts retain their actual observation dates; no hosted
+deployment or Factory audit is claimed.
 
 ## Executive architecture review
 
@@ -128,6 +133,8 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) | Feature-by-feature methods and current limitations |
 | [PRODUCT_WALKTHROUGH.md](PRODUCT_WALKTHROUGH.md) | Worked owner scenario, format coverage, failure behavior and deployment split |
 | [DOCUMENTATION_STANDARD.md](DOCUMENTATION_STANDARD.md) | Status vocabulary, authoritative records and maintenance checklist |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | Developer entry path, checks, review and Factory boundaries |
+| [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md) | Merge/pilot/release distinctions, gate register, metrics and evidence record |
 | [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
 | [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF reader, isolation and format limits |
 | [DOCUMENT_PROCESSING.md](DOCUMENT_PROCESSING.md) | Separate synthetic approval API/library, durable results, opt-in search and remaining operator/live gates |

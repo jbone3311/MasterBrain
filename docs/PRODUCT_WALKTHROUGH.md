@@ -23,7 +23,7 @@ independent hosted operation is a delivery target, not today's deployment state.
 | Step and owner experience | Method and safety boundary | Status |
 |---|---|---|
 | A broker sends a project introduction, PDF and rent-roll spreadsheet | Preserve source bytes and hashes; give every attachment a receipt; commit provider progress with durable outcomes | Implemented synthetic ingestion; no live enrollment |
-| Search finds the introduction immediately | PostgreSQL full-text search over current authorized body and supported attachment text; retain evidence-version citations | Implemented; PDF/Excel text is not yet indexed |
+| Search finds the introduction immediately | PostgreSQL full-text search over current authorized body and supported attachment text; retain evidence-version citations | Implemented; ordinary ingestion does not index PDF/Excel text; approved PDF search is a separate opt-in below |
 | See that a PDF arrived but has not been understood | Attachment outcome distinguishes preservation from extraction; do not call a deferred document successfully read | Implemented receipts |
 | Approve processing of this particular PDF | Bind permission to tenant/account, immutable source/part/hash and processor; restricted worker; validate and publish a new extraction atomically | Synthetic approval API/library and opt-in search implemented; UI/CLI and live/scanner policy pending |
 | A correction replaces an earlier rent figure | Keep both source versions; future project facts explicitly supersede earlier claims and cite the correction | Evidence history implemented; financial facts/projectors planned |

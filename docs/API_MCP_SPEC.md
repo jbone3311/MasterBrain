@@ -111,7 +111,7 @@ the bootstrap examples describe the target, not implemented MCP/actions:
 |---|---|---|
 | `GET /healthz` | none | Process liveness only; not DB readiness |
 | `GET /readyz` | `email.search` | Verifies runtime DB access/current owner membership |
-| `POST /v1/search` | `email.search` | Lexical message/attachment search, optional account filter, limit 1–50 |
+| `POST /v1/search` | `email.search` | Lexical message/attachment search, opt-in document text, optional account filter, limit 1–50 |
 | `GET /v1/evidence/{uuid}` | `email.evidence.read` | Version-stable excerpt/hash, attachment receipts/accounting; no raw download |
 | `POST /v1/proposals` | `email.proposal.create` | Closed discriminated payload; UUID `Idempotency-Key` header required |
 | `GET /v1/proposals` | `email.proposal.read` | Latest 50 proposals; full pagination pending |

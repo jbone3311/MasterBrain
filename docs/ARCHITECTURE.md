@@ -80,7 +80,7 @@ it does not provision or validate hosted backups, encryption or point-in-time re
 
 ## Style
 
-### Boundary to resolve before binary intake
+### Separate message-recovery and document-processing boundaries
 
 Current `RecoveryJobs` and `Recovery` select evidence through a quarantine
 receipt. Ready status is accepted there only for a recorded same-parser recovery
@@ -95,7 +95,12 @@ integration is distinct from pending UI/operator/live acceptance. See
 
 ### Deployment style
 
-Begin as a modular monolith plus workers. Separate deployable services only for materially different privileges or scaling: public/API ingress, mailbox connectors, inference quarantine, and mailbox action executor. Use a queue and transactional outbox, but avoid distributed-service complexity where a single process boundary suffices.
+Begin as a modular monolith plus workers. Separate deployable services only for
+materially different privileges or scaling: API ingress, mailbox connectors,
+restricted document readers, inference quarantine and the future action executor.
+Current processing queues are PostgreSQL job tables; no separate broker is required.
+Add the transactional mailbox-action outbox with the separately approved executor,
+not as an implied existing component.
 
 ## Logical components
 

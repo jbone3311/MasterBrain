@@ -61,6 +61,24 @@ automatic project state and mailbox actions remain planned.
 The present local UI covers search, evidence, proposals, narrow rules and recovery.
 It is not yet a complete project dashboard, assistant connection or hosted inbox.
 
+## What is decided, and what remains optional
+
+- **Keep:** Python service plus separate workers, PostgreSQL authority, immutable
+  evidence, tenant isolation, code-first handling and narrow provider/model adapters.
+- **Build first:** a dependable read-only search/evidence service, with visible
+  document limitations and recovery, before adding automatic understanding/actions.
+- **Preferred hosting:** one approved Azure billing home if that is the existing
+  RealEstateOS choice; independent Email Brain resources and permissions.
+- **Evaluate later:** local model/version, vectors, OCR/Office readers, remote-model
+  disclosure and any separate graph/search infrastructure. Popularity is not acceptance.
+- **Owner decisions still parked:** first account/backfill, region/budget, retention,
+  sharing and live-document policy. None prevents safe synthetic implementation.
+
+This is not a replacement mail server or a new all-purpose agent platform. SMTP
+does not import mail. Connectors read provider changes; a future separately approved
+executor would handle provider drafts/filing. Factory builds and audits the product,
+but is not in the deployed request or processing path.
+
 ## The immediate implementation gap
 
 Attachment accounting and attachment understanding are separate milestones. We
@@ -73,6 +91,13 @@ document approval API/library. It binds source/part/processor identity and prese
 the body index, then saves immutable extraction evidence for opt-in search. Next
 complete the owner/operator interface and accepted live/scanner policy. Scanning,
 extraction and OCR remain distinct outcomes and acceptance gates.
+
+The next increment should let an owner select one eligible PDF, see the exact
+processor/policy, explicitly approve it, inspect/cancel the job, then find its cited
+text. A separate operator command must execute approved jobs with its own worker
+identity. No automatic approval, new mailbox scopes or API access to the container
+daemon belongs in that increment. Backend groundwork already exists; the team
+should finish the workflow rather than rebuild it.
 
 ## Build sequence
 
@@ -121,3 +146,6 @@ cost and latency with sample size and versions—not just test counts.
 
 No automatic sending or permanent deletion in the initial product. Factory's
 independent audit remains a gate; this repository cannot certify its own Factory bind.
+The [release acceptance guide](RELEASE_ACCEPTANCE.md) turns these gates into a
+reviewable evidence record. Questions and approvals remain visible, not silently
+treated as answered when implementation progresses.

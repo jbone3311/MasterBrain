@@ -178,7 +178,10 @@ Rule predicates are a safe declarative AST—not executable Python/SQL/regex wit
 - Search documents/chunks reference message evidence and character offsets.
 - Retrieval logs store query fingerprint, filters, candidates/scores, selected evidence, feedback, and version—not plaintext query where policy forbids it.
 
-PostgreSQL holds transactional data and vectors together via [pgvector](https://github.com/pgvector/pgvector). A SQLite edge cache may use FTS5 and `sqlite-vec`, but it is disposable and tenant-scoped.
+If adopted after retrieval evaluation, [pgvector](https://github.com/pgvector/pgvector)
+would keep vectors alongside PostgreSQL transactional data. No vector table or
+extension is currently installed by this product. A future SQLite edge cache may
+use FTS5 and `sqlite-vec`, but would be disposable and tenant-scoped.
 
 ## Audit/event log
 
@@ -189,6 +192,11 @@ PostgreSQL holds transactional data and vectors together via [pgvector](https://
 The migrations currently implement tenants/memberships/accounts/cursors/events,
 raw MIME, current messages, immutable normalized message versions, typed proposals,
 proposal evidence links, audit, attachment receipts and intake events.
+They also implement immutable rule simulations/revisions, reconciliation inventory
+and seals, current sync state, quarantine receipts, recovery attempts/jobs and
+separate document jobs/extractions. These are actual tables, unlike the target
+entity, obligation and action sketches above. Migrations 0001–0012 describe the
+schema; the restore receipt's table count also includes migration bookkeeping.
 Worker leases/outcomes are in `sync_workers` and append-only `sync_runs`; enrolled
 accounts have administrator-set `provider_account_id`. Current mailbox/keyword
 metadata is separate from immutable raw-body evidence snapshots. People,

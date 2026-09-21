@@ -15,7 +15,8 @@ exact tested commits and results.
 
 - Added separate source-bound restricted PDF worker/image and strict page-level
   contract, with hash/part validation, partial/deferred/failed outcomes and explicit
-  unscanned status. No approval-job/SQL/FTS integration; ordinary ingestion still
+  unscanned status. At that initial increment there was no approval-job/SQL/FTS
+  integration; the subsequent ADR-035 entry above adds it. Ordinary ingestion still
   defers binary documents. PDF dependency stays out of the default API/MIME image.
 
 - Added certified inventory reconciliation and durable malformed/oversized MIME
@@ -28,8 +29,8 @@ exact tested commits and results.
   CLI with private configuration, preflight, credential refresh and graceful stop.
 - Added reviewed sender-rule simulation, explicit activation, immutable rollback
   and virtual search labels. No provider folders or mailbox contents are changed.
-- Added bounded calendar text extraction and attachment receipts/FTS; integrated
-  PDF/Office/OCR/archive intake and malware scanning remain unimplemented.
+- Added bounded calendar text extraction and attachment receipts/FTS; production
+  PDF intake, Office/OCR/archive extraction and malware scanning remain unfinished.
 
 ### Providers, models and test data
 
@@ -47,6 +48,11 @@ exact tested commits and results.
   container cases passed; these are not live-provider, model-quality or soak results.
 
 ### Documentation and delivery plan
+
+- Audited current PDF/search/security/roadmap claims against ADR-035 and corrected
+  stale standalone-only descriptions. Expanded the game plan and feature methods,
+  expanded the contributor guide, added release acceptance, and made GitHub build/review templates
+  require explicit evidence and remaining limits. No runtime permissions changed.
 
 - Added a worked owner scenario covering arrival, attachment formats, evidence,
   corrections, learning and future actions, plus documented failure behavior.

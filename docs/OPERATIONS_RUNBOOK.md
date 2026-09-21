@@ -64,8 +64,10 @@ not mean binary attachments were extracted or scanned: inspect receipt accountin
 If an ordinary searchable message has a deferred PDF/Office attachment, this is
 an unsupported extraction capability, not necessarily a stalled recovery job.
 Do not quarantine the message manually, invent a receipt or raise parser limits.
-Keep its body searchable and record the deferred part; the approved general
-document-processing workflow is still to be implemented.
+Keep its body searchable and record the deferred part. Eligible synthetic PDFs
+can use the separate [document API/library](DOCUMENT_PROCESSING.md); document
+UI/CLI, live policy and Office processing remain unavailable. Do not reinterpret
+an existing MIME approval as consent to use that separate channel.
 
 ## Encrypted evidence failures
 

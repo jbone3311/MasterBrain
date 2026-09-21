@@ -11,7 +11,7 @@ specific product outcome; none grants new mailbox or remote-model authority.
 |---|---|---|
 | Incremental import | Native cursors, bounded pages, atomic checkpoint, leased worker, certified inventory | Fastmail worker; offline Gmail/Graph libraries; injected IMAP contract; no live enrollment |
 | Search with sources | PostgreSQL FTS, account filters, immutable evidence IDs, bounded excerpts | Working; no vectors or project/entity filters |
-| Account for attachments | Per-part receipts, source hashes, duplicate links, explicit outcomes | Plain/CSV/calendar text; binary PDF/Office/image/archive extraction deferred |
+| Account for attachments | Per-part receipts, source hashes, duplicate links, explicit outcomes | Ordinary ingestion extracts supported plain/CSV/calendar text; PDF/Office/image/archive parts remain deferred there |
 | Read selected PDFs safely | Separate source-bound approvals, fenced restricted worker, immutable result revisions and opt-in FTS | Synthetic API/library; no document UI/CLI, live/scanner policy or hosted service |
 | Recover held mail | Owner retry; parser versions; isolated jobs bound to receipt/parser/expiry | API/UI, worker library and explicit bounded operator CLI; no hosted supervision |
 | Organize senders | Declarative match, review, bounded simulation, activation and immutable rollback | Narrow exact-domain persisted rules; virtual search labels only |
@@ -32,6 +32,22 @@ and regression tests. Models can propose ambiguous requests, aliases and summari
 Their claimed confidence is not accuracy: evaluate against labeled cases, allow
 abstention and route consequential ambiguity to review. No model receives provider
 tokens or action tools. [Model strategy](AI_MODEL_STRATEGY.md).
+
+## Which processing path does what?
+
+These are separate implemented paths, not interchangeable definitions of “process.”
+
+| Path | Input and authority | Output | Failure behavior |
+|---|---|---|---|
+| Ordinary ingestion | Authorized bounded provider change or fictional feed | Retained source, normalized body, per-part receipts and atomic cursor | Preserve a supported quarantine outcome or stop without advancing; no silent loss |
+| Held-message recovery | Human approval of a quarantine receipt and exact MIME parser; separate worker for isolated jobs | New immutable message evidence and current body/text-attachment index | Source/owner/lease fences reject stale publication; no provider write |
+| Approved PDF extraction | Separate synthetic attachment approval, processor/policy and `email.document.process` worker scope | Independent immutable page evidence and opt-in document FTS | Record explicit extraction outcome; never erase a working body or relabel unscanned text safe |
+| Model candidate generation | Explicit invocation of optional local adapter with bounded source | Validated candidate only | Reject/defer invalid output; no automatic cloud fallback or durable facts/actions |
+
+The first three paths have distinct contracts in [read worker](READ_WORKER.md),
+[recovery jobs](RECOVERY_JOBS.md) and [document processing](DOCUMENT_PROCESSING.md).
+The [code map](CODE_MAP.md) points to their actual modules. Model quality and
+production document policy remain separate acceptance work.
 
 ## Follow one message through the system
 
@@ -64,17 +80,18 @@ collapsed into one green checkmark.
 MIME parser. A recovered message can still contain deferred documents. A ready
 message containing a PDF is not automatically eligible for that recovery queue.
 
-[ADR-034's separate worker](PDF_WORKER.md) now verifies exact MIME/part bytes and
-extracts bounded PDF page text in an optional restricted image. That is groundwork:
-ADR-035 now connects separate synthetic tenant approval, result storage and opt-in FTS.
+[ADR-034's separate worker](PDF_WORKER.md) verifies exact MIME/part bytes and
+extracts bounded PDF page text in an optional restricted image. ADR-035 connects
+that reader to separate synthetic tenant approval, result storage and opt-in FTS.
 Its always-unscanned result is never a replacement for scanner policy.
 
 **Implemented API/library contract:** an approved attachment job identifies the immutable source
 version, exact MIME part and bytes, as well as the processor/image and policy.
-The worker needs resource limits and no network or provider credentials; the parent
-must validate returned text and provenance before publishing a new extraction.
-Cancellation, revoked access, changed sources and expired leases must prevent stale
-publication. Existing body search and historical citations must survive failure.
+The restricted worker runs with resource limits and no network or provider
+credentials; the parent validates returned text and provenance before publishing
+a new extraction. Cancellation, revoked access, changed sources and expired leases
+fence publication. Synthetic tests verify retained body search and citations on
+failure; this is not yet deployed-host isolation or live-mail acceptance.
 
 Scanned images need OCR; encrypted documents need an explicit password policy;
 damaged/unsupported/over-budget inputs need visible outcomes. Text extraction does
