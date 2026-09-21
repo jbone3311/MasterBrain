@@ -1,5 +1,13 @@
 # Synthetic PostgreSQL backup/restore drill
 
+Verified 2026-09-20 Pacific at code commit `d5f8f47`:
+[restore run 35556627775](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35556627775)
+passed with 22 tables, 73 rows and two synthetic tenants. Content hashes matched;
+recovered evidence, attachments, rules, search and row-level authorization checks
+passed. Elapsed drill time was 23.82 seconds including container startup—not a
+production RTO or large-mailbox performance measurement. The exact owned test
+container and temporary synthetic archive were removed by the drill.
+
 ## Scope
 
 This is an executable **logical dump and restore**, not merely a manifest check.

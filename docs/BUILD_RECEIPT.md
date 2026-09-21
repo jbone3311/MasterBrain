@@ -2,7 +2,47 @@
 
 Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Parallel implementation and pressure-test pass
+## Reviewed rules, local-model adapter and actual restore proof
+
+Code/test commit: `d5f8f47`.
+[CI 35556627769](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35556627769)
+and [restore 35556627775](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35556627775)
+both completed successfully on 2026-09-20 Pacific.
+
+- **658 Python tests passed**, including 64 real PostgreSQL cases, with no CI skips.
+  **15 additional Node interface tests passed**. The repository gate repeats the
+  Python suite; this is not counted as another 658 distinct tests.
+- Lint, strict typing across 27 source modules, all 16 pack documents/local links,
+  developer container build and CLI smoke passed.
+- Actual PostgreSQL 17 custom dump/restore verified **22 tables, 73 rows and two
+  synthetic tenants**: hashes, evidence, attachment/search results, quarantine,
+  approved proposals, active rules and row-level authorization survived recovery.
+  Elapsed 23.82 seconds includes disposable container startup and is not production RTO.
+- Local checks: 594 Python passes, 64 explicitly skipped database tests; 15 Node
+  passes. Full Git-history secret scan found no leaks through `d5f8f47`.
+- Four agents total implemented and independently reviewed the changes. Review
+  caught/fixed ambient PostgreSQL address redirection in the disposable drill and
+  a stale Review Delete selection surviving owner-screen disconnect.
+
+The working feedback loop is propose → approve → bounded sample → explicit human
+activation → virtual search labels → append-only revision rollback. Tests cover
+the REST lifecycle, concurrent receipts, expiry, foreign tenant/actor, malformed
+text, 50-message sample bounds and unchanged provider/evidence state. Review alone
+still applies nothing; project/fact/feature/correction application remains deferred.
+
+The opt-in local Ollama library has 90 fake-response tests plus independent runtime
+checks. It is not automatically wired into ingestion/API, no daemon was contacted,
+and no model accuracy claim is made. No model downloaded, real email accessed,
+mailbox changed, paid cloud resource deployed or Factory runtime modified.
+
+The restore drill removed its exact owned disposable container and temporary
+synthetic archive. It is logical recovery proof, not managed-cloud PITR, encryption,
+offsite backup or regional disaster-recovery validation. Production OIDC, account
+enrollment, encrypted large objects, binary extraction, additional durable provider
+workers, actual model/MCP integration, controlled actions and Factory bind remain
+release gates. Two upstream test-client deprecation warnings remain non-failing.
+
+## Prior parallel implementation and pressure-test pass
 
 Code/test commit: `3b7d972` (integrated implementation `c9e1829`).
 [GitHub Actions run 35555204407](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35555204407)

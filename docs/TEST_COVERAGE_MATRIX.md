@@ -18,11 +18,11 @@ and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 | Retrieval | Body and attachment FTS, stable historical evidence, tombstone/quarantine exclusions | Recall benchmark, vector retrieval, entity/state filters |
 | Identity | Expired/invalid tokens, server-bound context, denied scopes, owner membership revocation, forced RLS, cross-tenant keys and context reset | OIDC/MFA, invitation/member/account grants, rate limits |
 | API | Authentication, bounded bodies, validation without input echo, secure response headers, status counts, proposals/reviews, absent write endpoints | Browser accessibility, CSRF/session/OAuth threat tests for future login |
-| Owner UI | Six Node DOM-contract tests for session fencing, clearing, safe text and account paths; manual synthetic browser smoke for search/evidence/status/clear | Full browser automation, accessibility, pagination stress and production login |
-| Control | Typed proposal/review and idempotency, safe rule DSL, human-only approval, protected-class veto | Persisted rule activation, simulations, rollback and entities |
-| Models | Routing policy, closed JSON schema, evidence-excerpt requirement, rejected tool fields | Real local/remote models and calibrated accuracy/privacy/budget tests |
+| Owner UI | 15 Node DOM-contract tests, including separate simulation/activation, session fencing, safe rollback and text rendering; prior manual synthetic search/evidence smoke | Full browser automation, accessibility, pagination stress and production login |
+| Control | Persisted rule simulation/activation/rollback, stale receipts, competing writes, actor/tenant isolation, REST lifecycle, virtual-only effects; pure protected-class veto | Rich persisted predicates/protection policies, entities, drift evaluation |
+| Models | 90 fake-server tests for opt-in local adapter, digest/metadata checks, time/size/schema bounds, grounded excerpts, rejected tools; independent disclosure tests | Actual isolated daemon/model quality, calibrated accuracy, cache and remote budgets |
 | Synthetic demo | Deterministic corpus, bounded count, mid-import crash/resume, complete replay, mismatched cursor refusal | Interactive owner acceptance |
-| Release | Locked dependencies, lint, strict types, migration replay, document links, container build/CLI | SBOM/advisory/signature gates, cloud deployment, measured restore drills |
+| Release | Locked dependencies, lint, strict types, migration replay, document links, container build/CLI; actual disposable PG17 logical restore with hash/RLS/search checks | SBOM/advisory/signature gates, managed-cloud restore/PITR and disaster recovery |
 
 ## Interpreting the results
 

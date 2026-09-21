@@ -4,6 +4,13 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+New suites cover the complete reviewed-rule REST lifecycle, bounded previews,
+competing activation/rollback, tenant/actor isolation and virtual-only effects.
+`node --test tests/web_session.test.cjs` checks 15 UI contracts. Local-model tests
+use fake responses exclusively; they test transport/schema/privacy boundaries, not
+classification accuracy. The separate [restore workflow](RESTORE_DRILL.md) performs
+an actual synthetic `pg_dump`/`pg_restore` with recovered content and RLS verification.
+
 `uv run pytest -q` covers unit/API, JMAP/Fastmail mock transport, normalization,
 hostile attachment/type/filename cases and, with a disposable DB, real Postgres
 migrations, RLS, membership, composite ownership, raw-history protection, replay,

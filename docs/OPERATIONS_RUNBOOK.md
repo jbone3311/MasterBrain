@@ -1,5 +1,18 @@
 # Operations Runbook
 
+## Executable prototype recovery checks
+
+Run the [synthetic logical restore drill](RESTORE_DRILL.md) on a disposable Docker
+runner. It creates fresh synthetic source/target databases, verifies recovered
+contents and tenant isolation, then removes its owned test container and temporary
+archive. It accepts no production database or input archive. Success is not proof
+of managed-service PITR, offsite encryption, retention or regional failover.
+
+For an incorrect sender label, use [rule revision rollback](REVIEWED_RULES.md), then
+refresh search. Never edit historical rule/evidence rows. Local-model candidates
+can be disabled simply by not invoking the opt-in library; no model is automatically
+enabled in the service.
+
 ## Current worker implementation
 
 The worker library stores `sync_workers` state and append-only `sync_runs` outcomes;
