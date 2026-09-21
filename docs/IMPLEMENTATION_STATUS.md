@@ -35,9 +35,9 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
-ADR-046 adds [structured memory](STRUCTURED_MEMORY.md). Its new exact-commit
-verification must be recorded in the build receipt; the reader receipt below
-predates this increment and does not certify the new schema/API.
+ADR-046 adds [structured memory](STRUCTURED_MEMORY.md). Exact-commit SQL/API/UI-
+contract/container/restore verification is recorded below. General email extraction,
+actual browser acceptance and live assistant integration remain unverified.
 
 ADR-045 adds the [owner reader](MESSAGE_READER.md) and [fictional user test](USER_TESTING.md).
 The latter is a usability fixture, not database/live-mail acceptance. Its automated
@@ -58,11 +58,11 @@ next; no production sign-in or hosted availability is claimed.
 
 ### Latest verified runtime
 
-**c3cb5c4** passed [CI 35630644823](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35630644823):
-2,246 Python tests including 326 real SQL cases, 122 Node contracts, five actual
+**9769a22** passed [CI 35659369430](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35659369430):
+2,310 Python tests including 344 real SQL cases, 134 Node contracts, five actual
 MIME-container and 15 actual PDF-container cases. The same revision passed
-[restore 35630644811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35630644811):
-27 tables, 147 rows, two tenants, four encrypted objects and two identity bindings,
+[restore 35659434985](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35659434985):
+30 tables, 162 rows, two tenants, four encrypted objects and two identity bindings,
 including revoked-context denial. Exact scope, local skips and limitations are in
 the [build receipt](BUILD_RECEIPT.md). Receipt-only edits are not a new runtime test.
 

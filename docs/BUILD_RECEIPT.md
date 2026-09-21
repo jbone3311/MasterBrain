@@ -2,7 +2,46 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Verified owner reader
+## Verified structured memory
+
+Runtime/test revision **9769a22170279beb705d3674576fcd098ba8c966** passed
+[CI 35659369430](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35659369430)
+and [restore 35659434985](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35659434985),
+observed 2026-09-21. Later receipt-only changes do not alter this runtime.
+
+- **2,310 Python passes, including 344 real PostgreSQL cases**, no CI skips;
+  **134 Node contracts**, **five actual MIME-container cases** and **15 actual
+  PDF-container cases** pass. Repeated repository-gate suites and restore subsets
+  are not additional unique tests. New memory coverage: **46 offline/API cases,
+  18 SQL cases and 12 Node contracts**.
+- The SQL cases exercise reviewed publication, source/tenant/account binding,
+  assistant write denial, idempotency/no-op/stale conflicts, retained historical
+  reads, trip links, exact decimal amounts, concurrent update winners, a held-open
+  uncommitted publication followed by a second writer, and partial freshness.
+- Lint, type checks over **50 source files**, locked dependencies, both container
+  builds, CLI smoke, runtime-reader exclusion and repository gate pass. Docs:
+  **98 Markdown files / 840 local paths/fragments** before this receipt addition.
+  Local full suite: **1,966 passes / 344 explicit SQL skips**, 134 Node passes;
+  separate restore-script typing, diff checks and JavaScript syntax checks pass.
+- Exact-revision restore: **30 tables, 162 rows, two tenants, four encrypted
+  objects and two identity bindings**, including populated memory revisions and
+  receipts. Whole-table/object hashes match; RLS, identity revocation and refusal
+  of database-only recovery pass. **29 restore safety tests** pass. **26.53 seconds**
+  includes disposable startup; not production RTO, managed PITR or key-loss recovery.
+- Initial CI found one outdated existing upgrade-test expectation: its explicit
+  migration list omitted the newly applied 0014. New memory SQL tests passed.
+  The assertion now includes 0014 while retaining immutable-evidence checks;
+  no migration or permission was weakened. The later full run above is green.
+- Incremental secret scan from b663d13 through 9769a22 found no leaks. Two existing
+  test warnings and action/runner migration notices remain non-failing backlog.
+- This is **owner-reviewed memory**, not automated mailbox understanding. The
+  labelled parser abstains on general email; the separate `/memory` JSON editor
+  is a developer preview. Node contracts are not actual browser/accessibility
+  acceptance. The fictional reader-only server does not provide memory storage.
+  No real mailbox, paid service, LLM call, airline/bank verification, MCP enrollment
+  or mailbox write was enabled. Migration 0014 and runtime regrant are required.
+
+## Historical verified owner reader
 
 Runtime **c3cb5c4105bee7d018c1e5c7c6f8b00823c32b78** passed
 [CI 35630644823](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35630644823)
