@@ -2,6 +2,55 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Owner PDF screen and current documentation pack
+
+Implementation **8d8af93**, contract correction **f73c2352b14ddcceccf7ea2aaf42b9c614b02fe0**.
+[CI 35589125895](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125895)
+and [restore 35589125878](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125878)
+passed at f73c235, observed 2026-09-21 Pacific. Subsequent receipt-only documentation
+does not change the tested runtime and is not the revision tested by these runs.
+
+- **1,668 standard Python tests passed**, including **226 real PostgreSQL cases**,
+  with no CI skips. **84 Node contracts** (25 session/rules, 27 MIME, 32 PDF),
+  **five actual MIME-container** and **15 actual PDF-container** cases passed.
+  Repeated repository-gate suites and restore subsets are not counted twice.
+- New coverage includes four real SQL/API-response-to-DOM cases for extracted,
+  partial, encrypted/deferred and failed documents; four fixed static-asset cases;
+  and the PDF owner suite's consent, idempotency, stale-context, identity, paging,
+  cancellation, opt-in search and cited-page checks. The bridge uses a known-answer
+  reader; actual extraction remains the separate container suite's responsibility.
+- The first [CI run 35588376901](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35588376901)
+  failed all four bridge cases: the UI wrongly expected PDF-result `unscanned`
+  on original attachment receipts, whose persisted contract is `not_scanned`.
+  The fix corrects that validator and its offline fixtures, adds negative scan-state
+  coverage and preserves source/identity checks. No receipt/schema migration or
+  malware-safety assertion was introduced. The four real-response cases now pass.
+- Restore: **26 tables, 142 rows, two tenants, four encrypted objects**, equal
+  hashes, tenant RLS and database-only refusal; **14.37 seconds** including disposable
+  startup. The unchanged fixture and 29 restore safety tests passed. This is not
+  production RTO, managed PITR or hosted key-loss recovery.
+- Local: **1,442 Python passes, 226 explicit PostgreSQL skips**, 84 Node passes,
+  locked development sync, lint, strict typing over 41 source modules, separate
+  restore-script typing, repository/docs/diff checks. Incremental secret scan of
+  6984edf..f73c235 found no leaks. Two existing Python deprecations and GitHub's
+  action Node-runtime/Ubuntu migration notices remain non-failing tracked work.
+- A limited browser smoke at 8d8af93 checked initial layout, fictional connection,
+  default-off PDF search, invalid-account handling and session/checkbox clearing.
+  It did **not** exercise PDF approval/results against SQL, keyboard/screen-reader
+  acceptance or mobile layout. The synthetic preview server and tab were closed.
+
+The pack now explains ADR-038's owner workflow and aligns product features,
+methods, roadmap, security, APIs, deployment and Factory's next assignment. CI
+checked **84 Markdown files and 668 local paths/fragments** at f73c235; subsequent
+receipt links increase that number. GitHub's Markdown API rendered the owner-guide
+headings. Neither navigation checks nor rendered HTML certify factual freshness or
+accessibility. Historical research/OSS counts retain their actual observation dates.
+
+No real mail, provider writes, remote model, cloud resource, production identity,
+scanner acceptance or Factory mutation. The next implementation package is the
+bounded read-worker operator entry point; browser/live/hosted acceptance remain
+separate gates. See [owner guide](DOCUMENT_REVIEW_SCREEN.md) and [handoff](FACTORY_HANDOFF.md).
+
 ## Methods guide and documentation verification
 
 Documentation/tooling revision **874c288** adds the plain-language

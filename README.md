@@ -67,7 +67,7 @@ claim is made.
 
 ## What comes next
 
-1. Complete the read-worker operator entry point and supervised read-only operation.
+1. Complete the bounded read-worker operator entry point.
    The synthetic PDF owner workflow now exists; browser/accessibility acceptance,
    scanner/live policy and hosted worker supervision remain distinct gates.
 2. Complete supervised read-only operation, production identity, managed storage,

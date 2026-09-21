@@ -72,6 +72,9 @@ cover exact identities, malformed envelopes, bounded pages, Unicode offsets,
 same-key uncertainty, duplicate clicks and stale query/session/account/view/card
 responses. Four SQL/API bridge cases feed actual serialized responses through the
 DOM harness (extracted/partial/deferred/failed), using a known-answer reader.
+These caught the original receipt's `not_scanned` versus PDF result's `unscanned`
+contract mismatch; the corrected offline fixtures also reject invented clean/safe
+scan states. Keep the SQL bridge when changing the UI's hand-authored fixtures.
 Static-route/HTML checks retain same-origin/no-store and explicit opt-in controls.
 Neither harness nor static HTML checks prove real browser/accessibility acceptance.
 

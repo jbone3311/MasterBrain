@@ -1,6 +1,15 @@
 # Synthetic PostgreSQL backup/restore drill
 
-Latest runtime recheck: **73a8459**,
+Latest runtime recheck: **f73c235**,
+[run 35589125878](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125878),
+passed 2026-09-21 after the owner PDF screen and attachment-contract correction.
+The unchanged fixture verified **26 tables, 142 rows, two tenants and four encrypted
+objects**, matching hashes, RLS and database-only refusal. **14.37 seconds** includes
+disposable startup, not production RTO/PITR or hosted key recovery. The 29 restore
+safety tests also passed. This is not browser or real-PDF extraction proof; those
+have separate acceptance paths in the [build receipt](BUILD_RECEIPT.md).
+
+Historical runtime recheck: **73a8459**,
 [run 35584256115](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256115),
 passed 2026-09-21 after the separate PDF operator command/shared-controller changes.
 **26 tables, 142 rows, two tenants and four encrypted objects**, matching hashes,

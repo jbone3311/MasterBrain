@@ -61,6 +61,22 @@ ADR-037 strengthens documentation inventory/local-section-link checks and adds a
 methods guide. It changes no product capability or permission. Its tooling tests
 and verification are recorded separately from runtime and live-acceptance claims.
 
+### Latest verified runtime
+
+Owner PDF implementation **8d8af93**, corrected at **f73c235**, passed
+[CI 35589125895](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125895):
+**1,668 Python tests (226 real PostgreSQL), 84 Node contracts, five MIME and 15 PDF
+actual-container cases**. The four SQL/API-to-DOM cases initially exposed a
+scan-status contract mismatch; the corrected implementation and fixtures now pass.
+No schema, permission or immutable-receipt change was needed.
+
+[Restore 35589125878](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125878)
+at f73c235 verified 26 tables, 142 rows, two tenants and four encrypted objects,
+matching hashes and RLS. The limited browser smoke covered initial controls and
+session reset only, not end-to-end PDF/browser accessibility acceptance. Exact
+scope, local skips and remaining gates are in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
+Later receipt-only documentation is not a newly CI-verified runtime revision.
+
 ### Prior verified runtime (before the owner PDF screen)
 
 Application runtime **73a8459** and its documentation/tooling follow-up

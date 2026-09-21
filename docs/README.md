@@ -52,7 +52,7 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 
 The documentation review explains the owner scenario, methods, attachment coverage,
 failure behavior and dependency-ordered delivery plan. The latest consistency pass
-aligns current claims with ADR-035/036, explains the methods in plain language,
+aligns current claims with ADR-035/036/038, explains the methods in plain language,
 and checks contribution/release guides and GitHub review templates automatically.
 [Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
 keep future changes traceable. Browser/accessibility and live/scanner policy remain

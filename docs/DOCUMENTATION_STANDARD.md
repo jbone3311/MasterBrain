@@ -95,3 +95,9 @@ The follow-up consistency pass preserves original OSS/research observations and
 historical receipts, aligns ADR-035/036's current PDF/operator descriptions, adds
 the methods guide and expands the offline navigation/inventory gate with tests.
 No application runtime, schema, dependency, permission or hosting decision changes.
+
+ADR-038 subsequently adds the owner PDF screen and its separate workflow guide.
+The current product/status/roadmap pages now distinguish that implemented UI from
+pending browser accessibility, live-document policy and hosted acceptance. Its
+verification receipt also records the SQL-to-UI scan-status mismatch and correction;
+passing hand-authored UI fixtures alone was not sufficient acceptance.

@@ -13,11 +13,16 @@ exact tested commits and results.
   source/processor validation, same-key uncertain retry and stale-context fences
   keep consent explicit. Existing MIME permissions stay separate. No new schema,
   worker privilege, browser storage, scanner/live policy or hosted service.
+- Corrected the owner screen to recognize the original attachment receipt's
+  `not_scanned` status separately from PDF-result `unscanned`. Real SQL/API-to-UI
+  tests exposed the mismatch; offline fixtures now match the stored contract and
+  reject invented safe/clean scan claims. Immutable source records are unchanged.
 
 - Added `process-documents` with separate fixed-purpose/policy private configuration,
   exact PDF-worker scope, synthetic-account preflight, fresh credentials and bounded
   polling. Added an explicit loopback server channel option. MIME permissions remain
-  separate; no owner PDF UI, hosted supervisor or live-mail authority is added.
+  separate. That command increment added no owner UI; ADR-038 above now supplies
+  it. Hosted supervision and live-mail authority remain separate gates.
 - Fixed demo-owner registry generation to allowlist human scopes and validate before
   saving; the new document-worker scope can no longer invalidate the generated owner.
 
