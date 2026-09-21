@@ -12,6 +12,7 @@ import psycopg
 from email_brain import store as persistence
 from email_brain.attachments import Attachment
 from email_brain.auth import Principal
+from email_brain.mime_sandbox import validate_prepared
 from email_brain.normalize import NormalizedMessage
 from email_brain.store import AccessDenied, Conflict, IngestItem, NotFound, Store
 
@@ -132,7 +133,9 @@ class Recovery:
                         or self.processor.max_raw_bytes != limit
                     ):
                         raise RecoveryUnavailable()
-                    normalized, attachments, rejected = self.processor.prepare(raw)
+                    normalized, attachments, rejected = validate_prepared(
+                        self.processor.prepare(raw), raw
+                    )
                     if (
                         self.processor.parser_version != parser
                         or self.processor.max_raw_bytes != limit

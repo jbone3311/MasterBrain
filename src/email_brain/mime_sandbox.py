@@ -75,7 +75,7 @@ class MimeUnavailable(Exception):
 
 
 def _text(value: Any, limit: int) -> str:
-    if not isinstance(value, str) or len(value) > limit or "\x00" in value:
+    if type(value) is not str or len(value) > limit or "\x00" in value:
         raise MimeUnavailable()
     value.encode("utf-8", errors="strict")
     return value
@@ -94,7 +94,8 @@ def _normalized(value: Any, digest: str) -> NormalizedMessage:
         raise MimeUnavailable()
     text = _text(value["text"], MAX_TEXT_CHARS)
     if (
-        value["raw_sha256"] != digest
+        type(value["raw_sha256"]) is not str
+        or value["raw_sha256"] != digest
         or type(value["truncated"]) is not bool
         or (value["truncated"] and len(text) != MAX_TEXT_CHARS)
     ):
@@ -179,6 +180,69 @@ def _invalid_constant(value: str) -> None:
     raise MimeUnavailable()
 
 
+def _validate_parts(attachments: list[Attachment]) -> None:
+    parts: set[str] = set()
+    for attachment in attachments:
+        part = attachment.part_id
+        if part in parts or any(
+            prior.startswith(part + ".") or part.startswith(prior + ".") for prior in parts
+        ):
+            raise MimeUnavailable()
+        parts.add(part)
+
+
+def validate_prepared(
+    result: object,
+    raw: bytes,
+) -> tuple[NormalizedMessage | None, list[Attachment], bool]:
+    """Validate injected processor values before caching or publishing an outcome.
+
+    Check types, collection lengths and string budgets before copying/serializing.
+    Never asdict/deepcopy an unchecked processor-provided dataclass graph.
+    """
+    try:
+        if (
+            type(raw) is not bytes
+            or len(raw) > MAX_INPUT_BYTES
+            or type(result) is not tuple
+            or len(result) != 3
+        ):
+            raise MimeUnavailable()
+        normalized, attachments, rejected = result
+        if (
+            type(rejected) is not bool
+            or type(attachments) is not list
+            or len(attachments) > MAX_ATTACHMENTS
+        ):
+            raise MimeUnavailable()
+        if rejected:
+            if normalized is not None or attachments:
+                raise MimeUnavailable()
+            return None, [], True
+        if not raw or type(normalized) is not NormalizedMessage:
+            raise MimeUnavailable()
+        if type(normalized.recipients) is not tuple or len(normalized.recipients) > 100:
+            raise MimeUnavailable()
+        normalized_values = {name: getattr(normalized, name) for name in _NORMALIZED_FIELDS}
+        normalized_values["recipients"] = list(normalized.recipients)
+        digest = hashlib.sha256(raw).hexdigest()
+        verified_normalized = _normalized(normalized_values, digest)
+        verified_attachments: list[Attachment] = []
+        for attachment in attachments:
+            if type(attachment) is not Attachment:
+                raise MimeUnavailable()
+            values = {name: getattr(attachment, name) for name in _ATTACHMENT_FIELDS}
+            verified_attachments.append(_attachment(values))
+        _validate_parts(verified_attachments)
+        # Values are now bounded plain scalars; JSON escaping has a bounded
+        # amplification, but still must fit the same response contract budget.
+        if len(_encode(digest, verified_normalized, verified_attachments)) > MAX_OUTPUT_BYTES:
+            raise MimeUnavailable()
+        return verified_normalized, verified_attachments, False
+    except (ValueError, TypeError, UnicodeError, RecursionError, AttributeError):
+        raise MimeUnavailable() from None
+
+
 def _json_budget(text: str) -> None:
     """Bound allocation before JSON decoding; syntax is still checked by json.loads.
 
@@ -249,14 +313,7 @@ def decode_response(
         if not isinstance(items, list) or len(items) > MAX_ATTACHMENTS:
             raise MimeUnavailable()
         attachments = [_attachment(item) for item in items]
-        parts: set[str] = set()
-        for attachment in attachments:
-            part = attachment.part_id
-            if part in parts or any(
-                prior.startswith(part + ".") or part.startswith(prior + ".") for prior in parts
-            ):
-                raise MimeUnavailable()
-            parts.add(part)
+        _validate_parts(attachments)
         return normalized, attachments, False
     except (ValueError, TypeError, UnicodeError, RecursionError):
         raise MimeUnavailable() from None

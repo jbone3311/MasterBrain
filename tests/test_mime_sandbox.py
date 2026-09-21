@@ -19,6 +19,7 @@ from email_brain.mime_sandbox import (
     MimeUnavailable,
     decode_response,
     process_raw,
+    validate_prepared,
 )
 from email_brain.normalize import MAX_RAW_BYTES, normalize
 
@@ -392,3 +393,98 @@ def test_receipt_reason_agrees_with_type_and_budget(changes):
     output["attachments"][0].update(changes)
     with pytest.raises(MimeUnavailable):
         decode_response(encoded(output), raw)
+
+
+def test_prepared_contract_accepts_valid_parsed_and_rejected_values():
+    raw = attachment_raw()
+    prepared = decode_response(process_raw(raw), raw)
+    assert validate_prepared(prepared, raw) == prepared
+    assert validate_prepared((None, [], True), b"") == (None, [], True)
+
+
+@pytest.mark.parametrize(
+    "result",
+    [
+        None,
+        [],
+        [None, [], True],
+        (None, []),
+        (None, [], True, None),
+        (None, [], False),
+        (None, [], 1),
+        (None, (), True),
+        (None, [None], True),
+        ({}, [], False),
+        (None, [], None),
+    ],
+)
+def test_prepared_shape_cannot_be_cached_as_rejection(result):
+    with pytest.raises(MimeUnavailable):
+        validate_prepared(result, RAW)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "normal_with_rejected",
+        "wrong_hash",
+        "null_text",
+        "surrogate",
+        "many_recipients",
+        "recipient_list",
+        "bad_recipient",
+        "huge_subject",
+        "too_many_attachments",
+        "non_attachment",
+        "duplicate_part",
+        "ancestor_part",
+        "invalid_status",
+    ],
+)
+def test_prepared_fields_rejected_before_serialization(case, monkeypatch):
+    raw = attachment_raw()
+    normalized, attachments, rejected = decode_response(process_raw(raw), raw)
+    if case == "normal_with_rejected":
+        rejected = True
+    elif case == "wrong_hash":
+        normalized = replace(normalized, raw_sha256="0" * 64)
+    elif case == "null_text":
+        normalized = replace(normalized, text=None)
+    elif case == "surrogate":
+        normalized = replace(normalized, text="\ud800")
+    elif case == "many_recipients":
+        normalized = replace(normalized, recipients=("synthetic",) * 101)
+    elif case == "recipient_list":
+        normalized = replace(normalized, recipients=["synthetic"])
+    elif case == "bad_recipient":
+        normalized = replace(normalized, recipients=(None,))
+    elif case == "huge_subject":
+        normalized = replace(normalized, subject="x" * 1_000_000)
+    elif case == "too_many_attachments":
+        attachments = attachments * 65
+    elif case == "non_attachment":
+        attachments = [{}]
+    elif case == "duplicate_part":
+        attachments = attachments * 2
+    elif case == "ancestor_part":
+        attachments.append(replace(attachments[0], part_id="1"))
+    else:
+        attachments = [replace(attachments[0], status="unexpected")]
+    monkeypatch.setattr(
+        sandbox, "_encode", lambda *args: pytest.fail("serialized malformed output")
+    )
+    with pytest.raises(MimeUnavailable):
+        validate_prepared((normalized, attachments, rejected), raw)
+
+
+def test_prepared_canonical_output_still_has_byte_budget(monkeypatch):
+    prepared = decode_response(process_raw(RAW), RAW)
+    monkeypatch.setattr(sandbox, "MAX_OUTPUT_BYTES", 50)
+    with pytest.raises(MimeUnavailable):
+        validate_prepared(prepared, RAW)
+
+
+def test_prepared_uninitialized_dataclass_is_scrubbed():
+    normalized = object.__new__(sandbox.NormalizedMessage)
+    with pytest.raises(MimeUnavailable, match="^isolated MIME processing unavailable$"):
+        validate_prepared((normalized, [], False), RAW)

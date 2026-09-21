@@ -141,3 +141,27 @@ def test_default_recovery_does_not_admit_sandbox_version_or_construct_worker():
     with pytest.raises(Conflict):
         Recovery(store).retry(Principal(ctx, "human"), uuid4(), uuid4(), VERSION)
     store.transaction.assert_not_called()
+
+
+@pytest.mark.postgres
+@pytest.mark.parametrize("case", ["null_success", "contradictory", "wrong_type", "oversized_list"])
+def test_malformed_adapter_result_is_not_cached_as_rejected(database, tenant, monkeypatch, case):
+    store, _ = database
+    ctx, account = tenant
+    receipt = make_held(store, ctx, account, monkeypatch)
+    processor = FakeProcessor()
+    normalized, _, _ = processor.prepare(pg.item().raw)
+    values = {
+        "null_success": (None, [], False),
+        "contradictory": (normalized, [], True),
+        "wrong_type": {"unexpected": "private"},
+        "oversized_list": (normalized, [None] * 65, False),
+    }
+    monkeypatch.setattr(processor, "prepare", lambda raw: values[case])
+    with pytest.raises(RecoveryUnavailable):
+        Recovery(store, processor=processor).retry(
+            Principal(ctx, "human"), account, receipt, VERSION
+        )
+    with store.transaction(ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM recovery_attempts").fetchone()["n"] == 0
+    assert len(store.quarantines(ctx, account)["results"]) == 1
