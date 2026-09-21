@@ -1,5 +1,16 @@
 # Security
 
+## Implemented quarantine and reconciliation boundary
+
+Bounded malformed MIME is stored byte-for-byte behind the same tenant RLS as raw
+evidence, not rendered, executed or exposed by the status API. Receipts contain a
+fixed reason rather than parser exception text. NUL bytes are removed only from
+normalized text fields; original bytes and their hash remain unchanged. This is
+not malware scanning or an isolated binary extractor. Oversized mail still pauses.
+Only a certified complete provider inventory can hide absent current projections;
+partial or duplicate-ID inventories cannot authorize absence. No provider deletion
+or evidence erasure is involved. Demo corpus loading refuses enrolled accounts.
+
 ## Current release boundary
 
 The v0.1 service is loopback-only, synthetic-data-first, owner-only per tenant.

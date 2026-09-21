@@ -138,6 +138,13 @@ def seed_corpus(state: Path, count: int) -> None:
     account = UUID(data["account_id"])
     store = Store(_env("EMAIL_BRAIN_DSN"))
     with store.transaction(ctx) as conn:
+        synthetic = conn.execute(
+            "SELECT 1 FROM mail_accounts WHERE id=%s AND provider_account_id IS NULL "
+            "AND secret_ref LIKE %s AND status='active'",
+            (account, "synthetic:%"),
+        ).fetchone()
+        if not synthetic:
+            raise ValueError("unenrolled synthetic account required")
         row = conn.execute(
             "SELECT opaque_cursor FROM sync_cursors WHERE account_id=%s AND scope='email'",
             (account,),

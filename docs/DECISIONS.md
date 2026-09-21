@@ -213,6 +213,9 @@ Sources: [JMAP query-state contract](https://www.rfc-editor.org/rfc/rfc8620#sect
 
 ### ADR-017 — Certified inventory reconciliation and durable MIME quarantine
 
+Supersedes the earlier bounded-MIME failure pause and cursor-expiry pause decisions
+for newly running v2 workers; historical ADRs above record earlier shipped behavior.
+
 **Decision (2026-09-20):** checkpoint schema v2 adds a reconciliation phase. Every
 listing generation records the IDs actually received in a tenant/account inventory.
 Only a complete, query-state-consistent listing whose unique ID count equals its
@@ -241,6 +244,18 @@ tenant access, immutable receipts, batch bounds and end-to-end API evidence.
 workers; stop old workers before migration. Restore only through an explicit restore
 workflow; do not down-migrate or discard inventory/evidence. Production cloud,
 credential enrollment, retention cleanup and isolated binary extraction remain gates.
+
+### ADR-018 — Consolidated hosting planning target (not provisioned)
+
+Owner preference is fewer hosting accounts, not Microsoft-only application or
+mailbox software. Prefer the same Azure hosting account/subscription as RealEstateOS
+if that is the hosting home selected there, with isolated Email Brain resources,
+identities, databases, secrets and budgets. Retain portable Python/PostgreSQL and
+provider adapters. AWS remains an alternative if that is the actual existing
+hosting home. No cloud resources, paid services, Entra app registrations, model
+subscriptions or migration have been created or authorized by this planning choice.
+Region, costs, identity design and deployment approval remain gates. See the
+updated [hosting recommendation and sources](HOSTING_DECISION.md).
 
 ## Explicitly rejected for initial build
 

@@ -781,6 +781,43 @@ def test_quarantine_update_replay_recovery_and_evidence(database, tenant):
         assert conn.execute("SELECT count(*) AS n FROM raw_objects").fetchone()["n"] == 2
 
 
+def test_duplicate_across_inventory_pages_cannot_certify_a_missing_id(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    generation = uuid4()
+    store.ingest_page(ctx, account, None, "page1", [item()], inventory_generation=generation)
+    # Provider repeats page one's ID while claiming that two distinct IDs exist.
+    with pytest.raises(InventoryError):
+        store.ingest_page(
+            ctx,
+            account,
+            "page1",
+            "done",
+            [item("repeat")],
+            inventory_generation=generation,
+            inventory_total=2,
+        )
+    with store.transaction(ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM sync_inventory").fetchone()["n"] == 1
+        assert conn.execute("SELECT count(*) AS n FROM provider_events").fetchone()["n"] == 1
+        assert conn.execute("SELECT count(*) AS n FROM sync_inventory_seals").fetchone()["n"] == 0
+    with pytest.raises(InventoryError):
+        SyncStore(store).reconciliation_candidates(ctx, account, generation)
+
+
+def test_deleted_quarantine_has_no_unresolved_status_but_preserves_receipt(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    store.ingest_page(ctx, account, None, "q", [replace(item(), raw=b"")])
+    store.ingest_page(ctx, account, "q", "d", [replace(item("deleted"), raw=None)])
+    status = store.sync_status(ctx, account)
+    assert status["message_counts"] == {"ready": 0, "quarantined": 0, "deleted": 1}
+    assert not status["review_required"]
+    with store.transaction(ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM quarantine_receipts").fetchone()["n"] == 1
+        assert conn.execute("SELECT raw_mime FROM raw_objects").fetchone()["raw_mime"] == b""
+
+
 def test_quarantine_inventory_rls_and_immutability(database, tenant):
     store, admin = database
     ctx, account = tenant
@@ -964,6 +1001,12 @@ def test_seed_corpus_cli_resumes_after_mid_import_crash(database, tenant, tmp_pa
         assert conn.execute("SELECT count(*) AS n FROM provider_events").fetchone()["n"] == 205
     with pytest.raises(ValueError, match="matching corpus"):
         seed_corpus(tmp_path, 206)
+    with psycopg.connect(database[1]) as conn:
+        conn.execute(
+            "UPDATE mail_accounts SET provider_account_id='real-binding' WHERE id=%s", (account,)
+        )
+    with pytest.raises(ValueError, match="unenrolled synthetic"):
+        seed_corpus(tmp_path, 205)
 
 
 def test_sync_status_api_uses_database_owner_and_hides_unknown_accounts(database, tenant):

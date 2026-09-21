@@ -1,10 +1,40 @@
 # Hosting recommendation
 
-Research checked 2026-09-19. **Recommended long-term target: AWS RDS PostgreSQL +
-private S3 + containerized API/workers.** This is a recommendation, not a purchase
-or deployment. Standard PostgreSQL/Python keeps Supabase or Neon viable alternatives.
+Updated 2026-09-20 for Jim's preference to avoid multiple hosting accounts.
+**Preferred planning target: the same Azure account used for RealEstateOS, if Azure
+is its selected host.** This supersedes the earlier AWS-first recommendation below.
+It does not mean adopting Microsoft mail, SharePoint, or Microsoft-only software.
+Actual account ownership, subscription, region and budget still need confirmation;
+no paid deployment or cloud configuration has been performed.
 
-## Why AWS can make sense
+## Consolidated Azure shape
+
+- Container Apps for the API and separately scoped read workers; it supports API
+  endpoints and scheduled/background jobs. The current loopback CLI/developer image
+  must not be exposed publicly as-is. Production ingress and OIDC are release gates.
+  ([Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/overview))
+- Managed PostgreSQL with private connectivity, public access disabled, verified
+  TLS, backups and separate migration/runtime roles. Keep forced application RLS;
+  cloud identity does not replace tenant authorization.
+  ([PostgreSQL security](https://learn.microsoft.com/en-us/azure/postgresql/security/security-overview))
+- Private Blob storage for larger raw mail/attachments; least-privilege managed
+  identities and Key Vault for remaining provider secrets. Database and object
+  recovery require separate, coordinated restore tests.
+  ([Blob recommendations](https://learn.microsoft.com/en-us/azure/storage/blobs/security-recommendations),
+  [Container Apps identities](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity))
+- Same hosting billing home, separate product resource groups/identities/database
+  boundaries. Email Brain must run independently of Factory and RealEstateOS.
+  Avoid adding AWS Bedrock or a separate database vendor to the initial Azure design.
+  Local models remain optional; remote inference requires its own consent, cost,
+  availability and retention review. No GPU or remote inference is provisioned.
+
+This is our design recommendation, not a claim of zero extra setup or a fixed
+monthly price. Existing mailbox authorization remains necessary. Verify the whole
+region-specific bill and any actual partner credits; do not assume $50/month or
+free production use. If the established hosting home is AWS instead, the alternative
+below remains viable without creating Azure merely for Email Brain.
+
+## Earlier AWS alternative
 
 For multiple products in one security/operations environment, AWS offers private
 networking, database backups, workload identities, KMS, secrets, objects and logs.
