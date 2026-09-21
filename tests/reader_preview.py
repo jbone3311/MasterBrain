@@ -175,6 +175,10 @@ def preview_app() -> FastAPI:
             'id="token" type="password"', f'id="token" value="{TOKEN}" type="password"'
         )
         html = html.replace('id="query" maxlength=', 'id="query" value="Readerproof" maxlength=')
+        html = html.replace(
+            '<a href="/memory">Trips and bills — structured-memory developer preview</a>',
+            '<p>Structured memory requires the separate database-backed service.</p>',
+        )
         return HTMLResponse(html)
 
     @app.get("/readyz", dependencies=[Depends(owner)])

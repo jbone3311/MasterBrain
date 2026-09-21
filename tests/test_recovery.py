@@ -442,6 +442,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0011_processing_history.sql",
             "0012_document_jobs.sql",
             "0013_external_identities.sql",
+            "0014_structured_memory.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
