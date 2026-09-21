@@ -139,7 +139,7 @@ def test_history_scope_does_not_survive_owner_membership_removal(database, tenan
 def test_history_read_is_nonmutating_and_anchor_survives_status_change(
     database, tenant, monkeypatch
 ):
-    store, _ = database
+    store, admin = database
     ctx, account = tenant
     jobs, receipt, first = approve(store, ctx, account, monkeypatch)
     second = jobs.enqueue(Principal(ctx, "human"), account, receipt, VERSION, uuid4())
@@ -167,10 +167,17 @@ def test_history_read_is_nonmutating_and_anchor_survives_status_change(
     assert private_fields.isdisjoint(page["results"][0])
     with store.transaction(ctx) as conn:
         assert conn.execute("SELECT * FROM recovery_jobs ORDER BY id").fetchall() == before
+    # Audit rows are append-only to runtime. Inspect via the disposable test admin,
+    # while retaining a negative check rather than broadening application grants.
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
+        conn.execute("SELECT * FROM audit_events")
+    with psycopg.connect(admin) as conn:
         assert (
             conn.execute(
-                "SELECT count(*) AS n FROM audit_events WHERE event_type='recovery.jobs_read'"
-            ).fetchone()["n"]
+                "SELECT count(*) FROM audit_events "
+                "WHERE tenant_id=%s AND event_type='recovery.jobs_read'",
+                (ctx.tenant_id,),
+            ).fetchone()[0]
             == 1
         )
     jobs.cancel(Principal(ctx, "human"), account, second["id"])
