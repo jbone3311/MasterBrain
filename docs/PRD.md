@@ -62,6 +62,13 @@ A tenant may be one person or a household/team. Accounts and records belong to e
 
 ### Organization and state
 
+- Maintain typed trips/reservations, hotel stays and bills alongside project and
+  investment state. Distinguish an email claim from independently verified status.
+- Expose per-bucket changes with independent per-client cursors, source-check time
+  and explicit interpretation coverage. Never report stale/unprocessed mail as
+  a verified absence of changes. ADR-046 implements a reviewed travel/bill subset;
+  general automatic extraction, reminders and assistant enrollment remain planned.
+
 - Apply deterministic rule matching before model inference.
 - Maintain categories, tags, mailbox mappings, people, organizations, projects, threads, obligations, requests, decisions, deadlines, and temporal facts.
 - Support `_GrokBot/Review`, `_GrokBot/Review Delete`, `_GrokBot/Needs Reply`, `_GrokBot/Drafts`, and configurable domain folders/labels.

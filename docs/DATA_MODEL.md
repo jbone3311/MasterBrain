@@ -227,7 +227,7 @@ They also implement immutable rule simulations/revisions, reconciliation invento
 and seals, current sync state, quarantine receipts, recovery attempts/jobs and
 separate document jobs/extractions. These are actual tables, unlike the target
 entity, obligation and action sketches above. `external_identities` now provides
-the bounded external-subject mapping described above. Migrations 0001–0013 describe the
+the bounded external-subject mapping described above. Migrations 0001–0014 describe the
 schema; the restore receipt's table count also includes migration bookkeeping.
 Worker leases/outcomes are in `sync_workers` and append-only `sync_runs`; enrolled
 accounts have administrator-set `provider_account_id`. Current mailbox/keyword

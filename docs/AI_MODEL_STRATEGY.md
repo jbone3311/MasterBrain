@@ -7,6 +7,13 @@ is claimed. All broader tasks below are requirements for evaluated future work.
 
 ## Policy
 
+The [structured-memory slice](STRUCTURED_MEMORY.md) establishes typed trip/flight/
+hotel/bill publication and source citations. Its labelled-format candidates do not
+invoke a model. Future LLM extractors must produce candidates for this review
+boundary, with field-level evidence and independent quality evaluation; schema
+validity or a cited passage alone does not prove the claim is true. Mailbox sync
+freshness must not be presented as model/extraction coverage.
+
 Every inference task has an escalation ladder:
 
 ```text

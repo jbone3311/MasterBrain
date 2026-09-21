@@ -1,6 +1,7 @@
 """Real disposable PostgreSQL coverage of evidence-backed travel/bill memory."""
 
 import hashlib
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
@@ -278,3 +279,64 @@ def test_actual_http_assistant_read_and_human_write(database, tenant):
         ).status_code
         == 403
     )
+
+
+def test_uncommitted_publication_cannot_be_skipped_by_feed(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    memory, human, request = setup(store, ctx, account)
+    entered, release = threading.Event(), threading.Event()
+    original = store.audit
+    first_record = uuid4()
+
+    def paused_audit(conn, actor, event, resource, identifier=None):
+        original(conn, actor, event, resource, identifier)
+        if event == "memory.publish" and identifier == str(first_record):
+            entered.set()
+            assert release.wait(10), "test publication release timed out"
+
+    store.audit = paused_audit
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(publish, memory, human, account, request, first_record)
+            assert entered.wait(5)
+            second = pool.submit(publish, memory, human, account, request)
+            try:
+                assert memory.changes(ctx, account)["changes"] == []
+            finally:
+                release.set()
+            assert first.result(timeout=10)["record"]["revision"] == 1
+            assert second.result(timeout=10)["record"]["revision"] == 2
+    finally:
+        release.set()
+        store.audit = original
+    assert [r["revision"] for r in memory.changes(ctx, account)["changes"]] == [1, 2]
+
+
+def test_sync_freshness_never_claims_interpretation_complete(database, tenant):
+    store, admin = database
+    ctx, account = tenant
+    memory, _, _ = setup(store, ctx, account)
+    summary = memory.summary(ctx, account)
+    assert summary["last_checked_at"] is None and summary["needs_refresh"]
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO sync_runs(tenant_id,account_id,request_id,outcome,event_count) "
+            "VALUES (%s,%s,%s,'caught_up',0)",
+            (ctx.tenant_id, account, uuid4()),
+        )
+        conn.execute(
+            "INSERT INTO sync_workers(tenant_id,account_id,last_outcome) "
+            "VALUES (%s,%s,'caught_up')",
+            (ctx.tenant_id, account),
+        )
+    summary = memory.summary(ctx, account)
+    assert summary["checked_recently"] and not summary["needs_refresh"]
+    assert not summary["all_mail_interpreted"] and summary["latest_cursor"] is None
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE sync_workers SET paused=true,last_outcome='auth_required' WHERE account_id=%s",
+            (account,),
+        )
+    summary = memory.summary(ctx, account)
+    assert summary["checked_recently"] and summary["needs_refresh"]
