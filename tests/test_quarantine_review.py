@@ -21,7 +21,8 @@ def test_current_quarantine_pagination_is_bounded_and_has_no_raw_access(database
     seen, after = set(), None
     while True:
         page = store.quarantines(ctx, account, limit=10, after=after)
-        assert page["raw_access"] is False and page["reprocessing"] is False
+        assert page["raw_access"] is False and page["reprocessing"] is True
+        assert page["retry_parser_version"]
         assert len(page["results"]) <= 10
         for row in page["results"]:
             assert row["id"] not in seen

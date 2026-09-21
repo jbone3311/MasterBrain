@@ -2,6 +2,12 @@
 
 ## Latest executable additions
 
+[Human-requested held-message recovery](QUARANTINE_RECOVERY.md) rechecks retained
+hashes and current provider state, then atomically publishes parser-versioned
+evidence and an immutable attempt. It neither advances sync nor writes mailboxes.
+Current search excludes historical parser versions; same-parser output drift
+fails closed rather than linking changed text to an old citation.
+
 [Calendar MIME parts](CALENDAR_ATTACHMENTS.md), including unnamed body alternatives,
 now enter the existing bounded attachment evidence/FTS path. They do not create
 calendar events or obligations. [Public sample adoption](PUBLIC_EMAIL_TEST_DATA.md)

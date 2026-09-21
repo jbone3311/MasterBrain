@@ -2,6 +2,14 @@
 
 ## New local prototype boundaries
 
+[Held-message recovery](QUARANTINE_RECOVERY.md) requires a human owner with review
+and evidence scopes at the library boundary. Hash verification precedes parsing;
+account locking and latest-event checks prevent stale recovery from resurrecting
+deleted/replaced mail. Fixed attempt outcomes are immutable and tenant-isolated.
+Raw bytes, cursors and provider events are unchanged; parser exceptions are scrubbed.
+This supersedes earlier statements that all independent reprocessing is deferred;
+bulk reprocessing, automatic retry, binary execution and production access remain gated.
+
 Calendar extraction is quoted untrusted source text, never an RSVP or scheduler.
 It validates bounded syntax and MIME/body method agreement, with no alarm/URL
 execution or organizer authentication. Binary calendar data is unsupported and

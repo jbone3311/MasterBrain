@@ -1,5 +1,11 @@
 # Testing and Evaluations
 
+Held-message recovery adds human/scope/API denial, real PostgreSQL retry races,
+newer-provider-event fences, atomic publication rollback, raw hash failure,
+same-parser idempotency, parser-versioned search, immutable historical citations,
+legacy metadata, RLS and populated-schema upgrade checks. The synthetic logical
+restore also includes failed recovery attempts. See [recovery](QUARANTINE_RECOVERY.md).
+
 See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md).
 
 ## Current executable checks

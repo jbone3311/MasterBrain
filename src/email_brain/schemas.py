@@ -31,6 +31,10 @@ class SearchRequest(ClosedModel):
     include_attachments: bool = True
 
 
+class RecoveryRequest(ClosedModel):
+    expected_parser_version: str = Field(min_length=1, max_length=100)
+
+
 class RulePayload(ClosedModel):
     kind: Literal["rule"]
     sender_domain: str = Field(min_length=1, max_length=253, pattern=r"^[a-z0-9.-]+$")

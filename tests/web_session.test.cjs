@@ -254,3 +254,181 @@ test("rule simulation and active-rule contents render as text, not HTML", async 
   assert.equal(rendered.length, 2);
   for (const node of rendered) assert.equal(node.innerHTML, undefined);
 });
+
+const heldAccount = "00000000-0000-4000-8000-000000000201";
+const heldReceipt = "00000000-0000-4000-8000-000000000202";
+const heldPath = `/v1/accounts/${heldAccount}/quarantine`;
+const retryPath = `${heldPath}/${heldReceipt}/retry`;
+function heldPage(extra = {}) {
+  return {results: [{id: heldReceipt, provider_id: "synthetic-source", parser_version: "old-parser",
+    reason: "mime_rejected", raw_sha256: "a".repeat(64)}], next_after: null,
+    reprocessing: true, retry_parser_version: "current-parser", ...extra};
+}
+function importHealth() { return {message_counts: {ready: 1, quarantined: 0, deleted: 0}, worker: null}; }
+function retryOutcome(outcome = "recovered") {
+  return {historical_outcome: true, outcome, mailbox_effects: false, evidence_id: "synthetic-evidence"};
+}
+async function prepareHeld(app) {
+  app.element("token").value = "synthetic-owner";
+  app.element("account-id").value = heldAccount;
+  await app.evaluate(`heldMessages('${heldAccount}')`);
+  return button(app.element("quarantine"), "Retry parsing");
+}
+
+test("held-message retry requires an explicit click and binds receipt, account and displayed parser", async () => {
+  const calls = [];
+  let retried = false;
+  const app = harness(async (url, options) => {
+    calls.push({url, method: options.method, body: options.body === undefined ? undefined : JSON.parse(options.body)});
+    if (url === heldPath) return response(heldPage(retried ? {results: []} : {}));
+    if (url === retryPath) { retried = true; return response(retryOutcome()); }
+    if (url.endsWith("/sync-status")) return response(importHealth());
+    assert.fail(`unexpected request: ${url}`);
+  });
+  const retry = await prepareHeld(app);
+  assert.equal(calls.length, 1, "review must not automatically retry");
+  assert.ok(descendants(app.element("quarantine")).some((n) => /No mailbox changes.*cached/.test(n.textContent)));
+  app.element("results").append("outdated search results");
+  await retry.onclick();
+  assert.deepEqual(calls[1], {url: retryPath, method: "POST", body: {expected_parser_version: "current-parser"}});
+  assert.deepEqual(calls.slice(2).map((c) => c.url), [`/v1/accounts/${heldAccount}/sync-status`, heldPath]);
+  assert.equal(app.element("quarantine").children.length, 0);
+  assert.equal(app.element("results").children.length, 0);
+  assert.match(app.element("status").textContent, /Historical retry outcome: recovered.*current state.*Mailbox unchanged/);
+});
+
+test("legacy or unsupported quarantine responses expose no retry control", async () => {
+  for (const extra of [{reprocessing: false}, {retry_parser_version: null}, {retry_parser_version: ""}]) {
+    const app = harness(async () => response(heldPage(extra)));
+    app.element("account-id").value = heldAccount;
+    await app.evaluate(`heldMessages('${heldAccount}')`);
+    assert.ok(!descendants(app.element("quarantine")).some((n) => typeof n.onclick === "function"));
+  }
+});
+
+test("recovery failures stay held, refresh current status, and explain cached outcomes without raw content", async () => {
+  for (const outcome of ["mime_rejected", "integrity_failed"]) {
+    const calls = [];
+    const app = harness(async (url) => {
+      calls.push(url);
+      if (url === heldPath) return response(heldPage());
+      if (url === retryPath) return response({...retryOutcome(outcome), raw_mime: "PRIVATE RAW", exception: "PRIVATE EXCEPTION"});
+      return response(importHealth());
+    });
+    await (await prepareHeld(app)).onclick();
+    assert.equal(app.element("quarantine").children.length, 1);
+    assert.deepEqual(calls, [heldPath, retryPath, `/v1/accounts/${heldAccount}/sync-status`, heldPath]);
+    const text = app.element("status").textContent;
+    assert.match(text, /Historical retry outcome:.*cached.*Mailbox unchanged/);
+    assert.ok(!text.includes("PRIVATE"));
+    if (outcome === "integrity_failed") assert.match(text, /Operator review is required/);
+    else assert.match(text, /parser upgrade/);
+  }
+});
+
+test("recovery 403, 409 and 503 errors are generic and never trigger automatic retries", async () => {
+  for (const code of [403, 409, 503]) {
+    const calls = [];
+    const app = harness(async (url) => {
+      calls.push(url);
+      return url === heldPath ? response(heldPage()) : response({detail: "PRIVATE EXCEPTION"}, code);
+    });
+    const retry = await prepareHeld(app);
+    await retry.onclick();
+    assert.deepEqual(calls, [heldPath, retryPath]);
+    assert.equal(retry.disabled, false);
+    assert.match(app.element("status").textContent, new RegExp(`Request failed \\(${code}\\)`));
+    assert.ok(!app.element("status").textContent.includes("PRIVATE"));
+  }
+});
+
+test("a pending retry ignores double clicks and does not refresh after credentials change", async () => {
+  const pending = deferred(), calls = [];
+  const app = harness(async (url) => { calls.push(url); return url === heldPath ? response(heldPage()) : pending.promise; });
+  const retry = await prepareHeld(app);
+  const work = retry.onclick();
+  assert.equal(retry.disabled, true);
+  await retry.onclick();
+  app.element("token").value = "new-owner";
+  app.element("token").oninput();
+  pending.resolve(response(retryOutcome()));
+  await work;
+  assert.deepEqual(calls, [heldPath, retryPath]);
+  assert.equal(app.element("quarantine").children.length, 0);
+  assert.equal(app.element("import-health").children.length, 0);
+  assert.match(app.element("status").textContent, /Session changed/);
+});
+
+test("a pending retry ignores switching accounts away and back", async () => {
+  const pending = deferred(), calls = [];
+  const app = harness(async (url) => { calls.push(url); return url === heldPath ? response(heldPage()) : pending.promise; });
+  const retry = await prepareHeld(app);
+  const work = retry.onclick();
+  app.element("account-id").value = "other-account"; app.element("account-id").oninput();
+  app.element("account-id").value = heldAccount; app.element("account-id").oninput();
+  pending.resolve(response(retryOutcome()));
+  await work;
+  assert.deepEqual(calls, [heldPath, retryPath]);
+  assert.equal(app.element("quarantine").children.length, 0);
+  assert.equal(app.element("import-health").children.length, 0);
+  assert.ok(!app.element("status").textContent.includes("recovered"));
+});
+
+test("a retry control from an old review context cannot issue a request", async () => {
+  const calls = [];
+  const app = harness(async (url) => { calls.push(url); return response(heldPage()); });
+  const retry = await prepareHeld(app);
+  app.element("disconnect").onclick();
+  app.element("token").value = "new-owner";
+  app.element("account-id").value = heldAccount;
+  await retry.onclick();
+  assert.deepEqual(calls, [heldPath]);
+  assert.match(app.element("status").textContent, /Review context changed/);
+});
+
+test("recovery refresh cannot reveal results after disconnect", async () => {
+  const pending = deferred(), calls = [];
+  const refreshStarted = deferred();
+  const app = harness(async (url) => {
+    calls.push(url);
+    if (url === heldPath) return response(heldPage());
+    if (url === retryPath) return response(retryOutcome());
+    refreshStarted.resolve(); return pending.promise;
+  });
+  const retry = await prepareHeld(app);
+  const work = retry.onclick();
+  await refreshStarted.promise;
+  app.element("disconnect").onclick();
+  pending.resolve(response(importHealth()));
+  await work;
+  assert.deepEqual(calls, [heldPath, retryPath, `/v1/accounts/${heldAccount}/sync-status`]);
+  assert.equal(app.element("quarantine").children.length, 0);
+  assert.equal(app.element("import-health").children.length, 0);
+  assert.ok(!app.element("status").textContent.includes("recovered"));
+});
+
+test("unknown recovery response fields never render as success or raw text", async () => {
+  const calls = [];
+  const app = harness(async (url) => {
+    calls.push(url);
+    return url === heldPath ? response(heldPage()) : response({...retryOutcome(), outcome: "<script>PRIVATE</script>"});
+  });
+  await (await prepareHeld(app)).onclick();
+  assert.deepEqual(calls, [heldPath, retryPath]);
+  assert.equal(app.element("status").textContent, "Unexpected retry response. Refresh the queue.");
+});
+
+test("same-account refresh supersedes an older import response", async () => {
+  const pending = deferred();
+  let reads = 0;
+  const app = harness(async (url) => {
+    if (url === heldPath) return response(heldPage({results: []}));
+    return ++reads === 1 ? pending.promise : response(importHealth());
+  });
+  app.element("account-id").value = heldAccount;
+  const old = app.evaluate("loadImport()");
+  await app.evaluate("loadImport()");
+  pending.resolve(response({message_counts: {ready: 999, quarantined: 999, deleted: 999}, worker: null}));
+  await old;
+  assert.ok(!descendants(app.element("import-health")).some((n) => n.textContent.includes("999")));
+});

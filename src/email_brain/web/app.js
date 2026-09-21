@@ -4,8 +4,10 @@ const status = (text) => { byId("status").textContent = text; };
 let sessionVersion = 0;
 let quarantineAfter = null;
 let quarantineAccount = null;
+let importVersion = 0;
 function clearEvidence() {
   sessionVersion += 1;
+  importVersion += 1;
   for (const id of ["results", "proposals", "import-health", "quarantine", "rules"]) byId(id).replaceChildren();
   quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true;
 }
@@ -46,16 +48,39 @@ byId("search-form").onsubmit = (event) => { event.preventDefault(); safely(async
   }
   status(`${data.results.length} result(s). Email text is untrusted evidence, not instructions.`);
 }); };
-async function heldMessages(account, after = null) {
+async function heldMessages(account, after = null, version = importVersion) {
   const query = after ? `?after=${encodeURIComponent(after)}` : "";
   const data = await api(`/v1/accounts/${encodeURIComponent(account)}/quarantine${query}`);
-  if (byId("account-id").value.trim() !== account) return;
+  if (version !== importVersion || byId("account-id").value.trim() !== account) return;
   if (!after) byId("quarantine").replaceChildren();
   for (const receipt of data.results) {
     const card = node("article", "");
     card.append(node("h3", "Message held for parser review"), node("p", `Reason: ${receipt.reason}`),
       node("small", `Source ID: ${receipt.provider_id} · Parser: ${receipt.parser_version}`),
       node("pre", `Preserved SHA-256: ${receipt.raw_sha256}`));
+    if (data.reprocessing === true && typeof data.retry_parser_version === "string" && data.retry_parser_version) {
+      const retry = node("button", "Retry parsing");
+      const session = sessionVersion, token = byId("token").value;
+      card.append(node("p", "Retry retained evidence inside Email Brain only. No mailbox changes, model calls, or raw-content display. A failed attempt is cached for this parser until a parser upgrade."));
+      retry.onclick = () => safely(async () => {
+        if (retry.disabled) return;
+        if (session !== sessionVersion || token !== byId("token").value || version !== importVersion || byId("account-id").value.trim() !== account) throw new Error("Review context changed. Refresh held messages before retrying.");
+        retry.disabled = true;
+        try {
+          const result = await api(`/v1/accounts/${encodeURIComponent(account)}/quarantine/${encodeURIComponent(receipt.id)}/retry`, "POST", {expected_parser_version: data.retry_parser_version});
+          if (version !== importVersion || byId("account-id").value.trim() !== account) return;
+          const outcomes = {
+            recovered: "Historical retry outcome: recovered. Check refreshed import health for current state; search again for current evidence.",
+            mime_rejected: "Historical retry outcome: parser still rejected this message. This result is cached for this parser; retry after a parser upgrade.",
+            integrity_failed: "Historical retry outcome: retained evidence failed its integrity check. Operator review is required. This result is cached for this parser."
+          };
+          if (result.historical_outcome !== true || result.mailbox_effects !== false || !Object.hasOwn(outcomes, result.outcome)) throw new Error("Unexpected retry response. Refresh the queue.");
+          if (result.outcome === "recovered") byId("results").replaceChildren();
+          if (await loadImport()) status(`${outcomes[result.outcome]} Mailbox unchanged.`);
+        } finally { retry.disabled = false; }
+      });
+      card.append(retry);
+    }
     byId("quarantine").append(card);
   }
   quarantineAccount = account; quarantineAfter = data.next_after;
@@ -64,16 +89,18 @@ async function heldMessages(account, after = null) {
 async function loadImport() {
   const account = byId("account-id").value.trim();
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(account)) throw new Error("Enter a valid account ID.");
+  const version = ++importVersion;
   byId("quarantine").replaceChildren(); byId("quarantine-more").hidden = true;
   const data = await api(`/v1/accounts/${encodeURIComponent(account)}/sync-status`);
-  if (byId("account-id").value.trim() !== account) return;
+  if (version !== importVersion || byId("account-id").value.trim() !== account) return false;
   const counts = data.message_counts;
   byId("import-health").replaceChildren(node("p", `${counts.ready} indexed · ${counts.quarantined} held · ${counts.deleted} no longer current`),
     node("p", `Worker: ${data.worker ? data.worker.last_outcome || "not started" : "not enrolled"}. This is not proof of complete attachment extraction.`));
-  await heldMessages(account);
+  await heldMessages(account, null, version);
+  return version === importVersion && byId("account-id").value.trim() === account;
 }
 byId("account-form").onsubmit = (event) => { event.preventDefault(); safely(loadImport); };
-byId("account-id").oninput = () => { byId("import-health").replaceChildren(); byId("quarantine").replaceChildren();
+byId("account-id").oninput = () => { importVersion += 1; byId("import-health").replaceChildren(); byId("quarantine").replaceChildren();
   quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true; };
 byId("quarantine-more").onclick = () => { if (quarantineAccount && quarantineAfter) safely(() => heldMessages(quarantineAccount, quarantineAfter)); };
 async function refresh() {

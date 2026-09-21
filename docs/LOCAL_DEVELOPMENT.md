@@ -79,7 +79,9 @@ roles; they do not erase databases. Never use production. CI refuses silent skip
 The UI contract harness uses Node's standard test runner (Node 20+), with no npm
 dependencies. It is not a real browser/accessibility suite. The owner page also
 supports import health and held-message metadata review from a search result's
-account button. No raw download or reprocessing is enabled.
+account button. Human owners with review/evidence scopes can explicitly retry one
+held receipt using the displayed parser version. See [recovery](QUARANTINE_RECOVERY.md).
+No raw download or mailbox effect is enabled.
 
 Stop the API with Ctrl-C; `docker compose stop` preserves the database. Do not use
 `down -v` unless intentionally deleting that local volume. Migrations are

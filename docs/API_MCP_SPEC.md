@@ -25,9 +25,15 @@ receipt metadata: ID, provider ID, SHA-256, fixed reason, parser version and tim
 a live UUID-keyset list, not a stable export snapshot. New receipts can appear
 before an existing cursor; refresh from the first page after changes. Unknown or
 foreign accounts return 404, absent scope 403, invalid cursor/limit 422.
-Responses declare `raw_access: false` and `reprocessing: false`. Historical failure
+Responses declare `raw_access: false`, `reprocessing: true` and the current
+`retry_parser_version`. Historical failure
 receipts remain stored after repair/deletion but leave this current queue. There
-are no dismiss, raw-download, reprocess or delete routes.
+are no dismiss, raw-download or delete routes. An explicit human owner can call
+`POST /v1/accounts/{account_id}/quarantine/{receipt_id}/retry` with only
+`expected_parser_version`; both review and evidence scopes are required.
+The receipt/parser pair is the natural idempotency key. This retries retained
+bounded MIME, not provider ingestion or a mailbox action. See the complete
+[recovery contract and errors](QUARANTINE_RECOVERY.md).
 
 ## Implemented sync status
 

@@ -16,9 +16,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from email_brain.auth import Principal, TokenRegistry
+from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.rules.control import RuleControl
 from email_brain.schemas import (
     ProposalRequest,
+    RecoveryRequest,
     ReviewRequest,
     RuleActivationRequest,
     RuleRollbackRequest,
@@ -76,6 +78,7 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
     app.add_middleware(BodyLimit)
     bearer = HTTPBearer(auto_error=False)
     rule_control = RuleControl(store)
+    recovery_control = Recovery(store)
 
     def require(scope: str, *, human: bool = False) -> Callable[..., Principal]:
         def dependency(
@@ -127,6 +130,10 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
             (time.monotonic() - started) * 1000,
         )
         return response
+
+    @app.exception_handler(RecoveryUnavailable)
+    async def recovery_handler(request: Request, exc: RecoveryUnavailable) -> JSONResponse:
+        return JSONResponse(status_code=503, content={"error": "recovery_unavailable"})
 
     @app.exception_handler(Conflict)
     async def conflict_handler(request: Request, exc: Conflict) -> JSONResponse:
@@ -190,6 +197,17 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
         limit: Annotated[int, Query(ge=1, le=50)] = 50,
     ) -> dict[str, Any]:
         return store.quarantines(principal.context, account_id, after=after, limit=limit)
+
+    @app.post("/v1/accounts/{account_id}/quarantine/{receipt_id}/retry")
+    def retry_quarantine(
+        account_id: UUID,
+        receipt_id: UUID,
+        request: RecoveryRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        return recovery_control.retry(
+            principal, account_id, receipt_id, request.expected_parser_version
+        )
 
     @app.get("/v1/accounts/{account_id}/sync-status")
     def sync_status(

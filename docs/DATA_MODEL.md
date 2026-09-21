@@ -1,5 +1,15 @@
 # Data Model
 
+## Implemented held-message recovery (0008)
+
+`message_versions.parser_version` is generated from the immutable snapshot;
+uniqueness is now `(tenant_id,message_id,raw_sha256,parser_version)`. Current
+search matches both hash and parser. `quarantine_receipts.source_metadata` records
+new source metadata; legacy null means unknown. `recovery_attempts` has immutable
+receipt/parser-keyed outcomes, actor/time and optional evidence, FORCE RLS and
+composite tenant/account foreign keys. Runtime gets SELECT/INSERT only. See
+[recovery](QUARANTINE_RECOVERY.md) for migration compatibility and rollback.
+
 ## Implemented rule revision addition (0007)
 
 `rule_simulations` stores immutable tenant/actor-bound sample receipts, proposal

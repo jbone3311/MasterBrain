@@ -15,7 +15,8 @@ The read-worker library now has durable import/change checkpoints, fenced leases
 query-churn restart, retries, quarantine and certified inventory recovery. The next
 gates, in dependency order:
 
-1. Independent quarantine replay/review, inventory retention policy and extended soak.
+1. Validate the implemented human quarantine retry under extended soak; add
+   inventory retention policy, alerting and bulk historical reprocessing.
 2. Encrypted large-object storage, isolated binary extraction and byte-preserving restore.
 3. Audited enrollment/recovery, scheduler/lag alerts, disposable-mailbox conformance.
 4. Production identity, member/account grants, infrastructure and restore acceptance.

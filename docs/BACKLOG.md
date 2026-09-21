@@ -41,7 +41,9 @@ Worker progress update: EB-002 now includes orchestration plus synthetic HTTP-to
 coverage; EB-003 includes durable pagination, fresh-generation query restart,
 fenced leases and certified full inventory reconciliation after history expiry.
 EB-004 now retains bounded rejected MIME, immutable receipts and current quarantine
-counts without stalling healthy mail; independent reprocessing and alerts remain.
+counts without stalling healthy mail. Migration 0008 adds explicit human retry of
+current held evidence, immutable outcomes and parser-versioned search; bulk
+historical reprocessing, automated alerts and live acceptance remain.
 These tickets are not production-closed: enrollment, scheduling, live acceptance,
 large-message object storage and soak remain. See [READ_WORKER.md](READ_WORKER.md).
 

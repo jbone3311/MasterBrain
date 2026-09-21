@@ -24,7 +24,11 @@ silently unpaused on upgrade: review its cause and migrate under operator contro
 Inspect the authenticated sync-status endpoint for current quarantine counts.
 Quarantined MIME remains in raw storage with append-only receipts; never delete
 receipts, edit cursor text, or label deferred attachments as successfully extracted.
-Independent quarantine reprocessing and operator resume UI remain unimplemented.
+Independent, human-requested bounded quarantine retry is available in the review
+screen; follow [recovery](QUARANTINE_RECOVERY.md). Monitor fixed audit outcomes
+`recovery.recovered`, `recovery.mime_rejected`, `recovery.integrity_failed` and
+`recovery.read`; no content is logged. Same-parser failures are cached, not retried
+automatically. Operator worker-resume UI and alert delivery remain unimplemented.
 No manual cursor advancement, baseline replacement or silent error clearing.
 
 ## Daily checks

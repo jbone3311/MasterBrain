@@ -13,7 +13,8 @@
 <div id="results" aria-live="polite"></div></section>
 <section><h2>Import health and held messages</h2>
 <p>Choose an account from a search result, or enter its ID from your local demo configuration.
-Held messages are preserved for review; this page cannot reprocess or delete them.</p>
+Held messages are preserved for review. A human owner with review and evidence access can explicitly retry one message's parsing inside Email Brain.
+Retries do not change your mailbox, run a model, display raw mail, or delete evidence. Failed retries are cached for that parser version until an upgrade.</p>
 <form id="account-form"><label for="account-id">Account ID</label>
 <div class="row"><input id="account-id" maxlength="36" required placeholder="Account UUID"><button>Check import</button></div></form>
 <div id="import-health" role="status"></div><div id="quarantine" aria-live="polite"></div>

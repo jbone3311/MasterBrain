@@ -30,6 +30,8 @@ from psycopg.conninfo import make_conninfo
 from email_brain.auth import Principal
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
+from email_brain.normalize import PARSER_VERSION
+from email_brain.recovery import Recovery
 from email_brain.rules.control import RuleControl
 from email_brain.schemas import (
     FeaturePayload,
@@ -273,6 +275,13 @@ def seed(admin: str, store: Store) -> list[SeededTenant]:
             store.ingest_page(context, account, None, "synthetic-checkpoint", items) == 2,
             "synthetic seed accounting failed",
         )
+        held = store.quarantines(context, account)["results"][0]["id"]
+        require(
+            Recovery(store).retry(Principal(context, "human"), account, held, PARSER_VERSION)[
+                "outcome"
+            ] == "mime_rejected",
+            "synthetic recovery attempt seed failed",
+        )
         hits = store.search(context, SearchRequest(query=keyword, include_attachments=False))
         require(len(hits) == 1, "synthetic seed search failed")
         evidence_id = hits[0]["evidence_id"]
@@ -423,6 +432,13 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         else:
             raise DrillFailure("foreign evidence was exposed")
         status = store.sync_status(ctx, current.account_id)
+        held = store.quarantines(ctx, current.account_id)["results"][0]["id"]
+        require(
+            Recovery(store).retry(
+                Principal(ctx, "human"), current.account_id, held, PARSER_VERSION
+            )["outcome"] == "mime_rejected",
+            "restored recovery attempt changed",
+        )
         require(
             status["message_counts"]["ready"] == 1 and status["message_counts"]["quarantined"] == 1,
             "quarantine state changed",

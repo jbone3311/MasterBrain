@@ -18,7 +18,9 @@ from psycopg.types.json import Jsonb
 
 from email_brain.attachments import Attachment, receive_attachments, reconcile
 from email_brain.domain.models import TenantContext
-from email_brain.normalize import MAX_RAW_BYTES, PARSER_VERSION, NormalizedMessage, normalize
+from email_brain.normalize import MAX_RAW_BYTES as MAX_RAW_BYTES
+from email_brain.normalize import PARSER_VERSION as PARSER_VERSION
+from email_brain.normalize import NormalizedMessage, normalize
 from email_brain.rules.active import classify, current_rules
 from email_brain.schemas import CorrectionPayload, ProposalRequest, ReviewRequest, SearchRequest
 
@@ -165,6 +167,122 @@ class Store:
                         attachment.sha256,
                     ),
                 )
+
+    def publish_message(
+        self,
+        conn: psycopg.Connection[dict[str, Any]],
+        ctx: TenantContext,
+        account_id: UUID,
+        item: IngestItem,
+        normalized: NormalizedMessage,
+        attachments: list[Attachment],
+        *,
+        source_metadata_known: bool = True,
+    ) -> UUID:
+        """Publish one parser-versioned projection inside the caller's account lock."""
+        assert item.raw is not None
+        raw_hash = hashlib.sha256(item.raw).hexdigest()
+        message = conn.execute(
+            "INSERT INTO messages(tenant_id,account_id,provider_message_id,"
+            "provider_version,provider_thread_id,internet_message_id,subject,sender,"
+            "recipients,clean_text,raw_sha256,parser_version,received_at) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+            "ON CONFLICT (tenant_id,account_id,provider_message_id) DO UPDATE SET "
+            "provider_version=excluded.provider_version,"
+            "provider_thread_id=excluded.provider_thread_id,"
+            "internet_message_id=excluded.internet_message_id,subject=excluded.subject,"
+            "sender=excluded.sender,recipients=excluded.recipients,"
+            "clean_text=excluded.clean_text,raw_sha256=excluded.raw_sha256,"
+            "parser_version=excluded.parser_version,received_at=excluded.received_at,"
+            "deleted=false,quarantined=false,updated_at=now() RETURNING id",
+            (
+                ctx.tenant_id,
+                account_id,
+                item.provider_id,
+                item.version,
+                item.thread_id,
+                normalized.internet_message_id,
+                normalized.subject,
+                normalized.sender,
+                Jsonb(list(normalized.recipients)),
+                normalized.text,
+                raw_hash,
+                PARSER_VERSION,
+                item.received_at,
+            ),
+        ).fetchone()
+        assert message is not None
+        conn.execute(
+            "UPDATE messages SET provider_metadata=%s WHERE id=%s",
+            (
+                Jsonb(
+                    {"mailbox_ids": item.mailbox_ids, "keywords": item.keywords}
+                    if source_metadata_known
+                    else {"source_metadata": "unknown"}
+                ),
+                message["id"],
+            ),
+        )
+        snapshot = {
+            "subject": normalized.subject,
+            "sender": normalized.sender,
+            "text": normalized.text,
+            "truncated": normalized.truncated,
+            "received_at": item.received_at.isoformat(),
+            "parser_version": PARSER_VERSION,
+        }
+        created = conn.execute(
+            "INSERT INTO message_versions(tenant_id,account_id,message_id,raw_sha256,"
+            "provider_version,snapshot) VALUES (%s,%s,%s,%s,%s,%s) "
+            "ON CONFLICT (tenant_id,message_id,raw_sha256,parser_version) DO NOTHING RETURNING id",
+            (
+                ctx.tenant_id,
+                account_id,
+                message["id"],
+                raw_hash,
+                item.version,
+                Jsonb(snapshot),
+            ),
+        ).fetchone()
+        version = conn.execute(
+            "SELECT id,snapshot FROM message_versions WHERE message_id=%s AND raw_sha256=%s "
+            "AND parser_version=%s",
+            (message["id"], raw_hash, PARSER_VERSION),
+        ).fetchone()
+        assert version is not None and item.raw is not None
+        if created:
+            self.record_attachments(conn, ctx, account_id, version["id"], attachments)
+        else:
+            # A parser version is an immutable contract, not a mutable label. Reject
+            # drift atomically instead of linking new search text to old citations.
+            if any(
+                version["snapshot"].get(key) != snapshot[key]
+                for key in ("subject", "sender", "text", "truncated", "parser_version")
+            ):
+                raise Conflict("parser output changed without a version change")
+            existing = conn.execute(
+                "SELECT part_id,original_filename,safe_filename,media_type,sha256,byte_size,"
+                "status,reason,extracted_text FROM attachment_receipts WHERE evidence_id=%s "
+                "ORDER BY part_id",
+                (version["id"],),
+            ).fetchall()
+            expected = [
+                {
+                    "part_id": a.part_id,
+                    "original_filename": a.original_filename,
+                    "safe_filename": a.safe_filename,
+                    "media_type": a.media_type,
+                    "sha256": a.sha256,
+                    "byte_size": a.byte_size,
+                    "status": a.status,
+                    "reason": a.reason,
+                    "extracted_text": a.text,
+                }
+                for a in sorted(attachments, key=lambda a: a.part_id)
+            ]
+            if existing != expected:
+                raise Conflict("attachment output changed without a parser version change")
+        return UUID(str(version["id"]))
 
     @contextmanager
     def transaction(self, ctx: TenantContext) -> Iterator[psycopg.Connection[dict[str, Any]]]:
@@ -366,8 +484,8 @@ class Store:
                     conn.execute(
                         "INSERT INTO quarantine_receipts"
                         "(tenant_id,account_id,event_key,provider_id,"
-                        "raw_sha256,reason,parser_version) "
-                        "VALUES (%s,%s,%s,%s,%s,'mime_rejected',%s)",
+                        "raw_sha256,reason,parser_version,source_metadata) "
+                        "VALUES (%s,%s,%s,%s,%s,'mime_rejected',%s,%s)",
                         (
                             ctx.tenant_id,
                             account_id,
@@ -375,6 +493,13 @@ class Store:
                             item.provider_id,
                             raw_hash,
                             PARSER_VERSION,
+                            Jsonb(
+                                {
+                                    "thread_id": item.thread_id,
+                                    "mailbox_ids": item.mailbox_ids,
+                                    "keywords": item.keywords,
+                                }
+                            ),
                         ),
                     )
                     conn.execute(
@@ -390,70 +515,7 @@ class Store:
                         (item.version, account_id, item.provider_id),
                     )
                 else:
-                    message = conn.execute(
-                        "INSERT INTO messages(tenant_id,account_id,provider_message_id,"
-                        "provider_version,provider_thread_id,internet_message_id,subject,sender,"
-                        "recipients,clean_text,raw_sha256,parser_version,received_at) "
-                        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
-                        "ON CONFLICT (tenant_id,account_id,provider_message_id) DO UPDATE SET "
-                        "provider_version=excluded.provider_version,"
-                        "provider_thread_id=excluded.provider_thread_id,"
-                        "internet_message_id=excluded.internet_message_id,subject=excluded.subject,"
-                        "sender=excluded.sender,recipients=excluded.recipients,"
-                        "clean_text=excluded.clean_text,raw_sha256=excluded.raw_sha256,"
-                        "parser_version=excluded.parser_version,received_at=excluded.received_at,"
-                        "deleted=false,quarantined=false,updated_at=now() RETURNING id",
-                        (
-                            ctx.tenant_id,
-                            account_id,
-                            item.provider_id,
-                            item.version,
-                            item.thread_id,
-                            normalized.internet_message_id,
-                            normalized.subject,
-                            normalized.sender,
-                            Jsonb(list(normalized.recipients)),
-                            normalized.text,
-                            raw_hash,
-                            PARSER_VERSION,
-                            item.received_at,
-                        ),
-                    ).fetchone()
-                    assert message is not None
-                    conn.execute(
-                        "UPDATE messages SET provider_metadata=%s WHERE id=%s",
-                        (
-                            Jsonb({"mailbox_ids": item.mailbox_ids, "keywords": item.keywords}),
-                            message["id"],
-                        ),
-                    )
-                    snapshot = {
-                        "subject": normalized.subject,
-                        "sender": normalized.sender,
-                        "text": normalized.text,
-                        "truncated": normalized.truncated,
-                        "received_at": item.received_at.isoformat(),
-                        "parser_version": PARSER_VERSION,
-                    }
-                    conn.execute(
-                        "INSERT INTO message_versions(tenant_id,account_id,message_id,raw_sha256,"
-                        "provider_version,snapshot) VALUES (%s,%s,%s,%s,%s,%s) "
-                        "ON CONFLICT (tenant_id,message_id,raw_sha256) DO NOTHING",
-                        (
-                            ctx.tenant_id,
-                            account_id,
-                            message["id"],
-                            raw_hash,
-                            item.version,
-                            Jsonb(snapshot),
-                        ),
-                    )
-                    version = conn.execute(
-                        "SELECT id FROM message_versions WHERE message_id=%s AND raw_sha256=%s",
-                        (message["id"], raw_hash),
-                    ).fetchone()
-                    assert version is not None and item.raw is not None
-                    self.record_attachments(conn, ctx, account_id, version["id"], attachments)
+                    self.publish_message(conn, ctx, account_id, item, normalized, attachments)
                 inserted += 1
             conn.execute(
                 "INSERT INTO sync_cursors(tenant_id,account_id,scope,cursor_kind,opaque_cursor) "
@@ -504,7 +566,8 @@ class Store:
                 "next_after": rows[limit - 1]["id"] if len(rows) > limit else None,
                 "limit": limit,
                 "raw_access": False,
-                "reprocessing": False,
+                "reprocessing": True,
+                "retry_parser_version": PARSER_VERSION,
             }
 
     def sync_status(self, ctx: TenantContext, account_id: UUID) -> dict[str, Any]:
@@ -543,6 +606,7 @@ class Store:
                 "ts_rank_cd(m.search_document,websearch_to_tsquery('simple',%s)) AS score "
                 "FROM messages m JOIN message_versions v ON v.tenant_id=m.tenant_id "
                 "AND v.message_id=m.id AND v.raw_sha256=m.raw_sha256 "
+                "AND v.parser_version=m.parser_version "
                 "WHERE NOT m.deleted AND NOT m.quarantined "
                 "AND (%s::uuid IS NULL OR m.account_id=%s) "
                 "AND m.search_document @@ websearch_to_tsquery('simple',%s) "
@@ -567,6 +631,7 @@ class Store:
                     "v.tenant_id=a.tenant_id AND v.id=a.evidence_id "
                     "JOIN messages m ON m.tenant_id=v.tenant_id AND m.id=v.message_id "
                     "AND m.raw_sha256=v.raw_sha256 "
+                    "AND v.parser_version=m.parser_version "
                     "WHERE a.status='extracted' AND NOT m.deleted AND NOT m.quarantined "
                     "AND (%s::uuid IS NULL OR m.account_id=%s) "
                     "AND a.search_document @@ websearch_to_tsquery('simple',%s) "

@@ -4,6 +4,10 @@ This is a concise ADR index. Each decision should become an individual immutable
 
 ## Accepted
 
+[ADR-027](adr/027_quarantine_recovery.md) adds audited, human-requested retry of
+current held MIME and parser-versioned evidence (migration 0008). It supersedes
+the no-retry UI boundary in ADR-021; no raw-download or mailbox permission is added.
+
 ### ADR-001 — Hosted PostgreSQL is authoritative
 
 **Decision:** managed PostgreSQL + `pgvector`; encrypted object storage for raw blobs.  
