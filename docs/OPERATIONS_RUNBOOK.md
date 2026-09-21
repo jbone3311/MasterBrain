@@ -5,8 +5,13 @@
 The worker library stores `sync_workers` state and append-only `sync_runs` outcomes;
 it is not scheduled or connected to real accounts. See [READ_WORKER.md](READ_WORKER.md)
 for lease expiry, retry deadlines, paused errors and migration/grant instructions.
-`resync_required` is a safe pause: the full inventory reconciler is not implemented.
-Do not follow the target full-resync procedure below until that gate is delivered.
+Expired history now triggers a certified full inventory rebuild; old JSON v1
+checkpoints restart safely. A previously paused `resync_required` account is not
+silently unpaused on upgrade: review its cause and migrate under operator control.
+Inspect the authenticated sync-status endpoint for current quarantine counts.
+Quarantined MIME remains in raw storage with append-only receipts; never delete
+receipts, edit cursor text, or label deferred attachments as successfully extracted.
+Independent quarantine reprocessing and operator resume UI remain unimplemented.
 No manual cursor advancement, baseline replacement or silent error clearing.
 
 ## Daily checks

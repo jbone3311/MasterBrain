@@ -31,9 +31,12 @@ the product sequence; these are buildable handoff tickets.
 ## What can proceed without owner answers
 
 Worker progress update: EB-002 now includes orchestration plus synthetic HTTP-to-DB
-coverage; EB-003 includes durable pagination, query-state restart and fenced leases.
-Neither ticket is closed: enrollment, scheduling, full inventory reconciliation,
-quarantine and live acceptance remain. See [READ_WORKER.md](READ_WORKER.md).
+coverage; EB-003 includes durable pagination, fresh-generation query restart,
+fenced leases and certified full inventory reconciliation after history expiry.
+EB-004 now retains bounded rejected MIME, immutable receipts and current quarantine
+counts without stalling healthy mail; independent reprocessing and alerts remain.
+These tickets are not production-closed: enrollment, scheduling, live acceptance,
+large-message object storage and soak remain. See [READ_WORKER.md](READ_WORKER.md).
 
 Mock/provider transport tests, quarantine state machine, worker leases, synthetic
 attachment sandbox fixtures, OIDC integration contract, SQL grants tests, temporal

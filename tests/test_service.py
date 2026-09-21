@@ -73,6 +73,23 @@ def test_scope_denied(client: TestClient) -> None:
     )
 
 
+def test_sync_status_auth_scope_and_server_bound_context():
+    store = MagicMock(spec=Store)
+    store.sync_status.return_value = {"message_counts": {"quarantined": 1}, "review_required": True}
+    credentials = registry()
+    client = TestClient(create_app(store, credentials))
+    account = uuid4()
+    path = f"/v1/accounts/{account}/sync-status"
+    assert client.get(path).status_code == 401
+    result = client.get(path, headers={"Authorization": f"Bearer {TOKEN}"})
+    assert result.status_code == 200 and result.json()["review_required"]
+    passed_context, passed_account = store.sync_status.call_args.args
+    assert passed_account == account
+    assert passed_context.tenant_id == credentials.authenticate(TOKEN).context.tenant_id
+    denied = TestClient(create_app(store, registry({"email.evidence.read"})))
+    assert denied.get(path, headers={"Authorization": f"Bearer {TOKEN}"}).status_code == 403
+
+
 def test_big_body_rejected(client: TestClient) -> None:
     response = client.post("/v1/search", content=b"x" * 32769)
     assert response.status_code == 413

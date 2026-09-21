@@ -1,5 +1,7 @@
 # Testing and Evaluations
 
+See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md).
+
 ## Current executable checks
 
 `uv run pytest -q` covers unit/API, JMAP/Fastmail mock transport, normalization,

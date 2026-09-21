@@ -19,7 +19,9 @@ mail service. It includes:
 - expiring tenant-bound bootstrap credentials, REST API and a small owner review UI;
 - idempotent typed proposals and optimistic-concurrency human review;
 - a read-only Fastmail HTTP transport and resumable worker library with fenced leases,
-  stable-query import, incremental changes, bounded retries and explicit failure pauses;
+  certified inventory reconciliation, expired-history recovery, incremental changes,
+  bounded retries, durable MIME quarantine and owner-scoped processing status;
+- resumable fictional-inbox seeding with varied mail and attachments;
 - model-routing/output-validation and rank-fusion helpers (no model is called);
 - locked dependencies, CI with a real PostgreSQL service, and a repository gate.
 

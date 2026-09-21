@@ -395,6 +395,8 @@ class SyntheticMailbox:
         self.account = "provider-a"
         self.deleted: list[str] = []
         self.updated: list[str] = []
+        self.created: list[str] = []
+        self.change_state = "e1"
         self.expired = False
         self.status = 200
         self.calls: list[str] = []
@@ -455,8 +457,8 @@ class SyntheticMailbox:
                 )
             result.update(
                 oldState=args["sinceState"],
-                newState="e1",
-                created=[],
+                newState=self.change_state,
+                created=self.created,
                 updated=self.updated,
                 destroyed=self.deleted,
                 hasMoreChanges=False,
@@ -870,5 +872,120 @@ def test_synthetic_256_mailbox_import_search_attachments_and_restart(database, t
             )
             assert conn.execute("SELECT total FROM sync_inventory_seals").fetchone()["total"] == 256
         assert worker.step(ctx, account) == "not_due"
+        # Simulate the scheduler's next tick, then a seven-ID incremental delta.
+        with psycopg.connect(database[1]) as conn:
+            conn.execute(
+                "UPDATE sync_workers SET next_attempt_at=now() WHERE account_id=%s", (account,)
+            )
+        mail.updated = ["m00000", "m00004", "m00005"]
+        mail.created = ["m00256", "m00257"]
+        mail.deleted = ["m00002", "m00003"]
+        mail.change_state = mail.email_state = "e2"
+        for key in mail.deleted:
+            del mail.mail[key]
+        for index in (0, 4, 256, 257):
+            mail.mail[f"m{index:05d}"] = fake_email(index + 1000)
+        mail.mail["m00005"] = b""
+        assert worker.step(ctx, account) == "caught_up"
+        assert worker.store.sync_status(ctx, account)["message_counts"] == {
+            "ready": 255,
+            "quarantined": 1,
+            "deleted": 2,
+        }
+        assert worker.store.search(ctx, SearchRequest(query="marker00000")) == []
+        assert len(worker.store.search(ctx, SearchRequest(query="marker01000"))) == 1
+        # Expired history plus twenty unseen deletions: the certified full rebuild
+        # must recover them in bounded reconciliation pages, not leave stale hits.
+        with psycopg.connect(database[1]) as conn:
+            conn.execute(
+                "UPDATE sync_workers SET next_attempt_at=now() WHERE account_id=%s", (account,)
+            )
+        for index in range(10, 30):
+            del mail.mail[f"m{index:05d}"]
+        mail.expired = True
+        mail.email_state = mail.change_state = "e4"
+        mail.query_state = "q4"
+        mail.updated, mail.created, mail.deleted = [], [], []
+        assert worker.step(ctx, account) == "progress"
+        assert len(worker.store.search(ctx, SearchRequest(query="marker00010"))) == 1
+        mail.expired = False
+        for _ in range(40):
+            result = worker.step(ctx, account)
+            if result == "caught_up":
+                break
+            assert result == "progress"
+        assert result == "caught_up"
+        assert worker.store.sync_status(ctx, account)["message_counts"] == {
+            "ready": 235,
+            "quarantined": 1,
+            "deleted": 22,
+        }
+        assert worker.store.search(ctx, SearchRequest(query="marker00010")) == []
     finally:
         client.close()
+
+
+def test_seed_corpus_cli_resumes_after_mid_import_crash(database, tenant, tmp_path, monkeypatch):
+    import json
+
+    from email_brain.cli import seed_corpus
+
+    store, _ = database
+    ctx, account = tenant
+    (tmp_path / "demo.json").write_text(
+        json.dumps(
+            {
+                "tenant_id": str(ctx.tenant_id),
+                "actor_id": str(ctx.actor_id),
+                "account_id": str(account),
+            }
+        )
+    )
+    monkeypatch.setenv("EMAIL_BRAIN_DSN", store.dsn)
+    real_ingest = Store.ingest_page
+    calls = 0
+
+    def interrupted(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("synthetic crash")
+        return real_ingest(self, *args, **kwargs)
+
+    monkeypatch.setattr(Store, "ingest_page", interrupted)
+    with pytest.raises(RuntimeError, match="synthetic crash"):
+        seed_corpus(tmp_path, 205)
+    assert store.sync_status(ctx, account)["message_counts"]["ready"] == 100
+    monkeypatch.setattr(Store, "ingest_page", real_ingest)
+    seed_corpus(tmp_path, 205)
+    seed_corpus(tmp_path, 205)  # Complete replay is harmless.
+    assert store.sync_status(ctx, account)["message_counts"]["ready"] == 205
+    with store.transaction(ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM provider_events").fetchone()["n"] == 205
+    with pytest.raises(ValueError, match="matching corpus"):
+        seed_corpus(tmp_path, 206)
+
+
+def test_sync_status_api_uses_database_owner_and_hides_unknown_accounts(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    token = "synthetic-status-test-not-a-real-credential-00000"
+    credential = Credential(
+        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id,
+        actor_id=ctx.actor_id,
+        scopes={"email.search"},
+        client_kind="human",
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+    )
+    client = TestClient(create_app(store, TokenRegistry([credential])))
+    headers = {"Authorization": f"Bearer {token}"}
+    store.ingest_page(ctx, account, None, "c", [replace(item(), raw=b"")])
+    result = client.get(f"/v1/accounts/{account}/sync-status", headers=headers)
+    assert result.status_code == 200 and result.json()["review_required"]
+    assert result.json()["message_counts"]["quarantined"] == 1
+    assert "raw" not in result.text and "secret" not in result.text
+    assert client.get(f"/v1/accounts/{uuid4()}/sync-status", headers=headers).status_code == 404
+    with psycopg.connect(database[1]) as conn:
+        conn.execute("DELETE FROM tenant_memberships WHERE tenant_id=%s", (ctx.tenant_id,))
+    assert client.get(f"/v1/accounts/{account}/sync-status", headers=headers).status_code == 403

@@ -20,6 +20,7 @@ from email_brain.auth import SCOPES, TokenRegistry
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.store import IngestItem, Store
+from email_brain.synthetic import fake_email
 
 
 def _env(name: str) -> str:
@@ -126,6 +127,46 @@ def seed(state: Path) -> None:
     print(f"Synthetic page committed: {count} new events (replays are no-ops).")
 
 
+def seed_corpus(state: Path, count: int) -> None:
+    """Resumable synthetic-only backfill for a fresh demo; refuse unrelated cursors."""
+    if type(count) is not int or not 1 <= count <= 10000:
+        raise ValueError("synthetic corpus count must be 1..10000")
+    data = json.loads((state / "demo.json").read_text())
+    ctx = TenantContext(
+        UUID(data["tenant_id"]), UUID(data["actor_id"]), frozenset({"email.ingest"}), uuid4()
+    )
+    account = UUID(data["account_id"])
+    store = Store(_env("EMAIL_BRAIN_DSN"))
+    with store.transaction(ctx) as conn:
+        row = conn.execute(
+            "SELECT opaque_cursor FROM sync_cursors WHERE account_id=%s AND scope='email'",
+            (account,),
+        ).fetchone()
+    prefix = f"synthetic-corpus-v1:{count}:"
+    cursor = row["opaque_cursor"] if row else None
+    if cursor is not None and not cursor.startswith(prefix):
+        raise ValueError("fresh synthetic account or matching corpus required")
+    position = int(cursor[len(prefix) :]) if cursor else 0
+    if not 0 <= position <= count:
+        raise ValueError("invalid synthetic checkpoint")
+    while position < count:
+        stop = min(position + 100, count)
+        items = [
+            IngestItem(
+                f"corpus-v1-{index}",
+                f"synthetic-corpus-{index}",
+                "corpus-v1",
+                datetime(2026, 9, 19, 12, tzinfo=UTC),
+                fake_email(index),
+            )
+            for index in range(position, stop)
+        ]
+        next_cursor = f"{prefix}{stop}"
+        store.ingest_page(ctx, account, cursor, next_cursor, items)
+        position, cursor = stop, next_cursor
+    print(f"Synthetic corpus ready: {count} fictional messages; no provider or model contacted.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="email-brain")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -133,6 +174,9 @@ def main() -> None:
     migration.add_argument("--directory", type=Path, default=Path("migrations"))
     for command in ("init-demo", "seed-demo"):
         commands.add_parser(command).add_argument("--state-dir", type=Path, required=True)
+    corpus = commands.add_parser("seed-corpus", help="Import fictional emails, no provider calls")
+    corpus.add_argument("--state-dir", type=Path, required=True)
+    corpus.add_argument("--count", type=int, default=256)
     serve = commands.add_parser("serve", help="Loopback-only developer server")
     serve.add_argument("--port", type=int, default=8080)
     args = parser.parse_args()
@@ -143,6 +187,8 @@ def main() -> None:
             provision_demo(args.state_dir)
         elif args.command == "seed-demo":
             seed(args.state_dir)
+        elif args.command == "seed-corpus":
+            seed_corpus(args.state_dir, args.count)
         else:
             app = create_app(
                 Store(_env("EMAIL_BRAIN_DSN")),

@@ -4,6 +4,7 @@ import pytest
 from test_sync import query
 
 from email_brain.attachments import receive_attachments
+from email_brain.cli import seed_corpus
 from email_brain.connectors.jmap import ProtocolError
 from email_brain.normalize import MAX_TEXT_CHARS, normalize
 from email_brain.store import prepare_mime
@@ -83,3 +84,21 @@ def test_provider_batch_limits_reject_invalid_settings(limit):
 def test_provider_cannot_exceed_requested_batch_size():
     with pytest.raises(ProtocolError):
         query().query_page(limit=1)
+
+
+@pytest.mark.parametrize("count", [0, -1, 10001, True])
+def test_corpus_rejects_invalid_count_before_files_or_database(count, tmp_path):
+    with pytest.raises(ValueError):
+        seed_corpus(tmp_path, count)
+
+
+def test_bounded_random_bytes_do_not_crash_ingestion():
+    import random
+
+    rng = random.Random(20260920)
+    for _ in range(1000):
+        raw = rng.randbytes(rng.randrange(0, 2048))
+        normalized, _, quarantined = prepare_mime(raw)
+        assert normalized is not None or quarantined
+        if normalized:
+            assert normalized.raw_sha256 == hashlib.sha256(raw).hexdigest()

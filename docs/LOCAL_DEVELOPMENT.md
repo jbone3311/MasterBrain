@@ -49,6 +49,22 @@ public tunnel or reverse proxy. It is not production identity management.
 
 ## Tests
 
+For a larger fictional inbox, use this **instead of** `seed-demo` on a fresh
+initialized synthetic account:
+
+```sh
+uv run email-brain seed-corpus --state-dir "~/Library/Application Support/CW-EmailBrain" --count 256
+```
+
+Includes projects, receipts, meetings, newsletters, multilingual mail, untrusted
+instruction text, HTML alternatives and CSV/PDF attachments. PDFs are deferred,
+not claimed extracted. Search `marker00007`, `Melron`, or `Synthetic` in the UI.
+The importer resumes from its committed page after interruption; rerunning with
+the same count is a no-op once complete. Different corpus counts and unrelated
+account cursors are refused. Limit: 10,000 generated emails. Only the configured
+database is contacted; no mailbox or model calls. This is fixture data, not a
+substitute for a calibrated real-email evaluation set.
+
 ```sh
 uv run ruff check .
 uv run mypy src

@@ -1,0 +1,34 @@
+# Test coverage and limits
+
+Updated 2026-09-20. These are executable behavior checks, not a claim of 100% line
+coverage or production readiness. All message content is synthetic. Exact results
+and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
+
+| Area | Executable tests | Still needed before production |
+|---|---|---|
+| MIME | Plain/HTML alternatives, Unicode, unknown charset, truncation, NUL fields, size bounds, 1,000 seeded random byte inputs | Extended fuzz campaign, independent parser security review |
+| Attachments | Path names, duplicate receipts, CSV/plain extraction, binary/active-content deferral, depth/count limits | Actual isolated PDF/Office/OCR extraction, malware fixtures and sandbox escape tests |
+| Imports | 256-message HTTP-to-Postgres corpus, process recreation each page, varied attachments, initial and incremental sync | Live disposable-provider conformance and realistic mailbox sizes |
+| Recovery | History expiry, certified inventory, empty mailbox, query churn, multiple reconciliation pages, partial inventory refusal, v1 upgrade | Multi-day soak and provider-specific race/retention windows |
+| Poison mail | Exact rejected bytes retained; immutable receipt; good mail progresses; stale current projection hidden; valid update resolves; replay harmless | Independent replay UI, alerting, large object quarantine |
+| Consistency | Atomic evidence/checkpoint, duplicate event checks, collision rollback, lease fencing, eight concurrent claims, crash-after-commit | Production concurrency/load and database failover |
+| Retrieval | Body and attachment FTS, stable historical evidence, tombstone/quarantine exclusions | Recall benchmark, vector retrieval, entity/state filters |
+| Identity | Expired/invalid tokens, server-bound context, denied scopes, owner membership revocation, forced RLS, cross-tenant keys and context reset | OIDC/MFA, invitation/member/account grants, rate limits |
+| API | Authentication, bounded bodies, validation without input echo, secure response headers, status counts, proposals/reviews, absent write endpoints | Browser accessibility, CSRF/session/OAuth threat tests for future login |
+| Control | Typed proposal/review and idempotency, safe rule DSL, human-only approval, protected-class veto | Persisted rule activation, simulations, rollback and entities |
+| Models | Routing policy, closed JSON schema, evidence-excerpt requirement, rejected tool fields | Real local/remote models and calibrated accuracy/privacy/budget tests |
+| Synthetic demo | Deterministic corpus, bounded count, mid-import crash/resume, complete replay, mismatched cursor refusal | Interactive owner acceptance |
+| Release | Locked dependencies, lint, strict types, migration replay, document links, container build/CLI | SBOM/advisory/signature gates, cloud deployment, measured restore drills |
+
+## Interpreting the results
+
+The larger mailbox test imports 256 emails, applies seven changed IDs (new,
+updated, deleted and poisoned), then simulates expired history with twenty unseen
+deletions. It checks resulting counts and searches after certified reconciliation.
+It is bounded fault/pressure testing, not a throughput benchmark or long-running soak.
+
+`caught_up` describes provider cursor progress, not complete extraction. Check
+current quarantine counts and attachment accounting. No test sends or deletes
+provider mail, accesses a real mailbox, calls a model, or provisions paid hosting.
+Gmail, Graph, iCloud, MCP and production restore remain planned—not covered by
+pretend green tests for unimplemented features.
