@@ -56,6 +56,14 @@ Back up both stores with separately recoverable keys; database-only restore fail
 
 ## Executable prototype recovery checks
 
+For a repeatable [known-answer mailbox](TEST_MAILBOX_PLAN.md), export to a new
+directory or replay into an unenrolled synthetic account. Resume only the same
+manifest; never edit/reset cursors to force another dataset into an account.
+The summary distinguishes scheduled deliveries from new committed provider events.
+Stop signals finish in-flight work; a failed command may have committed a previous
+event. Check SQL progress by rerunning the same bounded command. Do not point this
+at a real/enrolled account or treat generated semantic targets as evaluated accuracy.
+
 Run the [synthetic logical restore drill](RESTORE_DRILL.md) on a disposable Docker
 runner. It creates fresh synthetic source/target databases, verifies recovered
 contents and tenant isolation, then removes its owned test container and temporary

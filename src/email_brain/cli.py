@@ -20,9 +20,10 @@ from email_brain.api import create_app
 from email_brain.auth import SCOPES, TokenRegistry
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
-from email_brain.processing_controller import run_controller, shutdown_signals
+from email_brain.processing_controller import private_bytes, run_controller, shutdown_signals
 from email_brain.store import IngestItem, Store
 from email_brain.synthetic import fake_email
+from email_brain.synthetic_mailbox import MailboxSpec, export_mailbox, seed_mailbox
 
 
 def _env(name: str) -> str:
@@ -194,6 +195,18 @@ def main() -> None:
     processing.add_argument("--check", action="store_true")
     processing.add_argument("--max-iterations", type=int, default=1)
     processing.add_argument("--idle-seconds", type=int, default=5)
+    for name in ("export-test-mailbox", "seed-test-mailbox"):
+        fixture_command = commands.add_parser(
+            name, help="Known-answer fictional mail; no live delivery"
+        )
+        fixture_command.add_argument("--seed", type=int, default=42)
+        fixture_command.add_argument("--projects", type=int, default=3)
+        if name == "export-test-mailbox":
+            fixture_command.add_argument("--output-dir", type=Path, required=True)
+        else:
+            fixture_command.add_argument("--state-dir", type=Path, required=True)
+            fixture_command.add_argument("--max-events", type=int, default=100)
+            fixture_command.add_argument("--interval-seconds", type=int, default=0)
     args = parser.parse_args()
     try:
         if args.command == "migrate":
@@ -204,6 +217,37 @@ def main() -> None:
             seed(args.state_dir)
         elif args.command == "seed-corpus":
             seed_corpus(args.state_dir, args.count)
+        elif args.command == "export-test-mailbox":
+            print(
+                json.dumps(export_mailbox(args.output_dir, MailboxSpec(args.seed, args.projects)))
+            )
+        elif args.command == "seed-test-mailbox":
+            spec = MailboxSpec(args.seed, args.projects)
+            data = json.loads(private_bytes(args.state_dir / "demo.json"))
+            if (
+                not isinstance(data, dict)
+                or set(data) != {"tenant_id", "actor_id", "account_id"}
+                or any(not isinstance(value, str) for value in data.values())
+            ):
+                raise ValueError("invalid synthetic state")
+            ctx = TenantContext(
+                UUID(data["tenant_id"]),
+                UUID(data["actor_id"]),
+                frozenset({"email.ingest"}),
+                uuid4(),
+            )
+            stop = Event()
+            with shutdown_signals(stop):
+                result = seed_mailbox(
+                    Store(_env("EMAIL_BRAIN_DSN")),
+                    ctx,
+                    UUID(data["account_id"]),
+                    spec,
+                    max_events=args.max_events,
+                    interval_seconds=args.interval_seconds,
+                    stop=stop,
+                )
+            print(json.dumps(result, sort_keys=True))
         elif args.command == "process-jobs":
             stop = Event()
             with shutdown_signals(stop):
@@ -225,7 +269,7 @@ def main() -> None:
             uvicorn.run(
                 app, host="127.0.0.1", port=args.port, access_log=False, proxy_headers=False
             )
-    except (ValueError, OSError, psycopg.Error):
+    except (ValueError, OSError, RecursionError, psycopg.Error):
         # Do not echo exception contents: a DSN or SQL error can contain credentials.
         parser.exit(
             1,

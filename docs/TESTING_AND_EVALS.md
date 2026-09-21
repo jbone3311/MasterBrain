@@ -56,6 +56,14 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[Known-answer mailbox tests](TEST_MAILBOX_PLAN.md) now independently read generated
+PDF/XLSX/DOCX, validate PNG/ZIP/MIME/calendar structure, check authored current-parser
+outcomes and run the same sources through four mocked provider read contracts.
+Actual SQL tests cover paced/restarted ingestion, commit-response loss, competing
+feeders, account/enrollment/scope denial, malformed MIME quarantine, source hashes,
+current search and absence of binary-only terms. Semantic targets remain unevaluated;
+an image-only diagram is not an OCR benchmark. No private/public mail was downloaded.
+
 [Controller tests](PROCESSING_CONTROLLER.md) add hostile private-file/configuration
 cases, worker credential freshness, bounded polls, signal cleanup, result redaction
 and actual SQL preflight/restart/revocation. The explicit container suite additionally

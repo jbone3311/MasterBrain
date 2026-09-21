@@ -7,6 +7,10 @@ The documentation refresh changes explanations/navigation, not runtime privilege
 
 ## Accepted
 
+[ADR-033](adr/033_known_answer_synthetic_mailbox.md) adds coherent fictional MIME,
+independent format checks, known-answer manifests and bounded/paced synthetic
+ingestion through existing transactions. No live delivery or binary extraction.
+
 [ADR-032](adr/032_operator_processing_controller.md) adds an explicit private,
 bounded operator command for approved jobs, configuration preflight and graceful
 shutdown. It adds no enrollment, SQL grants, schema or hosted service.

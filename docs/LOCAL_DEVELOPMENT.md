@@ -93,8 +93,10 @@ The owner screen also exposes [processing history/approval/cancellation](PROCESS
 The default server does not automatically configure an isolated parser/controller;
 history is distinct from worker liveness. The separately documented visual fixture
 can preview controls without PostgreSQL, but simulates jobs and proves no durability.
-The [test mailbox plan](TEST_MAILBOX_PLAN.md) extends the current seeder in future;
-there is no continuous incoming-mail generator command yet.
+The [test mailbox guide](TEST_MAILBOX_PLAN.md) now documents `export-test-mailbox`
+and `seed-test-mailbox`: coherent scenarios, actual attachments, known-answer
+manifests and bounded optional pacing/resume. Use a fresh synthetic account;
+there is no SMTP delivery or automatically installed continuous service.
 
 Stop the API with Ctrl-C; `docker compose stop` preserves the database. Do not use
 `down -v` unless intentionally deleting that local volume. Migrations are

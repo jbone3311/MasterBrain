@@ -1,5 +1,23 @@
 # Open-Source Evaluation
 
+## Added development-only format validators (2026-09-21)
+
+The [known-answer mailbox](TEST_MAILBOX_PLAN.md) uses pypdf 6.19.0 (BSD-3-Clause),
+openpyxl 3.1.5 and python-docx 1.2.0 (both MIT) as independent readers of our own
+generated fixtures. Reuse directly for bounded development tests, not as an
+unsandboxed production intake stack. Runtime generation remains standard-library
+code and the deployment image excludes these readers and their added XML dependency.
+
+[pypdf's release history](https://pypi.org/project/pypdf/) shows recent September
+2026 releases. [openpyxl](https://pypi.org/project/openpyxl/) last released the chosen
+stable version in June 2024; [python-docx](https://pypi.org/project/python-docx/) in
+June 2025. Their established format fit justifies narrowly scoped independent
+fixture checks; release age and small maintainer teams remain limitations, not
+evidence of active weekly updates or production security approval. The lockfile
+pins artifacts; live vulnerability scanning and full release provenance remain
+separate supply-chain gates. These observations do not refresh historical star/
+watcher/commit counts below.
+
 Documentation reviewed 2026-09-20. Dispositions below are architecture choices,
 not installation receipts. Current dependencies are [pyproject.toml](../pyproject.toml)
 and [uv.lock](../uv.lock); pgvector, MCP SDK, IMAPClient and parser frameworks are

@@ -40,6 +40,10 @@ jobs:
       - run: uv run python scripts/check_docs.py
       - run: docker build -t email-brain-ci .
       - run: docker run --rm email-brain-ci --help
+      - name: Independent fixture readers stay out of the runtime image
+        run: >-
+          docker run --rm --network none --entrypoint /app/.venv/bin/python email-brain-ci
+          -c "import importlib.util; assert all(importlib.util.find_spec(name) is None for name in ('pypdf', 'openpyxl', 'docx', 'lxml'))"
       - name: Actual isolated large-MIME recovery
         run: |
           image_id="$(docker image inspect email-brain-ci --format '{{.Id}}')"

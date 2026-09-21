@@ -1,9 +1,87 @@
 # Believable test mailbox and attachment plan
 
-Updated 2026-09-20. **A proposed extension of the existing synthetic tests, not an
-implemented continuous feed.** No public corpus has been imported, no testing
-service subscribed to and no live email sent. Current artifacts and results are
-listed in [coverage](TEST_COVERAGE_MATRIX.md) and [build receipts](BUILD_RECEIPT.md).
+Updated 2026-09-21. **A bounded known-answer generator/exporter and paced synthetic
+database feeder are now implemented.** No SMTP/capture server, always-on hosted feed,
+public corpus import, testing subscription or live mail delivery. Broader format,
+model-quality and soak requirements below remain open. [ADR-033](adr/033_known_answer_synthetic_mailbox.md)
+records the boundary; [build receipts](BUILD_RECEIPT.md) record executed checks.
+
+## Run the implemented mailbox
+
+Export a new local packet, without a database or any provider account:
+
+```sh
+uv run email-brain export-test-mailbox --seed 42 --projects 3 --output-dir /private/tmp/email-brain-mailbox-42
+```
+
+Use a new absolute output folder outside Dropbox/the source checkout, with existing
+non-symlink parents (`/tmp` is often a symlink on macOS; use `/private/tmp`). Existing
+files/folders are refused, never overwritten. Fixed generated filenames contain no
+mail-derived paths. Files are 0600 and the folder 0700. `manifest.json` is written
+last; treat nonzero exit or an absent/invalid manifest as an incomplete packet.
+Partial outputs are retained for inspection; choose another new directory to retry.
+
+For a fresh initialized synthetic account, use this **instead of** `seed-demo` or
+`seed-corpus`. Keep `demo.json` in its private 0700 state directory, mode 0600, and
+supply only the runtime DSN through the trusted environment:
+
+```sh
+uv run email-brain seed-test-mailbox --state-dir /srv/email-brain-private/demo --seed 42 --projects 3 --max-events 10
+uv run email-brain seed-test-mailbox --state-dir /srv/email-brain-private/demo --seed 42 --projects 3 --max-events 100 --interval-seconds 2
+```
+
+The first command advances at most ten scheduled events. The next resumes the
+same manifest; a completed run is a no-op. `--interval-seconds` is a fixed optional
+wall-clock delay between events (0–60), not a claim of production-realistic timing.
+The manifest separately records varied logical arrivals and out-of-order source dates.
+SIGINT/SIGTERM stop after in-flight work; SQL checkpoints survive interrupted output.
+Conflicting feeders stop safely and can resume; they do not reset each other's cursor.
+
+Bounds: seed 0–2147483647, 1–500 projects, at most 7,500 scheduled events, and
+`--max-events` 1–7500 (default 100). Default three projects produce **36 source
+messages and 45 scheduled events**. Each project has 12 source messages, one exact
+duplicate delivery, one metadata update and one simulated provider tombstone:
+14 unique provider events, ten ready messages, one quarantined and one deleted
+current projection. Deletion is internal test input, never a mailbox command.
+
+The manifest is tenant-neutral and hashes generator version, seed, source bytes,
+attachment bytes, dates, IDs and expected outcomes. Ingestion binds it to the
+existing private demo account/tenant and a manifest-hash cursor. A changed seed,
+project count, byte format or unrelated cursor requires a new synthetic account.
+Account ownership, active status and unenrolled synthetic binding are enforced,
+including again inside every ingestion transaction. No arbitrary packet import.
+
+Search markers from `manifest.json`, for example `rentproofs42p0000`, to find both
+rent-roll CSV revisions. `pdfproofs42p0000` must currently return no hits: it exists
+only in the deferred PDF. Both revisions remain source evidence; no automatic
+project/entity/fact/reply-state implementation is implied.
+
+## Current file and scenario coverage
+
+Connected request/package/correction/receipt/confirmation conversations; original
+and revised XLSX/CSV, text PDFs, minimal DOCX, a PNG floor-plan diagram and its
+image-only PDF, same-UID ICS reschedule, forwarded EML, ZIP, a deliberately truncated
+PDF, inert hostile instruction text and malformed Unicode MIME. PDF/Office/PNG/ZIP/
+nested-message extraction remains deferred; text/CSV/calendar outcomes are checked.
+The image-only PDF is a diagram, **not a scanned-text OCR-quality fixture**. Password-
+protected files, JPEG, more varied business layouts and large soak sets remain gaps.
+
+The generator uses deterministic standard-library format construction and fixed
+MIME/ZIP/PDF metadata; independent dev-only readers validate generated formats:
+
+| Reader | Resolved version / license | Fit and limits |
+|---|---|---|
+| [pypdf](https://pypi.org/project/pypdf/) | 6.19.0 / BSD-3-Clause | Strict PDF structure/text check; release September 16, 2026; not malware scanning or OCR |
+| [openpyxl](https://pypi.org/project/openpyxl/) | 3.1.5 / MIT | Independent worksheet values with read-only/no-link retention; stable release June 28, 2024, not evidence of recent releases |
+| [python-docx](https://pypi.org/project/python-docx/) | 1.2.0 / MIT | Independent paragraph read; release June 16, 2025; small maintainer base and limited fixture scope |
+
+Versions observed September 21, 2026 and pinned with hashes in `uv.lock`; this is
+not a fresh vulnerability audit. These mature readers are used **only for tests of
+our generated files**, not recommended here as unsandboxed production intake.
+CI checks they and the added `lxml` dependency are absent from the runtime image.
+No new core runtime dependencies. See [PDF text limits](https://pypdf.readthedocs.io/en/stable/user/extract-text.html),
+[read-only workbook API](https://openpyxl.readthedocs.io/en/stable/api/openpyxl.reader.excel.html),
+and [DOCX stream support](https://python-docx.readthedocs.io/en/stable/user/documents.html).
 
 ## What exists now
 
@@ -19,7 +97,7 @@ listed in [coverage](TEST_COVERAGE_MATRIX.md) and [build receipts](BUILD_RECEIPT
 See [local development](LOCAL_DEVELOPMENT.md) for commands. Do not create a second
 disconnected ingestion implementation just for the demo.
 
-## Proposed generator: coherent scenarios, varied arrivals
+## Broader generator requirements (partly implemented above)
 
 Generate a fictional world first: organizations, people, projects, invoices and
 deadlines. Produce messages and their attachments from the same facts. Randomize
@@ -46,7 +124,7 @@ Deliberately malformed files must be labeled malformed in the manifest.
 
 ## Required manifest and answer key
 
-Each run records generator version/seed, synthetic tenant/account, scenario/thread,
+Each exported packet records generator version/seed, scenario/thread,
 message and parent IDs, planned arrival time, raw SHA-256, attachment byte hashes,
 formats and expected supported/deferred outcomes. Semantic expectations record
 entities, facts, reply state and relevant evidence only for implemented evaluators.

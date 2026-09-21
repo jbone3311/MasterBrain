@@ -98,7 +98,7 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [GAME_PLAN.md](GAME_PLAN.md) | Finished experience, delivery sequence and release bar |
 | [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) | Feature-by-feature methods and current limitations |
 | [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
-| [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) | Proposed realistic fictional feed, attachment formats and answer keys |
+| [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) | Executable fictional generator/export/replay, attachment formats, answer keys and remaining soak gaps |
 | [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md) | External corpus shortlist and adoption gates |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Authoritative current capability boundaries |
 | [BUILD_RECEIPT.md](BUILD_RECEIPT.md) | Exact-commit verification, historical results and explicit limits |

@@ -7,6 +7,13 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[Known-answer mailbox tooling](TEST_MAILBOX_PLAN.md) authors fictional files only;
+it accepts no recipients or external document inputs. Export refuses existing
+paths and symlinks. Paced replay uses existing synthetic-only account checks on
+every ingestion transaction, without provider writes. New PDF/Office readers are
+dev-only validators of generated data and absent from the runtime image; they are
+not a new unsandboxed production extraction path. No public corpus is imported.
+
 [The operator processing command](PROCESSING_CONTROLLER.md) accepts closed private
 configuration and no-follow owner-only files; a separate exact-scope worker identity
 is reauthenticated at each poll and around parsing. No keys/DSN enter child input,

@@ -18,9 +18,10 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | MCP | Planned typed REST-backed surface | Official SDK adapter, OAuth, actual client compatibility matrix |
 | Actions | No executable sending/deletion/mailbox-write path | Separate action ADR, preview/approval/outbox/reconciliation and disposable-account tests |
 | Factory | Architecture/intake mapping and Product handoff | Registration, hooks, clean sibling checkout, bind PASS and independent Factory audit |
-| Test data | Resumable fictional seeding, actual synthetic attachment bytes and mocked provider formats | Coherent known-answer continuous feed, selected external fixture approval and live replay; see [test mailbox plan](TEST_MAILBOX_PLAN.md) |
+| Test data | Coherent seeded conversations/documents, independent PDF/Office reads, hash manifests, export and bounded paced/resumable SQL feed; mocked provider formats | More varied/held-out scenarios, scanned-text/password-protected fixtures, sustained soak and authorized live replay; see [test mailbox guide](TEST_MAILBOX_PLAN.md) |
 
-The current source includes ADR-032's [bounded operator processing command](PROCESSING_CONTROLLER.md),
+The current source includes ADR-033's [known-answer test mailbox](TEST_MAILBOX_PLAN.md)
+and ADR-032's [bounded operator processing command](PROCESSING_CONTROLLER.md),
 plus ADR-031/migration 0011 processing history and owner controls. The command adds
 private configuration/preflight, fresh worker authentication and graceful stop,
 not credential enrollment or hosted supervision. Exact verification is recorded
@@ -36,8 +37,8 @@ Latest verified runtime/test commit: **eaeca7a**, [CI 35570703531](https://githu
 actual-container cases passed. Restore of unchanged runtime at 0f01724 verified
 24 tables, 119 rows, two tenants and four encrypted objects. See
 [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for exact scope, warnings and limitations.
-The proposed known-answer continuous feed and new browser/accessibility acceptance
-are not included in those claims.
+Later known-answer mailbox changes and new browser/accessibility acceptance
+are not included in those historical commit counts.
 
 Local unit/API/protocol/attachment tests, type checking and linting run with locked
 dependencies. CI additionally runs real PostgreSQL integration tests against a

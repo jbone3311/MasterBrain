@@ -26,6 +26,10 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 
 ## Trace an operation
 
+Known-answer generation/replay is in [synthetic_mailbox.py](../src/email_brain/synthetic_mailbox.py);
+minimal document bytes are authored by [synthetic_formats.py](../src/email_brain/synthetic_formats.py).
+The ordinary parser is unchanged. Independent PDF/Office readers are test-only.
+
 The executable approved-job entry point is [processing_controller.py](../src/email_brain/processing_controller.py),
 wired through `process-jobs` in [cli.py](../src/email_brain/cli.py).
 See [configuration and shutdown](PROCESSING_CONTROLLER.md).

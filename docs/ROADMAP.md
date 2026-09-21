@@ -20,8 +20,10 @@ worker supervision, binary extraction, operational acceptance and Factory bind r
    implemented. Hosted supervision, enrollment, service identities and health/alerts
    remain; the ingestion worker still needs its own operator workflow. The API
    never receives Docker authority.
-2. **Known-answer mailbox:** extend current generator with coherent scenarios,
-   real file formats, versioned manifests and failure/replay schedules (EB-023).
+2. **Known-answer mailbox:** coherent seeded scenarios, actual formats, versioned
+   manifests, export and paced/restarted database replay are implemented (EB-023).
+   Expand held-out variety, scanned-text/password-protected cases and sustained
+   load measurement; existing format checks do not prove binary extraction quality.
 3. **Binary intake:** isolate and scan selected PDF/Office/image formats, enforce
    resource limits, retain receipts and prove known-answer extraction (EB-006).
 4. **Production foundation:** OIDC/grants, Azure adapters/private resources,

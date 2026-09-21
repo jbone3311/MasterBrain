@@ -16,7 +16,7 @@ paid cloud resource or remote model is enabled by this repository.
 - [Features and methods](docs/FEATURES_AND_METHODS.md): workflows, implementation and limits.
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md): working capabilities versus launch gates.
 - [Roadmap](docs/ROADMAP.md): dependency-ordered milestones and measurable exits.
-- [Test mailbox plan](docs/TEST_MAILBOX_PLAN.md): believable conversations, real attachment formats and answer keys.
+- [Test mailbox guide](docs/TEST_MAILBOX_PLAN.md): generate/export believable conversations, real attachments and answer keys; replay through bounded synthetic ingestion.
 - [Documentation directory](docs/README.md): complete product, engineering and operations pack.
 
 ## What works now

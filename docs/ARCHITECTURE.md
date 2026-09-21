@@ -8,6 +8,12 @@ explicit in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 ## Latest executable additions
 
+[Known-answer synthetic mail](TEST_MAILBOX_PLAN.md) now exports coherent MIME and
+documents and replays them through the existing synthetic-only ingestion boundary.
+Manifest-hash cursors bind seed/version/bytes; per-event transactions preserve
+restart and duplicate-delivery semantics. Independent PDF/Office readers live only
+in development tests, not production parsing. There is no new table or API endpoint.
+
 [Operator processing](PROCESSING_CONTROLLER.md) turns the approved-job library
 into a bounded CLI with private identity/key configuration, non-claiming preflight,
 fixed result counts and graceful stop. API and worker still deploy separately;
