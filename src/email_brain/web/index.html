@@ -12,6 +12,10 @@
 <div class="row"><input id="query" maxlength="500" required placeholder="Try: Melron"><button>Search</button></div>
 <label class="check-label"><input id="include-documents" type="checkbox"> Include approved PDF text (unscanned)</label></form>
 <div id="results" aria-live="polite"></div></section>
+<section id="message-reader" aria-labelledby="message-reader-title" hidden>
+<div class="row"><h2 id="message-reader-title">Read email</h2>
+<button id="message-reader-close" type="button">Close email</button></div>
+<div id="message-reader-content" aria-live="polite"></div></section>
 <section><h2>Import health and held messages</h2>
 <p>Choose an account from a search result, or enter its ID from your local demo configuration.
 Held messages are preserved for review. A human owner with review and evidence access can explicitly retry one message's parsing inside Email Brain.
@@ -54,4 +58,4 @@ Closing this page clears local selections, not saved approvals. Cancel unfinishe
 <p>Approval records your decision only. Approved rules need a separate sample preview and activation. Other proposal types are not yet applied.</p>
 <div id="proposals" aria-live="polite"></div></section>
 <footer>No external scripts, images, model calls, or browser storage.</footer>
-</main><script src="/app.js"></script><script src="/document_review.js"></script></body></html>
+</main><script src="/app.js"></script><script src="/document_review.js"></script><script src="/message_reader.js"></script></body></html>

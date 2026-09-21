@@ -7,6 +7,11 @@ for deployed schema; see [code map](CODE_MAP.md) and [status](IMPLEMENTATION_STA
 
 Read the sketches below as a target information model, not ready-to-run SQL.
 
+ADR-045's [owner reader](MESSAGE_READER.md) adds no columns or tables. It resolves
+existing immutable message versions/raw objects/attachment receipts, verifies
+source hashes and appends identifier-only read/export events. Complete small-body
+reading does not enlarge or rewrite the 100,000-character search projection.
+
 ADR-044 adds internal boolean `sender_rule_eligible` to immutable JSON snapshots,
 not a new column/table or SQL migration. Current search/simulation require exact
 JSON true; missing/false/non-boolean legacy values deny sender-rule matching.

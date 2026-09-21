@@ -12,6 +12,7 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 | Optional browser session backend | [browser_auth.py](../src/email_brain/browser_auth.py), [browser_routes.py](../src/email_brain/browser_routes.py); fixed code/PKCE, opaque process sessions and Origin/CSRF; owner UI remains next |
 | Private browser TLS startup | [browser_operator.py](../src/email_brain/browser_operator.py), [operator tests](../tests/test_browser_operator.py); explicit mode, private certificate/key checks and non-consuming preflight; not public hosting |
 | SQL/search/proposals | [store.py](../src/email_brain/store.py) |
+| Owner message reader | [message_reader.py](../src/email_brain/message_reader.py), [message_reader.js](../src/email_brain/web/message_reader.js); source/authority verification, inert text and explicit downloads |
 | Reviewed rules | [rules/](../src/email_brain/rules/) |
 | MIME/attachments | [normalize.py](../src/email_brain/normalize.py), [attachments.py](../src/email_brain/attachments.py), [calendar_attachment.py](../src/email_brain/calendar_attachment.py) |
 | Encrypted local objects | [blobs.py](../src/email_brain/blobs.py) |

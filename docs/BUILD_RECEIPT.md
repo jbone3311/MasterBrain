@@ -2,7 +2,27 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Verified review corrections
+## Owner reader — local implementation checkpoint
+
+ADR-045 is implemented from base **498dd4ceed6a906e2440ec3aa90c3a97aec04b20**.
+New exact-commit CI/restore must pass before claiming SQL/container completion.
+
+- Local: **1,920 Python passes, 326 explicit SQL skips**, two existing warnings;
+  47-source-file type check, lint, locked offline dependency sync, repository gate,
+  diff and docs checks pass. Docs: **96 Markdown files / 816 local paths/fragments**
+  before this receipt-only addition. Existing Node suites: 84 passes; new reader
+  Node suite: 32 passes. Repeated runs are not additional unique tests.
+- New Python cases: 64 reader unit/API, six fictional-preview, 20 actual SQL cases
+  (the latter are local skips, not passes). A real SQL/API-to-DOM bridge is included.
+- Actual local browser smoke confirms fictional search, complete long-body tail,
+  no executable message elements and explicit attachment controls. Original download
+  reached the browser handoff status, but the in-app browser's download event did
+  not arrive; saved-file acceptance is not certified by this checkpoint.
+- No real mailbox, production SQL, cloud storage, worker enrollment, paid service,
+  formatted HTML, large-MIME API parsing, or hosted availability. The fictional
+  preview substitutes storage and is not database authorization proof.
+
+## Historical verified review corrections
 
 Runtime **98a334c47253d7e1af74a948837d2c40e9ff9c95** passed
 [CI 35624876529](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35624876529)

@@ -81,13 +81,8 @@ def validate_raw_budget(max_raw_bytes: int) -> None:
         raise ValueError("invalid bounded MIME budget")
 
 
-def normalize(raw: bytes, *, max_raw_bytes: int = MAX_RAW_BYTES) -> NormalizedMessage:
-    validate_raw_budget(max_raw_bytes)
-    if not isinstance(raw, bytes) or not raw or len(raw) > max_raw_bytes:
-        raise ValueError("raw MIME outside configured byte budget")
-    mail = BytesParser(policy=policy.default).parsebytes(raw)
-    if not isinstance(mail, EmailMessage):
-        raise ValueError("invalid MIME parser result")
+def body_text(mail: EmailMessage) -> str:
+    """Decode the selected body to inert text; preserve quoted conversation content."""
     # Prefer the plain body; get_body avoids text attachments and alternative duplication.
     body = mail.get_body(preferencelist=("plain", "html"))
     text = ""
@@ -103,7 +98,17 @@ def normalize(raw: bytes, *, max_raw_bytes: int = MAX_RAW_BYTES) -> NormalizedMe
             parser = _TextOnly()
             parser.feed(text)
             text = "".join(parser.parts)
-    text = text.replace("\x00", "").strip()
+    return text.replace("\x00", "").strip()
+
+
+def normalize(raw: bytes, *, max_raw_bytes: int = MAX_RAW_BYTES) -> NormalizedMessage:
+    validate_raw_budget(max_raw_bytes)
+    if not isinstance(raw, bytes) or not raw or len(raw) > max_raw_bytes:
+        raise ValueError("raw MIME outside configured byte budget")
+    mail = BytesParser(policy=policy.default).parsebytes(raw)
+    if not isinstance(mail, EmailMessage):
+        raise ValueError("invalid MIME parser result")
+    text = body_text(mail)
     addresses = getaddresses([str(v) for v in mail.get_all("to", []) + mail.get_all("cc", [])])
     sender, sender_rule_eligible = _sender(mail)
     return NormalizedMessage(

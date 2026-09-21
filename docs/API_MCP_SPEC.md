@@ -7,6 +7,14 @@ See [status](IMPLEMENTATION_STATUS.md) and [features/methods](FEATURES_AND_METHO
 
 ## Reading this contract
 
+[ADR-045 reader/export routes](MESSAGE_READER.md#http-contract) add a human-only
+`GET /v1/reader/{evidence_uuid}`, explicit `POST .../original` and
+`POST .../attachments/{receipt_uuid}`. They require current owner/evidence scope;
+downloads additionally require exact unscanned acknowledgement. These are not MCP
+tools or arbitrary object access. Existing evidence/search envelopes stay bounded.
+The new owner view supersedes earlier blanket no-download statements, not the
+quarantine/status endpoints' no-raw boundary or large-MIME parser budget.
+
 ADR-042 adds an explicitly injected [browser session backend](BROWSER_AUTH.md):
 `GET /auth/session`, `POST /auth/login`, `GET /auth/callback`, `POST /auth/logout`.
 These are absent from default `serve`; ADR-043's explicit browser/TLS mode enables

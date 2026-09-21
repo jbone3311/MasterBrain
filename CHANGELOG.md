@@ -6,6 +6,15 @@ The package remains version 0.1.0, a synthetic-data prototype. These entries do
 not announce a production release. [Build receipts](docs/BUILD_RECEIPT.md) retain
 exact tested commits and results.
 
+### Owner email reader (ADR-045)
+
+The later [ADR-045 owner reader](docs/MESSAGE_READER.md) adds complete selected
+body text for MIME up to 1 MiB, bounded headers and explicit human-only verified
+original/leaf-part downloads. Large messages keep explicit projection limits;
+no in-API large parsing or active HTML. New unit/API/SQL/Node/preview tests and a
+[user test guide](docs/USER_TESTING.md) accompany the feature. No migration,
+dependency or mailbox privilege; exact verification is in the build receipt.
+
 ### Review corrections (ADR-044)
 
 - Signing-key refresh no longer holds the cache lock during network I/O. Valid

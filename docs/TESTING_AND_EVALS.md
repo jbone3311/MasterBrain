@@ -19,6 +19,7 @@ owner/search suite. Run all three suites:
 
 ```sh
 node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
+node --test tests/web_reader.test.cjs
 ```
 
 The DOM harness covers same-key uncertain retries, double clicks, malformed
@@ -29,6 +30,15 @@ and restore runs prove database durability separately. Exact verified counts and
 commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
 ## Review regressions
+
+ADR-045 adds [reader unit/API tests](../tests/test_message_reader.py),
+[real SQL/source/authorization tests](../tests/test_message_reader_postgres.py),
+[Node race/download contracts](../tests/web_reader.test.cjs), and a real SQL/API-to-
+DOM bridge. They cover long-body tails, HTML/Unicode/headers, tenant/account/source
+binding, revoked access, corrupted originals, exact decoded attachments, historical
+versions, encrypted/large originals, strict acknowledgement, download headers,
+hashes and stale UI state. The [fictional preview](USER_TESTING.md) is independently
+tested but does not prove database authorization or live-provider readiness.
 
 [Review regressions](../tests/test_review_fixes.py) exercise cache hits during
 blocked refresh, bounded waiters, cold/expired rotation and failure; source MIME

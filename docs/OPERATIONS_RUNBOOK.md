@@ -7,6 +7,13 @@ implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
 
 ## API identity operations
 
+For owner reading/export failures, follow [MESSAGE_READER.md](MESSAGE_READER.md).
+`message.read`, `message.original_export`, `message.attachment_export` are
+identifier-only audit events, not proof a browser saved a file. A scrubbed 503 can
+mean unavailable/corrupt retained storage or an unsupported parser result. Never
+disable hash checking or log source bytes. No migration is needed to disable/revert
+reader routes and UI together. Existing quarantine/status APIs still expose no raw bytes.
+
 ADR-044 permits unexpired cached keys during issuer refresh. Cold/unknown/expired
 requests wait at most five seconds before generic unavailability; do not extend
 key TTL or add bootstrap fallback to hide an outage.

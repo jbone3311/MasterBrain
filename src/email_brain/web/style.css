@@ -10,4 +10,5 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;background:#f3f5f0;
 .processing-note{font-size:.85rem}#processing-jobs article{overflow-wrap:anywhere}#processing-health{border-left:3px solid #91bea6;padding-left:1rem}button:disabled{cursor:default}
 .check-label{display:flex;align-items:center;gap:.6rem;font-weight:400}.check-label input{width:auto}
 #document-jobs article,#document-selection{overflow-wrap:anywhere}#documents-health{border-left:3px solid #91bea6;padding-left:1rem}
+.reader-body{max-height:60vh;overflow:auto}.reader-body:focus-visible{outline:3px solid #91bea6;outline-offset:2px}#message-reader{overflow-wrap:anywhere}
 @media(max-width:560px){.row{flex-wrap:wrap;gap:.4rem}.row input{min-width:0;width:100%;flex-basis:100%}section{padding:1.15rem}.row h2{flex-basis:100%;margin-bottom:.3rem}}

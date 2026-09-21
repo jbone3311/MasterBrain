@@ -52,6 +52,7 @@ what must be proved before it can be used on real mail.
 | Ingest | Fastmail worker and explicit bounded operator CLI; synthetic HTTP-to-Postgres tests; atomic checkpoints, fenced leases, quarantine and inventory reconciliation |
 | Preserve | Immutable raw/evidence versions; bounded inline MIME; opt-in encrypted local objects up to 16 MiB |
 | Search | PostgreSQL FTS over messages and supported text/calendar attachments, with stable evidence references |
+| Read email | Complete selected body for original MIME up to 1 MiB, inert HTML-to-text, headers and explicit hash-verified downloads; larger messages clearly show stored projections |
 | Read PDFs | Separate synthetic approval API/library/operator, owner selection/approval/history/cancel UI, restricted worker, immutable page evidence and opt-in document FTS |
 | Review | Owner-only local UI: search, proposals, virtual sender rules, held mail, processing history/approval/cancellation |
 | Recover | Human-authorized retries and separate restricted MIME worker; bounded jobs, expiry, cancellation and atomic results |
@@ -136,6 +137,10 @@ caches outside Dropbox. See [hosting](docs/HOSTING_DECISION.md).
 
 ## Run and verify
 
+**Ready to try the reader?** Follow [the user test guide](docs/USER_TESTING.md).
+It includes a no-database fictional browser preview and a separate database-backed
+synthetic test. See [reader capabilities and limits](docs/MESSAGE_READER.md).
+
 The [read operator](docs/READ_CONTROLLER.md) adds `sync-read --check` and separately
 flagged bounded execution for an already configured Fastmail account. It does not
 enroll accounts or reset paused workers; no live mailbox has been accepted.
@@ -153,6 +158,7 @@ uv run ruff check .
 uv run mypy src
 uv run pytest -q
 node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
+node --test tests/web_reader.test.cjs
 uv run python scripts/deployment_gate.py
 uv run python scripts/check_docs.py
 uv run email-brain --help

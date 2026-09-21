@@ -177,7 +177,7 @@ class Store:
         return staged
 
     def load_raw(self, ctx: TenantContext, account_id: UUID, sha: str) -> bytes:
-        """Internal authorized evidence read. Never exposed as a raw HTTP/MCP tool."""
+        """Internal authorized read. Human exports resolve evidence first, never raw keys."""
         self.require(ctx, "email.evidence.read")
         with self.transaction(ctx) as conn:
             row = conn.execute(

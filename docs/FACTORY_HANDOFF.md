@@ -25,6 +25,12 @@ operational acceptance; live promotion has its own [gate record](RELEASE_ACCEPTA
 
 ## Completed increments to review, not rebuild
 
+Latest owner increment: [ADR-045/message reader](MESSAGE_READER.md). Review full
+small-body reading, source/receipt integrity, human-only authorization and rechecks,
+explicit unscanned exports, browser generation fences and truthful large-MIME
+projection limits. The [fictional preview](USER_TESTING.md) is only a usability
+fixture. Real SQL/API-to-UI tests remain distinct; hosted/live gates above stay open.
+
 Latest backend slice: [ADR-042/browser sessions](BROWSER_AUTH.md), fixed code/PKCE
 exchange, one-use state, bounded process-memory sessions, cookie/Origin/CSRF,
 current human mapping and revocation. Review callback/logout/cancellation races.

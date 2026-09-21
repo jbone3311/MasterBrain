@@ -15,7 +15,7 @@ function harness(fetch) {
   const elements = new Map();
   const element = (id) => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   const context = vm.createContext({document: {getElementById: element, createElement: () => new Element()}, fetch});
-  for (const name of ["app.js", "document_review.js"]) {
+  for (const name of ["app.js", "document_review.js", "message_reader.js"]) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/email_brain/web", name), "utf8"), context);
   }
   return {element, evaluate: (code) => vm.runInContext(code, context)};

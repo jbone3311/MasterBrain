@@ -120,7 +120,7 @@ async function loadImport() {
   return version === importVersion && byId("account-id").value.trim() === account;
 }
 byId("account-form").onsubmit = (event) => { event.preventDefault(); safely(loadImport); };
-byId("account-id").oninput = () => { importVersion += 1; heldRenderVersion += 1; heldPages = []; resetProcessing(true); resetDocuments(true); byId("import-health").replaceChildren(); byId("quarantine").replaceChildren();
+byId("account-id").oninput = () => { resetReader(); importVersion += 1; heldRenderVersion += 1; heldPages = []; resetProcessing(true); resetDocuments(true); byId("import-health").replaceChildren(); byId("quarantine").replaceChildren();
   quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true; };
 byId("quarantine-more").onclick = () => { if (quarantineAccount && quarantineAfter) safely(() => heldMessages(quarantineAccount, quarantineAfter)); };
 

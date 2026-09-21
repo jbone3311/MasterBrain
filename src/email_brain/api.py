@@ -1,5 +1,6 @@
 """Bootstrap REST service and owner review screen; no mailbox effects or inference tools."""
 
+import hashlib
 import logging
 import time
 from collections.abc import Awaitable, Callable
@@ -20,11 +21,13 @@ from email_brain.blobs import BlobError
 from email_brain.browser_auth import SESSION_COOKIE, BrowserAuth, BrowserDenied
 from email_brain.browser_routes import browser_cookie, browser_principal, browser_router
 from email_brain.document_jobs import DocumentJobs
+from email_brain.message_reader import MessageReader, ReaderUnavailable
 from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.recovery_jobs import RecoveryJobs
 from email_brain.rules.control import RuleControl
 from email_brain.schemas import (
     DocumentRequest,
+    DownloadRequest,
     ProposalRequest,
     RecoveryRequest,
     ReviewRequest,
@@ -96,6 +99,7 @@ def create_app(
     recovery_control = Recovery(store)
     recovery_jobs = RecoveryJobs(store, recovery_parser_version)
     document_jobs = DocumentJobs(store, document_processor_version)
+    message_reader = MessageReader(store)
     if browser_auth is not None:
         if browser_auth.authenticator.store is not store:
             raise ValueError("browser and API must share the same Store")
@@ -145,6 +149,7 @@ def create_app(
         request_id = str(uuid4())
         request.state.request_id = request_id
         response = await call_next(request)
+        content_policy = response.headers.get("Content-Security-Policy")
         response.headers.update(
             {
                 "X-Request-ID": request_id,
@@ -156,6 +161,8 @@ def create_app(
                 "img-src 'none'; frame-ancestors 'none'; base-uri 'none'",
             }
         )
+        if content_policy is not None:
+            response.headers["Content-Security-Policy"] = content_policy
         # Fixed route templates, not URLs, queries, auth headers, or exception strings.
         route = getattr(request.scope.get("route"), "path", "unmatched")
         log.info(
@@ -184,6 +191,10 @@ def create_app(
     @app.exception_handler(RecoveryUnavailable)
     async def recovery_handler(request: Request, exc: RecoveryUnavailable) -> JSONResponse:
         return JSONResponse(status_code=503, content={"error": "recovery_unavailable"})
+
+    @app.exception_handler(ReaderUnavailable)
+    async def reader_handler(request: Request, exc: ReaderUnavailable) -> JSONResponse:
+        return JSONResponse(status_code=503, content={"error": "message_reader_unavailable"})
 
     @app.exception_handler(Conflict)
     async def conflict_handler(request: Request, exc: Conflict) -> JSONResponse:
@@ -232,6 +243,45 @@ def create_app(
     @app.get("/style.css", include_in_schema=False)
     def stylesheet() -> FileResponse:
         return FileResponse(WEB / "style.css", media_type="text/css")
+
+    @app.get("/message_reader.js", include_in_schema=False)
+    def reader_javascript() -> FileResponse:
+        return FileResponse(WEB / "message_reader.js", media_type="text/javascript")
+
+    @app.get("/v1/reader/{evidence_id}")
+    def read_message(
+        evidence_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read", human=True))],
+    ) -> dict[str, Any]:
+        return message_reader.read(principal, evidence_id)
+
+    def download_response(data: bytes, name: str) -> Response:
+        return Response(
+            data,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": f'attachment; filename="{name}"',
+                "Content-Security-Policy": "default-src 'none'; sandbox; frame-ancestors 'none'",
+                "X-Content-SHA256": hashlib.sha256(data).hexdigest(),
+            },
+        )
+
+    @app.post("/v1/reader/{evidence_id}/original")
+    def original_download(
+        evidence_id: UUID,
+        body: DownloadRequest,
+        principal: Annotated[Principal, Depends(require("email.evidence.read", human=True))],
+    ) -> Response:
+        return download_response(*message_reader.download(principal, evidence_id))
+
+    @app.post("/v1/reader/{evidence_id}/attachments/{receipt_id}")
+    def attachment_download(
+        evidence_id: UUID,
+        receipt_id: UUID,
+        body: DownloadRequest,
+        principal: Annotated[Principal, Depends(require("email.evidence.read", human=True))],
+    ) -> Response:
+        return download_response(*message_reader.download(principal, evidence_id, receipt_id))
 
     @app.post("/v1/search")
     def search(

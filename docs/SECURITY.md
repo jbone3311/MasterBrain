@@ -7,6 +7,15 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-045 owner reader](MESSAGE_READER.md) adds human-only source-bound reading
+and consented downloads, not a general raw-object tool. Hash/length and current
+authority are checked before release. Small MIME retains the 1 MiB API parser
+budget; larger MIME is not reparsed in this process. Email display is inert text;
+downloads use octet-stream, generated names, sandbox/no-store/nosniff headers,
+browser hash checks and explicit unscanned acknowledgement. No malware-safety
+claim, HTML rendering, provider write or new assistant/MCP access. Audit identifiers
+only; already delivered bytes cannot be retroactively revoked.
+
 [ADR-044](adr/044_review_fixes.md) keeps unexpired cached signing keys available
 during single-flight refresh without extending expired authority. Sender rules
 now require source-derived single-sender eligibility, including legacy fail-closed

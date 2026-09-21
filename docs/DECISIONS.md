@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-045](adr/045_owner_message_reader.md) adds a human-only full small-message
+reader, explicit original/leaf-part exports and source/authority verification.
+Large messages retain explicit projection limits and intact original downloads;
+MCP/assistant evidence remains bounded. No mailbox privileges or migration.
+
 [ADR-044](adr/044_review_fixes.md) fixes signing-key cache contention and lost
 sender ambiguity. Single-flight refresh preserves valid cached access; source-bound
 sender-rule eligibility fails closed for historical evidence without validation.

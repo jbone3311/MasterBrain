@@ -29,7 +29,7 @@ class Element {
   }
 }
 
-function harness(fetch) {
+function harness(fetch, extras = {}) {
   const elements = new Map(), uuids = [];
   const element = (id) => {
     if (!elements.has(id)) elements.set(id, new Element());
@@ -42,8 +42,9 @@ function harness(fetch) {
       const id = `00000000-0000-4000-8000-${String(900 + uuids.length).padStart(12, "0")}`;
       uuids.push(id); return id;
     }},
+    ...extras,
   });
-  for (const name of ["app.js", "document_review.js"]) {
+  for (const name of ["app.js", "document_review.js", "message_reader.js"]) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/email_brain/web", name), "utf8"), context);
   }
   return {element, uuids, evaluate: (code) => vm.runInContext(code, context)};

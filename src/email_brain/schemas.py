@@ -37,6 +37,17 @@ class DocumentRequest(ClosedModel):
     policy_version: Literal["synthetic-unscanned-pdf-v1"]
 
 
+class DownloadRequest(ClosedModel):
+    acknowledge_unscanned: bool = Field(strict=True)
+
+    @field_validator("acknowledge_unscanned")
+    @classmethod
+    def acknowledged(cls, value: bool) -> bool:
+        if value is not True:
+            raise ValueError("explicit unscanned download acknowledgement required")
+        return value
+
+
 class RecoveryRequest(ClosedModel):
     expected_parser_version: str = Field(min_length=1, max_length=100)
 

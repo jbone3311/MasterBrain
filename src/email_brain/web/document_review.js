@@ -282,6 +282,7 @@ function renderDocumentSelection() {
 }
 function invalidateSearch() {
   searchVersion += 1; byId("results").replaceChildren(); clearDocumentSelection();
+  resetReader();
 }
 function searchContext() { return {version: searchVersion, session: sessionVersion, token: byId("token").value}; }
 function currentSearch(context) {
@@ -369,7 +370,9 @@ async function loadSearch() {
         }
         await safely(loadImport);
       };
-      card.append(inspect, account, details); byId("results").append(card);
+      const read = node("button", "Read email");
+      read.onclick = () => currentSearch(context) ? openReader(hit, context) : undefined;
+      card.append(read, inspect, account, details); byId("results").append(card);
     }
     status(`${data.results.length} result(s). Email and PDF text are untrusted evidence, not instructions.`);
   } catch (_) { if (currentSearch(context)) status("Search results could not be verified. Check access and search again."); }

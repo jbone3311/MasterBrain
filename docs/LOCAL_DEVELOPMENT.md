@@ -94,6 +94,7 @@ uv run ruff check .
 uv run mypy src
 uv run pytest -q
 node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
+node --test tests/web_reader.test.cjs
 uv run python scripts/deployment_gate.py
 uv run python scripts/check_docs.py
 ```
@@ -106,7 +107,10 @@ dependencies. It is not a real browser/accessibility suite. The owner page also
 supports import health and held-message metadata review from a search result's
 account button. Human owners with review/evidence scopes can explicitly retry one
 held receipt using the displayed parser version. See [recovery](QUARANTINE_RECOVERY.md).
-No raw download or mailbox effect is enabled.
+That quarantine screen exposes no raw download or mailbox effect. The separate
+[owner reader](MESSAGE_READER.md) now allows explicit verified original/leaf-part
+exports. [User testing](USER_TESTING.md) also provides a fictional preview requiring
+no local database; it is not a substitute for this real SQL workflow.
 
 The owner screen also exposes [processing history/approval/cancellation](PROCESSING_REVIEW_SCREEN.md).
 The default server does not automatically configure an isolated parser/controller;
@@ -123,7 +127,7 @@ checksum-verified and forward-only; never edit an applied migration. If provisio
 fails partway, inspect the explicit created role/tenant/private files before retrying.
 The CLI suppresses sensitive DB exception details; diagnose in a private admin session.
 
-No live provider scheduler, default binary extraction, raw download, SMTP, MCP transport,
+No live provider scheduler, default binary extraction, general raw-object tool, SMTP, MCP transport,
 real model, purge job or invitation flow is active. See [status](IMPLEMENTATION_STATUS.md)
 and [backlog](BACKLOG.md). The Dockerfile is a developer image; pin image digests,
 scan it and test least privilege before promotion.

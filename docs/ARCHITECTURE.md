@@ -12,6 +12,13 @@ execution distinct in both diagrams and implementation.
 
 ## Latest executable additions
 
+[Owner message reading](MESSAGE_READER.md), ADR-045, resolves immutable evidence
+to verified retained bytes under current human/owner/account authority. Small
+messages are read beyond search-excerpt limits, with inert text and bounded
+headers. Larger originals retain an explicit projection-only screen plus original
+export. Separate consented download POSTs serve verified bytes, never arbitrary
+objects. No migration, worker privilege or assistant evidence change.
+
 [ADR-044 review fixes](adr/044_review_fixes.md) separate key-refresh network I/O
 from cached-key access and carry source sender eligibility through versioned MIME
 results into search/rule simulation. Legacy evidence remains immutable and readable;

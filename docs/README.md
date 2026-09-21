@@ -15,6 +15,8 @@ selection/approval/history/cancellation and cited pages; live acceptance is pend
 
 ## Reading paths
 
+- **Try the latest reader:** [user testing](USER_TESTING.md), [reading and download limits](MESSAGE_READER.md).
+
 - **Current build:** [browser session backend](BROWSER_AUTH.md) and explicit
   private TLS/operator startup are implemented; owner UI and browser acceptance come next.
 

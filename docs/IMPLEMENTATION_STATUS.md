@@ -8,7 +8,8 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks; verified synthetic logical dump/restore | Managed deployment, encryption/KMS, purge, offsite/PITR disaster-recovery drills |
 | Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker and bounded private-configured read CLI; fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/resume administration, hosted supervision/alerts, live acceptance and soak |
 | Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
-| Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, production PDF intake policy, Office/OCR/archive extraction; bulk historical document reprocessing and raw download policy |
+| Read original email | Human-only complete selected body for MIME up to 1 MiB, inert HTML-to-text, headers, explicit verified original/leaf-part downloads | Larger bodies remain stored projections on screen; full large-message reader and nested-part export require restricted processing; no formatted HTML |
+| Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; explicit unscanned human downloads for small-source leaf parts | Malware scanner, production PDF intake policy, Office/OCR/archive extraction; bulk historical document reprocessing and large/nested separate exports |
 | Approved PDF processing | Separate restricted worker; synthetic API/library/operator and owner approval/history/cancel UI, durable fenced jobs, immutable results, opt-in FTS and cited pages | Browser acceptance, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments; opt-in latest-current PDF extraction text | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Explicit bootstrap or RFC/Entra access-token verification; administrator-owned SQL mappings, revision/expiry/scope/owner rechecks and binding audit | Browser sign-in/session lifecycle, MFA/issuer enrollment, invitations, member/account grants, revocation UX, rate limiting |
@@ -32,6 +33,10 @@ do not create entities. Virtual labels do not change provider folders. A configu
 parser does not certify an online worker, and a completed job can have deferred attachments.
 
 ## Validation
+
+ADR-045 adds the [owner reader](MESSAGE_READER.md) and [fictional user test](USER_TESTING.md).
+The latter is a usability fixture, not database/live-mail acceptance. The verified
+runtime below predates this addition until its own exact-commit receipt is recorded.
 
 ADR-044 corrects cache-refresh contention and sender ambiguity. Current search and
 rule previews require source-derived sender eligibility; historical snapshots
