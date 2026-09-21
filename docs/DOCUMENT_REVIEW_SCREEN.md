@@ -51,6 +51,11 @@ number, Unicode-character offsets, hash and truncation notice. Citation text is
 not opened as a URL. No embedded PDF/HTML, images, scripts, password entry or raw
 download. Hashes identify source bytes/excerpts, not document truth or malware safety.
 
+Original MIME attachment receipts use the existing `scanner_status: not_scanned`
+contract; separate PDF capabilities/results use `scanner_status: unscanned`.
+Neither means safe. The UI validates each against its own API contract rather than
+rewriting immutable receipts or accepting a claimed clean scan.
+
 The newest current extraction controls opt-in search. A historical job citation
 may still resolve even if newer extraction failed or provider mail was deleted.
 The screen labels the saved result/revision; it does not claim every historical

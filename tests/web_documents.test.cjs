@@ -32,7 +32,7 @@ function pdfHit(extra = {}) {
 function search(results = [hit()]) { return {mode: "lexical", untrusted_content: true, results}; }
 function part(extra = {}) {
   return {id: RECEIPT, part_id: "1.2", safe_filename: "fictional.pdf", media_type: "application/pdf", sha256: "b".repeat(64),
-    byte_size: 1000, status: "deferred", reason: "isolated_extractor_required", scanner_status: "unscanned", duplicate_of: null, excerpt: "", ...extra};
+    byte_size: 1000, status: "deferred", reason: "isolated_extractor_required", scanner_status: "not_scanned", duplicate_of: null, excerpt: "", ...extra};
 }
 function message(extra = {}) {
   return {id: EVIDENCE, account_id: ACCOUNT, message_id: MESSAGE, raw_sha256: "c".repeat(64), excerpt: "Fictional body",
@@ -349,6 +349,21 @@ test("invalid message/source/receipt identities never produce PDF selection cont
     await find(app); await button(app.element("results"), "Inspect cited evidence").onclick();
     assert.ok(!buttons(app.element("results")).some((b) => b.textContent === "Review this PDF"));
     assert.ok(!visible(app).includes("PRIVATE"));
+  }
+});
+
+test("original receipts retain not_scanned while PDF results use their separate unscanned contract", async () => {
+  const {app} = scenario();
+  await select(app);
+  assert.match(app.element("results").textContent, /scanner: not_scanned/);
+  assert.ok(button(app.element("document-selection"), "Approve this PDF"));
+  for (const scanner_status of ["unscanned", "clean", "safe", null]) {
+    const invalid = scenario(({url}) => url === `/v1/evidence/${EVIDENCE}`
+      ? response(message({attachments: [part({scanner_status})]})) : undefined);
+    await find(invalid.app);
+    await button(invalid.app.element("results"), "Inspect cited evidence").onclick();
+    assert.ok(!buttons(invalid.app.element("results")).some((b) => b.textContent === "Review this PDF"));
+    assert.equal(approvals(invalid.calls).length, 0);
   }
 });
 

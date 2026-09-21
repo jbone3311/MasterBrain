@@ -308,7 +308,7 @@ function validateMessageEvidence(evidence, hit) {
     if (!part || !validUuid(part.id) || ids.has(part.id.toLowerCase()) || !boundedText(part.safe_filename, 120)
         || typeof part.part_id !== "string" || !partPattern.test(part.part_id) || !validHash(part.sha256)
         || !boundedText(part.media_type, 127) || !["extracted", "deferred", "failed", "skipped", "pending"].includes(part.status)
-        || !boundedText(part.reason, 120) || part.scanner_status !== "unscanned" || !boundedText(part.excerpt, 2000)) invalidDocument();
+        || !boundedText(part.reason, 120) || part.scanner_status !== "not_scanned" || !boundedText(part.excerpt, 2000)) invalidDocument();
     ids.add(part.id.toLowerCase());
   }
 }
