@@ -18,6 +18,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from email_brain.auth import Principal, TokenRegistry
 from email_brain.blobs import BlobError
 from email_brain.recovery import Recovery, RecoveryUnavailable
+from email_brain.recovery_jobs import RecoveryJobs
 from email_brain.rules.control import RuleControl
 from email_brain.schemas import (
     ProposalRequest,
@@ -72,7 +73,9 @@ class BodyLimit:
         await self.app(scope, replay, send)
 
 
-def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
+def create_app(
+    store: Store, registry: TokenRegistry, *, recovery_parser_version: str | None = None
+) -> FastAPI:
     app = FastAPI(
         title="Email Brain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
     )
@@ -80,6 +83,7 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
     bearer = HTTPBearer(auto_error=False)
     rule_control = RuleControl(store)
     recovery_control = Recovery(store)
+    recovery_jobs = RecoveryJobs(store, recovery_parser_version)
 
     def require(scope: str, *, human: bool = False) -> Callable[..., Principal]:
         def dependency(
@@ -219,6 +223,41 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
         account_id: UUID, principal: Annotated[Principal, Depends(require("email.search"))]
     ) -> dict[str, Any]:
         return store.sync_status(principal.context, account_id)
+
+    @app.get("/v1/accounts/{account_id}/processing")
+    def processing_capabilities(
+        account_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+    ) -> dict[str, Any]:
+        return recovery_jobs.capabilities(principal.context, account_id)
+
+    @app.post("/v1/accounts/{account_id}/quarantine/{receipt_id}/jobs", status_code=202)
+    def enqueue_recovery(
+        account_id: UUID,
+        receipt_id: UUID,
+        body: RecoveryRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        return recovery_jobs.enqueue(
+            principal, account_id, receipt_id, body.expected_parser_version, idempotency_key
+        )
+
+    @app.get("/v1/accounts/{account_id}/processing/{job_id}")
+    def processing_status(
+        account_id: UUID,
+        job_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+    ) -> dict[str, Any]:
+        return recovery_jobs.get(principal.context, account_id, job_id)
+
+    @app.post("/v1/accounts/{account_id}/processing/{job_id}/cancel")
+    def cancel_processing(
+        account_id: UUID,
+        job_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        return recovery_jobs.cancel(principal, account_id, job_id)
 
     @app.get("/v1/evidence/{evidence_id}")
     def evidence(

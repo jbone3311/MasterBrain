@@ -1,5 +1,12 @@
 # Data Model
 
+Migration 0010 adds [durable recovery jobs](RECOVERY_JOBS.md): immutable
+tenant/account/receipt/parser approval, actor-bound idempotency, expiry, bounded
+lease/claim/retry state and composite references to immutable recovery outcomes.
+FORCE RLS and a protection trigger prohibit approval edits and terminal rewrites.
+Runtime receives SELECT/INSERT/UPDATE but not DELETE; it receives EXECUTE only on
+the narrowly scoped owner/account lock helper, not UPDATE on authority tables.
+
 Isolated recovery reuses migration 0008 parser-versioned snapshots/attempts and 0009
 encrypted raw manifests. Parser provenance `sandbox-mime-v1-<full image SHA-256>`
 distinguishes isolated output from ordinary `stdlib-mime-v4` without rewriting old

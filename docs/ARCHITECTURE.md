@@ -2,11 +2,16 @@
 
 ## Latest executable additions
 
+[Durable recovery jobs](RECOVERY_JOBS.md) connect an opt-in approval/status API to
+the restricted worker. One-hour grants, leased bounded retries, cancellation and
+fresh authorization/source fences make evidence publication and completion atomic.
+The API holds no Docker authority; hosted identity/supervision remain gates.
+
 [Isolated large-MIME recovery](ISOLATED_MIME_RECOVERY.md) lets a trusted worker
 inject an exact-image processor into human-authorized Recovery. Existing SQL fences
 and immutable parser versions publish bounded body/text-attachment evidence from
 retained messages up to 16 MiB. This does not give the public API Docker privileges
-or enable binary extraction; an authenticated hosted job channel is still required.
+or enable binary extraction; hosted deployment of the job channel is still required.
 
 [Encrypted large-email storage](LARGE_EVIDENCE_STORAGE.md) stages verified external
 objects before atomic SQL manifest/event/checkpoint publication. The explicit

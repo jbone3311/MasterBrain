@@ -22,8 +22,9 @@ That version binds the worker contract to the full image hash. No tags, pulls,
 arbitrary commands, model calls or source-provided configuration are accepted.
 
 The existing HTTP/UI retry continues to use its ordinary bounded parser and cannot
-select an image or launch this worker. Hosted integration needs an authenticated,
-scoped job channel; do not shortcut that by giving the API access to Docker.
+select an image or launch this worker. [Durable approved jobs](RECOVERY_JOBS.md)
+now provide an opt-in bootstrap API/worker channel. Hosted identity and controller
+supervision remain gates; never give the API access to Docker.
 
 ## Isolation and disclosure boundary
 
@@ -79,6 +80,6 @@ See [build receipt](BUILD_RECEIPT.md) for exactly which commit has been verified
 
 No SQL migration is needed beyond 0008/0009. Rollback disables new isolated recovery
 while keeping readers and existing image-bound evidence. Still required: hosted job
-authorization/queue, scanning and isolated PDF/Office/OCR/archive extraction,
+identity/supervision, scanning and isolated PDF/Office/OCR/archive extraction,
 production image signing/advisory gates, real-mailbox acceptance and long-running
 resource/escape testing. No real mailbox or paid hosting is activated by this work.

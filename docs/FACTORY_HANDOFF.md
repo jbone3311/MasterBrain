@@ -6,11 +6,16 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest increment: [isolated large-MIME recovery](ISOLATED_MIME_RECOVERY.md), using
+Latest increment: [durable recovery jobs](RECOVERY_JOBS.md), migration 0010,
+explicit human approval API, cancellation, worker leases and atomic fenced results.
+Review the privileged read-only SQL locking helper, approval lifetime and controller
+separation before rollout. Hosted identity/supervision and UI job controls remain.
+
+Previous increment: [isolated large-MIME recovery](ISOLATED_MIME_RECOVERY.md), using
 approved local image IDs, resource/output limits and image-bound immutable evidence.
 Default API has no Docker access; a trusted worker must explicitly inject it into
 human-authorized Recovery. CI adds actual post-build container/SQL pipeline checks.
-Review controller privilege and the still-missing hosted job channel before rollout.
+Review controller privilege and hosted deployment of the job channel before rollout.
 
 Previous increment: [encrypted large evidence](LARGE_EVIDENCE_STORAGE.md), optional
 16 MiB local objects, atomic SQL manifests, held large mail and two-part restore

@@ -23,6 +23,7 @@ SCOPES = frozenset(
         "email.proposal.read",
         "email.review",
         "email.ingest",
+        "email.process",
     }
 )
 
@@ -64,6 +65,8 @@ class TokenRegistry:
             raise ValueError("duplicate credential digest")
         if any(c.client_kind != "human" and "email.review" in c.scopes for c in credentials):
             raise ValueError("review is human-only")
+        if any(c.client_kind != "worker" and "email.process" in c.scopes for c in credentials):
+            raise ValueError("processing is worker-only")
         self.credentials = credentials
 
     @classmethod

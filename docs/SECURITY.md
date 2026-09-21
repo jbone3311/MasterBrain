@@ -2,11 +2,20 @@
 
 ## New local prototype boundaries
 
+[Durable recovery approvals](RECOVERY_JOBS.md) are bounded one-hour, single-source,
+exact-parser grants, not saved bearer credentials. Workers require a separate
+worker-only scope and both actors' current owner membership. Cancellation, lease
+loss, expiry and source change fence atomic publication, including cached outcomes.
+A narrow SECURITY DEFINER boolean helper locks current-tenant account/membership
+rows without granting runtime UPDATE authority. Fixed search path, UUID parameters,
+no dynamic SQL/data return and revoked PUBLIC execution limit this privileged seam.
+Hosted service-principal roles and queue supervision remain deployment gates.
+
 [Isolated MIME recovery](ISOLATED_MIME_RECOVERY.md) runs explicitly on a trusted
 controller with an image-bound parser, no network/mounts, disabled logs and enforced
 resource/output limits. Default API retry cannot select or launch it. Docker daemon
 access must never be given to the API or parser. This extracts bounded source text,
-not binary documents; cloud queue authorization and sandbox operational acceptance
+not binary documents; hosted identity and sandbox operational acceptance
 remain gates. Infrastructure failures cannot be cached as successful/rejected mail.
 
 [Encrypted large evidence](LARGE_EVIDENCE_STORAGE.md) adds an opt-in tenant/account

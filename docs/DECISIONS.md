@@ -4,6 +4,10 @@ This is a concise ADR index. Each decision should become an individual immutable
 
 ## Accepted
 
+[ADR-030](adr/030_durable_recovery_jobs.md) connects explicit human approval to
+durable isolated-processing jobs, bounded claims/retries and atomic fenced
+completion. API and worker remain separate; no hosted identity or daemon is enabled.
+
 [ADR-029](adr/029_isolated_large_mime_recovery.md) adds a restricted, image-bound
 large-MIME processor for the human-authorized Recovery library. Default API parsing
 and binary-extraction deferral remain unchanged. Docker control is a separate

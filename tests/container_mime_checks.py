@@ -9,14 +9,19 @@ import os
 import secrets
 from dataclasses import replace
 from email.message import EmailMessage
+from uuid import uuid4
 
 import pytest
 import test_postgres as pg
+from fastapi.testclient import TestClient
+from test_service import TOKEN, registry
 
+from email_brain.api import create_app
 from email_brain.auth import Principal
 from email_brain.blobs import EncryptedBlobStore
 from email_brain.normalize import MAX_RAW_BYTES, PARSER_VERSION
 from email_brain.recovery import Recovery
+from email_brain.recovery_jobs import RecoveryJobs
 from email_brain.sandbox_runner import DockerMimeProcessor
 from email_brain.schemas import SearchRequest
 from email_brain.store import Conflict, Store
@@ -112,3 +117,48 @@ def test_encrypted_source_to_actual_sandbox_to_searchable_database(
         for table, rows in before.items():
             assert conn.execute(f"SELECT * FROM {table}").fetchall() == rows
     assert store.load_raw(ctx, account, receipt["raw_sha256"]) == raw
+
+
+@pytest.mark.postgres
+def test_api_job_to_actual_container_atomic_completion(database, tenant, processor, tmp_path):
+    ctx, account = tenant
+    worker_store = Store(
+        database[0].dsn,
+        blobs=EncryptedBlobStore(
+            tmp_path.resolve() / "job-objects",
+            {(ctx.tenant_id, "job-key"): secrets.token_bytes(32)},
+            {ctx.tenant_id: "job-key"},
+        ),
+    )
+    worker_store.ingest_page(
+        ctx, account, None, "held", [replace(pg.item(), raw=attachment_heavy_mail())]
+    )
+    receipt = worker_store.quarantines(ctx, account)["results"][0]
+    creds = registry({"email.review", "email.evidence.read", "email.search"})
+    creds.credentials[0].tenant_id, creds.credentials[0].actor_id = ctx.tenant_id, ctx.actor_id
+    # The API has neither blob keys nor a processor/controller, only the approved version.
+    api = TestClient(
+        create_app(Store(database[0].dsn), creds, recovery_parser_version=processor.parser_version)
+    )
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = api.post(
+        f"/v1/accounts/{account}/quarantine/{receipt['id']}/jobs",
+        json={"expected_parser_version": processor.parser_version},
+        headers={**headers, "Idempotency-Key": str(uuid4())},
+    )
+    assert response.status_code == 202
+    job = response.json()
+    queue = RecoveryJobs(worker_store, processor.parser_version)
+    worker = Principal(replace(ctx, scopes=frozenset({"email.process"})), "worker")
+    queue.run_once(worker, account, processor)
+    status = api.get(f"/v1/accounts/{account}/processing/{job['id']}", headers=headers)
+    assert status.status_code == 200
+    assert status.json()["status"] == "completed" and status.json()["outcome"] == "recovered"
+    assert queue.run_once(worker, account, processor) is None
+    for term in ("largebodyproof", "largeattachmentproof"):
+        response = api.post("/v1/search", json={"query": term}, headers=headers)
+        assert response.status_code == 200 and len(response.json()["results"]) == 1
+    with worker_store.transaction(ctx) as conn:
+        attempt = conn.execute("SELECT id FROM recovery_attempts").fetchone()
+        assert str(attempt["id"]) == status.json()["attempt_id"]
+        assert conn.execute("SELECT count(*) AS n FROM recovery_jobs").fetchone()["n"] == 1

@@ -17,7 +17,7 @@ import stat
 import subprocess
 import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from email.message import EmailMessage
 from pathlib import Path
@@ -28,12 +28,14 @@ import psycopg
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
+from email_brain.attachments import Attachment
 from email_brain.auth import Principal
 from email_brain.blobs import BlobError, BlobRef, EncryptedBlobStore
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
-from email_brain.normalize import PARSER_VERSION
+from email_brain.normalize import PARSER_VERSION, NormalizedMessage
 from email_brain.recovery import Recovery
+from email_brain.recovery_jobs import RecoveryJobs
 from email_brain.rules.control import RuleControl
 from email_brain.schemas import (
     FeaturePayload,
@@ -204,6 +206,18 @@ class SeededTenant:
     category: str
     keyword: str
     evidence_digest: str
+    job_ids: tuple[UUID, UUID, UUID]
+
+
+class SyntheticRestoreProcessor:
+    """Only exercise durable rejection; not an actual container/isolation proof."""
+
+    parser_version = "sandbox-mime-v1-" + "a" * 64
+    max_raw_bytes = 16 * 1024 * 1024
+
+    def prepare(self, raw: bytes) -> tuple[NormalizedMessage | None, list[Attachment], bool]:
+        require(raw == b"", "restore processor only accepts empty synthetic MIME")
+        return None, [], True
 
 
 def stable_digest(value: object) -> str:
@@ -313,6 +327,23 @@ def seed(
             == "mime_rejected",
             "synthetic recovery attempt seed failed",
         )
+        processor = SyntheticRestoreProcessor()
+        jobs = RecoveryJobs(store, processor.parser_version)
+        human = Principal(context, "human")
+        completed_job = jobs.enqueue(human, account, held, processor.parser_version, uuid4())
+        jobs.run_once(
+            Principal(replace(context, scopes=frozenset({"email.process"})), "worker"),
+            account,
+            processor,
+        )
+        require(
+            jobs.get(context, account, completed_job["id"])["status"] == "completed",
+            "synthetic job completion failed",
+        )
+        cancelled_job = jobs.enqueue(human, account, held, processor.parser_version, uuid4())
+        jobs.cancel(human, account, cancelled_job["id"])
+        queued_job = jobs.enqueue(human, account, held, processor.parser_version, uuid4())
+        job_ids = (completed_job["id"], cancelled_job["id"], queued_job["id"])
         hits = store.search(context, SearchRequest(query=keyword, include_attachments=False))
         require(len(hits) == 1, "synthetic seed search failed")
         evidence_id = hits[0]["evidence_id"]
@@ -372,6 +403,7 @@ def seed(
                 category,
                 keyword,
                 stable_digest(evidence),
+                job_ids,
             )
         )
     return tenants
@@ -418,6 +450,21 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         )
     for current, foreign in ((tenants[0], tenants[1]), (tenants[1], tenants[0])):
         ctx = current.context
+        jobs = RecoveryJobs(store, SyntheticRestoreProcessor.parser_version)
+        for job_id, expected in zip(
+            current.job_ids, ("completed", "cancelled", "queued"), strict=True
+        ):
+            job = jobs.get(ctx, current.account_id, job_id)
+            require(job["status"] == expected, "restored job state changed")
+            require("lease_token" not in job, "restored job exposes lease authority")
+            if expected == "completed":
+                require(job["outcome"] == "mime_rejected", "restored job outcome changed")
+        try:
+            jobs.get(ctx, foreign.account_id, foreign.job_ids[0])
+        except NotFound:
+            pass
+        else:
+            raise DrillFailure("foreign restored job accessible")
         hits = store.search(ctx, SearchRequest(query=current.keyword, include_attachments=False))
         require(
             len(hits) == 1,

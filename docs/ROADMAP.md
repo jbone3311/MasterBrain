@@ -3,7 +3,7 @@
 EB-005 now has an opt-in encrypted filesystem backend, immutable SQL manifests,
 16 MiB preservation with explicit parser-budget quarantine and coordinated
 synthetic object/database restore checks. Next: hosted Blob/KMS, independent key
-recovery, authorized jobs for the implemented isolated MIME worker, and binary
+recovery, hosted supervision for the approved isolated MIME job channel, and binary
 extraction. The worker recovers text/receipts, not PDF/Office/OCR content.
 See [storage contract](LARGE_EVIDENCE_STORAGE.md).
 
@@ -24,8 +24,8 @@ gates, in dependency order:
 
 1. Validate the implemented human quarantine retry under extended soak; add
    inventory retention policy, alerting and bulk historical reprocessing.
-2. Extend encrypted local storage to hosted Blob/KMS; add authorized isolated-MIME
-   jobs, binary extraction and independent offsite/key recovery.
+2. Extend encrypted local storage to hosted Blob/KMS; deploy the approved isolated-MIME
+   job channel, add binary extraction and independent offsite/key recovery.
 3. Audited enrollment/recovery, scheduler/lag alerts, disposable-mailbox conformance.
 4. Production identity, member/account grants, infrastructure and restore acceptance.
 5. Persistent rules/state and evaluation-backed inference; then controlled actions.

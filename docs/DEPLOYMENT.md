@@ -2,7 +2,9 @@
 
 The optional [isolated MIME controller](ISOLATED_MIME_RECOVERY.md) is a separate
 trusted-worker privilege. Do not add the Docker socket to the API image/deployment.
-Hosted scheduling, per-job authorization and isolation verification remain gates;
+The [durable job channel](RECOVERY_JOBS.md) adds explicit bootstrap approvals and
+requires migration 0010 plus updated runtime grants, API and controller code.
+Hosted scheduling, production identity and isolation verification remain gates;
 the checked local/CI Docker controls are not an Azure deployment template.
 
 The opt-in [encrypted local object backend](LARGE_EVIDENCE_STORAGE.md) is an

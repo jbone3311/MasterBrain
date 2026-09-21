@@ -1,5 +1,15 @@
 # Testing and Evaluations
 
+## Durable processing jobs
+
+[ADR-030](adr/030_durable_recovery_jobs.md) adds API/worker/SQL tests for
+human approval, scope separation, actor-bound idempotency, concurrent claims,
+lease/approval deadlines, cancellation, membership revocation, provider changes,
+bounded retries and crash recovery. Actual-container CI exercises a large encrypted
+message through API approval, worker, atomic completion and searchable evidence.
+Restore covers pending/cancelled/completed grants, unchanged expiry and tenant
+isolation. No live provider, cloud host or real user message is used.
+
 Isolated MIME adds strict parent-envelope, input/output/complexity/resource bounds,
 Docker pre-disclosure isolation inspection, exact ownership cleanup and processor
 version/race tests. The explicit post-image-build `tests/container_mime_checks.py`

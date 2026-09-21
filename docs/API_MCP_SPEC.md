@@ -1,11 +1,19 @@
 # API and MCP Specification
 
+## Durable isolated processing jobs
+
+The opt-in [processing-job API](RECOVERY_JOBS.md) supports human approval, bounded
+status and cancellation. The operator fixes the exact parser version at startup.
+The client cannot choose images, commands, sockets or storage. A separate
+owner-bound worker claims jobs through the library, not an HTTP execution endpoint.
+The ordinary synchronous retry route remains unchanged. No MCP transport is added.
+
 ## External evidence storage
 
 The [isolated large-MIME processor](ISOLATED_MIME_RECOVERY.md) is injected only by
 a trusted operator/worker into the Recovery library. Default HTTP/UI retry does
 not launch it, accept image IDs or grant daemon privileges. Its future hosted job
-control needs separate scoped authorization; this change adds no HTTP/MCP tool.
+control now has a scoped bootstrap job API; production authorization is still gated.
 
 Opt-in [large evidence storage](LARGE_EVIDENCE_STORAGE.md) adds quarantine reason
 `mime_too_large`; retry is 409 while retained mail exceeds the parser budget.

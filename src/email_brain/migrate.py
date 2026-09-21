@@ -9,6 +9,7 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "recovery_jobs",
     "recovery_attempts",
     "rule_simulations",
     "rule_revisions",
@@ -32,6 +33,7 @@ RUNTIME_SELECT = (
     "proposal_evidence",
 )
 RUNTIME_INSERT = (
+    "recovery_jobs",
     "recovery_attempts",
     "rule_simulations",
     "rule_revisions",
@@ -98,10 +100,25 @@ def migrate(dsn: str, directory: Path) -> list[str]:
 def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> None:
     """Administrator operation; no ownership or role membership is granted."""
     conn.execute(sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role)))
+    conn.execute(
+        sql.SQL("GRANT EXECUTE ON FUNCTION lock_recovery_owners(uuid,uuid,uuid) TO {}").format(
+            sql.Identifier(role)
+        )
+    )
     for privilege, tables in (
         ("SELECT", RUNTIME_SELECT),
         ("INSERT", RUNTIME_INSERT),
-        ("UPDATE", ("messages", "sync_cursors", "proposals", "sync_workers", "message_sync_state")),
+        (
+            "UPDATE",
+            (
+                "messages",
+                "sync_cursors",
+                "proposals",
+                "sync_workers",
+                "message_sync_state",
+                "recovery_jobs",
+            ),
+        ),
     ):
         conn.execute(
             sql.SQL("GRANT {} ON {} TO {}").format(

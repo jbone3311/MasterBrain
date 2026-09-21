@@ -33,6 +33,16 @@ class MimeProcessor(Protocol):
     def prepare(self, raw: bytes) -> tuple[NormalizedMessage | None, list[Attachment], bool]: ...
 
 
+class RecoveryFence(Protocol):
+    """Internal durable-grant fence; never supplied by a request or MIME payload."""
+
+    def check(self, conn: psycopg.Connection[dict[str, Any]]) -> None: ...
+
+    def complete(
+        self, conn: psycopg.Connection[dict[str, Any]], attempt: dict[str, Any]
+    ) -> None: ...
+
+
 class Recovery:
     def __init__(self, store: Store, *, processor: MimeProcessor | None = None) -> None:
         self.store = store
@@ -95,6 +105,17 @@ class Recovery:
     def retry(
         self, principal: Principal, account_id: UUID, receipt_id: UUID, parser: str
     ) -> dict[str, Any]:
+        return self._retry(principal, account_id, receipt_id, parser)
+
+    def _retry(
+        self,
+        principal: Principal,
+        account_id: UUID,
+        receipt_id: UUID,
+        parser: str,
+        *,
+        fence: RecoveryFence | None = None,
+    ) -> dict[str, Any]:
         if principal.client_kind != "human":
             raise AccessDenied("human required")
         ctx = principal.context
@@ -103,10 +124,14 @@ class Recovery:
         if parser != self.parser_version:
             raise Conflict("deployed parser version changed; refresh before retrying")
         with self.store.transaction(ctx) as conn:
+            if fence is not None:
+                fence.check(conn)
             row = self.receipt(conn, account_id, receipt_id)
             cached = self.attempt(conn, receipt_id, parser)
             if cached:
                 self.store.audit(conn, ctx, "recovery.read", "recovery", str(cached["id"]))
+                if fence is not None:
+                    fence.complete(conn, cached)
                 return self.result(cached)
             self.current(row)
 
@@ -145,6 +170,8 @@ class Recovery:
                 raise RecoveryUnavailable() from None
         outcome = "integrity_failed" if not valid else "mime_rejected"
         with self.store.transaction(ctx) as conn:
+            if fence is not None:
+                fence.check(conn)
             conn.execute(
                 "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
                 (f"{ctx.tenant_id}:{account_id}",),
@@ -153,6 +180,8 @@ class Recovery:
             cached = self.attempt(conn, receipt_id, parser)
             if cached:
                 self.store.audit(conn, ctx, "recovery.read", "recovery", str(cached["id"]))
+                if fence is not None:
+                    fence.complete(conn, cached)
                 return self.result(cached)
             self.current(current)
             evidence_id = None
@@ -192,4 +221,6 @@ class Recovery:
             ).fetchone()
             assert attempt is not None
             self.store.audit(conn, ctx, "recovery." + outcome, "recovery", str(attempt["id"]))
+            if fence is not None:
+                fence.complete(conn, attempt)
             return self.result(attempt)

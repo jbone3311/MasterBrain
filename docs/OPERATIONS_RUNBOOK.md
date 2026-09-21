@@ -1,5 +1,16 @@
 # Operations Runbook
 
+## Durable processing approvals
+
+See [RECOVERY_JOBS.md](RECOVERY_JOBS.md). A configured parser does not mean a worker
+is online. Watch queued age, retry deadlines, attempts and fixed terminal outcomes;
+the current API does not claim worker liveness. Investigate repeated infrastructure
+failures without logging MIME or subprocess output. Cancel outstanding approvals
+to revoke them; bearer-token expiry alone does not retract durable consent.
+During restore, stop controllers until pending approvals and image versions are
+reviewed. Original one-hour expiries remain unchanged. Never manually renew leases,
+edit approval identity or reset claim counters to force work through.
+
 ## Isolated MIME controller
 
 Run only on an explicitly trusted local worker/controller with an approved immutable

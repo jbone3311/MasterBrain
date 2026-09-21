@@ -438,6 +438,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
         assert migrate(dsn, directory) == [
             "0008_quarantine_recovery.sql",
             "0009_external_raw_evidence.sql",
+            "0010_recovery_jobs.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(

@@ -38,6 +38,8 @@ mail service. It includes:
   trusted worker explicitly recovers it ([storage contract](docs/LARGE_EVIDENCE_STORAGE.md));
 - image-bound, resource-limited [isolated MIME recovery](docs/ISOLATED_MIME_RECOVERY.md)
   for bounded body/plain/calendar text in large mail; no binary extraction or API Docker access;
+- opt-in [durable processing jobs](docs/RECOVERY_JOBS.md), human-approved through the
+  API, with leased worker claims, cancellation, bounded retries and atomic completion;
 - locked dependencies, CI with a real PostgreSQL service, and a repository gate.
 
 It does **not** connect to your mail, send anything, change folders, delete mail,

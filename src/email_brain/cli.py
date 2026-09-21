@@ -72,7 +72,7 @@ def provision_demo(state: Path) -> None:
             "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
             "tenant_id": str(tenant_id),
             "actor_id": str(actor_id),
-            "scopes": sorted(SCOPES - {"email.ingest"}),
+            "scopes": sorted(SCOPES - {"email.ingest", "email.process"}),
             "client_kind": "human",
             "expires_at": (datetime.now(UTC) + timedelta(days=7)).isoformat(),
         }
@@ -186,6 +186,7 @@ def main() -> None:
     corpus.add_argument("--count", type=int, default=256)
     serve = commands.add_parser("serve", help="Loopback-only developer server")
     serve.add_argument("--port", type=int, default=8080)
+    serve.add_argument("--recovery-parser-version", default=None)
     args = parser.parse_args()
     try:
         if args.command == "migrate":
@@ -200,6 +201,7 @@ def main() -> None:
             app = create_app(
                 Store(_env("EMAIL_BRAIN_DSN")),
                 TokenRegistry.from_file(Path(_env("EMAIL_BRAIN_CREDENTIALS_FILE"))),
+                recovery_parser_version=args.recovery_parser_version,
             )
             uvicorn.run(
                 app, host="127.0.0.1", port=args.port, access_log=False, proxy_headers=False
