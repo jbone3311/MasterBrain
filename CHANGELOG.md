@@ -18,7 +18,8 @@ exact tested commits and results.
 - Added a separate synthetic-only PDF approval API/library, worker scope, fenced
   durable jobs, immutable extraction revisions, opt-in document FTS and bounded
   page evidence. Migration 0012 protects receipts/results and approval identity.
-  No document UI/CLI, scanner, live-mail policy or hosted service is added.
+  That increment added no document UI/CLI; ADR-036 above supplies the separate CLI.
+  Document UI, scanner, live-mail policy and hosted service remain unfinished.
 
 - Added separate source-bound restricted PDF worker/image and strict page-level
   contract, with hash/part validation, partial/deferred/failed outcomes and explicit
@@ -55,6 +56,12 @@ exact tested commits and results.
   container cases passed; these are not live-provider, model-quality or soak results.
 
 ### Documentation and delivery plan
+
+- Added a plain-language methods guide and a specific next owner-workflow outcome.
+  Strengthened offline documentation checks to cover required guides and GitHub
+  issue/PR templates, local paths and supported section links, with synthetic
+  regression tests (ADR-037). Updated navigation and corrected ambiguous MIME/PDF
+  command wording. No product runtime, dependency, schema or permission changes.
 
 - Audited current PDF/search/security/roadmap claims against ADR-035 and corrected
   stale standalone-only descriptions. Expanded the game plan and feature methods,

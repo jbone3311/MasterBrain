@@ -15,6 +15,7 @@ command, not yet owner UI.
 ## Reading paths
 
 - **Owner:** [game plan](GAME_PLAN.md), [features/methods](FEATURES_AND_METHODS.md),
+  [how it works](METHODS_GUIDE.md),
   [worked product walkthrough](PRODUCT_WALKTHROUGH.md),
   [status](IMPLEMENTATION_STATUS.md), [hosting](HOSTING_DECISION.md), [open choices](OPEN_QUESTIONS.md).
 - **Builder/Factory:** [code map](CODE_MAP.md), [handoff](FACTORY_HANDOFF.md),
@@ -39,6 +40,7 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 |---|---|
 | What will this product ultimately do? | [Game plan](GAME_PLAN.md), then [PRD](PRD.md) |
 | What actually works, and how? | [Features/methods](FEATURES_AND_METHODS.md), [status](IMPLEMENTATION_STATUS.md), [code map](CODE_MAP.md) |
+| What do the technical methods mean for me? | [Methods guide](METHODS_GUIDE.md): evidence, retries, search, corrections and permission boundaries |
 | Where will it run and what stays local? | [Hosting decision](HOSTING_DECISION.md), [deployment](DEPLOYMENT.md) |
 | What is the team building next? | [Roadmap](ROADMAP.md), [EB-006 contract gap](BACKLOG.md#eb-006-next-source-bound-document-processing), [Factory handoff](FACTORY_HANDOFF.md) |
 | How do we test believable mail and attachments? | [Runnable mailbox guide](TEST_MAILBOX_PLAN.md), [evaluation plan](TESTING_AND_EVALS.md) |
@@ -49,8 +51,9 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 
 The documentation review explains the owner scenario, methods, attachment coverage,
 failure behavior and dependency-ordered delivery plan. The latest consistency pass
-aligns current claims with ADR-035 and adds contributor/release-evidence guides and
-GitHub review templates. [Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
+aligns current claims with ADR-035/036, explains the methods in plain language,
+and checks contribution/release guides and GitHub review templates automatically.
+[Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
 keep future changes traceable. Owner UI and live/scanner policy remain pending for the
 document channel. Research counts retain their actual observation dates; no hosted
 deployment or Factory audit is claimed.
@@ -132,6 +135,7 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 |---|---|
 | [GAME_PLAN.md](GAME_PLAN.md) | Finished experience, delivery sequence and release bar |
 | [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) | Feature-by-feature methods and current limitations |
+| [METHODS_GUIDE.md](METHODS_GUIDE.md) | Plain-language methods, evidence versus interpretation, distinct processing channels and proof |
 | [PRODUCT_WALKTHROUGH.md](PRODUCT_WALKTHROUGH.md) | Worked owner scenario, format coverage, failure behavior and deployment split |
 | [DOCUMENTATION_STANDARD.md](DOCUMENTATION_STANDARD.md) | Status vocabulary, authoritative records and maintenance checklist |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Developer entry path, checks, review and Factory boundaries |
@@ -186,9 +190,11 @@ with private configuration, preflight, bounded polling, results and rollback.
 
 - Change a feature's contract, implementation, tests, status, roadmap and rollback
   notes in the same work package. Add an ADR before new permissions/schema/workflows.
-- Run `scripts/check_docs.py`: it requires the original 16 pack documents plus
-  the four product guides and checks local Markdown paths. It does not verify
-  remote URL availability, factual correctness or browser accessibility.
+- Run `scripts/check_docs.py`: it requires the original 16 pack documents,
+  product/contributor/release/operator guides and GitHub issue/PR templates. It
+  checks local paths and supported heading fragments across root/docs/GitHub Markdown.
+  It does not verify remote URLs, factual correctness, all Markdown syntax or
+  browser accessibility. See the [checker's scope](DOCUMENTATION_STANDARD.md#automated-check-scope).
 - Keep test counts in exact-commit receipts. Preserve historical results and source
   snapshot dates; a documentation edit is not a fresh benchmark or OSS activity scan.
 - Proposed fixtures/services must remain labeled proposed until code, provenance

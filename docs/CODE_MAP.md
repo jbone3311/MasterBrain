@@ -26,6 +26,7 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 | Owner UI | [web/](../src/email_brain/web/) |
 | Schema upgrades | [migrations/](../migrations/), [migrate.py](../src/email_brain/migrate.py) |
 | Checks | [tests/](../tests/), [CI](../.github/workflows/ci.yml) |
+| Offline documentation gate | [check_docs.py](../scripts/check_docs.py), [regression tests](../tests/test_check_docs.py); inventory/paths/supported headings, including `.github/` templates |
 | Disposable restore | [restore_drill.py](../scripts/restore_drill.py), [workflow](../.github/workflows/restore-drill.yml) |
 | Governance bridge | [factory/](../factory/), [AGENTS.md](../AGENTS.md) |
 

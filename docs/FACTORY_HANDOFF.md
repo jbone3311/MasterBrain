@@ -9,7 +9,12 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest increment: [document operator command](DOCUMENT_CONTROLLER.md), ADR-036.
+Latest documentation/tooling increment: [ADR-037](adr/037_documentation_verification.md)
+adds the [methods guide](METHODS_GUIDE.md) and regression-tested inventory/local-link/
+heading checks, including hidden GitHub templates. It changes no product runtime.
+The next implementation assignment below remains the PDF owner interface.
+
+Latest runtime increment: [document operator command](DOCUMENT_CONTROLLER.md), ADR-036.
 Review fixed purpose/policy, exact document-worker scope, private file/key boundary,
 synthetic-account preflight, fresh authentication around extraction and shared
 polling without shared approval authority. The loopback server exposes an explicit

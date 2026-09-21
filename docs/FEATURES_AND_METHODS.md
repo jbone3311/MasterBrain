@@ -6,6 +6,8 @@ production. [Status](IMPLEMENTATION_STATUS.md) and [receipts](BUILD_RECEIPT.md) 
 See the [worked walkthrough](PRODUCT_WALKTHROUGH.md) for the owner experience,
 attachment-format matrix and failure examples. Each method below supports a
 specific product outcome; none grants new mailbox or remote-model authority.
+For a less technical explanation of the methods and why they are separate, use
+[How Email Brain works](METHODS_GUIDE.md).
 
 | Owner benefit | Method | Current boundary |
 |---|---|---|

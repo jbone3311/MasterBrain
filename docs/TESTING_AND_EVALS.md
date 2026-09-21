@@ -65,6 +65,13 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[Documentation checks](DOCUMENTATION_STANDARD.md#automated-check-scope) cover the
+required pack/guides/templates and local paths/supported headings across root,
+`docs/` and `.github/`. Synthetic checker regressions exercise missing files,
+broken fragments, encoded paths, duplicate headings, code-example exclusion,
+template navigation and repository escape. This is not external-source freshness
+or rendered browser/accessibility proof.
+
 [Document controller tests](DOCUMENT_CONTROLLER.md) exercise the separate CLI/config,
 exact worker scope, synthetic account gate, nonclaiming preflight, private keys,
 revocation/rotation, counters, cancellation and restart. Real PostgreSQL tests use

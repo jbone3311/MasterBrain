@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-037](adr/037_documentation_verification.md) strengthens offline documentation
+inventory/path/section-link checks, including GitHub templates, with regression tests.
+It adds a methods reading guide but no runtime or permission change. The next
+runtime work remains the document owner interface.
+
 [ADR-036](adr/036_document_operator_controller.md) adds the separate explicit PDF
 operator command, fixed-purpose/policy private configuration, exact document-worker
 identity and loopback server channel option. Shared controller primitives preserve

@@ -20,6 +20,7 @@ passed; documentation updates do not certify new functionality.
 - [Worked product walkthrough](docs/PRODUCT_WALKTHROUGH.md): follow a fictional
   project through incoming mail, attachments, search, corrections and future actions.
 - [Features and methods](docs/FEATURES_AND_METHODS.md): workflows, implementation and limits.
+- [How it works](docs/METHODS_GUIDE.md): plain-language methods, examples and the reasons behind the boundaries.
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md): working capabilities versus launch gates.
 - [Roadmap](docs/ROADMAP.md): dependency-ordered milestones and measurable exits.
 - [Test mailbox guide](docs/TEST_MAILBOX_PLAN.md): generate/export believable conversations, real attachments and answer keys; replay through bounded synthetic ingestion.
@@ -59,7 +60,7 @@ A separate [restricted PDF worker](docs/PDF_WORKER.md) now provides source-bound
 page-level extraction groundwork with explicit partial/deferred outcomes. It is
 now connected to a separate [synthetic document approval API/library](docs/DOCUMENT_PROCESSING.md),
 immutable results and opt-in document search. Ordinary ingestion still defers PDFs;
-The [PDF operator command](docs/DOCUMENT_CONTROLLER.md) is explicit and separate;
+the [PDF operator command](docs/DOCUMENT_CONTROLLER.md) is explicit and separate;
 owner UI controls are pending. The default image has no PDF reader and no malware-safety
 claim is made.
 
@@ -139,6 +140,9 @@ See the [build receipt](docs/BUILD_RECEIPT.md) for exact tested commits and limi
 [Documentation maintenance](docs/DOCUMENTATION_STANDARD.md) defines status terms,
 authoritative records and the updates required alongside each feature. A tested
 component, integrated workflow and live-accepted service are different milestones.
+The offline documentation gate checks required guides/templates, local destinations
+and supported heading links across root docs, `docs/` and `.github/`. It does not
+certify external sources, factual freshness or rendered accessibility.
 
 Read [PRODUCT.md](PRODUCT.md), [AGENTS.md](AGENTS.md), security, architecture and
 accepted [ADRs](docs/DECISIONS.md) before changing behavior. Security invariants and

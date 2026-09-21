@@ -56,6 +56,11 @@ the [restore workflow](.github/workflows/restore-drill.yml) is a separate proof.
 Inspect results for the commit actually under review. A prior green run does not
 certify a changed migration, image or test suite.
 
+The documentation gate includes hidden GitHub templates and supported local section
+links, not just file existence. See its [scope and limitations](docs/DOCUMENTATION_STANDARD.md#automated-check-scope).
+When changing it, also run `uv run pytest -q tests/test_check_docs.py`. Link checks
+do not replace reviewing feature claims against source and actual test evidence.
+
 ## Before requesting review
 
 - Explain method, source/permission boundary, compatibility and failure behavior.

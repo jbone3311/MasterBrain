@@ -41,7 +41,7 @@ apply these counts to an untested later revision.
 
 ### Important attachment boundary
 
-The processing CLI/API/UI operate on approved held-message recovery, not arbitrary
+The MIME processing CLI/API/UI operate on approved held-message recovery, not arbitrary
 PDF/Office parts in ready messages. Ready-body search and deferred-attachment
 accounting can coexist. ADR-035 now adds a separate synthetic-only document-job
 API/library and extraction publication; it does not expand MIME approvals or the
@@ -49,7 +49,12 @@ existing operator CLI. [Document contract](DOCUMENT_PROCESSING.md).
 
 ADR-034 supplies the [restricted PDF worker](PDF_WORKER.md); ADR-035 supplies the
 separate API/SQL/search workflow. UI controls remain absent. Exact-commit acceptance
-is recorded in the build receipt, not inferred from this row.
+is recorded in the build receipt, not inferred from this row. ADR-036 adds the
+separate `process-documents` command; it does not expand `process-jobs` or its UI.
+
+ADR-037 strengthens documentation inventory/local-section-link checks and adds a
+methods guide. It changes no product capability or permission. Its tooling tests
+and verification are recorded separately from runtime and live-acceptance claims.
 
 ### Verified runtime
 

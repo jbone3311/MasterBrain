@@ -8,6 +8,8 @@ Updated 2026-09-21. Product direction, not a claim that all features are availab
 
 For a concrete example, read the [Melron product walkthrough](PRODUCT_WALKTHROUGH.md).
 It explains each user-visible step, the method underneath and its current status.
+The [methods guide](METHODS_GUIDE.md) translates checkpoints, evidence, leases,
+search, rules and permissions into their practical purpose.
 
 Email Brain maintains a searchable, evidence-backed view of authorized mail. It
 knows which conversations relate to a project, which requests remain open and
@@ -100,6 +102,21 @@ daemon belongs in that increment. Backend groundwork already exists; the team
 should finish the workflow rather than rebuild it.
 
 ## Build sequence
+
+### The next complete user outcome
+
+Finish one owner-visible path: find a synthetic message, select its eligible PDF,
+see the exact processor/policy and explicitly approve it, inspect or cancel the
+job, then read cited page excerpts and opt into document search. Preserve the
+working body result throughout. The approval API, restricted reader, storage/search
+and separate operator command already exist; do not build them again.
+
+Acceptance must include permission/source changes, lost responses and same-intent
+retry, cancellation races, stale screens, partial/deferred extraction and default
+search behavior—not only a successful PDF. This is the immediate build package,
+not authorization for real mail, automatic approval or production deployment.
+
+### From prototype to independent product
 
 | Milestone | Outcome | Reason for order |
 |---|---|---|

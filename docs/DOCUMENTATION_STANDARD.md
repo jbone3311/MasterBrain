@@ -8,7 +8,7 @@ permission, deployment or Factory-policy change.
 | Question | Primary record |
 |---|---|
 | What should the ultimate product do? | [PRD](PRD.md) |
-| How does it work for an owner? | [Worked walkthrough](PRODUCT_WALKTHROUGH.md), [features/methods](FEATURES_AND_METHODS.md) |
+| How does it work for an owner? | [Worked walkthrough](PRODUCT_WALKTHROUGH.md), [features/methods](FEATURES_AND_METHODS.md), [methods guide](METHODS_GUIDE.md) |
 | What is executable now? | [Implementation status](IMPLEMENTATION_STATUS.md), linked source/contracts |
 | What passed, at which revision? | [Build receipt](BUILD_RECEIPT.md), linked exact-commit CI/restore runs |
 | What comes next and why? | [Roadmap](ROADMAP.md), [backlog](BACKLOG.md), [Factory handoff](FACTORY_HANDOFF.md) |
@@ -54,14 +54,27 @@ tables, proposed MCP tools registered tools, or generic proposal approval execut
 7. Check local links and required files, inspect the rendered GitHub reading path,
    and review for secrets/real mail before publishing.
 
-Run the repository checks in [AGENTS.md](../AGENTS.md). The current
-`scripts/check_docs.py` checks required inventory and local link **paths**. It does
-not validate heading fragments, external URL availability, factual accuracy,
-source freshness or rendered accessibility. Those require separate review; a green
-documentation check alone is not proof that every claim is correct.
-The contributor and release guides and hidden GitHub issue/PR templates also need
-review: the current script does not enforce their inventory or traverse `.github/`.
-Do not assume a passing check guarantees those files were inspected.
+## Automated check scope
+
+Run the repository checks in [AGENTS.md](../AGENTS.md). Under
+[ADR-037](adr/037_documentation_verification.md), `scripts/check_docs.py` requires
+the original 16 pack files, product/contributor/release/operator guides and GitHub
+issue/PR templates. It reads root Markdown and all Markdown in `docs/` and `.github/`.
+
+It checks inline-link/reference-definition destinations, repository-contained
+paths, same-document/cross-document heading fragments, encoded paths/fragments,
+duplicate heading IDs and the explicit anchors used by this pack. Fenced examples,
+inline code, comments and template frontmatter are excluded. This repository's
+explicit `blob/main` documentation URLs are resolved against the checkout, which
+catches template navigation errors without a network request. That is not proof
+the checkout has been pushed to GitHub.
+
+The checker implements a limited Markdown subset, not a full GitHub renderer.
+Complex/nested inline markup, all reference-use syntax, HTML navigation and every
+GitHub extension are not certified. It does not check external URL availability,
+factual accuracy, source freshness, image layout or rendered accessibility. Those
+require separate review; a green check alone is not proof every claim is correct.
+Synthetic regression tests are in [test_check_docs.py](../tests/test_check_docs.py).
 
 ## Research and citations
 
@@ -78,7 +91,7 @@ assistant client. References remain beside the relevant architecture/interface
 claims. Source-only downloads must exclude credentials, environments, private data,
 logs and database/object backups.
 
-The follow-up consistency pass preserves the original OSS/research observations
-and historical receipts. It updates ADR-035's current PDF/search/security/operations
-descriptions and adds explicit contribution/release evidence paths. No runtime,
-schema, dependency, permission or hosting decision is changed by this pass.
+The follow-up consistency pass preserves original OSS/research observations and
+historical receipts, aligns ADR-035/036's current PDF/operator descriptions, adds
+the methods guide and expands the offline navigation/inventory gate with tests.
+No application runtime, schema, dependency, permission or hosting decision changes.
