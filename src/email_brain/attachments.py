@@ -14,6 +14,7 @@ from email.message import Message
 from email.parser import BytesParser
 from pathlib import PurePosixPath
 
+from email_brain.calendar_attachment import CalendarInvalid, CalendarUnsupported, extract_calendar
 from email_brain.normalize import MAX_RAW_BYTES
 
 MAX_ATTACHMENTS = 64
@@ -43,8 +44,9 @@ def safe_name(value: str) -> str:
 
 
 def _classify(part: Message, path: str) -> Attachment:
-    filename = str(part.get_filename() or f"attachment-{path}").replace("\x00", "")[:1000]
     media_type = part.get_content_type()
+    default_name = f"calendar-{path}.ics" if media_type == "text/calendar" else f"attachment-{path}"
+    filename = str(part.get_filename() or default_name).replace("\x00", "")[:1000]
     raw = part.get_payload(decode=True)
     if not isinstance(raw, bytes):
         # Nested emails/containers are retained as source MIME and deferred, not recursed.
@@ -75,6 +77,26 @@ def _classify(part: Message, path: str) -> Attachment:
         return replace(base, status="skipped", reason="inline_image_not_ocr_enabled")
     if len(raw) > MAX_TEXT_BYTES:
         return replace(base, status="deferred", reason="extraction_byte_limit")
+    if media_type == "text/calendar":
+        if suffix not in {"", ".ics"}:
+            return replace(base, status="deferred", reason="type_mismatch_or_binary")
+        charset = (part.get_content_charset() or "utf-8").lower()
+        if charset not in {"utf-8", "us-ascii"}:
+            return replace(base, status="deferred", reason="calendar_unsupported_charset")
+        if part.defects or (charset == "us-ascii" and not raw.isascii()):
+            return replace(base, status="failed", reason="calendar_invalid")
+        mime_method = part.get_param("method")
+        if mime_method is not None and not isinstance(mime_method, str):
+            return replace(base, status="failed", reason="calendar_invalid")
+        try:
+            text = extract_calendar(raw, mime_method=mime_method)
+        except CalendarUnsupported:
+            return replace(base, status="deferred", reason="calendar_unsupported")
+        except CalendarInvalid:
+            return replace(base, status="failed", reason="calendar_invalid")
+        if len(text) > MAX_EXTRACTED_CHARS:
+            return replace(base, status="deferred", reason="extraction_character_limit")
+        return replace(base, status="extracted", reason="bounded_calendar_v1", text=text)
     if media_type not in {"text/plain", "text/csv", "text/markdown"}:
         return replace(base, status="deferred", reason="isolated_extractor_required")
     if suffix not in {"", ".txt", ".csv", ".md"} or b"\x00" in raw:
@@ -106,6 +128,7 @@ def receive_attachments(raw: bytes) -> list[Attachment]:
             part.get_filename() is not None
             or part.get_content_disposition() in {"attachment", "inline"}
             or (path != "1" and part.get_content_type() == "message/rfc822")
+            or part.get_content_type() == "text/calendar"
         ):
             if len(results) >= MAX_ATTACHMENTS:
                 raise ValueError("attachment count limit")

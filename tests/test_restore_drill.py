@@ -132,7 +132,10 @@ def test_synthetic_fixture_contains_extractable_and_deferred_attachments():
     raw = drill.synthetic_mime("restorealphazebra")
     assert "restorealphazebra" in normalize(raw).text
     attachments = receive_attachments(raw)
-    assert len(attachments) == 2
+    assert len(attachments) == 3
+    assert attachments[2].status == "extracted"
+    assert attachments[2].reason == "bounded_calendar_v1"
+    assert "restorecalendarproof" in attachments[2].text
     assert {item.status for item in attachments} == {"extracted", "deferred"}
     assert b"example.invalid" in raw
 

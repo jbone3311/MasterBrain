@@ -16,6 +16,8 @@ mail service. It includes:
 - connector and event contracts;
 - PostgreSQL tenant/RLS migrations, atomic ingestion, immutable evidence versions,
   full-text search, attachment receipts and bounded plain-text extraction;
+- bounded calendar-invitation source extraction and realistic synthetic attachment
+  format tests across all four provider read boundaries;
 - expiring tenant-bound bootstrap credentials, REST API and a small owner review UI;
 - idempotent typed proposals and optimistic-concurrency human review;
 - human-reviewed sender rules with bounded simulation, explicit activation,

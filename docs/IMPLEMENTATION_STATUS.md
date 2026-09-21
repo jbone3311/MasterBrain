@@ -8,7 +8,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks; verified synthetic logical dump/restore | Managed deployment, encryption/KMS, purge, offsite/PITR disaster-recovery drills |
 | Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine | Enrollment/scheduler, large-message storage, live acceptance and soak |
 | Evidence | Raw MIME up to 1 MiB; immutable normalized snapshots; version-stable citations | Encrypted object store and larger messages |
-| Attachments | Per-part receipts/events, duplicate links, bounded text extraction, FTS, explicit deferred/failed outcomes | Malware scanner, sandboxed PDF/Office/OCR/archive extraction; raw download policy |
+| Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, sandboxed PDF/Office/OCR/archive extraction; versioned historical reprocessing and raw download policy |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
 | Feedback | Typed proposals; human-reviewed sender rule simulation/activation; immutable revisions and rollback; virtual search labels | Rich predicates/protected-sender configuration, temporal/entity application, drift evaluation |

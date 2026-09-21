@@ -2,6 +2,11 @@
 
 ## Latest executable additions
 
+[Calendar MIME parts](CALENDAR_ATTACHMENTS.md), including unnamed body alternatives,
+now enter the existing bounded attachment evidence/FTS path. They do not create
+calendar events or obligations. [Public sample adoption](PUBLIC_EMAIL_TEST_DATA.md)
+remains gated; format-faithful tests use generated synthetic bytes only.
+
 The local control plane now supports reviewed exact-domain sender rules: immutable
 tenant ruleset snapshots, bounded simulation, human activation and rollback. Search
 adds read-time virtual labels without changing source mailbox/evidence state.

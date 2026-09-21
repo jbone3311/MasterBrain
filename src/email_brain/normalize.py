@@ -12,7 +12,7 @@ from html.parser import HTMLParser
 
 MAX_RAW_BYTES = 1_048_576
 MAX_TEXT_CHARS = 100_000
-PARSER_VERSION = "stdlib-mime-v3"
+PARSER_VERSION = "stdlib-mime-v4"
 
 
 class _TextOnly(HTMLParser):

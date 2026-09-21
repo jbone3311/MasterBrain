@@ -222,6 +222,15 @@ def synthetic_mime(keyword: str) -> bytes:
     message.add_attachment(
         b"%PDF-synthetic-deferred", maintype="application", subtype="pdf", filename="unparsed.pdf"
     )
+    calendar = (
+        "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Synthetic restore//EN\r\n"
+        "BEGIN:VEVENT\r\nUID:restore-event@example.invalid\r\n"
+        "DTSTAMP:20260920T120000Z\r\nDTSTART:20261001T120000Z\r\n"
+        f"SUMMARY:restorecalendarproof {keyword}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    message.add_attachment(
+        calendar.encode(), maintype="text", subtype="calendar", filename="meeting.ics"
+    )
     return message.as_bytes()
 
 
@@ -268,7 +277,7 @@ def seed(admin: str, store: Store) -> list[SeededTenant]:
         require(len(hits) == 1, "synthetic seed search failed")
         evidence_id = hits[0]["evidence_id"]
         evidence = store.evidence(context, evidence_id)
-        require(len(evidence["attachments"]) == 2, "synthetic attachment seed failed")
+        require(len(evidence["attachments"]) == 3, "synthetic attachment seed failed")
         proposal = store.propose(
             context,
             ProposalRequest(
@@ -398,6 +407,11 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         evidence = store.evidence(ctx, current.evidence_id)
         require(stable_digest(evidence) == current.evidence_digest, "restored evidence changed")
         attachment_hits = store.search(ctx, SearchRequest(query="spreadsheet"))
+        calendar_hits = store.search(ctx, SearchRequest(query="restorecalendarproof"))
+        require(
+            len(calendar_hits) == 1 and calendar_hits[0]["result_type"] == "attachment",
+            "restored calendar attachment search failed",
+        )
         require(
             len(attachment_hits) == 1 and attachment_hits[0]["result_type"] == "attachment",
             "restored attachment search failed",

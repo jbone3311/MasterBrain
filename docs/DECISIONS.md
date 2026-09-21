@@ -285,6 +285,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Explicitly rejected for initial build
 
+[ADR-026 calendar attachments and format fixtures](adr/026_calendar_attachments_and_format_fixtures.md)
+adds bounded searchable calendar source evidence and synthetic attachment/provider
+format tests. It grants no calendar action or public-corpus import authority.
+
 New accepted prototype decisions: [ADR-023 synthetic logical restore drill](adr/023_synthetic_restore_drill.md),
 [ADR-024 opt-in local classification candidates](adr/024_local_model_classification.md),
 and [ADR-025 reviewed virtual sender rules](adr/025_reviewed_rule_activation.md).

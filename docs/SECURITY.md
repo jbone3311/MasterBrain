@@ -2,6 +2,11 @@
 
 ## New local prototype boundaries
 
+Calendar extraction is quoted untrusted source text, never an RSVP or scheduler.
+It validates bounded syntax and MIME/body method agreement, with no alarm/URL
+execution or organizer authentication. Binary calendar data is unsupported and
+malware scan status remains unchanged. See [calendar boundary](CALENDAR_ATTACHMENTS.md).
+
 Rule activation requires human owner identity plus review/search scopes, an
 actor-bound simulation receipt, unexpired database time and matching rules revision.
 Rollback is append-only; virtual Review Delete labels never hide or delete messages.
