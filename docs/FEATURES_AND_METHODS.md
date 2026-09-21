@@ -23,10 +23,11 @@ For a less technical explanation of the methods and why they are separate, use
 | Use local AI | Code first; bounded model input/output, digest and schema/grounding checks | Optional Ollama library, fake-response tested, not automatically invoked |
 | Escalate hard cases | Minimum authorized evidence, disclosure policy, retention review, budget caps | Planned; no remote calls or silent fallback |
 | Draft/file mail | Separate executor, preview-bound approval, command outbox, reconciliation | Planned; no SMTP/drafts/moves/send/delete |
-| Share securely | API checks and tenant RLS, then explicit account/project grants | Owner foundation works; OIDC/invitations/team grants pending |
+| Share securely | Verified access tokens, server-owned identity mapping, current API/SQL checks and tenant RLS | Owner-only token/mapping foundation; browser login, invitations and team grants pending |
 | Run independently | Supervised workers, managed storage, alerts, restores, deployment artifacts | Local/CI and restore drill; no hosted service |
 
-The next work is the [identity foundation](BACKLOG.md#eb-007-next-production-identity-foundation),
+The next work is [browser/session identity lifecycle](BACKLOG.md#eb-007-next-production-identity-foundation)
+on the implemented [API identity foundation](IDENTITY_AUTH.md),
 followed by the independent-service gates in the [roadmap](ROADMAP.md#next-build-packages).
 “Owner foundation works” does not mean remote sign-in, team sharing or assistant
 connections work. [Identity versus permission](METHODS_GUIDE.md#identity-is-not-the-same-as-permission)

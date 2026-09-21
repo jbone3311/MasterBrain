@@ -2,6 +2,38 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Configured API identity — local implementation checkpoint
+
+ADR-040/migration 0013 adds RFC/Entra access-token verification, administrator-owned
+identity mappings and current SQL authority. This checkpoint was checked locally
+from base **84997c4f32dea58652343b5498e73d6a50ba85c4**; publication CI/restore must
+provide the new exact-commit database/container evidence before acceptance.
+
+- **1,643 local Python passes, 284 explicit PostgreSQL skips**; two existing
+  deprecation warnings. **120 new offline identity cases** and **35 new SQL/API
+  cases** are present; the latter are not local passes. **84 Node contracts** pass.
+- Lint, strict typing over **43 source modules**, separate restore-script typing,
+  CLI help, locked dependencies and diff checks pass. Documentation checks cover
+  **88 Markdown files and 745 local paths/fragments** before receipt-only changes.
+- Keys/tokens are generated in memory; all issuer HTTP in tests is fictional.
+  SQL tests include both token profiles through the real API, mapping/RLS,
+  revocation/revision, foreign evidence, runtime grant denials and administrator
+  audit. Populated upgrade includes 0013. The restore fixture now seeds two identity
+  bindings and tests mapped search/isolation and revocation after restore.
+- Reviewed selected PyJWT advisory and installed MIT license; pinned 2.14.0.
+  Focused upstream health observations are in [OSS evaluation](OSS_EVALUATION.md).
+  This is not an exhaustive security or supply-chain certification.
+- No real issuer, app registration, mailbox, public listener, paid resource,
+  browser login, MFA policy or team grant was enabled. Independent review and
+  complete identity/session lifecycle remain open. Existing durable processing
+  approvals are not cancelled merely by token/binding revocation.
+
+The earlier documentation-only revision 84997c4 passed
+[CI 35592669766](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35592669766).
+That result does not verify the new identity runtime. The next build assignment
+after this slice is browser/session lifecycle over the existing mapping boundary,
+not another verifier scaffold. The full product goal remains active.
+
 ## Documentation-only next-delivery review
 
 Reviewed 2026-09-21 from clean base **c721f52a7811e236cc3de704e397f48eda602f01**.

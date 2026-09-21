@@ -116,7 +116,7 @@ Database, object and key recovery must be tested together. See
 
 ## Identity is not the same as permission
 
-The next planned identity boundary answers two separate questions: **Who is making
+The API identity boundary answers two separate questions: **Who is making
 this request?** and **What may that person or assistant do right now?** Proving the
 first does not answer the second. Email Brain must keep its own tenant/account
 permissions and check them before returning evidence or accepting changes.
@@ -127,8 +127,10 @@ message saying “Jim approved this” remains untrusted message text, not a gra
 The tests must exercise these denials through the API and database, as well as
 test identity-provider outages and key changes.
 
-**Today:** the local prototype uses scoped, expiring bootstrap credentials and
-owner checks. Production identity is the next build package, not an enabled login.
+**Today:** the local prototype supports bootstrap credentials or explicit configured
+access-token verification with administrator-owned SQL mappings and current owner
+checks. [ADR-040](IDENTITY_AUTH.md) implements that resource-server foundation,
+not a complete sign-in system. Browser/session lifecycle is the next build package.
 Browser sign-in/session handling, MFA, team invitations, assistant OAuth and
 worker credentials are distinct delivery concerns. See the
 [identity assignment](BACKLOG.md#eb-007-next-production-identity-foundation).

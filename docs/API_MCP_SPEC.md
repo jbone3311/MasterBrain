@@ -7,6 +7,14 @@ See [status](IMPLEMENTATION_STATUS.md) and [features/methods](FEATURES_AND_METHO
 
 ## Reading this contract
 
+[ADR-040](IDENTITY_AUTH.md) adds explicit `serve --oidc-config` authentication, not
+new data routes. RFC access tokens or configured Entra v2 tokens map to existing
+administrator-owned SQL bindings; local scopes/current owner access govern requests.
+JWT mode never falls back to bootstrap. Invalid/unknown credentials return generic
+401 with `Bearer error="invalid_token"`; issuer/key or mapping-store outage returns
+503 `authentication_unavailable`; current permission loss remains 403. No login,
+callback, enrollment, mapping-administration or worker-token endpoint is added.
+
 Implemented routes must be checked against [api.py](../src/email_brain/api.py),
 its generated OpenAPI and route tests. Target tool names, example identifiers and
 pagination conventions later in this document are design sketches, not requests
@@ -131,8 +139,9 @@ the bootstrap examples describe the target, not implemented MCP/actions:
 | `POST /v1/proposals/{uuid}/reviews` | `email.review` + human credential | Expected-version approve/reject; **applies nothing** |
 
 All content routes also require an existing owner membership. No tenant/user IDs
-are accepted in payloads. Auth is expiring server-bound bootstrap tokens, not the
-target OIDC system. Requests cap at 32 KiB before JSON decoding; schemas reject
+are accepted in payloads. Auth is either expiring server-bound bootstrap tokens or
+the explicit configured access-token/mapping mode above; browser OIDC/session
+lifecycle is not implemented. Requests cap at 32 KiB before JSON decoding; schemas reject
 extra fields. Evidence excerpts cap at 4,000 characters plus bounded per-attachment
 excerpts. Validation errors do not echo input. No action/send/delete/raw SQL/MCP
 transport endpoint exists. The service is loopback-only and not Internet-ready.
@@ -172,7 +181,11 @@ email.send email.delete.permanent
 email.admin.accounts email.admin.rules email.audit.read
 ```
 
-User-delegated tokens include tenant, subject, scopes, audience, and expiry. Service principals are bound to a tenant/account/job class. Remote MCP follows audience-bound OAuth and no token passthrough per [MCP authorization security considerations](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/basic/authorization/security-considerations.mdx).
+Token issuer, subject/client, audience and expiry are verified; server-owned mappings
+and current local grants determine tenant and authority. Token-supplied tenant IDs
+or roles do not grant access. Service principals are bound to a tenant/account/job
+class. Remote MCP follows audience-bound OAuth and no token passthrough per
+[MCP authorization security considerations](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/basic/authorization/security-considerations.mdx).
 
 ## REST surface (v1)
 

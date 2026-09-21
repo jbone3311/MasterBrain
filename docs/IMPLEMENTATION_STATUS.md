@@ -11,7 +11,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, production PDF intake policy, Office/OCR/archive extraction; bulk historical document reprocessing and raw download policy |
 | Approved PDF processing | Separate restricted worker; synthetic API/library/operator and owner approval/history/cancel UI, durable fenced jobs, immutable results, opt-in FTS and cited pages | Browser acceptance, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments; opt-in latest-current PDF extraction text | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
-| Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
+| Access | Explicit bootstrap or RFC/Entra access-token verification; administrator-owned SQL mappings, revision/expiry/scope/owner rechecks and binding audit | Browser sign-in/session lifecycle, MFA/issuer enrollment, invitations, member/account grants, revocation UX, rate limiting |
 | Feedback | Typed proposals; human-reviewed sender rule simulation/activation; immutable revisions and rollback; virtual search labels | Rich predicates/protected-sender configuration, temporal/entity application, drift evaluation |
 | Providers | Fastmail durable worker; offline-tested Gmail/Graph read transports and injected-session IMAP contract | All live enrollment/acceptance; Gmail/Graph/IMAP durable database workers and notification ingress |
 | Models | Opt-in loopback Ollama library; installed-digest checks; bounded fake-server/output tests; code-first candidate routing | Actual isolated runtime/quality evaluation, durable receipts/cache, remote disclosures/budgets |
@@ -32,6 +32,13 @@ do not create entities. Virtual labels do not change provider folders. A configu
 parser does not certify an online worker, and a completed job can have deferred attachments.
 
 ## Validation
+
+ADR-040 adds the [configured API identity foundation](IDENTITY_AUTH.md), migration
+0013 and PyJWT 2.14.0. Generated-key/fake-issuer tests exercise token/profile/cache
+boundaries; real SQL/API cases cover mapping/RLS/revocation and the restore fixture
+now includes populated identity bindings. Exact pass/fail evidence belongs in the
+build receipt, not this implementation description. No browser login, live issuer,
+MFA enforcement, team grants or public ingress is implied.
 
 ADR-039 adds the [bounded read controller](READ_CONTROLLER.md), exact ingest-worker
 identity, explicit execution flag and non-consuming preflight. Current tests use
@@ -67,7 +74,7 @@ ADR-037 strengthens documentation inventory/local-section-link checks and adds a
 methods guide. It changes no product capability or permission. Its tooling tests
 and verification are recorded separately from runtime and live-acceptance claims.
 
-### Latest verified runtime
+### Previously verified read-operator runtime
 
 Read-controller implementation **0b4f0d3** passed
 [CI 35590968421](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968421):

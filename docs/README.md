@@ -52,11 +52,12 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 
 The documentation review explains the owner scenario, methods, attachment coverage,
 failure behavior and dependency-ordered delivery plan. The latest consistency pass
-aligns current claims through ADR-039, explains the methods in plain language,
+aligns current claims through ADR-040, explains the methods in plain language,
 and checks contribution/release guides and GitHub review templates automatically.
-It separates completed synthetic PDF/read-operator work from the next identity,
-hosted-operation and live-acceptance packages. Authentication research is not an
-implemented login feature; the current API still uses local bootstrap credentials.
+It separates completed synthetic PDF/read-operator and API token/mapping work from
+browser identity lifecycle, hosted operation and live acceptance. The
+[configured identity foundation](IDENTITY_AUTH.md) is executable, but does not
+implement browser login/MFA or certify a real issuer. Bootstrap remains a separate mode.
 [Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
 keep future changes traceable. Browser/accessibility and live/scanner policy remain
 pending for the document channel. Research counts retain their actual observation dates; no hosted
@@ -145,6 +146,7 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Developer entry path, checks, review and Factory boundaries |
 | [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md) | Merge/pilot/release distinctions, gate register, metrics and evidence record |
 | [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
+| [IDENTITY_AUTH.md](IDENTITY_AUTH.md) | Configured RFC/Entra access tokens, database mappings, revocation, audit, upgrade and remaining login gates |
 | [READ_CONTROLLER.md](READ_CONTROLLER.md) | Bounded Fastmail read command, private preflight, authority checks and remaining live/supervision gates |
 | [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF reader, isolation and format limits |
 | [DOCUMENT_PROCESSING.md](DOCUMENT_PROCESSING.md) | Separate synthetic approval API/library, durable results, opt-in search and remaining operator/live gates |

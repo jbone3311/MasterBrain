@@ -3,7 +3,7 @@
 Ordered by dependency and risk, not calendar promises. The broad roadmap remains
 the product sequence; these are buildable handoff tickets.
 
-Reviewed 2026-09-21 through ADR-039; exact verified commits remain in the build receipt. A partly implemented
+Reviewed 2026-09-21 through ADR-040; exact verified commits remain in the build receipt. A partly implemented
 ticket stays open until its stated production/acceptance gates are met.
 
 | ID | Work package | Acceptance / dependency |
@@ -14,7 +14,7 @@ ticket stays open until its stated production/acceptance gates are met.
 | EB-004 | Durable poison-message quarantine | Preserve source/error receipt before advancing past bad message; retry independently; accounting/alerts; no stalled account or silent skip |
 | EB-005 | Encrypted object storage — local slice implemented | Local tenant-bound AES-GCM, 16 MiB preservation, transactional manifests and non-deleting inventory implemented; hosted IAM/KMS, key backup, authorized GC/purge and offsite acceptance remain |
 | EB-006 | Sandboxed attachment extraction — synthetic PDF backend/operator/UI implemented | Restricted MIME recovery plus separate synthetic PDF approvals/results/FTS, explicit CLI and owner UI implemented; browser acceptance, scanner/live policy, Office/OCR/archives, hosted identity/supervision and production sandbox acceptance remain |
-| EB-007 | Production identity/grants | OIDC/MFA, JWT issuer/audience/expiry, invite/revoke, account/project grants before candidate retrieval, permission-cache invalidation, negative role matrix |
+| EB-007 | API token/mapping foundation implemented; production identity/grants open | Browser login/session, MFA/enrollment policy, invite/revoke, account/project grants and service identities; preserve ADR-040's configured verification, current SQL permissions and audit |
 | EB-008 | Hosted infrastructure and restore | Owner-approved region/budget; private Postgres/object storage, KMS/secrets, TLS ingress, CI artifacts by digest, actual restore of DB and bytes |
 | EB-009 | Operations baseline | Rate limits, connection pool, job SLOs/counters, denial audit, immutable audit export, dashboards, alert ownership, budget caps |
 | EB-010 | Rules storage/simulation/application | Safe DSL, immutable versions, sample preview, protected-class veto, explicit corrections outrank inferred patterns, shadow drift sample, rollback |
@@ -41,11 +41,15 @@ seeding and isolated format fixtures remain supported. Milestone ordering is in
 
 ## What can proceed without owner answers
 
-### EB-007 next: production identity foundation
+<a id="eb-007-next-production-identity-foundation"></a>
 
-This is the next implementation assignment, not a completed feature. Write the
-ADR before adding authentication behavior or schema. See the
-[Factory contract](FACTORY_HANDOFF.md#suggested-next-issue).
+### EB-007: API foundation implemented; browser/session lifecycle next
+
+[ADR-040](IDENTITY_AUTH.md) implements the access-token and SQL mapping slice below.
+It is not a hosted identity product. Next design and implement the browser
+sign-in/session lifecycle behind a new ADR and fake authorization-server tests.
+See the [Factory contract](FACTORY_HANDOFF.md#suggested-next-issue). The preserved
+checklist explains what to review in the implemented foundation, not what to rebuild.
 
 - Verify access tokens only against an explicitly configured issuer and API
   audience; bound key discovery/cache behavior and fail closed on invalid tokens.
@@ -58,7 +62,7 @@ ADR before adding authentication behavior or schema. See the
 - Use a fake issuer and disposable SQL for rotation, outage, stale authority and
   cross-tenant tests. No real app registration, identity account or public service.
 
-After this foundation, complete independent operation and owner acceptance in the
+Complete identity lifecycle, independent operation and owner acceptance in the
 [roadmap order](ROADMAP.md#next-build-packages). Broader EB-007 sharing/lifecycle
 requirements remain open even when a bounded token-verification slice passes.
 

@@ -108,3 +108,10 @@ the next build package. Completed read/PDF operator and owner workflows stay
 marked implemented; browser/live/hosted gates stay open. The old EB-006 section
 anchor remains valid for existing links. This pass changes documentation only,
 does not implement authentication and does not refresh external research counts.
+
+ADR-040 subsequently adds the actual API token/mapping boundary and its required
+[identity guide](IDENTITY_AUTH.md). Product/status/roadmap/handoff now distinguish
+that implemented foundation from browser login, issuer policy/enrollment and team
+grants. Only PyJWT receives a new focused maintenance/license/advisory observation;
+the prior OSS tables keep their original dates. Runtime claims require the new
+exact-commit SQL/container/restore receipts, not the earlier documentation CI run.

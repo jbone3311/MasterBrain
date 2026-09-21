@@ -38,11 +38,23 @@ class ActionKind(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class ExternalIdentity:
+    binding_id: UUID
+    issuer: str
+    subject: str
+    client_id: str
+    revision: int
+    client_kind: str
+    expires_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class TenantContext:
     tenant_id: UUID
     actor_id: UUID
     scopes: frozenset[str]
     request_id: UUID
+    identity: ExternalIdentity | None = None
 
 
 @dataclass(frozen=True, slots=True)

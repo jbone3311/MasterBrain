@@ -12,6 +12,13 @@ execution distinct in both diagrams and implementation.
 
 ## Latest executable additions
 
+[Access-token identity](IDENTITY_AUTH.md), ADR-040/migration 0013, joins fixed-profile
+JWT verification to administrator-owned identity mappings and fresh Store-transaction
+checks. Discovery/JWKS trust is configured, never chosen by token content. Mapping
+RLS precedes tenant resolution; ordinary tenant RLS and owner checks remain.
+The API can explicitly select this mode but remains loopback-only. Browser login,
+MFA, identity enrollment, service identities and team sharing are not implemented.
+
 [Read-worker operation](READ_CONTROLLER.md), ADR-039, adds a private-configured
 bounded CLI over the existing Fastmail worker. Preflight performs no provider
 requests/lease claims. Execution reuses checkpoint/retry/lease logic and adds

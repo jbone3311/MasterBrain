@@ -1,6 +1,12 @@
 # Synthetic PostgreSQL backup/restore drill
 
-Latest runtime recheck: **0b4f0d3**,
+ADR-040 now adds populated identity bindings for both fictional tenants. The drill
+checks preserved binding IDs/scopes, identity-lookup RLS, tenant search isolation,
+disable/re-enable revision and rejection of stale contexts after restore. This is
+SQL authority proof, not a real issuer handshake; signatures have separate fake-issuer
+tests. New exact counts/results must be recorded after the updated drill runs.
+
+Previously verified runtime recheck: **0b4f0d3**,
 [run 35590968376](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968376),
 passed 2026-09-21 after the bounded read controller/shared identity changes.
 The unchanged synthetic fixture verified **26 tables, 142 rows, two tenants, four

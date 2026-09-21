@@ -8,6 +8,12 @@ does not mean a local demo has already been started on Jim's computer.
 
 ## Keep runtime state off Dropbox
 
+For fake-issuer development of the separate API identity mode, follow
+[IDENTITY_AUTH.md](IDENTITY_AUTH.md). `serve --oidc-config` requires migration 0013,
+private configuration and existing administrator-managed mappings; it rejects
+simultaneous bootstrap credentials and stays loopback-only. Unit tests generate
+keys and intercept every issuer request; no real registration is needed or implied.
+
 Use a private directory such as `~/Library/Application Support/CW-EmailBrain`.
 Keep secrets, credential files and local environments outside the synced checkout.
 For a Dropbox checkout, set `UV_PROJECT_ENVIRONMENT` to an absolute path outside

@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-040](adr/040_access_token_identity.md) adds the configured access-token
+resource-server boundary, explicit RFC/Entra profiles and administrator-owned
+identity bindings with current SQL authorization and administrator audit. Exact
+verification is in the build receipt; browser login, real issuer enrollment and hosted release remain gates.
+
 [ADR-039](adr/039_read_worker_controller.md) adds explicit bounded Fastmail read
 operation, non-consuming private preflight, exact ingest-worker identity and fresh
 file/account guards. No enrollment, schema/grant change or live acceptance.

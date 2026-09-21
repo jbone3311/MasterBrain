@@ -1,5 +1,28 @@
 # Open-Source Evaluation
 
+## Access-token verification adoption (2026-09-21)
+
+Reuse **PyJWT 2.14.0**, MIT, directly for signature/standard claim verification,
+behind the bounded [identity adapter](IDENTITY_AUTH.md). Use existing cryptography
+RSA keys and fixed RS256, not hand-built signature code or unrestricted key discovery.
+The installed package license was inspected; version/artifact hashes are locked.
+
+The public [upstream repository](https://github.com/jpadilla/pyjwt) API snapshot on
+2026-09-21 showed **5,702 stars, 60 watchers, 796 forks**, not archived, last push
+`2026-09-21T11:16:39Z`, and **38 default-branch commits** returned for
+2026-08-22 through the observation date (100-entry page, not truncated). These are
+interest/activity observations, not security or user-count measures. The focused
+snapshot does not refresh the other projects' historical counts.
+
+Its long-established focused JWT API, current release/maintenance and existing
+cryptography fit favor direct reuse over copying protocol/crypto implementation.
+Keep our issuer/mapping policy outside the library. Reviewed the
+[algorithm allowlist advisory](https://github.com/jpadilla/pyjwt/security/advisories/GHSA-jq35-7prp-9v3f),
+fixed in 2.13.0; selected 2.14.0 is later. Pass actual RSA public keys and explicitly
+check header/JWK algorithm compatibility as additional policy defense. This is a
+selected-advisory review, not exhaustive supply-chain clearance. Full release
+advisory/SBOM/signature gates and independent identity review remain required.
+
 ## Dedicated PDF worker adoption (2026-09-21)
 
 ADR-034 adds **exactly pypdf 6.19.0**, BSD-3-Clause, to an opt-in `pdf-worker`

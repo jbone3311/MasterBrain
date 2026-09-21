@@ -7,6 +7,14 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-040 identity foundation](IDENTITY_AUTH.md) adds explicit configured access-token
+verification and administrator-owned SQL identity mappings. Fixed issuer/audience/
+client/profile, bounded public-key retrieval, current binding revision/scope/expiry
+and owner rechecks are separate from future browser login/MFA. Mapping RLS uses
+verified identity context; runtime has SELECT only. No automatic enrollment, token
+role trust, worker scopes or bootstrap fallback. Existing durable processing consent
+is not cancelled by token revocation alone. No public ingress or real issuer tested.
+
 [ADR-039's read controller](READ_CONTROLLER.md) requires a worker with exactly
 `email.ingest`, existing owner/account/provider/secret binding and explicit
 execution flag. No request-selectable endpoint, enrollment or pause reset. Fresh
@@ -143,7 +151,9 @@ or evidence erasure is involved. Demo corpus loading refuses enrolled accounts.
 
 The v0.1 service is loopback-only, synthetic-data-first, owner-only per tenant.
 Bootstrap tokens are hashed, expiring, scope-bound, and revocation is via the private
-registry plus restart; they are not production OAuth/OIDC. The schema is tenant-isolated
+registry plus restart; they are not production OAuth/OIDC. The separate configured
+JWT mode verifies API access tokens and database mappings, not browser login/MFA
+or complete production identity lifecycle. The schema is tenant-isolated
 but team/account-grant sharing is not implemented. Ordinary ingestion still defers
 binary documents; the separate synthetic PDF channel integrates approved extraction,
 immutable results and opt-in search, not malware scanning or live-mail acceptance.

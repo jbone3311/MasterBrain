@@ -12,6 +12,14 @@ explains why original evidence, current derived state and proposed actions need
 separate records. The standalone reader adds no table; ADR-035 now adds its separate
 durable approval/result model.
 
+Migration 0013 adds administrator-owned `external_identities`: unique verified
+issuer/subject/client -> existing tenant/actor, API scopes, human/assistant kind,
+active flag and protected monotonic revision. Runtime gets SELECT only; forced
+RLS requires verified identity settings even before tenant resolution. Binding
+identity is immutable; administrator mutations emit existing audit events with
+database-role attribution, not tokens/subjects. Saved request contexts recheck
+binding revision, scope/kind, expiry and owner membership. See [identity](IDENTITY_AUTH.md).
+
 Migration 0012 adds `document_jobs` and append-only `document_extractions`, receipt
 immutability, tenant/account/source composite keys, forced RLS, protected approval
 identity/transitions, and generated PDF text/FTS. Jobs bind a current source event,
@@ -195,7 +203,8 @@ proposal evidence links, audit, attachment receipts and intake events.
 They also implement immutable rule simulations/revisions, reconciliation inventory
 and seals, current sync state, quarantine receipts, recovery attempts/jobs and
 separate document jobs/extractions. These are actual tables, unlike the target
-entity, obligation and action sketches above. Migrations 0001–0012 describe the
+entity, obligation and action sketches above. `external_identities` now provides
+the bounded external-subject mapping described above. Migrations 0001–0013 describe the
 schema; the restore receipt's table count also includes migration bookkeeping.
 Worker leases/outcomes are in `sync_workers` and append-only `sync_runs`; enrolled
 accounts have administrator-set `provider_account_id`. Current mailbox/keyword

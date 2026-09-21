@@ -24,7 +24,7 @@ test environments; it is not that hosted service yet.
 | Stage | What the owner gets | Where we stand |
 |---|---|---|
 | Preserve and find | Search mail and supported attachments with traceable sources | Synthetic prototype implemented and tested |
-| Run independently | Secure remote access, supervised sync, backups and failure alerts | Next delivery milestone; identity is the next build assignment |
+| Run independently | Secure remote access, supervised sync, backups and failure alerts | API token/mapping foundation exists; browser identity lifecycle and hosted operation remain |
 | Understand and learn | Current projects, people, commitments and reviewed preferences | Narrow sender rules exist; richer state and evaluated inference remain planned |
 | Connect and act | Scoped assistant/team access, then previewed filing and drafts | Planned; no assistant integration or mailbox-write path enabled |
 
@@ -55,7 +55,7 @@ what must be proved before it can be used on real mail.
 | Read PDFs | Separate synthetic approval API/library/operator, owner selection/approval/history/cancel UI, restricted worker, immutable page evidence and opt-in document FTS |
 | Review | Owner-only local UI: search, proposals, virtual sender rules, held mail, processing history/approval/cancellation |
 | Recover | Human-authorized retries and separate restricted MIME worker; bounded jobs, expiry, cancellation and atomic results |
-| Isolate | Tenant RLS, ownership constraints, scoped expiring bootstrap credentials and negative authorization tests |
+| Isolate | Tenant RLS, ownership constraints, bootstrap or explicit verified access tokens, administrator-owned identity bindings and current authorization checks |
 | Test | Fictional inbox seeding, actual synthetic attachment bytes, mocked provider contracts, real PostgreSQL CI and disposable SQL/object restore drills |
 
 The known-answer mailbox creates connected conversations and corrections with
@@ -86,8 +86,9 @@ claim is made.
 
 ## What comes next
 
-1. Build the production identity boundary with fake-issuer and real-database tests.
-   A valid identity must map to server-controlled permissions, not choose a tenant.
+1. Build the browser sign-in/session lifecycle on the
+   [implemented API identity foundation](docs/IDENTITY_AUTH.md). Keep current server-owned
+   permissions and revocation; a token verifier is not a complete login experience.
 2. Complete managed storage/key recovery, worker supervision, operator alerts and
    browser/document-policy acceptance; then accept one authorized disposable provider.
 3. Build evaluated project/reply state and assistant access; add separately
@@ -97,6 +98,10 @@ See [roadmap acceptance gates](docs/ROADMAP.md) and the
 [Factory next assignment](docs/FACTORY_HANDOFF.md#suggested-next-issue).
 The [bounded read command](docs/READ_CONTROLLER.md) and synthetic PDF owner
 workflow already exist; the next assignment must build on them, not rebuild them.
+
+The new identity mode accepts only explicitly configured RFC access tokens or
+Entra v2 tokens and existing database mappings. It remains loopback-only; no real
+issuer, identity enrollment or hosted login has been accepted.
 
 ## What the finished product adds
 

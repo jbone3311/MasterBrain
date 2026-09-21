@@ -11,8 +11,8 @@ and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
 ## Start here: the next delivery
 
-Build the [production identity foundation](#suggested-next-issue), beginning with
-its ADR and explicit acceptance tests. The
+Build the [browser sign-in/session lifecycle](#suggested-next-issue) on ADR-040's
+existing token/mapping foundation, beginning with its own ADR and acceptance tests. The
 [backlog slice](BACKLOG.md#eb-007-next-production-identity-foundation) and
 [roadmap](ROADMAP.md#next-build-packages) agree on this priority. A signature
 verifier alone does not finish browser login, sharing or hosted operation.
@@ -24,7 +24,13 @@ operational acceptance; live promotion has its own [gate record](RELEASE_ACCEPTA
 
 ## Completed increments to review, not rebuild
 
-Latest runtime increment: [ADR-039](adr/039_read_worker_controller.md) adds the
+Latest increment: [ADR-040/API identity](IDENTITY_AUTH.md), migration 0013 and
+PyJWT 2.14.0. Review fixed RFC/Entra profiles, exact discovery/key trust, bounded
+cache/outage semantics, administrator-only mappings/audit and fresh transaction
+revocation. Restore now includes populated identity bindings. No browser login,
+real issuer enrollment, team grants, worker authority or public ingress is added.
+
+Previous runtime increment: [ADR-039](adr/039_read_worker_controller.md) adds the
 [bounded read command](READ_CONTROLLER.md). Review exact ingest-only worker
 identity, non-consuming preflight, fixed provider/secret binding, per-request/step
 authority guards, encrypted write-key selection, stop and pause/retry semantics.
@@ -40,7 +46,8 @@ are distinct from pending browser/accessibility and live/scanner acceptance.
 Previous documentation/tooling increment: [ADR-037](adr/037_documentation_verification.md)
 adds the [methods guide](METHODS_GUIDE.md) and regression-tested inventory/local-link/
 heading checks, including hidden GitHub templates. It changes no product runtime.
-The next implementation assignment below is the production identity boundary.
+That increment's identity assignment now has the ADR-040 foundation above;
+the next assignment is browser/session lifecycle, not another verifier.
 
 Previous runtime increment: [document operator command](DOCUMENT_CONTROLLER.md), ADR-036.
 Review fixed purpose/policy, exact document-worker scope, private file/key boundary,
@@ -230,14 +237,16 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 
 ## Suggested next issue
 
-> Implement the production-identity foundation behind an explicit accepted ADR:
-> trusted configured OIDC issuer/audience, bounded signature-key retrieval/cache,
-> expiry/algorithm/audience checks and server-owned subject-to-tenant mapping.
-> Keep bootstrap credentials explicitly local; never trust request-chosen tenant
-> IDs or auto-enroll an unknown identity. Exercise fake issuer/key rotation and real
-> SQL denial/revocation paths. Define the browser/session and worker-identity split
-> before code. No app registration, public ingress, real identity enrollment,
-> paid resource, mailbox access or new team sharing without separate approval.
+> Build the browser sign-in/session lifecycle on ADR-040, with a new ADR before
+> implementation: fixed registered client/redirect configuration, authorization
+> code + PKCE/state/nonce handling as applicable, server-controlled session storage,
+> cookie/CSRF boundaries, logout/expiry/revocation and no browser token persistence.
+> Exercise a fake authorization server, malicious callbacks, stolen/stale sessions,
+> token/issuer failures and real SQL isolation. Preserve current database mappings;
+> never auto-enroll unknown identities or substitute ID tokens for API access tokens.
+> Define enrollment/admin and worker boundaries separately. No real app registration,
+> public ingress, identity enrollment, paid resource, mailbox access or team sharing
+> without separate approval. Browser acceptance remains a separate proof.
 
 ADR-034 supplies the reader; ADR-035 supplies durable approval/publication/search;
 ADR-036 supplies `process-documents` and loopback channel configuration; ADR-038

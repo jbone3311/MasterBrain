@@ -8,6 +8,7 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Protocol
 from uuid import UUID, uuid4
 
 from pydantic import Field, field_validator
@@ -56,6 +57,14 @@ class Credential(ClosedModel):
 class Principal:
     context: TenantContext
     client_kind: str
+
+
+class AuthenticationUnavailable(Exception):
+    """Authentication infrastructure failed; never include sensitive diagnostics."""
+
+
+class Authenticator(Protocol):
+    def authenticate(self, token: str) -> Principal | None: ...
 
 
 class TokenRegistry:

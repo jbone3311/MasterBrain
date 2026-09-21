@@ -8,6 +8,7 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 | Demo/migrate/serve | [cli.py](../src/email_brain/cli.py) |
 | REST/request boundary | [api.py](../src/email_brain/api.py), [schemas.py](../src/email_brain/schemas.py) |
 | Bootstrap identity | [auth.py](../src/email_brain/auth.py) |
+| Configured API identity | [oidc.py](../src/email_brain/oidc.py), [migration 0013](../migrations/0013_external_identities.sql); verifier, administrator mapping and Store transaction rechecks |
 | SQL/search/proposals | [store.py](../src/email_brain/store.py) |
 | Reviewed rules | [rules/](../src/email_brain/rules/) |
 | MIME/attachments | [normalize.py](../src/email_brain/normalize.py), [attachments.py](../src/email_brain/attachments.py), [calendar_attachment.py](../src/email_brain/calendar_attachment.py) |
@@ -60,7 +61,8 @@ See [configuration and shutdown](PROCESSING_CONTROLLER.md).
 
 Future tables in [DATA_MODEL.md](DATA_MODEL.md) are not migrations; future MCP tools
 in [API_MCP_SPEC.md](API_MCP_SPEC.md) are not registered endpoints. `api.py` is the
-implemented bootstrap surface. Production identity is not supplied by API docs.
+implemented bounded surface. The [access-token foundation](IDENTITY_AUTH.md) is
+executable; complete production login/lifecycle is not supplied by API docs.
 
 Runtime dependencies are in [pyproject.toml](../pyproject.toml), pinned in
 [uv.lock](../uv.lock). Prospective OSS recommendations are not installed dependencies.

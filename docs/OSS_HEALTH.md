@@ -1,6 +1,8 @@
 # Open-source health snapshot
 
 This is a dated research artifact, not a continuously refreshed popularity table.
+The focused [PyJWT adoption snapshot](OSS_EVALUATION.md#access-token-verification-adoption-2026-09-21)
+was measured separately on 2026-09-21; it does not replace the historical table below.
 The documentation refresh on 2026-09-20 preserves its original observations.
 Re-run [oss_snapshot.py](../scripts/oss_snapshot.py) and inspect releases, licenses,
 security advisories and substantive changes before adopting/upgrading a dependency.

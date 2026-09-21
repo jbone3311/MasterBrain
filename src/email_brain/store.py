@@ -397,7 +397,8 @@ class Store:
         return UUID(str(version["id"]))
 
     @contextmanager
-    def transaction(self, ctx: TenantContext) -> Iterator[psycopg.Connection[dict[str, Any]]]:
+    def connection(self) -> Iterator[psycopg.Connection[dict[str, Any]]]:
+        """Least-privileged transaction, before tenant/verified-identity resolution."""
         with psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=5) as conn:
             role = conn.execute(
                 "SELECT rolsuper, rolbypassrls, "
@@ -409,6 +410,38 @@ class Store:
                 raise AccessDenied("unsafe runtime database role")
             conn.execute("SELECT set_config('statement_timeout', '5000', true)")
             conn.execute("SELECT set_config('lock_timeout', '2000', true)")
+            yield conn
+
+    @staticmethod
+    def identity_context(
+        conn: psycopg.Connection[dict[str, Any]], issuer: str, subject: str, client_id: str
+    ) -> None:
+        # Only verified identity resolution and contexts created by it call this.
+        conn.execute("SELECT set_config('email_brain.auth_issuer', %s, true)", (issuer,))
+        conn.execute("SELECT set_config('email_brain.auth_subject', %s, true)", (subject,))
+        conn.execute("SELECT set_config('email_brain.auth_client', %s, true)", (client_id,))
+
+    @contextmanager
+    def transaction(self, ctx: TenantContext) -> Iterator[psycopg.Connection[dict[str, Any]]]:
+        with self.connection() as conn:
+            if identity := ctx.identity:
+                self.identity_context(conn, identity.issuer, identity.subject, identity.client_id)
+                binding = conn.execute(
+                    "SELECT 1 FROM external_identities WHERE id=%s AND tenant_id=%s "
+                    "AND actor_id=%s AND revision=%s AND active AND client_kind=%s "
+                    "AND scopes @> %s::text[] AND clock_timestamp() < %s",
+                    (
+                        identity.binding_id,
+                        ctx.tenant_id,
+                        ctx.actor_id,
+                        identity.revision,
+                        identity.client_kind,
+                        sorted(ctx.scopes),
+                        identity.expires_at,
+                    ),
+                ).fetchone()
+                if not binding:
+                    raise AccessDenied("external identity is no longer authorized")
             conn.execute(
                 "SELECT set_config('email_brain.tenant_id', %s, true)", (str(ctx.tenant_id),)
             )

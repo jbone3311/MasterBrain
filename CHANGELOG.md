@@ -6,6 +6,19 @@ The package remains version 0.1.0, a synthetic-data prototype. These entries do
 not announce a production release. [Build receipts](docs/BUILD_RECEIPT.md) retain
 exact tested commits and results.
 
+### API identity foundation (ADR-040)
+
+- Added explicitly configured RFC access-token/Entra v2 verification with fixed
+  issuer/audience/client, bounded discovery/key cache and no bootstrap fallback.
+- Added migration 0013 administrator-owned identity mappings, immutable binding
+  identity, monotonic revisions, forced lookup RLS and minimal administrator audit.
+  Every mapped Store transaction rechecks current scopes/kind/expiry and ownership.
+- Added private `serve --oidc-config`, fake-issuer/security and real SQL/API tests,
+  populated-upgrade coverage and two-tenant identity restore/revocation checks.
+  Adopted pinned MIT PyJWT 2.14.0; maintained source/operating/rollback documentation.
+- No browser login/session, MFA enforcement, real issuer enrollment, team sharing,
+  service-principal lifecycle, public ingress or mailbox privilege was added.
+
 ### Evidence, processing and review
 
 - Added separate owner PDF selection/approval, bounded history/status/cancel,

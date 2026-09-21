@@ -83,11 +83,11 @@ but is not in the deployed request or processing path.
 
 ## The immediate implementation gap: identity and independent operation
 
-The next build assignment is the production identity boundary: verify the caller
-against a configured trust source, map that identity to existing server-controlled
-access and enforce current permissions when data is used. Unknown identities must
-not create tenants or grant themselves access. The existing bootstrap token file
-is for local operation, not a completed remote sign-in experience.
+[ADR-040](IDENTITY_AUTH.md) now verifies configured access tokens, maps identity
+to existing server-controlled access and rechecks current permissions when data is
+used. Unknown identities cannot create tenants or grant themselves access. Next
+build the browser sign-in/session lifecycle; manual access-token entry and the
+local bootstrap file are not a completed remote sign-in experience.
 
 After that foundation, complete hosted storage/key recovery, supervised workers,
 enrollment administration and alerts. Browser/document-policy acceptance and a
@@ -100,7 +100,7 @@ from approving the product plan.
 
 Attachment accounting and attachment understanding are separate milestones. We
 already know a PDF arrived and can preserve it. We cannot yet extract/index its
-text in production. Existing processing approvals refer to quarantined **messages**;
+text in production. MIME recovery approvals refer to quarantined **messages**;
 they are not general permission to process every deferred attachment.
 
 ADR-035 now supports that ordinary searchable email through a separate synthetic
@@ -131,7 +131,8 @@ retry, cancellation races, stale screens, partial/deferred extraction and defaul
 search behavior—not only a successful PDF. Node and SQL/API-response contracts
 exercise these boundaries; browser/keyboard/screen-reader acceptance remains.
 ADR-039 now adds the [bounded read-worker operator entry point](READ_CONTROLLER.md).
-Next build the production identity boundary, then complete operational visibility/
+ADR-040 supplies the API identity boundary. Next build browser/session lifecycle,
+then complete operational visibility/
 supervision and production storage. The
 command does not enroll accounts, reset pauses or authorize real-mail access,
 automatic approval or paid deployment.

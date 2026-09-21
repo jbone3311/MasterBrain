@@ -2,6 +2,13 @@
 
 Updated 2026-09-21. [GAME_PLAN.md](GAME_PLAN.md) explains the delivery stages.
 
+ADR-040 adds [configured API identity](IDENTITY_AUTH.md). Apply migration 0013 and
+refresh runtime SELECT grants before `serve --oidc-config`; reject simultaneous
+bootstrap registry configuration. Private configuration, fixed issuer/key URLs and
+loopback-only ingress remain mandatory. No browser login, app registration, public
+ingress or service identity is provisioned. Keep clocks synchronized; test hosted
+egress and issuer policy before promotion. Never use bootstrap as a public fallback.
+
 [ADR-039's read command](READ_CONTROLLER.md) now provides explicit private-configured
 bounded Fastmail operation and non-consuming preflight. It adds no hosted resources,
 service installer, enrollment or new SQL grants. Keep its provider token separate

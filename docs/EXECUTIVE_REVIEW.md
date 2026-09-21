@@ -21,7 +21,7 @@ effects make this feedback loop useful without permitting self-modifying automat
 
 | Gap | Refined decision |
 |---|---|
-| Multi-user versus “one owner with many accounts” | Tenant foundation now; owner-only bootstrap; membership/account/project grants and invitation/revocation before team use |
+| Multi-user versus “one owner with many accounts” | Tenant foundation and owner-only bootstrap/JWT mapping now; browser lifecycle, membership/account/project grants and invitations before team use |
 | Dropbox could accidentally become runtime storage | Code/content surface only; no live Postgres, venv, secrets, model caches, SQLite or embeddings in Dropbox |
 | Hosting could depend on Jim's Mac/Factory | Independent hosted API/worker/database; edge inference optional, outbound-only, durable pending jobs while offline |
 | SQL relationships could cross tenants/accounts | Composite ownership foreign keys plus forced RLS, runtime-role and negative tests |
@@ -43,7 +43,8 @@ effects make this feedback loop useful without permitting self-modifying automat
 1. Prove synthetic ingestion → Postgres → FTS/evidence → review, including replay,
    RLS and attachment accounting. This prototype implements that bounded slice.
 2. Preserve the implemented Fastmail worker/operator, quarantine, local encrypted
-   objects, reconciliation and synthetic restore. Complete identity first, then
+   objects, reconciliation and synthetic restore. ADR-040 adds API token/mapping
+   verification; complete browser identity lifecycle first, then
    managed storage/key recovery, enrollment and supervised operation. Fastmail is
    the engineering default, not a claim Jim's first account is enrolled.
 3. Complete browser acceptance of existing owner controls, rate limits, audit export,

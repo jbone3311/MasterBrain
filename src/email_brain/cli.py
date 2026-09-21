@@ -17,10 +17,11 @@ import uvicorn
 from psycopg import sql
 
 from email_brain.api import create_app
-from email_brain.auth import Credential, TokenRegistry
+from email_brain.auth import Authenticator, Credential, TokenRegistry
 from email_brain.document_controller import run_document_controller
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
+from email_brain.oidc import AccessTokenVerifier, OIDCAuthenticator, OIDCConfig
 from email_brain.processing_controller import private_bytes, run_controller, shutdown_signals
 from email_brain.read_controller import run_read_controller
 from email_brain.store import IngestItem, Store
@@ -198,6 +199,7 @@ def main() -> None:
     corpus.add_argument("--count", type=int, default=256)
     serve = commands.add_parser("serve", help="Loopback-only developer server")
     serve.add_argument("--port", type=int, default=8080)
+    serve.add_argument("--oidc-config", type=Path, default=None)
     serve.add_argument("--recovery-parser-version", default=None)
     serve.add_argument("--document-processor-version", default=None)
     for name, help_text in (
@@ -296,9 +298,19 @@ def main() -> None:
                 )
             print(json.dumps(result, sort_keys=True))
         else:
+            store = Store(_env("EMAIL_BRAIN_DSN"))
+            registry: Authenticator
+            if args.oidc_config is not None:
+                if os.environ.get("EMAIL_BRAIN_CREDENTIALS_FILE"):
+                    raise ValueError("select exactly one authentication mode")
+                registry = OIDCAuthenticator(
+                    store, AccessTokenVerifier(OIDCConfig.from_file(args.oidc_config))
+                )
+            else:
+                registry = TokenRegistry.from_file(Path(_env("EMAIL_BRAIN_CREDENTIALS_FILE")))
             app = create_app(
-                Store(_env("EMAIL_BRAIN_DSN")),
-                TokenRegistry.from_file(Path(_env("EMAIL_BRAIN_CREDENTIALS_FILE"))),
+                store,
+                registry,
                 recovery_parser_version=args.recovery_parser_version,
                 document_processor_version=args.document_processor_version,
             )

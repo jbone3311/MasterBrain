@@ -21,7 +21,7 @@ pass/fail/pending/not-applicable with rationale for each proposed release.
 |---|---|---|
 | Product scope and consent | PRD, roadmap, parked owner choices | First account/backfill, region, budget, retention and document coverage decisions |
 | Provider integrity | Synthetic Fastmail HTTP-to-SQL; offline Gmail/Graph/IMAP contracts | Enrolled disposable provider, cursor expiry/moves/outages and sustained reconciliation |
-| Identity and isolation | Bootstrap owner/scopes, forced RLS, composite keys and negative tests | Production OIDC/MFA, lifecycle/revocation, rate limits; grants before any sharing |
+| Identity and isolation | Bootstrap or explicit RFC/Entra verifier, server-owned SQL mappings/revisions, owner/scopes, forced RLS, composite keys and negative tests | Browser login/session, issuer/MFA and enrollment policy, revocation UX, rate limits; grants before any sharing |
 | Source durability | Immutable evidence, encrypted local objects, atomic cursors | Hosted Blob/KMS/IAM, separately recoverable keys and accepted retention/purge |
 | Document safety and usefulness | Restricted MIME/PDF containers; synthetic PDF approval/result/search, operator command and owner review UI | Browser/owner acceptance, accepted scanner/live policy, deployed isolation and quality on supported inputs |
 | Independent operation | Worker libraries, separate read/MIME/PDF operator commands, bounded retries/fences | Hosted supervision, enrollment, restarts/soak, alerts and responsible operator |

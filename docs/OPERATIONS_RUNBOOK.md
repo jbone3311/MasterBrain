@@ -5,6 +5,23 @@ Daily checks, incident playbooks and SLOs below are production requirements;
 their dashboards, alert delivery, OIDC and provider-action controls are not all
 implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
 
+## API identity operations
+
+Use [identity configuration/revocation](IDENTITY_AUTH.md) for ADR-040's explicit
+mode. Apply 0013 and SELECT grants before startup. Unknown identities never enroll;
+401 means invalid/unmapped credential, 403 current permission denial, and scrubbed
+503 identity/key or mapping-store unavailability. Check fixed issuer/key settings,
+clock synchronization and service availability without logging bearer tokens or
+subjects. Do not add bootstrap fallback or relax audience/algorithm checks.
+
+Administrator binding changes increment revision and append an audit event under
+the database role. Disable the resolved binding to deny new requests/transactions;
+in-flight transactions are not retracted. Existing processing grants require their
+own cancellation or membership revocation. Cached signing keys can remain valid
+for their original five-minute TTL; refresh failure never extends it. Restart
+clears cache, not grants. Real enrollment, browser login, alert delivery and public
+ingress remain unaccepted. Stop JWT-mode API for rollback; preserve schema/audit.
+
 For owner-facing symptoms, see [failure examples](PRODUCT_WALKTHROUGH.md#what-failures-should-look-like).
 Report import freshness, attachment extraction, scanning and interpretation
 separately. A responsive API or completed MIME job does not establish that all

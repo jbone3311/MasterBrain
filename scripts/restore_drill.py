@@ -18,7 +18,7 @@ import subprocess
 import tempfile
 import time
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, BinaryIO
@@ -35,6 +35,7 @@ from email_brain.document_jobs import POLICY, DocumentJobs
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.normalize import PARSER_VERSION, NormalizedMessage
+from email_brain.oidc import AccessTokenVerifier, OIDCAuthenticator, OIDCConfig, VerifiedToken
 from email_brain.pdf_contract import PdfPage, PdfResult, source_for
 from email_brain.recovery import Recovery
 from email_brain.recovery_jobs import RecoveryJobs
@@ -213,6 +214,7 @@ class SeededTenant:
     document_jobs: tuple[UUID, UUID, UUID]
     document_id: UUID
     document_digest: str
+    identity_id: UUID
 
 
 class SyntheticDocumentProcessor:
@@ -286,6 +288,7 @@ def seed(
     tenants = []
     for keyword in ("restorealphazebra", "restorebetazebra"):
         tenant, actor, account = uuid4(), uuid4(), uuid4()
+        identity_id = uuid4()
         with psycopg.connect(admin) as conn:
             conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Synthetic restore')", (tenant,))
             conn.execute(
@@ -296,6 +299,12 @@ def seed(
                 "INSERT INTO mail_accounts(id,tenant_id,provider,address,secret_ref) "
                 "VALUES (%s,%s,'fastmail','owner@example.invalid','synthetic:none')",
                 (account, tenant),
+            )
+            conn.execute(
+                "INSERT INTO external_identities(id,tenant_id,actor_id,issuer,subject,client_id,"
+                "scopes,client_kind) VALUES (%s,%s,%s,'https://issuer.example.invalid',%s,"
+                "'restore-client',ARRAY['email.search','email.evidence.read'],'human')",
+                (identity_id, tenant, actor, keyword),
             )
         context = TenantContext(
             tenant,
@@ -454,6 +463,7 @@ def seed(
                 (saved["id"], cancelled["id"], pending["id"]),
                 document_id,
                 stable_digest(store.document_evidence(context, document_id)),
+                identity_id,
             )
         )
     return tenants
@@ -486,6 +496,22 @@ def snapshot(admin: str, blobs: EncryptedBlobStore | None = None) -> dict[str, t
 
 
 def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> None:
+    # SQL mapping/authorization proof only; signature/HTTP proof has separate fake-issuer tests.
+    identity_auth = OIDCAuthenticator(
+        store,
+        AccessTokenVerifier(
+            OIDCConfig(
+                version=1,
+                profile="rfc9068",
+                issuer="https://issuer.example.invalid",
+                discovery_url="https://issuer.example.invalid/.well-known/openid-configuration",
+                jwks_url="https://issuer.example.invalid/keys",
+                audience="restore-api",
+                client_ids=("restore-client",),
+                admission_scope="email.access",
+            )
+        ),
+    )
     with psycopg.connect(admin) as conn:
         rls = conn.execute(
             "SELECT c.relname,c.relrowsecurity,c.relforcerowsecurity FROM pg_class c "
@@ -500,6 +526,62 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         )
     for current, foreign in ((tenants[0], tenants[1]), (tenants[1], tenants[0])):
         ctx = current.context
+        verified = VerifiedToken(
+            "https://issuer.example.invalid",
+            current.keyword,
+            "restore-client",
+            datetime.now(UTC) + timedelta(minutes=10),
+        )
+        mapped = identity_auth.resolve(verified)
+        require(mapped is not None, "restored identity missing")
+        assert mapped is not None and mapped.context.identity is not None
+        require(
+            mapped.context.tenant_id == ctx.tenant_id
+            and mapped.context.identity.binding_id == current.identity_id
+            and mapped.context.scopes == frozenset({"email.search", "email.evidence.read"}),
+            "restored identity authority changed",
+        )
+        require(
+            bool(store.search(mapped.context, SearchRequest(query=current.keyword))),
+            "restored identity cannot search",
+        )
+        require(
+            not store.search(mapped.context, SearchRequest(query=foreign.keyword)),
+            "restored identity crosses tenant",
+        )
+        with store.transaction(mapped.context) as conn:
+            identities = conn.execute("SELECT id FROM external_identities").fetchall()
+            require(
+                [r["id"] for r in identities] == [current.identity_id],
+                "restored identity lookup RLS failed",
+            )
+        with store.transaction(ctx) as conn:
+            require(
+                not conn.execute("SELECT id FROM external_identities").fetchall(),
+                "unverified context exposed identity mappings",
+            )
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "UPDATE external_identities SET active=false WHERE id=%s", (current.identity_id,)
+            )
+        require(identity_auth.resolve(verified) is None, "revoked restored identity accepted")
+        try:
+            store.search(mapped.context, SearchRequest(query=current.keyword))
+        except AccessDenied:
+            pass
+        else:
+            raise DrillFailure("saved restored identity survived revocation")
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "UPDATE external_identities SET active=true WHERE id=%s", (current.identity_id,)
+            )
+        renewed = identity_auth.resolve(verified)
+        require(
+            renewed is not None
+            and renewed.context.identity is not None
+            and renewed.context.identity.revision == 3,
+            "identity revision not restored",
+        )
         documents = DocumentJobs(store, SyntheticDocumentProcessor.processor_version)
         for job_id, expected in zip(
             current.document_jobs, ("completed", "cancelled", "queued"), strict=True
@@ -824,6 +906,8 @@ def _run_drill(storage: Path) -> dict[str, object]:
             "tenants_verified": len(tenants),
             "content_hashes_equal": True,
             "rls_verified": True,
+            "identity_bindings_verified": len(tenants),
+            "identity_revocation_verified": True,
             "database_only_restore_refused": True,
             "external_objects_verified": sum(
                 len(target_blobs.object_keys(t.context.tenant_id, t.account_id)) for t in tenants

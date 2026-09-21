@@ -19,12 +19,13 @@ These are the remaining delivery packages, not a list of components to rebuild.
 
 | Order | Package | Completion evidence |
 |---|---|---|
-| 1 | **Identity foundation (EB-007):** configured trusted issuer/audience, verified access tokens, server-owned identity mapping and current authorization | Fake issuer/rotation/failure tests, real SQL/API denial and revocation tests; explicit bootstrap-versus-hosted boundary |
+| 1 | **Identity lifecycle (EB-007/021):** browser sign-in/session and enrollment/revocation controls over ADR-040's implemented API token/mapping foundation | New ADR; fake authorization server, callback/session/CSRF and revocation tests; browser acceptance; real issuer policy/enrollment only with approval |
 | 2 | **Independent operation (EB-005/008/009):** hosted storage adapters, key recovery, supervision, enrollment administration, rate limits and alerts | Synthetic adapter contracts first; approved environment, DB/object/key restore, restart and alert-delivery proof before promotion |
 | Alongside 1–2 | **Owner/document acceptance (EB-006/021/023):** browser/accessibility checks, broader held-out documents and an explicit scanner/live coverage policy | Actual browser and restricted-host evidence, per-format quality/deferral results; no implied Office/OCR support |
 | 3 | **Read-only pilot:** one explicitly authorized disposable mailbox | Provider conformance, multi-day staging soak, security review, stop/rollback procedure and owner acceptance |
 
-The identity package starts with an ADR; it does not create cloud accounts, app
+ADR-040 supplies the [access-token/SQL mapping foundation](IDENTITY_AUTH.md); do not
+rebuild that slice. The next identity package starts with its own ADR; it does not create cloud accounts, app
 registrations or public ingress. A token verifier alone is not browser login,
 MFA, member invitations or authenticated MCP. Those boundaries must be explicit
 in the implementation and acceptance record. See the

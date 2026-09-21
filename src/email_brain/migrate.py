@@ -9,6 +9,7 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "external_identities",
     "document_jobs",
     "document_extractions",
     "recovery_jobs",
