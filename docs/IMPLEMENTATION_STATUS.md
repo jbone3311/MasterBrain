@@ -58,9 +58,11 @@ and verification are recorded separately from runtime and live-acceptance claims
 
 ### Verified runtime
 
-Latest verified runtime/test revision: **73a8459**, [CI 35584256073](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256073).
-1,632 Python tests (222 real PostgreSQL), 52 Node UI contracts, five MIME
-and 15 PDF actual-container cases passed. The same revision's
+Application runtime remains **73a8459**. The documentation/tooling follow-up
+**874c288** passed [CI 35585839904](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35585839904):
+1,660 Python tests (222 real PostgreSQL), 52 Node UI contracts, five MIME
+and 15 PDF actual-container cases. The added 28 cases test documentation tooling,
+not new product features. Runtime revision 73a8459's separate
 [restore](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256115)
 verified 26 tables, 142 rows, two tenants and four encrypted objects. See
 [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for exact scope, warnings and limitations.

@@ -2,6 +2,39 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Methods guide and documentation verification
+
+Documentation/tooling revision **874c288** adds the plain-language
+[methods guide](METHODS_GUIDE.md), explicit next owner-workflow outcome, corrected
+MIME/PDF command wording and the regression-tested offline documentation gate
+from [ADR-037](adr/037_documentation_verification.md). No application runtime,
+schema, dependency, permission or hosted resource changes. Historical research
+dates and prior verification remain intact; no new OSS activity scan is claimed.
+
+[CI 35585839904](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35585839904)
+passed at **874c288b368550b80c085b09cb61c4081e51d5f9**, observed 2026-09-21 Pacific:
+**1,660 Python tests, including 222 real PostgreSQL cases**, no CI skips;
+**52 Node contracts, five actual MIME-container and 15 actual PDF-container cases**.
+The repeated repository-gate suite is not counted twice. Both images, default-image
+reader exclusion, CLI smoke, locked dependencies, lint, typing and docs checks passed.
+Existing action Node-runtime and future Ubuntu-runner migration notices remain
+non-failing supply-chain work. This increment did not rerun the separate restore
+workflow; the unchanged application/schema restore proof remains the 73a8459 run
+below. Later receipt-only edits are not the revision tested by this run.
+
+Local verification at that revision: **1,438 Python passes, 222 explicit PostgreSQL
+skips**, **52 Node UI-contract passes**, locked dependency sync, lint, strict typing
+over 41 source modules plus the documentation checker, repository/docs/diff checks.
+The 28 new documentation regressions are included in the Python count, not added
+again. Two existing upstream Python deprecations remain. Staged and incremental
+secret scans found no leaks in the change.
+
+The gate checked **82 Markdown files and 635 local paths/fragments** at 874c288,
+including hidden GitHub templates. GitHub's Markdown API rendered the guide's
+headings; the published file's Git blob matched the checkout. These are navigation/
+rendered-HTML checks, not browser layout or accessibility acceptance. Later receipt
+edits can increase the link count without changing the tested checker.
+
 ## Explicit PDF operator execution and demo credential repair
 
 Implementation/test revision **73a8459** passed
