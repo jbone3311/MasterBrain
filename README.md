@@ -28,7 +28,8 @@ mail service. It includes:
 - resumable fictional-inbox seeding with varied mail and attachments;
 - offline-tested Gmail/Graph read libraries and an injected-session IMAP contract
   (not live connectors or durable provider workers yet);
-- owner import-health and held-message review with bounded metadata-only paging;
+- owner import-health and held-message review with bounded metadata-only paging,
+  explicit human retry, immutable attempt history and parser-versioned evidence;
 - opt-in loopback Ollama classification library with fake-response tests and
   model-digest checks (no daemon contacted or model enabled by default);
 - a disposable PostgreSQL logical backup/restore drill workflow;

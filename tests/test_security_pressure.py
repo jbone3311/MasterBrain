@@ -301,7 +301,8 @@ def test_quarantine_list_is_current_paged_and_owner_scoped(database, tenant):
     second_page = store.quarantines(context, account, after=first_page["next_after"], limit=1)
     assert len(second_page["results"]) == 1 and second_page["next_after"] is None
     assert first_page["results"][0]["id"] != second_page["results"][0]["id"]
-    assert first_page["raw_access"] is False and first_page["reprocessing"] is False
+    assert first_page["raw_access"] is False and first_page["reprocessing"] is True
+    assert first_page["retry_parser_version"]
     # A later bad version replaces the current receipt; repaired mail leaves this live list.
     store.ingest_page(
         context,

@@ -6,7 +6,12 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest read-only increment: certified full-inventory reconciliation, history-expiry
+Latest local increment: [audited held-message retry](QUARANTINE_RECOVERY.md), with
+human authorization, immutable parser versions, stale-event fencing, output-drift
+refusal and review UI. Migration 0008 requires stopping pre-0008 binaries; do not
+mix old workers with its changed evidence uniqueness key.
+
+Earlier read-only increments: certified full-inventory reconciliation, history-expiry
 recovery, bounded raw MIME quarantine, owner-scoped sync status, and resumable
 fictional-inbox seeding. Review [test coverage and gaps](TEST_COVERAGE_MATRIX.md)
 and the exact [build receipt](BUILD_RECEIPT.md) before promotion. These tests use
