@@ -194,7 +194,9 @@ class AccessTokenVerifier:
             if length is not None and (not length.isdecimal() or int(length) > limit):
                 raise ValueError("issuer response too large")
             data = bytearray()
-            for chunk in response.iter_bytes(chunk_size=8192):
+            # Do not buffer up to a caller-selected chunk size: a slow drip could
+            # otherwise postpone the elapsed-time check until that buffer fills.
+            for chunk in response.iter_bytes():
                 data.extend(chunk)
                 if len(data) > limit or time.monotonic() - started > 10:
                     raise ValueError("issuer response limit")

@@ -8,6 +8,11 @@ exact tested commits and results.
 
 ### API identity foundation (ADR-040)
 
+- Pressure review corrected key-response buffering that could postpone elapsed-time
+  checks during a slow drip; a regression test fails the prior buffered path.
+  Ambiguous duplicate Authorization headers now fail before verification, and
+  missing credentials receive a plain Bearer challenge.
+
 - Added explicitly configured RFC access-token/Entra v2 verification with fixed
   issuer/audience/client, bounded discovery/key cache and no bootstrap fallback.
 - Added migration 0013 administrator-owned identity mappings, immutable binding

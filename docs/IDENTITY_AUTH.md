@@ -124,11 +124,18 @@ token. This identifies the DB administrator role, not an invented end-user actor
   503. Existing request/status/duration logs contain no token/subject/body details.
   Rate limits, dedicated auth alerts and immutable audit export remain hosted gates.
 
+Multiple Authorization headers are rejected before authentication. Missing credentials
+receive a plain Bearer challenge; invalid presented credentials receive `invalid_token`.
+
 Metadata and JWKS fetches use HTTPS with certificate validation, no redirects or
 environment proxies, fixed destinations, bounded streaming/time and response sizes
 (128/256 KiB). Reject compressed responses, duplicate JSON keys, private-literal
 URLs, token-selected URLs/keys and unsupported JOSE controls. RSA public signing
-keys are limited to 2048–4096 bits. Token size is at most 16 KiB. URL checks do not
+keys are limited to 2048–4096 bits. Elapsed-time checks run on incoming chunks,
+without waiting for a caller-sized buffer to fill. Connect/read timeouts and these
+checks are not a hard process-level deadline across DNS/TLS; hosted resolver/egress,
+request-concurrency and supervision controls remain required.
+Token size is at most 16 KiB. URL checks do not
 prove DNS/egress isolation; configure and test that in the hosted environment.
 
 ## Testing, restore and rollback

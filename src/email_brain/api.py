@@ -97,12 +97,21 @@ def create_app(
             request: Request,
             credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
         ) -> Principal:
-            principal = registry.authenticate(credentials.credentials) if credentials else None
+            authorization = request.headers.getlist("authorization")
+            principal = (
+                registry.authenticate(credentials.credentials)
+                if credentials and len(authorization) == 1
+                else None
+            )
             if principal is None:
                 raise HTTPException(
                     401,
                     "invalid_or_expired_credential",
-                    headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+                    headers={
+                        "WWW-Authenticate": (
+                            'Bearer error="invalid_token"' if authorization else "Bearer"
+                        )
+                    },
                 )
             if scope not in principal.context.scopes or (
                 human and principal.client_kind != "human"

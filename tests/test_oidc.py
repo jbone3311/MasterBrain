@@ -5,6 +5,7 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 import httpx
@@ -13,6 +14,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 
+import email_brain.oidc as identity_module
 from email_brain.api import create_app
 from email_brain.auth import AuthenticationUnavailable, Principal
 from email_brain.domain.models import TenantContext
@@ -486,6 +488,30 @@ def test_network_timeout_and_client_security_options(issuer, monkeypatch):
     assert observed[0]["timeout"].read == 5 and observed[0]["timeout"].connect == 2
 
 
+def test_slow_drip_cannot_delay_deadline_until_buffer_fills(issuer, monkeypatch):
+    chunks = []
+    times = iter([0.0, 1.0, 11.0])
+    monkeypatch.setattr(
+        identity_module, "time", SimpleNamespace(time=time.time, monotonic=lambda: next(times))
+    )
+
+    class Drip(httpx.SyncByteStream):
+        def __iter__(self):
+            for _ in range(100):
+                chunks.append(1)
+                assert len(chunks) <= 2, "deadline postponed while buffering response"
+                yield b"x"
+
+    verifier = AccessTokenVerifier(
+        issuer.config,
+        monotonic=lambda: 0.0,
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, stream=Drip())),
+    )
+    with pytest.raises(AuthenticationUnavailable):
+        verifier.verify(token(issuer.key, issuer.config))
+    assert len(chunks) == 2
+
+
 def test_weak_rsa_key_rejected(issuer):
     weak = rsa.generate_private_key(public_exponent=65537, key_size=1024)
     issuer.entries = [issuer.jwk(weak, "first")]
@@ -524,6 +550,26 @@ def test_api_auth_errors_are_scrubbed(issuer, caplog):
     assert response.json() == {"error": "authentication_unavailable"}
     assert raw not in response.text + caplog.text
     assert "fictional-owner" not in response.text + caplog.text
+
+
+def test_missing_credential_is_a_plain_bearer_challenge(issuer):
+    auth = OIDCAuthenticator(Store("never-connect"), issuer.verifier())
+    response = TestClient(create_app(auth.store, auth)).get("/readyz")
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+    assert issuer.urls == []
+
+
+@pytest.mark.parametrize("valid_first", [True, False])
+def test_duplicate_authorization_rejected_before_verification(issuer, valid_first):
+    auth = OIDCAuthenticator(Store("never-connect"), issuer.verifier())
+    valid = ("Authorization", "Bearer " + token(issuer.key, issuer.config))
+    invalid = ("Authorization", "Bearer malformed")
+    response = TestClient(create_app(auth.store, auth)).get(
+        "/readyz", headers=[valid, invalid] if valid_first else [invalid, valid]
+    )
+    assert response.status_code == 401
+    assert issuer.urls == []
 
 
 def test_api_authority_comes_from_mapping_not_signed_roles(issuer, monkeypatch):
