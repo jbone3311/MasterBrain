@@ -2,6 +2,54 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Approved PDF source-to-search integration
+
+Runtime/schema implementation **a2c5957**, test/document follow-up **9a99dfa**.
+[CI 35580405200](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35580405200)
+passed at 9a99dfa. The unchanged restore/runtime implementation passed
+[restore 35579931717](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35579931717)
+at a2c5957. Verified 2026-09-21 Pacific.
+
+- **1,553 standard Python tests passed**, including **211 real PostgreSQL cases**,
+  no CI skips. **52 Node contracts**, **five actual MIME-container cases** and
+  **14 actual PDF-container cases** passed. Repeated quality-gate suites and the
+  restore subset are not counted twice.
+- The added actual-container case proves a known PDF-only term absent before
+  approval becomes searchable after source-bound approval, restricted extraction,
+  SQL publication and document evidence read. The original deferred receipt and
+  provider cursor remain unchanged. Default API/MIME reader exclusion still passes.
+- **51 new standard cases**: 18 offline configuration/scope/schema checks and
+  33 database/API cases. They cover distinct worker authority, actor idempotency,
+  queue/paging bounds, concurrent claims/cancel, worker restart/retries, current
+  owners/account/enrollment/source events, approval/lease expiry, processor/hash
+  substitution, atomic audit rollback, immutable revisions, bounded page excerpts,
+  historical/current search, cached-result authorization and foreign resources.
+- Restore verified **26 tables, 142 rows, two tenants, four encrypted objects**;
+  all hashes and tenant RLS passed. Completed/cancelled/pending document jobs,
+  immutable page evidence and document FTS survived. SQL-only/missing-object restore
+  was refused. **19.71 seconds** includes disposable startup, not production RTO.
+  This drill uses a known-answer document adapter; actual extraction is verified
+  separately by the real container suite.
+- Local checks: **1,342 passed, 211 explicit PostgreSQL skips**, 52 Node passes,
+  locked dependencies, lint, strict typing across **40 source modules**, separate
+  restore-script typing, repository/docs/diff checks. Incremental secret scan
+  through 9a99dfa found no leaks. Existing two Python deprecations and CI action/
+  runner notices remain non-failing, tracked supply-chain work.
+
+The first CI run found the older populated-upgrade test's expected migration list
+omitted 0012; the actual upgrade succeeded. The expectation was corrected without
+removing immutable-evidence checks. Review also strengthened fault injection: source
+replacement/deletion now uses actual ingestion and every mutation must complete,
+with the expected terminal/retry state asserted. This avoids treating a failed
+fault setup as successful stale-source protection. Final checks above all passed.
+
+[ADR-035](adr/035_approved_document_processing.md) and
+[document processing](DOCUMENT_PROCESSING.md) define the synthetic-only API/library,
+new worker scope, protected migration, fixed unscanned policy and opt-in search.
+No owner document UI, document operator CLI, scanner, real mailbox, cloud resource,
+remote model, mailbox write or Factory mutation was added. Those remain separate
+work/acceptance gates. This is meaningful integration, not a production release.
+
 ## Source-bound restricted PDF worker groundwork
 
 Implementation **a041647** passed [CI 35576368521](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35576368521)

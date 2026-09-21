@@ -16,9 +16,9 @@ live/scanner policy remain open; do not rebuild the now-integrated backend.
 
 Previous increment: [source-bound restricted PDF worker](PDF_WORKER.md), ADR-034.
 Review the dedicated image, hash/part binding, strict result validation, shared
-fixed-profile container controller and partial/unscanned semantics. It has no SQL,
-HTTP or existing-job integration. Next implement durable approval/results/search
-under a separate ADR; preserve ready-body search and do not invent quarantine.
+fixed-profile container controller and partial/unscanned semantics. That increment
+had no SQL/HTTP integration; ADR-035 above now supplies a separate channel while
+preserving ready-body search and never inventing quarantine.
 
 Previous increment: [known-answer mailbox](TEST_MAILBOX_PLAN.md), ADR-033,
 coherent conversations/document corrections, real formats, independent dev-only

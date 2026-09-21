@@ -1,6 +1,15 @@
 # Synthetic PostgreSQL backup/restore drill
 
-Latest verified implementation: **814197a**, [run 35568746120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35568746120),
+Latest verified restore implementation: **a2c5957**,
+[run 35579931717](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35579931717),
+passed 2026-09-21: **26 tables, 142 rows, two tenants and four encrypted objects**.
+It adds completed/cancelled/pending document jobs, immutable page evidence and
+authorized document FTS. All table/raw hashes and RLS checks passed; SQL-only and
+missing-object restores were refused. Elapsed 19.71 seconds includes disposable
+startup, not a production RTO. The known-answer synthetic result adapter proves
+restoration, not actual extraction; restricted-container checks run separately.
+
+Historical verified implementation: **814197a**, [run 35568746120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35568746120),
 passed 2026-09-20 Pacific. Mixed inline/external evidence: **24 tables, 119 rows,
 two tenants, four encrypted objects**, equal hashes and restored authorization.
 Completed, cancelled and queued processing grants retained their exact state and
@@ -58,7 +67,8 @@ reviewed application grants. [pg_dump](https://www.postgresql.org/docs/17/app-pg
   compared before any post-restore application reads add new audit events.
 - Each raw MIME object's SHA-256 recomputed from its restored bytes.
 - Stable evidence IDs, excerpts, metadata and attachment receipts.
-- Body and extracted-attachment full-text search.
+- Body, extracted-attachment and opt-in document full-text search; immutable
+  document page excerpts/provenance and completed/cancelled/pending grants.
 - Preserved approved proposals and evidence links, quarantine state and cursors.
 - Human-reviewed rule proposals, simulation receipts and active revision 1 per
   tenant; restored search classifications retain distinct tenant categories and
@@ -70,8 +80,9 @@ reviewed application grants. [pg_dump](https://www.postgresql.org/docs/17/app-pg
 - Applied migration checksums remain unchanged; no new migration runs after restore.
 
 All input is generated synthetic mail with `example.invalid` addresses. One plain
-text attachment is extracted, one fake PDF remains deferred and malformed empty
-MIME produces retained quarantine evidence. No real provider or model is contacted.
+text attachment is extracted, a generated PDF keeps its original deferred receipt
+and gains a separate known-answer extraction, and empty MIME produces retained
+quarantine evidence. No real provider or model is contacted.
 
 ## Safety boundaries
 

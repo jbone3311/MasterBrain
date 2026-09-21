@@ -21,16 +21,16 @@ No source/body mutation, default PDF parsing, UI controls or hosted service is a
 [Source-bound PDF worker groundwork](PDF_WORKER.md) adds a separate closed pipe
 contract and optional restricted image. The child verifies retained MIME and part
 hashes before bounded extraction; the parent validates page-level outcomes. The
-ordinary parser, quarantine jobs and database/search are unchanged. Durable source-
-bound approval and extraction publication remain the next integration, not a hidden
-reuse of MIME recovery permissions.
+ordinary parser and quarantine jobs remain unchanged. ADR-035 adds separate durable
+approval/extraction publication, not a hidden reuse of MIME recovery permissions.
 
 [Known-answer synthetic mail](TEST_MAILBOX_PLAN.md) now exports coherent MIME and
 documents and replays them through the existing synthetic-only ingestion boundary.
 Manifest-hash cursors bind seed/version/bytes; per-event transactions preserve
 restart and duplicate-delivery semantics. Independent PDF/Office readers validate
 fixtures in development; only the separately opted-in PDF worker now adds pypdf
-outside dev. The default API/MIME image still excludes it. No new table or API endpoint.
+outside dev. The default API/MIME image still excludes it. The generator itself
+adds no table or API endpoint; the independent document channel does.
 
 [Operator processing](PROCESSING_CONTROLLER.md) turns the approved-job library
 into a bounded CLI with private identity/key configuration, non-claiming preflight,

@@ -47,14 +47,14 @@ is recorded in the build receipt, not inferred from this row.
 
 ### Verified runtime
 
-Latest verified runtime/test commit: **a041647**, [CI 35576368521](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35576368521).
-1,502 Python tests (178 real PostgreSQL), 52 Node UI contracts, five existing MIME
-and 13 additional PDF actual-container cases passed. Restore at the same commit verified
-24 tables, 119 rows, two tenants and four encrypted objects. See
+Latest verified runtime/test revision: **9a99dfa**, [CI 35580405200](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35580405200).
+1,553 Python tests (211 real PostgreSQL), 52 Node UI contracts, five MIME
+and 14 PDF actual-container cases passed. The unchanged runtime/restore implementation
+at **a2c5957** verified 26 tables, 142 rows, two tenants and four encrypted objects. See
 [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for exact scope, warnings and limitations.
-These include source-bound standalone PDF processing and known-answer mailbox
-generation/replay, not integrated PDF approvals/search, scanning, sustained live
-feed service, real model accuracy or new browser/accessibility acceptance.
+These include approved synthetic PDF-to-SQL/search/evidence and known-answer mailbox
+generation/replay, not document UI/CLI, scanning, sustained live feed, real model
+accuracy or new browser/accessibility acceptance.
 
 Local unit/API/protocol/attachment tests, type checking and linting run with locked
 dependencies. CI additionally runs real PostgreSQL integration tests against a

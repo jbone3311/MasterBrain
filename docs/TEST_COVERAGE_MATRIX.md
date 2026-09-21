@@ -1,16 +1,17 @@
 # Test coverage and limits
 
-Updated 2026-09-20. These are executable behavior checks, not a claim of 100% line
+Updated 2026-09-21. These are executable behavior checks, not a claim of 100% line
 coverage or production readiness. All message content is synthetic. Exact results
 and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
 | Area | Executable tests | Still needed before production |
 |---|---|---|
+| Approved PDF documents | Separate human/worker scopes, schema/SQL ownership, cancellation/revocation/source/expiry/lease races, immutable revisions, bounded page citations, opt-in FTS, actual restricted-worker SQL/search and restored document jobs/results | UI/operator workflow, scanner/live policy, hosted supervision, broader quality and soak |
 | Durable recovery jobs | API approval/cancel/status/history, account-bound cursor pagination, worker authority, SQL RLS/immutable approvals, concurrent claims/idempotency, lease/expiry/source/revocation fences, bounded retries, actual-container pipeline and restored job states | Hosted service identities, supervision/alerts and extended multi-controller soak |
 | Isolated large MIME | Strict output schema/hash/Unicode/allocation budgets, container pre-disclosure controls, timeout/output flooding, exact-owned cleanup, processor-version fences, explicit real-container to PostgreSQL/search CI suite | Hosted controller, sandbox escape/load review, scanner and binary extractors |
 | Encrypted raw objects | AES-GCM/AAD, key rotation, tampering, ownership/symlinks, crash/fsync, duplicates, staged orphan inventory, SQL constraints, large-message holding/restart and missing-object restore refusal | Hosted Blob/KMS, key-backup recovery, retention/purge and offsite durability |
 | MIME | Plain/HTML alternatives, Unicode, unknown charset, truncation, NUL fields, size bounds, 1,000 seeded random byte inputs | Extended fuzz campaign, independent parser security review |
-| Attachments | Path names, duplicate receipts, CSV/plain extraction, binary/active-content deferral, depth/count limits | Actual isolated PDF/Office/OCR extraction, malware fixtures and sandbox escape tests |
+| Attachments | Path names, duplicate receipts, CSV/plain extraction, binary/active-content deferral, depth/count limits; separate approved PDF path above | Office/OCR extraction, malware fixtures and sandbox escape tests |
 | Realistic attachment formats | Nine deterministic in-memory MIME cases; 31 payload/hash/ZIP/XML/PNG/encoding checks; 36 byte-preservation checks across four mocked provider formats | Approved external corpus comparisons and live provider conformance; Office application acceptance |
 | Calendar evidence | 73 parser and 11 independent security tests; named/unnamed calendar MIME, UTF-8 byte folding, syntax/budget failures, inert alarms, METHOD consistency, real DB FTS/history/replay | Full calendar semantics, recurrence/timezone computation, historical reprocessing and calendar actions |
 | Imports | 256-message HTTP-to-Postgres corpus, process recreation each page, varied attachments, initial and incremental sync | Live disposable-provider conformance and realistic mailbox sizes |
@@ -26,7 +27,7 @@ and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 | Owner UI | 52 Node DOM-contract tests: prior 25 plus 27 processing cases covering history, approvals, same-key retries, cancellation races, malformed responses, stale views and cursor preservation | Full browser automation, accessibility, scale/pagination stress and production login |
 | Control | Persisted rule simulation/activation/rollback, stale receipts, competing writes, actor/tenant isolation, REST lifecycle, virtual-only effects; pure protected-class veto | Rich persisted predicates/protection policies, entities, drift evaluation |
 | Models | 90 fake-server tests for opt-in local adapter, digest/metadata checks, time/size/schema bounds, grounded excerpts, rejected tools; independent disclosure tests | Actual isolated daemon/model quality, calibrated accuracy, cache and remote budgets |
-| Synthetic demo | Deterministic corpus, bounded count, mid-import crash/resume, complete replay, mismatched cursor refusal | Coherent scenario/answer-key feed (EB-023), continuous replay and interactive owner acceptance |
+| Synthetic demo | Deterministic corpus and coherent known-answer feed (EB-023), real generated formats, bounded paced/restarted replay and mismatched cursor refusal | Broader held-out scenarios, sustained soak and interactive owner acceptance |
 | Release | Locked dependencies, lint, strict types, migration replay, document links, container build/CLI; actual disposable PG17 logical restore with hash/RLS/search checks | SBOM/advisory/signature gates, managed-cloud restore/PITR and disaster recovery |
 
 ## Interpreting the results
