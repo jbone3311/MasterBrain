@@ -9,9 +9,16 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest increment: [approved document jobs/search](DOCUMENT_PROCESSING.md), ADR-035,
+Latest increment: [document operator command](DOCUMENT_CONTROLLER.md), ADR-036.
+Review fixed purpose/policy, exact document-worker scope, private file/key boundary,
+synthetic-account preflight, fresh authentication around extraction and shared
+polling without shared approval authority. The loopback server exposes an explicit
+channel option; demo-owner generation now allowlists human scopes. No schema,
+dependency, hosted supervision, owner PDF UI or live-mail policy is added.
+
+Previous increment: [approved document jobs/search](DOCUMENT_PROCESSING.md), ADR-035,
 migration 0012. Review separate worker scope, synthetic policy, fresh source/owner/
-lease fences, immutable revisions and latest-result FTS selection. UI/CLI and
+lease fences, immutable revisions and latest-result FTS selection. UI and
 live/scanner policy remain open; do not rebuild the now-integrated backend.
 
 Previous increment: [source-bound restricted PDF worker](PDF_WORKER.md), ADR-034.
@@ -189,17 +196,18 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 
 ## Suggested next issue
 
-> Build the explicit owner/operator workflow over ADR-035's document API/library:
+> Build the explicit owner workflow over ADR-035's document API/library:
 > safe attachment selection, exact processor/policy approval, bounded history and
-> cancellation, document search/evidence rendering, and separately configured
-> worker execution. Add the required workflow ADR first. Preserve session/account
+> cancellation and document search/evidence rendering. ADR-036 already supplies
+> separately configured worker execution. Add the required UI workflow ADR first. Preserve session/account
 > fencing, retained request keys, worker-scope separation and no automatic consent.
 > Keep existing MIME controls unchanged. Test stale UI, revocation, restart and
 > restricted worker/SQL behavior. Do not enroll mail, buy resources or mutate Factory.
 
-ADR-034 supplies the reader; ADR-035 supplies durable approval/publication/search.
-`process-jobs` still supports only MIME recovery. Extend the product deliberately,
-not by selecting a PDF image for that incompatible MIME contract.
+ADR-034 supplies the reader; ADR-035 supplies durable approval/publication/search;
+ADR-036 supplies `process-documents` and loopback channel configuration.
+`process-jobs` still supports only MIME recovery. Do not select a PDF image for
+that incompatible MIME contract or broaden credentials to cover both channels.
 
 The operator recovery command and bounded known-answer generator already exist;
 do not reimplement either. Hosted supervision, a read-worker operator path and

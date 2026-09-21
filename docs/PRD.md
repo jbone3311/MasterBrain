@@ -8,7 +8,8 @@ current behavior; [status](IMPLEMENTATION_STATUS.md) identifies remaining gates.
 
 - **Current prototype:** synthetic read/search/evidence/review, narrow virtual
   sender rules, bounded attachment handling, durable recovery API/UI/libraries and
-  separate synthetic PDF approval/result/search API/library (document UI/CLI pending).
+  separate synthetic PDF approval/result/search API/library and operator command
+  (document owner UI pending).
 - **First live release:** one explicitly enrolled read-only provider, hosted
   identity/storage/supervision, safe processing policy, recovery and operator acceptance.
 - **Later capabilities:** evaluated state/inference, team grants/MCP and separately

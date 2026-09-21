@@ -1,19 +1,27 @@
 """Explicit real restricted-image PDF tests; not ordinary test discovery."""
 
+import json
 import os
+import secrets
+import subprocess
+import sys
 from dataclasses import replace
 from uuid import uuid4
 
 import pytest
 import test_postgres as pg
 from pdf_samples import mail_packet, variant
+from test_document_controller import document_files
+from test_processing_controller import private_write
 
 from email_brain.attachments import receive_attachments
 from email_brain.auth import Principal
+from email_brain.blobs import EncryptedBlobStore
 from email_brain.document_jobs import POLICY, DocumentJobs
 from email_brain.pdf_contract import PdfUnavailable
 from email_brain.pdf_processor import DockerPdfProcessor
 from email_brain.schemas import SearchRequest
+from email_brain.store import Store
 from email_brain.synthetic_mailbox import project_events
 
 database, tenant = pg.database, pg.tenant
@@ -115,4 +123,99 @@ def test_actual_approved_document_to_sql_search_and_evidence(database, tenant, p
                 "SELECT opaque_cursor FROM sync_cursors WHERE account_id=%s", (account,)
             ).fetchone()["opaque_cursor"]
             == "pdf-ready"
+        )
+
+
+@pytest.mark.postgres
+def test_document_cli_encrypted_source_check_execute_restart(database, tenant, processor, tmp_path):
+    ctx, account = tenant
+    key = secrets.token_bytes(32)
+    root = tmp_path.resolve() / "pdf-objects"
+    store = Store(
+        database[0].dsn,
+        blobs=EncryptedBlobStore(
+            root, {(ctx.tenant_id, "pdf-key"): key}, {ctx.tenant_id: "pdf-key"}
+        ),
+    )
+    raw, _, _ = mail_packet(variant("text"))
+    store.ingest_page(ctx, account, None, "pdf-cli-ready", [replace(pg.item(), raw=raw)])
+    with store.transaction(ctx) as conn:
+        receipt = conn.execute(
+            "SELECT id FROM attachment_receipts WHERE account_id=%s", (account,)
+        ).fetchone()["id"]
+        saved = conn.execute(
+            "SELECT raw_mime,blob_ref FROM raw_objects WHERE account_id=%s", (account,)
+        ).fetchone()
+        assert saved["raw_mime"] is None and saved["blob_ref"] is not None
+    query = SearchRequest(query="pdfonlyproof", include_documents=True)
+    assert store.search(ctx, query) == []
+    jobs = DocumentJobs(store, processor.processor_version)
+    job = jobs.enqueue(
+        Principal(ctx, "human"), account, receipt, processor.processor_version, POLICY, uuid4()
+    )
+    path, config, _, token = document_files(
+        tmp_path,
+        ctx.tenant_id,
+        ctx.actor_id,
+        account,
+        "sha256:" + processor.processor_version.removeprefix("sandbox-pdf-v1-"),
+    )
+    config.update(blob_root=str(root), keys_file=str(path.parent / "keys.json"))
+    private_write(path, config)
+    private_write(
+        path.parent / "keys.json",
+        {"tenant_id": str(ctx.tenant_id), "keys": [{"key_id": "pdf-key", "key_hex": key.hex()}]},
+    )
+
+    def invoke(*extra):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "email_brain.cli",
+                "process-documents",
+                "--config",
+                str(path),
+                *extra,
+            ],
+            env={"PATH": "/usr/bin:/bin", "EMAIL_BRAIN_DSN": store.dsn},
+            capture_output=True,
+            text=True,
+            timeout=90,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stderr == ""
+        for secret in (token, key.hex(), store.dsn, str(account), "pdfonlyproof"):
+            assert secret not in result.stdout
+        return json.loads(result.stdout)
+
+    assert invoke("--check") == {
+        "configuration_valid": True,
+        "execution_verified": False,
+        "claims": 0,
+    }
+    assert jobs.get(ctx, account, job["id"])["attempts"] == 0
+    assert invoke()["results"]["completed"] == 1
+    assert invoke()["results"]["no_result"] == 1
+    status = jobs.get(ctx, account, job["id"])
+    assert status["attempts"] == 1 and status["status"] == "completed"
+    hits = store.search(ctx, query)
+    assert len(hits) == 1 and hits[0]["document_id"] == status["extraction_id"]
+    evidence = store.document_evidence(ctx, status["extraction_id"])
+    assert evidence["scanner_status"] == "unscanned"
+    assert "pdfonlyproof" in evidence["pages"][0]["excerpt"]
+    assert store.load_raw(ctx, account, saved["blob_ref"]["sha256"]) == raw
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM document_extractions WHERE account_id=%s", (account,)
+            ).fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute(
+                "SELECT opaque_cursor FROM sync_cursors WHERE account_id=%s", (account,)
+            ).fetchone()["opaque_cursor"]
+            == "pdf-cli-ready"
         )

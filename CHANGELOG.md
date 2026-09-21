@@ -8,6 +8,13 @@ exact tested commits and results.
 
 ### Evidence, processing and review
 
+- Added `process-documents` with separate fixed-purpose/policy private configuration,
+  exact PDF-worker scope, synthetic-account preflight, fresh credentials and bounded
+  polling. Added an explicit loopback server channel option. MIME permissions remain
+  separate; no owner PDF UI, hosted supervisor or live-mail authority is added.
+- Fixed demo-owner registry generation to allowlist human scopes and validate before
+  saving; the new document-worker scope can no longer invalidate the generated owner.
+
 - Added a separate synthetic-only PDF approval API/library, worker scope, fenced
   durable jobs, immutable extraction revisions, opt-in document FTS and bounded
   page evidence. Migration 0012 protects receipts/results and approval identity.

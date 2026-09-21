@@ -90,7 +90,8 @@ revision selection, page citations and opt-in FTS. Existing ingestion receipts
 still defer PDFs; only a successful explicitly approved result makes PDF-only text
 available to document search. Source/body state is preserved. See
 [document contract](DOCUMENT_PROCESSING.md) for scopes, routes and operational controls.
-UI, document CLI/supervision, scanning and live acceptance remain open; do not
+ADR-036 adds the [document CLI](DOCUMENT_CONTROLLER.md). UI, hosted supervision,
+scanning and live acceptance remain open; do not
 close EB-006 on parser or synthetic integration checks alone.
 
 Schema inspection confirms current receipts are unique per message-evidence/part,

@@ -9,7 +9,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/scheduler, hosted processing supervision, live acceptance and soak |
 | Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
 | Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, production PDF intake policy, Office/OCR/archive extraction; bulk historical document reprocessing and raw download policy |
-| Approved PDF processing | Separate restricted worker; synthetic-only approval API/library, durable fenced jobs, immutable result revisions, opt-in document FTS and cited page excerpts | Owner UI/document CLI, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
+| Approved PDF processing | Separate restricted worker; synthetic approval API/library and explicit operator CLI, durable fenced jobs, immutable results, opt-in FTS and page excerpts | Owner UI, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments; opt-in latest-current PDF extraction text | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
 | Feedback | Typed proposals; human-reviewed sender rule simulation/activation; immutable revisions and rollback; virtual search labels | Rich predicates/protected-sender configuration, temporal/entity application, drift evaluation |
@@ -32,6 +32,12 @@ do not create entities. Virtual labels do not change provider folders. A configu
 parser does not certify an online worker, and a completed job can have deferred attachments.
 
 ## Validation
+
+ADR-036 adds [explicit document execution](DOCUMENT_CONTROLLER.md), separate
+purpose/policy configuration and worker scope, plus a loopback server channel flag.
+It fixes invalid demo-owner credential generation by allowlisting human scopes.
+Current local/CI verification is recorded separately below/in the build receipt;
+the previous increment's counts must not be applied to these new tests implicitly.
 
 ### Important attachment boundary
 

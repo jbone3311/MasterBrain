@@ -18,6 +18,9 @@ history, cancellation and result reads. It is not yet part of the owner screen o
 scan status. Stopping a worker does not cancel saved consent; disabling configuration
 only prevents new approvals. Cancel pending jobs explicitly and retain immutable
 results. Restore and expiry rules apply to both channels without merging permissions.
+The separate [document operator command](DOCUMENT_CONTROLLER.md) now runs approved
+PDF work. Its preflight checks synthetic account/configuration, not worker readiness;
+keep its worker credentials/configuration distinct from MIME recovery.
 
 Choose the account and refresh processing history manually. Approve only the
 displayed receipt/parser; inspect fixed status/outcomes and each attachment result.
@@ -66,7 +69,8 @@ an unsupported extraction capability, not necessarily a stalled recovery job.
 Do not quarantine the message manually, invent a receipt or raise parser limits.
 Keep its body searchable and record the deferred part. Eligible synthetic PDFs
 can use the separate [document API/library](DOCUMENT_PROCESSING.md); document
-UI/CLI, live policy and Office processing remain unavailable. Do not reinterpret
+UI, live policy and Office processing remain unavailable; the separate document CLI
+is now implemented. Do not reinterpret
 an existing MIME approval as consent to use that separate channel.
 
 ## Encrypted evidence failures

@@ -32,7 +32,7 @@ passed; documentation updates do not certify new functionality.
 | Ingest | Fastmail worker library; synthetic HTTP-to-Postgres tests; atomic checkpoints, fenced leases, quarantine and inventory reconciliation |
 | Preserve | Immutable raw/evidence versions; bounded inline MIME; opt-in encrypted local objects up to 16 MiB |
 | Search | PostgreSQL FTS over messages and supported text/calendar attachments, with stable evidence references |
-| Read PDFs | Separate synthetic approval API/library, restricted PDF worker, immutable page evidence and opt-in document FTS; document UI/CLI still pending |
+| Read PDFs | Separate synthetic approval API/library and operator command, restricted PDF worker, immutable page evidence and opt-in document FTS; owner UI still pending |
 | Review | Owner-only local UI: search, proposals, virtual sender rules, held mail, processing history/approval/cancellation |
 | Recover | Human-authorized retries and separate restricted MIME worker; bounded jobs, expiry, cancellation and atomic results |
 | Isolate | Tenant RLS, ownership constraints, scoped expiring bootstrap credentials and negative authorization tests |
@@ -59,13 +59,14 @@ A separate [restricted PDF worker](docs/PDF_WORKER.md) now provides source-bound
 page-level extraction groundwork with explicit partial/deferred outcomes. It is
 now connected to a separate [synthetic document approval API/library](docs/DOCUMENT_PROCESSING.md),
 immutable results and opt-in document search. Ordinary ingestion still defers PDFs;
-UI/CLI controls are pending. The default image has no PDF reader and no malware-safety
+The [PDF operator command](docs/DOCUMENT_CONTROLLER.md) is explicit and separate;
+owner UI controls are pending. The default image has no PDF reader and no malware-safety
 claim is made.
 
 ## What comes next
 
-1. Finish the document-processing owner/operator experience around the new
-   approved API/library: safe UI, explicit bounded CLI and operational controls.
+1. Finish the document-processing owner experience around the approved API/library
+   and separate bounded operator command: safe UI, cited results and review controls.
    Preserve body/evidence identity and separately resolve scanner/live policy.
 2. Complete supervised read-only operation, production identity, managed storage,
    recoverable keys and operator alerts; then accept one disposable live provider.

@@ -7,6 +7,14 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-036's document controller](DOCUMENT_CONTROLLER.md) uses explicit purpose/policy
+configuration, exactly the worker-only document scope and synthetic account preflight.
+It reuses private-file/key/polling primitives, not MIME permissions or approvals.
+Fresh credential checks surround extraction; SQL fences remain authoritative for
+publication. The server flag only configures the approval channel. Demo human
+credentials now use a fixed human-scope allowlist and are validated before saving.
+No additional SQL grant, live account or hosted supervisor is introduced.
+
 [ADR-035 document jobs](DOCUMENT_PROCESSING.md) bind synthetic-only human consent
 to a current attachment/source event, exact processor and fixed unscanned policy.
 The new worker-only scope cannot reuse MIME grants. Database-clock lease/approval,

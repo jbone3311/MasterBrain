@@ -17,7 +17,8 @@ import uvicorn
 from psycopg import sql
 
 from email_brain.api import create_app
-from email_brain.auth import SCOPES, TokenRegistry
+from email_brain.auth import Credential, TokenRegistry
+from email_brain.document_controller import run_document_controller
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.processing_controller import private_bytes, run_controller, shutdown_signals
@@ -75,11 +76,18 @@ def provision_demo(state: Path) -> None:
             "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
             "tenant_id": str(tenant_id),
             "actor_id": str(actor_id),
-            "scopes": sorted(SCOPES - {"email.ingest", "email.process"}),
+            "scopes": [
+                "email.search",
+                "email.evidence.read",
+                "email.proposal.create",
+                "email.proposal.read",
+                "email.review",
+            ],
             "client_kind": "human",
             "expires_at": (datetime.now(UTC) + timedelta(days=7)).isoformat(),
         }
     ]
+    TokenRegistry([Credential.model_validate(item) for item in credential])
     _private_file(state / "credentials.json", json.dumps(credential, indent=2))
     _private_file(state / "owner-token.txt", token)
     _private_file(
@@ -190,11 +198,16 @@ def main() -> None:
     serve = commands.add_parser("serve", help="Loopback-only developer server")
     serve.add_argument("--port", type=int, default=8080)
     serve.add_argument("--recovery-parser-version", default=None)
-    processing = commands.add_parser("process-jobs", help="Run explicitly approved processing jobs")
-    processing.add_argument("--config", type=Path, required=True)
-    processing.add_argument("--check", action="store_true")
-    processing.add_argument("--max-iterations", type=int, default=1)
-    processing.add_argument("--idle-seconds", type=int, default=5)
+    serve.add_argument("--document-processor-version", default=None)
+    for name, help_text in (
+        ("process-jobs", "Run explicitly approved MIME recovery jobs"),
+        ("process-documents", "Run explicitly approved synthetic PDF jobs"),
+    ):
+        processing = commands.add_parser(name, help=help_text)
+        processing.add_argument("--config", type=Path, required=True)
+        processing.add_argument("--check", action="store_true")
+        processing.add_argument("--max-iterations", type=int, default=1)
+        processing.add_argument("--idle-seconds", type=int, default=5)
     for name in ("export-test-mailbox", "seed-test-mailbox"):
         fixture_command = commands.add_parser(
             name, help="Known-answer fictional mail; no live delivery"
@@ -248,10 +261,13 @@ def main() -> None:
                     stop=stop,
                 )
             print(json.dumps(result, sort_keys=True))
-        elif args.command == "process-jobs":
+        elif args.command in {"process-jobs", "process-documents"}:
             stop = Event()
+            controller = (
+                run_controller if args.command == "process-jobs" else run_document_controller
+            )
             with shutdown_signals(stop):
-                result = run_controller(
+                result = controller(
                     args.config,
                     _env("EMAIL_BRAIN_DSN"),
                     check=args.check,
@@ -265,6 +281,7 @@ def main() -> None:
                 Store(_env("EMAIL_BRAIN_DSN")),
                 TokenRegistry.from_file(Path(_env("EMAIL_BRAIN_CREDENTIALS_FILE"))),
                 recovery_parser_version=args.recovery_parser_version,
+                document_processor_version=args.document_processor_version,
             )
             uvicorn.run(
                 app, host="127.0.0.1", port=args.port, access_log=False, proxy_headers=False

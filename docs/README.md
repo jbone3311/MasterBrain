@@ -9,7 +9,8 @@ mail, maintains people/project/thread/obligation state and gives assistants boun
 evidence instead of whole mailboxes. The current prototype implements only a
 bounded portion: synthetic ingestion/search, review, virtual rules and recovery.
 It also connects approved synthetic PDFs to restricted extraction, immutable page
-evidence and opt-in search through a separate API/library, not yet owner UI/CLI.
+evidence and opt-in search through a separate API/library and explicit operator
+command, not yet owner UI.
 
 ## Reading paths
 
@@ -50,7 +51,7 @@ The documentation review explains the owner scenario, methods, attachment covera
 failure behavior and dependency-ordered delivery plan. The latest consistency pass
 aligns current claims with ADR-035 and adds contributor/release-evidence guides and
 GitHub review templates. [Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
-keep future changes traceable. UI/CLI and live/scanner policy remain pending for the
+keep future changes traceable. Owner UI and live/scanner policy remain pending for the
 document channel. Research counts retain their actual observation dates; no hosted
 deployment or Factory audit is claimed.
 
@@ -138,6 +139,7 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
 | [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF reader, isolation and format limits |
 | [DOCUMENT_PROCESSING.md](DOCUMENT_PROCESSING.md) | Separate synthetic approval API/library, durable results, opt-in search and remaining operator/live gates |
+| [DOCUMENT_CONTROLLER.md](DOCUMENT_CONTROLLER.md) | Explicit PDF command, private configuration, preflight, worker identity and operational limits |
 | [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) | Executable fictional generator/export/replay, attachment formats, answer keys and remaining soak gaps |
 | [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md) | External corpus shortlist and adoption gates |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Authoritative current capability boundaries |

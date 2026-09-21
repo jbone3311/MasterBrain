@@ -43,7 +43,7 @@ its own permission and review.
 
 **Today:** synthetic ingestion, receipts, FTS, proposal review and narrow virtual
 rules work. Restricted PDF processing now has a synthetic approval API/library,
-immutable results and opt-in search. Its owner UI/CLI, live/scanner policy,
+immutable results, opt-in search and a separate operator command. Its owner UI, live/scanner policy,
 automatic project state and mailbox actions remain planned.
 [Features and methods](FEATURES_AND_METHODS.md).
 
@@ -89,12 +89,12 @@ they are not general permission to process every deferred attachment.
 ADR-035 now supports that ordinary searchable email through a separate synthetic
 document approval API/library. It binds source/part/processor identity and preserves
 the body index, then saves immutable extraction evidence for opt-in search. Next
-complete the owner/operator interface and accepted live/scanner policy. Scanning,
+complete the owner interface and accepted live/scanner policy. Scanning,
 extraction and OCR remain distinct outcomes and acceptance gates.
 
 The next increment should let an owner select one eligible PDF, see the exact
 processor/policy, explicitly approve it, inspect/cancel the job, then find its cited
-text. A separate operator command must execute approved jobs with its own worker
+text. ADR-036 now supplies the separate operator command with its own worker
 identity. No automatic approval, new mailbox scopes or API access to the container
 daemon belongs in that increment. Backend groundwork already exists; the team
 should finish the workflow rather than rebuild it.

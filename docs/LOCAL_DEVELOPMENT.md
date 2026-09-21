@@ -43,6 +43,12 @@ the generated `owner-token.txt` and paste it into `http://127.0.0.1:8080/`. It e
 after seven days; the page stores it only in memory. Search `Melron`, inspect a
 citation, propose a project, and review it. Approval deliberately applies nothing.
 
+ADR-036 fixes demo registry generation to include only explicit human scopes;
+neither processing-worker scope belongs in an owner credential. The emitted
+registry is validated before saving. Do not rerun `init-demo` over an existing
+installation to repair credentials: it deliberately refuses existing roles/files.
+Inspect any earlier failed setup privately; do not discard its retained state.
+
 Unset `EMAIL_BRAIN_ADMIN_DSN` and `EMAIL_BRAIN_RUNTIME_PASSWORD` before launching
 the long-lived API process. Do not expose bootstrap authentication through a
 public tunnel or reverse proxy. It is not production identity management.
@@ -53,6 +59,11 @@ For separate approved-job execution, follow [PROCESSING_CONTROLLER.md](PROCESSIN
 The demo human token cannot act as a worker. Use explicit private worker credentials,
 an approved image and `process-jobs --check` before a bounded synthetic run. The
 command does not contact providers, generate approvals or install a background service.
+
+For PDFs, use the separate [document controller guide](DOCUMENT_CONTROLLER.md):
+`process-documents`, exact document-worker scope and fixed synthetic policy. The
+existing document approval API can be explicitly configured with
+`serve --document-processor-version`; the owner screen is not connected yet.
 
 For a larger fictional inbox, use this **instead of** `seed-demo` on a fresh
 initialized synthetic account:
@@ -104,7 +115,7 @@ checksum-verified and forward-only; never edit an applied migration. If provisio
 fails partway, inspect the explicit created role/tenant/private files before retrying.
 The CLI suppresses sensitive DB exception details; diagnose in a private admin session.
 
-No live provider scheduler, binary extractor, raw download, SMTP, MCP transport,
+No live provider scheduler, default binary extraction, raw download, SMTP, MCP transport,
 real model, purge job or invitation flow is active. See [status](IMPLEMENTATION_STATUS.md)
 and [backlog](BACKLOG.md). The Dockerfile is a developer image; pin image digests,
 scan it and test least privilege before promotion.

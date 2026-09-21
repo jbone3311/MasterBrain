@@ -5,6 +5,12 @@ This is an executable **local/synthetic operator workflow**, not hosted deployme
 or live-mail authorization. It turns the [durable job library](RECOVERY_JOBS.md)
 into an explicitly configured command. It never creates approvals or connects mail.
 
+This guide covers **MIME recovery only**. ADR-036's separate
+[`process-documents` command](DOCUMENT_CONTROLLER.md) requires a different fixed-purpose
+configuration and exactly `email.document.process`. Do not add both scopes to a
+worker or select a PDF image for this MIME contract. Shared file/polling helpers do
+not merge approvals or processor interfaces.
+
 ## Prerequisites and privilege separation
 
 - Migrated disposable PostgreSQL with an existing active account and owner membership.

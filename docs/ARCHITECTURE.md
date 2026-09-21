@@ -12,6 +12,12 @@ execution distinct in both diagrams and implementation.
 
 ## Latest executable additions
 
+[Document operator execution](DOCUMENT_CONTROLLER.md), ADR-036, adds a separate
+fixed-purpose/configured PDF command and exact document-worker identity. Shared
+private-file/key/polling primitives preserve separate MIME/PDF queues and processors.
+The loopback server can explicitly declare the PDF approval channel; no Docker
+privilege enters the API. Demo owner provisioning uses human scopes only.
+
 [Approved document processing](DOCUMENT_PROCESSING.md), ADR-035/migration 0012,
 connects the PDF worker to synthetic-only source-bound approvals, separate worker
 scope, immutable result revisions, opt-in document FTS and bounded page citations.
@@ -90,7 +96,7 @@ have deferred binary attachments and no quarantine receipt at all.
 ADR-035 represents approved processing of such a part with source/event identity,
 independent result revisions and fenced publication. Never manufacture quarantine
 or drop a valid body projection to fit the old queue. The synthetic API/library
-integration is distinct from pending UI/operator/live acceptance. See
+integration and ADR-036's operator command are distinct from pending UI/live acceptance. See
 [document processing](DOCUMENT_PROCESSING.md) and [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing).
 
 ### Deployment style

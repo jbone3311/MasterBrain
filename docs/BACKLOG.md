@@ -3,7 +3,7 @@
 Ordered by dependency and risk, not calendar promises. The broad roadmap remains
 the product sequence; these are buildable handoff tickets.
 
-Reviewed 2026-09-21 through ADR-035; exact verified commits remain in the build receipt. A partly implemented
+Reviewed 2026-09-21 through ADR-036; exact verified commits remain in the build receipt. A partly implemented
 ticket stays open until its stated production/acceptance gates are met.
 
 | ID | Work package | Acceptance / dependency |
@@ -13,7 +13,7 @@ ticket stays open until its stated production/acceptance gates are met.
 | EB-003 | Resumable backfill/reconciliation | Baseline Email state before listing; query-state-safe pagination; catches concurrent creates/deletes; durable leases; expired cursor reset; no partial-list deletions |
 | EB-004 | Durable poison-message quarantine | Preserve source/error receipt before advancing past bad message; retry independently; accounting/alerts; no stalled account or silent skip |
 | EB-005 | Encrypted object storage — local slice implemented | Local tenant-bound AES-GCM, 16 MiB preservation, transactional manifests and non-deleting inventory implemented; hosted IAM/KMS, key backup, authorized GC/purge and offsite acceptance remain |
-| EB-006 | Sandboxed attachment extraction — synthetic PDF backend implemented | Restricted MIME recovery plus separate synthetic PDF approvals/results/FTS implemented; document UI/CLI, scanner/live policy, Office/OCR/archives, hosted identity/supervision and production sandbox acceptance remain |
+| EB-006 | Sandboxed attachment extraction — synthetic PDF backend/operator implemented | Restricted MIME recovery plus separate synthetic PDF approvals/results/FTS and explicit CLI implemented; document UI, scanner/live policy, Office/OCR/archives, hosted identity/supervision and production sandbox acceptance remain |
 | EB-007 | Production identity/grants | OIDC/MFA, JWT issuer/audience/expiry, invite/revoke, account/project grants before candidate retrieval, permission-cache invalidation, negative role matrix |
 | EB-008 | Hosted infrastructure and restore | Owner-approved region/budget; private Postgres/object storage, KMS/secrets, TLS ingress, CI artifacts by digest, actual restore of DB and bytes |
 | EB-009 | Operations baseline | Rate limits, connection pool, job SLOs/counters, denial audit, immutable audit export, dashboards, alert ownership, budget caps |
@@ -45,7 +45,8 @@ seeding and isolated format fixtures remain supported. Milestone ordering is in
 
 ADR-034 implements the [separate PDF worker contract/profile](PDF_WORKER.md).
 ADR-035 now implements the [synthetic approval/API/SQL/search slice](DOCUMENT_PROCESSING.md)
-of steps 1–4 below, with actual-container integration and restore tests. UI/CLI,
+of steps 1–4 below, with actual-container integration and restore tests. ADR-036
+adds the [explicit document command](DOCUMENT_CONTROLLER.md). Owner UI,
 scanner/live policy, broader quality and hosted operations remain open. Do not
 reimplement the reader or broaden the old MIME queue to make it callable.
 
@@ -57,8 +58,10 @@ working message search to reuse that queue.
 Deliver in independently verified slices:
 
 The original acceptance checklist follows; it is not a fresh blank-slate assignment.
-Next deliver explicit document UI/CLI with their own session/configuration tests,
+Next deliver explicit document UI with session/account/view and same-request tests,
 then scanner/live and hosted acceptance. Keep those distinct from API/library proof.
+The separate document controller/configuration tests are now implemented; do not
+rebuild the command or reuse the MIME command for PDF work.
 
 1. Define the attachment source/approval/result contract and decide whether a
    separate queue/schema is needed. Bind tenant/account, evidence version, part

@@ -6,7 +6,7 @@ import json
 import os
 import signal
 import stat
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from threading import Event
@@ -160,8 +160,16 @@ class _Keys(ClosedModel):
 
 
 class WorkerIdentity:
-    def __init__(self, config: ControllerConfig) -> None:
+    def __init__(
+        self,
+        config: ControllerConfig,
+        *,
+        scope: Literal["email.process", "email.document.process"] = "email.process",
+    ) -> None:
+        if scope not in {"email.process", "email.document.process"}:
+            raise ControllerError()
         self.config = config
+        self.scope = scope
         self.initial: Principal | None = None
 
     def authenticate(self) -> Principal:
@@ -178,7 +186,7 @@ class WorkerIdentity:
         if (
             principal is None
             or principal.client_kind != "worker"
-            or principal.context.scopes != frozenset({"email.process"})
+            or principal.context.scopes != frozenset({self.scope})
         ):
             raise ControllerError()
         if self.initial is not None and (
@@ -221,6 +229,109 @@ def shutdown_signals(stop: Event) -> Iterator[None]:
             signal.signal(sig, handler)
 
 
+def validate_run_options(dsn: str, max_iterations: int, idle_seconds: int) -> None:
+    if (
+        type(max_iterations) is not int
+        or not 1 <= max_iterations <= 1000
+        or type(idle_seconds) is not int
+        or not 1 <= idle_seconds <= 60
+        or not dsn
+    ):
+        raise ControllerError()
+
+
+def configured_store(
+    config: ControllerConfig,
+    dsn: str,
+    principal: Principal,
+    *,
+    synthetic_only: bool = False,
+) -> Store:
+    """Validate current ownership and read-only object keys; never create storage."""
+    store = Store(dsn)
+    with store.transaction(principal.context) as conn:
+        account = conn.execute(
+            "SELECT provider_account_id,secret_ref FROM mail_accounts "
+            "WHERE id=%s AND status='active'",
+            (config.account_id,),
+        ).fetchone()
+        if account is None or (
+            synthetic_only
+            and (
+                account["provider_account_id"] is not None
+                or not account["secret_ref"].startswith("synthetic:")
+            )
+        ):
+            raise ControllerError()
+    if config.blob_root is not None and config.keys_file is not None:
+        keys = _Keys.model_validate(_json(config.keys_file))
+        if keys.tenant_id != principal.context.tenant_id or len(
+            {key.key_id for key in keys.keys}
+        ) != len(keys.keys):
+            raise ControllerError()
+        # Check mode must not create an empty object root or alter storage.
+        with _directory(config.blob_root):
+            pass
+        store = Store(
+            dsn,
+            blobs=EncryptedBlobStore(
+                config.blob_root,
+                {(keys.tenant_id, k.key_id): bytes.fromhex(k.key_hex) for k in keys.keys},
+                {},
+            ),
+        )
+    return store
+
+
+def poll_jobs(
+    identity: WorkerIdentity,
+    run_once: Callable[[Principal], dict[str, Any] | None],
+    *,
+    max_iterations: int,
+    idle_seconds: int,
+    stop: Event | None,
+) -> dict[str, Any]:
+    """Bounded shared scheduling, not a configurable processor dispatch surface."""
+    stop = stop if stop is not None else Event()
+    counts = dict.fromkeys(
+        (
+            "completed",
+            "cancelled",
+            "expired",
+            "failed",
+            "stale",
+            "revoked",
+            "retry_wait",
+            "running",
+            "queued",
+            "no_result",
+        ),
+        0,
+    )
+    polls = 0
+    for _ in range(max_iterations):
+        if stop.is_set():
+            break
+        principal = identity.authenticate()
+        if stop.is_set():
+            break
+        result = run_once(principal)
+        polls += 1
+        identity.authenticate()
+        status = result["status"] if result is not None else "no_result"
+        if status not in counts:
+            raise ControllerError()
+        counts[status] += 1
+        if polls < max_iterations and stop.wait(idle_seconds):
+            break
+    return {
+        "polls": polls,
+        "results": counts,
+        "stopped": stop.is_set(),
+        "mailbox_effects": False,
+    }
+
+
 def run_controller(
     path: Path,
     dsn: str,
@@ -232,41 +343,11 @@ def run_controller(
 ) -> dict[str, Any]:
     """Run explicit bounded work. CLI owns signal handling; tests may inject stop."""
     try:
-        if (
-            type(max_iterations) is not int
-            or not 1 <= max_iterations <= 1000
-            or type(idle_seconds) is not int
-            or not 1 <= idle_seconds <= 60
-            or not dsn
-        ):
-            raise ControllerError()
+        validate_run_options(dsn, max_iterations, idle_seconds)
         config = ControllerConfig.model_validate(_json(path))
         identity = WorkerIdentity(config)
         principal = identity.authenticate()
-        store = Store(dsn)
-        with store.transaction(principal.context) as conn:
-            if not conn.execute(
-                "SELECT 1 FROM mail_accounts WHERE id=%s AND status='active'",
-                (config.account_id,),
-            ).fetchone():
-                raise ControllerError()
-        if config.blob_root is not None and config.keys_file is not None:
-            keys = _Keys.model_validate(_json(config.keys_file))
-            if keys.tenant_id != principal.context.tenant_id or len(
-                {key.key_id for key in keys.keys}
-            ) != len(keys.keys):
-                raise ControllerError()
-            # Check mode must not create an empty object root or alter storage.
-            with _directory(config.blob_root):
-                pass
-            store = Store(
-                dsn,
-                blobs=EncryptedBlobStore(
-                    config.blob_root,
-                    {(keys.tenant_id, k.key_id): bytes.fromhex(k.key_hex) for k in keys.keys},
-                    {},
-                ),
-            )
+        store = configured_store(config, dsn, principal)
         identity.authenticate()
         if check:
             return {"configuration_valid": True, "execution_verified": False, "claims": 0}
@@ -274,44 +355,13 @@ def run_controller(
             DockerMimeProcessor(config.image_id, docker_binary=config.docker_binary), identity
         )
         jobs = RecoveryJobs(store, processor.parser_version)
-        stop = stop if stop is not None else Event()
-        counts = dict.fromkeys(
-            (
-                "completed",
-                "cancelled",
-                "expired",
-                "failed",
-                "stale",
-                "revoked",
-                "retry_wait",
-                "running",
-                "queued",
-                "no_result",
-            ),
-            0,
+        return poll_jobs(
+            identity,
+            lambda current: jobs.run_once(current, config.account_id, processor),
+            max_iterations=max_iterations,
+            idle_seconds=idle_seconds,
+            stop=stop,
         )
-        polls = 0
-        for _ in range(max_iterations):
-            if stop.is_set():
-                break
-            principal = identity.authenticate()
-            if stop.is_set():
-                break
-            result = jobs.run_once(principal, config.account_id, processor)
-            polls += 1
-            identity.authenticate()
-            status = result["status"] if result is not None else "no_result"
-            if status not in counts:
-                raise ControllerError()
-            counts[status] += 1
-            if polls < max_iterations and stop.wait(idle_seconds):
-                break
-        return {
-            "polls": polls,
-            "results": counts,
-            "stopped": stop.is_set(),
-            "mailbox_effects": False,
-        }
     except Exception:
         # Parsing/configuration/SQL/OS exceptions may include secrets or mail.
         raise ControllerError() from None

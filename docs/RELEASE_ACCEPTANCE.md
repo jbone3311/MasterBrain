@@ -23,8 +23,8 @@ pass/fail/pending/not-applicable with rationale for each proposed release.
 | Provider integrity | Synthetic Fastmail HTTP-to-SQL; offline Gmail/Graph/IMAP contracts | Enrolled disposable provider, cursor expiry/moves/outages and sustained reconciliation |
 | Identity and isolation | Bootstrap owner/scopes, forced RLS, composite keys and negative tests | Production OIDC/MFA, lifecycle/revocation, rate limits; grants before any sharing |
 | Source durability | Immutable evidence, encrypted local objects, atomic cursors | Hosted Blob/KMS/IAM, separately recoverable keys and accepted retention/purge |
-| Document safety and usefulness | Restricted MIME/PDF containers; synthetic PDF approval/result/search | Owner/operator workflow, accepted scanner/live policy, deployed isolation and quality on supported inputs |
-| Independent operation | Worker libraries, MIME operator command, bounded retries/fences | Hosted supervision, enrollment, restarts/soak, alerts and responsible operator |
+| Document safety and usefulness | Restricted MIME/PDF containers; synthetic PDF approval/result/search and operator command | Owner workflow, accepted scanner/live policy, deployed isolation and quality on supported inputs |
+| Independent operation | Worker libraries, separate MIME/PDF operator commands, bounded retries/fences | Hosted supervision, enrollment, restarts/soak, alerts and responsible operator |
 | Search and evidence | Authorized FTS, immutable citations, opt-in PDF results | Representative held-out retrieval and latency results at accepted corpus size |
 | Backup and disaster recovery | Disposable SQL/object restore with hashes/search/RLS | Managed PITR/offsite recovery, key loss scenario, measured production-like RPO/RTO |
 | Supply chain and governance | Locked builds, lint/types/tests, recorded scans, Factory proposal | Release SBOM/license/advisory/signature gates and independent Factory bind/audit |

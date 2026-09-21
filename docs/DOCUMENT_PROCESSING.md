@@ -2,8 +2,9 @@
 
 Implemented synthetic API/library slice, 2026-09-21; verification belongs to the
 exact-commit [build receipt](BUILD_RECEIPT.md). [ADR-035](adr/035_approved_document_processing.md)
-and migration 0012 extend the [restricted PDF worker](PDF_WORKER.md). No live mail,
-scanner, cloud deployment, UI controls or document operator CLI is implied.
+and migration 0012 extend the [restricted PDF worker](PDF_WORKER.md). ADR-036 now
+adds the separate [operator command](DOCUMENT_CONTROLLER.md). No live mail, scanner,
+cloud deployment or owner-screen controls are implied.
 
 ## What it does
 
@@ -16,7 +17,8 @@ change. Completed means a result was saved, not necessarily successful extractio
 
 ## Approval and execution
 
-An operator configures `document_processor_version` on `create_app`; default `None`
+An operator configures `document_processor_version` on `create_app` or uses
+`serve --document-processor-version`; default `None`
 disables new approvals. It must be `sandbox-pdf-v1-<64-character image hash>`.
 There is no HTTP image/command/socket configuration or worker-execute route.
 
@@ -44,7 +46,9 @@ A separately trusted worker invokes
 `DocumentJobs(store, processor.processor_version).run_once(worker, account, processor)`
 with `DockerPdfProcessor` and a worker principal carrying `email.document.process`.
 The old `email.process` scope and `process-jobs` CLI still authorize MIME recovery
-only. Production use requires restricted execution, not an in-process PDF helper.
+only. The separate `process-documents` command invokes this PDF path using explicit
+private configuration and exact worker scope. Production use requires accepted
+restricted execution, not an in-process PDF helper.
 
 Jobs retain a one-hour approval, exact source event/receipt/processor/policy, at
 most three claims and a 120-second lease. Infrastructure retries wait 60 then 120
@@ -99,6 +103,6 @@ atomic audit failure, historical/current revisions, foreign resources, API schem
 denials and SQL immutability. The explicit PDF container suite additionally runs
 the actual restricted worker through PostgreSQL and authorized search.
 
-UI approval/result rendering, operator CLI/supervision, scanner policy, supported
+UI approval/result rendering, hosted supervision, scanner policy, supported
 live identity/enrollment/storage and broader real-world quality/soak remain open.
 Do not infer their completion from this source-to-search acceptance.

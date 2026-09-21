@@ -65,11 +65,19 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[Document controller tests](DOCUMENT_CONTROLLER.md) exercise the separate CLI/config,
+exact worker scope, synthetic account gate, nonclaiming preflight, private keys,
+revocation/rotation, counters, cancellation and restart. Real PostgreSQL tests use
+a known-answer reader; the explicit PDF container suite additionally runs fresh
+CLI processes over encrypted source and the actual restricted image. The emitted
+demo-owner registry has a regression test; server-option tests retain loopback binding.
+These checks do not certify the pending document UI or a deployed supervisor.
+
 [Document jobs](DOCUMENT_PROCESSING.md) add real-SQL lifecycle/race/authorization,
 API, immutable revision and current-versus-historical search tests. The PDF container
 suite now also runs source -> approval -> restricted PDF -> SQL -> cited search.
 Restore seeds completed/cancelled/pending document jobs and text/evidence revisions.
-These do not certify a document UI/CLI, malware scanner or live processing policy.
+These do not certify a document UI, malware scanner or live processing policy.
 
 [PDF worker tests](PDF_WORKER.md) independently exercise the source-bound request
 and strict parent response, known-answer PDF text, selected MIME paths/hashes,
@@ -77,7 +85,8 @@ encrypted/empty-password/damaged/image-only/mixed-page inputs and logical budget
 Parent tests cover fixed-profile pre-disclosure isolation, ownership cleanup,
 crashes, forged results and absence of eager PDF imports. The separate explicit
 `tests/container_pdf_checks.py` runs the dedicated real image in CI; it is not
-counted in the standard test suite or evidence of database/search integration.
+counted in the standard test suite. Reader-only cases do not prove integration;
+the explicitly named SQL/search and operator-CLI cases exercise those connections.
 Default-image exclusion and existing MIME/SQL/container tests remain required.
 
 [Known-answer mailbox tests](TEST_MAILBOX_PLAN.md) now independently read generated

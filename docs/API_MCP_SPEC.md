@@ -26,6 +26,9 @@ account document capabilities, attachment jobs, bounded job history/status/cance
 and `GET /v1/documents/{document_id}`. Search accepts `include_documents: true`
 (default false). Human review/evidence approval and worker-only
 `email.document.process` are distinct; no HTTP execution or arbitrary upload.
+ADR-036 exposes the existing channel configuration through loopback
+`serve --document-processor-version`; its separate `process-documents` CLI holds
+worker authority. It adds no HTTP execution route or request-selectable image.
 
 [Processing history and owner controls](PROCESSING_REVIEW_SCREEN.md) add
 `GET /v1/accounts/{account_id}/processing/jobs`, before the dynamic job-ID route.
