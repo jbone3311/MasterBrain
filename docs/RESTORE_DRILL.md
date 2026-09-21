@@ -6,7 +6,15 @@ disable/re-enable revision and rejection of stale contexts after restore. This i
 SQL authority proof, not a real issuer handshake; signatures have separate fake-issuer
 tests.
 
-Latest verified runtime: **5c0114a4be6351931791834942cf3d6ba7306f7d**,
+Latest verified runtime: **69e52e037c7d842f010e417d3f3e57466b55a2a7**,
+[run 35616709609](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35616709609),
+passed 2026-09-21 with **27 tables, 147 rows, two tenants, four encrypted objects
+and two identity bindings**. Content hashes, RLS, identity revocation and
+database-only refusal passed; 29 safety cases passed. **14.79 seconds** includes
+disposable startup, not production RTO/PITR or hosted key-loss recovery. ADR-043
+introduces no durable-state change. Receipt-only edits are not another runtime drill.
+
+Previously verified runtime: **5c0114a4be6351931791834942cf3d6ba7306f7d**,
 [run 35599565086](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565086),
 passed 2026-09-21 with the unchanged populated fixture: **27 tables, 147 rows,
 two tenants, four encrypted objects and two identity bindings**. Content hashes,

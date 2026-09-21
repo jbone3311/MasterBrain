@@ -42,10 +42,10 @@ next; no production sign-in or hosted availability is claimed.
 
 ### Latest verified runtime
 
-**5c0114a** passed [CI 35599565083](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565083):
-2,060 Python tests including 294 real SQL cases, 84 Node contracts, five actual
+**69e52e0** passed [CI 35616709666](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35616709666):
+2,103 Python tests including 294 real SQL cases, 84 Node contracts, five actual
 MIME-container and 15 actual PDF-container cases. The same revision passed
-[restore 35599565086](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565086):
+[restore 35616709609](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35616709609):
 27 tables, 147 rows, two tenants, four encrypted objects and two identity bindings,
 including revoked-context denial. Exact scope, local skips and limitations are in
 the [build receipt](BUILD_RECEIPT.md). Receipt-only edits are not a new runtime test.

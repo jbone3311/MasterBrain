@@ -2,7 +2,34 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Private browser TLS/operator — local checkpoint
+## Verified private browser TLS/operator
+
+Runtime **69e52e037c7d842f010e417d3f3e57466b55a2a7** passed
+[CI 35616709666](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35616709666)
+and [restore 35616709609](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35616709609),
+observed 2026-09-21. Later receipt-only edits are not a new runtime verification.
+
+- **2,103 Python passes including 294 real PostgreSQL cases**, no CI skips;
+  **84 Node contracts**, **five actual MIME-container cases** and **15 actual
+  PDF-container cases** passed. Repeated gate runs are not additional tests.
+- All **43 new operator/TLS cases** passed in CI and locally. These include real
+  TLS 1.2/1.3 handshakes over in-memory OpenSSL buffers with trusted success and
+  wrong-host/untrusted-certificate refusal, not browser or hosted TLS acceptance.
+- Both images, CLI smoke, runtime-reader exclusion, locked dependencies, lint,
+  typing over **46 modules**, repository gate and **92 Markdown / 780 local path
+  and fragment checks** passed. Separate restore-script typing passed locally.
+- Restore verified **27 tables, 147 rows, two tenants, four encrypted objects,
+  two identity bindings**, hash equality, tenant/identity RLS, revoked-context
+  denial and database-only refusal. **29 safety tests** passed. **14.79 seconds**
+  includes disposable startup; not production RTO, managed PITR or key-loss recovery.
+- Local: **1,809 passes, 294 explicit SQL skips**, 84 Node passes; staged and
+  incremental secret scans from 5c0114a found no leaks. Two pre-existing test
+  warnings and action/runner migration notices remain non-failing backlog.
+- The private repository now includes explicit browser-mode TLS startup and
+  non-consuming preflight. Owner sign-in UI, actual browser acceptance, real
+  issuer/MFA and hosted operation remain gates. No real mailbox or paid service enabled.
+
+## Historical private browser TLS/operator — local checkpoint
 
 ADR-043 adds explicit browser-mode startup and non-consuming preflight from base
 **5c0114a4be6351931791834942cf3d6ba7306f7d**. Publication CI/restore must verify
