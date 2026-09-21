@@ -26,6 +26,10 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 
 ## Trace an operation
 
+The executable approved-job entry point is [processing_controller.py](../src/email_brain/processing_controller.py),
+wired through `process-jobs` in [cli.py](../src/email_brain/cli.py).
+See [configuration and shutdown](PROCESSING_CONTROLLER.md).
+
 - Search: API -> authenticated context -> Store transaction/RLS -> current evidence
   and attachment FTS -> bounded response -> text-only UI.
 - Import: adapter -> sync lease -> atomic event/evidence/receipt/checkpoint;

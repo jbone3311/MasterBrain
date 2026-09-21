@@ -7,6 +7,13 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[The operator processing command](PROCESSING_CONTROLLER.md) accepts closed private
+configuration and no-follow owner-only files; a separate exact-scope worker identity
+is reauthenticated at each poll and around parsing. No keys/DSN enter child input,
+no Docker rights enter the API, and no new SQL authority is granted. File revocation
+is not atomic with SQL: database membership/account and job cancellation fences
+remain authoritative. Preflight is not image/host isolation certification.
+
 [Owner processing controls](PROCESSING_REVIEW_SCREEN.md) validate response
 identifiers, account/parser binding and fixed states before displaying actions.
 Credential/account/view changes invalidate pending responses and old callbacks.

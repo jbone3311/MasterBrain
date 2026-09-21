@@ -28,6 +28,13 @@ edit approval identity or reset claim counters to force work through.
 
 ## Isolated MIME controller
 
+Use [the operator command](PROCESSING_CONTROLLER.md) for private preflight and
+bounded job polling. Check success does not certify Docker readiness; exit 0 can
+include retry/terminal failure results. SIGINT/SIGTERM finish in-flight bounded
+work and stop new claims, not cancel approvals. Registry changes are checked per
+poll and around parsing; SQL membership/account/cancellation fences remain stronger
+than file revocation. No supervisor is installed by this command.
+
 Run only on an explicitly trusted local worker/controller with an approved immutable
 image; never mount Docker into the API. Inspect [worker contract](ISOLATED_MIME_RECOVERY.md)
 before invoking library recovery. Timeouts, unavailable images, oversized/malformed

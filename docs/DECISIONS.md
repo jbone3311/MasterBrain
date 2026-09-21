@@ -7,6 +7,10 @@ The documentation refresh changes explanations/navigation, not runtime privilege
 
 ## Accepted
 
+[ADR-032](adr/032_operator_processing_controller.md) adds an explicit private,
+bounded operator command for approved jobs, configuration preflight and graceful
+shutdown. It adds no enrollment, SQL grants, schema or hosted service.
+
 [ADR-031](adr/031_processing_review_screen.md) adds bounded durable processing
 history and explicit owner-screen approval/cancellation, with session/view fencing
 and uncertain-request idempotency. No worker or mailbox capability is enabled.

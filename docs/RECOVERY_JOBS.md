@@ -23,9 +23,10 @@ move or label provider mail, call a model, scan malware or extract binary docume
    searchable through existing evidence endpoints. Deferred binary receipts remain
    visibly incomplete; job completion is not proof that every attachment was read.
 
-No daemon loop or secret enrollment is implied by `run_once`. A supervisor should
-invoke bounded iterations for explicitly configured accounts, respecting durable
-retry deadlines. Hosted identity, controller hosting, credential provisioning,
+[The operator command](PROCESSING_CONTROLLER.md) now invokes bounded iterations
+for one explicitly configured account, respecting durable retry deadlines and
+rechecking a separate worker credential. No daemon installation or secret
+enrollment is implied. Hosted identity, controller hosting, credential provisioning,
 supervision and operational acceptance remain work to do. The
 [owner processing screen](PROCESSING_REVIEW_SCREEN.md) now supplies explicit
 approvals, cancellation and reloadable bounded history.

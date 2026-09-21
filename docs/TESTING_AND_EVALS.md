@@ -56,6 +56,12 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[Controller tests](PROCESSING_CONTROLLER.md) add hostile private-file/configuration
+cases, worker credential freshness, bounded polls, signal cleanup, result redaction
+and actual SQL preflight/restart/revocation. The explicit container suite additionally
+invokes the real CLI in new processes with encrypted source keys and an approved
+local image. No hosted supervisor or multi-day soak is inferred from these tests.
+
 [Calendar and format fixtures](CALENDAR_ATTACHMENTS.md) exercise actual MIME bytes,
 harmless OOXML/image/calendar contents, and provider response encodings without
 contacting providers. Deferred binary extraction is an expected limitation, not a

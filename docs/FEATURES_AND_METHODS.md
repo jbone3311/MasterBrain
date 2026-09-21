@@ -8,7 +8,7 @@ production. [Status](IMPLEMENTATION_STATUS.md) and [receipts](BUILD_RECEIPT.md) 
 | Incremental import | Native cursors, bounded pages, atomic checkpoint, leased worker, certified inventory | Fastmail worker; offline Gmail/Graph libraries; injected IMAP contract; no live enrollment |
 | Search with sources | PostgreSQL FTS, account filters, immutable evidence IDs, bounded excerpts | Working; no vectors or project/entity filters |
 | Account for attachments | Per-part receipts, source hashes, duplicate links, explicit outcomes | Plain/CSV/calendar text; binary PDF/Office/image/archive extraction deferred |
-| Recover held mail | Owner retry; parser versions; isolated jobs bound to receipt/parser/expiry | API/UI and worker library; no hosted supervision |
+| Recover held mail | Owner retry; parser versions; isolated jobs bound to receipt/parser/expiry | API/UI, worker library and explicit bounded operator CLI; no hosted supervision |
 | Organize senders | Declarative match, review, bounded simulation, activation and immutable rollback | Narrow exact-domain persisted rules; virtual search labels only |
 | Send feedback | Typed evidence-linked proposals with idempotency and review state | REST works; most approved proposal types apply nothing; MCP absent |
 | Track people/projects | Relational entities/aliases, evidence-linked facts, reversible merges, valid/recorded time | Planned; project proposal is not a created project |

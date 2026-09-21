@@ -49,6 +49,11 @@ public tunnel or reverse proxy. It is not production identity management.
 
 ## Tests
 
+For separate approved-job execution, follow [PROCESSING_CONTROLLER.md](PROCESSING_CONTROLLER.md).
+The demo human token cannot act as a worker. Use explicit private worker credentials,
+an approved image and `process-jobs --check` before a bounded synthetic run. The
+command does not contact providers, generate approvals or install a background service.
+
 For a larger fictional inbox, use this **instead of** `seed-demo` on a fresh
 initialized synthetic account:
 

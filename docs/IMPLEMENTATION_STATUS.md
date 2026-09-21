@@ -20,8 +20,11 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Factory | Architecture/intake mapping and Product handoff | Registration, hooks, clean sibling checkout, bind PASS and independent Factory audit |
 | Test data | Resumable fictional seeding, actual synthetic attachment bytes and mocked provider formats | Coherent known-answer continuous feed, selected external fixture approval and live replay; see [test mailbox plan](TEST_MAILBOX_PLAN.md) |
 
-The current source includes ADR-031/migration 0011 processing history and owner
-controls. Exact verification is recorded separately in [BUILD_RECEIPT.md](BUILD_RECEIPT.md);
+The current source includes ADR-032's [bounded operator processing command](PROCESSING_CONTROLLER.md),
+plus ADR-031/migration 0011 processing history and owner controls. The command adds
+private configuration/preflight, fresh worker authentication and graceful stop,
+not credential enrollment or hosted supervision. Exact verification is recorded
+separately in [BUILD_RECEIPT.md](BUILD_RECEIPT.md);
 do not apply historical counts to a newer commit. Generic project/fact proposals
 do not create entities. Virtual labels do not change provider folders. A configured
 parser does not certify an online worker, and a completed job can have deferred attachments.

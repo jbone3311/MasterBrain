@@ -5,8 +5,11 @@ No real mail, external endpoints, cloud credentials or host mounts.
 """
 
 import hashlib
+import json
 import os
 import secrets
+import subprocess
+import sys
 from dataclasses import replace
 from email.message import EmailMessage
 from uuid import uuid4
@@ -14,6 +17,7 @@ from uuid import uuid4
 import pytest
 import test_postgres as pg
 from fastapi.testclient import TestClient
+from test_processing_controller import controller_files, private_write
 from test_service import TOKEN, registry
 
 from email_brain.api import create_app
@@ -162,3 +166,77 @@ def test_api_job_to_actual_container_atomic_completion(database, tenant, process
         attempt = conn.execute("SELECT id FROM recovery_attempts").fetchone()
         assert str(attempt["id"]) == status.json()["attempt_id"]
         assert conn.execute("SELECT count(*) AS n FROM recovery_jobs").fetchone()["n"] == 1
+
+
+@pytest.mark.postgres
+def test_operator_cli_encrypted_job_check_execute_and_restart(
+    database, tenant, processor, tmp_path
+):
+    ctx, account = tenant
+    key = secrets.token_bytes(32)
+    root = tmp_path.resolve() / "objects"
+    store = Store(
+        database[0].dsn,
+        blobs=EncryptedBlobStore(
+            root,
+            {(ctx.tenant_id, "cli-key"): key},
+            {ctx.tenant_id: "cli-key"},
+        ),
+    )
+    store.ingest_page(ctx, account, None, "held", [replace(pg.item(), raw=attachment_heavy_mail())])
+    receipt = store.quarantines(ctx, account)["results"][0]
+    jobs = RecoveryJobs(store, processor.parser_version)
+    job = jobs.enqueue(
+        Principal(ctx, "human"), account, receipt["id"], processor.parser_version, uuid4()
+    )
+    path, config, _, token = controller_files(
+        tmp_path,
+        ctx.tenant_id,
+        ctx.actor_id,
+        account,
+        "sha256:" + processor.parser_version.removeprefix("sandbox-mime-v1-"),
+    )
+    config.update(blob_root=str(root), keys_file=str(path.parent / "keys.json"))
+    private_write(path, config)
+    private_write(
+        path.parent / "keys.json",
+        {
+            "tenant_id": str(ctx.tenant_id),
+            "keys": [{"key_id": "cli-key", "key_hex": key.hex()}],
+        },
+    )
+
+    def invoke(*extra):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "email_brain.cli",
+                "process-jobs",
+                "--config",
+                str(path),
+                *extra,
+            ],
+            env={"PATH": "/usr/bin:/bin", "EMAIL_BRAIN_DSN": store.dsn},
+            capture_output=True,
+            text=True,
+            timeout=90,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stderr == ""
+        for secret in (token, key.hex(), store.dsn, str(account), "largebodyproof"):
+            assert secret not in result.stdout
+        return json.loads(result.stdout)
+
+    assert invoke("--check")["execution_verified"] is False
+    assert jobs.get(ctx, account, job["id"])["attempts"] == 0
+    assert invoke()["results"]["completed"] == 1
+    assert invoke()["results"]["no_result"] == 1
+    status = jobs.get(ctx, account, job["id"])
+    assert status["status"] == "completed" and status["attempts"] == 1
+    assert len(store.search(ctx, SearchRequest(query="largeattachmentproof"))) == 1
+    assert (
+        hashlib.sha256(store.load_raw(ctx, account, receipt["raw_sha256"])).hexdigest()
+        == receipt["raw_sha256"]
+    )

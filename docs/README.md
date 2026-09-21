@@ -136,6 +136,9 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 
 ## Keeping this pack current
 
+New operator workflow: [approved-processing command](PROCESSING_CONTROLLER.md),
+with private configuration, preflight, bounded polling, results and rollback.
+
 - Change a feature's contract, implementation, tests, status, roadmap and rollback
   notes in the same work package. Add an ADR before new permissions/schema/workflows.
 - Run `scripts/check_docs.py`: it requires the original 16 pack documents plus

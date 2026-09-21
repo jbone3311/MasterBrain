@@ -6,7 +6,12 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest increment: [owner processing controls](PROCESSING_REVIEW_SCREEN.md),
+Latest increment: [bounded operator processing](PROCESSING_CONTROLLER.md), ADR-032,
+explicit private configuration, owner-scoped worker identity, non-claiming preflight,
+fixed counts and graceful stop. Review the privileged host/file boundary and
+credential revocation timing. No new schema/grants or installed service.
+
+Previous increment: [owner processing controls](PROCESSING_REVIEW_SCREEN.md),
 migration 0011 history index, bounded owner/account history, explicit approval and
 cancellation, uncertain-request idempotency and stale-view fencing. Review actual
 code through [CODE_MAP.md](CODE_MAP.md); read [GAME_PLAN.md](GAME_PLAN.md) and

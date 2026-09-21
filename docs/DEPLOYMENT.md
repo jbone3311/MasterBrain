@@ -7,6 +7,9 @@ approvals. The production topology below is planned, not provisioned.
 
 The optional [isolated MIME controller](ISOLATED_MIME_RECOVERY.md) is a separate
 trusted-worker privilege. Do not add the Docker socket to the API image/deployment.
+The [operator CLI](PROCESSING_CONTROLLER.md) now supports explicit private
+configuration and bounded execution on that trusted host; credential enrollment
+and service installation remain operator/deployment work, not automatic startup.
 The [durable job channel](RECOVERY_JOBS.md) adds explicit bootstrap approvals and
 requires migration 0010 plus updated runtime grants, API and controller code.
 Hosted scheduling, production identity and isolation verification remain gates;

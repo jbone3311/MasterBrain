@@ -8,6 +8,11 @@ explicit in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 ## Latest executable additions
 
+[Operator processing](PROCESSING_CONTROLLER.md) turns the approved-job library
+into a bounded CLI with private identity/key configuration, non-claiming preflight,
+fixed result counts and graceful stop. API and worker still deploy separately;
+no service, provider enrollment or cloud resources are automatically created.
+
 [Owner processing review](PROCESSING_REVIEW_SCREEN.md) exposes durable history,
 explicit isolated approvals and cancellation through the existing scoped API.
 All-state history is indexed by immutable time/ID; UI controls are bound to

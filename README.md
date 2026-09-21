@@ -65,6 +65,10 @@ caches outside Dropbox. See [hosting](docs/HOSTING_DECISION.md).
 
 ## Run and verify
 
+The separate [approved-processing command](docs/PROCESSING_CONTROLLER.md) runs
+bounded recovery jobs with explicit private configuration. It does not enroll an
+account, install a service or give the API Docker access.
+
 [Local development](docs/LOCAL_DEVELOPMENT.md) explains disposable PostgreSQL,
 private credentials, synthetic seeding and loopback-only serving.
 

@@ -9,6 +9,7 @@ import os
 import secrets
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from threading import Event
 from uuid import UUID, uuid4
 
 import psycopg
@@ -19,6 +20,7 @@ from email_brain.api import create_app
 from email_brain.auth import SCOPES, TokenRegistry
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
+from email_brain.processing_controller import run_controller, shutdown_signals
 from email_brain.store import IngestItem, Store
 from email_brain.synthetic import fake_email
 
@@ -187,6 +189,11 @@ def main() -> None:
     serve = commands.add_parser("serve", help="Loopback-only developer server")
     serve.add_argument("--port", type=int, default=8080)
     serve.add_argument("--recovery-parser-version", default=None)
+    processing = commands.add_parser("process-jobs", help="Run explicitly approved processing jobs")
+    processing.add_argument("--config", type=Path, required=True)
+    processing.add_argument("--check", action="store_true")
+    processing.add_argument("--max-iterations", type=int, default=1)
+    processing.add_argument("--idle-seconds", type=int, default=5)
     args = parser.parse_args()
     try:
         if args.command == "migrate":
@@ -197,6 +204,18 @@ def main() -> None:
             seed(args.state_dir)
         elif args.command == "seed-corpus":
             seed_corpus(args.state_dir, args.count)
+        elif args.command == "process-jobs":
+            stop = Event()
+            with shutdown_signals(stop):
+                result = run_controller(
+                    args.config,
+                    _env("EMAIL_BRAIN_DSN"),
+                    check=args.check,
+                    max_iterations=args.max_iterations,
+                    idle_seconds=args.idle_seconds,
+                    stop=stop,
+                )
+            print(json.dumps(result, sort_keys=True))
         else:
             app = create_app(
                 Store(_env("EMAIL_BRAIN_DSN")),
