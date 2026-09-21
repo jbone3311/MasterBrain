@@ -22,8 +22,16 @@ Held messages are preserved for review; this page cannot reprocess or delete the
 <form id="project-form"><label for="project-name">Project name</label><input id="project-name" maxlength="120" required>
 <label for="project-reason">Why add it?</label><textarea id="project-reason" maxlength="2000" required></textarea>
 <button>Save proposal</button></form></section>
+<section><h2>Teach Email Brain a sender rule</h2>
+<p>Labels stay inside Email Brain. Sender headers can be spoofed; a match is not proof of identity.</p>
+<form id="rule-form"><label for="rule-domain">Exact sender domain</label><input id="rule-domain" maxlength="253" required placeholder="example.invalid">
+<label for="rule-category">Category</label><input id="rule-category" maxlength="80" required placeholder="investment">
+<label for="rule-mailbox">Virtual review label</label><select id="rule-mailbox"><option value="review">Review</option><option value="needs_reply">Needs Reply</option><option value="review_delete">Review Delete — suggestion only</option></select>
+<label for="rule-reason">Reason</label><textarea id="rule-reason" maxlength="2000" required></textarea><button>Propose rule</button></form></section>
+<section><div class="row"><h2>Active rules</h2><button id="rules-refresh">Refresh rules</button></div>
+<div id="rules" aria-live="polite"></div></section>
 <section><div class="row"><h2>Review queue</h2><button id="refresh">Refresh</button></div>
-<p>Approval records your decision only. Applying rules and mailbox changes is a later milestone.</p>
+<p>Approval records your decision only. Approved rules need a separate sample preview and activation. Other proposal types are not yet applied.</p>
 <div id="proposals" aria-live="polite"></div></section>
 <footer>No external scripts, images, model calls, or browser storage.</footer>
 </main><script src="/app.js"></script></body></html>

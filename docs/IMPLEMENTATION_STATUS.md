@@ -11,9 +11,9 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Attachments | Per-part receipts/events, duplicate links, bounded text extraction, FTS, explicit deferred/failed outcomes | Malware scanner, sandboxed PDF/Office/OCR/archive extraction; raw download policy |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
-| Feedback | Typed proposals, evidence links, idempotency conflict detection, human-only reviews | Rule activation/simulation/rollback and temporal projection application |
+| Feedback | Typed proposals; human-reviewed sender rule simulation/activation; immutable revisions and rollback; virtual search labels | Rich predicates/protected-sender configuration, temporal/entity application, drift evaluation |
 | Providers | Fastmail durable worker; offline-tested Gmail/Graph read transports and injected-session IMAP contract | All live enrollment/acceptance; Gmail/Graph/IMAP durable database workers and notification ingress |
-| Models | Closed classification schema, source-excerpt validation, code/local/remote/human policy | Real local runtime, calibrated eval corpus, remote disclosures/budgets |
+| Models | Opt-in loopback Ollama library; installed-digest checks; bounded fake-server/output tests; code-first candidate routing | Actual isolated runtime/quality evaluation, durable receipts/cache, remote disclosures/budgets |
 | UI | Local search/evidence/proposals, account health and paginated held-message metadata; session clearing; synthetic browser smoke | Production login, audited reprocessing, full accessibility and live-data acceptance |
 | MCP | Planned typed REST-backed surface | Official SDK adapter, OAuth, actual client compatibility matrix |
 | Actions | No executable sending/deletion/mailbox-write path | Separate action ADR, preview/approval/outbox/reconciliation and disposable-account tests |

@@ -1,5 +1,15 @@
 # Data Model
 
+## Implemented rule revision addition (0007)
+
+`rule_simulations` stores immutable tenant/actor-bound sample receipts, proposal
+version/hash, base ruleset revision and finite expiry. `rule_revisions` stores
+immutable complete snapshots (at most 100 rules) with a unique tenant revision and
+optional activation receipt or rollback source. Both use FORCE RLS, composite
+tenant receipt/proposal references, append-only triggers and SELECT/INSERT-only
+runtime grants. Highest revision is active; zero is empty. No provider/evidence
+rows are rewritten. See [reviewed rules](REVIEWED_RULES.md).
+
 ## Implemented recovery additions (migration 0006)
 
 `sync_inventory` records observed IDs per tenant/account/generation;

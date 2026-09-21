@@ -6,7 +6,7 @@ let quarantineAfter = null;
 let quarantineAccount = null;
 function clearEvidence() {
   sessionVersion += 1;
-  for (const id of ["results", "proposals", "import-health", "quarantine"]) byId(id).replaceChildren();
+  for (const id of ["results", "proposals", "import-health", "quarantine", "rules"]) byId(id).replaceChildren();
   quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true;
 }
 async function api(path, method = "GET", body = undefined, extra = {}) {
@@ -24,13 +24,15 @@ async function safely(action) { try { await action(); } catch (error) { status(e
 byId("connect").onclick = () => safely(async () => { await api("/readyz"); status("Connected · mailbox changes disabled"); });
 byId("token").oninput = () => { clearEvidence(); status("Credential changed. Reconnect to load evidence."); };
 byId("disconnect").onclick = () => { byId("token").value = ""; clearEvidence();
-  for (const id of ["query", "account-id", "project-name", "project-reason"]) byId(id).value = "";
+  for (const id of ["query", "account-id", "project-name", "project-reason", "rule-domain", "rule-category", "rule-reason"]) byId(id).value = "";
+  byId("rule-mailbox").value = "review";
   status("Session cleared"); };
 byId("search-form").onsubmit = (event) => { event.preventDefault(); safely(async () => {
   const data = await api("/v1/search", "POST", {query: byId("query").value});
   byId("results").replaceChildren();
   for (const result of data.results) {
     const card = node("article", ""); card.append(node("h3", result.subject), node("small", result.sender), node("p", result.excerpt));
+    if (result.classification) card.append(node("small", `Email Brain labels · revision ${result.classification.rules_revision} · ${JSON.stringify(result.classification.effects)} · virtual only`));
     const button = node("button", "Inspect cited evidence");
     button.onclick = () => safely(async () => { const evidence = await api(`/v1/evidence/${result.evidence_id}`);
       const text = node("pre", evidence.excerpt); card.append(text, node("small", evidence.citation));
@@ -85,6 +87,22 @@ async function refresh() {
         {decision, expected_version: proposal.version}); await refresh(); status("Review recorded. No mailbox or rule changes applied."); });
       card.append(button);
     }
+    if (proposal.kind === "rule" && proposal.status === "approved") {
+      const preview = node("button", "Preview rule on a bounded sample");
+      preview.onclick = () => safely(async () => {
+        const receipt = await api(`/v1/proposals/${proposal.id}/simulation`, "POST", {expected_version: proposal.version});
+        preview.disabled = true;
+        card.append(node("p", `Sample: ${receipt.sample.length} current messages, at most 50. Not a whole-mailbox accuracy test. Expires ${receipt.expires_at}.`), node("pre", JSON.stringify(receipt.sample, null, 2)));
+        const activate = node("button", "Activate this rule — labels only");
+        activate.onclick = () => safely(async () => {
+          const result = await api("/v1/rules/activations", "POST", {simulation_id: receipt.id});
+          activate.disabled = true; byId("results").replaceChildren();
+          await refreshRules(); status(`Rule activation recorded at revision ${result.revision}. Search again for current labels. Mailbox unchanged.`);
+        });
+        card.append(activate);
+      });
+      card.append(preview);
+    }
     byId("proposals").append(card);
   }
 }
@@ -93,4 +111,23 @@ byId("project-form").onsubmit = (event) => { event.preventDefault(); safely(asyn
   await api("/v1/proposals", "POST", {payload: {kind: "project", name: byId("project-name").value},
     reason: byId("project-reason").value, source: "owner-review-ui", evidence_ids: []}, {"Idempotency-Key": crypto.randomUUID()});
   event.target.reset(); await refresh(); status("Project proposal saved for review.");
+}); };
+async function refreshRules() {
+  const data = await api("/v1/rules");
+  byId("rules").replaceChildren(node("p", `Revision ${data.revision} · ${data.rules.length} active sender rules · labels only`), node("pre", JSON.stringify(data.rules, null, 2)));
+  if (data.revision > 0) {
+    const undo = node("button", `Restore revision ${data.revision - 1} labels`);
+    undo.onclick = () => safely(async () => {
+      const restored = await api("/v1/rules/rollback", "POST", {expected_revision: data.revision, target_revision: data.revision - 1});
+      byId("results").replaceChildren(); await refreshRules();
+      status(`Restored earlier labels as revision ${restored.revision}. Mailbox unchanged.`);
+    });
+    byId("rules").append(undo);
+  }
+}
+byId("rules-refresh").onclick = () => safely(refreshRules);
+byId("rule-form").onsubmit = (event) => { event.preventDefault(); safely(async () => {
+  await api("/v1/proposals", "POST", {payload: {kind: "rule", sender_domain: byId("rule-domain").value.trim().toLowerCase(), category: byId("rule-category").value, canonical_mailbox: byId("rule-mailbox").value},
+    reason: byId("rule-reason").value, source: "owner-review-ui", evidence_ids: []}, {"Idempotency-Key": crypto.randomUUID()});
+  event.target.reset(); await refresh(); status("Rule proposal saved. Review, preview, and activation are separate steps.");
 }); };

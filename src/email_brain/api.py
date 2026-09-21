@@ -16,7 +16,15 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from email_brain.auth import Principal, TokenRegistry
-from email_brain.schemas import ProposalRequest, ReviewRequest, SearchRequest
+from email_brain.rules.control import RuleControl
+from email_brain.schemas import (
+    ProposalRequest,
+    ReviewRequest,
+    RuleActivationRequest,
+    RuleRollbackRequest,
+    RuleSimulationRequest,
+    SearchRequest,
+)
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 
 log = logging.getLogger("email_brain.requests")
@@ -67,6 +75,7 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
     )
     app.add_middleware(BodyLimit)
     bearer = HTTPBearer(auto_error=False)
+    rule_control = RuleControl(store)
 
     def require(scope: str, *, human: bool = False) -> Callable[..., Principal]:
         def dependency(
@@ -219,5 +228,31 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
             "applied": False,
             "mailbox_effects": False,
         }
+
+    @app.get("/v1/rules")
+    def rules(principal: Annotated[Principal, Depends(require("email.search"))]) -> dict[str, Any]:
+        return rule_control.list(principal.context)
+
+    @app.post("/v1/proposals/{proposal_id}/simulation", status_code=201)
+    def simulate_rule(
+        proposal_id: UUID,
+        body: RuleSimulationRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        return rule_control.simulate(principal, proposal_id, body.expected_version)
+
+    @app.post("/v1/rules/activations")
+    def activate_rule(
+        body: RuleActivationRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        return rule_control.activate(principal, body.simulation_id)
+
+    @app.post("/v1/rules/rollback")
+    def rollback_rules(
+        body: RuleRollbackRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        return rule_control.rollback(principal, body.expected_revision, body.target_revision)
 
     return app

@@ -1,5 +1,12 @@
 # Rules and Feedback Control Plane
 
+## Working local subset
+
+[Reviewed sender rules](REVIEWED_RULES.md) now implement approved-rule simulation,
+explicit human activation, immutable ruleset revisions and rollback, with derived
+virtual labels in search. They do not apply project/fact/feature/correction proposals
+or make mailbox changes. The richer policy below remains the target specification.
+
 ## Purpose
 
 The control plane turns assistant/user feedback into governed system change. It distinguishes configuration, knowledge, and software capability so the live service learns without self-modifying.

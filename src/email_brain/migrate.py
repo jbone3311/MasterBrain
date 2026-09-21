@@ -9,6 +9,8 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "rule_simulations",
+    "rule_revisions",
     "sync_inventory",
     "sync_inventory_seals",
     "message_sync_state",
@@ -29,6 +31,8 @@ RUNTIME_SELECT = (
     "proposal_evidence",
 )
 RUNTIME_INSERT = (
+    "rule_simulations",
+    "rule_revisions",
     "sync_inventory",
     "sync_inventory_seals",
     "message_sync_state",

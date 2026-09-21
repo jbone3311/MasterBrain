@@ -30,6 +30,13 @@ the product sequence; these are buildable handoff tickets.
 
 ## What can proceed without owner answers
 
+EB-010 now has a working narrow human-reviewed sender-rule loop, bounded simulation,
+revisioned activation/rollback and virtual search labels. Rich policy/protected-class
+configuration and autonomous application remain open. EB-011 now has an opt-in
+Ollama adapter and fake-server evaluations; actual model quality and runtime isolation
+remain unverified. EB-008 has a separate disposable logical restore workflow;
+managed-cloud backup/PITR, encryption, region and owner approval remain open.
+
 Worker progress update: EB-002 now includes orchestration plus synthetic HTTP-to-DB
 coverage; EB-003 includes durable pagination, fresh-generation query restart,
 fenced leases and certified full inventory reconciliation after history expiry.

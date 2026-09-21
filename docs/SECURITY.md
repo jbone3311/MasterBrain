@@ -1,5 +1,21 @@
 # Security
 
+## New local prototype boundaries
+
+Rule activation requires human owner identity plus review/search scopes, an
+actor-bound simulation receipt, unexpired database time and matching rules revision.
+Rollback is append-only; virtual Review Delete labels never hide or delete messages.
+Sender domains are untrusted header metadata, not authenticated identity.
+All direct request text fields reject NUL and unencodable Unicode before SQL.
+See [reviewed rules](REVIEWED_RULES.md).
+
+The opt-in [Ollama adapter](LOCAL_MODEL_RUNTIME.md) requires operator-attested local
+daemon isolation and checks installed model metadata/digest before email disclosure.
+These checks cannot substitute for daemon egress controls or eliminate a privileged
+local replacement race. No model path is enabled by default and no model output
+executes actions. [Restore testing](RESTORE_DRILL.md) uses a fresh disposable cluster,
+private temporary archive, content-free results and exact owned-container cleanup.
+
 ## Implemented quarantine and reconciliation boundary
 
 Bounded malformed MIME is stored byte-for-byte behind the same tenant RLS as raw

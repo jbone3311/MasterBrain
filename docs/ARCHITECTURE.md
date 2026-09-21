@@ -1,5 +1,15 @@
 # Architecture
 
+## Latest executable additions
+
+The local control plane now supports reviewed exact-domain sender rules: immutable
+tenant ruleset snapshots, bounded simulation, human activation and rollback. Search
+adds read-time virtual labels without changing source mailbox/evidence state.
+See [reviewed rules](REVIEWED_RULES.md). The [local model library](LOCAL_MODEL_RUNTIME.md)
+is opt-in and candidate-only, not wired into the API/ingestion path. The
+[logical restore drill](RESTORE_DRILL.md) exercises isolated synthetic databases;
+it does not provision or validate hosted backups, encryption or point-in-time recovery.
+
 ## Style
 
 Begin as a modular monolith plus workers. Separate deployable services only for materially different privileges or scaling: public/API ingress, mailbox connectors, inference quarantine, and mailbox action executor. Use a queue and transactional outbox, but avoid distributed-service complexity where a single process boundary suffices.

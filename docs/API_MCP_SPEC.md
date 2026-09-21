@@ -1,5 +1,12 @@
 # API and MCP Specification
 
+## Implemented reviewed sender rules
+
+The [reviewed rules contract](REVIEWED_RULES.md) adds list, simulation, explicit
+human activation and expected-revision rollback. Search returns virtual labels and
+rule provenance. Review alone still applies nothing; no provider action or MCP
+transport is enabled by this addition.
+
 ## Implemented held-message review
 
 `GET /v1/accounts/{account_id}/quarantine?limit=50&after={receipt_uuid}` requires

@@ -18,6 +18,8 @@ mail service. It includes:
   full-text search, attachment receipts and bounded plain-text extraction;
 - expiring tenant-bound bootstrap credentials, REST API and a small owner review UI;
 - idempotent typed proposals and optimistic-concurrency human review;
+- human-reviewed sender rules with bounded simulation, explicit activation,
+  immutable revision history, rollback and virtual search labels;
 - a read-only Fastmail HTTP transport and resumable worker library with fenced leases,
   certified inventory reconciliation, expired-history recovery, incremental changes,
   bounded retries, durable MIME quarantine and owner-scoped processing status;
@@ -25,11 +27,14 @@ mail service. It includes:
 - offline-tested Gmail/Graph read libraries and an injected-session IMAP contract
   (not live connectors or durable provider workers yet);
 - owner import-health and held-message review with bounded metadata-only paging;
-- model-routing/output-validation and rank-fusion helpers (no model is called);
+- opt-in loopback Ollama classification library with fake-response tests and
+  model-digest checks (no daemon contacted or model enabled by default);
+- a disposable PostgreSQL logical backup/restore drill workflow;
 - locked dependencies, CI with a real PostgreSQL service, and a repository gate.
 
 It does **not** connect to your mail, send anything, change folders, delete mail,
-apply approved proposals, or deploy paid cloud resources. Hosted OIDC, full team
+apply non-rule proposals, or deploy paid cloud resources. Rules affect only virtual
+labels inside Email Brain, never the mailbox. Hosted OIDC, full team
 permissions, binary attachment extraction, provider enrollment, and production
 operations remain launch gates. See [implementation status](docs/IMPLEMENTATION_STATUS.md).
 

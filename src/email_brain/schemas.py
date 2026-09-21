@@ -5,11 +5,23 @@ from __future__ import annotations
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ClosedModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    @field_validator("*")
+    @classmethod
+    def safe_text(cls, value: object) -> object:
+        if isinstance(value, str):
+            if "\x00" in value:
+                raise ValueError("NUL is not valid persisted text")
+            try:
+                value.encode("utf-8", errors="strict")
+            except UnicodeError:
+                raise ValueError("text must be valid Unicode") from None
+        return value
 
 
 class SearchRequest(ClosedModel):
@@ -24,6 +36,30 @@ class RulePayload(ClosedModel):
     sender_domain: str = Field(min_length=1, max_length=253, pattern=r"^[a-z0-9.-]+$")
     category: str = Field(min_length=1, max_length=80)
     canonical_mailbox: Literal["review", "review_delete", "needs_reply"] = "review"
+
+    @field_validator("sender_domain")
+    @classmethod
+    def valid_domain(cls, value: str) -> str:
+        labels = value.split(".")
+        if any(
+            not 1 <= len(label) <= 63 or label.startswith("-") or label.endswith("-")
+            for label in labels
+        ):
+            raise ValueError("exact DNS domain required")
+        return value
+
+
+class RuleSimulationRequest(ClosedModel):
+    expected_version: int = Field(ge=1, strict=True)
+
+
+class RuleActivationRequest(ClosedModel):
+    simulation_id: UUID
+
+
+class RuleRollbackRequest(ClosedModel):
+    expected_revision: int = Field(ge=1, strict=True)
+    target_revision: int = Field(ge=0, strict=True)
 
 
 class ProjectPayload(ClosedModel):

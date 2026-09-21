@@ -285,4 +285,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Explicitly rejected for initial build
 
+New accepted prototype decisions: [ADR-023 synthetic logical restore drill](adr/023_synthetic_restore_drill.md),
+[ADR-024 opt-in local classification candidates](adr/024_local_model_classification.md),
+and [ADR-025 reviewed virtual sender rules](adr/025_reviewed_rule_activation.md).
+No production deployment, real model quality, mailbox effects or live-service
+authorization is implied by these additive local/CI capabilities.
+
 SQLite as multi-user source of truth; public database/model/MCP endpoints; vector-only retrieval; automatic send/delete; direct assistant SQL; direct model provider credentials; rules as executable code; graph database by default; whole-mailbox prompts; Git storage of email/live secrets.

@@ -19,6 +19,7 @@ from psycopg.types.json import Jsonb
 from email_brain.attachments import Attachment, receive_attachments, reconcile
 from email_brain.domain.models import TenantContext
 from email_brain.normalize import MAX_RAW_BYTES, PARSER_VERSION, NormalizedMessage, normalize
+from email_brain.rules.active import classify, current_rules
 from email_brain.schemas import CorrectionPayload, ProposalRequest, ReviewRequest, SearchRequest
 
 
@@ -590,7 +591,9 @@ class Store:
                 )
                 rows = rows[: request.limit]
             self.audit(conn, ctx, "search.read", "message")
+            active = current_rules(conn)
             for row in rows:
+                row["classification"] = classify(active["rules"], active["revision"], row["sender"])
                 row["citation"] = f"emailbrain://evidence/{row['evidence_id']}"
                 if row.get("attachment_id"):
                     row["citation"] += f"#attachment={row['attachment_id']}"
