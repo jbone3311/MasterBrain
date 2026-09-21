@@ -7,7 +7,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from email_brain.domain.models import TenantContext
-from email_brain.store import Conflict, NotFound, Store
+from email_brain.store import Conflict, InventoryError, NotFound, Store
 
 Outcome = Literal[
     "progress",
@@ -32,6 +32,28 @@ class Lease:
 class SyncStore:
     def __init__(self, store: Store) -> None:
         self.store = store
+
+    def reconciliation_candidates(
+        self, ctx: TenantContext, account_id: UUID, generation: UUID
+    ) -> tuple[str, ...]:
+        """A complete inventory certificate is required before inferring absence."""
+        self.store.require(ctx, "email.ingest")
+        with self.store.transaction(ctx) as conn:
+            seal = conn.execute(
+                "SELECT 1 FROM sync_inventory_seals WHERE account_id=%s AND generation=%s",
+                (account_id, generation),
+            ).fetchone()
+            if not seal:
+                raise InventoryError("uncertified inventory cannot reconcile")
+            rows = conn.execute(
+                "SELECT h.provider_id FROM message_sync_state h WHERE h.account_id=%s "
+                "AND h.status<>'deleted' AND NOT EXISTS (SELECT 1 FROM sync_inventory i "
+                "WHERE i.tenant_id=h.tenant_id AND i.account_id=h.account_id "
+                "AND i.provider_id=h.provider_id AND i.generation=%s) "
+                "ORDER BY h.provider_id LIMIT 8",
+                (account_id, generation),
+            ).fetchall()
+            return tuple(row["provider_id"] for row in rows)
 
     def acquire(self, ctx: TenantContext, account_id: UUID) -> Lease | None:
         self.store.require(ctx, "email.ingest")

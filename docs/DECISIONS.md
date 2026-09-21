@@ -211,6 +211,37 @@ Sources: [JMAP query-state contract](https://www.rfc-editor.org/rfc/rfc8620#sect
 - Remote-model providers and data-retention contractual mode.
 - UI framework; architecture does not require one.
 
+### ADR-017 — Certified inventory reconciliation and durable MIME quarantine
+
+**Decision (2026-09-20):** checkpoint schema v2 adds a reconciliation phase. Every
+listing generation records the IDs actually received in a tenant/account inventory.
+Only a complete, query-state-consistent listing whose unique ID count equals its
+declared total can start reconciliation. Reconciliation hides absent local projections
+in bounded batches, never deletes provider mail or retained evidence, then replays
+changes from the pre-listing Email baseline. Query churn starts a fresh inventory
+generation while preserving that baseline. Expired history starts a fresh full import;
+legacy v1 checkpoints are safely reimported rather than trusted as certified inventories.
+
+Within the existing 1 MiB raw bound, rejected MIME is retained byte-for-byte with a
+hash, immutable failure receipt and current-message status in the same transaction
+as the event and checkpoint. A quarantined update hides its old searchable projection;
+later valid input or explicit deletion resolves current status without erasing the
+receipt. Oversized downloads still fail closed, because their full bytes cannot yet
+be retained. No binary execution, automatic reprocessing, send or mailbox writes.
+An owner-scoped read-only sync-status endpoint exposes aggregate processing counts,
+worker outcome and whether review is required; it never returns raw mail or credentials.
+Synthetic corpus generation is offline-only and deterministic, with reserved invalid
+addresses and no external model or provider calls.
+
+**Tests:** synthetic multi-page imports, history expiry, list churn, incomplete or
+contradictory inventories, crash/replay, poison mail mixed with good mail, foreign
+tenant access, immutable receipts, batch bounds and end-to-end API evidence.
+
+**Rollback:** additive migrations and v2 checkpoints require forward-compatible
+workers; stop old workers before migration. Restore only through an explicit restore
+workflow; do not down-migrate or discard inventory/evidence. Production cloud,
+credential enrollment, retention cleanup and isolated binary extraction remain gates.
+
 ## Explicitly rejected for initial build
 
 SQLite as multi-user source of truth; public database/model/MCP endpoints; vector-only retrieval; automatic send/delete; direct assistant SQL; direct model provider credentials; rules as executable code; graph database by default; whole-mailbox prompts; Git storage of email/live secrets.

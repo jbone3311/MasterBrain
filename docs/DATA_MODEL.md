@@ -1,5 +1,17 @@
 # Data Model
 
+## Implemented recovery additions (migration 0006)
+
+`sync_inventory` records observed IDs per tenant/account/generation;
+`sync_inventory_seals` certifies the stable listing's unique count before absence
+reconciliation. Both are append-only. `message_sync_state` stores each provider
+ID's current ready/quarantined/deleted status and latest event key, including IDs
+that never produced a normalized message. `quarantine_receipts` preserves parser
+version, fixed reason and raw-object hash for rejected MIME. Exact bytes remain
+within the 1 MiB bound. Receipts are append-only and all four tables force tenant
+RLS with composite ownership keys. Search excludes quarantined projections without
+erasing historical evidence. Inventory retention/cleanup remains an explicit gate.
+
 ## Conventions
 
 - UUID primary keys; UTC `timestamptz`; canonical JSON only for provider/versioned payloads that do not merit columns.

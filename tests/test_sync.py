@@ -56,7 +56,7 @@ def test_query_malformed_is_not_an_empty_mailbox(changes):
         {"phase": "changes", "position": 1},
         {"position": 1},
         {"position": True},
-        {"schema_version": 2},
+        {"schema_version": 3},
         {"send": True},
         {"email_state": ""},
     ],

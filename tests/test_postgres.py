@@ -29,9 +29,10 @@ from email_brain.connectors.fastmail import MAIL, FastmailReadClient
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.schemas import FeaturePayload, ProposalRequest, ReviewRequest, SearchRequest
-from email_brain.store import AccessDenied, Conflict, IngestItem, NotFound, Store
+from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError, NotFound, Store
 from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
+from email_brain.synthetic import fake_email
 
 pytestmark = pytest.mark.postgres
 
@@ -398,6 +399,7 @@ class SyntheticMailbox:
         self.status = 200
         self.calls: list[str] = []
         self.keywords: dict[str, bool] = {}
+        self.page_size = 1
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         import json
@@ -422,7 +424,7 @@ class SyntheticMailbox:
         result: dict[str, Any] = {"accountId": self.account}
         if method == "Email/query":
             position = args["position"]
-            ids = sorted(self.mail)[position : position + 1]
+            ids = sorted(self.mail)[position : position + min(self.page_size, args["limit"])]
             result.update(
                 ids=ids, total=len(self.mail), queryState=self.query_state, position=position
             )
@@ -484,6 +486,7 @@ def test_worker_http_to_database_search_and_metadata(database, tenant):
     try:
         assert worker.step(ctx, account) == "progress"  # Durable baseline.
         assert worker.step(ctx, account) == "progress"  # Durable listing.
+        assert worker.step(ctx, account) == "progress"  # Certified reconciliation.
         mail.keywords = {"$seen": True}
         mail.updated = ["m1"]
         assert worker.step(ctx, account) == "caught_up"
@@ -492,7 +495,7 @@ def test_worker_http_to_database_search_and_metadata(database, tenant):
         with worker.store.transaction(ctx) as conn:
             state = conn.execute("SELECT provider_metadata FROM messages").fetchone()
             assert state["provider_metadata"] == {"mailbox_ids": ["inbox"], "keywords": ["$seen"]}
-            assert conn.execute("SELECT count(*) AS n FROM sync_runs").fetchone()["n"] == 3
+            assert conn.execute("SELECT count(*) AS n FROM sync_runs").fetchone()["n"] == 4
         before = len(mail.calls)
         assert worker.step(ctx, account) == "not_due"
         assert len(mail.calls) == before
@@ -520,6 +523,8 @@ def test_worker_restart_and_query_churn_preserve_baseline(database, tenant):
             checkpoint = Checkpoint.model_validate_json(cursor)
             assert checkpoint.position == 0 and checkpoint.email_state == "e0"
         assert restarted.step(ctx, account) == "progress"
+        assert restarted.step(ctx, account) == "progress"  # Remove absent m1 locally.
+        assert restarted.step(ctx, account) == "progress"  # Finish reconciliation.
         assert restarted.step(ctx, account) == "caught_up"
         assert worker.store.search(ctx, SearchRequest(query="Melron")) == []
         assert len(worker.store.search(ctx, SearchRequest(query="Survives"))) == 1
@@ -555,38 +560,61 @@ def test_worker_account_mismatch_fails_before_mail_reads(database, tenant):
         client.close()
 
 
-def test_worker_expired_cursor_pauses_without_reset_or_delete(database, tenant):
+def test_worker_expired_cursor_rebuilds_before_inference_of_absence(database, tenant):
     worker, mail, client = bind_synthetic(database, tenant)
     ctx, account = tenant
     try:
         worker.step(ctx, account)
         worker.step(ctx, account)
+        worker.step(ctx, account)
         mail.expired = True
-        assert worker.step(ctx, account) == "resync_required"
-        assert worker.step(ctx, account) == "not_due"
+        del mail.mail["m1"]
+        mail.query_state = "q2"
+        mail.email_state = "e2"
+        assert worker.step(ctx, account) == "progress"
         assert len(worker.store.search(ctx, SearchRequest(query="Melron"))) == 1
         with worker.store.transaction(ctx) as conn:
             cursor = conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()[
                 "opaque_cursor"
             ]
-            assert Checkpoint.model_validate_json(cursor).email_state == "e0"
+            assert Checkpoint.model_validate_json(cursor).email_state == "e2"
+            assert Checkpoint.model_validate_json(cursor).phase == "listing"
+        assert worker.step(ctx, account) == "progress"  # Seal empty inventory.
+        assert len(worker.store.search(ctx, SearchRequest(query="Melron"))) == 1
+        assert worker.step(ctx, account) == "progress"  # Now infer absence.
+        assert worker.store.search(ctx, SearchRequest(query="Melron")) == []
+        assert worker.step(ctx, account) == "progress"
+        mail.expired = False
+        assert worker.step(ctx, account) == "caught_up"
+        with worker.store.transaction(ctx) as conn:
+            assert conn.execute("SELECT count(*) AS n FROM raw_objects").fetchone()["n"] == 1
     finally:
         client.close()
 
 
-def test_worker_bad_mime_does_not_advance(database, tenant):
+def test_worker_bad_mime_is_preserved_and_does_not_block_good_mail(database, tenant):
     worker, mail, client = bind_synthetic(database, tenant)
     ctx, account = tenant
     try:
         worker.step(ctx, account)
         mail.mail["m1"] = b""
-        assert worker.step(ctx, account) == "parse_error"
+        mail.mail["m2"] = b"Subject: Survives\r\n\r\nHealthy content"
+        assert worker.step(ctx, account) == "progress"
         with worker.store.transaction(ctx) as conn:
             cursor = conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()[
                 "opaque_cursor"
             ]
             assert Checkpoint.model_validate_json(cursor).phase == "listing"
             assert conn.execute("SELECT count(*) AS n FROM messages").fetchone()["n"] == 0
+            assert conn.execute("SELECT raw_mime FROM raw_objects").fetchone()["raw_mime"] == b""
+            assert (
+                conn.execute("SELECT reason FROM quarantine_receipts").fetchone()["reason"]
+                == "mime_rejected"
+            )
+        assert worker.step(ctx, account) == "progress"
+        assert worker.step(ctx, account) == "progress"
+        assert worker.step(ctx, account) == "caught_up"
+        assert len(worker.store.search(ctx, SearchRequest(query="Survives"))) == 1
     finally:
         client.close()
 
@@ -702,5 +730,145 @@ def test_worker_tables_rls_and_append_only_runs(database, tenant):
             conn.execute(
                 "UPDATE sync_runs SET outcome='retry' WHERE tenant_id=%s", (ctx.tenant_id,)
             )
+    finally:
+        client.close()
+
+
+def test_uncertified_or_incomplete_inventory_never_authorizes_absence(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    generation = uuid4()
+    store.ingest_page(ctx, account, None, "existing", [item()])
+    with pytest.raises(InventoryError):
+        SyncStore(store).reconciliation_candidates(ctx, account, generation)
+    with pytest.raises(InventoryError):
+        store.ingest_page(
+            ctx,
+            account,
+            "existing",
+            "wrong",
+            [],
+            inventory_generation=generation,
+            inventory_total=1,
+        )
+    assert len(store.search(ctx, SearchRequest(query="Melron"))) == 1
+    with store.transaction(ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM sync_inventory_seals").fetchone()["n"] == 0
+        assert (
+            conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()["opaque_cursor"]
+            == "existing"
+        )
+
+
+def test_quarantine_update_replay_recovery_and_evidence(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    store.ingest_page(ctx, account, None, "c1", [item()])
+    evidence = store.search(ctx, SearchRequest(query="Melron"))[0]["evidence_id"]
+    bad = replace(item("poison"), raw=b"")
+    assert store.ingest_page(ctx, account, "c1", "c2", [bad]) == 1
+    assert store.ingest_page(ctx, account, "c1", "c2", [bad]) == 0
+    assert store.search(ctx, SearchRequest(query="Melron")) == []
+    assert store.evidence(ctx, evidence)
+    assert store.sync_status(ctx, account)["review_required"]
+    store.ingest_page(ctx, account, "c2", "c3", [item("fixed")])
+    assert len(store.search(ctx, SearchRequest(query="Melron"))) == 1
+    assert not store.sync_status(ctx, account)["review_required"]
+    with store.transaction(ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM quarantine_receipts").fetchone()["n"] == 1
+        assert conn.execute("SELECT count(*) AS n FROM raw_objects").fetchone()["n"] == 2
+
+
+def test_quarantine_inventory_rls_and_immutability(database, tenant):
+    store, admin = database
+    ctx, account = tenant
+    generation = uuid4()
+    store.ingest_page(
+        ctx,
+        account,
+        None,
+        "c",
+        [replace(item(), raw=b"")],
+        inventory_generation=generation,
+        inventory_total=1,
+    )
+    for table in (
+        "sync_inventory",
+        "sync_inventory_seals",
+        "quarantine_receipts",
+        "message_sync_state",
+    ):
+        with psycopg.connect(store.dsn) as conn:
+            assert conn.execute(
+                sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(table))
+            ).fetchone() == (0,)
+            conn.execute("SELECT set_config('email_brain.tenant_id',%s,true)", (str(uuid4()),))
+            assert conn.execute(
+                sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(table))
+            ).fetchone() == (0,)
+    for table in ("sync_inventory", "sync_inventory_seals", "quarantine_receipts"):
+        with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+            conn.execute(
+                sql.SQL("DELETE FROM {} WHERE tenant_id=%s").format(sql.Identifier(table)),
+                (ctx.tenant_id,),
+            )
+    with pytest.raises(NotFound):
+        store.sync_status(ctx, uuid4())
+    with pytest.raises(AccessDenied):
+        store.sync_status(replace(ctx, scopes=frozenset()), account)
+
+
+def test_legacy_checkpoint_restarts_full_inventory_without_hiding_mail(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    old = Checkpoint(schema_version=1, generation=uuid4(), phase="changes", email_state="old")
+    store.ingest_page(ctx, account, None, old.encode(), [item()])
+    worker, _, client = bind_synthetic(database, tenant)
+    try:
+        assert worker.step(ctx, account) == "progress"
+        with store.transaction(ctx) as conn:
+            checkpoint = Checkpoint.model_validate_json(
+                conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()["opaque_cursor"]
+            )
+            assert checkpoint.schema_version == 2 and checkpoint.phase == "listing"
+            assert checkpoint.generation != old.generation
+        assert len(store.search(ctx, SearchRequest(query="Melron"))) == 1
+    finally:
+        client.close()
+
+
+def test_synthetic_256_mailbox_import_search_attachments_and_restart(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    mail.mail = {f"m{i:05d}": fake_email(i) for i in range(256)}
+    mail.page_size = 8
+    try:
+        outcomes = []
+        for _ in range(40):
+            # New process object at every page, using only durable database state.
+            result = ReadWorker(worker.store, client, jitter=lambda: 0.0).step(ctx, account)
+            outcomes.append(result)
+            if result == "caught_up":
+                break
+            assert result == "progress"
+        assert outcomes[-1] == "caught_up" and len(outcomes) == 35
+        state = worker.store.sync_status(ctx, account)
+        assert state["message_counts"] == {"ready": 256, "quarantined": 0, "deleted": 0}
+        for index in (0, 4, 5, 7, 127, 255):
+            hits = worker.store.search(ctx, SearchRequest(query=f"marker{index:05d}"))
+            assert len(hits) == 1
+            assert worker.store.evidence(ctx, hits[0]["evidence_id"])
+        with worker.store.transaction(ctx) as conn:
+            assert (
+                conn.execute("SELECT count(*) AS n FROM attachment_receipts").fetchone()["n"] == 64
+            )
+            assert (
+                conn.execute(
+                    "SELECT count(*) AS n FROM attachment_receipts WHERE duplicate_of IS NOT NULL"
+                ).fetchone()["n"]
+                == 62
+            )
+            assert conn.execute("SELECT total FROM sync_inventory_seals").fetchone()["total"] == 256
+        assert worker.step(ctx, account) == "not_due"
     finally:
         client.close()

@@ -43,7 +43,7 @@ def safe_name(value: str) -> str:
 
 
 def _classify(part: Message, path: str) -> Attachment:
-    filename = str(part.get_filename() or f"attachment-{path}")[:1000]
+    filename = str(part.get_filename() or f"attachment-{path}").replace("\x00", "")[:1000]
     media_type = part.get_content_type()
     raw = part.get_payload(decode=True)
     if not isinstance(raw, bytes):

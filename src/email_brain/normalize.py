@@ -12,7 +12,7 @@ from html.parser import HTMLParser
 
 MAX_RAW_BYTES = 1_048_576
 MAX_TEXT_CHARS = 100_000
-PARSER_VERSION = "stdlib-mime-v1"
+PARSER_VERSION = "stdlib-mime-v2"
 
 
 class _TextOnly(HTMLParser):
@@ -74,8 +74,10 @@ def normalize(raw: bytes) -> NormalizedMessage:
     return NormalizedMessage(
         subject=str(mail.get("subject", "")).replace("\x00", "")[:2000],
         sender=(sender[0][1] if sender else "").replace("\x00", "")[:320],
-        recipients=tuple(address[:320] for _, address in addresses[:100]),
-        internet_message_id=str(mail["message-id"])[:1000] if mail["message-id"] else None,
+        recipients=tuple(address.replace("\x00", "")[:320] for _, address in addresses[:100]),
+        internet_message_id=(
+            str(mail["message-id"]).replace("\x00", "")[:1000] if mail["message-id"] else None
+        ),
         text=text[:MAX_TEXT_CHARS],
         raw_sha256=hashlib.sha256(raw).hexdigest(),
         truncated=len(text) > MAX_TEXT_CHARS,

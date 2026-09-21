@@ -8,6 +8,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
+from email.errors import MessageError
 from typing import Any
 from uuid import UUID
 
@@ -17,7 +18,7 @@ from psycopg.types.json import Jsonb
 
 from email_brain.attachments import Attachment, receive_attachments, reconcile
 from email_brain.domain.models import TenantContext
-from email_brain.normalize import PARSER_VERSION, normalize
+from email_brain.normalize import MAX_RAW_BYTES, PARSER_VERSION, NormalizedMessage, normalize
 from email_brain.schemas import CorrectionPayload, ProposalRequest, ReviewRequest, SearchRequest
 
 
@@ -31,6 +32,23 @@ class NotFound(Exception):
 
 class AccessDenied(Exception):
     """The principal has no current owner membership."""
+
+
+class InventoryError(Exception):
+    """A partial or contradictory inventory cannot authorize reconciliation."""
+
+
+def prepare_mime(raw: bytes | None) -> tuple[NormalizedMessage | None, list[Attachment], bool]:
+    if raw is None:
+        return None, [], False
+    if len(raw) > MAX_RAW_BYTES:
+        raise ValueError("raw evidence exceeds durable storage limit")
+    try:
+        attachments = receive_attachments(raw)
+        return normalize(raw), attachments, False
+    except (ValueError, UnicodeError, RecursionError, MessageError):
+        # Never store exception text: malformed headers can put content in diagnostics.
+        return None, [], True
 
 
 def digest(value: Any) -> str:
@@ -171,13 +189,24 @@ class Store:
         items: Sequence[IngestItem],
         *,
         lease_token: UUID | None = None,
+        inventory_generation: UUID | None = None,
+        inventory_total: int | None = None,
     ) -> int:
         if "email.ingest" not in ctx.scopes:
             raise AccessDenied("ingest scope required")
         if len(items) > 100 or not next_cursor or len(next_cursor) > 4000:
             raise ValueError("bounded pages and nonempty cursor required")
-        # Parsing failure aborts the page; a future quarantine worker can durably record it.
-        prepared = [(item, normalize(item.raw) if item.raw is not None else None) for item in items]
+        if inventory_total is not None and (
+            inventory_generation is None
+            or type(inventory_total) is not int
+            or not 0 <= inventory_total <= 2**31 - 1
+        ):
+            raise InventoryError("invalid inventory certificate")
+        if inventory_generation is not None and len({item.provider_id for item in items}) != len(
+            items
+        ):
+            raise ValueError("one event per provider ID per page required")
+        prepared = [(item, *prepare_mime(item.raw)) for item in items]
         inserted = 0
         with self.transaction(ctx) as conn:
             # Serialize this account without granting UPDATE on account credentials/config.
@@ -218,7 +247,7 @@ class Store:
                 # event hash agrees. An empty page can safely be acknowledged as well.
                 if current != next_cursor:
                     raise Conflict("stale sync cursor")
-                for item, _normalized in prepared:
+                for item, _normalized, _attachments, _quarantined in prepared:
                     previous = conn.execute(
                         "SELECT event_hash FROM provider_events "
                         "WHERE account_id=%s AND event_key=%s",
@@ -227,7 +256,27 @@ class Store:
                     if not previous or previous["event_hash"] != self._event_hash(item):
                         raise Conflict("page replay differs from committed content")
                 return 0
-            for item, normalized in prepared:
+            if inventory_generation is not None:
+                for item in items:
+                    conn.execute(
+                        "INSERT INTO sync_inventory(tenant_id,account_id,generation,provider_id) "
+                        "VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+                        (ctx.tenant_id, account_id, inventory_generation, item.provider_id),
+                    )
+                if inventory_total is not None:
+                    count = conn.execute(
+                        "SELECT count(*) AS n FROM sync_inventory "
+                        "WHERE account_id=%s AND generation=%s",
+                        (account_id, inventory_generation),
+                    ).fetchone()
+                    if not count or count["n"] != inventory_total:
+                        raise InventoryError("incomplete inventory")
+                    conn.execute(
+                        "INSERT INTO sync_inventory_seals(tenant_id,account_id,generation,total) "
+                        "VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+                        (ctx.tenant_id, account_id, inventory_generation, inventory_total),
+                    )
+            for item, normalized, attachments, quarantined in prepared:
                 event_hash = self._event_hash(item)
                 previous = conn.execute(
                     "SELECT event_hash FROM provider_events WHERE account_id=%s AND event_key=%s",
@@ -237,7 +286,7 @@ class Store:
                     if previous["event_hash"] != event_hash:
                         raise Conflict("event key reused with different content")
                     continue
-                raw_hash = normalized.raw_sha256 if normalized else None
+                raw_hash = hashlib.sha256(item.raw).hexdigest() if item.raw is not None else None
                 conn.execute(
                     "INSERT INTO provider_events(tenant_id,account_id,event_key,kind,"
                     "provider_object_id,provider_version,payload_ref,observed_at,event_hash) "
@@ -246,7 +295,11 @@ class Store:
                         ctx.tenant_id,
                         account_id,
                         item.event_key,
-                        "upsert_message" if normalized else "delete_message",
+                        "quarantine_message"
+                        if quarantined
+                        else "upsert_message"
+                        if normalized
+                        else "delete_message",
                         item.provider_id,
                         item.version,
                         raw_hash,
@@ -254,18 +307,54 @@ class Store:
                         event_hash,
                     ),
                 )
-                if normalized is None:
+                conn.execute(
+                    "INSERT INTO message_sync_state"
+                    "(tenant_id,account_id,provider_id,event_key,status) "
+                    "VALUES (%s,%s,%s,%s,%s) ON CONFLICT (tenant_id,account_id,provider_id) "
+                    "DO UPDATE SET event_key=excluded.event_key,"
+                    "status=excluded.status,updated_at=now()",
+                    (
+                        ctx.tenant_id,
+                        account_id,
+                        item.provider_id,
+                        item.event_key,
+                        "quarantined" if quarantined else "ready" if normalized else "deleted",
+                    ),
+                )
+                if item.raw is not None:
+                    conn.execute(
+                        "INSERT INTO raw_objects(tenant_id,account_id,sha256,raw_mime) "
+                        "VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+                        (ctx.tenant_id, account_id, raw_hash, item.raw),
+                    )
+                if quarantined:
+                    conn.execute(
+                        "INSERT INTO quarantine_receipts"
+                        "(tenant_id,account_id,event_key,provider_id,"
+                        "raw_sha256,reason,parser_version) "
+                        "VALUES (%s,%s,%s,%s,%s,'mime_rejected',%s)",
+                        (
+                            ctx.tenant_id,
+                            account_id,
+                            item.event_key,
+                            item.provider_id,
+                            raw_hash,
+                            PARSER_VERSION,
+                        ),
+                    )
+                    conn.execute(
+                        "UPDATE messages SET quarantined=true,updated_at=now() "
+                        "WHERE account_id=%s AND provider_message_id=%s",
+                        (account_id, item.provider_id),
+                    )
+                    self.audit(conn, ctx, "ingest.quarantined", "account", str(account_id))
+                elif normalized is None:
                     conn.execute(
                         "UPDATE messages SET deleted=true,provider_version=%s,updated_at=now() "
                         "WHERE account_id=%s AND provider_message_id=%s",
                         (item.version, account_id, item.provider_id),
                     )
                 else:
-                    conn.execute(
-                        "INSERT INTO raw_objects(tenant_id,account_id,sha256,raw_mime) "
-                        "VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING",
-                        (ctx.tenant_id, account_id, raw_hash, item.raw),
-                    )
                     message = conn.execute(
                         "INSERT INTO messages(tenant_id,account_id,provider_message_id,"
                         "provider_version,provider_thread_id,internet_message_id,subject,sender,"
@@ -278,7 +367,7 @@ class Store:
                         "sender=excluded.sender,recipients=excluded.recipients,"
                         "clean_text=excluded.clean_text,raw_sha256=excluded.raw_sha256,"
                         "parser_version=excluded.parser_version,received_at=excluded.received_at,"
-                        "deleted=false,updated_at=now() RETURNING id",
+                        "deleted=false,quarantined=false,updated_at=now() RETURNING id",
                         (
                             ctx.tenant_id,
                             account_id,
@@ -329,9 +418,7 @@ class Store:
                         (message["id"], raw_hash),
                     ).fetchone()
                     assert version is not None and item.raw is not None
-                    self.record_attachments(
-                        conn, ctx, account_id, version["id"], receive_attachments(item.raw)
-                    )
+                    self.record_attachments(conn, ctx, account_id, version["id"], attachments)
                 inserted += 1
             conn.execute(
                 "INSERT INTO sync_cursors(tenant_id,account_id,scope,cursor_kind,opaque_cursor) "
@@ -357,6 +444,33 @@ class Store:
             payload.update(mailbox_ids=item.mailbox_ids, keywords=item.keywords)
         return digest(payload)
 
+    def sync_status(self, ctx: TenantContext, account_id: UUID) -> dict[str, Any]:
+        self.require(ctx, "email.search")
+        with self.transaction(ctx) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM mail_accounts WHERE id=%s", (account_id,)
+            ).fetchone():
+                raise NotFound()
+            worker = conn.execute(
+                "SELECT last_outcome,paused,failures,next_attempt_at,updated_at "
+                "FROM sync_workers WHERE account_id=%s",
+                (account_id,),
+            ).fetchone()
+            counts = {"ready": 0, "quarantined": 0, "deleted": 0}
+            for row in conn.execute(
+                "SELECT status,count(*) AS n FROM message_sync_state "
+                "WHERE account_id=%s GROUP BY status",
+                (account_id,),
+            ).fetchall():
+                counts[row["status"]] = row["n"]
+            return {
+                "account_id": account_id,
+                "worker": worker,
+                "message_counts": counts,
+                "review_required": bool(counts["quarantined"]),
+                "mailbox_writes": False,
+            }
+
     def search(self, ctx: TenantContext, request: SearchRequest) -> list[dict[str, Any]]:
         self.require(ctx, "email.search")
         with self.transaction(ctx) as conn:
@@ -366,7 +480,8 @@ class Store:
                 "ts_rank_cd(m.search_document,websearch_to_tsquery('simple',%s)) AS score "
                 "FROM messages m JOIN message_versions v ON v.tenant_id=m.tenant_id "
                 "AND v.message_id=m.id AND v.raw_sha256=m.raw_sha256 "
-                "WHERE NOT m.deleted AND (%s::uuid IS NULL OR m.account_id=%s) "
+                "WHERE NOT m.deleted AND NOT m.quarantined "
+                "AND (%s::uuid IS NULL OR m.account_id=%s) "
                 "AND m.search_document @@ websearch_to_tsquery('simple',%s) "
                 "ORDER BY score DESC,m.received_at DESC,m.id LIMIT %s",
                 (
@@ -389,7 +504,7 @@ class Store:
                     "v.tenant_id=a.tenant_id AND v.id=a.evidence_id "
                     "JOIN messages m ON m.tenant_id=v.tenant_id AND m.id=v.message_id "
                     "AND m.raw_sha256=v.raw_sha256 "
-                    "WHERE a.status='extracted' AND NOT m.deleted "
+                    "WHERE a.status='extracted' AND NOT m.deleted AND NOT m.quarantined "
                     "AND (%s::uuid IS NULL OR m.account_id=%s) "
                     "AND a.search_document @@ websearch_to_tsquery('simple',%s) "
                     "ORDER BY score DESC,m.received_at DESC,a.id LIMIT %s",

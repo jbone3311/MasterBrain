@@ -95,13 +95,15 @@ class JmapReader:
         result = self._call("Email/get", {"ids": [], "properties": ["id"]})
         return identifier(result.get("state"))
 
-    def changes(self, since: str) -> ChangeIds:
-        data = self._call("Email/changes", {"sinceState": identifier(since), "maxChanges": 100})
+    def changes(self, since: str, limit: int = 100) -> ChangeIds:
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError("invalid batch limit")
+        data = self._call("Email/changes", {"sinceState": identifier(since), "maxChanges": limit})
         if data.get("oldState") != since or not isinstance(data.get("hasMoreChanges"), bool):
             raise ProtocolError("invalid change state")
         state = identifier(data.get("newState"))
         groups = [id_list(data.get(field)) for field in ("created", "updated", "destroyed")]
-        if sum(map(len, groups)) > 100:
+        if sum(map(len, groups)) > limit:
             raise ProtocolError("provider exceeded maxChanges")
         if any(set(groups[a]) & set(groups[b]) for a, b in ((0, 1), (0, 2), (1, 2))):
             raise ProtocolError("contradictory change lists")
@@ -113,13 +115,15 @@ class JmapReader:
         page = self.query_page(position)
         return page.ids, page.has_more
 
-    def query_page(self, position: int = 0) -> QueryPage:
+    def query_page(self, position: int = 0, limit: int = 100) -> QueryPage:
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError("invalid batch limit")
         if type(position) is not int or not 0 <= position <= 2**31 - 1:
             raise ValueError("invalid position")
         data = self._call(
-            "Email/query", {"position": position, "limit": 100, "calculateTotal": True}
+            "Email/query", {"position": position, "limit": limit, "calculateTotal": True}
         )
-        ids = id_list(data.get("ids"))
+        ids = id_list(data.get("ids"), limit)
         total = data.get("total")
         if (
             type(data.get("position")) is not int

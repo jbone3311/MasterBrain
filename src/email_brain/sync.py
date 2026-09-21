@@ -27,7 +27,7 @@ from email_brain.connectors.jmap import (
     identifier,
 )
 from email_brain.domain.models import TenantContext
-from email_brain.store import IngestItem, Store, digest
+from email_brain.store import IngestItem, InventoryError, Store, digest
 from email_brain.sync_store import Outcome, SyncStore
 
 MAX_PAGE_BYTES = 16 * 1024 * 1024
@@ -35,9 +35,9 @@ MAX_PAGE_BYTES = 16 * 1024 * 1024
 
 class Checkpoint(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
-    schema_version: Literal[1] = 1
+    schema_version: Literal[1, 2] = 2
     generation: UUID
-    phase: Literal["listing", "changes"]
+    phase: Literal["listing", "reconcile", "changes"]
     email_state: str = Field(min_length=1, max_length=512)
     query_state: str | None = Field(default=None, min_length=1, max_length=512)
     position: int = Field(default=0, ge=0, le=2**31 - 1)
@@ -54,7 +54,7 @@ class Checkpoint(BaseModel):
             and (self.query_state is None or self.total is None or self.position >= self.total)
         ):
             raise ValueError("incomplete listing checkpoint")
-        if self.phase == "changes" and (
+        if self.phase in {"changes", "reconcile"} and (
             self.position or self.total is not None or self.query_state is not None
         ):
             raise ValueError("unexpected listing fields")
@@ -149,18 +149,20 @@ class ReadWorker:
             heartbeat()
             reader = self.client.reader()
             items: list[IngestItem] = []
+            inventory_generation = None
+            inventory_total = None
             outcome: Outcome = "progress"
-            if checkpoint is None:
+            if checkpoint is None or checkpoint.schema_version == 1:
                 next_checkpoint = self._baseline(reader)
             elif checkpoint.phase == "listing":
-                page = reader.query_page(checkpoint.position)
+                page = reader.query_page(checkpoint.position, limit=8)
                 if checkpoint.query_state is not None and (
                     checkpoint.query_state != page.query_state or checkpoint.total != page.total
                 ):
                     # Keep the original Email baseline: previously imported IDs
                     # may disappear during this restart and must be replayed as deletions.
                     next_checkpoint = Checkpoint(
-                        generation=checkpoint.generation,
+                        generation=uuid4(),
                         phase="listing",
                         email_state=checkpoint.email_state,
                     )
@@ -168,6 +170,7 @@ class ReadWorker:
                     items = self._fetch(
                         checkpoint, page.ids, (), lease.provider_account_id, heartbeat
                     )
+                    inventory_generation = checkpoint.generation
                     if page.has_more:
                         next_checkpoint = Checkpoint(
                             generation=checkpoint.generation,
@@ -178,26 +181,45 @@ class ReadWorker:
                             total=page.total,
                         )
                     else:
+                        inventory_total = page.total
                         next_checkpoint = Checkpoint(
                             generation=checkpoint.generation,
-                            phase="changes",
+                            phase="reconcile",
                             email_state=checkpoint.email_state,
                         )
+            elif checkpoint.phase == "reconcile":
+                missing = self.jobs.reconciliation_candidates(
+                    ctx, account_id, checkpoint.generation
+                )
+                items = self._fetch(checkpoint, (), missing, lease.provider_account_id, heartbeat)
+                next_checkpoint = (
+                    checkpoint
+                    if missing
+                    else Checkpoint(
+                        generation=checkpoint.generation,
+                        phase="changes",
+                        email_state=checkpoint.email_state,
+                    )
+                )
             else:
-                changes = reader.changes(checkpoint.email_state)
-                items = self._fetch(
-                    checkpoint,
-                    changes.created + changes.updated,
-                    changes.destroyed,
-                    lease.provider_account_id,
-                    heartbeat,
-                )
-                next_checkpoint = Checkpoint(
-                    generation=checkpoint.generation,
-                    phase="changes",
-                    email_state=changes.next_state,
-                )
-                outcome = "progress" if changes.has_more else "caught_up"
+                try:
+                    changes = reader.changes(checkpoint.email_state, limit=8)
+                except ResyncRequired:
+                    next_checkpoint = self._baseline(reader)
+                else:
+                    items = self._fetch(
+                        checkpoint,
+                        changes.created + changes.updated,
+                        changes.destroyed,
+                        lease.provider_account_id,
+                        heartbeat,
+                    )
+                    next_checkpoint = Checkpoint(
+                        generation=checkpoint.generation,
+                        phase="changes",
+                        email_state=changes.next_state,
+                    )
+                    outcome = "progress" if changes.has_more else "caught_up"
             heartbeat()
             inserted = self.store.ingest_page(
                 ctx,
@@ -206,6 +228,8 @@ class ReadWorker:
                 next_checkpoint.encode(),
                 items,
                 lease_token=lease.token,
+                inventory_generation=inventory_generation,
+                inventory_total=inventory_total,
             )
             self.jobs.finish(
                 ctx,
@@ -233,7 +257,7 @@ class ReadWorker:
             )
             self.jobs.finish(ctx, account_id, lease.token, "retry", delay=delay)
             return "retry"
-        except (ProtocolError, ValidationError):
+        except (ProtocolError, ValidationError, InventoryError):
             self.jobs.finish(ctx, account_id, lease.token, "protocol_error")
             return "protocol_error"
         except (ValueError, RecursionError, UnicodeError):

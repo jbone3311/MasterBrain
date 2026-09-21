@@ -11,12 +11,15 @@ tenant/owner context with `email.ingest`. No provider write method exists.
    Fastmail account must have an administrator-set `provider_account_id`.
 2. Load the versioned checkpoint and discover the session; reject account mismatch
    before fetching mail. Missing binding is not automatically populated from a token.
-3. First step stores an Email-state baseline. Subsequent steps query at most 100
+3. First step stores an Email-state baseline. Subsequent steps query at most 8
    IDs, fetch metadata/raw MIME, normalize/index and commit evidence plus checkpoint.
 4. Every query page must have the same query state and total. If changed, restart
-   listing at zero **without replacing the original Email baseline**. This prevents
+   listing in a fresh inventory generation **without replacing the original Email baseline**. This prevents
    a deletion during listing from falling outside the later change replay window.
-5. After listing, replay changes from the original baseline. `caught_up` means that
+5. Seal the inventory only when the unique ID count matches the stable query total.
+   Reconcile absent local IDs in batches of eight; then replay changes from the
+   original baseline. Provider mail and historical evidence are never deleted.
+   `caught_up` means that
    page reported no further changes at that instant, not permanent consistency.
 6. Record content-free outcomes and release the lease. Caught-up accounts wait at
    least 60 seconds; temporary failures use capped exponential backoff/jitter and
@@ -45,15 +48,21 @@ and can be absent after such a crash. Do not treat run counts as ingestion truth
 
 ## Limits and explicit unfinished behavior
 
-- Raw MIME ≤1 MiB each; cumulative downloaded page ≤16 MiB; metadata ≤100 IDs.
-  A page exceeding limits pauses; adaptive sub-batching and large encrypted objects
-  are not implemented. Binary attachments are still deferred.
+- Raw MIME ≤1 MiB each; cumulative downloaded page ≤16 MiB; worker batches ≤8 IDs
+  (protocol parser supports caller-selected limits up to 100). Large encrypted
+  objects are not implemented. Binary attachments are still deferred.
 - Auth errors pause as `auth_required`; invalid protocol pauses as `protocol_error`;
-  parser failures pause as `parse_error`. Failure telemetry never includes bodies,
-  tokens, provider URLs or exception text. No durable poison-byte quarantine yet.
-- Expired provider cursor pauses as `resync_required`. A complete inventory-diff
-  reconciler is required before restarting from a new baseline; blindly resetting
-  would leave old deleted messages searchable. **Never manually advance/reset it.**
+  known MIME parser rejections within the byte bound are retained byte-for-byte in
+  quarantine and advance the checkpoint. Invalid updates hide old searchable
+  projections but retain historical evidence; later valid input resolves current
+  quarantine status without erasing receipts. Oversize still pauses because it
+  cannot be preserved. Failure telemetry omits bodies, tokens and exception text.
+- Expired history starts a new baseline/full inventory. No missing-ID inference
+  occurs until that inventory is certified complete. v1 checkpoints similarly
+  restart; corrupt/unknown checkpoints fail closed. Never manually advance cursors.
+- The owner-scoped sync-status endpoint exposes processing counts and worker state.
+  `caught_up` is not proof all content is extracted: inspect `review_required`
+  for current quarantine and per-evidence attachment accounting separately.
 - Constant query churn can prevent listing completion. Scheduling/watchdog/lag alerts
   must detect this; those operational services are still pending.
 - Workers currently share the owner-scoped prototype runtime role; a production
@@ -64,7 +73,7 @@ and can be absent after such a crash. Do not treat run counts as ingestion truth
 
 ## Migration and rollback
 
-Apply all migrations through `0005_worker_status_compatibility.sql` with the
+Apply all migrations through `0006_reconciliation_quarantine.sql` with the
 administrator migrator, then reapply the
 explicit runtime grants using `grant_runtime` for the installed runtime role.
 The normal API migration command does not silently expand existing role grants.

@@ -1,5 +1,15 @@
 # API and MCP Specification
 
+## Implemented sync status
+
+`GET /v1/accounts/{account_id}/sync-status` requires `email.search` and current
+owner membership. Returns account ID, content-free worker outcome/pause/retry state
+(or null before enrollment), message counts by ready/quarantined/deleted,
+`review_required` for current quarantines, and `mailbox_writes: false`. Unknown
+and cross-tenant accounts return 404; missing scopes return 403. Counts do not
+imply complete backfill, binary extraction, or live-provider acceptance. No raw
+object access or resume/reprocess capability is exposed.
+
 ## Implemented bootstrap surface (v0.1)
 
 The rest of this document is the target contract. The actual bounded service exposes:

@@ -173,6 +173,12 @@ def create_app(store: Store, registry: TokenRegistry) -> FastAPI:
             "results": store.search(principal.context, body),
         }
 
+    @app.get("/v1/accounts/{account_id}/sync-status")
+    def sync_status(
+        account_id: UUID, principal: Annotated[Principal, Depends(require("email.search"))]
+    ) -> dict[str, Any]:
+        return store.sync_status(principal.context, account_id)
+
     @app.get("/v1/evidence/{evidence_id}")
     def evidence(
         evidence_id: UUID, principal: Annotated[Principal, Depends(require("email.evidence.read"))]
