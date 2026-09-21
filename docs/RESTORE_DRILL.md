@@ -1,6 +1,14 @@
 # Synthetic PostgreSQL backup/restore drill
 
-Latest runtime recheck: **f73c235**,
+Latest runtime recheck: **0b4f0d3**,
+[run 35590968376](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968376),
+passed 2026-09-21 after the bounded read controller/shared identity changes.
+The unchanged synthetic fixture verified **26 tables, 142 rows, two tenants, four
+encrypted objects**, matching hashes, RLS and refusal of database-only restore.
+**13.99 seconds** includes disposable startup; 29 restore safety tests also passed.
+This does not prove live-provider operation, cloud durability or production RTO.
+
+Historical runtime recheck: **f73c235**,
 [run 35589125878](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125878),
 passed 2026-09-21 after the owner PDF screen and attachment-contract correction.
 The unchanged fixture verified **26 tables, 142 rows, two tenants and four encrypted

@@ -69,6 +69,21 @@ and verification are recorded separately from runtime and live-acceptance claims
 
 ### Latest verified runtime
 
+Read-controller implementation **0b4f0d3** passed
+[CI 35590968421](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968421):
+**1,772 Python tests (249 real PostgreSQL), 84 Node contracts, five MIME and 15 PDF
+actual-container cases**. New operator cases use fake HTTPS responses with real
+SQL, including restart, revoked credentials/ownership, changed bindings/leases,
+pause/retry and encrypted source readback. No real provider or identity enrollment.
+
+[Restore 35590968376](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968376)
+at the same runtime verified 26 tables, 142 rows, two tenants, four encrypted
+objects, matching hashes and RLS. Local tests explicitly skipped 249 SQL cases;
+the CI run supplies their proof. Later receipt-only changes do not alter this
+runtime. Full scope and remaining gates are in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
+
+### Prior verified owner PDF runtime
+
 Owner PDF implementation **8d8af93**, corrected at **f73c235**, passed
 [CI 35589125895](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125895):
 **1,668 Python tests (226 real PostgreSQL), 84 Node contracts, five MIME and 15 PDF

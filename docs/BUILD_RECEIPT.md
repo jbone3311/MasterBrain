@@ -2,6 +2,53 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Bounded read-worker operator
+
+Runtime **0b4f0d33bbdfedaad42dbbc7b2f09991cc2af923** passed
+[CI 35590968421](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968421)
+and [restore 35590968376](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968376),
+observed 2026-09-21 Pacific. Later receipt-only documentation is not the SHA tested
+by these runs and changes no runtime behavior.
+
+- **1,772 standard Python tests passed**, including **249 real PostgreSQL cases**;
+  no CI skips. **84 Node contracts**, **five actual MIME-container** and **15 actual
+  PDF-container** cases passed. Repeated release-gate suites and restore subsets
+  are not counted twice. Both images, default-image reader exclusion, CLI smoke,
+  locked dependencies, lint, typing and documentation checks passed.
+- **104 new standard cases**: 81 offline operator/configuration/identity tests and
+  23 actual SQL cases. Real Fastmail HTTP logic uses a fictional injected transport;
+  no provider is contacted. Tests cover non-consuming preflight, explicit execution,
+  exact ingest scope, private files/keys, current binding, restart/search/evidence,
+  token/owner/account/lease changes during downloads, persisted pauses/retries,
+  stop and encrypted large-message preservation plus exact source readback.
+- Authorization failures use a distinct guard exception rather than the worker's
+  malformed-MIME path. SQL checks verify revoked/stale work cannot publish the
+  page or advance its checkpoint, does not fabricate a parser pause, and closes
+  its HTTP client. Existing lease recovery is retained; no automatic reset.
+- Restore reverified **26 tables, 142 rows, two tenants and four encrypted objects**,
+  equal hashes, tenant RLS and database-only refusal. **13.99 seconds** includes
+  disposable startup, not production RTO/PITR. The unchanged fixture and 29 safety
+  tests passed; no hosted key-recovery or live-provider claim.
+- Local: **1,523 Python passes, 249 explicit PostgreSQL skips**, 84 Node passes,
+  locked sync, lint, strict typing over **42 source modules**, separate restore
+  typing, repository/docs/diff checks and CLI help. Staged and incremental secret
+  scans through 0b4f0d3 found no leaks. Two existing Python deprecations and GitHub
+  action/runner migration notices remain non-failing supply-chain work.
+- The gate checked **86 Markdown files and 696 local paths/fragments** at the
+  runtime revision. GitHub's Markdown API rendered the read-guide headings; this
+  is not browser accessibility or external-source freshness verification.
+
+[ADR-039](adr/039_read_worker_controller.md) and the [operator guide](READ_CONTROLLER.md)
+define `sync-read`: private configuration, zero-request/zero-claim preflight,
+explicit provider-read invocation, fixed account/secret binding, fresh authority
+checks, bounded runs and content-free outcomes. Shared identity code preserves
+MIME/PDF scope separation. No schema, dependency, SQL grant, HTTP API, enrollment,
+mailbox effect or installed service was added. The command is implemented but has
+not been used on real mail. Production identity, enrollment/resume administration,
+hosted storage/supervision/alerts, live acceptance and soak remain gates. The next
+implementation assignment is the configured OIDC/identity boundary, not another
+read-controller scaffold. The full product goal remains unfinished.
+
 ## Owner PDF screen and current documentation pack
 
 Implementation **8d8af93**, contract correction **f73c2352b14ddcceccf7ea2aaf42b9c614b02fe0**.
