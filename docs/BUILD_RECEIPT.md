@@ -2,7 +2,48 @@
 
 Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Reviewed rules, local-model adapter and actual restore proof
+## Calendar extraction and realistic attachment formats
+
+Code/test commit: `e3695d8`.
+[CI 35560344173](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35560344173)
+and [restore 35560344225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35560344225)
+both passed on 2026-09-20 Pacific.
+
+- **817 Python tests passed**, including 66 real PostgreSQL cases, no CI skips.
+  **15 Node interface tests** also passed. The repeated repository-gate suite is
+  not counted twice. Locally: 751 passes and 66 explicit database skips.
+- Lint, strict typing across 28 source modules, docs/link checks, developer image
+  build and CLI smoke passed. Restore script also passed separate strict typing.
+- Actual synthetic PostgreSQL restore passed for **22 tables, 77 rows, two tenants**
+  with equal content hashes, recovered calendar attachment search/evidence, rules
+  and tenant authorization. Elapsed 20.52 seconds includes container startup and
+  is not a production recovery-time claim. Owned test container/archive cleaned up.
+- Full Git-history secret scan found no leaks through the code commit.
+
+Nine deterministic attachment-bearing MIME cases include minimal DOCX/XLSX packages,
+PNG files, CSV, folded Unicode calendar invitation/cancellation, nested email and
+a mixed bundle. Thirty-one format/payload/hash tests and 36 mocked-provider wrapper
+tests independently check expected bytes and receipt outcomes. OOXML structure is
+checked, not full Office rendering. Binary extraction is still deferred/skipped,
+not counted as successfully read. No public correspondence was imported.
+
+Calendar source extraction has 73 focused parser tests and 11 independent security
+cases, plus named/unnamed MIME handling, charset/transfer-encoding failures and two
+real database integration tests. Review fixed case-insensitive binary-value refusal;
+integration rejects mismatched MIME/body METHOD and malformed transfer encodings.
+The existing restore fixture assertion was updated to require the added calendar
+attachment and its extracted content, retaining its binary-deferred checks.
+
+This adds searchable calendar evidence, **not** meeting acceptance, RSVP, timezone
+conversion, recurrence expansion, URL/alarm execution or obligation changes. Parser
+provenance is v4 for new snapshots; old evidence is not silently reprocessed. Four
+agents total implemented/reviewed the slice. No real mailbox, calendar, model daemon,
+paid cloud resource or Factory runtime was activated. Two upstream test-client
+deprecation warnings remain. See [calendar scope](CALENDAR_ATTACHMENTS.md),
+[public sample adoption gates](PUBLIC_EMAIL_TEST_DATA.md) and
+[remaining product gates](IMPLEMENTATION_STATUS.md).
+
+## Prior reviewed rules, local-model adapter and actual restore proof
 
 Code/test commit: `d5f8f47`.
 [CI 35556627769](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35556627769)

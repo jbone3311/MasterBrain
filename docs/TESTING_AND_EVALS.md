@@ -4,6 +4,12 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[Calendar and format fixtures](CALENDAR_ATTACHMENTS.md) exercise actual MIME bytes,
+harmless OOXML/image/calendar contents, and provider response encodings without
+contacting providers. Deferred binary extraction is an expected limitation, not a
+successful text extraction. [Public fixture adoption](PUBLIC_EMAIL_TEST_DATA.md)
+is documented but no external corpus is part of current CI results.
+
 New suites cover the complete reviewed-rule REST lifecycle, bounded previews,
 competing activation/rollback, tenant/actor isolation and virtual-only effects.
 `node --test tests/web_session.test.cjs` checks 15 UI contracts. Local-model tests

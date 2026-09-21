@@ -93,4 +93,10 @@ adapter. No SMTP credentials or sending capability are currently added.
 
 ## Conformance suite
 
+`tests/test_attachment_provider_formats.py` now passes nine identical synthetic
+attachment-bearing messages through Gmail raw/base64url JSON, Graph MIME `$value`,
+Fastmail JMAP blob downloads and IMAP fetched literals, checking byte preservation.
+These mocked transports do not certify live servers or additional durable workers.
+See [fixture coverage](CALENDAR_ATTACHMENTS.md).
+
 Each adapter must pass recorded/synthetic fixtures for bootstrap pagination, empty changes, duplicate notifications, cursor expiry, deletes, moves, label/flag changes, drafts, rate limits, crashes before/after checkpoint, and Unicode/MIME anomalies. Live tests operate only in disposable test mailboxes/folders.

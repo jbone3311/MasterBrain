@@ -8,6 +8,8 @@ and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 |---|---|---|
 | MIME | Plain/HTML alternatives, Unicode, unknown charset, truncation, NUL fields, size bounds, 1,000 seeded random byte inputs | Extended fuzz campaign, independent parser security review |
 | Attachments | Path names, duplicate receipts, CSV/plain extraction, binary/active-content deferral, depth/count limits | Actual isolated PDF/Office/OCR extraction, malware fixtures and sandbox escape tests |
+| Realistic attachment formats | Nine deterministic in-memory MIME cases; 31 payload/hash/ZIP/XML/PNG/encoding checks; 36 byte-preservation checks across four mocked provider formats | Approved external corpus comparisons and live provider conformance; Office application acceptance |
+| Calendar evidence | 73 parser and 11 independent security tests; named/unnamed calendar MIME, UTF-8 byte folding, syntax/budget failures, inert alarms, METHOD consistency, real DB FTS/history/replay | Full calendar semantics, recurrence/timezone computation, historical reprocessing and calendar actions |
 | Imports | 256-message HTTP-to-Postgres corpus, process recreation each page, varied attachments, initial and incremental sync | Live disposable-provider conformance and realistic mailbox sizes |
 | Gmail | Fixed-host GET transport, account binding, History paging/expiry, raw and minimal response shapes, quota/auth distinction, untrusted notifications | OAuth enrollment, durable worker, authenticated Pub/Sub and live conformance |
 | Graph | Fixed-account/folder opaque cursors, immutable IDs, folder removal is not global deletion, webhook-hint validation, MIME bounds | Durable per-folder workers, subscription lifecycle, live conformance |

@@ -1,5 +1,14 @@
 # API and MCP Specification
 
+## Calendar attachment evidence
+
+Existing search/evidence responses now include bounded extracted source text from
+newly ingested supported `text/calendar` parts, including unnamed body alternatives.
+The receipt reason `bounded_calendar_v1` means source extraction only, not invitation
+acceptance, timezone/recurrence evaluation or a malware scan. Unsupported/malformed
+parts retain explicit deferred/failed outcomes. No calendar action route is added.
+See [calendar contract](CALENDAR_ATTACHMENTS.md).
+
 ## Implemented reviewed sender rules
 
 The [reviewed rules contract](REVIEWED_RULES.md) adds list, simulation, explicit

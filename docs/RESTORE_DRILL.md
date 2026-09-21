@@ -1,5 +1,13 @@
 # Synthetic PostgreSQL backup/restore drill
 
+Latest verification: code `e3695d8`,
+[restore run 35560344225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35560344225),
+passed on 2026-09-20 Pacific. The expanded fixture includes searchable calendar
+attachments: 22 tables, 77 rows, two tenants, equal hashes and recovered search/RLS.
+Elapsed 20.52 seconds includes container startup; not a production RTO. The owned
+test container and temporary archive were removed. The earlier receipt below is
+historical and covers the previous smaller fixture.
+
 Verified 2026-09-20 Pacific at code commit `d5f8f47`:
 [restore run 35556627775](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35556627775)
 passed with 22 tables, 73 rows and two synthetic tenants. Content hashes matched;
