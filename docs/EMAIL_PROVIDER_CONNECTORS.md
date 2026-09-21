@@ -1,5 +1,10 @@
 # Email Provider Connectors
 
+Updated 2026-09-20. See [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) for
+owner-facing behavior and [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) for the
+separate MIME/mock-provider/disposable-live replay layers. SMTP is not a substitute
+for any provider's synchronization protocol.
+
 ## Shared contract
 
 This section describes the target contract, not active provider enrollment.

@@ -1,5 +1,19 @@
 # Open-Source Evaluation
 
+Documentation reviewed 2026-09-20. Dispositions below are architecture choices,
+not installation receipts. Current dependencies are [pyproject.toml](../pyproject.toml)
+and [uv.lock](../uv.lock); pgvector, MCP SDK, IMAPClient and parser frameworks are
+not installed merely because direct reuse is recommended. Star/activity figures
+remain the dated [snapshot](OSS_HEALTH.md), not live counters.
+
+## Test-data/tool shortlist
+
+Use [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) for proposed Faker scenario data,
+optional local Mailpit and Tika/EDRM/Govdocs format references. Commercial services
+are explicitly distinguished from OSS. No new dependency or external fixture is
+adopted by this documentation update. Each needs the acceptance checklist below;
+correspondence/embedded attachment rights need the [per-file gate](PUBLIC_EMAIL_TEST_DATA.md).
+
 ## Implemented authenticated encryption dependency
 
 The optional raw-object backend directly reuses the maintained

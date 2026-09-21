@@ -243,6 +243,15 @@ def create_app(
             principal, account_id, receipt_id, body.expected_parser_version, idempotency_key
         )
 
+    @app.get("/v1/accounts/{account_id}/processing/jobs")
+    def processing_history(
+        account_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.evidence.read"))],
+        after: UUID | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 50,
+    ) -> dict[str, Any]:
+        return recovery_jobs.list(principal.context, account_id, after=after, limit=limit)
+
     @app.get("/v1/accounts/{account_id}/processing/{job_id}")
     def processing_status(
         account_id: UUID,

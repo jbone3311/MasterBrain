@@ -6,7 +6,7 @@ and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
 | Area | Executable tests | Still needed before production |
 |---|---|---|
-| Durable recovery jobs | API approval/cancel/status, worker authority, SQL RLS/immutable approvals, concurrent claims/idempotency, lease/expiry/source/revocation fences, bounded retry/crash recovery, actual-container job pipeline and restored job states | Hosted service identities, supervision/alerts, UI controls and extended multi-controller soak |
+| Durable recovery jobs | API approval/cancel/status/history, account-bound cursor pagination, worker authority, SQL RLS/immutable approvals, concurrent claims/idempotency, lease/expiry/source/revocation fences, bounded retries, actual-container pipeline and restored job states | Hosted service identities, supervision/alerts and extended multi-controller soak |
 | Isolated large MIME | Strict output schema/hash/Unicode/allocation budgets, container pre-disclosure controls, timeout/output flooding, exact-owned cleanup, processor-version fences, explicit real-container to PostgreSQL/search CI suite | Hosted controller, sandbox escape/load review, scanner and binary extractors |
 | Encrypted raw objects | AES-GCM/AAD, key rotation, tampering, ownership/symlinks, crash/fsync, duplicates, staged orphan inventory, SQL constraints, large-message holding/restart and missing-object restore refusal | Hosted Blob/KMS, key-backup recovery, retention/purge and offsite durability |
 | MIME | Plain/HTML alternatives, Unicode, unknown charset, truncation, NUL fields, size bounds, 1,000 seeded random byte inputs | Extended fuzz campaign, independent parser security review |
@@ -23,10 +23,10 @@ and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 | Retrieval | Body and attachment FTS, stable historical evidence, tombstone/quarantine exclusions | Recall benchmark, vector retrieval, entity/state filters |
 | Identity | Expired/invalid tokens, server-bound context, denied scopes, owner membership revocation, forced RLS, cross-tenant keys and context reset | OIDC/MFA, invitation/member/account grants, rate limits |
 | API | Authentication, bounded bodies, validation without input echo, secure response headers, status counts, proposals/reviews, absent write endpoints | Browser accessibility, CSRF/session/OAuth threat tests for future login |
-| Owner UI | 25 Node DOM-contract tests: explicit recovery click/parser binding, session/account/refresh races, generic errors, simulation/activation, rollback, text-only rendering; prior synthetic search/evidence smoke | Full browser automation, accessibility, pagination stress and production login |
+| Owner UI | 52 Node DOM-contract tests: prior 25 plus 27 processing cases covering history, approvals, same-key retries, cancellation races, malformed responses, stale views and cursor preservation | Full browser automation, accessibility, scale/pagination stress and production login |
 | Control | Persisted rule simulation/activation/rollback, stale receipts, competing writes, actor/tenant isolation, REST lifecycle, virtual-only effects; pure protected-class veto | Rich persisted predicates/protection policies, entities, drift evaluation |
 | Models | 90 fake-server tests for opt-in local adapter, digest/metadata checks, time/size/schema bounds, grounded excerpts, rejected tools; independent disclosure tests | Actual isolated daemon/model quality, calibrated accuracy, cache and remote budgets |
-| Synthetic demo | Deterministic corpus, bounded count, mid-import crash/resume, complete replay, mismatched cursor refusal | Interactive owner acceptance |
+| Synthetic demo | Deterministic corpus, bounded count, mid-import crash/resume, complete replay, mismatched cursor refusal | Coherent scenario/answer-key feed (EB-023), continuous replay and interactive owner acceptance |
 | Release | Locked dependencies, lint, strict types, migration replay, document links, container build/CLI; actual disposable PG17 logical restore with hash/RLS/search checks | SBOM/advisory/signature gates, managed-cloud restore/PITR and disaster recovery |
 
 ## Interpreting the results

@@ -27,11 +27,17 @@ uv sync --locked --extra dev
 uv run ruff check .
 uv run mypy src
 uv run pytest -q
+node --test tests/web_session.test.cjs tests/web_processing.test.cjs
 uv run python scripts/deployment_gate.py
 uv run python scripts/check_docs.py
 ```
 
 Do not claim completion while required checks fail. Live provider tests must use disposable accounts/folders and require explicit operator authorization.
+
+Use `docs/CODE_MAP.md` for current files, `docs/IMPLEMENTATION_STATUS.md` for
+capability limits and `docs/BUILD_RECEIPT.md` for exact-commit verification.
+PRD/roadmap requirements and proposed test feeds are not implementation claims.
+Keep observed OSS counts/dates and historical test receipts intact until remeasured.
 
 ## Change classification
 

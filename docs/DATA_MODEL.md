@@ -1,5 +1,14 @@
 # Data Model
 
+Updated 2026-09-20. The migration notes and final implemented-schema section
+describe executable storage. Entity/project/obligation/grant/vector sketches are
+target design, not existing tables. [Migrations](../migrations/) are authoritative
+for deployed schema; see [code map](CODE_MAP.md) and [status](IMPLEMENTATION_STATUS.md).
+
+Migration 0011 adds `recovery_jobs_history` over tenant, account and descending
+immutable creation time/UUID. This supports all-state bounded history without
+reusing the unfinished-work-only claim index. No approval fields or grants change.
+
 Migration 0010 adds [durable recovery jobs](RECOVERY_JOBS.md): immutable
 tenant/account/receipt/parser approval, actor-bound idempotency, expiry, bounded
 lease/claim/retry state and composite references to immutable recovery outcomes.

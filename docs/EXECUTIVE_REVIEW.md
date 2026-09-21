@@ -1,5 +1,9 @@
 # Executive architecture review
 
+Updated 2026-09-20. Start with [GAME_PLAN.md](GAME_PLAN.md) and
+[FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) for the owner narrative.
+The architecture verdict below is not a production-readiness certificate.
+
 ## Verdict
 
 The product is worth building. Its strongest form is **an independent, evidence-first
@@ -42,8 +46,8 @@ effects make this feedback loop useful without permitting self-modifying automat
    engineering default, not a claim Jim's first account is enrolled.
 3. Add OIDC, owner review UX, rate limits, audit export, attachment sandbox/scanner
    and operational health. Ship no Internet-facing service before these gates.
-4. Enable deterministic rules in shadow mode; calibrate local extraction on a private
-   labeled corpus. Add people/projects/obligations as evidence-backed projections.
+4. Expand the implemented narrow reviewed virtual rules; calibrate local extraction
+   on approved labeled data. Add people/projects/obligations as evidence-backed projections.
 5. Add previewed labels/moves/drafts with a separate executor; prove compensation
    limits and ambiguous-result handling before production effects.
 6. Expand providers, granted team sharing, evaluated hybrid vectors and approved
@@ -53,6 +57,10 @@ Not yet production-ready: live sync, provider credentials, attachment binary
 extraction, OIDC, full team grants, production backup/purge and authenticated MCP
 remain unfinished. See [status](IMPLEMENTATION_STATUS.md), [backlog](BACKLOG.md),
 [hosting recommendation](HOSTING_DECISION.md), and [open choices](OPEN_QUESTIONS.md).
+
+The detailed delivery sequence is maintained in [ROADMAP.md](ROADMAP.md): secure
+read-only operation, useful understanding, scoped assistant/team access, then
+separately approved mailbox effects. No new effect is authorized by this review.
 
 ## Success is measured, not inferred
 

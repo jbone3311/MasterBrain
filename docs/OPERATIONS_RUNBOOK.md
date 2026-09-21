@@ -1,5 +1,20 @@
 # Operations Runbook
 
+Updated 2026-09-20. The opening sections describe current local/CI recovery.
+Daily checks, incident playbooks and SLOs below are production requirements;
+their dashboards, alert delivery, OIDC and provider-action controls are not all
+implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
+
+## Owner processing screen
+
+Choose the account and refresh processing history manually. Approve only the
+displayed receipt/parser; inspect fixed status/outcomes and each attachment result.
+If submission is uncertain, retry with the retained key in the unchanged context
+or inspect history before creating another approval. A page reload loses browser
+keys, not the saved job. Cancel explicitly; completion winning the race must be
+shown as completion. No polling daemon or worker-health guarantee is implied.
+See [PROCESSING_REVIEW_SCREEN.md](PROCESSING_REVIEW_SCREEN.md).
+
 ## Durable processing approvals
 
 See [RECOVERY_JOBS.md](RECOVERY_JOBS.md). A configured parser does not mean a worker

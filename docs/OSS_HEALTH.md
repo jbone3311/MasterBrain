@@ -1,5 +1,11 @@
 # Open-source health snapshot
 
+This is a dated research artifact, not a continuously refreshed popularity table.
+The documentation refresh on 2026-09-20 preserves its original observations.
+Re-run [oss_snapshot.py](../scripts/oss_snapshot.py) and inspect releases, licenses,
+security advisories and substantive changes before adopting/upgrading a dependency.
+Do not change the observation date without a new measured snapshot.
+
 Observed 2026-09-19 Pacific / 2026-09-20 00:56 UTC. Counts come from the public GitHub
 API and are preserved in [oss-snapshot.json](research/oss-snapshot.json), with
 commit SHAs. Stars measure interest; subscribers are notification watchers, not

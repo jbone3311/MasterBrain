@@ -249,6 +249,48 @@ class RecoveryJobs:
                 raise NotFound()
             return _public(row)
 
+    def list(
+        self,
+        ctx: TenantContext,
+        account: UUID,
+        *,
+        limit: int = 50,
+        after: UUID | None = None,
+    ) -> dict[str, Any]:
+        """Bounded live history; the cursor must belong to this tenant and account."""
+        self.store.require(ctx, "email.evidence.read")
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError("history limit must be 1..50")
+        if after is not None and not isinstance(after, UUID):
+            raise ValueError("history cursor must be a UUID")
+        with self.store.transaction(ctx) as conn:
+            self._account(conn, account)
+            if after is None:
+                rows = conn.execute(
+                    "SELECT * FROM recovery_jobs WHERE account_id=%s "
+                    "ORDER BY created_at DESC,id DESC LIMIT %s",
+                    (account, limit + 1),
+                ).fetchall()
+            else:
+                anchor = conn.execute(
+                    "SELECT created_at,id FROM recovery_jobs WHERE account_id=%s AND id=%s",
+                    (account, after),
+                ).fetchone()
+                if anchor is None:
+                    raise NotFound()
+                rows = conn.execute(
+                    "SELECT * FROM recovery_jobs WHERE account_id=%s "
+                    "AND (created_at,id)<(%s,%s) ORDER BY created_at DESC,id DESC LIMIT %s",
+                    (account, anchor["created_at"], after, limit + 1),
+                ).fetchall()
+            self.store.audit(conn, ctx, "recovery.jobs_read", "account", str(account))
+            return {
+                "results": [_public(row) for row in rows[:limit]],
+                "next_after": rows[limit - 1]["id"] if len(rows) > limit else None,
+                "limit": limit,
+                "mailbox_effects": False,
+            }
+
     def _terminal(
         self,
         conn: psycopg.Connection[dict[str, Any]],

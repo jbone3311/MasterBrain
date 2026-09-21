@@ -22,11 +22,12 @@ PACK = (
     "DECISIONS",
     "FACTORY_HANDOFF",
 )
+GUIDES = ("GAME_PLAN", "FEATURES_AND_METHODS", "CODE_MAP", "TEST_MAILBOX_PLAN")
 
 
 def main() -> None:
     errors = []
-    for name in PACK:
+    for name in (*PACK, *GUIDES):
         if not (ROOT / "docs" / f"{name}.md").is_file():
             errors.append(f"Missing document: {name}")
     for path in [*ROOT.glob("*.md"), *(ROOT / "docs").rglob("*.md")]:
@@ -38,7 +39,7 @@ def main() -> None:
                 errors.append(f"{path.relative_to(ROOT)}: broken local link {target}")
     if errors:
         raise SystemExit("\n".join(errors))
-    print("PASS: all 16 pack documents and local Markdown links")
+    print("PASS: all 16 pack documents, 4 product guides and local Markdown links")
 
 
 if __name__ == "__main__":

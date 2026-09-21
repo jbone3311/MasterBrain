@@ -1,8 +1,15 @@
 # Architecture Decisions
 
-This is a concise ADR index. Each decision should become an individual immutable ADR during implementation when detail or alternatives expand.
+This is an ADR index plus historical decision summaries. New detailed decisions
+live in [adr/](adr/). Later explicit decisions supersede earlier limitations without
+rewriting their history. The current status is in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+The documentation refresh changes explanations/navigation, not runtime privileges.
 
 ## Accepted
+
+[ADR-031](adr/031_processing_review_screen.md) adds bounded durable processing
+history and explicit owner-screen approval/cancellation, with session/view fencing
+and uncertain-request idempotency. No worker or mailbox capability is enabled.
 
 [ADR-030](adr/030_durable_recovery_jobs.md) connects explicit human approval to
 durable isolated-processing jobs, bounded claims/retries and atomic fenced
@@ -83,7 +90,7 @@ the no-retry UI boundary in ADR-021; no raw-download or mailbox permission is ad
 **Decision:** API authorization plus forced RLS and tenant-aware object/cache keys.  
 **Why:** defense in depth. PostgreSQL documents RLS behavior and bypass cases ([docs](https://www.postgresql.org/docs/17/ddl-rowsecurity.html)).
 
-## Deferred decisions
+## Accepted prototype evolution
 
 ### ADR-013 — Executable foundation and bounded bootstrap (2026-09-19)
 
@@ -127,7 +134,7 @@ Sources: [Psycopg transactions](https://www.psycopg.org/psycopg3/docs/basic/tran
 [PostgreSQL RLS and bypass behavior](https://www.postgresql.org/docs/17/ddl-rowsecurity.html),
 [FastAPI test client](https://fastapi.tiangolo.com/tutorial/testing/).
 
-## Deferred decisions (tracked without blocking bootstrap)
+## Historical attachment boundary (superseded in part by later ADRs)
 
 ### ADR-014 — Factory-shaped attachment receipts, bounded extraction (2026-09-19)
 
@@ -161,7 +168,7 @@ objects, vectors, and cache copies; no such destructive workflow runs in v0.1.
 binary disguised as text, duplicate receipts, archive/nested handling, MIME limits,
 attachment FTS, RLS, immutable receipt-event history, and reconciliation counts.
 
-## Owner decisions pending
+## Accepted provider and worker evolution
 
 ### ADR-015 — Fastmail read-only HTTP transport (2026-09-19)
 
@@ -180,7 +187,7 @@ outcomes. Disposable-account authorization is still required for live acceptance
 Sources: [Fastmail JMAP](https://www.fastmail.com/dev/),
 [JMAP blob download](https://jmap.io/spec-core.html#downloading-binary-data).
 
-## Pending owner choices
+## Worker history and pending deployment choices
 
 ### ADR-016 — Resumable read worker with fenced leases (2026-09-20)
 
@@ -301,7 +308,7 @@ Tests cover absent/foreign account identifiers, scope denial, bounded paging,
 current-status filtering and the no-raw-data API contract. Production login,
 audited reprocessing and browser accessibility acceptance remain gates.
 
-## Explicitly rejected for initial build
+## Additional accepted prototype decisions
 
 [ADR-026 calendar attachments and format fixtures](adr/026_calendar_attachments_and_format_fixtures.md)
 adds bounded searchable calendar source evidence and synthetic attachment/provider
@@ -312,5 +319,7 @@ New accepted prototype decisions: [ADR-023 synthetic logical restore drill](adr/
 and [ADR-025 reviewed virtual sender rules](adr/025_reviewed_rule_activation.md).
 No production deployment, real model quality, mailbox effects or live-service
 authorization is implied by these additive local/CI capabilities.
+
+## Explicitly rejected for initial build
 
 SQLite as multi-user source of truth; public database/model/MCP endpoints; vector-only retrieval; automatic send/delete; direct assistant SQL; direct model provider credentials; rules as executable code; graph database by default; whole-mailbox prompts; Git storage of email/live secrets.

@@ -69,8 +69,9 @@ substitute for a calibrated real-email evaluation set.
 uv run ruff check .
 uv run mypy src
 uv run pytest -q
-node --test tests/web_session.test.cjs
+node --test tests/web_session.test.cjs tests/web_processing.test.cjs
 uv run python scripts/deployment_gate.py
+uv run python scripts/check_docs.py
 ```
 
 For PostgreSQL tests create a **disposable** database named `email_brain_test*`
@@ -82,6 +83,13 @@ supports import health and held-message metadata review from a search result's
 account button. Human owners with review/evidence scopes can explicitly retry one
 held receipt using the displayed parser version. See [recovery](QUARANTINE_RECOVERY.md).
 No raw download or mailbox effect is enabled.
+
+The owner screen also exposes [processing history/approval/cancellation](PROCESSING_REVIEW_SCREEN.md).
+The default server does not automatically configure an isolated parser/controller;
+history is distinct from worker liveness. The separately documented visual fixture
+can preview controls without PostgreSQL, but simulates jobs and proves no durability.
+The [test mailbox plan](TEST_MAILBOX_PLAN.md) extends the current seeder in future;
+there is no continuous incoming-mail generator command yet.
 
 Stop the API with Ctrl-C; `docker compose stop` preserves the database. Do not use
 `down -v` unless intentionally deleting that local volume. Migrations are

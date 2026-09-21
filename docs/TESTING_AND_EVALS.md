@@ -1,5 +1,23 @@
 # Testing and Evaluations
 
+Updated 2026-09-20. [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) specifies the
+next coherent fictional feed/answer keys; [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md)
+governs outside samples. These proposed extensions are not current test results.
+
+Processing history/owner controls add Python account/cursor/read-only tests and
+27 independent Node cases, alongside 25 existing UI cases. Run both suites:
+
+```sh
+node --test tests/web_session.test.cjs tests/web_processing.test.cjs
+```
+
+The DOM harness covers same-key uncertain retries, double clicks, malformed
+responses, cancellation/completion races, stale account/session responses and
+history pagination. It is not browser/accessibility acceptance. The optional
+[visual fixture](PROCESSING_REVIEW_SCREEN.md) simulates jobs in memory; SQL tests
+and restore runs prove database durability separately. Exact verified counts and
+commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
+
 ## Durable processing jobs
 
 [ADR-030](adr/030_durable_recovery_jobs.md) adds API/worker/SQL tests for
@@ -46,7 +64,7 @@ is documented but no external corpus is part of current CI results.
 
 New suites cover the complete reviewed-rule REST lifecycle, bounded previews,
 competing activation/rollback, tenant/actor isolation and virtual-only effects.
-`node --test tests/web_session.test.cjs` checks 15 UI contracts. Local-model tests
+The two Node suites above check the local UI contracts. Local-model tests
 use fake responses exclusively; they test transport/schema/privacy boundaries, not
 classification accuracy. The separate [restore workflow](RESTORE_DRILL.md) performs
 an actual synthetic `pg_dump`/`pg_restore` with recovered content and RLS verification.
@@ -69,7 +87,7 @@ Retry bounds are checked over 15,015 combinations. These are
 bounded fault/pressure tests, not a multi-day load/soak test or live-provider proof.
 
 Targets below still need private-corpus and production-like testing. No live
-provider, malware sandbox, cloud restore or model evaluation is implied by unit tests.
+provider, malware scanner, cloud restore or model-quality evaluation is implied by unit tests.
 
 ## Test layers
 

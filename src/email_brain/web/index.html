@@ -19,6 +19,14 @@ Retries do not change your mailbox, run a model, display raw mail, or delete evi
 <div class="row"><input id="account-id" maxlength="36" required placeholder="Account UUID"><button>Check import</button></div></form>
 <div id="import-health" role="status"></div><div id="quarantine" aria-live="polite"></div>
 <button id="quarantine-more" hidden>More held messages</button></section>
+<section aria-labelledby="processing-title"><div class="row"><h2 id="processing-title">Isolated processing approvals</h2>
+<button id="processing-refresh" type="button">Refresh processing</button></div>
+<p>Use the account selected above. Refresh to load saved history and the configured parser; then choose an explicit approval beside a held message.
+No processing starts just by opening or refreshing this screen. Worker availability is unknown.</p>
+<div id="processing-health" role="status"></div>
+<div id="processing-jobs" aria-live="polite"></div>
+<button id="processing-more" type="button" hidden>More processing history</button>
+<p class="processing-note">History is a live view, not a frozen export. Each page shows up to 50 approvals. Refresh from the beginning to see new approvals and updated states.</p></section>
 <section><h2>Propose a project</h2><p>For example: “Make Melron a project.” Nothing is applied automatically.</p>
 <form id="project-form"><label for="project-name">Project name</label><input id="project-name" maxlength="120" required>
 <label for="project-reason">Why add it?</label><textarea id="project-reason" maxlength="2000" required></textarea>

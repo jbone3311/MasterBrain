@@ -27,6 +27,13 @@ the product sequence; these are buildable handoff tickets.
 | EB-020 | Retention/export/purge | Legal/owner policy; raw/derived/vector/cache deletion; backup aging; append-only audit with content minimization; tested completion certificate |
 | EB-021 | Review UI hardening | Auth/login, pagination, previews, full schema forms, keyboard/screen-reader tests, safe attachment download, no active email HTML |
 | EB-022 | Supply chain release gates | SBOM/license/advisory scans, digest-pinned images/actions, artifact signatures, tested dependency upgrades and rollback |
+| EB-023 | Believable known-answer test mailbox | Extend existing seeder with coherent threads/revisions, valid PDF/XLSX/CSV/DOCX/image/ICS bytes, seeded arrival/failure schedules and answer-key manifests; no live delivery; see [plan](TEST_MAILBOX_PLAN.md) |
+
+EB-021 now includes bounded processing history, explicit isolated approval/cancel,
+manual status and stale-context safeguards. Production login, actual browser/
+accessibility acceptance and broad review forms remain. EB-023 is planned, not
+implemented by researching sample datasets. Existing synthetic seeding/format
+fixtures are its starting point. Milestone ordering is in [ROADMAP.md](ROADMAP.md).
 
 ## What can proceed without owner answers
 

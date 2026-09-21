@@ -1,5 +1,10 @@
 # Rules and Feedback Control Plane
 
+Updated 2026-09-20. [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) explains
+knowledge, dynamic configuration and software changes in plain language. The
+working subset below is separate from the broader target policy. Processing
+approvals use the distinct [recovery-job contract](RECOVERY_JOBS.md), not rule activation.
+
 ## Working local subset
 
 [Reviewed sender rules](REVIEWED_RULES.md) now implement approved-rule simulation,

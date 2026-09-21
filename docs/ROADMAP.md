@@ -1,134 +1,114 @@
 # Roadmap
 
-EB-005 now has an opt-in encrypted filesystem backend, immutable SQL manifests,
-16 MiB preservation with explicit parser-budget quarantine and coordinated
-synthetic object/database restore checks. Next: hosted Blob/KMS, independent key
-recovery, hosted supervision for the approved isolated MIME job channel, and binary
-extraction. The worker recovers text/receipts, not PDF/Office/OCR content.
-See [storage contract](LARGE_EVIDENCE_STORAGE.md).
+Updated 2026-09-20. This delivery order supersedes the initial phase numbering;
+it does not grant new permissions. Dates depend on evidence and owner approvals,
+not optimistic calendar promises. [Backlog IDs](BACKLOG.md) remain stable.
 
-The roadmap is gated by verified outcomes. Dates depend on team size and provider approval; phases are sequential where safety requires it.
+## Current position
 
-Current progress: a bounded portion of Phases 0–2 is executable with synthetic
-data, including real PostgreSQL CI, attachment accounting/search and a review
-queue, bounded MIME quarantine and certified inventory recovery. No phase is
-complete: live sync, hosted object/key recovery, production identity
-and cloud setup remain gates. [BACKLOG.md](BACKLOG.md) is the concrete work queue.
-Tenant isolation starts now; Phase 7 expands sharing rather than retrofitting tenancy.
+The synthetic foundation is substantial: Fastmail worker/checkpoints, PostgreSQL
+RLS/FTS, immutable evidence, attachment receipts, narrow reviewed virtual rules,
+encrypted local objects, restricted MIME jobs and owner processing controls.
+Real PostgreSQL, actual restricted-container and disposable restore tests run in
+CI. No production phase is complete. Live enrollment, hosted identity/storage,
+worker supervision, binary extraction, operational acceptance and Factory bind remain.
 
-## Refined next-build order
+## Next build packages
 
-The read-worker library now has durable import/change checkpoints, fenced leases,
-query-churn restart, retries, quarantine and certified inventory recovery. The next
-gates, in dependency order:
+1. **Operator processing path:** explicit configuration/commands and supervision for
+   existing workers; bounded job scheduling, shutdown/restart, cancellation and
+   content-free health. The API never receives Docker authority.
+2. **Known-answer mailbox:** extend current generator with coherent scenarios,
+   real file formats, versioned manifests and failure/replay schedules (EB-023).
+3. **Binary intake:** isolate and scan selected PDF/Office/image formats, enforce
+   resource limits, retain receipts and prove known-answer extraction (EB-006).
+4. **Production foundation:** OIDC/grants, Azure adapters/private resources,
+   secrets/key recovery, enrollment, rate limits, audit and restore (EB-007–009).
+5. **Read-only acceptance:** owner-authorized disposable mailbox plus staging soak,
+   security/accessibility review and documented rollback before real mail.
 
-1. Validate the implemented human quarantine retry under extended soak; add
-   inventory retention policy, alerting and bulk historical reprocessing.
-2. Extend encrypted local storage to hosted Blob/KMS; deploy the approved isolated-MIME
-   job channel, add binary extraction and independent offsite/key recovery.
-3. Audited enrollment/recovery, scheduler/lag alerts, disposable-mailbox conformance.
-4. Production identity, member/account grants, infrastructure and restore acceptance.
-5. Persistent rules/state and evaluation-backed inference; then controlled actions.
+Some work can proceed independently. Provider conformance cannot be declared
+complete from local capture alone, and production deployment cannot precede identity.
 
-Do not promote on test count alone. Each gate needs failure injection, negative
-authorization tests, actual acceptance evidence and a documented rollback path.
+## Milestone 1 — Reproducible synthetic foundation
 
-## Phase 0 — Decisions and threat model
+Scope: preserve source, normalize/account for every part, durable cursors,
+search/evidence, owner review, forced RLS, replay and restore.
 
-Deliver:
+Current: implemented bounded slices; source/CI evidence is in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
-- Confirm tenant model, first provider/account, deployment region/provider, retention, and OAuth consent model.
-- Synthetic corpus and disposable provider accounts.
-- Threat model, data-flow diagram, dependency/license review, baseline metrics.
-- Repository scaffolding, CI, migrations, service interfaces, and decision log.
+Exit: locked tests reproducible; migration/grant negatives pass; crashed/replayed
+events cannot skip evidence; account isolation and restored hashes/search hold.
+No claim of live mail, model quality or hosted durability.
 
-Exit: security owner accepts boundaries; no unresolved choice blocks the vertical slice.
+## Milestone 2 — Independent read-only pilot
 
-## Phase 1 — Read-only vertical slice
+Scope: one provider (Fastmail engineering default, owner choice pending), approved
+enrollment/backfill, supervision, hosted Postgres/objects, recoverable keys,
+OIDC/MFA, current-owner access, rate limits, audit export and operator alerts.
+Selected document extraction either passes isolated acceptance or stays explicitly
+deferred under an approved pilot coverage policy.
 
-Deliver:
+Exit: disposable-mailbox bootstrap/change/expiry/reconciliation tests; multi-day
+bounded soak with restarts/outages; independent DB+object+key restore; private
+networking/authorization review; approved retention and incident owner. All real
+account use and paid resources require explicit approval.
 
-- One provider connector with bootstrap, incremental cursor, expiry recovery, reconciliation.
-- Immutable raw archive, MIME normalization, canonical messages/participants/threads.
-- Managed Postgres/RLS, FTS search, evidence API, audit, health metrics.
-- Replay/crash/idempotency tests and restore rehearsal.
+## Milestone 3 — Useful understanding and organization
 
-Exit: no skipped/duplicated messages across fault injection; top evidence can be inspected; cross-tenant tests pass.
+Scope: richer reviewed rules/protected classes, supported PDF/Office/OCR extraction,
+evaluated local candidates, relational people/projects/threads/obligations, temporal
+corrections and reversible merges. Keep lexical search and no-model operation.
 
-## Phase 2 — Deterministic organization
+Current: narrow virtual sender rules and fake-tested optional local adapter only.
 
-Deliver:
+Exit: held-out retrieval/extraction/classification results with sample sizes,
+abstention and error costs; evidence links valid; stale facts supersede correctly;
+rule rollback tested; no inference path can execute actions. A generated answer
+key is necessary but not a real-world quality certificate.
 
-- Rule DSL/versioning/simulation/trace.
-- Categories, canonical folder mappings, people/organizations/projects basics.
-- Read-only recommendations for `_GrokBot/Review`, `Review Delete`, and `Needs Reply`.
-- Correction and relevance-feedback capture.
+## Milestone 4 — Assistant and authorized team access
 
-Exit: offline precision targets met for review queues; no mailbox writes yet.
+Scope: REST-backed official MCP adapter, audience/scope-aware OAuth, explicit
+member/account/project grants, invitations/revocation and tested client support.
 
-## Phase 3 — Controlled mailbox actions
+Exit: Grok/ChatGPT/Claude compatibility recorded individually; no raw SQL/token
+passthrough; authorization before retrieval/cache candidates; revoked access cannot
+reappear through stale UI/caches; independent cross-tenant/resource tests pass.
 
-Deliver:
+## Milestone 5 — Controlled mailbox effects
 
-- Action preview, policy engine, approval, transactional outbox, executor, reconciliation.
-- Create labels/folders; label/move/flag/archive; draft creation where provider supports it.
-- Kill switch, per-account read-only mode, rollback/compensation, operator playbooks.
+Scope: previewed labels/folders/moves/flags/archive and provider drafts; separate
+executor/credentials, expiring exact-intent approval, outbox, kill switch and
+uncertain-outcome reconciliation. No automatic send/permanent deletion.
 
-Exit: duplicate/reordered/retried commands have one effect; bulk/high-risk actions cannot bypass approval; live testing confined to disposable mailboxes.
+Exit: separately approved ADR and disposable write-account tests; duplicate and
+out-of-order commands cannot bypass policy; ambiguous responses reconciled before
+retry; compensation limits shown to owner; every effect audited. Never promise
+universal exactly-once delivery or that sent mail can be unsent.
 
-## Phase 4 — Local inference
+## Milestone 6 — Measured expansion
 
-Deliver:
+Scope: durable Gmail/Graph/IMAP workers and notification lifecycles; hybrid
+FTS/vector retrieval if measured beneficial; approved remote inference with
+disclosure/retention/budget rules; optional encrypted local read cache.
 
-- Ollama or llama.cpp adapter, schema validation, extraction cache, model registry.
-- Classification, entity/request/obligation candidates, injection quarantine.
-- Gold-set harness, calibration, abstention, model/route dashboards.
-- Local embeddings only if retrieval evaluation justifies them.
+Exit: per-provider conformance; lexical-versus-hybrid comparison; permission-safe
+candidate retrieval; model version/quality/disclosure receipts; offline edge
+behavior and revocation tested. Do not add a graph database without measured need.
 
-Exit: measured quality/cost/latency thresholds; malformed or injected content cannot reach action credentials.
+## Continuous release gates
 
-## Phase 5 — State and Librarian
+- Every behavior change: ADR where required, implementation/tests/docs together,
+  migration compatibility, telemetry, rollback and exact-commit evidence.
+- Every dependency: pinned versions, license/provenance/advisory review and an
+  adapter escape hatch. SBOM/signature automation remains backlog work.
+- Every release: distinguish local skips, real DB tests, actual containers,
+  browser checks, live acceptance and soak. No promotion on test count alone.
+- Every dataset: provenance, privacy/rights, bounded offline execution, known
+  outcomes and separate development/test cases. [Test plan](TEST_MAILBOX_PLAN.md).
+- Every hosted operation: independent product identities, budgets, alert ownership,
+  retention/purge and tested recovery. Factory is not a runtime dependency.
 
-Deliver:
-
-- Temporal facts/evidence, identity resolution and reversible merges.
-- Thread/project/person briefs, obligations, decisions, waiting-on state.
-- Fact/rule/relationship proposals and review UI/API.
-- Rebuildable projections and correction propagation.
-
-Exit: sampled facts have valid evidence; stale/superseded facts behave correctly; reviewers can reverse merges/rules.
-
-## Phase 6 — Remote escalation and multi-provider
-
-Deliver:
-
-- Approved remote-model adapter with disclosure policy/redaction/cost limits.
-- Remaining Fastmail, Gmail, Microsoft, and iCloud connectors with conformance tests.
-- Hybrid retrieval/reranking and cross-account canonicalization.
-
-Exit: provider parity matrix passes; remote disclosure/audit verified; lexical-only degraded mode remains functional.
-
-## Phase 7 — Multi-user hardening
-
-Deliver:
-
-- Roles/resource grants/shared projects, invitation/revocation, tenant export/deletion.
-- Device-aware admin access, immutable audit export, SLOs/on-call, capacity tests.
-- Optional tenant-scoped encrypted edge replica.
-
-Exit: external security review, restore drill, load test, privacy/retention signoff, and zero cross-tenant findings.
-
-## Phase 8 — Carefully expanded automation
-
-Candidates only after longitudinal evidence:
-
-- Auto-apply safe metadata rules.
-- Time-limited `Review Delete` retention with explicit opt-in.
-- Calendar/task handoffs or additional data sources.
-- Graphiti/graph-engine pilot if relational temporal queries prove insufficient.
-
-Automatic sending and permanent deletion require separate product/security decisions; they are not implied by completing earlier phases.
-
-## Workstreams throughout
-
-Security/privacy, connector correctness, observability/cost, evaluation corpus, documentation/ADRs, dependency maintenance, user review experience, and recovery drills run in every phase.
+See [PRD](PRD.md) for numeric quality/SLO targets and [open choices](OPEN_QUESTIONS.md)
+for decisions that block live rollout but not safe synthetic implementation.

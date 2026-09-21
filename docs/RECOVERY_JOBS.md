@@ -26,7 +26,9 @@ move or label provider mail, call a model, scan malware or extract binary docume
 No daemon loop or secret enrollment is implied by `run_once`. A supervisor should
 invoke bounded iterations for explicitly configured accounts, respecting durable
 retry deadlines. Hosted identity, controller hosting, credential provisioning,
-supervision, UI job controls and operational acceptance remain work to do.
+supervision and operational acceptance remain work to do. The
+[owner processing screen](PROCESSING_REVIEW_SCREEN.md) now supplies explicit
+approvals, cancellation and reloadable bounded history.
 
 ## API contract
 
@@ -35,6 +37,7 @@ supervision, UI job controls and operational acceptance remain work to do.
 | `GET /v1/accounts/{account}/processing` | owner + evidence scope | `enabled`, `parser_version`, `worker_online: null` |
 | `POST /v1/accounts/{account}/quarantine/{receipt}/jobs` | human owner + review/evidence scopes | 202, bounded job status |
 | `GET /v1/accounts/{account}/processing/{job}` | owner + evidence scope | durable status |
+| `GET /v1/accounts/{account}/processing/jobs` | owner + evidence scope | newest-first live history, up to 50 jobs/page |
 | `POST /v1/accounts/{account}/processing/{job}/cancel` | human owner + review/evidence scopes | cancelled status, or unchanged terminal result |
 
 Approval body contains only `expected_parser_version`; the `Idempotency-Key` header

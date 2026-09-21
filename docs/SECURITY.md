@@ -1,6 +1,17 @@
 # Security
 
+Updated 2026-09-20. Current prototype controls are identified below; production
+requirements are not claims of completed deployment or compliance. Public sample
+files remain untrusted and unadopted; follow [fixture policy](PUBLIC_EMAIL_TEST_DATA.md).
+No realistic-feed proposal authorizes external delivery or private-data disclosure.
+
 ## New local prototype boundaries
+
+[Owner processing controls](PROCESSING_REVIEW_SCREEN.md) validate response
+identifiers, account/parser binding and fixed states before displaying actions.
+Credential/account/view changes invalidate pending responses and old callbacks.
+History cursors resolve within the authorized account; only public job fields
+leave SQL. No raw content, lease authority or browser-persisted credentials are added.
 
 [Durable recovery approvals](RECOVERY_JOBS.md) are bounded one-hour, single-source,
 exact-parser grants, not saved bearer credentials. Workers require a separate

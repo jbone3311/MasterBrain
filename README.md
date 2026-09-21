@@ -1,95 +1,98 @@
 # CW-EmailBrain
 
-Private, multi-user, evidence-first email intelligence infrastructure.
+An independent, code-first intelligence layer over email. Preserve messages once,
+make them searchable with evidence, and let assistants propose useful changes
+without handing them the keys to the mailbox.
 
-Email Brain incrementally synchronizes supported mail providers, preserves immutable evidence, performs deterministic classification and retrieval, and exposes bounded API/MCP interfaces to Grok, ChatGPT, Claude, and other clients. Models propose structured interpretations; policy-controlled code owns authorization and mailbox effects.
+**Status: working synthetic-data prototype, not a hosted or live-mail product.**
+The repository contains executable ingestion, PostgreSQL search, review and
+recovery code. Live enrollment, production identity, document extraction,
+supervision and acceptance testing remain launch requirements. No real mailbox,
+paid cloud resource or remote model is enabled by this repository.
 
-## Repository status
+## Understand the product
 
-This repository is an **executable, synthetic-data-only prototype**, not a production
-mail service. It includes:
+- [Game plan](docs/GAME_PLAN.md): the finished product and how we get there.
+- [Features and methods](docs/FEATURES_AND_METHODS.md): workflows, implementation and limits.
+- [Implementation status](docs/IMPLEMENTATION_STATUS.md): working capabilities versus launch gates.
+- [Roadmap](docs/ROADMAP.md): dependency-ordered milestones and measurable exits.
+- [Test mailbox plan](docs/TEST_MAILBOX_PLAN.md): believable conversations, real attachment formats and answer keys.
+- [Documentation directory](docs/README.md): complete product, engineering and operations pack.
 
-- the full product and architecture pack in [`docs/`](docs/README.md);
-- Factory-facing product and agent contracts;
-- a dependency-light Python domain core;
-- a safe declarative rule evaluator with tests;
-- connector and event contracts;
-- PostgreSQL tenant/RLS migrations, atomic ingestion, immutable evidence versions,
-  full-text search, attachment receipts and bounded plain-text extraction;
-- bounded calendar-invitation source extraction and realistic synthetic attachment
-  format tests across all four provider read boundaries;
-- expiring tenant-bound bootstrap credentials, REST API and a small owner review UI;
-- idempotent typed proposals and optimistic-concurrency human review;
-- human-reviewed sender rules with bounded simulation, explicit activation,
-  immutable revision history, rollback and virtual search labels;
-- a read-only Fastmail HTTP transport and resumable worker library with fenced leases,
-  certified inventory reconciliation, expired-history recovery, incremental changes,
-  bounded retries, durable MIME quarantine and owner-scoped processing status;
-- resumable fictional-inbox seeding with varied mail and attachments;
-- offline-tested Gmail/Graph read libraries and an injected-session IMAP contract
-  (not live connectors or durable provider workers yet);
-- owner import-health and held-message review with bounded metadata-only paging,
-  explicit human retry, immutable attempt history and parser-versioned evidence;
-- opt-in loopback Ollama classification library with fake-response tests and
-  model-digest checks (no daemon contacted or model enabled by default);
-- a disposable PostgreSQL logical backup/restore drill workflow;
-- opt-in encrypted raw objects up to 16 MiB, atomic database manifests and
-  coordinated object/database restore checks; large mail remains held until a
-  trusted worker explicitly recovers it ([storage contract](docs/LARGE_EVIDENCE_STORAGE.md));
-- image-bound, resource-limited [isolated MIME recovery](docs/ISOLATED_MIME_RECOVERY.md)
-  for bounded body/plain/calendar text in large mail; no binary extraction or API Docker access;
-- opt-in [durable processing jobs](docs/RECOVERY_JOBS.md), human-approved through the
-  API, with leased worker claims, cancellation, bounded retries and atomic completion;
-- locked dependencies, CI with a real PostgreSQL service, and a repository gate.
+## What works now
 
-It does **not** connect to your mail, send anything, change folders, delete mail,
-apply non-rule proposals, or deploy paid cloud resources. Rules affect only virtual
-labels inside Email Brain, never the mailbox. Hosted OIDC, full team
-permissions, binary attachment extraction, provider enrollment, and production
-operations remain launch gates. See [implementation status](docs/IMPLEMENTATION_STATUS.md).
+| Area | Executable prototype |
+|---|---|
+| Ingest | Fastmail worker library; synthetic HTTP-to-Postgres tests; atomic checkpoints, fenced leases, quarantine and inventory reconciliation |
+| Preserve | Immutable raw/evidence versions; bounded inline MIME; opt-in encrypted local objects up to 16 MiB |
+| Search | PostgreSQL FTS over messages and supported text/calendar attachments, with stable evidence references |
+| Review | Owner-only local UI: search, proposals, virtual sender rules, held mail, processing history/approval/cancellation |
+| Recover | Human-authorized retries and separate restricted MIME worker; bounded jobs, expiry, cancellation and atomic results |
+| Isolate | Tenant RLS, ownership constraints, scoped expiring bootstrap credentials and negative authorization tests |
+| Test | Fictional inbox seeding, actual synthetic attachment bytes, mocked provider contracts, real PostgreSQL CI and disposable SQL/object restore drills |
 
-## Start here
+Gmail and Graph have offline-tested read libraries; IMAP has an injected-session
+contract. They are **not yet durable live connectors**. The optional Ollama library
+is candidate-only, tested with fake responses and not wired into ingestion.
+Vectors, people/project/obligation projections, MCP, provider drafts, moves,
+sending and deletion are not implemented.
 
-[Executive review](docs/EXECUTIVE_REVIEW.md) · [Build receipt](docs/BUILD_RECEIPT.md) ·
-[Factory intake review](docs/FACTORY_INTAKE_REVIEW.md) ·
-[Hosting recommendation](docs/HOSTING_DECISION.md) · [Open decisions](docs/OPEN_QUESTIONS.md)
+`_GrokBot/Review Delete` is a virtual search label—not a provider folder or deletion
+queue. Processing completion does not mean PDF/Office extraction succeeded;
+every attachment has its own outcome.
 
-The worker is exercised through synthetic HTTP → PostgreSQL tests, not a real
-mailbox. See [worker contract and recovery limits](docs/READ_WORKER.md).
+## How the design works
 
-```bash
-uv sync --locked --extra dev
-uv run pytest -q
-uv run ruff check .
-uv run mypy src
-uv run python scripts/deployment_gate.py
+```text
+Provider changes -> preserve evidence -> parse/account for every part -> search
+                                              |
+                               rules first; optional model candidates later
+                                              |
+Assistant/user request -> typed proposal -> policy + human review -> versioned change
 ```
 
-The PostgreSQL tests require a disposable database named `email_brain_test*` and
-`EMAIL_BRAIN_TEST_ADMIN_DSN`; CI provides it. Local absence is reported as skipped,
-never as database verification. Start the synthetic demo using [LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md).
+Future mailbox effects use a separate approved executor. Email and model output
+cannot authorize tools or account access. Factory governs development; the deployed
+product must not depend on Factory or Jim's computer running.
 
-For available application commands:
+## Hosting direction
 
-```bash
+Prefer the same Azure billing home as RealEstateOS, with **separate Email Brain
+resources and permissions**: API/workers, private managed PostgreSQL, private Blob
+storage, managed identities and Key Vault. This is not a deployment or a requirement
+to use Microsoft mail/SharePoint. Keep live databases, secrets, objects and model
+caches outside Dropbox. See [hosting](docs/HOSTING_DECISION.md).
+
+## Run and verify
+
+[Local development](docs/LOCAL_DEVELOPMENT.md) explains disposable PostgreSQL,
+private credentials, synthetic seeding and loopback-only serving.
+
+```sh
+uv sync --locked --extra dev
+uv run ruff check .
+uv run mypy src
+uv run pytest -q
+node --test tests/web_session.test.cjs tests/web_processing.test.cjs
+uv run python scripts/deployment_gate.py
+uv run python scripts/check_docs.py
 uv run email-brain --help
 ```
 
-## Binding documents
+PostgreSQL tests need a disposable `email_brain_test*` database and
+`EMAIL_BRAIN_TEST_ADMIN_DSN`; CI supplies it. Local skips are not passes.
+See the [build receipt](docs/BUILD_RECEIPT.md) for exact tested commits and limits.
 
-1. [`PRODUCT.md`](PRODUCT.md)
-2. [`AGENTS.md`](AGENTS.md)
-3. [`docs/SECURITY.md`](docs/SECURITY.md)
-4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-5. [`docs/DECISIONS.md`](docs/DECISIONS.md)
-6. [`docs/FACTORY_HANDOFF.md`](docs/FACTORY_HANDOFF.md)
+## For the implementation team
 
-When these conflict, security invariants and explicit accepted ADRs win. A behavioral change requires documentation and test updates in the same pull request.
+[Code map](docs/CODE_MAP.md) · [Factory handoff](docs/FACTORY_HANDOFF.md) ·
+[Backlog](docs/BACKLOG.md) · [Open decisions](docs/OPEN_QUESTIONS.md)
 
-## First vertical slice
+Read [PRODUCT.md](PRODUCT.md), [AGENTS.md](AGENTS.md), security, architecture and
+accepted [ADRs](docs/DECISIONS.md) before changing behavior. Security invariants and
+explicit accepted ADRs govern conflicts. Update implementation, tests, migrations,
+rollback notes and documentation together.
 
-Implement one read-only provider connector through immutable evidence, normalization, PostgreSQL/RLS, lexical search, replay tests, metrics, and restore verification. Models, vectors, and mailbox writes are later increments.
-
-## Data warning
-
-Never commit real messages, credentials, OAuth tokens, database dumps, vectors derived from private mail, or unsanitized fixtures. Use synthetic test data only.
+Private proprietary product; dependency licenses remain separate. Never commit
+real messages/attachments, credentials, dumps or private embeddings. Committed/CI
+mail fixtures are synthetic only. Public samples require the [adoption gate](docs/PUBLIC_EMAIL_TEST_DATA.md).

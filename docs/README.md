@@ -1,9 +1,32 @@
 # Email Brain / Email OS
 
 Status: target architecture plus an executable bounded prototype  
-Research reviewed: 2026-09-19
+Documentation reviewed: 2026-09-20; source health measurements retain their own dates.
 
-Email Brain is a private, multi-user intelligence layer over email. It continuously synchronizes mail, normalizes and indexes it once, maintains people/project/thread/obligation state, and gives Grok, ChatGPT, Claude, or another client small evidence-backed answers instead of entire mailboxes. Repeated judgments are compiled into reviewed data-driven rules so the system becomes cheaper and more deterministic over time.
+Email Brain's target is a private, multi-user intelligence layer that synchronizes
+mail, maintains people/project/thread/obligation state and gives assistants bounded
+evidence instead of whole mailboxes. The current prototype implements only a
+bounded portion: synthetic ingestion/search, review, virtual rules and recovery.
+
+## Reading paths
+
+- **Owner:** [game plan](GAME_PLAN.md), [features/methods](FEATURES_AND_METHODS.md),
+  [status](IMPLEMENTATION_STATUS.md), [hosting](HOSTING_DECISION.md), [open choices](OPEN_QUESTIONS.md).
+- **Builder/Factory:** [code map](CODE_MAP.md), [handoff](FACTORY_HANDOFF.md),
+  [architecture](ARCHITECTURE.md), [ADRs](DECISIONS.md), [roadmap](ROADMAP.md), [backlog](BACKLOG.md).
+- **Tester:** [test mailbox plan](TEST_MAILBOX_PLAN.md), [local run](LOCAL_DEVELOPMENT.md),
+  [coverage](TEST_COVERAGE_MATRIX.md), [evaluation](TESTING_AND_EVALS.md), [receipts](BUILD_RECEIPT.md).
+- **Operator/security reviewer:** [security](SECURITY.md), [deployment](DEPLOYMENT.md),
+  [runbook](OPERATIONS_RUNBOOK.md), [restore](RESTORE_DRILL.md), [processing controls](PROCESSING_REVIEW_SCREEN.md).
+
+## How to read status claims
+
+The PRD and target sections describe requirements, not shipped integrations.
+Implementation status describes local/CI behavior. Build receipts tie validation
+to exact commits and retain historical results without rewriting them as current.
+Accepted ADRs may supersede earlier boundaries; the latest applicable decision
+wins, subject to security invariants. A planning choice is not cloud provisioning,
+an SDK contract is not live acceptance, and an approved proposal is not execution.
 
 ## Executive architecture review
 
@@ -72,6 +95,14 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 
 | Document | Purpose |
 |---|---|
+| [GAME_PLAN.md](GAME_PLAN.md) | Finished experience, delivery sequence and release bar |
+| [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) | Feature-by-feature methods and current limitations |
+| [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
+| [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) | Proposed realistic fictional feed, attachment formats and answer keys |
+| [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md) | External corpus shortlist and adoption gates |
+| [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Authoritative current capability boundaries |
+| [BUILD_RECEIPT.md](BUILD_RECEIPT.md) | Exact-commit verification, historical results and explicit limits |
+| [PROCESSING_REVIEW_SCREEN.md](PROCESSING_REVIEW_SCREEN.md) | Current owner processing workflow and safety semantics |
 | [PRD.md](PRD.md) | Users, scope, requirements, metrics |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Components, flows, boundaries, invariants |
 | [SECURITY.md](SECURITY.md) | Threat model and controls |

@@ -7,6 +7,20 @@ It does not mean adopting Microsoft mail, SharePoint, or Microsoft-only software
 Actual account ownership, subscription, region and budget still need confirmation;
 no paid deployment or cloud configuration has been performed.
 
+One billing home does not mean one shared application, one permission set, or no
+provider consent. Email Brain keeps separate identities/resources and remains
+independent. Entra authentication does not replace account/resource authorization.
+Do not inherit RealEstateOS's SharePoint/mailbox choices as Email Brain requirements.
+
+If remote inference is later approved, evaluate available models through the
+existing Azure subscription before adding a second cloud solely for inference.
+Microsoft documents Claude through Foundry, with model-specific hosting/billing
+distinctions. This is not a blanket single-processor or zero-retention guarantee:
+review the exact deployment/terms and rerun quality evaluation. No model subscription
+is created by this recommendation.
+([Claude in Foundry](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models),
+[App Service identity versus authorization](https://learn.microsoft.com/en-us/azure/app-service/configure-authentication-provider-aad))
+
 ## Consolidated Azure shape
 
 - Container Apps for the API and separately scoped read workers; it supports API

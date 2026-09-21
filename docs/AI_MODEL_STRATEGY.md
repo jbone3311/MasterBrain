@@ -1,5 +1,10 @@
 # AI Model Strategy
 
+Updated 2026-09-20. Current implementation is the opt-in, candidate-only
+[Ollama library](LOCAL_MODEL_RUNTIME.md), tested with fake responses and not wired
+into ingestion. No real-model quality result, embedding index or remote adapter
+is claimed. All broader tasks below are requirements for evaluated future work.
+
 ## Policy
 
 Every inference task has an escalation ladder:

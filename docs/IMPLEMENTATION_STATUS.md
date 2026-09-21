@@ -7,17 +7,24 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 |---|---|---|
 | Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks; verified synthetic logical dump/restore | Managed deployment, encryption/KMS, purge, offsite/PITR disaster-recovery drills |
 | Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/scheduler, hosted processing supervision, live acceptance and soak |
-| Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting, UI job controls and retention/purge |
+| Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
 | Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, sandboxed PDF/Office/OCR/archive extraction; versioned historical reprocessing and raw download policy |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
 | Feedback | Typed proposals; human-reviewed sender rule simulation/activation; immutable revisions and rollback; virtual search labels | Rich predicates/protected-sender configuration, temporal/entity application, drift evaluation |
 | Providers | Fastmail durable worker; offline-tested Gmail/Graph read transports and injected-session IMAP contract | All live enrollment/acceptance; Gmail/Graph/IMAP durable database workers and notification ingress |
 | Models | Opt-in loopback Ollama library; installed-digest checks; bounded fake-server/output tests; code-first candidate routing | Actual isolated runtime/quality evaluation, durable receipts/cache, remote disclosures/budgets |
-| UI | Local search/evidence/proposals, rule preview/activation/rollback, account health and explicit held-message retry; session/account race protection; 25 Node contracts and prior synthetic browser smoke | Production login, bulk historical reprocessing, full accessibility and live-data acceptance |
+| UI | Local search/evidence/proposals, rule preview/activation/rollback, account health, held-message retry, processing history/approval/cancellation; session/account/view race protection | Production login, bulk historical reprocessing, full browser/accessibility and live-data acceptance |
 | MCP | Planned typed REST-backed surface | Official SDK adapter, OAuth, actual client compatibility matrix |
 | Actions | No executable sending/deletion/mailbox-write path | Separate action ADR, preview/approval/outbox/reconciliation and disposable-account tests |
 | Factory | Architecture/intake mapping and Product handoff | Registration, hooks, clean sibling checkout, bind PASS and independent Factory audit |
+| Test data | Resumable fictional seeding, actual synthetic attachment bytes and mocked provider formats | Coherent known-answer continuous feed, selected external fixture approval and live replay; see [test mailbox plan](TEST_MAILBOX_PLAN.md) |
+
+The current source includes ADR-031/migration 0011 processing history and owner
+controls. Exact verification is recorded separately in [BUILD_RECEIPT.md](BUILD_RECEIPT.md);
+do not apply historical counts to a newer commit. Generic project/fact proposals
+do not create entities. Virtual labels do not change provider folders. A configured
+parser does not certify an online worker, and a completed job can have deferred attachments.
 
 ## Validation
 

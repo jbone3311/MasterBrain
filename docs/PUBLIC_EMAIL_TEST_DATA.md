@@ -6,6 +6,33 @@ were downloaded, vendored, replayed or used to claim a passing test in this revi
 Only publisher documentation, repository directory listings and license information
 were inspected. Links to moving branches below are discovery links, not approved pins.
 
+For the proposed believable continuous feed, use [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md).
+Its primary strategy is known-answer fictional scenarios plus selected public
+format references—not random real correspondence imported into the repository.
+
+## Additional file collections and test tools
+
+- [Apache Tika Office/email fixtures](https://github.com/apache/tika/tree/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-microsoft-module/src/test/resources/test-documents):
+  parser regression references, subject to per-file provenance/rights review.
+- [EDRM file-format dataset](https://edrm.net/resources/data-sets-2/): publisher lists
+  381 files across 200 formats including Excel, Word and PST. This is not evidence
+  that the old attachment-inclusive Enron archive is currently downloadable.
+- [Govdocs1](https://digitalcorpora.org/corpora/file-corpora/files/): varied documents
+  and smaller subsets; publisher explicitly warns of malware. Do not bulk-download
+  into Dropbox or open in desktop document applications. Isolated selected-file
+  evaluation requires a separate approved collection/execution boundary.
+- [Faker](https://faker.readthedocs.io/en/master/) supplies fictional data components;
+  it does not create coherent email threads or valid PDFs by itself.
+- [Mailpit](https://mailpit.axllent.org/docs/) captures SMTP/MIME and exposes a test
+  API, not a JMAP/IMAP/Gmail/Graph sync implementation or realistic-content feed.
+  Keep optional relay/forward/link-check features disabled in offline tests.
+- [Mailosaur](https://mailosaur.com/docs/email-testing/sending-from-mailosaur) is a
+  commercial test service, including attachment-bearing mail to verified addresses.
+  [Mockaroo](https://www.mockaroo.com/) is a data-generation service. Neither is
+  required for local development, subscribed to, or approved for private data.
+
+These are researched candidates, not installed dependencies or approved fixtures.
+
 ## Decision for the current build
 
 Keep committed and CI fixtures synthetic under [AGENTS.md](../AGENTS.md). Use

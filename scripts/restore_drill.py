@@ -451,6 +451,12 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
     for current, foreign in ((tenants[0], tenants[1]), (tenants[1], tenants[0])):
         ctx = current.context
         jobs = RecoveryJobs(store, SyntheticRestoreProcessor.parser_version)
+        history = jobs.list(ctx, current.account_id)
+        require(
+            [row["id"] for row in history["results"]] == list(reversed(current.job_ids))
+            and history["next_after"] is None,
+            "restored processing history changed",
+        )
         for job_id, expected in zip(
             current.job_ids, ("completed", "cancelled", "queued"), strict=True
         ):

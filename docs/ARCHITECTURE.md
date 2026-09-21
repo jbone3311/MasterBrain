@@ -1,6 +1,17 @@
 # Architecture
 
+Updated 2026-09-20. [CODE_MAP.md](CODE_MAP.md) maps executable modules;
+[FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) explains the owner workflows.
+Sections titled logical components, flows and reliability patterns describe the
+target architecture; not every component is implemented. Current boundaries are
+explicit in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+
 ## Latest executable additions
+
+[Owner processing review](PROCESSING_REVIEW_SCREEN.md) exposes durable history,
+explicit isolated approvals and cancellation through the existing scoped API.
+All-state history is indexed by immutable time/ID; UI controls are bound to
+session/account/view and parser. No background browser polling or automatic approval.
 
 [Durable recovery jobs](RECOVERY_JOBS.md) connect an opt-in approval/status API to
 the restricted worker. One-hour grants, leased bounded retries, cancellation and
@@ -110,7 +121,12 @@ authenticated request
 
 ## Rollback
 
-Code/config deployments use normal version rollback and backward-compatible migrations. Rule versions are immutable; activating a new version records a pointer, and rollback restores the prior pointer then produces compensating mailbox actions where the provider supports them. Facts are superseded, not overwritten. Generated drafts can be removed; sent mail cannot be unsent, which is why sending remains a human decision.
+Current rule rollback appends a new immutable revision containing the prior rules;
+it does not edit historical rows or move mail. Current migrations are forward-only
+and checksum-verified: stop incompatible workers and use documented forward repair
+or an explicitly tested restore, not an assumed downgrade. Future provider effects
+need separately approved compensating commands where supported. Facts will be
+superseded rather than overwritten; sending is not reliably reversible.
 
 ## Scale assumptions
 

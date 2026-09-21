@@ -1,5 +1,10 @@
 # Deployment
 
+Updated 2026-09-20. [GAME_PLAN.md](GAME_PLAN.md) explains the delivery stages.
+Migration 0011 adds the owner history index; ship compatible API/assets together
+and account for index-build locking. Hiding controls does not cancel existing
+approvals. The production topology below is planned, not provisioned.
+
 The optional [isolated MIME controller](ISOLATED_MIME_RECOVERY.md) is a separate
 trusted-worker privilege. Do not add the Docker socket to the API image/deployment.
 The [durable job channel](RECOVERY_JOBS.md) adds explicit bootstrap approvals and
@@ -60,7 +65,7 @@ Versioned, encrypted buckets with public access blocked, tenant-derived prefixes
 
 ## Local processing and replicas
 
-Two supported modes:
+Two planned modes (neither is a deployed service):
 
 1. **Hosted inference:** local-model runtime inside the private deployment. Simplest operations, still avoids third-party model disclosure.
 2. **Trusted edge inference:** an always-on owner device pulls encrypted, tenant-scoped jobs over mutually authenticated outbound connections and returns schema-validated results. No inbound home port. Jobs and results are signed/replay-protected.
@@ -71,9 +76,12 @@ An encrypted SQLite replica may provide offline search on an authorized device. 
 
 - `dev`: synthetic mail only; local containers allowed.
 - `staging`: synthetic/reversible provider test accounts; production-like auth/RLS/networking.
-- `prod`: separate cloud account/project, KMS keys, database, OAuth apps, buckets, and model credentials.
+- `prod`: isolated resources/identities, keys, database, OAuth apps and storage.
+  A separate Azure subscription is an optional stronger boundary, not a requirement
+  to sign up with another vendor. Sharing billing never implies shared data access.
 
-No production data copies to development. Sanitized fixtures require an explicit irreversible process and review.
+No production data copies to development. Committed/CI fixtures stay synthetic.
+Any external-data exception requires the explicit [adoption gate](PUBLIC_EMAIL_TEST_DATA.md).
 
 ## Delivery
 
@@ -91,7 +99,11 @@ No production data copies to development. Sanitized fixtures require an explicit
 
 ## Minimum sizing
 
-Start small: 2 API instances, independently scaled worker pools, managed Postgres with enough RAM for hot FTS/indexes, and one local inference worker sized after benchmarks. Autoscale queue-bound stateless workers; cap model concurrency and provider rate. Measure before partitioning.
+For a production availability objective, evaluate two API replicas plus separately
+scaled workers and Postgres sized for the measured corpus/indexes. A single-instance
+synthetic pilot is not a high-availability commitment. Do not buy a GPU or provision
+a model worker before quality/capacity benchmarks. Cap concurrency and provider
+rate, price the whole region-specific topology, and measure before partitioning.
 
 ## Configuration
 

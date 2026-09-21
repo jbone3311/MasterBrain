@@ -1,5 +1,21 @@
 # Product Requirements Document
 
+Updated 2026-09-20. This is the ultimate product contract, not an implemented
+feature list. [Features/methods](FEATURES_AND_METHODS.md) maps each requirement to
+current behavior; [status](IMPLEMENTATION_STATUS.md) identifies remaining gates.
+
+## Release boundaries
+
+- **Current prototype:** synthetic read/search/evidence/review, narrow virtual
+  sender rules, bounded attachment handling and durable recovery API/UI/libraries.
+- **First live release:** one explicitly enrolled read-only provider, hosted
+  identity/storage/supervision, safe processing policy, recovery and operator acceptance.
+- **Later capabilities:** evaluated state/inference, team grants/MCP and separately
+  approved mailbox effects. No automatic send or permanent delete in the initial release.
+
+Use [GAME_PLAN.md](GAME_PLAN.md) for owner intent and [ROADMAP.md](ROADMAP.md)
+for the current dependency order. Numeric quality/SLO goals below are targets.
+
 ## Product statement
 
 Email Brain turns multiple mailboxes into a secure, searchable, current operating memory while keeping repetitive work in deterministic code. It is a service beneath assistants, not another assistant that rereads mail.
@@ -89,5 +105,10 @@ Initial targets must be validated against a labeled private corpus:
 Autonomous send/delete, calendar/task writes, organization-wide eDiscovery, legal retention policy automation, attachment OCR for every format, and specialized graph infrastructure.
 
 ## Launch gates
+
+A repeatable [fictional mailbox](TEST_MAILBOX_PLAN.md) must cover coherent threads,
+real attachment bytes, revisions, failures and known answers. Count a deferred PDF
+as deferred—not successful extraction. Generated scenarios supplement, not replace,
+authorized disposable-provider, model-quality, security, accessibility and soak testing.
 
 See [ROADMAP.md](ROADMAP.md) and [TESTING_AND_EVALS.md](TESTING_AND_EVALS.md). No phase advances on demo quality alone; replay, tenant isolation, rollback, and recovery evidence are required.

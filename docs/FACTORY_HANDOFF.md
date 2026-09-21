@@ -6,10 +6,17 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest increment: [durable recovery jobs](RECOVERY_JOBS.md), migration 0010,
+Latest increment: [owner processing controls](PROCESSING_REVIEW_SCREEN.md),
+migration 0011 history index, bounded owner/account history, explicit approval and
+cancellation, uncertain-request idempotency and stale-view fencing. Review actual
+code through [CODE_MAP.md](CODE_MAP.md); read [GAME_PLAN.md](GAME_PLAN.md) and
+[FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) for intent. The proposed
+[realistic test feed](TEST_MAILBOX_PLAN.md) is not yet a continuous generator/service.
+
+Previous increment: [durable recovery jobs](RECOVERY_JOBS.md), migration 0010,
 explicit human approval API, cancellation, worker leases and atomic fenced results.
 Review the privileged read-only SQL locking helper, approval lifetime and controller
-separation before rollout. Hosted identity/supervision and UI job controls remain.
+separation before rollout. Hosted identity/supervision remain.
 
 Previous increment: [isolated large-MIME recovery](ISOLATED_MIME_RECOVERY.md), using
 approved local image IDs, resource/output limits and image-bound immutable evidence.
@@ -61,9 +68,9 @@ Build the smallest secure vertical slice of Email Brain while preserving the bou
 14. `ROADMAP.md`
 15. `DECISIONS.md`
 
-## First implementation epic
+## Existing foundation: preserve, do not re-scaffold
 
-Choose one provider and deliver:
+The bounded synthetic Fastmail path already implements much of this sequence:
 
 ```text
 incremental read-only sync
@@ -75,39 +82,18 @@ incremental read-only sync
 -> backup restore proof
 ```
 
-No model, vector index, mailbox write, or broad MCP tool is required for the first success. Those are later vertical increments.
+Do not interpret this as a blank-slate assignment. Complete operator supervision,
+safe document extraction, known-answer scenarios and the production foundations
+in [ROADMAP.md](ROADMAP.md). No model, vector index or mailbox-write privilege is
+needed to prove the initial read-only service.
 
 ## Repository shape
 
-```text
-email-brain/
-  AGENTS.md
-  README.md
-  docs/adr/
-  src/email_brain/
-    api/
-    auth/
-    connectors/
-    evidence/
-    normalization/
-    rules/
-    retrieval/
-    inference/
-    librarian/
-    actions/
-    storage/
-    observability/
-  migrations/
-  tests/
-    unit/
-    contract/
-    replay/
-    security/
-    evals/
-    fixtures/synthetic/
-  deploy/
-  scripts/
-```
+Use the linked [actual file map](CODE_MAP.md). The runtime currently uses modules
+such as `api.py`, `store.py`, `sync.py`, `recovery_jobs.py`, `connectors/`, `rules/`
+and `web/`; there are no implemented `librarian/` or `actions/` services. Tests
+are in the existing flat `tests/` tree. Do not create duplicate modules based on
+the original aspirational directory layout.
 
 ## Required engineering practices
 
@@ -118,7 +104,8 @@ email-brain/
 - Transactional inbox/outbox, idempotency keys, explicit state machines, worker leases.
 - Synthetic fixtures only in Git; production data never copied to CI/dev.
 - Provider/model/storage adapters have contract tests and fake implementations.
-- Security-sensitive changes require review; dependency licenses/SBOM checked in CI.
+- Security-sensitive changes require review. Dependency license/SBOM/advisory and
+  signature automation is a required release gate, not currently complete in CI.
 
 ## Pull-request gates
 
@@ -165,6 +152,11 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 - Do not expose SQL, raw object storage, provider tokens, or unrestricted URL fetching through MCP.
 - If an invariant must change, propose an ADR and update the relevant documents/tests before implementation.
 
-## Suggested kickoff issue
+## Suggested next issue
 
-> Implement a read-only connector-to-search vertical slice for the selected provider. Use synthetic/disposable test data, immutable raw evidence, idempotent incremental synchronization, PostgreSQL RLS, lexical retrieval, evidence citations, reconciliation, audit, metrics, and restore verification. Exclude models, vectors, and mailbox writes. Demonstrate crash recovery and tenant isolation in automated tests.
+> Complete the explicitly configured operator/supervisor path for existing read and
+> processing workers. Preserve human approval, lease/source/authorization fences,
+> bounded retries and no-mailbox-write behavior. Add restart/shutdown and health
+> tests. In a separate work package extend the existing synthetic corpus into
+> known-answer threaded scenarios with actual attachment formats (EB-023). Do not
+> enroll accounts, provision cloud services or mutate Factory without approval.

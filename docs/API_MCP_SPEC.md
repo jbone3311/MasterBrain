@@ -1,6 +1,16 @@
 # API and MCP Specification
 
+Updated 2026-09-20. Implemented REST sections below map to [api.py](../src/email_brain/api.py).
+MCP, entity/state and action examples are target contracts, not callable tools.
+No Grok/ChatGPT/Claude end-to-end connection is certified by this specification.
+See [status](IMPLEMENTATION_STATUS.md) and [features/methods](FEATURES_AND_METHODS.md).
+
 ## Durable isolated processing jobs
+
+[Processing history and owner controls](PROCESSING_REVIEW_SCREEN.md) add
+`GET /v1/accounts/{account_id}/processing/jobs`, before the dynamic job-ID route.
+Owner/evidence scope, limit 1–50, same-account UUID cursor, immutable time/ID order;
+unknown/foreign anchors return 404. Public projection only; no new execution scope.
 
 The opt-in [processing-job API](RECOVERY_JOBS.md) supports human approval, bounded
 status and cancellation. The operator fixes the exact parser version at startup.
@@ -68,7 +78,9 @@ object access or resume/reprocess capability is exposed.
 
 ## Implemented bootstrap surface (v0.1)
 
-The rest of this document is the target contract. The actual bounded service exposes:
+The actual bounded service exposes the additions above, the rule routes in
+[REVIEWED_RULES.md](REVIEWED_RULES.md), and the core routes below. Sections after
+the bootstrap examples describe the target, not implemented MCP/actions:
 
 | Method/path | Required scope | Behavior |
 |---|---|---|
