@@ -125,18 +125,18 @@ def _finite_float(value: str) -> float:
 def _response_json(response: httpx.Response, started: float) -> dict[str, Any]:
     if response.headers.get("Content-Encoding", "identity").lower() != "identity":
         raise GmailProtocolError("compressed responses are not supported")
-    parts: list[bytes] = []
+    body = bytearray()
     count = 0
-    for chunk in response.iter_bytes(chunk_size=65536):
+    for chunk in response.iter_bytes():
         if time.monotonic() - started > 30:
             raise GmailUnavailable("provider response deadline exceeded")
         count += len(chunk)
         if count > MAX_JSON_BYTES:
             raise GmailProtocolError("provider response exceeds prototype byte limit")
-        parts.append(chunk)
+        body.extend(chunk)
     if time.monotonic() - started > 30:
         raise GmailUnavailable("provider response deadline exceeded")
-    return _json(b"".join(parts))
+    return _json(bytes(body))
 
 
 def _retry_after(response: httpx.Response) -> int | None:

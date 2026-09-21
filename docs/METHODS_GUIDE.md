@@ -42,9 +42,15 @@ independent operation and assistant connections still need implementation/accept
 | Temporal facts | Remember both what was believed and when a correction became known | Planned relational project/person/obligation state, not current tables |
 | Typed control plane | Accept a small validated request instead of arbitrary code or SQL | REST proposal foundation exists; MCP and most proposal application are planned |
 | Forced row-level security | Add database-level tenant checks behind the API's checks | Implemented owner-only foundation; team grants and production identity pending |
+| Bounded response reading | Stop accepting a response that is too large or takes too long, even when bytes arrive slowly | Implemented cooperative chunk/EOF checks; network timeouts and supervision still required |
 
 [Architecture](ARCHITECTURE.md), [data model](DATA_MODEL.md) and
 [code map](CODE_MAP.md) provide the implementation details.
+
+The [streaming correction](adr/041_stream_deadline_checks.md) checks small incoming
+fragments immediately instead of waiting for a large buffer to fill. This keeps
+slow responses from bypassing the application checks; it is not a guarantee that
+every DNS lookup, TLS handshake or blocked socket finishes within that deadline.
 
 ## Four records that must not be confused
 

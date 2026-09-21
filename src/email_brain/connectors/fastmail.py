@@ -102,16 +102,18 @@ class FastmailReadClient:
                     raise ProviderUnavailable("provider returned non-success status")
                 if response.headers.get("Content-Encoding", "identity").lower() != "identity":
                     raise ProtocolError("compressed provider responses are not supported")
-                parts: list[bytes] = []
+                body = bytearray()
                 count = 0
-                for chunk in response.iter_bytes(chunk_size=65536):
+                for chunk in response.iter_bytes():
                     if time.monotonic() - started > 30:
                         raise ProviderUnavailable("provider response deadline exceeded")
                     count += len(chunk)
                     if count > byte_limit:
                         raise ProtocolError("provider response exceeds prototype byte limit")
-                    parts.append(chunk)
-                return b"".join(parts)
+                    body.extend(chunk)
+                if time.monotonic() - started > 30:
+                    raise ProviderUnavailable("provider response deadline exceeded")
+                return bytes(body)
         except httpx.HTTPError:
             # HTTP exceptions can carry sensitive URLs/request headers.
             raise ProviderUnavailable("provider network failure") from None

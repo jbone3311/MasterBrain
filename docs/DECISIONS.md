@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-041](adr/041_stream_deadline_checks.md) closes application chunk-buffering
+gaps in the four HTTP readers, with bounded accumulation and delayed-EOF checks.
+Existing scopes, response limits and connector availability remain unchanged.
+
 [ADR-040](adr/040_access_token_identity.md) adds the configured access-token
 resource-server boundary, explicit RFC/Entra profiles and administrator-owned
 identity bindings with current SQL authorization and administrator audit. Exact

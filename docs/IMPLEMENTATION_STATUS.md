@@ -33,6 +33,11 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
+ADR-041 closes buffered response deadline gaps in Fastmail, Gmail, Graph and the
+local Ollama adapter. Sixteen controlled-clock transport cases include slow-drip
+and delayed-empty regression tests, fragmentation, byte caps and stream closure.
+This changes neither connector availability nor live-service acceptance.
+
 ADR-040 adds the [configured API identity foundation](IDENTITY_AUTH.md), migration
 0013 and PyJWT 2.14.0. Generated-key/fake-issuer tests exercise token/profile/cache
 boundaries; real SQL/API cases cover mapping/RLS/revocation and the restore fixture

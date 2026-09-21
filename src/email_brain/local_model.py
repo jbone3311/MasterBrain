@@ -189,18 +189,18 @@ class OllamaLocalClassifier:
                     raise LocalModelUnavailable("local model service unavailable")
                 if response.headers.get("Content-Encoding", "identity").lower() != "identity":
                     raise LocalModelRejected("compressed local responses denied")
-                chunks: list[bytes] = []
+                body = bytearray()
                 count = 0
-                for chunk in response.iter_bytes(chunk_size=4096):
+                for chunk in response.iter_bytes():
                     count += len(chunk)
                     if count > MAX_RESPONSE_BYTES:
                         raise LocalModelRejected("local response exceeds byte budget")
                     if time.monotonic() - started > 60:
                         raise LocalModelUnavailable("local inference deadline exceeded")
-                    chunks.append(chunk)
+                    body.extend(chunk)
                 if time.monotonic() - started > 60:
                     raise LocalModelUnavailable("local inference deadline exceeded")
-                return _json(b"".join(chunks))
+                return _json(bytes(body))
         except httpx.HTTPError:
             raise LocalModelUnavailable("local model network failure") from None
 

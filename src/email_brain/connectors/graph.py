@@ -146,18 +146,18 @@ class GraphReadClient:
                     raise ProviderUnavailable("provider returned non-success status")
                 if response.headers.get("Content-Encoding", "identity").lower() != "identity":
                     raise ProtocolError("compressed Graph responses are not supported")
-                chunks: list[bytes] = []
+                body = bytearray()
                 size = 0
-                for chunk in response.iter_bytes(chunk_size=65536):
+                for chunk in response.iter_bytes():
                     size += len(chunk)
                     if size > MAX_RAW_BYTES:
                         raise ProtocolError("Graph response exceeds byte limit")
                     if time.monotonic() - started > 30:
                         raise ProviderUnavailable("provider response deadline exceeded")
-                    chunks.append(chunk)
+                    body.extend(chunk)
                 if time.monotonic() - started > 30:
                     raise ProviderUnavailable("provider response deadline exceeded")
-                return b"".join(chunks)
+                return bytes(body)
         except httpx.HTTPError:
             raise ProviderUnavailable("provider network failure") from None
 

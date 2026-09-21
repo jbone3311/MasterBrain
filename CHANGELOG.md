@@ -24,6 +24,14 @@ exact tested commits and results.
 - No browser login/session, MFA enforcement, real issuer enrollment, team sharing,
   service-principal lifecycle, public ingress or mailbox privilege was added.
 
+### Response streaming correction (ADR-041)
+
+- Fastmail, Gmail, Graph and Ollama now check incoming chunks without extra
+  fixed-size buffering, accumulate within existing byte caps and check deadlines
+  after EOF. Sixteen synthetic transport cases cover slow drips, delayed empty
+  replies, fragmented success, overflow and closure. Five cases fail the prior
+  implementation. These are cooperative checks, not hard process deadlines.
+
 ### Evidence, processing and review
 
 - Added separate owner PDF selection/approval, bounded history/status/cancel,
