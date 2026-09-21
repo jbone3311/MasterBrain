@@ -2,7 +2,46 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Owner reader — local implementation checkpoint
+## Verified owner reader
+
+Runtime **c3cb5c4105bee7d018c1e5c7c6f8b00823c32b78** passed
+[CI 35630644823](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35630644823)
+and [restore 35630644811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35630644811),
+observed 2026-09-21. Subsequent receipt-only edits do not change this tested runtime.
+
+- **2,246 Python passes, including 326 real PostgreSQL cases**, no CI skips;
+  **122 Node contracts** (38 reader), **five actual MIME-container cases** and
+  **15 actual PDF-container cases** pass. Repeated quality-gate runs and restore
+  subsets are not additional unique tests. The reader adds 90 Python cases:
+  64 unit/API, six preview and 20 SQL cases.
+- Lint, type checks over **47 source files**, locked dependencies, both container
+  builds, CLI smoke, runtime-reader exclusion and repository gate pass. Docs:
+  **96 Markdown files / 816 local paths/fragments** before this receipt update.
+  Local: **1,920 Python passes / 326 explicit SQL skips**, 122 Node passes and
+  separate restore-script typing with `MYPYPATH=src`.
+- Restore verified **27 tables, 147 rows, two tenants, four encrypted objects,
+  two identity bindings**, matching hashes, RLS, revoked-context denial and
+  database-only restore refusal. **29 safety tests** passed. **14.08 seconds**
+  includes disposable startup, not production RTO, managed PITR or key-loss recovery.
+- The first reader CI run at c494ae3 failed one SQL test: its audit assertion used
+  the runtime role, which correctly cannot read the audit table. The corrected test
+  reads audit through a separate disposable administrator and explicitly verifies
+  runtime-role denial. No production permission was widened. The later run above
+  verifies the correction and explicit two-step browser saving.
+- Actual fictional browser smoke verified long-body tail, inert HTML text, four
+  document receipts, the large-message projection warning, session clearing and
+  browser-side hash verification before presenting a **Save verified file** link.
+  Clicking the link reached the save-request status; completed filesystem saving
+  was **not confirmed** in the in-app browser. User/browser save acceptance remains
+  required. This is not full accessibility or cross-browser certification.
+- Staged/incremental secret scans from 498dd4c found no leaks. Two existing test
+  warnings and action/runner migration notices remain non-failing backlog.
+- No real mailbox, hosted service, paid account, SQL migration or dependency was
+  added. Full selected-body display applies to source MIME up to 1 MiB; larger
+  originals remain stored projections on screen with verified original export.
+  The fictional preview substitutes storage and is not database authorization proof.
+
+## Historical owner reader — local implementation checkpoint
 
 ADR-045 is implemented from base **498dd4ceed6a906e2440ec3aa90c3a97aec04b20**.
 New exact-commit CI/restore must pass before claiming SQL/container completion.

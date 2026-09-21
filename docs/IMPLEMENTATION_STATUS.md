@@ -35,8 +35,9 @@ parser does not certify an online worker, and a completed job can have deferred 
 ## Validation
 
 ADR-045 adds the [owner reader](MESSAGE_READER.md) and [fictional user test](USER_TESTING.md).
-The latter is a usability fixture, not database/live-mail acceptance. The verified
-runtime below predates this addition until its own exact-commit receipt is recorded.
+The latter is a usability fixture, not database/live-mail acceptance. Its automated
+reader/SQL/container verification is recorded below; completed browser file saving
+and full cross-browser/accessibility acceptance remain open.
 
 ADR-044 corrects cache-refresh contention and sender ambiguity. Current search and
 rule previews require source-derived sender eligibility; historical snapshots
@@ -52,10 +53,10 @@ next; no production sign-in or hosted availability is claimed.
 
 ### Latest verified runtime
 
-**98a334c** passed [CI 35624876529](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35624876529):
-2,156 Python tests including 306 real SQL cases, 84 Node contracts, five actual
+**c3cb5c4** passed [CI 35630644823](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35630644823):
+2,246 Python tests including 326 real SQL cases, 122 Node contracts, five actual
 MIME-container and 15 actual PDF-container cases. The same revision passed
-[restore 35624876390](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35624876390):
+[restore 35630644811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35630644811):
 27 tables, 147 rows, two tenants, four encrypted objects and two identity bindings,
 including revoked-context denial. Exact scope, local skips and limitations are in
 the [build receipt](BUILD_RECEIPT.md). Receipt-only edits are not a new runtime test.

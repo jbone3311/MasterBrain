@@ -37,6 +37,11 @@ Tell us which message/button failed, the generic status text and browser—not a
 email bodies, credentials or downloaded private files. Useful feedback: readability,
 how easy it is to find a message, download clarity, and whether limits are obvious.
 
+The in-app browser smoke verified preparation and the **Save verified file** link,
+not a completed filesystem save. Please confirm that files actually appear in your
+downloads during this trial; use your regular browser if the in-app browser blocks
+the save. A save-request status is not proof that the browser saved the file.
+
 ## Database-backed synthetic product test
 
 Follow [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) to provision a **disposable**
