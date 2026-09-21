@@ -2,7 +2,36 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Review corrections — local checkpoint
+## Verified review corrections
+
+Runtime **98a334c47253d7e1af74a948837d2c40e9ff9c95** passed
+[CI 35624876529](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35624876529)
+and [restore 35624876390](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35624876390),
+observed 2026-09-21. Subsequent receipt-only edits do not change this tested runtime.
+
+- **2,156 Python passes, including 306 real PostgreSQL cases**, no CI skips;
+  **84 Node contracts**, **five actual MIME-container cases** and **15 actual
+  PDF-container cases** pass. Repeated gate suites/restore subsets are not extra tests.
+- All **53 new regressions** pass: **41 offline and 12 real SQL**. Two cache tests
+  failed the former blocking path before correction. Direct old/new comparisons
+  confirm both multiple-author and duplicate-From sources stop matching, without
+  changing body text. The six concurrency cases also passed five local repeat runs.
+- Current search and previews require exact source sender eligibility, including
+  body/attachment/PDF hits and legacy snapshots. Raw/evidence retention, unchanged
+  public response shapes and strict/legacy worker contracts passed.
+- Lint, 46-module typing, locked dependencies, images/smoke/reader exclusion and
+  quality gate pass. Docs: **93 Markdown files, 785 local paths/fragments**.
+  Local **1,850 passes / 306 SQL skips**, 84 Node passes and separate restore typing.
+- Restore: **27 tables, 147 rows, two tenants, four encrypted objects, two identity
+  bindings**, matching hashes, RLS/revocation and database-only refusal; **29 safety
+  tests** pass. **14.35 seconds** includes disposable startup, not production RTO/PITR.
+- Staged/incremental secret scans from 3ac6771 found no leaks. Two existing test
+  warnings and action/runner migration notices remain non-failing backlog.
+- No SQL migration, dependency, real account, paid service or mailbox privilege
+  added. Ordinary parser is v5. Legacy messages remain readable but cannot match
+  sender rules until authorized revalidation. Browser UI/hosted acceptance remain open.
+
+## Historical review corrections — local checkpoint
 
 ADR-044 is implemented from base **3ac67711f11d50a56468b17b1ed77ed8cd7515d9**.
 Publication CI/restore must verify the new exact commit; prior receipts do not
