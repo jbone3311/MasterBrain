@@ -6,6 +6,7 @@ and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
 | Area | Executable tests | Still needed before production |
 |---|---|---|
+| Encrypted raw objects | AES-GCM/AAD, key rotation, tampering, ownership/symlinks, crash/fsync, duplicates, staged orphan inventory, SQL constraints, large-message holding/restart and missing-object restore refusal | Hosted Blob/KMS, key-backup recovery, retention/purge, larger isolated parser and offsite durability |
 | MIME | Plain/HTML alternatives, Unicode, unknown charset, truncation, NUL fields, size bounds, 1,000 seeded random byte inputs | Extended fuzz campaign, independent parser security review |
 | Attachments | Path names, duplicate receipts, CSV/plain extraction, binary/active-content deferral, depth/count limits | Actual isolated PDF/Office/OCR extraction, malware fixtures and sandbox escape tests |
 | Realistic attachment formats | Nine deterministic in-memory MIME cases; 31 payload/hash/ZIP/XML/PNG/encoding checks; 36 byte-preservation checks across four mocked provider formats | Approved external corpus comparisons and live provider conformance; Office application acceptance |
@@ -15,7 +16,7 @@ and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 | Graph | Fixed-account/folder opaque cursors, immutable IDs, folder removal is not global deletion, webhook-hint validation, MIME bounds | Durable per-folder workers, subscription lifecycle, live conformance |
 | IMAP | Injected UID session, read-only selection, UIDVALIDITY races, complete high-water inventory, PEEK size bounds and reset | Pinned network library, verified TLS/account binding, hard wire bounds, durable worker |
 | Recovery | History expiry, certified inventory, empty mailbox, query churn, multiple reconciliation pages, partial inventory refusal, v1 upgrade | Multi-day soak and provider-specific race/retention windows |
-| Poison mail | Exact rejected bytes retained; immutable receipts; good mail progresses; human retry; concurrent retry/provider update races; hash verification; parser drift rollback; old citations stable | Bulk historical reprocessing, alerting, large object quarantine |
+| Poison mail | Exact rejected bytes retained; immutable receipts; good mail progresses; human retry; concurrent retry/provider update races; hash verification; parser drift rollback; old citations stable; opt-in large-object quarantine | Bulk historical reprocessing, alerting, larger isolated parsing |
 | Consistency | Atomic evidence/checkpoint, duplicate event checks, collision rollback, lease fencing, eight concurrent claims, crash-after-commit | Production concurrency/load and database failover |
 | Retrieval | Body and attachment FTS, stable historical evidence, tombstone/quarantine exclusions | Recall benchmark, vector retrieval, entity/state filters |
 | Identity | Expired/invalid tokens, server-bound context, denied scopes, owner membership revocation, forced RLS, cross-tenant keys and context reset | OIDC/MFA, invitation/member/account grants, rate limits |

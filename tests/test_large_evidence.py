@@ -171,6 +171,80 @@ def test_enrolled_account_cannot_be_seeded_into_external_storage(
 
 
 @pytest.mark.postgres
+@pytest.mark.parametrize("change", ["membership", "inactive", "enrollment"])
+def test_authority_changed_during_staging_cannot_publish(
+    external, database, tenant, monkeypatch, change
+):
+    ctx, account = tenant
+    put = external.blobs.put
+
+    def stage_then_revoke(*args):
+        ref = put(*args)
+        with psycopg.connect(database[1]) as conn:
+            if change == "membership":
+                conn.execute(
+                    "UPDATE tenant_memberships SET role='member' WHERE tenant_id=%s AND user_id=%s",
+                    (ctx.tenant_id, ctx.actor_id),
+                )
+            elif change == "inactive":
+                conn.execute("UPDATE mail_accounts SET status='paused' WHERE id=%s", (account,))
+            else:
+                conn.execute(
+                    "UPDATE mail_accounts SET provider_account_id='enrolled' WHERE id=%s",
+                    (account,),
+                )
+        return ref
+
+    monkeypatch.setattr(external.blobs, "put", stage_then_revoke)
+    expected = {"membership": AccessDenied, "inactive": NotFound, "enrollment": ValueError}
+    with pytest.raises(expected[change]):
+        external.ingest_page(ctx, account, None, "x", [pg.item()], synthetic_only=True)
+    # Owner access may now be revoked. Inspect only this synthetic tenant as test admin.
+    with psycopg.connect(database[1]) as conn:
+        for table in ("raw_objects", "provider_events", "messages", "sync_cursors"):
+            assert (
+                conn.execute(
+                    f"SELECT count(*) FROM {table} WHERE tenant_id=%s", (ctx.tenant_id,)
+                ).fetchone()[0]
+                == 0
+            )
+    assert len(external.blobs.object_keys(ctx.tenant_id, account)) == 1
+
+
+@pytest.mark.postgres
+def test_persisted_manifest_survives_rotation_and_missing_old_key_blocks_replay(
+    database, tenant, tmp_path
+):
+    ctx, account = tenant
+    keys = {
+        (ctx.tenant_id, "old"): secrets.token_bytes(32),
+        (ctx.tenant_id, "new"): secrets.token_bytes(32),
+    }
+    root = tmp_path.resolve() / "rotation"
+    store = Store(database[0].dsn, blobs=EncryptedBlobStore(root, keys, {ctx.tenant_id: "old"}))
+    store.ingest_page(ctx, account, None, "one", [pg.item()])
+    with store.transaction(ctx) as conn:
+        original = conn.execute("SELECT * FROM raw_objects").fetchone()
+    store.blobs = EncryptedBlobStore(root, keys, {ctx.tenant_id: "new"})
+    assert store.ingest_page(ctx, account, "one", "two", [pg.item("second")]) == 1
+    with store.transaction(ctx) as conn:
+        assert conn.execute("SELECT * FROM raw_objects").fetchone() == original
+    assert store.load_raw(ctx, account, original["sha256"]) == pg.item().raw
+    assert len(store.blobs.object_keys(ctx.tenant_id, account)) == 1
+    store.blobs = EncryptedBlobStore(
+        root, {(ctx.tenant_id, "new"): keys[(ctx.tenant_id, "new")]}, {ctx.tenant_id: "new"}
+    )
+    with pytest.raises(BlobError):
+        store.ingest_page(ctx, account, "two", "three", [pg.item("third")])
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()["opaque_cursor"]
+            == "two"
+        )
+        assert conn.execute("SELECT * FROM raw_objects").fetchone() == original
+
+
+@pytest.mark.postgres
 def test_missing_backend_or_object_refuses_recovery_without_cached_failure(
     external, tenant, monkeypatch
 ):

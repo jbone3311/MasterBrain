@@ -12,7 +12,7 @@ the product sequence; these are buildable handoff tickets.
 | EB-005 | Encrypted object storage — local slice implemented | Local tenant-bound AES-GCM, 16 MiB preservation, transactional manifests and non-deleting inventory implemented; hosted IAM/KMS, key backup, authorized GC/purge and larger isolated parsing remain |
 | EB-006 | Sandboxed attachment extraction | Factory-reviewed package contract; scanner; PDF/Office/OCR/archives; no egress, bounded CPU/time/memory/disk/depth; per-child receipts and timeouts |
 | EB-007 | Production identity/grants | OIDC/MFA, JWT issuer/audience/expiry, invite/revoke, account/project grants before candidate retrieval, permission-cache invalidation, negative role matrix |
-| EB-008 | Hosted infrastructure and restore | Owner-approved region/budget; private Postgres/S3, KMS/secrets, TLS ingress, CI artifacts by digest, actual restore of DB and bytes |
+| EB-008 | Hosted infrastructure and restore | Owner-approved region/budget; private Postgres/object storage, KMS/secrets, TLS ingress, CI artifacts by digest, actual restore of DB and bytes |
 | EB-009 | Operations baseline | Rate limits, connection pool, job SLOs/counters, denial audit, immutable audit export, dashboards, alert ownership, budget caps |
 | EB-010 | Rules storage/simulation/application | Safe DSL, immutable versions, sample preview, protected-class veto, explicit corrections outrank inferred patterns, shadow drift sample, rollback |
 | EB-011 | Local model adapter/eval harness | Approved local model weights/license, schema constrained output, evidence verification, no cloud fallback, cache/versioning, gold-set calibration |
@@ -45,7 +45,8 @@ counts without stalling healthy mail. Migration 0008 adds explicit human retry o
 current held evidence, immutable outcomes and parser-versioned search; bulk
 historical reprocessing, automated alerts and live acceptance remain.
 These tickets are not production-closed: enrollment, scheduling, live acceptance,
-large-message object storage and soak remain. See [READ_WORKER.md](READ_WORKER.md).
+hosted object storage, larger isolated parsing and soak remain. Local encrypted
+preservation is implemented; see [READ_WORKER.md](READ_WORKER.md).
 
 Mock/provider transport tests, quarantine state machine, worker leases, synthetic
 attachment sandbox fixtures, OIDC integration contract, SQL grants tests, temporal

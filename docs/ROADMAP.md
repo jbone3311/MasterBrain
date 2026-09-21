@@ -11,7 +11,7 @@ The roadmap is gated by verified outcomes. Dates depend on team size and provide
 Current progress: a bounded portion of Phases 0–2 is executable with synthetic
 data, including real PostgreSQL CI, attachment accounting/search and a review
 queue, bounded MIME quarantine and certified inventory recovery. No phase is
-complete: live sync, large-object recovery, restore, production identity
+complete: live sync, hosted object/key recovery, production identity
 and cloud setup remain gates. [BACKLOG.md](BACKLOG.md) is the concrete work queue.
 Tenant isolation starts now; Phase 7 expands sharing rather than retrofitting tenancy.
 
@@ -23,7 +23,8 @@ gates, in dependency order:
 
 1. Validate the implemented human quarantine retry under extended soak; add
    inventory retention policy, alerting and bulk historical reprocessing.
-2. Encrypted large-object storage, isolated binary extraction and byte-preserving restore.
+2. Extend encrypted local storage to hosted Blob/KMS; implement isolated large-MIME
+   and binary extraction and independent offsite/key recovery.
 3. Audited enrollment/recovery, scheduler/lag alerts, disposable-mailbox conformance.
 4. Production identity, member/account grants, infrastructure and restore acceptance.
 5. Persistent rules/state and evaluation-backed inference; then controlled actions.
