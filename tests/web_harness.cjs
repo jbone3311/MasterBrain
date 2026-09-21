@@ -43,8 +43,9 @@ function harness(fetch) {
       uuids.push(id); return id;
     }},
   });
-  const source = fs.readFileSync(path.join(__dirname, "../src/email_brain/web/app.js"), "utf8");
-  vm.runInContext(source, context);
+  for (const name of ["app.js", "document_review.js"]) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/email_brain/web", name), "utf8"), context);
+  }
   return {element, uuids, evaluate: (code) => vm.runInContext(code, context)};
 }
 function deferred() {

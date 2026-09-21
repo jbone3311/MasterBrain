@@ -34,7 +34,7 @@ independent operation and assistant connections still need implementation/accept
 | Reconciliation | Compare a complete provider inventory against the local view | Implemented Fastmail worker logic; incomplete listings cannot prove deletion |
 | Immutable evidence | Retain original bytes and prior interpretations while retained | Implemented; a new parser/result does not rewrite an old citation |
 | Per-part receipt | Record that each attachment arrived, including why it is unread | Implemented; a receipt is not proof that its contents were extracted |
-| Source-bound extraction | Process precisely the approved message version and attachment bytes | Implemented synthetic PDF API/library/operator; owner UI/live policy pending |
+| Source-bound extraction | Process precisely the approved message version and attachment bytes | Implemented synthetic PDF API/library/operator and owner review UI; live policy/hosted acceptance pending |
 | Idempotency | Retrying the same intent does not create a second operation | Implemented proposal/job boundaries; future provider effects still need reconciliation |
 | Lease and publication fence | Give a worker temporary ownership, then recheck before saving | Implemented; expired/replaced/revoked workers cannot publish stale results |
 | Full-text search (FTS) | Search stored words without sending each query's entire mailbox to AI | Implemented PostgreSQL body/text-attachment search; PDF search is opt-in |
@@ -72,7 +72,7 @@ exist. It does not grant general document processing permission.
 
 If the body is already searchable but its PDF is deferred, the **document channel**
 uses a separate attachment approval, worker identity, processor/policy and immutable
-page result. Its API/library and operator command exist; its owner UI does not yet.
+page result. Its API/library, operator command and [owner screen](DOCUMENT_REVIEW_SCREEN.md) exist.
 A PDF-only query uses `include_documents: true`; default search excludes those
 document results. A completed job may record a partial/deferred/failed extraction,
 so inspect the result rather than treating job completion as successful reading.

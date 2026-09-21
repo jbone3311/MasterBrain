@@ -24,6 +24,7 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 | Fictional inbox/file bytes | [synthetic.py](../src/email_brain/synthetic.py), [attachment_samples.py](../tests/attachment_samples.py) |
 | Coherent mailbox/manifest/replay | [synthetic_mailbox.py](../src/email_brain/synthetic_mailbox.py), [synthetic_formats.py](../src/email_brain/synthetic_formats.py) |
 | Owner UI | [web/](../src/email_brain/web/) |
+| PDF owner workflow/search | [document_review.js](../src/email_brain/web/document_review.js); existing API calls, independent document state and text-only evidence |
 | Schema upgrades | [migrations/](../migrations/), [migrate.py](../src/email_brain/migrate.py) |
 | Checks | [tests/](../tests/), [CI](../.github/workflows/ci.yml) |
 | Offline documentation gate | [check_docs.py](../scripts/check_docs.py), [regression tests](../tests/test_check_docs.py); inventory/paths/supported headings, including `.github/` templates |
@@ -51,8 +52,8 @@ See [configuration and shutdown](PROCESSING_CONTROLLER.md).
   restricted image -> versioned recovery and fenced atomic job completion.
 - PDF document: separate synthetic approval -> document job -> restricted PDF
   processor -> immutable extraction revision -> opt-in document FTS/page evidence.
-  The separate `process-documents` command runs this path; the existing owner UI
-  and MIME operator command do not.
+  The separate `process-documents` command runs the worker. The owner PDF screen
+  grants/reviews consent and inspects results; the MIME operator command cannot run it.
 
 ## Contract versus code
 

@@ -15,8 +15,9 @@ function harness(fetch) {
   const elements = new Map();
   const element = (id) => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   const context = vm.createContext({document: {getElementById: element, createElement: () => new Element()}, fetch});
-  const source = fs.readFileSync(path.join(__dirname, "../src/email_brain/web/app.js"), "utf8");
-  vm.runInContext(source, context);
+  for (const name of ["app.js", "document_review.js"]) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/email_brain/web", name), "utf8"), context);
+  }
   return {element, evaluate: (code) => vm.runInContext(code, context)};
 }
 function deferred() { let resolve; const promise = new Promise((done) => { resolve = done; }); return {promise, resolve}; }

@@ -14,10 +14,11 @@ measured model answer. [Documentation rules](DOCUMENTATION_STANDARD.md) prevent
 test plans, skipped checks and prior receipts from being presented as new results.
 
 Processing history/owner controls add Python account/cursor/read-only tests and
-27 independent Node cases, alongside 25 existing UI cases. Run both suites:
+27 independent Node cases, alongside 25 existing UI cases. ADR-038 adds the PDF
+owner/search suite. Run all three suites:
 
 ```sh
-node --test tests/web_session.test.cjs tests/web_processing.test.cjs
+node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
 ```
 
 The DOM harness covers same-key uncertain retries, double clicks, malformed
@@ -65,6 +66,15 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[PDF owner controls](DOCUMENT_REVIEW_SCREEN.md) add explicit selection/approval,
+history/cancel, opt-in search and page-evidence Node contracts. Negative cases
+cover exact identities, malformed envelopes, bounded pages, Unicode offsets,
+same-key uncertainty, duplicate clicks and stale query/session/account/view/card
+responses. Four SQL/API bridge cases feed actual serialized responses through the
+DOM harness (extracted/partial/deferred/failed), using a known-answer reader.
+Static-route/HTML checks retain same-origin/no-store and explicit opt-in controls.
+Neither harness nor static HTML checks prove real browser/accessibility acceptance.
+
 [Documentation checks](DOCUMENTATION_STANDARD.md#automated-check-scope) cover the
 required pack/guides/templates and local paths/supported headings across root,
 `docs/` and `.github/`. Synthetic checker regressions exercise missing files,
@@ -78,13 +88,14 @@ revocation/rotation, counters, cancellation and restart. Real PostgreSQL tests u
 a known-answer reader; the explicit PDF container suite additionally runs fresh
 CLI processes over encrypted source and the actual restricted image. The emitted
 demo-owner registry has a regression test; server-option tests retain loopback binding.
-These checks do not certify the pending document UI or a deployed supervisor.
+These checks do not certify the separate document UI or a deployed supervisor;
+the new UI-specific checks above cover its local contracts.
 
 [Document jobs](DOCUMENT_PROCESSING.md) add real-SQL lifecycle/race/authorization,
 API, immutable revision and current-versus-historical search tests. The PDF container
 suite now also runs source -> approval -> restricted PDF -> SQL -> cited search.
 Restore seeds completed/cancelled/pending document jobs and text/evidence revisions.
-These do not certify a document UI, malware scanner or live processing policy.
+These do not certify a browser, malware scanner or live processing policy.
 
 [PDF worker tests](PDF_WORKER.md) independently exercise the source-bound request
 and strict parent response, known-answer PDF text, selected MIME paths/hashes,

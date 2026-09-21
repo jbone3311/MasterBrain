@@ -14,7 +14,7 @@ For a less technical explanation of the methods and why they are separate, use
 | Incremental import | Native cursors, bounded pages, atomic checkpoint, leased worker, certified inventory | Fastmail worker; offline Gmail/Graph libraries; injected IMAP contract; no live enrollment |
 | Search with sources | PostgreSQL FTS, account filters, immutable evidence IDs, bounded excerpts | Working; no vectors or project/entity filters |
 | Account for attachments | Per-part receipts, source hashes, duplicate links, explicit outcomes | Ordinary ingestion extracts supported plain/CSV/calendar text; PDF/Office/image/archive parts remain deferred there |
-| Read selected PDFs safely | Separate source-bound approvals, explicit document command, fenced restricted worker, immutable results and opt-in FTS | Synthetic API/library/CLI; no owner UI, live/scanner policy or hosted service |
+| Read selected PDFs safely | Separate source-bound approvals, explicit document command, fenced restricted worker, immutable results and opt-in FTS | Synthetic API/library/CLI and owner review UI; live/scanner policy, browser acceptance and hosted service remain |
 | Recover held mail | Owner retry; parser versions; isolated jobs bound to receipt/parser/expiry | API/UI, worker library and explicit bounded operator CLI; no hosted supervision |
 | Organize senders | Declarative match, review, bounded simulation, activation and immutable rollback | Narrow exact-domain persisted rules; virtual search labels only |
 | Send feedback | Typed evidence-linked proposals with idempotency and review state | REST works; most approved proposal types apply nothing; MCP absent |
@@ -52,6 +52,8 @@ The [code map](CODE_MAP.md) points to their actual modules. Model quality and
 production document policy remain separate acceptance work.
 The [PDF command](DOCUMENT_CONTROLLER.md) runs only explicitly approved jobs with
 document-only credentials; it cannot create approvals or consume MIME recovery grants.
+The [PDF owner screen](DOCUMENT_REVIEW_SCREEN.md) adds explicit selection/approval,
+bounded history, cancellation and cited page inspection without running that worker.
 
 ## Follow one message through the system
 

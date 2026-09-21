@@ -42,6 +42,7 @@ REQUIRED = (
     "docs/RELEASE_ACCEPTANCE.md",
     "docs/DOCUMENT_PROCESSING.md",
     "docs/DOCUMENT_CONTROLLER.md",
+    "docs/DOCUMENT_REVIEW_SCREEN.md",
     ".github/ISSUE_TEMPLATE/build.md",
     ".github/ISSUE_TEMPLATE/decision.md",
     ".github/PULL_REQUEST_TEMPLATE.md",

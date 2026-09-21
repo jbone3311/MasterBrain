@@ -46,6 +46,7 @@ class Preview(BaseHTTPRequestHandler):
         assets = {
             "/": ("index.html", "text/html"),
             "/app.js": ("app.js", "text/javascript"),
+            "/document_review.js": ("document_review.js", "text/javascript"),
             "/style.css": ("style.css", "text/css"),
         }
         if path in assets:

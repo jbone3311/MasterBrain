@@ -109,4 +109,6 @@ identity rotation/revocation, source preservation, cancellation and restart. The
 explicit container suite invokes fresh CLI processes through encrypted source,
 actual restricted PDF, PostgreSQL and cited search. Exact passed revisions belong
 in [BUILD_RECEIPT.md](BUILD_RECEIPT.md), not inferred from this guide.
-Hosted supervision, service identity, scanner/live policy, owner UI and soak remain.
+The [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) now exposes separate approval/
+history/cancel and cited results. Hosted supervision, service identity,
+scanner/live policy, browser acceptance and soak remain.

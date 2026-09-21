@@ -10,10 +10,14 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-038](adr/038_document_owner_review.md) adds separate owner PDF approval/history/
+cancellation and bounded cited page evidence, plus opt-in document search. It uses
+existing APIs and source/authorization fences; no schema or permission expansion.
+
 [ADR-037](adr/037_documentation_verification.md) strengthens offline documentation
 inventory/path/section-link checks, including GitHub templates, with regression tests.
 It adds a methods reading guide but no runtime or permission change. The next
-runtime work remains the document owner interface.
+runtime assignment at that increment was the document owner interface, now ADR-038.
 
 [ADR-036](adr/036_document_operator_controller.md) adds the separate explicit PDF
 operator command, fixed-purpose/policy private configuration, exact document-worker
@@ -24,7 +28,7 @@ No new schema, dependency, live policy or owner-screen controls.
 [ADR-035](adr/035_approved_document_processing.md) adds synthetic-only document
 approval/jobs, immutable extraction revisions, opt-in FTS and cited results.
 Migration 0012 and a separate worker scope preserve source/body state. ADR-036 adds
-operator execution; UI integration, live/scanner policy and hosted acceptance remain.
+operator execution and ADR-038 adds owner UI; live/scanner and hosted acceptance remain.
 
 [ADR-034](adr/034_source_bound_pdf_worker.md) adds an explicit source-bound restricted
 PDF worker, separate image/contract and synthetic tests. No attachment queue,

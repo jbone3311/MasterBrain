@@ -8,4 +8,6 @@ button:disabled{opacity:.5}.row{display:flex;align-items:center;gap:1rem}.row in
 pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;background:#f3f5f0;padding:1rem;border-radius:8px}small,footer{color:#60736a;font-size:.8rem;overflow-wrap:anywhere}
 #status{font-size:.9rem}textarea{min-height:90px}input:focus,textarea:focus,button:focus-visible{outline:3px solid #91bea6;outline-offset:2px}
 .processing-note{font-size:.85rem}#processing-jobs article{overflow-wrap:anywhere}#processing-health{border-left:3px solid #91bea6;padding-left:1rem}button:disabled{cursor:default}
+.check-label{display:flex;align-items:center;gap:.6rem;font-weight:400}.check-label input{width:auto}
+#document-jobs article,#document-selection{overflow-wrap:anywhere}#documents-health{border-left:3px solid #91bea6;padding-left:1rem}
 @media(max-width:560px){.row{flex-wrap:wrap;gap:.4rem}.row input{min-width:0;width:100%;flex-basis:100%}section{padding:1.15rem}.row h2{flex-basis:100%;margin-bottom:.3rem}}

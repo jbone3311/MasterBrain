@@ -8,6 +8,12 @@ exact tested commits and results.
 
 ### Evidence, processing and review
 
+- Added separate owner PDF selection/approval, bounded history/status/cancel,
+  cited page evidence and opt-in document search (ADR-038). Closed response and
+  source/processor validation, same-key uncertain retry and stale-context fences
+  keep consent explicit. Existing MIME permissions stay separate. No new schema,
+  worker privilege, browser storage, scanner/live policy or hosted service.
+
 - Added `process-documents` with separate fixed-purpose/policy private configuration,
   exact PDF-worker scope, synthetic-account preflight, fresh credentials and bounded
   polling. Added an explicit loopback server channel option. MIME permissions remain
@@ -19,7 +25,7 @@ exact tested commits and results.
   durable jobs, immutable extraction revisions, opt-in document FTS and bounded
   page evidence. Migration 0012 protects receipts/results and approval identity.
   That increment added no document UI/CLI; ADR-036 above supplies the separate CLI.
-  Document UI, scanner, live-mail policy and hosted service remain unfinished.
+  ADR-038 above supplies the owner UI; scanner, live-mail policy and hosted service remain unfinished.
 
 - Added separate source-bound restricted PDF worker/image and strict page-level
   contract, with hash/part validation, partial/deferred/failed outcomes and explicit

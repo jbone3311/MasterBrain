@@ -25,7 +25,7 @@ independent hosted operation is a delivery target, not today's deployment state.
 | A broker sends a project introduction, PDF and rent-roll spreadsheet | Preserve source bytes and hashes; give every attachment a receipt; commit provider progress with durable outcomes | Implemented synthetic ingestion; no live enrollment |
 | Search finds the introduction immediately | PostgreSQL full-text search over current authorized body and supported attachment text; retain evidence-version citations | Implemented; ordinary ingestion does not index PDF/Excel text; approved PDF search is a separate opt-in below |
 | See that a PDF arrived but has not been understood | Attachment outcome distinguishes preservation from extraction; do not call a deferred document successfully read | Implemented receipts |
-| Approve processing of this particular PDF | Bind permission to tenant/account, immutable source/part/hash and processor; restricted worker; validate and publish a new extraction atomically | Synthetic approval API/library, operator command and opt-in search implemented; owner UI and live/scanner policy pending |
+| Approve processing of this particular PDF | Bind permission to tenant/account, immutable source/part/hash and processor; restricted worker; validate and publish a new extraction atomically | Synthetic API/library/operator and owner review UI with opt-in search implemented; live/scanner and browser acceptance pending |
 | A correction replaces an earlier rent figure | Keep both source versions; future project facts explicitly supersede earlier claims and cite the correction | Evidence history implemented; financial facts/projectors planned |
 | Ask “what are we waiting on for Melron?” | Combine authorized thread evidence with evidence-backed open obligations; show uncertainty and unavailable documents | Planned state and assistant workflow |
 | Say “make Melron a project and treat these senders as important” | Separate a project proposal from a rule proposal; validate scope and show reviewable effects | Generic proposals implemented; project application planned; narrow sender rules implemented |
@@ -126,9 +126,9 @@ live-provider, cloud disaster-recovery, model-quality or multi-day soak acceptan
 
 ## What the team builds next
 
-First complete owner UI controls for the approved PDF API/library and operator command,
-immutable results and opt-in search, preserving the original body and evidence.
-Then finish the secure read-only service: scanner policy, identity, enrollment, hosted
+The [owner PDF workflow](DOCUMENT_REVIEW_SCREEN.md) now connects explicit selection,
+approval/history/cancellation and cited page evidence to the existing backend.
+Next finish the secure read-only service: read-worker operation, scanner policy, identity, enrollment, hosted
 storage/key recovery, supervision and operational acceptance. State, assistant/team
 access and controlled mailbox effects follow their own gates.
 

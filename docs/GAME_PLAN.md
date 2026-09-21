@@ -45,7 +45,7 @@ its own permission and review.
 
 **Today:** synthetic ingestion, receipts, FTS, proposal review and narrow virtual
 rules work. Restricted PDF processing now has a synthetic approval API/library,
-immutable results, opt-in search and a separate operator command. Its owner UI, live/scanner policy,
+immutable results, opt-in search, a separate operator command and owner review UI. Live/scanner policy,
 automatic project state and mailbox actions remain planned.
 [Features and methods](FEATURES_AND_METHODS.md).
 
@@ -91,30 +91,33 @@ they are not general permission to process every deferred attachment.
 ADR-035 now supports that ordinary searchable email through a separate synthetic
 document approval API/library. It binds source/part/processor identity and preserves
 the body index, then saves immutable extraction evidence for opt-in search. Next
-complete the owner interface and accepted live/scanner policy. Scanning,
+complete accepted live/scanner policy and hosted/browser acceptance. Scanning,
 extraction and OCR remain distinct outcomes and acceptance gates.
 
-The next increment should let an owner select one eligible PDF, see the exact
-processor/policy, explicitly approve it, inspect/cancel the job, then find its cited
-text. ADR-036 now supplies the separate operator command with its own worker
-identity. No automatic approval, new mailbox scopes or API access to the container
-daemon belongs in that increment. Backend groundwork already exists; the team
-should finish the workflow rather than rebuild it.
+ADR-038 now lets an owner select one eligible PDF, see the exact processor/policy,
+explicitly approve it, inspect/cancel the job, then find its cited text. ADR-036
+supplies the separate operator command with its own worker identity. No automatic
+approval, new mailbox scopes or API access to the container daemon is added.
+The [owner guide](DOCUMENT_REVIEW_SCREEN.md) explains this synthetic workflow and
+remaining browser/live gates; the team should not rebuild the completed backend/UI.
 
 ## Build sequence
 
 ### The next complete user outcome
 
-Finish one owner-visible path: find a synthetic message, select its eligible PDF,
+The implemented owner-visible path is: find a synthetic message, select its eligible PDF,
 see the exact processor/policy and explicitly approve it, inspect or cancel the
 job, then read cited page excerpts and opt into document search. Preserve the
-working body result throughout. The approval API, restricted reader, storage/search
-and separate operator command already exist; do not build them again.
+working body result throughout. The approval API, restricted reader, storage/search,
+separate operator command and review UI now exist; do not build them again.
 
 Acceptance must include permission/source changes, lost responses and same-intent
 retry, cancellation races, stale screens, partial/deferred extraction and default
-search behavior—not only a successful PDF. This is the immediate build package,
-not authorization for real mail, automatic approval or production deployment.
+search behavior—not only a successful PDF. Node and SQL/API-response contracts
+exercise these boundaries; browser/keyboard/screen-reader acceptance remains.
+The next implementation package is a bounded read-worker operator entry point,
+followed by supervised operation and production foundations. None authorizes real
+mail, automatic approval or paid deployment.
 
 ### From prototype to independent product
 

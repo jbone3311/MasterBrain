@@ -27,7 +27,7 @@ uv sync --locked --extra dev
 uv run ruff check .
 uv run mypy src
 uv run pytest -q
-node --test tests/web_session.test.cjs tests/web_processing.test.cjs
+node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
 uv run python scripts/deployment_gate.py
 uv run python scripts/check_docs.py
 ```

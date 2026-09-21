@@ -33,7 +33,7 @@ passed; documentation updates do not certify new functionality.
 | Ingest | Fastmail worker library; synthetic HTTP-to-Postgres tests; atomic checkpoints, fenced leases, quarantine and inventory reconciliation |
 | Preserve | Immutable raw/evidence versions; bounded inline MIME; opt-in encrypted local objects up to 16 MiB |
 | Search | PostgreSQL FTS over messages and supported text/calendar attachments, with stable evidence references |
-| Read PDFs | Separate synthetic approval API/library and operator command, restricted PDF worker, immutable page evidence and opt-in document FTS; owner UI still pending |
+| Read PDFs | Separate synthetic approval API/library/operator, owner selection/approval/history/cancel UI, restricted worker, immutable page evidence and opt-in document FTS |
 | Review | Owner-only local UI: search, proposals, virtual sender rules, held mail, processing history/approval/cancellation |
 | Recover | Human-authorized retries and separate restricted MIME worker; bounded jobs, expiry, cancellation and atomic results |
 | Isolate | Tenant RLS, ownership constraints, scoped expiring bootstrap credentials and negative authorization tests |
@@ -61,14 +61,15 @@ page-level extraction groundwork with explicit partial/deferred outcomes. It is
 now connected to a separate [synthetic document approval API/library](docs/DOCUMENT_PROCESSING.md),
 immutable results and opt-in document search. Ordinary ingestion still defers PDFs;
 the [PDF operator command](docs/DOCUMENT_CONTROLLER.md) is explicit and separate;
-owner UI controls are pending. The default image has no PDF reader and no malware-safety
+the [owner PDF screen](docs/DOCUMENT_REVIEW_SCREEN.md) now provides explicit approval,
+history/cancellation and cited results. The default image has no PDF reader and no malware-safety
 claim is made.
 
 ## What comes next
 
-1. Finish the document-processing owner experience around the approved API/library
-   and separate bounded operator command: safe UI, cited results and review controls.
-   Preserve body/evidence identity and separately resolve scanner/live policy.
+1. Complete the read-worker operator entry point and supervised read-only operation.
+   The synthetic PDF owner workflow now exists; browser/accessibility acceptance,
+   scanner/live policy and hosted worker supervision remain distinct gates.
 2. Complete supervised read-only operation, production identity, managed storage,
    recoverable keys and operator alerts; then accept one disposable live provider.
 3. Build evaluated project/reply state and assistant access; add separately
@@ -121,7 +122,7 @@ uv sync --locked --extra dev
 uv run ruff check .
 uv run mypy src
 uv run pytest -q
-node --test tests/web_session.test.cjs tests/web_processing.test.cjs
+node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
 uv run python scripts/deployment_gate.py
 uv run python scripts/check_docs.py
 uv run email-brain --help

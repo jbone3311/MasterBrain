@@ -191,6 +191,10 @@ def create_app(
     def javascript() -> FileResponse:
         return FileResponse(WEB / "app.js", media_type="text/javascript")
 
+    @app.get("/document_review.js", include_in_schema=False)
+    def document_javascript() -> FileResponse:
+        return FileResponse(WEB / "document_review.js", media_type="text/javascript")
+
     @app.get("/style.css", include_in_schema=False)
     def stylesheet() -> FileResponse:
         return FileResponse(WEB / "style.css", media_type="text/css")

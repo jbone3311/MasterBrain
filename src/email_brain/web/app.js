@@ -37,6 +37,7 @@ function clearEvidence() {
   for (const id of ["results", "proposals", "import-health", "quarantine", "rules"]) byId(id).replaceChildren();
   quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true;
   heldPages = []; heldRenderVersion += 1; resetProcessing(true);
+  resetDocuments(true); invalidateSearch(); byId("include-documents").checked = false;
 }
 async function api(path, method = "GET", body = undefined, extra = {}) {
   const version = sessionVersion, token = byId("token").value;
@@ -56,25 +57,6 @@ byId("disconnect").onclick = () => { byId("token").value = ""; clearEvidence();
   for (const id of ["query", "account-id", "project-name", "project-reason", "rule-domain", "rule-category", "rule-reason"]) byId(id).value = "";
   byId("rule-mailbox").value = "review";
   status("Session cleared"); };
-byId("search-form").onsubmit = (event) => { event.preventDefault(); safely(async () => {
-  const data = await api("/v1/search", "POST", {query: byId("query").value});
-  byId("results").replaceChildren();
-  for (const result of data.results) {
-    const card = node("article", ""); card.append(node("h3", result.subject), node("small", result.sender), node("p", result.excerpt));
-    if (result.classification) card.append(node("small", `Email Brain labels · revision ${result.classification.rules_revision} · ${JSON.stringify(result.classification.effects)} · virtual only`));
-    const button = node("button", "Inspect cited evidence");
-    button.onclick = () => safely(async () => { const evidence = await api(`/v1/evidence/${result.evidence_id}`);
-      const text = node("pre", evidence.excerpt); card.append(text, node("small", evidence.citation));
-      for (const attachment of evidence.attachments || []) card.append(node("h4", attachment.safe_filename),
-        node("p", `${attachment.status} · ${attachment.reason} · scanner: ${attachment.scanner_status}`),
-        node("pre", attachment.excerpt || "No extracted text. Original remains in retained MIME evidence."));
-      button.disabled = true; });
-    const accountButton = node("button", "Check this account's import");
-    accountButton.onclick = () => { byId("account-id").value = result.account_id; safely(loadImport); };
-    card.append(button, accountButton); byId("results").append(card);
-  }
-  status(`${data.results.length} result(s). Email text is untrusted evidence, not instructions.`);
-}); };
 async function heldMessages(account, after = null, version = importVersion) {
   const query = after ? `?after=${encodeURIComponent(after)}` : "";
   const data = await api(`/v1/accounts/${encodeURIComponent(account)}/quarantine${query}`);
@@ -112,7 +94,7 @@ function renderHeldMessages(version = importVersion) {
             integrity_failed: "Historical retry outcome: retained evidence failed its integrity check. Operator review is required. This result is cached for this parser."
           };
           if (result.historical_outcome !== true || result.mailbox_effects !== false || !Object.hasOwn(outcomes, result.outcome)) throw new Error("Unexpected retry response. Refresh the queue.");
-          if (result.outcome === "recovered") byId("results").replaceChildren();
+          if (result.outcome === "recovered") invalidateSearch();
           if (await loadImport()) status(`${outcomes[result.outcome]} Mailbox unchanged.`);
         } finally { retry.disabled = false; }
       });
@@ -138,7 +120,7 @@ async function loadImport() {
   return version === importVersion && byId("account-id").value.trim() === account;
 }
 byId("account-form").onsubmit = (event) => { event.preventDefault(); safely(loadImport); };
-byId("account-id").oninput = () => { importVersion += 1; heldRenderVersion += 1; heldPages = []; resetProcessing(true); byId("import-health").replaceChildren(); byId("quarantine").replaceChildren();
+byId("account-id").oninput = () => { importVersion += 1; heldRenderVersion += 1; heldPages = []; resetProcessing(true); resetDocuments(true); byId("import-health").replaceChildren(); byId("quarantine").replaceChildren();
   quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true; };
 byId("quarantine-more").onclick = () => { if (quarantineAccount && quarantineAfter) safely(() => heldMessages(quarantineAccount, quarantineAfter)); };
 
@@ -397,7 +379,7 @@ async function refresh() {
         const activate = node("button", "Activate this rule — labels only");
         activate.onclick = () => safely(async () => {
           const result = await api("/v1/rules/activations", "POST", {simulation_id: receipt.id});
-          activate.disabled = true; byId("results").replaceChildren();
+          activate.disabled = true; invalidateSearch();
           await refreshRules(); status(`Rule activation recorded at revision ${result.revision}. Search again for current labels. Mailbox unchanged.`);
         });
         card.append(activate);
@@ -420,7 +402,7 @@ async function refreshRules() {
     const undo = node("button", `Restore revision ${data.revision - 1} labels`);
     undo.onclick = () => safely(async () => {
       const restored = await api("/v1/rules/rollback", "POST", {expected_revision: data.revision, target_revision: data.revision - 1});
-      byId("results").replaceChildren(); await refreshRules();
+      invalidateSearch(); await refreshRules();
       status(`Restored earlier labels as revision ${restored.revision}. Mailbox unchanged.`);
     });
     byId("rules").append(undo);

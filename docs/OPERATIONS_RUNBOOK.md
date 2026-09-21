@@ -12,9 +12,10 @@ documents are understood, a worker is online, or the provider is current.
 
 ## Owner processing screen
 
-The new [document job API/library](DOCUMENT_PROCESSING.md) has independent approval,
-history, cancellation and result reads. It is not yet part of the owner screen or
-`process-jobs`. Inspect document `status` separately from extraction outcome and
+The [document job API/library](DOCUMENT_PROCESSING.md) has independent approval,
+history, cancellation and result reads, now exposed by the separate
+[owner PDF screen](DOCUMENT_REVIEW_SCREEN.md), never `process-jobs`.
+Inspect document `status` separately from extraction outcome and
 scan status. Stopping a worker does not cancel saved consent; disabling configuration
 only prevents new approvals. Cancel pending jobs explicitly and retain immutable
 results. Restore and expiry rules apply to both channels without merging permissions.
@@ -68,9 +69,8 @@ If an ordinary searchable message has a deferred PDF/Office attachment, this is
 an unsupported extraction capability, not necessarily a stalled recovery job.
 Do not quarantine the message manually, invent a receipt or raise parser limits.
 Keep its body searchable and record the deferred part. Eligible synthetic PDFs
-can use the separate [document API/library](DOCUMENT_PROCESSING.md); document
-UI, live policy and Office processing remain unavailable; the separate document CLI
-is now implemented. Do not reinterpret
+can use the separate [document API/library](DOCUMENT_PROCESSING.md), operator CLI
+and owner PDF screen. Live policy and Office processing remain unavailable. Do not reinterpret
 an existing MIME approval as consent to use that separate channel.
 
 ## Encrypted evidence failures

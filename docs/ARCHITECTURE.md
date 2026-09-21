@@ -12,6 +12,12 @@ execution distinct in both diagrams and implementation.
 
 ## Latest executable additions
 
+[Owner PDF review](DOCUMENT_REVIEW_SCREEN.md), ADR-038, uses existing document
+APIs for explicit selection/approval, bounded history/status/cancel and cited page
+evidence. A separate static script owns this channel and generation-fenced search;
+MIME controls/credentials remain separate. Document search is opt-in, text-only
+and unscanned. No schema, extraction or mailbox authority is added to the browser.
+
 [Document operator execution](DOCUMENT_CONTROLLER.md), ADR-036, adds a separate
 fixed-purpose/configured PDF command and exact document-worker identity. Shared
 private-file/key/polling primitives preserve separate MIME/PDF queues and processors.
@@ -96,7 +102,8 @@ have deferred binary attachments and no quarantine receipt at all.
 ADR-035 represents approved processing of such a part with source/event identity,
 independent result revisions and fenced publication. Never manufacture quarantine
 or drop a valid body projection to fit the old queue. The synthetic API/library
-integration and ADR-036's operator command are distinct from pending UI/live acceptance. See
+integration, ADR-036's operator command and ADR-038's owner screen remain distinct
+from pending browser/live acceptance. See
 [document processing](DOCUMENT_PROCESSING.md) and [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing).
 
 ### Deployment style

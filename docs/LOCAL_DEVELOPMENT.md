@@ -63,7 +63,9 @@ command does not contact providers, generate approvals or install a background s
 For PDFs, use the separate [document controller guide](DOCUMENT_CONTROLLER.md):
 `process-documents`, exact document-worker scope and fixed synthetic policy. The
 existing document approval API can be explicitly configured with
-`serve --document-processor-version`; the owner screen is not connected yet.
+`serve --document-processor-version`; the [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md)
+now exposes separate selection/approval/history/cancellation and cited page results.
+Worker execution is still a separate explicit command, not a browser operation.
 
 For a larger fictional inbox, use this **instead of** `seed-demo` on a fresh
 initialized synthetic account:
@@ -85,7 +87,7 @@ substitute for a calibrated real-email evaluation set.
 uv run ruff check .
 uv run mypy src
 uv run pytest -q
-node --test tests/web_session.test.cjs tests/web_processing.test.cjs
+node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
 uv run python scripts/deployment_gate.py
 uv run python scripts/check_docs.py
 ```

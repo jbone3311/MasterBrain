@@ -25,9 +25,9 @@ worker supervision, production binary-intake policy, operational acceptance and 
    Expand held-out variety, scanned-text/password-protected cases and sustained
    load measurement; existing format checks do not prove binary extraction quality.
 3. **Binary intake:** ADR-035 now connects the restricted PDF worker to separate
-   synthetic approval jobs, immutable results and opt-in FTS. Next add document
-   owner UI and scanner/live policy, then broader Office/OCR intake. ADR-036 now
-   supplies the separate bounded document command and loopback channel option.
+   synthetic approval jobs, immutable results and opt-in FTS. ADR-038 supplies the
+   document owner UI; browser/accessibility and scanner/live policy remain, then
+   broader Office/OCR intake. ADR-036 supplies the separate bounded document command and loopback channel option.
    Quarantine-recovery permissions remain unchanged. See the
    [contract](DOCUMENT_PROCESSING.md) and [work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
 4. **Production foundation:** OIDC/grants, Azure adapters/private resources,
@@ -69,8 +69,8 @@ evaluated local candidates, relational people/projects/threads/obligations, temp
 corrections and reversible merges. Keep lexical search and no-model operation.
 
 Current: narrow virtual sender rules, a fake-tested optional local adapter and a
-separate synthetic PDF approval/extraction/search backend. State projectors,
-document UI controls and evaluated production interpretation remain open; explicit
+separate synthetic PDF approval/extraction/search backend and owner controls. State
+projectors and evaluated production interpretation remain open; explicit
 synthetic operator execution is now available separately from MIME recovery.
 
 Exit: held-out retrieval/extraction/classification results with sample sizes,

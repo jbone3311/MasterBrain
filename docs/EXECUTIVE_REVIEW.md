@@ -62,7 +62,8 @@ remain unfinished. See [status](IMPLEMENTATION_STATUS.md), [backlog](BACKLOG.md)
 [hosting recommendation](HOSTING_DECISION.md), and [open choices](OPEN_QUESTIONS.md).
 
 The restricted PDF worker now has a synthetic approval/result/search API/library,
-not a completed owner UI or live deployment. The [owner walkthrough](PRODUCT_WALKTHROUGH.md) makes this and
+separate operator command and [owner review screen](DOCUMENT_REVIEW_SCREEN.md),
+not live deployment or browser/accessibility acceptance. The [owner walkthrough](PRODUCT_WALKTHROUGH.md) makes this and
 the other current-versus-target boundaries explicit for the team.
 
 The detailed delivery sequence is maintained in [ROADMAP.md](ROADMAP.md): secure

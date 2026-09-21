@@ -7,6 +7,15 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-038's owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) validates document/account/
+receipt/processor identity, policy and closed status/page envelopes before creating
+controls. Session, query, document view, selection and card generations fence stale
+requests/responses; uncertain approvals preserve one intent key until explicit
+retry within the session. No automatic consent, browser storage, raw-file rendering,
+new worker scope or endpoint for execution. Existing API/SQL authorization remains
+authoritative; UI checks alone are not a security boundary. Browser/accessibility
+and live/scanner acceptance remain pending.
+
 [ADR-036's document controller](DOCUMENT_CONTROLLER.md) uses explicit purpose/policy
 configuration, exactly the worker-only document scope and synthetic account preflight.
 It reuses private-file/key/polling primitives, not MIME permissions or approvals.

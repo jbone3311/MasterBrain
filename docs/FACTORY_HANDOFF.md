@@ -9,12 +9,19 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest documentation/tooling increment: [ADR-037](adr/037_documentation_verification.md)
+Latest runtime increment: [ADR-038](adr/038_document_owner_review.md) adds the
+[owner PDF screen](DOCUMENT_REVIEW_SCREEN.md): explicit selection/approval,
+bounded history/cancel, opt-in search and own-document citations. Review source/
+processor binding, separate MIME state, same-key uncertainty, stale callback fences
+and closed response validation. Node contracts and a real SQL/API-to-DOM bridge
+are distinct from pending browser/accessibility and live/scanner acceptance.
+
+Previous documentation/tooling increment: [ADR-037](adr/037_documentation_verification.md)
 adds the [methods guide](METHODS_GUIDE.md) and regression-tested inventory/local-link/
 heading checks, including hidden GitHub templates. It changes no product runtime.
-The next implementation assignment below remains the PDF owner interface.
+The next implementation assignment below is bounded read-worker operation.
 
-Latest runtime increment: [document operator command](DOCUMENT_CONTROLLER.md), ADR-036.
+Previous runtime increment: [document operator command](DOCUMENT_CONTROLLER.md), ADR-036.
 Review fixed purpose/policy, exact document-worker scope, private file/key boundary,
 synthetic-account preflight, fresh authentication around extraction and shared
 polling without shared approval authority. The loopback server exposes an explicit
@@ -201,16 +208,17 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 
 ## Suggested next issue
 
-> Build the explicit owner workflow over ADR-035's document API/library:
-> safe attachment selection, exact processor/policy approval, bounded history and
-> cancellation and document search/evidence rendering. ADR-036 already supplies
-> separately configured worker execution. Add the required UI workflow ADR first. Preserve session/account
-> fencing, retained request keys, worker-scope separation and no automatic consent.
-> Keep existing MIME controls unchanged. Test stale UI, revocation, restart and
-> restricted worker/SQL behavior. Do not enroll mail, buy resources or mutate Factory.
+> Build a bounded read-worker operator entry point over the existing Fastmail
+> worker, with explicit private configuration, fixed account/provider identity,
+> narrow worker credentials, non-consuming preflight and graceful stop. Define
+> enrollment/credential/transport boundaries in an ADR first. Test with fake
+> provider transport plus real SQL, including revoked access, restart, stale leases,
+> encrypted evidence and content-free failures. Do not discover tokens, enroll or
+> read real mail, buy resources, broaden MIME/PDF scopes or mutate Factory.
 
 ADR-034 supplies the reader; ADR-035 supplies durable approval/publication/search;
-ADR-036 supplies `process-documents` and loopback channel configuration.
+ADR-036 supplies `process-documents` and loopback channel configuration; ADR-038
+supplies its separate owner review/search/evidence screen.
 `process-jobs` still supports only MIME recovery. Do not select a PDF image for
 that incompatible MIME contract or broaden credentials to cover both channels.
 

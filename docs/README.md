@@ -10,7 +10,8 @@ evidence instead of whole mailboxes. The current prototype implements only a
 bounded portion: synthetic ingestion/search, review, virtual rules and recovery.
 It also connects approved synthetic PDFs to restricted extraction, immutable page
 evidence and opt-in search through a separate API/library and explicit operator
-command, not yet owner UI.
+command. The [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) now provides separate
+selection/approval/history/cancellation and cited pages; live acceptance is pending.
 
 ## Reading paths
 
@@ -54,8 +55,8 @@ failure behavior and dependency-ordered delivery plan. The latest consistency pa
 aligns current claims with ADR-035/036, explains the methods in plain language,
 and checks contribution/release guides and GitHub review templates automatically.
 [Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
-keep future changes traceable. Owner UI and live/scanner policy remain pending for the
-document channel. Research counts retain their actual observation dates; no hosted
+keep future changes traceable. Browser/accessibility and live/scanner policy remain
+pending for the document channel. Research counts retain their actual observation dates; no hosted
 deployment or Factory audit is claimed.
 
 ## Executive architecture review
@@ -144,6 +145,7 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF reader, isolation and format limits |
 | [DOCUMENT_PROCESSING.md](DOCUMENT_PROCESSING.md) | Separate synthetic approval API/library, durable results, opt-in search and remaining operator/live gates |
 | [DOCUMENT_CONTROLLER.md](DOCUMENT_CONTROLLER.md) | Explicit PDF command, private configuration, preflight, worker identity and operational limits |
+| [DOCUMENT_REVIEW_SCREEN.md](DOCUMENT_REVIEW_SCREEN.md) | Owner PDF selection/approval/history/cancel, opt-in search, cited pages and uncertainty handling |
 | [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) | Executable fictional generator/export/replay, attachment formats, answer keys and remaining soak gaps |
 | [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md) | External corpus shortlist and adoption gates |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Authoritative current capability boundaries |

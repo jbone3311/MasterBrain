@@ -57,6 +57,21 @@ def test_search_and_headers(client: TestClient) -> None:
     assert "frame-ancestors 'none'" in response.headers["Content-Security-Policy"]
 
 
+@pytest.mark.parametrize("path", ["/", "/app.js", "/document_review.js", "/style.css"])
+def test_owner_assets_remain_fixed_same_origin_and_noncacheable(client: TestClient, path: str):
+    response = client.get(path)
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    assert "script-src 'self'" in response.headers["Content-Security-Policy"]
+    if path == "/":
+        assert 'src="/document_review.js"' in response.text
+        assert 'id="include-documents" type="checkbox"' in response.text
+        assert 'id="document-selection" aria-live="polite"' in response.text
+        assert 'id="documents-health" role="status"' in response.text
+    elif path.endswith(".js"):
+        assert response.headers["Content-Type"].startswith("text/javascript")
+
+
 def test_body_tenant_cannot_override_identity(client: TestClient) -> None:
     response = client.post(
         "/v1/search",

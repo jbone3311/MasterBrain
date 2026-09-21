@@ -21,6 +21,11 @@ owner intent behind these interfaces.
 
 ## Durable isolated processing jobs
 
+ADR-038's [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) consumes the existing
+document routes below. Its new fixed `/document_review.js` static asset carries
+no credentials/content and retains the self-only/no-store policy. No API data
+schema or worker-execution route changes. UI document search is explicitly opt-in.
+
 ADR-035 adds a **separate** [document approval/result API](DOCUMENT_PROCESSING.md):
 account document capabilities, attachment jobs, bounded job history/status/cancel
 and `GET /v1/documents/{document_id}`. Search accepts `include_documents: true`

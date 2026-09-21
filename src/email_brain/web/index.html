@@ -9,7 +9,8 @@
 <button id="connect">Check connection</button><button id="disconnect">Clear session</button>
 <p id="status" role="status">Local prototype · synthetic data recommended</p></section>
 <section><h2>Find the evidence</h2><form id="search-form"><label for="query">Search</label>
-<div class="row"><input id="query" maxlength="500" required placeholder="Try: Melron"><button>Search</button></div></form>
+<div class="row"><input id="query" maxlength="500" required placeholder="Try: Melron"><button>Search</button></div>
+<label class="check-label"><input id="include-documents" type="checkbox"> Include approved PDF text (unscanned)</label></form>
 <div id="results" aria-live="polite"></div></section>
 <section><h2>Import health and held messages</h2>
 <p>Choose an account from a search result, or enter its ID from your local demo configuration.
@@ -27,6 +28,16 @@ No processing starts just by opening or refreshing this screen. Worker availabil
 <div id="processing-jobs" aria-live="polite"></div>
 <button id="processing-more" type="button" hidden>More processing history</button>
 <p class="processing-note">History is a live view, not a frozen export. Each page shows up to 50 approvals. Refresh from the beginning to see new approvals and updated states.</p></section>
+<section aria-labelledby="document-title"><div class="row"><h2 id="document-title">PDF attachment review</h2>
+<button id="documents-refresh" type="button">Refresh PDF history</button></div>
+<p>Search and inspect a message, then select one eligible PDF. Selection only loads its review information; approval is a separate click.
+This channel is for synthetic accounts only and is separate from held-message MIME recovery. No mailbox changes, model calls or malware-safety claim.</p>
+<div id="documents-health" role="status"></div>
+<div id="document-selection" aria-live="polite"></div>
+<div id="document-jobs" aria-live="polite"></div>
+<button id="documents-more" type="button" hidden>More PDF history</button>
+<p class="processing-note">History shows up to 50 approvals per page. Refresh manually for changes. Worker availability is unknown.
+Closing this page clears local selections, not saved approvals. Cancel unfinished jobs to revoke consent; running extraction may finish but cannot publish after cancellation.</p></section>
 <section><h2>Propose a project</h2><p>For example: “Make Melron a project.” Nothing is applied automatically.</p>
 <form id="project-form"><label for="project-name">Project name</label><input id="project-name" maxlength="120" required>
 <label for="project-reason">Why add it?</label><textarea id="project-reason" maxlength="2000" required></textarea>
@@ -43,4 +54,4 @@ No processing starts just by opening or refreshing this screen. Worker availabil
 <p>Approval records your decision only. Approved rules need a separate sample preview and activation. Other proposal types are not yet applied.</p>
 <div id="proposals" aria-live="polite"></div></section>
 <footer>No external scripts, images, model calls, or browser storage.</footer>
-</main><script src="/app.js"></script></body></html>
+</main><script src="/app.js"></script><script src="/document_review.js"></script></body></html>

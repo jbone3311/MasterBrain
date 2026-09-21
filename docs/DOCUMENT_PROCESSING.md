@@ -3,8 +3,8 @@
 Implemented synthetic API/library slice, 2026-09-21; verification belongs to the
 exact-commit [build receipt](BUILD_RECEIPT.md). [ADR-035](adr/035_approved_document_processing.md)
 and migration 0012 extend the [restricted PDF worker](PDF_WORKER.md). ADR-036 now
-adds the separate [operator command](DOCUMENT_CONTROLLER.md). No live mail, scanner,
-cloud deployment or owner-screen controls are implied.
+adds the separate [operator command](DOCUMENT_CONTROLLER.md), and ADR-038 adds the
+[owner review screen](DOCUMENT_REVIEW_SCREEN.md). No live mail, scanner or cloud deployment is implied.
 
 ## What it does
 
@@ -103,6 +103,6 @@ atomic audit failure, historical/current revisions, foreign resources, API schem
 denials and SQL immutability. The explicit PDF container suite additionally runs
 the actual restricted worker through PostgreSQL and authorized search.
 
-UI approval/result rendering, hosted supervision, scanner policy, supported
+Browser/accessibility acceptance, hosted supervision, scanner policy, supported
 live identity/enrollment/storage and broader real-world quality/soak remain open.
 Do not infer their completion from this source-to-search acceptance.

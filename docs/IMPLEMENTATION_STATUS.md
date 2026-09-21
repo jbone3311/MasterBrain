@@ -9,7 +9,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/scheduler, hosted processing supervision, live acceptance and soak |
 | Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
 | Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, production PDF intake policy, Office/OCR/archive extraction; bulk historical document reprocessing and raw download policy |
-| Approved PDF processing | Separate restricted worker; synthetic approval API/library and explicit operator CLI, durable fenced jobs, immutable results, opt-in FTS and page excerpts | Owner UI, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
+| Approved PDF processing | Separate restricted worker; synthetic API/library/operator and owner approval/history/cancel UI, durable fenced jobs, immutable results, opt-in FTS and cited pages | Browser acceptance, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
 | Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments; opt-in latest-current PDF extraction text | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
 | Access | Expiring hashed-token registry; tenant/actor/scopes; owner membership checks | OIDC/MFA, invitations, member/account grants, revocation UX, rate limiting |
 | Feedback | Typed proposals; human-reviewed sender rule simulation/activation; immutable revisions and rollback; virtual search labels | Rich predicates/protected-sender configuration, temporal/entity application, drift evaluation |
@@ -33,6 +33,11 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
+ADR-038 adds the [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md), generation-fenced
+search/evidence rendering and opt-in document search. Node contracts and a real
+SQL/API-response-to-DOM bridge test this slice; neither is browser/accessibility
+acceptance. No new schema, dependency or mailbox/worker scope.
+
 ADR-036 adds [explicit document execution](DOCUMENT_CONTROLLER.md), separate
 purpose/policy configuration and worker scope, plus a loopback server channel flag.
 It fixes invalid demo-owner credential generation by allowlisting human scopes.
@@ -48,7 +53,7 @@ API/library and extraction publication; it does not expand MIME approvals or the
 existing operator CLI. [Document contract](DOCUMENT_PROCESSING.md).
 
 ADR-034 supplies the [restricted PDF worker](PDF_WORKER.md); ADR-035 supplies the
-separate API/SQL/search workflow. UI controls remain absent. Exact-commit acceptance
+separate API/SQL/search workflow. ADR-038 now adds separate owner controls. Exact-commit acceptance
 is recorded in the build receipt, not inferred from this row. ADR-036 adds the
 separate `process-documents` command; it does not expand `process-jobs` or its UI.
 
@@ -56,9 +61,9 @@ ADR-037 strengthens documentation inventory/local-section-link checks and adds a
 methods guide. It changes no product capability or permission. Its tooling tests
 and verification are recorded separately from runtime and live-acceptance claims.
 
-### Verified runtime
+### Prior verified runtime (before the owner PDF screen)
 
-Application runtime remains **73a8459**. The documentation/tooling follow-up
+Application runtime **73a8459** and its documentation/tooling follow-up
 **874c288** passed [CI 35585839904](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35585839904):
 1,660 Python tests (222 real PostgreSQL), 52 Node UI contracts, five MIME
 and 15 PDF actual-container cases. The added 28 cases test documentation tooling,

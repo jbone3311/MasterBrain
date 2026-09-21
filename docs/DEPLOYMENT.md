@@ -5,7 +5,10 @@ Migration 0012 and updated runtime grants are required for the separate
 [document channel](DOCUMENT_PROCESSING.md). Configure its exact processor only
 after the restricted worker is available; API configuration grants no Docker access.
 ADR-036 adds the separate [document CLI](DOCUMENT_CONTROLLER.md) and loopback
-`serve --document-processor-version` option. Owner UI and hosted deployment remain pending.
+`serve --document-processor-version` option. ADR-038 adds the
+[owner PDF screen](DOCUMENT_REVIEW_SCREEN.md); deploy compatible `app.js`,
+`document_review.js`, HTML/CSS and the fixed asset route together. It changes no
+schema or worker permissions. Hosted deployment and browser acceptance remain pending.
 Migration 0011 adds the owner history index; ship compatible API/assets together
 and account for index-build locking. Hiding controls does not cancel existing
 approvals. The production topology below is planned, not provisioned.
