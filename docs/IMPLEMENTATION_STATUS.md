@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated 2026-09-20. This file distinguishes shipped prototype behavior from the
+Updated 2026-09-21. This file distinguishes shipped prototype behavior from the
 ultimate product described in the PRD. A passing CI run does not make this production-ready.
 
 | Capability | Current implementation | Remaining gate |
@@ -31,9 +31,9 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
-Latest verified runtime/test commit: **98bb6f2**, [CI 35568932837](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35568932837).
-1,238 Python tests (156 real PostgreSQL), 52 Node UI contracts and four additional
-actual-container cases passed. Restore of unchanged runtime at 814197a verified
+Latest verified runtime/test commit: **eaeca7a**, [CI 35570703531](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35570703531).
+1,304 Python tests (164 real PostgreSQL), 52 Node UI contracts and five additional
+actual-container cases passed. Restore of unchanged runtime at 0f01724 verified
 24 tables, 119 rows, two tenants and four encrypted objects. See
 [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for exact scope, warnings and limitations.
 The proposed known-answer continuous feed and new browser/accessibility acceptance

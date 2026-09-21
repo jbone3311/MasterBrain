@@ -1,6 +1,55 @@
 # Build and validation receipt
 
-Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+
+## Operator-run approved processing
+
+Implementation **0f01724** passed [CI 35570568792](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35570568792)
+and [restore 35570568779](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35570568779).
+The follow-up **eaeca7a** strengthens the denial test with an actual foreign-tenant
+account and updates the roadmap; it changes no runtime or schema. Final
+[CI 35570703531](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35570703531)
+also passed at eaeca7a. Counts below apply to both runs. Subsequent receipt-only
+documentation edits do not change that tested runtime.
+
+- **1,304 standard Python tests**, including **164 PostgreSQL cases**, passed with
+  no CI skips; **52 Node UI contracts** and **five additional actual-container
+  cases** passed. Repeated gate tests and the restore subset are not added again.
+- New coverage: **58 controller unit cases**, **eight SQL workflow cases** and
+  **one actual CLI/container case**. Private file modes/type/links/size, closed
+  configuration, scoped worker auth, expiry/revocation, bounded polls, stop signals,
+  redaction, preflight without claims, restart idempotency and encrypted-source
+  processing are tested. Existing SQL lease/crash/cancel tests remain in the suite.
+- Local full suite: **1,140 passed, 164 explicit PostgreSQL skips**, two existing
+  dependency warnings. Ruff, strict typing over **34 source modules**, separately
+  typed restore script, locked sync, 52 Node checks, documentation/repository gates
+  and diff checks passed. This does not imply local PostgreSQL or Docker was run.
+- Restore on unchanged runtime: **24 tables, 119 rows, two tenants, four encrypted
+  objects**, equal content hashes and tenant isolation; database-only recovery
+  refused. **15.73 seconds** includes disposable startup, not production RTO.
+- Full-history secret scan through eaeca7a: **38 commits**, no detected leaks.
+
+[ADR-032](adr/032_operator_processing_controller.md) and the
+[operator guide](PROCESSING_CONTROLLER.md) define `process-jobs`: private explicit
+configuration, exact worker scope, no-claim preflight, bounded iterations and
+graceful stop. API/parser receive no Docker authority; no SQL grants/schema change.
+The actual-container test runs new CLI processes for check, execution and restart,
+with tenant-bound encrypted source, bounded text evidence and unchanged raw hashes.
+The database tests also show token removal during parsing prevents evidence publication.
+
+Review fixed inherited whitespace normalization so an image ID with trailing
+whitespace is rejected, not silently changed. The foreign-account test now checks
+an existing other tenant's account, not just an absent UUID. There is no claim of
+independent third-party security certification.
+
+Still required: credential enrollment, production OIDC/service principals,
+hosted supervision and image/host acceptance, Fastmail operator enrollment/scheduler,
+cloud Blob/KMS and independent key recovery, scanner/PDF/Office/OCR extraction,
+known-answer continuous fixture feed, live-provider and multi-day soak testing,
+MCP/state/model-quality work, retention/purge and Factory audit. Check mode does
+not certify processor availability; successful polling can report deferred/failed
+work. File revocation is not atomic with SQL publication. No real mail, remote
+model, mailbox effect or paid resource is enabled.
 
 ## Modernized product pack and owner processing review
 
