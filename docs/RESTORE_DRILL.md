@@ -1,6 +1,14 @@
 # Synthetic PostgreSQL backup/restore drill
 
-Latest verified restore implementation: **a2c5957**,
+Latest runtime recheck: **73a8459**,
+[run 35584256115](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256115),
+passed 2026-09-21 after the separate PDF operator command/shared-controller changes.
+**26 tables, 142 rows, two tenants and four encrypted objects**, matching hashes,
+RLS and database-only refusal passed. Elapsed **18.24 seconds** includes disposable
+startup; this is not managed PITR, a key-loss recovery drill or production RTO.
+The restore fixture is unchanged; actual CLI/PDF-container acceptance runs separately.
+
+Historical verified restore implementation: **a2c5957**,
 [run 35579931717](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35579931717),
 passed 2026-09-21: **26 tables, 142 rows, two tenants and four encrypted objects**.
 It adds completed/cancelled/pending document jobs, immutable page evidence and

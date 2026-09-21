@@ -36,8 +36,8 @@ parser does not certify an online worker, and a completed job can have deferred 
 ADR-036 adds [explicit document execution](DOCUMENT_CONTROLLER.md), separate
 purpose/policy configuration and worker scope, plus a loopback server channel flag.
 It fixes invalid demo-owner credential generation by allowlisting human scopes.
-Current local/CI verification is recorded separately below/in the build receipt;
-the previous increment's counts must not be applied to these new tests implicitly.
+Exact local/CI verification is recorded below and in the build receipt; do not
+apply these counts to an untested later revision.
 
 ### Important attachment boundary
 
@@ -53,13 +53,15 @@ is recorded in the build receipt, not inferred from this row.
 
 ### Verified runtime
 
-Latest verified runtime/test revision: **9a99dfa**, [CI 35580405200](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35580405200).
-1,553 Python tests (211 real PostgreSQL), 52 Node UI contracts, five MIME
-and 14 PDF actual-container cases passed. The unchanged runtime/restore implementation
-at **a2c5957** verified 26 tables, 142 rows, two tenants and four encrypted objects. See
+Latest verified runtime/test revision: **73a8459**, [CI 35584256073](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256073).
+1,632 Python tests (222 real PostgreSQL), 52 Node UI contracts, five MIME
+and 15 PDF actual-container cases passed. The same revision's
+[restore](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256115)
+verified 26 tables, 142 rows, two tenants and four encrypted objects. See
 [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for exact scope, warnings and limitations.
-These include approved synthetic PDF-to-SQL/search/evidence and known-answer mailbox
-generation/replay, not document UI/CLI, scanning, sustained live feed, real model
+These include the explicit document CLI from encrypted source to restricted PDF/
+SQL/search/evidence, credential repair and known-answer mailbox generation/replay,
+not document UI, scanning, sustained live feed, real model
 accuracy or new browser/accessibility acceptance.
 
 Local unit/API/protocol/attachment tests, type checking and linting run with locked

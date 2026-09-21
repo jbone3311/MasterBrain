@@ -2,6 +2,47 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Explicit PDF operator execution and demo credential repair
+
+Implementation/test revision **73a8459** passed
+[CI 35584256073](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256073)
+and [restore 35584256115](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256115),
+observed 2026-09-21 Pacific. Later receipt-only edits do not change this tested runtime.
+
+- **1,632 standard Python tests passed**, including **222 real PostgreSQL cases**;
+  no CI skips. **52 Node contracts**, **five actual MIME-container cases** and
+  **15 actual PDF-container cases** passed. Repeated repository-gate and restore
+  subsets are not counted twice.
+- **79 new standard cases**: 68 offline controller/credential/server-option checks
+  and 11 PostgreSQL cases. They test closed fixed-purpose/policy configuration,
+  MIME-versus-document separation, exact worker scope, synthetic account/runtime
+  role/owner denial, no-claim preflight, private key material, bounded counters,
+  credential rotation/revocation, stop, cancellation and restarted publication.
+- The added actual-container case invokes **fresh CLI processes** through private
+  configuration, encrypted source, the real restricted PDF image, real SQL and
+  cited search. Preflight leaves attempts at zero; execution publishes one result;
+  restarting finds no duplicate work. Original raw bytes and sync cursor survive.
+- Fixed demo provisioning's accidental inclusion of a worker-only scope. The
+  regression exercises emitted credential generation/serialization/registry
+  authentication with SQL provisioning mocked; it is not a new live enrollment test.
+  A fixed human allowlist and validation now precede credential-file publication.
+- Restore reverified **26 tables, 142 rows, two tenants and four encrypted objects**,
+  equal hashes, RLS and refusal of incomplete database-only recovery. **18.24 seconds**
+  includes disposable startup, not production RTO/PITR. Restore fixtures/results
+  are unchanged; the real extraction/CLI check is the separate CI proof above.
+- Local: **1,410 passed, 222 explicit PostgreSQL skips**, 52 Node passes, locked
+  dependencies, lint, strict typing over **41 modules**, separate restore-script
+  typing, CLI help, docs/repository/diff checks. Incremental secret scan through
+  73a8459 found no leaks. Two existing Python deprecations and action/runner
+  migration notices remain tracked, non-failing supply-chain work.
+
+[ADR-036](adr/036_document_operator_controller.md) and the
+[operator guide](DOCUMENT_CONTROLLER.md) describe exact scopes, private files,
+unscanned synthetic policy, count/exit semantics and revocation limits. No schema,
+new dependency, real mailbox, provider write, cloud resource, remote model or
+Factory mutation was added. The document owner UI, hosted supervision, live/scanner
+policy and sustained acceptance remain open; the next assignment is the owner UI.
+
 ## Documentation and handoff consistency pass
 
 Documentation-only follow-up to **25f69de**, whose
