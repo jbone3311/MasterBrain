@@ -2,6 +2,50 @@
 
 Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Audited human recovery of held messages
+
+Code/test commit: `063ac14` (implementation `af76838`, follow-up assertions/UI).
+[CI 35561947038](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35561947038)
+and [restore 35561947019](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35561947019)
+both passed on 2026-09-20 Pacific.
+
+- **839 Python tests passed**, including **86 real PostgreSQL cases**, no CI skips;
+  **25 Node UI contracts passed**. The repository-gate repetition is not counted
+  twice. Local validation: 753 passes, 86 explicit PostgreSQL skips.
+- Locked dependency sync, lint, strict typing across 29 source modules, all pack
+  documents/local links, container build and CLI smoke passed. The restore script
+  separately passed strict typing with `MYPYPATH=src`.
+- Actual PostgreSQL 17 dump/restore verified **23 tables, 82 rows, two synthetic
+  tenants**, equal content hashes, tenant authorization, search/evidence and
+  recovery-attempt persistence. Elapsed **23.74 seconds** includes disposable
+  container startup, not a production recovery-time promise. Owned test resources
+  and private temporary archive were cleaned up by the drill.
+- Full Git-history secret scan found no leaks through `063ac14`.
+
+Twenty new real-database cases and two API/library cases cover explicit human
+authorization, simultaneous retries, competing owner audit, newer provider events,
+membership/account revocation, hash corruption, parser crashes, atomic rollback,
+old citations, legacy metadata, populated migration and active worker compatibility.
+Same-parser output drift now fails closed; it cannot change searchable text while
+reusing a historical citation. Ten new UI tests cover explicit clicks, exact parser
+binding, cached outcomes, generic errors and session/account/refresh races.
+
+The first CI pass found an old security-test assertion expecting all reprocessing
+to be unavailable (838 passed, one failed). That assertion was updated for the
+new human-only retry contract without removing its raw-access, paging or isolation
+checks. Independent review also caught missing audit on a concurrent cached retry;
+it was fixed and both actors/requests are tested. The final UI explicitly displays
+the parser version being approved. Two agents implemented/reviewed this increment.
+
+Migration **0008** requires coordinated API/worker upgrade and refuses legacy
+parser-provenance mismatches. No raw bytes, provider events, sync cursors or worker
+leases are changed by recovery. No real mailbox, model, binary extractor, cloud
+resource or Factory runtime was activated. Two upstream test-client deprecations
+remain; CI also warns about old action Node runtimes and an upcoming runner-image
+change. Dependency/action modernization belongs to the supply-chain backlog.
+See [recovery contract](QUARANTINE_RECOVERY.md), [ADR-027](adr/027_quarantine_recovery.md)
+and [remaining gates](IMPLEMENTATION_STATUS.md).
+
 ## Calendar extraction and realistic attachment formats
 
 Code/test commit: `e3695d8`.
