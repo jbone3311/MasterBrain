@@ -58,7 +58,7 @@ def ingest(store, ctx, account, raw=None):
 
 
 def test_full_body_and_exact_exports_with_audit_no_source_mutation(database, tenant):
-    store, _ = database
+    store, admin = database
     ctx, account = tenant
     evidence, raw = ingest(store, ctx, account)
     api = client(store, ctx)
@@ -82,16 +82,23 @@ def test_full_body_and_exact_exports_with_audit_no_source_mutation(database, ten
         assert hashlib.sha256(downloaded.content).hexdigest() == part["sha256"]
         assert len(downloaded.content) == part["byte_size"]
     assert store.evidence(ctx, evidence) == before
-    with store.transaction(ctx) as conn:
+    # Runtime deliberately writes but cannot browse audit records. Inspect the
+    # synthetic receipt with the separate administrator, never broaden its grant.
+    with psycopg.connect(admin) as conn:
         events = conn.execute(
-            "SELECT event_type FROM audit_events WHERE event_type LIKE 'message.%'"
+            "SELECT event_type FROM audit_events WHERE tenant_id=%s "
+            "AND event_type LIKE 'message.%%'",
+            (ctx.tenant_id,),
         ).fetchall()
-        assert sorted(e["event_type"] for e in events) == [
+        assert sorted(e[0] for e in events) == [
             "message.attachment_export",
             "message.attachment_export",
             "message.original_export",
             "message.read",
         ]
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
+        conn.execute("SELECT event_type FROM audit_events")
+    with store.transaction(ctx) as conn:
         assert conn.execute("SELECT count(*) AS n FROM provider_events").fetchone()["n"] == 1
 
 

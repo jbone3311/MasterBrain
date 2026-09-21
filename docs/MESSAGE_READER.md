@@ -39,8 +39,11 @@ Renaming or opening a file is the user's responsibility. **Unscanned is not safe
 These downloads do not start PDF extraction, install software or open the files.
 
 The browser validates identity, length, response type/disposition and SHA-256
-before handing bytes to its save mechanism. Temporary blob URLs are revoked.
-The browser can block saving; “handed to browser” is not proof of a completed save.
+before offering an explicit **Save verified file** link. Saving requires that
+second user click, not an automatic action after a network request. At most one
+prepared file is retained per view; a new export, closing/resetting the reader or
+unchecking consent revokes its temporary blob URL. The browser can block saving;
+“save requested” is not proof of a completed save.
 
 ## HTTP contract
 

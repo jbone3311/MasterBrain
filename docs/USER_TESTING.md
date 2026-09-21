@@ -25,7 +25,8 @@ Other product controls on this preview are not connected. Stop it with Ctrl-C.
 4. Open **project documents**. Expect PDF, Excel, Word and CSV receipt entries.
 5. Downloads must remain disabled until you check the unscanned-files acknowledgement.
    Try **Download original email (.eml)** and one **Download attachment (.bin)**.
-   The browser may prompt for a save location. These generated files are fictional;
+   Then click **Save verified file**. The browser may prompt for a save location.
+   These generated files are fictional;
    future real attachments remain untrusted. Saving is not document extraction.
 6. Open **large original boundary**. Expect an explicit truncated projection warning,
    not a claim of full on-screen reading. The original download retains the rest.

@@ -65,7 +65,7 @@ test("reader displays complete long text safely, with no automatic download", as
 });
 
 for (const which of ["original", "attachment"]) test(`${which} download is explicit, hash-checked, temporary and inert`, async () => {
-  const {app, calls, saved, revoked, timers} = scenario(); await open(app); consent(app);
+  const {app, calls, saved, revoked} = scenario(); await open(app); consent(app);
   await button(view(app), which === "original" ? "Download original email (.eml)" : "Download attachment (.bin)").onclick();
   assert.equal(saved.length, 1);
   assert.equal(saved[0].type, "application/octet-stream");
@@ -74,8 +74,14 @@ for (const which of ["original", "attachment"]) test(`${which} download is expli
   assert.equal(request.method, "POST"); assert.equal(request.credentials, "omit");
   assert.equal(request.cache, "no-store");
   assert.deepEqual(JSON.parse(request.body), {acknowledge_unscanned: true});
-  assert.equal(descendants(view(app)).some((e) => e.tagName === "A"), false);
-  timers.forEach((fn) => fn()); assert.deepEqual(revoked, ["blob:synthetic-1"]);
+  const link = descendants(view(app)).find((e) => e.tagName === "A");
+  assert.ok(link); assert.equal(link.clicked, undefined);
+  link.onclick({preventDefault() { assert.fail("current save rejected"); }});
+  assert.match(app.element("status").textContent, /Save requested/);
+  app.element("message-reader-close").onclick();
+  assert.deepEqual(revoked, ["blob:synthetic-1"]);
+  let prevented = false; link.onclick({preventDefault() { prevented = true; }});
+  assert.equal(prevented, true);
 });
 
 for (const mutate of [
@@ -162,4 +168,39 @@ test("only one export request at a time and consent can be disabled", async () =
   const run = original.onclick(); await other.onclick(); assert.equal(calls.length, 3);
   pending.resolve(download()); await run;
   box.checked = false; box.onchange(); await other.onclick(); assert.equal(calls.length, 3);
+});
+
+for (const change of ["consent", "token", "query", "account"]) test(`prepared save link is revoked after ${change}`, async () => {
+  const {app, revoked} = scenario(); await open(app); const box = consent(app);
+  await button(view(app), "Download original email (.eml)").onclick();
+  const old = descendants(view(app)).find((e) => e.tagName === "A"); assert.ok(old);
+  if (change === "consent") { box.checked = false; box.onchange(); }
+  if (change === "token") { app.element("token").value = "other"; app.element("token").oninput(); }
+  if (change === "query") app.element("query").oninput();
+  if (change === "account") { app.element("account-id").value = id(99); app.element("account-id").oninput(); }
+  assert.deepEqual(revoked, ["blob:synthetic-1"]);
+  assert.equal(descendants(view(app)).some((e) => e.tagName === "A"), false);
+  let prevented = false; old.onclick({preventDefault() { prevented = true; }});
+  assert.equal(prevented, true);
+});
+
+test("a new verified file replaces the prior temporary link", async () => {
+  const {app, saved, revoked} = scenario(); await open(app); consent(app);
+  await button(view(app), "Download original email (.eml)").onclick();
+  const old = descendants(view(app)).find((e) => e.tagName === "A");
+  await button(view(app), "Download attachment (.bin)").onclick();
+  assert.equal(saved.length, 2); assert.deepEqual(revoked, ["blob:synthetic-1"]);
+  assert.equal(descendants(view(app)).filter((e) => e.tagName === "A").length, 1);
+  let prevented = false; old.onclick({preventDefault() { prevented = true; }});
+  assert.equal(prevented, true);
+});
+
+test("withdrawn consent during a request never prepares a save link", async () => {
+  const pending = deferred();
+  const {app, saved} = scenario((url) => url.endsWith("/original") ? pending.promise : undefined);
+  await open(app); const box = consent(app);
+  const run = button(view(app), "Download original email (.eml)").onclick();
+  box.checked = false; box.onchange(); pending.resolve(download()); await run;
+  assert.equal(saved.length, 0);
+  assert.equal(descendants(view(app)).some((e) => e.tagName === "A"), false);
 });

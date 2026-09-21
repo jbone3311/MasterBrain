@@ -105,8 +105,14 @@ async function openReader(hit, context) {
     target.append(label);
     const controls = [];
     let downloading = false;
+    let saveLink = null;
+    function clearPreparedDownload() {
+      for (const url of readerUrls) URL.revokeObjectURL(url);
+      readerUrls.clear();
+      if (saveLink) { saveLink.remove(); saveLink = null; }
+    }
     const update = () => { for (const control of controls) control.disabled = downloading || acknowledge.checked !== true; };
-    acknowledge.onchange = update;
+    acknowledge.onchange = () => { if (acknowledge.checked !== true) clearPreparedDownload(); update(); };
     function downloadButton(text, suffix, size, sha, filename) {
       const button = node("button", text); button.disabled = true; controls.push(button);
       button.onclick = async () => {
@@ -132,17 +138,19 @@ async function openReader(hit, context) {
           const bytes = await readDownload(response, size, current);
           const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
             (n) => n.toString(16).padStart(2, "0")).join("");
-          if (!current()) return;
+          if (!current() || acknowledge.checked !== true) return;
           if (digest !== sha) invalidReader();
+          clearPreparedDownload();
           const url = URL.createObjectURL(new Blob([bytes], {type: "application/octet-stream"}));
           readerUrls.add(url);
-          const link = node("a", ""); link.href = url; link.download = filename;
+          const link = node("a", `Save verified file: ${filename}`); link.href = url; link.download = filename;
+          saveLink = link;
+          link.onclick = (event) => {
+            if (!current() || acknowledge.checked !== true || saveLink !== link) { event.preventDefault(); return; }
+            status("Save requested. Check your browser's downloads; the file remains unscanned.");
+          };
           target.append(link);
-          try { link.click(); } finally {
-            link.remove();
-            setTimeout(() => { URL.revokeObjectURL(url); readerUrls.delete(url); }, 1000);
-          }
-          status("Verified bytes handed to your browser for saving. File remains unscanned.");
+          status("File verified. Click the Save verified file link below to save it. File remains unscanned.");
         } catch (_) { if (current()) status("Download could not be verified. Check access and try again; no file was saved by this page."); }
         finally { downloading = false; if (current()) update(); }
       };
