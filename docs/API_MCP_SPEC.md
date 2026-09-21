@@ -21,6 +21,11 @@ owner intent behind these interfaces.
 
 ## Durable isolated processing jobs
 
+The [read operator](READ_CONTROLLER.md), ADR-039, is CLI-only. It adds no REST/MCP
+route, enrollment or pause-reset endpoint and no new scope. The existing
+`email.ingest` scope is required alone on its worker identity. No assistant tool
+can invoke this command through the API.
+
 ADR-038's [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) consumes the existing
 document routes below. Its new fixed `/document_review.js` static asset carries
 no credentials/content and retains the self-only/no-store policy. No API data

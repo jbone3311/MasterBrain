@@ -14,6 +14,7 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 | Encrypted local objects | [blobs.py](../src/email_brain/blobs.py) |
 | Provider reads | [connectors/](../src/email_brain/connectors/) |
 | Worker/checkpoints | [sync.py](../src/email_brain/sync.py), [sync_store.py](../src/email_brain/sync_store.py) |
+| Bounded read operator | [read_controller.py](../src/email_brain/read_controller.py); `sync-read`, private preflight, exact ingest identity and guarded Fastmail reads |
 | Recovery/jobs | [recovery.py](../src/email_brain/recovery.py), [recovery_jobs.py](../src/email_brain/recovery_jobs.py) |
 | Approved document jobs/results | [document_jobs.py](../src/email_brain/document_jobs.py), [migration 0012](../migrations/0012_document_jobs.sql); opt-in search/evidence in Store |
 | Restricted processor/controller | [mime_sandbox.py](../src/email_brain/mime_sandbox.py), [sandbox_runner.py](../src/email_brain/sandbox_runner.py) |

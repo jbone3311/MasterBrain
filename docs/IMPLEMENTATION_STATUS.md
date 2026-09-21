@@ -6,7 +6,7 @@ ultimate product described in the PRD. A passing CI run does not make this produ
 | Capability | Current implementation | Remaining gate |
 |---|---|---|
 | Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks; verified synthetic logical dump/restore | Managed deployment, encryption/KMS, purge, offsite/PITR disaster-recovery drills |
-| Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker, fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/scheduler, hosted processing supervision, live acceptance and soak |
+| Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker and bounded private-configured read CLI; fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/resume administration, hosted supervision/alerts, live acceptance and soak |
 | Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
 | Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; realistic synthetic MIME fixtures | Malware scanner, production PDF intake policy, Office/OCR/archive extraction; bulk historical document reprocessing and raw download policy |
 | Approved PDF processing | Separate restricted worker; synthetic API/library/operator and owner approval/history/cancel UI, durable fenced jobs, immutable results, opt-in FTS and cited pages | Browser acceptance, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
@@ -32,6 +32,12 @@ do not create entities. Virtual labels do not change provider folders. A configu
 parser does not certify an online worker, and a completed job can have deferred attachments.
 
 ## Validation
+
+ADR-039 adds the [bounded read controller](READ_CONTROLLER.md), exact ingest-worker
+identity, explicit execution flag and non-consuming preflight. Current tests use
+fake HTTPS plus SQL for restart, revocation, lease/source binding, retries/pauses
+and encrypted evidence. Exact observed results belong in the build receipt; no
+live/provider/hosted acceptance follows from the new CLI.
 
 ADR-038 adds the [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md), generation-fenced
 search/evidence rendering and opt-in document search. Node contracts and a real

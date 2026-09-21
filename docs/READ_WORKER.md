@@ -1,6 +1,9 @@
 # Read worker: implemented contract and remaining gates
 
-This is a library, tested using synthetic HTTP and real PostgreSQL. It does not
+This library now has a separate [bounded operator command](READ_CONTROLLER.md),
+`sync-read`, with private preflight and explicit execution. Tests use synthetic
+HTTP and real PostgreSQL; the command is not live-accepted or a hosted supervisor.
+The library does not
 discover credentials, enroll accounts, start a background process or contact a
 mailbox on installation. A caller explicitly supplies a read client and a trusted
 tenant/owner context with `email.ingest`. No provider write method exists.
@@ -76,7 +79,7 @@ and can be absent after such a crash. Do not treat run counts as ingestion truth
 
 ## Migration and rollback
 
-Apply all migrations through `0009_external_raw_evidence.sql` with the
+Apply the complete repository migration set with the
 administrator migrator, then reapply the
 explicit runtime grants using `grant_runtime` for the installed runtime role.
 The normal API migration command does not silently expand existing role grants.

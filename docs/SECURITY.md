@@ -7,6 +7,14 @@ No realistic-feed proposal authorizes external delivery or private-data disclosu
 
 ## New local prototype boundaries
 
+[ADR-039's read controller](READ_CONTROLLER.md) requires a worker with exactly
+`email.ingest`, existing owner/account/provider/secret binding and explicit
+execution flag. No request-selectable endpoint, enrollment or pause reset. Fresh
+checks surround HTTP requests and precede ingestion; provider token bytes are
+pinned per step. File revocation is not atomic with SQL and cannot retract committed
+pages. Authorization failure may leave a lease to expire, never silently become a
+malformed-MIME pause. No new API/SQL scope or provider-write method.
+
 [ADR-038's owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) validates document/account/
 receipt/processor identity, policy and closed status/page envelopes before creating
 controls. Session, query, document view, selection and card generations fence stale

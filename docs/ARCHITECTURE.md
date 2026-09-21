@@ -12,6 +12,12 @@ execution distinct in both diagrams and implementation.
 
 ## Latest executable additions
 
+[Read-worker operation](READ_CONTROLLER.md), ADR-039, adds a private-configured
+bounded CLI over the existing Fastmail worker. Preflight performs no provider
+requests/lease claims. Execution reuses checkpoint/retry/lease logic and adds
+per-request/step authority checks. No enrollment, scheduler service or hosted
+identity is created; MIME/PDF controllers remain separate.
+
 [Owner PDF review](DOCUMENT_REVIEW_SCREEN.md), ADR-038, uses existing document
 APIs for explicit selection/approval, bounded history/status/cancel and cited page
 evidence. A separate static script owns this channel and generation-fenced search;

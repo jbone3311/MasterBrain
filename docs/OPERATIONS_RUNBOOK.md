@@ -12,6 +12,13 @@ documents are understood, a worker is online, or the provider is current.
 
 ## Owner processing screen
 
+The separate [read operator](READ_CONTROLLER.md) has non-consuming preflight and
+explicit bounded execution. Exit 2 requires attention to a persisted pause; exit 1
+is a scrubbed operation failure. Exit 0 still requires inspecting progress/retry/
+not-due counts; it is not proof of sync completeness. Never reset a pause or advance
+a checkpoint to bypass a failure. Stop subsequent polls with SIGINT/SIGTERM;
+an in-flight bounded page may finish. No supervisor or enrollment is installed.
+
 The [document job API/library](DOCUMENT_PROCESSING.md) has independent approval,
 history, cancellation and result reads, now exposed by the separate
 [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md), never `process-jobs`.

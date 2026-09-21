@@ -30,7 +30,7 @@ passed; documentation updates do not certify new functionality.
 
 | Area | Executable prototype |
 |---|---|
-| Ingest | Fastmail worker library; synthetic HTTP-to-Postgres tests; atomic checkpoints, fenced leases, quarantine and inventory reconciliation |
+| Ingest | Fastmail worker and explicit bounded operator CLI; synthetic HTTP-to-Postgres tests; atomic checkpoints, fenced leases, quarantine and inventory reconciliation |
 | Preserve | Immutable raw/evidence versions; bounded inline MIME; opt-in encrypted local objects up to 16 MiB |
 | Search | PostgreSQL FTS over messages and supported text/calendar attachments, with stable evidence references |
 | Read PDFs | Separate synthetic approval API/library/operator, owner selection/approval/history/cancel UI, restricted worker, immutable page evidence and opt-in document FTS |
@@ -67,10 +67,11 @@ claim is made.
 
 ## What comes next
 
-1. Complete the bounded read-worker operator entry point.
-   The synthetic PDF owner workflow now exists; browser/accessibility acceptance,
-   scanner/live policy and hosted worker supervision remain distinct gates.
-2. Complete supervised read-only operation, production identity, managed storage,
+1. Build the production identity boundary, operational visibility and supervision. The
+   [bounded read command](docs/READ_CONTROLLER.md) and synthetic PDF owner workflow
+   now exist; browser/accessibility acceptance, scanner/live policy and hosted
+   worker supervision remain distinct gates.
+2. Complete production identity, managed storage,
    recoverable keys and operator alerts; then accept one disposable live provider.
 3. Build evaluated project/reply state and assistant access; add separately
    approved mailbox actions only after those foundations.
@@ -109,6 +110,10 @@ to use Microsoft mail/SharePoint. Keep live databases, secrets, objects and mode
 caches outside Dropbox. See [hosting](docs/HOSTING_DECISION.md).
 
 ## Run and verify
+
+The [read operator](docs/READ_CONTROLLER.md) adds `sync-read --check` and separately
+flagged bounded execution for an already configured Fastmail account. It does not
+enroll accounts or reset paused workers; no live mailbox has been accepted.
 
 The separate [approved-processing command](docs/PROCESSING_CONTROLLER.md) runs
 bounded recovery jobs with explicit private configuration. It does not enroll an

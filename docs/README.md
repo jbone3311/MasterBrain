@@ -142,6 +142,7 @@ Use provider-native change tracking: Gmail partial sync through `history.list` (
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Developer entry path, checks, review and Factory boundaries |
 | [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md) | Merge/pilot/release distinctions, gate register, metrics and evidence record |
 | [CODE_MAP.md](CODE_MAP.md) | Actual files and operation paths |
+| [READ_CONTROLLER.md](READ_CONTROLLER.md) | Bounded Fastmail read command, private preflight, authority checks and remaining live/supervision gates |
 | [PDF_WORKER.md](PDF_WORKER.md) | Source-bound restricted PDF reader, isolation and format limits |
 | [DOCUMENT_PROCESSING.md](DOCUMENT_PROCESSING.md) | Separate synthetic approval API/library, durable results, opt-in search and remaining operator/live gates |
 | [DOCUMENT_CONTROLLER.md](DOCUMENT_CONTROLLER.md) | Explicit PDF command, private configuration, preflight, worker identity and operational limits |

@@ -9,7 +9,13 @@ Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLE
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 
-Latest runtime increment: [ADR-038](adr/038_document_owner_review.md) adds the
+Latest runtime increment: [ADR-039](adr/039_read_worker_controller.md) adds the
+[bounded read command](READ_CONTROLLER.md). Review exact ingest-only worker
+identity, non-consuming preflight, fixed provider/secret binding, per-request/step
+authority guards, encrypted write-key selection, stop and pause/retry semantics.
+It grants no enrollment, hosted supervision, mailbox writes or live acceptance.
+
+Previous runtime increment: [ADR-038](adr/038_document_owner_review.md) adds the
 [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md): explicit selection/approval,
 bounded history/cancel, opt-in search and own-document citations. Review source/
 processor binding, separate MIME state, same-key uncertainty, stale callback fences
@@ -19,7 +25,7 @@ are distinct from pending browser/accessibility and live/scanner acceptance.
 Previous documentation/tooling increment: [ADR-037](adr/037_documentation_verification.md)
 adds the [methods guide](METHODS_GUIDE.md) and regression-tested inventory/local-link/
 heading checks, including hidden GitHub templates. It changes no product runtime.
-The next implementation assignment below is bounded read-worker operation.
+The next implementation assignment below is the production identity boundary.
 
 Previous runtime increment: [document operator command](DOCUMENT_CONTROLLER.md), ADR-036.
 Review fixed purpose/policy, exact document-worker scope, private file/key boundary,
@@ -208,22 +214,25 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 
 ## Suggested next issue
 
-> Build a bounded read-worker operator entry point over the existing Fastmail
-> worker, with explicit private configuration, fixed account/provider identity,
-> narrow worker credentials, non-consuming preflight and graceful stop. Define
-> enrollment/credential/transport boundaries in an ADR first. Test with fake
-> provider transport plus real SQL, including revoked access, restart, stale leases,
-> encrypted evidence and content-free failures. Do not discover tokens, enroll or
-> read real mail, buy resources, broaden MIME/PDF scopes or mutate Factory.
+> Implement the production-identity foundation behind an explicit accepted ADR:
+> trusted configured OIDC issuer/audience, bounded signature-key retrieval/cache,
+> expiry/algorithm/audience checks and server-owned subject-to-tenant mapping.
+> Keep bootstrap credentials explicitly local; never trust request-chosen tenant
+> IDs or auto-enroll an unknown identity. Exercise fake issuer/key rotation and real
+> SQL denial/revocation paths. Define the browser/session and worker-identity split
+> before code. No app registration, public ingress, real identity enrollment,
+> paid resource, mailbox access or new team sharing without separate approval.
 
 ADR-034 supplies the reader; ADR-035 supplies durable approval/publication/search;
 ADR-036 supplies `process-documents` and loopback channel configuration; ADR-038
 supplies its separate owner review/search/evidence screen.
+ADR-039 supplies bounded `sync-read`; do not rebuild it or mix its ingest identity
+with MIME/PDF scopes.
 `process-jobs` still supports only MIME recovery. Do not select a PDF image for
 that incompatible MIME contract or broaden credentials to cover both channels.
 
 The operator recovery command and bounded known-answer generator already exist;
-do not reimplement either. Hosted supervision, a read-worker operator path and
-production identity/storage remain distinct work packages. A documentation plan
+do not reimplement either. Hosted supervision, production identity/storage and
+enrollment/resume administration remain distinct work packages. A documentation plan
 does not approve a new schema, API or processing privilege; the required ADR comes
 before code.

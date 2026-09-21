@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-039](adr/039_read_worker_controller.md) adds explicit bounded Fastmail read
+operation, non-consuming private preflight, exact ingest-worker identity and fresh
+file/account guards. No enrollment, schema/grant change or live acceptance.
+
 [ADR-038](adr/038_document_owner_review.md) adds separate owner PDF approval/history/
 cancellation and bounded cited page evidence, plus opt-in document search. It uses
 existing APIs and source/authorization fences; no schema or permission expansion.

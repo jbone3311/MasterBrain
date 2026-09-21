@@ -22,6 +22,7 @@ from email_brain.document_controller import run_document_controller
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.processing_controller import private_bytes, run_controller, shutdown_signals
+from email_brain.read_controller import run_read_controller
 from email_brain.store import IngestItem, Store
 from email_brain.synthetic import fake_email
 from email_brain.synthetic_mailbox import MailboxSpec, export_mailbox, seed_mailbox
@@ -202,12 +203,15 @@ def main() -> None:
     for name, help_text in (
         ("process-jobs", "Run explicitly approved MIME recovery jobs"),
         ("process-documents", "Run explicitly approved synthetic PDF jobs"),
+        ("sync-read", "Explicit bounded reads for an already enrolled Fastmail account"),
     ):
         processing = commands.add_parser(name, help=help_text)
         processing.add_argument("--config", type=Path, required=True)
         processing.add_argument("--check", action="store_true")
         processing.add_argument("--max-iterations", type=int, default=1)
         processing.add_argument("--idle-seconds", type=int, default=5)
+        if name == "sync-read":
+            processing.add_argument("--allow-provider-read", action="store_true")
     for name in ("export-test-mailbox", "seed-test-mailbox"):
         fixture_command = commands.add_parser(
             name, help="Known-answer fictional mail; no live delivery"
@@ -261,6 +265,21 @@ def main() -> None:
                     stop=stop,
                 )
             print(json.dumps(result, sort_keys=True))
+        elif args.command == "sync-read":
+            stop = Event()
+            with shutdown_signals(stop):
+                result = run_read_controller(
+                    args.config,
+                    _env("EMAIL_BRAIN_DSN"),
+                    check=args.check,
+                    allow_provider_read=args.allow_provider_read,
+                    max_iterations=args.max_iterations,
+                    idle_seconds=args.idle_seconds,
+                    stop=stop,
+                )
+            print(json.dumps(result, sort_keys=True))
+            if result.get("attention_required"):
+                parser.exit(2, "Read worker paused; operator attention required.\n")
         elif args.command in {"process-jobs", "process-documents"}:
             stop = Event()
             controller = (

@@ -18,7 +18,8 @@ worker supervision, production binary-intake policy, operational acceptance and 
 1. **Operator processing path:** [bounded approved-job command](PROCESSING_CONTROLLER.md),
    private configuration/preflight, fresh worker credentials and graceful stop are
    implemented. Hosted supervision, enrollment, service identities and health/alerts
-   remain; the ingestion worker still needs its own operator workflow. The API
+   remain. ADR-039 now supplies the [ingestion operator workflow](READ_CONTROLLER.md),
+   with private non-consuming preflight and explicit bounded execution. The API
    never receives Docker authority.
 2. **Known-answer mailbox:** coherent seeded scenarios, actual formats, versioned
    manifests, export and paced/restarted database replay are implemented (EB-023).

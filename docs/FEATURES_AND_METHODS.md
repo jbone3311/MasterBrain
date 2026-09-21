@@ -11,7 +11,7 @@ For a less technical explanation of the methods and why they are separate, use
 
 | Owner benefit | Method | Current boundary |
 |---|---|---|
-| Incremental import | Native cursors, bounded pages, atomic checkpoint, leased worker, certified inventory | Fastmail worker; offline Gmail/Graph libraries; injected IMAP contract; no live enrollment |
+| Incremental import | Native cursors, bounded pages, atomic checkpoint, leased worker, certified inventory | Fastmail worker plus explicit bounded read CLI; offline Gmail/Graph libraries; injected IMAP contract; no live enrollment |
 | Search with sources | PostgreSQL FTS, account filters, immutable evidence IDs, bounded excerpts | Working; no vectors or project/entity filters |
 | Account for attachments | Per-part receipts, source hashes, duplicate links, explicit outcomes | Ordinary ingestion extracts supported plain/CSV/calendar text; PDF/Office/image/archive parts remain deferred there |
 | Read selected PDFs safely | Separate source-bound approvals, explicit document command, fenced restricted worker, immutable results and opt-in FTS | Synthetic API/library/CLI and owner review UI; live/scanner policy, browser acceptance and hosted service remain |
@@ -27,6 +27,11 @@ For a less technical explanation of the methods and why they are separate, use
 | Run independently | Supervised workers, managed storage, alerts, restores, deployment artifacts | Local/CI and restore drill; no hosted service |
 
 ## Code first, models second
+
+The [read command](READ_CONTROLLER.md) supplies private preflight, a separate
+execution flag and bounded runs. It checks current worker/account authority before
+fetching and publishing, preserves SQL retry/pause state, and reports fixed counts.
+It is not a hosted scheduler or enrollment workflow.
 
 Code handles exact identifiers, MIME structure, hashes, known rules, permissions
 and retries. It is repeatable and testable, but still needs parser/version provenance

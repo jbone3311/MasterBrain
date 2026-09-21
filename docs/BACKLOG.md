@@ -3,13 +3,13 @@
 Ordered by dependency and risk, not calendar promises. The broad roadmap remains
 the product sequence; these are buildable handoff tickets.
 
-Reviewed 2026-09-21 through ADR-036; exact verified commits remain in the build receipt. A partly implemented
+Reviewed 2026-09-21 through ADR-039; exact verified commits remain in the build receipt. A partly implemented
 ticket stays open until its stated production/acceptance gates are met.
 
 | ID | Work package | Acceptance / dependency |
 |---|---|---|
 | EB-001 | Factory registration and bind audit | Current descriptor/hooks/packs installed through Factory tooling; clean sibling checkout; bind PASS; proposals validated by Factory reader |
-| EB-002 | Authenticated Fastmail transport and read-only worker | TLS/host allowlist, bounded responses/downloads, token vault, no mutating methods; mock HTTP conformance then authorized disposable account |
+| EB-002 | Authenticated Fastmail transport, read-only worker and bounded operator CLI implemented | Fixed HTTPS/read methods, private preflight, ingest-only identity and guarded execution; enrollment/vault, hosted supervision and authorized disposable-account acceptance remain |
 | EB-003 | Resumable backfill/reconciliation | Baseline Email state before listing; query-state-safe pagination; catches concurrent creates/deletes; durable leases; expired cursor reset; no partial-list deletions |
 | EB-004 | Durable poison-message quarantine | Preserve source/error receipt before advancing past bad message; retry independently; accounting/alerts; no stalled account or silent skip |
 | EB-005 | Encrypted object storage — local slice implemented | Local tenant-bound AES-GCM, 16 MiB preservation, transactional manifests and non-deleting inventory implemented; hosted IAM/KMS, key backup, authorized GC/purge and offsite acceptance remain |

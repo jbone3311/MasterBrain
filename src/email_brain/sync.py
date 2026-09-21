@@ -123,6 +123,7 @@ class ReadWorker:
         *,
         monotonic: Callable[[], float] = time.monotonic,
         jitter: Callable[[], float] | None = None,
+        authorize: Callable[[], None] | None = None,
     ) -> None:
         import random
 
@@ -136,14 +137,17 @@ class ReadWorker:
         self.client = client
         self.monotonic = monotonic
         self.jitter = jitter or random.random
+        self.authorize = authorize or (lambda: None)
 
     def step(self, ctx: TenantContext, account_id: UUID) -> str:
+        self.authorize()
         lease = self.jobs.acquire(ctx, account_id)
         if lease is None:
             return "not_due"
         started = self.monotonic()
 
         def heartbeat() -> None:
+            self.authorize()
             if self.monotonic() - started > 60:
                 raise ProviderUnavailable("worker step deadline exceeded")
             self.jobs.renew(ctx, account_id, lease.token)

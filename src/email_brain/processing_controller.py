@@ -10,7 +10,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from threading import Event
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
@@ -159,14 +159,19 @@ class _Keys(ClosedModel):
     keys: list[_Key] = Field(min_length=1, max_length=100, repr=False)
 
 
+class CredentialFiles(Protocol):
+    credentials_file: Path
+    token_file: Path
+
+
 class WorkerIdentity:
     def __init__(
         self,
-        config: ControllerConfig,
+        config: CredentialFiles,
         *,
-        scope: Literal["email.process", "email.document.process"] = "email.process",
+        scope: Literal["email.process", "email.document.process", "email.ingest"] = "email.process",
     ) -> None:
-        if scope not in {"email.process", "email.document.process"}:
+        if scope not in {"email.process", "email.document.process", "email.ingest"}:
             raise ControllerError()
         self.config = config
         self.scope = scope

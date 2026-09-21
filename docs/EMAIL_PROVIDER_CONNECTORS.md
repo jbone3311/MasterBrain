@@ -41,7 +41,10 @@ certified inventory before absence inference. Explicit encrypted storage and lar
 Fastmail downloads preserve up to 16 MiB, holding mail beyond the parser budget;
 see [storage limits](LARGE_EVIDENCE_STORAGE.md). Scheduler, credential enrollment,
 hosted storage and live acceptance are not implemented.
-See [worker contract](READ_WORKER.md). No real mailbox was contacted. Fastmail's `mail`
+See [worker contract](READ_WORKER.md). No real mailbox was contacted. The Fastmail
+read operator is now exposed by [explicit bounded CLI](READ_CONTROLLER.md), with
+non-consuming preflight and pinned account/secret binding; no enrollment or service
+is installed. Tests use fictional transport only. Fastmail's `mail`
 OAuth scope covers read/manage: do not assume a universal read-only OAuth scope.
 The adapter excludes `set` and submission methods. Use the least capable token
 actually available. Distributed OAuth apps need Fastmail client registration;

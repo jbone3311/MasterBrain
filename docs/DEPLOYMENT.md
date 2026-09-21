@@ -1,6 +1,11 @@
 # Deployment
 
 Updated 2026-09-21. [GAME_PLAN.md](GAME_PLAN.md) explains the delivery stages.
+
+[ADR-039's read command](READ_CONTROLLER.md) now provides explicit private-configured
+bounded Fastmail operation and non-consuming preflight. It adds no hosted resources,
+service installer, enrollment or new SQL grants. Keep its provider token separate
+from API/MIME/PDF credentials. Production supervision and live acceptance remain.
 Migration 0012 and updated runtime grants are required for the separate
 [document channel](DOCUMENT_PROCESSING.md). Configure its exact processor only
 after the restricted worker is available; API configuration grants no Docker access.

@@ -66,6 +66,14 @@ See the [implemented coverage matrix and explicit gaps](TEST_COVERAGE_MATRIX.md)
 
 ## Current executable checks
 
+[Read-controller tests](../tests/test_read_controller.py) cover private configuration,
+exact scopes, explicit execution, zero-request preflight, fixed output, stop and
+credential changes. [SQL integration](../tests/test_read_controller_postgres.py)
+runs actual Fastmail transport logic against fake HTTPS responses and real SQL:
+restart/search, paused/retry state, identity/source/lease changes during downloads,
+encrypted large mail and CLI dispatch. This does not contact Fastmail or certify
+hosted scheduling. Existing worker pressure tests remain required.
+
 [PDF owner controls](DOCUMENT_REVIEW_SCREEN.md) add explicit selection/approval,
 history/cancel, opt-in search and page-evidence Node contracts. Negative cases
 cover exact identities, malformed envelopes, bounded pages, Unicode offsets,

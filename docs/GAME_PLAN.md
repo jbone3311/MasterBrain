@@ -115,9 +115,11 @@ Acceptance must include permission/source changes, lost responses and same-inten
 retry, cancellation races, stale screens, partial/deferred extraction and default
 search behavior—not only a successful PDF. Node and SQL/API-response contracts
 exercise these boundaries; browser/keyboard/screen-reader acceptance remains.
-The next implementation package is a bounded read-worker operator entry point,
-followed by supervised operation and production foundations. None authorizes real
-mail, automatic approval or paid deployment.
+ADR-039 now adds the [bounded read-worker operator entry point](READ_CONTROLLER.md).
+Next build the production identity boundary, then complete operational visibility/
+supervision and production storage. The
+command does not enroll accounts, reset pauses or authorize real-mail access,
+automatic approval or paid deployment.
 
 ### From prototype to independent product
 

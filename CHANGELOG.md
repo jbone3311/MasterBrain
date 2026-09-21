@@ -53,6 +53,10 @@ exact tested commits and results.
 
 ### Providers, models and test data
 
+- Added `sync-read` with private non-consuming preflight, explicit provider-read
+  flag, exact ingest-worker identity, fixed account/secret binding, per-request/step
+  guards, bounded counters/stop and existing encrypted storage. No enrollment,
+  pause reset, schema/grant change, hosted supervisor or live acceptance (ADR-039).
 - Added offline-tested Gmail/Graph read libraries and an injected-session IMAP
   contract. Only Fastmail has durable database worker orchestration; no live account.
 - Added opt-in candidate-only local-model library and fake-response boundary tests;

@@ -128,7 +128,8 @@ live-provider, cloud disaster-recovery, model-quality or multi-day soak acceptan
 
 The [owner PDF workflow](DOCUMENT_REVIEW_SCREEN.md) now connects explicit selection,
 approval/history/cancellation and cited page evidence to the existing backend.
-Next finish the secure read-only service: read-worker operation, scanner policy, identity, enrollment, hosted
+The [read command](READ_CONTROLLER.md) now adds bounded private-configured operation.
+Next finish the secure read-only service: supervision, scanner policy, identity, enrollment, hosted
 storage/key recovery, supervision and operational acceptance. State, assistant/team
 access and controlled mailbox effects follow their own gates.
 
