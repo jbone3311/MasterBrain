@@ -1,9 +1,10 @@
 # Browser authorization session backend
 
 Implemented backend under [ADR-042](adr/042_browser_authorization_sessions.md).
-**Not yet an owner-ready browser sign-in feature:** private CLI/TLS wiring, owner
-UI integration and actual browser acceptance are the next delivery. Default
-`serve` remains unchanged; these routes exist only with explicit library injection.
+**Not yet an owner-ready browser sign-in feature:** owner UI integration and actual
+browser acceptance remain next. [ADR-043](adr/043_browser_operator_tls.md) wires
+explicit `serve --browser-config` with private TLS files; unflagged `serve`
+remains bootstrap mode. No implicit upgrade or fallback occurs.
 
 ## Flow and trust
 
@@ -36,11 +37,11 @@ owner-only private-file checks. Fields are `version: 1`, `identity` (the complet
 [ADR-040 configuration](IDENTITY_AUTH.md)), `public_origin`,
 `authorization_endpoint`, `token_endpoint`, `client_id`, `client_secret`, `scopes`.
 The secret uses a redacted value type; never print configuration validation details
-or put the file in Git/Dropbox. Error logs at the eventual CLI must remain scrubbed.
+or put the file in Git/Dropbox. CLI failures suppress configuration and secret details.
 
 Browser origin is exact HTTPS without a path/query/fragment, userinfo or explicit
 default port. Explicit HTTPS loopback origins with a non-default port are supported
-for future local browser acceptance. Issuer endpoints remain public HTTPS on the
+for local operator setup. Issuer endpoints remain public HTTPS on the
 configured issuer origin; Entra endpoints are fixed to its configured tenant.
 Callback is always `<public_origin>/auth/callback`, not derived from request or
 forwarded headers. The browser client must be accepted by the API verifier.
@@ -53,6 +54,43 @@ auth = OIDCAuthenticator(store, AccessTokenVerifier(config.identity))
 browser = BrowserAuth(config, auth)
 app = create_app(store, auth, browser_auth=browser)
 ```
+
+## Private operator startup
+
+Provide the configuration above and a certificate/key in an owner-only directory
+outside Git/Dropbox. All three files must be regular, owner-only files, not symbolic
+or hard links. Set `EMAIL_BRAIN_DSN` to the restricted runtime-role database connection;
+unset `EMAIL_BRAIN_CREDENTIALS_FILE`. Never paste a DSN or secret into a command log.
+
+```bash
+email-brain serve --browser-config /private/emailbrain/browser.json \
+  --tls-cert /private/emailbrain/certificate.pem \
+  --tls-key /private/emailbrain/private-key.pem --port 8765 --check
+```
+
+These paths are placeholders, not supplied files. The exact configured origin can
+be `https://localhost:8765`; the certificate must contain that exact host in its
+SAN and its key must match. For an IP origin, require the corresponding IP SAN.
+Wildcards and legacy Common Name alone are not accepted. Validity dates, RSA
+2048–4096/e65537 or P-256/P-384 key strength, server EKU when present, and OpenSSL
+certificate/key loading are checked. Encrypted private keys are rejected without
+prompting. TLS uses a server context with minimum TLS 1.2 and modern ECDHE ciphers.
+This preflight does **not** certify browser trust, issuer policy or chain revocation.
+
+`--check` outputs only mode/status and explicit `database_checked: false` and
+`network_contact: false`; it starts no server, performs no SQL or issuer request
+and does not enroll a user. The DSN environment variable is required but not tested.
+Remove `--check` to start the single API process on **127.0.0.1 only**. Proxy-header
+trust and access logs remain disabled. Do not add forwarding/public ingress or
+extra workers to this command. Configure browser trust separately for synthetic
+acceptance; never bypass certificate validation to obtain a passing result.
+
+`--browser-config` conflicts with `--oidc-config` and any nonempty bootstrap
+registry environment value. Both TLS paths are mandatory. TLS flags and `--check`
+outside browser mode fail rather than being ignored. Certificate renewal requires
+a controlled restart; the server reloads those operator-controlled files at startup.
+Restart invalidates all in-memory sessions. Stop the process to roll back; preserve
+SQL mappings and never expose bootstrap credentials as a public recovery mode.
 
 The application refuses mismatched authenticator/Store objects. No registration,
 tenant creation, SQL grant or migration is introduced. Confidential client
@@ -100,6 +138,9 @@ exercise both profiles, search/evidence isolation, current revocation/revision,
 expiry, logout and unknown-subject refusal. Exact results belong in the
 [build receipt](BUILD_RECEIPT.md). The key reader additionally checks elapsed time
 after EOF and byte caps before accumulation; token exchange uses the same bounds.
+[Operator tests](../tests/test_browser_operator.py) cover private configuration,
+certificate/key preflight and real TLS 1.2/1.3 handshakes over in-memory buffers.
+They do not install browser trust or test a public listener.
 
 Only fixed route/status/duration are logged, never callback query strings, tokens,
 cookies, secrets or provider diagnostics. Capacity exhaustion denies new flows
@@ -107,7 +148,7 @@ without evicting valid sessions; rate limits and dedicated auth alerts remain
 necessary before public ingress. Stopping the process clears sessions/flows;
 disable injection to roll back, preserving SQL identity mappings and audit.
 
-Remaining: operator CLI/TLS configuration, owner UI/no-token-persistence wiring,
+Remaining: owner UI/no-token-persistence wiring,
 browser/accessibility acceptance, real registration and MFA policy, enrollment,
 service identities, hosted session availability/rate limits/audit export. No real
 issuer, email account, cloud service or public listener was enabled.

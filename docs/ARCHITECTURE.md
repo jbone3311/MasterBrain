@@ -14,8 +14,9 @@ execution distinct in both diagrams and implementation.
 
 [Browser authorization sessions](BROWSER_AUTH.md), ADR-042, implement an optional
 code/PKCE exchange and process-local session/CSRF backend over ADR-040's current
-human mapping boundary. No new table/grant. Default startup/UI are unchanged;
-private operator wiring and actual browser acceptance are the next integration.
+human mapping boundary. No new table/grant. ADR-043 adds explicitly selected
+private TLS/operator startup. Default startup/UI are unchanged; owner UI wiring
+and actual browser acceptance are the next integration.
 
 [Access-token identity](IDENTITY_AUTH.md), ADR-040/migration 0013, joins fixed-profile
 JWT verification to administrator-owned identity mappings and fresh Store-transaction

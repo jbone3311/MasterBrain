@@ -9,10 +9,10 @@ specific product outcome; none grants new mailbox or remote-model authority.
 For a less technical explanation of the methods and why they are separate, use
 [How Email Brain works](METHODS_GUIDE.md).
 
-The [browser session backend](BROWSER_AUTH.md) now exists by explicit library
-injection: it trades a one-use code for verified API authority, discards the API
-token and uses a short-lived opaque cookie. Operator/TLS wiring and owner UI are
-next; the default screen has not become a complete sign-in experience.
+The [browser session backend](BROWSER_AUTH.md) now exists through explicit private
+TLS/operator configuration: it trades a one-use code for verified API authority,
+discards the API token and uses a short-lived opaque cookie. Owner UI integration
+and actual browser acceptance are next; the screen is not yet a complete sign-in experience.
 
 | Owner benefit | Method | Current boundary |
 |---|---|---|

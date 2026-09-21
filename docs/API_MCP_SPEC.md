@@ -9,7 +9,8 @@ See [status](IMPLEMENTATION_STATUS.md) and [features/methods](FEATURES_AND_METHO
 
 ADR-042 adds an explicitly injected [browser session backend](BROWSER_AUTH.md):
 `GET /auth/session`, `POST /auth/login`, `GET /auth/callback`, `POST /auth/logout`.
-These are absent from default `serve`; CLI/UI integration remains next. Cookie
+These are absent from default `serve`; ADR-043's explicit browser/TLS mode enables
+them. Owner UI integration remains next. Cookie
 requests retain SQL authority and require exact Origin/CSRF for unsafe methods;
 cookie plus bearer is rejected. The following ADR-040 paragraph describes that
 earlier increment, not the new optional browser routes.

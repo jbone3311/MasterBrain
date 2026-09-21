@@ -18,7 +18,7 @@ worker supervision, production binary-intake policy, operational acceptance and 
 These are the remaining delivery packages, not a list of components to rebuild.
 
 ADR-042 now supplies the optional [browser session backend](BROWSER_AUTH.md).
-Package 1 next wires private operator/TLS configuration and owner UI, followed by
+ADR-043 supplies private operator/TLS configuration. Package 1 next wires owner UI, followed by
 actual browser acceptance. A fake HTTPS test client does not prove browser cookies,
 deployed TLS, MFA or hosted availability.
 

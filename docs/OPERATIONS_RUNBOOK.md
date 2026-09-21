@@ -7,8 +7,9 @@ implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
 
 ## API identity operations
 
-The optional [browser session backend](BROWSER_AUTH.md) has no default CLI/UI
-wiring yet. If explicitly injected for synthetic acceptance, process restart logs
+The optional [browser session backend](BROWSER_AUTH.md) has explicit private
+CLI/TLS startup and a non-consuming preflight; owner UI wiring remains next.
+Use its documented certificate/configuration checks before startup. Process restart logs
 everyone out; current SQL revocation and session logout remain distinct from
 cancelling durable processing grants. Capacity denies new sessions rather than
 evicting live ones. Never log cookies, CSRF/state, codes or confidential-client

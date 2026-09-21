@@ -35,16 +35,17 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ADR-042 now supplies the optional [browser authorization/session backend](BROWSER_AUTH.md),
 including fake code exchange, current mapping, cookie/Origin/CSRF, expiry and
-cancellation/replay fences. It is available through explicit `create_app` injection,
-not default `serve` or the owner UI. Operator/TLS wiring and browser acceptance
-are the next integration; no production sign-in or hosted availability is claimed.
+cancellation/replay fences. ADR-043 adds explicit `serve --browser-config` with
+private TLS files and a non-consuming configuration check. Unflagged `serve` and
+the owner UI are unchanged. UI integration and actual browser acceptance remain
+next; no production sign-in or hosted availability is claimed.
 
 ### Latest verified runtime
 
-**88af633** passed [CI 35596527992](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596527992):
-1,947 Python tests including 284 real SQL cases, 84 Node contracts, five actual
+**5c0114a** passed [CI 35599565083](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565083):
+2,060 Python tests including 294 real SQL cases, 84 Node contracts, five actual
 MIME-container and 15 actual PDF-container cases. The same revision passed
-[restore 35596528021](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596528021):
+[restore 35599565086](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565086):
 27 tables, 147 rows, two tenants, four encrypted objects and two identity bindings,
 including revoked-context denial. Exact scope, local skips and limitations are in
 the [build receipt](BUILD_RECEIPT.md). Receipt-only edits are not a new runtime test.

@@ -6,6 +6,17 @@ The package remains version 0.1.0, a synthetic-data prototype. These entries do
 not announce a production release. [Build receipts](docs/BUILD_RECEIPT.md) retain
 exact tested commits and results.
 
+### Private browser-mode TLS startup (ADR-043)
+
+- Added explicit `serve --browser-config --tls-cert --tls-key` and browser-only
+  non-consuming `--check`. Conflicting modes and incomplete settings fail closed.
+- Verify private files, certificate validity, exact SAN, key strength and pairing;
+  reject encrypted keys without prompting. Preserve loopback binding, TLS 1.2
+  minimum, disabled access logs and disabled proxy-header trust.
+- Generated-certificate/CLI tests cover malformed/private material, conflict and
+  scrubbed-error boundaries. No issuer, certificate trust, public ingress or new
+  schema/dependency is provisioned. Owner UI and browser acceptance remain next.
+
 ### API identity foundation (ADR-040)
 
 - Pressure review corrected key-response buffering that could postpone elapsed-time
@@ -32,8 +43,9 @@ exact tested commits and results.
 - Added expiry/logout/current-revocation and concurrent request/callback tests;
   cancelled/replaced flows cannot publish late sessions. The key reader now also
   checks elapsed time after EOF and validates size before extending its buffer.
-- Default CLI/owner UI are unchanged; private operator/TLS wiring and actual
-  browser acceptance remain next. No ID/refresh-token flow, MFA policy, real issuer,
+- At this increment default CLI/owner UI were unchanged; ADR-043 subsequently
+  supplies private operator/TLS wiring. Owner UI and actual browser acceptance
+  remain next. No ID/refresh-token flow, MFA policy, real issuer,
   new dependency/schema/grant, mailbox or hosted listener was introduced.
 
 ### Response streaming correction (ADR-041)

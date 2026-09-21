@@ -10,9 +10,13 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-043](adr/043_browser_operator_tls.md) adds explicit private browser-mode TLS
+startup, mutually exclusive authentication flags and non-consuming preflight.
+It preserves loopback-only binding; UI and actual browser acceptance remain gates.
+
 [ADR-042](adr/042_browser_authorization_sessions.md) defines the explicit browser
 code/PKCE and server-side session flow. The optional backend/REST boundary exists;
-operator CLI, owner UI and actual browser/TLS acceptance remain required.
+ADR-043 supplies the operator command; owner UI and actual browser/TLS acceptance remain required.
 
 [ADR-041](adr/041_stream_deadline_checks.md) closes application chunk-buffering
 gaps in the four HTTP readers, with bounded accumulation and delayed-EOF checks.

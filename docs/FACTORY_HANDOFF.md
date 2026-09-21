@@ -12,8 +12,8 @@ and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
 ## Start here: the next delivery
 
 Complete the [browser sign-in/session lifecycle](#suggested-next-issue) using
-ADR-042's optional backend and ADR-040's token/mapping foundation. Next wire
-private operator/TLS configuration and the owner UI, then actual browser tests. The
+ADR-042's optional backend, ADR-043's private TLS/operator configuration and
+ADR-040's token/mapping foundation. Next wire the owner UI and actual browser tests. The
 [backlog slice](BACKLOG.md#eb-007-next-production-identity-foundation) and
 [roadmap](ROADMAP.md#next-build-packages) agree on this priority. A signature
 verifier alone does not finish browser login, sharing or hosted operation.
@@ -250,7 +250,7 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 ## Suggested next issue
 
 > Complete ADR-042's browser feature: wire its existing backend through explicit
-> private operator/TLS configuration and the owner UI, preserving manual bearer
+> the owner UI using ADR-043's private TLS/operator command, preserving manual bearer
 > mode separately. No downgrade on failed browser authentication. Exercise actual
 > browser cookies, Origin/CSRF, safe navigation, logout/expiry/revocation and stale
 > evidence clearing with no browser token persistence. Do not rebuild code/PKCE or

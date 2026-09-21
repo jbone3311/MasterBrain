@@ -84,8 +84,8 @@ but is not in the deployed request or processing path.
 ## The immediate implementation gap: identity and independent operation
 
 The optional [browser session backend](BROWSER_AUTH.md) now handles code/PKCE,
-opaque cookies, CSRF and current mapping checks. Next integrate it with private
-operator/TLS startup and the owner screen, then verify real browser behavior.
+opaque cookies, CSRF and current mapping checks. Private operator/TLS startup is
+now explicit and preflightable. Next integrate the owner screen and verify real browser behavior.
 Default startup and UI still use the earlier explicit credential modes.
 
 [ADR-040](IDENTITY_AUTH.md) now verifies configured access tokens, maps identity

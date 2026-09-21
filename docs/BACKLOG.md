@@ -43,12 +43,12 @@ seeding and isolated format fixtures remain supported. Milestone ordering is in
 
 <a id="eb-007-next-production-identity-foundation"></a>
 
-### EB-007: API/session backends implemented; operator and browser integration next
+### EB-007: API/session/operator implemented; browser UI integration next
 
 [ADR-040](IDENTITY_AUTH.md) implements the access-token and SQL mapping slice below.
 It is not a hosted identity product. [ADR-042](BROWSER_AUTH.md) now adds the optional
-code/PKCE and opaque session backend. Next wire private operator/TLS configuration
-and the owner UI, then verify actual browser behavior. Do not rebuild either backend.
+code/PKCE and opaque session backend; ADR-043 adds private TLS/operator startup.
+Next wire the owner UI and verify actual browser behavior. Do not rebuild either backend.
 See the [Factory contract](FACTORY_HANDOFF.md#suggested-next-issue). The preserved
 checklist explains what to review in the implemented foundation, not what to rebuild.
 

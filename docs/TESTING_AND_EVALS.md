@@ -28,6 +28,16 @@ history pagination. It is not browser/accessibility acceptance. The optional
 and restore runs prove database durability separately. Exact verified counts and
 commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
+## Private browser operator and TLS
+
+[Browser operator tests](../tests/test_browser_operator.py) generate fictional TLS
+material and exercise private-file permissions/links, validity, exact SAN, key
+strength/pairing, encrypted-key refusal, parser error redaction and mutually
+exclusive startup flags. Preflight tests prohibit issuer/SQL access or a listener.
+Uvicorn-context TLS 1.2/1.3 handshakes run over in-memory OpenSSL buffers with
+generated trust material; wrong-host and untrusted certificates fail verification.
+These are operator/TLS checks, not socket or actual-browser sign-in acceptance.
+
 ## Durable processing jobs
 
 [ADR-030](adr/030_durable_recovery_jobs.md) adds API/worker/SQL tests for

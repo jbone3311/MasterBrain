@@ -88,8 +88,8 @@ claim is made.
 
 1. Complete browser sign-in integration: the [session backend](docs/BROWSER_AUTH.md)
    now implements code/PKCE, cookies/CSRF and current authorization. Private CLI/TLS
-   wiring, owner UI and actual browser acceptance remain next. Default `serve` is
-   unchanged; the backend alone is not a complete login experience.
+   startup is explicit and preflightable; owner UI and actual browser acceptance
+   remain next. Default `serve` is unchanged; this is not yet a complete login experience.
 2. Complete managed storage/key recovery, worker supervision, operator alerts and
    browser/document-policy acceptance; then accept one authorized disposable provider.
 3. Build evaluated project/reply state and assistant access; add separately

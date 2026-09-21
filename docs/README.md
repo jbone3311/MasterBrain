@@ -15,8 +15,8 @@ selection/approval/history/cancellation and cited pages; live acceptance is pend
 
 ## Reading paths
 
-- **Current build:** [browser session backend](BROWSER_AUTH.md) is implemented by
-  explicit library injection; operator/TLS and owner UI integration come next.
+- **Current build:** [browser session backend](BROWSER_AUTH.md) and explicit
+  private TLS/operator startup are implemented; owner UI and browser acceptance come next.
 
 - **Owner:** [game plan](GAME_PLAN.md), [features/methods](FEATURES_AND_METHODS.md),
   [how it works](METHODS_GUIDE.md),

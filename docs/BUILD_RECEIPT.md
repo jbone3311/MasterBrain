@@ -2,7 +2,48 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Browser session backend — local checkpoint
+## Private browser TLS/operator — local checkpoint
+
+ADR-043 adds explicit browser-mode startup and non-consuming preflight from base
+**5c0114a4be6351931791834942cf3d6ba7306f7d**. Publication CI/restore must verify
+the new exact commit; the earlier backend receipt below is not that verification.
+
+- **1,809 local Python passes, 294 explicit SQL skips**, two existing warnings;
+  **84 Node contracts** pass. Locked sync, lint, typing over **46 source modules**,
+  separate restore typing, repository gate, docs and diff checks pass.
+- **43 new operator cases** cover generated private certificates, dates/SAN/key
+  mismatch, weak keys, encrypted-key refusal, links/permissions, scrubbed parser
+  errors, mode conflicts and no-network/no-database/no-listener preflight.
+- Real OpenSSL TLS 1.2 and 1.3 handshakes use the Uvicorn context and generated
+  certificates over in-memory buffers, with trusted success and wrong-host/untrusted
+  certificate refusal. This is not a socket, browser-trust installation or hosted test.
+- No dependency, migration, grant, real identity or mailbox changed. Owner UI and
+  actual-browser acceptance remain the next bounded slice, not completed features.
+
+## Verified browser session backend
+
+Runtime **5c0114a4be6351931791834942cf3d6ba7306f7d** passed
+[CI 35599565083](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565083)
+and [restore 35599565086](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565086),
+observed 2026-09-21. This verifies ADR-042, not later ADR-043/operator work.
+
+- **2,060 Python passes including 294 real SQL cases**, no CI skips; **84 Node
+  contracts**, **five actual MIME-container** and **15 actual PDF-container** cases.
+  Repeated release-gate suites and restore subsets are not additional tests.
+- Both container images, CLI smoke, independent-reader exclusion, lint, locked
+  dependencies, typing over **45 source modules** and restore-script typing pass.
+  Documentation checks cover **91 Markdown files and 774 local paths/fragments**.
+- Restore: **27 tables, 147 rows, two tenants, four encrypted objects, two identity
+  bindings**, matching content hashes, RLS, current revocation and database-only
+  restore refusal. **29 restore-safety cases** pass. **31.17 seconds** includes
+  disposable startup; not production RTO/PITR, key-loss recovery or real issuer proof.
+- Local **1,766 passes and 294 explicit SQL skips**; 102 new offline browser cases,
+  ten new real-SQL cases in CI and one EOF-key-reader regression. Generated keys and
+  fictional HTTP only. Staged/incremental secret scans from 611ee2d found no leaks.
+- Two existing deprecation warnings and runner/action migration notices remain
+  non-failing backlog. No browser UI, live issuer, cloud account or mailbox enabled.
+
+## Historical browser session backend — local checkpoint
 
 ADR-042's optional backend/REST slice was checked from base **611ee2dd87a30b0e334e69fbb834234b96d504d9**.
 That base's [documentation CI 35597127919](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35597127919)

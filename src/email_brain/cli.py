@@ -18,6 +18,8 @@ from psycopg import sql
 
 from email_brain.api import create_app
 from email_brain.auth import Authenticator, Credential, TokenRegistry
+from email_brain.browser_auth import BrowserAuth, BrowserConfig
+from email_brain.browser_operator import tls_options
 from email_brain.document_controller import run_document_controller
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_runtime, migrate
@@ -200,6 +202,12 @@ def main() -> None:
     serve = commands.add_parser("serve", help="Loopback-only developer server")
     serve.add_argument("--port", type=int, default=8080)
     serve.add_argument("--oidc-config", type=Path, default=None)
+    serve.add_argument("--browser-config", type=Path, default=None)
+    serve.add_argument("--tls-cert", type=Path, default=None)
+    serve.add_argument("--tls-key", type=Path, default=None)
+    serve.add_argument(
+        "--check", action="store_true", help="Browser configuration/TLS preflight only"
+    )
     serve.add_argument("--recovery-parser-version", default=None)
     serve.add_argument("--document-processor-version", default=None)
     for name, help_text in (
@@ -300,7 +308,33 @@ def main() -> None:
         else:
             store = Store(_env("EMAIL_BRAIN_DSN"))
             registry: Authenticator
-            if args.oidc_config is not None:
+            browser_auth = None
+            tls = {}
+            if args.browser_config is not None:
+                if args.oidc_config is not None or os.environ.get("EMAIL_BRAIN_CREDENTIALS_FILE"):
+                    raise ValueError("select exactly one authentication mode")
+                if args.tls_cert is None or args.tls_key is None:
+                    raise ValueError("browser mode requires explicit TLS files")
+                config = BrowserConfig.from_file(args.browser_config)
+                tls = tls_options(config, args.port, args.tls_cert, args.tls_key)
+                if args.check:
+                    print(
+                        json.dumps(
+                            {
+                                "mode": "browser",
+                                "status": "configuration_valid",
+                                "database_checked": False,
+                                "network_contact": False,
+                            },
+                            sort_keys=True,
+                        )
+                    )
+                    return
+                registry = OIDCAuthenticator(store, AccessTokenVerifier(config.identity))
+                browser_auth = BrowserAuth(config, registry)
+            elif args.tls_cert is not None or args.tls_key is not None or args.check:
+                raise ValueError("TLS and check options require browser mode")
+            elif args.oidc_config is not None:
                 if os.environ.get("EMAIL_BRAIN_CREDENTIALS_FILE"):
                     raise ValueError("select exactly one authentication mode")
                 registry = OIDCAuthenticator(
@@ -313,9 +347,10 @@ def main() -> None:
                 registry,
                 recovery_parser_version=args.recovery_parser_version,
                 document_processor_version=args.document_processor_version,
+                browser_auth=browser_auth,
             )
             uvicorn.run(
-                app, host="127.0.0.1", port=args.port, access_log=False, proxy_headers=False
+                app, host="127.0.0.1", port=args.port, access_log=False, proxy_headers=False, **tls
             )
     except (ValueError, OSError, RecursionError, psycopg.Error):
         # Do not echo exception contents: a DSN or SQL error can contain credentials.

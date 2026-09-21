@@ -6,7 +6,16 @@ disable/re-enable revision and rejection of stale contexts after restore. This i
 SQL authority proof, not a real issuer handshake; signatures have separate fake-issuer
 tests.
 
-Latest verified runtime: **88af6332012af820eedcede9ae78adff34a930df**,
+Latest verified runtime: **5c0114a4be6351931791834942cf3d6ba7306f7d**,
+[run 35599565086](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565086),
+passed 2026-09-21 with the unchanged populated fixture: **27 tables, 147 rows,
+two tenants, four encrypted objects and two identity bindings**. Content hashes,
+RLS, identity revocation and database-only refusal passed; 29 safety cases passed.
+**31.17 seconds** includes disposable startup, not production RTO/PITR, real issuer
+acceptance or hosted key-loss recovery. ADR-042's ephemeral sessions deliberately
+do not survive process restart or database restore.
+
+Previously verified runtime: **88af6332012af820eedcede9ae78adff34a930df**,
 [run 35596528021](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596528021),
 passed 2026-09-21: **27 tables, 147 rows, two tenants, four encrypted objects and
 two identity bindings**. Hash equality, tenant/identity RLS, revoked-context denial
