@@ -10,6 +10,10 @@ recovery code. Live enrollment, production identity, document extraction,
 supervision and acceptance testing remain launch requirements. No real mailbox,
 paid cloud resource or remote model is enabled by this repository.
 
+Documentation synchronized September 21, 2026 against runtime/test commit
+`4286504`. [Verification receipts](docs/BUILD_RECEIPT.md) identify exactly what
+passed; documentation updates do not certify new functionality.
+
 ## Understand the product
 
 - [Game plan](docs/GAME_PLAN.md): the finished product and how we get there.
@@ -31,6 +35,13 @@ paid cloud resource or remote model is enabled by this repository.
 | Isolate | Tenant RLS, ownership constraints, scoped expiring bootstrap credentials and negative authorization tests |
 | Test | Fictional inbox seeding, actual synthetic attachment bytes, mocked provider contracts, real PostgreSQL CI and disposable SQL/object restore drills |
 
+The known-answer mailbox creates connected conversations and corrections with
+PDF, Excel, CSV, Word, calendar, image, forwarded-message and archive attachments.
+The files are real formats with fictional contents; this does **not** mean the
+production parser extracts every format. Follow the
+[export/replay guide](docs/TEST_MAILBOX_PLAN.md) to reproduce them without a mail
+account, subscription or remote model.
+
 Gmail and Graph have offline-tested read libraries; IMAP has an injected-session
 contract. They are **not yet durable live connectors**. The optional Ollama library
 is candidate-only, tested with fake responses and not wired into ingestion.
@@ -40,6 +51,19 @@ sending and deletion are not implemented.
 `_GrokBot/Review Delete` is a virtual search label—not a provider folder or deletion
 queue. Processing completion does not mean PDF/Office extraction succeeded;
 every attachment has its own outcome.
+
+## What comes next
+
+1. Extend safe intake from held-message recovery to approved extraction of
+   deferred attachments in otherwise searchable messages. Preserve source and
+   attachment identity; do not hide good mail to force it through quarantine.
+2. Complete supervised read-only operation, production identity, managed storage,
+   recoverable keys and operator alerts; then accept one disposable live provider.
+3. Build evaluated project/reply state and assistant access; add separately
+   approved mailbox actions only after those foundations.
+
+See [roadmap acceptance gates](docs/ROADMAP.md) and the
+[Factory next assignment](docs/FACTORY_HANDOFF.md#suggested-next-issue).
 
 ## How the design works
 

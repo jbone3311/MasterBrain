@@ -2,6 +2,27 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## September 21 documentation alignment
+
+Documentation-only changes follow `c0e2aec` (whose
+[CI 35573423696](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35573423696)
+passed). Runtime/test implementation remains `4286504`; no code, schema, lockfile,
+permissions or deployment changes are included in this alignment.
+
+The refresh synchronizes product guides, feature/method explanations, changelog,
+code map, roadmap and Factory next assignment; corrects stale generator language;
+and makes the ready-message attachment-processing gap explicit across architecture,
+security, API, storage and operations. Historical third-party counts and receipts
+remain dated observations, not newly remeasured results.
+
+Local rechecks: all 16 requested pack documents plus four product guides and local
+Markdown file targets passed the documentation checker; locked offline dependency
+sync, lint, strict source typing, 52 Node checks, repository gate and whitespace
+checks passed. Python: **1,214 passed, 178 PostgreSQL skips, two known upstream
+deprecation warnings**. The gate repeats tests; do not double-count it. No local
+PostgreSQL/container/live-service acceptance or new model quality is claimed.
+The checker validates file targets, not every external URL or Markdown anchor.
+
 ## Known-answer synthetic mailbox and paced replay
 
 Implementation **4286504** passed [CI 35572975435](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35572975435)

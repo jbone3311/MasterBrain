@@ -2,6 +2,9 @@
 
 ## Mission
 
+Handoff refreshed 2026-09-21 against runtime/test commit `4286504`. This is a
+documentation alignment, not a Factory bind, permission expansion or new release.
+
 Bootstrap now includes working code; begin with [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md),
 [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md), [FACTORY_INTAKE_REVIEW.md](FACTORY_INTAKE_REVIEW.md)
 and [BACKLOG.md](BACKLOG.md). Do not restart from a blank scaffold.
@@ -93,7 +96,7 @@ incremental read-only sync
 ```
 
 Do not interpret this as a blank-slate assignment. Complete operator supervision,
-safe document extraction, known-answer scenarios and the production foundations
+safe document extraction, broader held-out scenarios and the production foundations
 in [ROADMAP.md](ROADMAP.md). No model, vector index or mailbox-write privilege is
 needed to prove the initial read-only service.
 
@@ -164,9 +167,20 @@ Record answers as ADRs; current bounded assumptions are in ADR-013/014 and
 
 ## Suggested next issue
 
-> Complete the explicitly configured operator/supervisor path for existing read and
-> processing workers. Preserve human approval, lease/source/authorization fences,
-> bounded retries and no-mailbox-write behavior. Add restart/shutdown and health
-> tests. In a separate work package extend the existing synthetic corpus into
-> known-answer threaded scenarios with actual attachment formats (EB-023). Do not
-> enroll accounts, provision cloud services or mutate Factory without approval.
+> Implement the first approved PDF attachment-processing slice from
+> [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing). Start with an
+> ADR: existing recovery jobs require a quarantine receipt and do not cover an
+> ordinary ready email with a deferred PDF. Preserve its searchable body; bind new
+> processing to immutable evidence/part/hash and an exact processor version. Use
+> the existing known-answer mailbox, keeping test-only readers out of the API
+> image. Verify restricted execution, fenced publication, authorized search,
+> cancellation/revocation/restart and explicit unsupported/failure outcomes.
+> Extraction is not scanning. Do not enroll accounts, provision paid services or
+> mutate Factory. Record standalone parser work as groundwork until the approved
+> source-to-search path is integrated and verified.
+
+The operator recovery command and bounded known-answer generator already exist;
+do not reimplement either. Hosted supervision, a read-worker operator path and
+production identity/storage remain distinct work packages. A documentation plan
+does not approve a new schema, API or processing privilege; the required ADR comes
+before code.

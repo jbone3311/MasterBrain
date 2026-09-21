@@ -1,6 +1,6 @@
 # Email Provider Connectors
 
-Updated 2026-09-20. See [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) for
+Updated 2026-09-21. See [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) for
 owner-facing behavior and [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) for the
 separate MIME/mock-provider/disposable-live replay layers. SMTP is not a substitute
 for any provider's synchronization protocol.
@@ -105,5 +105,10 @@ attachment-bearing messages through Gmail raw/base64url JSON, Graph MIME `$value
 Fastmail JMAP blob downloads and IMAP fetched literals, checking byte preservation.
 These mocked transports do not certify live servers or additional durable workers.
 See [fixture coverage](CALENDAR_ATTACHMENTS.md).
+
+`tests/test_synthetic_mailbox_providers.py` additionally replays the coherent
+known-answer mailbox sources through those four mocked contracts (48 cases in
+the verified build). This tests format preservation with connected scenarios;
+it does not add notification ingress, durable workers or live-provider acceptance.
 
 Each adapter must pass recorded/synthetic fixtures for bootstrap pagination, empty changes, duplicate notifications, cursor expiry, deletes, moves, label/flag changes, drafts, rate limits, crashes before/after checkpoint, and Unicode/MIME anomalies. Live tests operate only in disposable test mailboxes/folders.

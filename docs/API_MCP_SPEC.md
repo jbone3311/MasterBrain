@@ -1,6 +1,6 @@
 # API and MCP Specification
 
-Updated 2026-09-20. Implemented REST sections below map to [api.py](../src/email_brain/api.py).
+Updated 2026-09-21. Implemented REST sections below map to [api.py](../src/email_brain/api.py).
 MCP, entity/state and action examples are target contracts, not callable tools.
 No Grok/ChatGPT/Claude end-to-end connection is certified by this specification.
 See [status](IMPLEMENTATION_STATUS.md) and [features/methods](FEATURES_AND_METHODS.md).
@@ -17,6 +17,13 @@ status and cancellation. The operator fixes the exact parser version at startup.
 The client cannot choose images, commands, sockets or storage. A separate
 owner-bound worker claims jobs through the library, not an HTTP execution endpoint.
 The ordinary synchronous retry route remains unchanged. No MCP transport is added.
+
+These grants target quarantine receipts. They are not a general API for extracting
+PDFs or processing deferred parts of ready messages. No attachment-extract endpoint,
+arbitrary file upload, password submission or binary worker selection is currently
+exposed. The source-bound document workflow remains a
+[separate design task](BACKLOG.md#eb-006-next-source-bound-document-processing).
+The synthetic packet/export/replay tooling is CLI-only, not an API/MCP addition.
 
 ## External evidence storage
 

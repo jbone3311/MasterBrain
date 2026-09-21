@@ -3,6 +3,9 @@
 Ordered by dependency and risk, not calendar promises. The broad roadmap remains
 the product sequence; these are buildable handoff tickets.
 
+Reviewed 2026-09-21 against runtime/test commit `4286504`. A partly implemented
+ticket stays open until its stated production/acceptance gates are met.
+
 | ID | Work package | Acceptance / dependency |
 |---|---|---|
 | EB-001 | Factory registration and bind audit | Current descriptor/hooks/packs installed through Factory tooling; clean sibling checkout; bind PASS; proposals validated by Factory reader |
@@ -37,6 +40,37 @@ seeding and isolated format fixtures remain supported. Milestone ordering is in
 [ROADMAP.md](ROADMAP.md).
 
 ## What can proceed without owner answers
+
+### EB-006 next: source-bound document processing
+
+Write and review a new ADR before changing behavior. Existing `recovery_jobs`
+approve a quarantine receipt, not arbitrary attachments in ready mail. Do not
+fabricate quarantine rows, broaden the MIME result contract silently or remove
+working message search to reuse that queue.
+
+Deliver in independently verified slices:
+
+1. Define the attachment source/approval/result contract and decide whether a
+   separate queue/schema is needed. Bind tenant/account, evidence version, part
+   path/hash, processor/image, policy, requester and expiry. Document migration,
+   grants, API/UI, counters and rollback before implementation.
+2. Implement a dedicated bounded PDF worker profile. Keep binary readers out of
+   API/ordinary MIME images; enforce no network, non-root execution, CPU/memory/time
+   limits and closed parent-validated output. OCR/Office can remain deferred.
+3. Wire eligible ready-message attachments through review -> durable job ->
+   isolated processor -> fenced versioned evidence -> authorized FTS. Preserve
+   working body search and historical citations on failure or cancellation.
+4. Prove known-answer extraction plus encrypted, image-only, corrupt, oversized,
+   complex and active-content cases. Define scanner policy separately; do not mark
+   a document safe because text was extracted. Actual-container, real-SQL, tenant
+   denial, restart, revocation, stale-source and restore tests are required.
+
+Exit for the first integrated PDF slice: a PDF-only marker currently absent from
+search becomes searchable **only** after the authorized successful extraction;
+other tenants never see it; failure has an explicit outcome and leaves body search
+intact. A standalone parser can be merged as groundwork but does not close EB-006.
+
+### Other safe parallel work packages
 
 EB-006/009 now include the [approved-processing operator command](PROCESSING_CONTROLLER.md):
 private config, exact worker scope, non-claiming preflight, bounded polling, fixed

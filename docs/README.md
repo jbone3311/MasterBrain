@@ -1,7 +1,8 @@
 # Email Brain / Email OS
 
 Status: target architecture plus an executable bounded prototype  
-Documentation reviewed: 2026-09-20; source health measurements retain their own dates.
+Documentation synchronized: 2026-09-21 against runtime/test commit `4286504`;
+source health measurements and historical validation retain their own dates.
 
 Email Brain's target is a private, multi-user intelligence layer that synchronizes
 mail, maintains people/project/thread/obligation state and gives assistants bounded
@@ -28,6 +29,23 @@ Accepted ADRs may supersede earlier boundaries; the latest applicable decision
 wins, subject to security invariants. A planning choice is not cloud provisioning,
 an SDK contract is not live acceptance, and an approved proposal is not execution.
 
+## Find the answer quickly
+
+| Question | Authoritative starting point |
+|---|---|
+| What will this product ultimately do? | [Game plan](GAME_PLAN.md), then [PRD](PRD.md) |
+| What actually works, and how? | [Features/methods](FEATURES_AND_METHODS.md), [status](IMPLEMENTATION_STATUS.md), [code map](CODE_MAP.md) |
+| Where will it run and what stays local? | [Hosting decision](HOSTING_DECISION.md), [deployment](DEPLOYMENT.md) |
+| What is the team building next? | [Roadmap](ROADMAP.md), [EB-006 contract gap](BACKLOG.md#eb-006-next-source-bound-document-processing), [Factory handoff](FACTORY_HANDOFF.md) |
+| How do we test believable mail and attachments? | [Runnable mailbox guide](TEST_MAILBOX_PLAN.md), [evaluation plan](TESTING_AND_EVALS.md) |
+| What has actually passed? | [Exact-commit build receipt](BUILD_RECEIPT.md), not roadmap targets |
+| Which decisions still need Jim? | [Open questions](OPEN_QUESTIONS.md); safe synthetic work can continue |
+
+The latest refresh fixes the changelog and stale generator/handoff language, adds
+the message-to-evidence walkthrough and identifies the ready-message attachment
+workflow still to design. It does not implement PDF extraction, refresh third-party
+activity counts, grant new authority or claim a Factory audit.
+
 ## Executive architecture review
 
 Start with [EXECUTIVE_REVIEW.md](EXECUTIVE_REVIEW.md),
@@ -38,7 +56,7 @@ not a claim that all integrations are implemented or deployed.
 
 The design is sound after five refinements:
 
-1. **Hosted Postgres is authoritative.** For multi-user remote access, use a managed PostgreSQL service with point-in-time recovery, `pgvector`, private networking, encryption, and tested exports. An encrypted SQLite database may be a local read cache or single-user edge replica, but is not the shared source of truth.
+1. **Hosted Postgres is authoritative.** For multi-user remote access, use a managed PostgreSQL service with point-in-time recovery, private networking, encryption, and tested exports. Preserve the option for `pgvector` after measured retrieval need; vectors are not part of the current implementation. An encrypted SQLite database may be a local read cache, but is not the shared source of truth.
 2. **A control plane mediates learning.** Assistants submit typed proposals. Safe knowledge updates may auto-apply; attention-changing rules require review; code/schema/security changes become Factory work. No model edits production rules or source code directly.
 3. **Mailbox effects are commands, not side effects of inference.** Classification produces a proposed action. A policy engine validates it; an idempotent executor performs it. Draft, move/label, archive, and delete privileges are separately scoped. Sending and permanent deletion are approval-gated.
 4. **Tenant isolation is defense in depth.** Every owned record has `tenant_id`; authorization is checked in the API and enforced again with PostgreSQL row-level security (RLS). Workers use tenant-scoped identities. PostgreSQL notes that table owners and `BYPASSRLS` roles can bypass policies, so the runtime role must be neither ([PostgreSQL RLS](https://www.postgresql.org/docs/17/ddl-rowsecurity.html)).

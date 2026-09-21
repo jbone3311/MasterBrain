@@ -1,6 +1,6 @@
 # Deployment
 
-Updated 2026-09-20. [GAME_PLAN.md](GAME_PLAN.md) explains the delivery stages.
+Updated 2026-09-21. [GAME_PLAN.md](GAME_PLAN.md) explains the delivery stages.
 Migration 0011 adds the owner history index; ship compatible API/assets together
 and account for index-build locking. Hiding controls does not cancel existing
 approvals. The production topology below is planned, not provisioned.
@@ -26,6 +26,12 @@ This is the production target, not a deployed environment. See
 and AWS/other alternatives, and
 [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) for the executable synthetic prototype.
 No cloud infrastructure, real email connection or paid resource has been provisioned.
+
+The current default image deliberately excludes the PDF/Office fixture readers.
+Do not install development extras in a production API image to enable document
+intake. A future binary processor needs a separately approved image/profile and
+source-bound job integration. The local Docker isolation checks are not proof that
+an arbitrary managed container service provides equivalent isolation.
 
 ## Recommended production topology
 

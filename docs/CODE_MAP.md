@@ -1,6 +1,6 @@
 # Current code map
 
-Updated 2026-09-20. Existing files, not a proposed directory tree. Python modular
+Updated 2026-09-21. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 
 | Responsibility | Actual files |
@@ -16,8 +16,10 @@ service, vanilla-JavaScript owner UI; no React application or installed RAG fram
 | Worker/checkpoints | [sync.py](../src/email_brain/sync.py), [sync_store.py](../src/email_brain/sync_store.py) |
 | Recovery/jobs | [recovery.py](../src/email_brain/recovery.py), [recovery_jobs.py](../src/email_brain/recovery_jobs.py) |
 | Restricted processor/controller | [mime_sandbox.py](../src/email_brain/mime_sandbox.py), [sandbox_runner.py](../src/email_brain/sandbox_runner.py) |
+| Approved-processing operator CLI | [processing_controller.py](../src/email_brain/processing_controller.py) |
 | Local candidates | [inference.py](../src/email_brain/inference.py), [local_model.py](../src/email_brain/local_model.py) |
 | Fictional inbox/file bytes | [synthetic.py](../src/email_brain/synthetic.py), [attachment_samples.py](../tests/attachment_samples.py) |
+| Coherent mailbox/manifest/replay | [synthetic_mailbox.py](../src/email_brain/synthetic_mailbox.py), [synthetic_formats.py](../src/email_brain/synthetic_formats.py) |
 | Owner UI | [web/](../src/email_brain/web/) |
 | Schema upgrades | [migrations/](../migrations/), [migrate.py](../src/email_brain/migrate.py) |
 | Checks | [tests/](../tests/), [CI](../.github/workflows/ci.yml) |

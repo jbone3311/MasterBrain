@@ -1,9 +1,16 @@
 # Data Model
 
-Updated 2026-09-20. The migration notes and final implemented-schema section
+Updated 2026-09-21. The migration notes and final implemented-schema section
 describe executable storage. Entity/project/obligation/grant/vector sketches are
 target design, not existing tables. [Migrations](../migrations/) are authoritative
 for deployed schema; see [code map](CODE_MAP.md) and [status](IMPLEMENTATION_STATUS.md).
+
+ADR-033's known-answer generator adds no schema. The next attachment-processing
+design is still pending: `recovery_jobs` references quarantine receipts, not arbitrary
+parts of ready messages. Do not reinterpret that foreign key or fabricate quarantine
+to implement document extraction. Any new source/part-bound approval or extraction
+version model requires an ADR, reviewed migration/grants and restore tests first.
+See [next work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
 
 Migration 0011 adds `recovery_jobs_history` over tenant, account and descending
 immutable creation time/UUID. This supports all-state bounded history without

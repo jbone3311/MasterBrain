@@ -32,6 +32,16 @@ parser does not certify an online worker, and a completed job can have deferred 
 
 ## Validation
 
+### Important attachment boundary
+
+The processing CLI/API/UI operate on approved held-message recovery, not arbitrary
+PDF/Office parts in ready messages. Ready-body search and deferred-attachment
+accounting can coexist. Source-bound attachment jobs and binary extraction still
+need their own approved design and integrated tests; no new PDF capability is
+claimed by this documentation refresh. [Next contract](BACKLOG.md#eb-006-next-source-bound-document-processing).
+
+### Verified runtime
+
 Latest verified runtime/test commit: **4286504**, [CI 35572975435](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35572975435).
 1,392 Python tests (178 real PostgreSQL), 52 Node UI contracts and five additional
 actual-container cases passed. Restore at the same runtime commit verified

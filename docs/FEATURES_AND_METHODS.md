@@ -1,6 +1,6 @@
 # Features and methods
 
-Updated 2026-09-20. “Implemented” means bounded local/CI synthetic behavior, not
+Updated 2026-09-21. “Implemented” means bounded local/CI synthetic behavior, not
 production. [Status](IMPLEMENTATION_STATUS.md) and [receipts](BUILD_RECEIPT.md) govern claims.
 
 | Owner benefit | Method | Current boundary |
@@ -27,6 +27,64 @@ and regression tests. Models can propose ambiguous requests, aliases and summari
 Their claimed confidence is not accuracy: evaluate against labeled cases, allow
 abstention and route consequential ambiguity to review. No model receives provider
 tokens or action tools. [Model strategy](AI_MODEL_STRATEGY.md).
+
+## Follow one message through the system
+
+1. **Read changes:** the provider adapter fetches bounded source bytes and metadata.
+   A stored cursor and account lease support restart. Only Fastmail currently has
+   the durable database worker; the other provider contracts are offline-tested.
+2. **Keep evidence:** preserve source bytes/hash and account ownership before
+   advancing progress. Default inline MIME is bounded to 1 MiB; explicitly configured
+   encrypted local storage can preserve up to 16 MiB. Larger preservation is not
+   permission for a larger in-process parser.
+3. **Account for content:** normalization produces a versioned body; attachment
+   receipts record extracted, deferred, failed or skipped outcomes. Supported
+   plain/CSV/calendar text can enter FTS. PDF/Office/image/archive bytes stay deferred.
+4. **Find it:** current authorized message/attachment text becomes searchable with
+   evidence IDs. Old evidence remains distinguishable; a provider tombstone hides
+   the current result without silently purging retained history.
+5. **Improve interpretation:** today's reviewed sender rules add virtual labels.
+   Future evaluated models and projectors will propose facts, obligations and
+   corrections. They cannot change mailbox state merely by returning JSON.
+6. **Act only through a separate boundary:** future drafts/moves require an exact
+   preview, authorization and executor. There is no current provider-write path.
+
+Each stage has a different success condition. “Imported,” “body searchable,”
+“attachment extracted,” “scanned,” “fact verified” and “action executed” must not be
+collapsed into one green checkmark.
+
+## Attachment processing is a separate product workflow
+
+**Current:** held-message recovery is tied to a quarantine receipt and an approved
+MIME parser. A recovered message can still contain deferred documents. A ready
+message containing a PDF is not automatically eligible for that recovery queue.
+
+**Required next:** an approved attachment job must identify the immutable source
+version, exact MIME part and bytes, as well as the processor/image and policy.
+The worker needs resource limits and no network or provider credentials; the parent
+must validate returned text and provenance before publishing a new extraction.
+Cancellation, revoked access, changed sources and expired leases must prevent stale
+publication. Existing body search and historical citations must survive failure.
+
+Scanned images need OCR; encrypted documents need an explicit password policy;
+damaged/unsupported/over-budget inputs need visible outcomes. Text extraction does
+not establish malware safety or document truth. These are design requirements,
+not newly implemented capabilities. [Next work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
+
+## How we prove usefulness
+
+The implemented test mailbox starts from known fictional project facts, then
+creates coherent conversations, revised spreadsheets, PDFs, calendar changes and
+failure cases. A versioned manifest records bytes, arrivals and expected outcomes.
+Replaying the same packet tests duplicate delivery, restarts and searches. Separate
+readers check that our generated PDFs/Office files are valid; they are development
+dependencies, not enabled production extractors.
+
+This answers “did we store and find the right supported evidence?” It does not yet
+answer “does a model understand varied real-world mail?” That requires held-out
+quality evaluations, while provider reliability requires authorized live tests and
+sustained operation. See [mailbox guide](TEST_MAILBOX_PLAN.md) and
+[evaluation plan](TESTING_AND_EVALS.md).
 
 ## Three kinds of change
 

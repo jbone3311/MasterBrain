@@ -1,6 +1,6 @@
 # Product Requirements Document
 
-Updated 2026-09-20. This is the ultimate product contract, not an implemented
+Updated 2026-09-21. This is the ultimate product contract, not an implemented
 feature list. [Features/methods](FEATURES_AND_METHODS.md) maps each requirement to
 current behavior; [status](IMPLEMENTATION_STATUS.md) identifies remaining gates.
 
@@ -48,6 +48,10 @@ A tenant may be one person or a household/team. Accounts and records belong to e
 - Perform incremental, resumable, idempotent synchronization with full-resync recovery.
 - Retain immutable raw MIME or equivalent provider evidence plus hashes and provider metadata.
 - Normalize MIME, character sets, HTML, quotations, signatures, trackers, attachments, identities, and threads without discarding raw evidence.
+- Process supported attachments independently of whether the containing message
+  body is already searchable. Bind approval/results to source evidence and part
+  hashes; expose unsupported/encrypted/failed/over-budget outcomes. Scanning,
+  text extraction and OCR are separate capabilities, not a single success flag.
 
 ### Organization and state
 

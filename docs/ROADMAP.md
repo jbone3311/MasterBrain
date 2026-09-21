@@ -1,6 +1,6 @@
 # Roadmap
 
-Updated 2026-09-20. This delivery order supersedes the initial phase numbering;
+Updated 2026-09-21. This delivery order supersedes the initial phase numbering;
 it does not grant new permissions. Dates depend on evidence and owner approvals,
 not optimistic calendar promises. [Backlog IDs](BACKLOG.md) remain stable.
 
@@ -24,8 +24,11 @@ worker supervision, binary extraction, operational acceptance and Factory bind r
    manifests, export and paced/restarted database replay are implemented (EB-023).
    Expand held-out variety, scanned-text/password-protected cases and sustained
    load measurement; existing format checks do not prove binary extraction quality.
-3. **Binary intake:** isolate and scan selected PDF/Office/image formats, enforce
-   resource limits, retain receipts and prove known-answer extraction (EB-006).
+3. **Binary intake:** first define approved processing for deferred attachments in
+   ready messages; today's quarantine-recovery queue does not cover them. Then
+   isolate selected PDF extraction, add its scanner policy, preserve receipts and
+   prove authorized source-to-search results before Office/OCR expansion (EB-006).
+   See the [concrete work package](BACKLOG.md#eb-006-next-source-bound-document-processing).
 4. **Production foundation:** OIDC/grants, Azure adapters/private resources,
    secrets/key recovery, enrollment, rate limits, audit and restore (EB-007–009).
 5. **Read-only acceptance:** owner-authorized disposable mailbox plus staging soak,

@@ -1,6 +1,6 @@
 # Security
 
-Updated 2026-09-20. Current prototype controls are identified below; production
+Updated 2026-09-21. Current prototype controls are identified below; production
 requirements are not claims of completed deployment or compliance. Public sample
 files remain untrusted and unadopted; follow [fixture policy](PUBLIC_EMAIL_TEST_DATA.md).
 No realistic-feed proposal authorizes external delivery or private-data disclosure.
@@ -13,6 +13,13 @@ paths and symlinks. Paced replay uses existing synthetic-only account checks on
 every ingestion transaction, without provider writes. New PDF/Office readers are
 dev-only validators of generated data and absent from the runtime image; they are
 not a new unsandboxed production extraction path. No public corpus is imported.
+
+Future PDF/Office support requires an approved source/part-bound processing design;
+today's MIME recovery permission must not silently expand to binary readers or
+ready-message attachments. Keep parser success, malware-scan status and semantic
+trust independent. Preserve valid body search when an attachment fails. The
+[next-work requirements](BACKLOG.md#eb-006-next-source-bound-document-processing)
+are not an authorization or a claim that a scanner/sandbox integration exists.
 
 [The operator processing command](PROCESSING_CONTROLLER.md) accepts closed private
 configuration and no-follow owner-only files; a separate exact-scope worker identity

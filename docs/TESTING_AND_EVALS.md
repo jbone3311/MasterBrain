@@ -1,8 +1,10 @@
 # Testing and Evaluations
 
-Updated 2026-09-20. [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) specifies the
-next coherent fictional feed/answer keys; [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md)
-governs outside samples. These proposed extensions are not current test results.
+Updated 2026-09-21. [TEST_MAILBOX_PLAN.md](TEST_MAILBOX_PLAN.md) documents the
+implemented bounded fictional generator, answer keys, export and database replay,
+along with the remaining quality/soak gaps. [PUBLIC_EMAIL_TEST_DATA.md](PUBLIC_EMAIL_TEST_DATA.md)
+governs outside samples. Runtime verification is tied to exact commits below and
+in [BUILD_RECEIPT.md](BUILD_RECEIPT.md), not inferred from test-plan requirements.
 
 Processing history/owner controls add Python account/cursor/read-only tests and
 27 independent Node cases, alongside 25 existing UI cases. Run both suites:
@@ -104,6 +106,21 @@ Targets below still need private-corpus and production-like testing. No live
 provider, malware scanner, cloud restore or model-quality evaluation is implied by unit tests.
 
 ## Test layers
+
+### First binary-extraction acceptance gate (planned)
+
+Use a ready message from the existing known-answer packet whose PDF-only marker
+is currently absent from search. Prove explicit source/part/parser approval,
+isolated extraction, parent validation, atomic versioned publication and authorized
+FTS. Its body must remain searchable when the document fails, is deferred or its
+job is cancelled. Test foreign tenants, expired approval, revoked membership,
+changed evidence, lost responses, restart and restore. Include image-only,
+encrypted, malformed and resource-exhausting PDFs with explicit outcomes.
+
+Keep scan status independent of text extraction. Independent readers verifying our
+generated fixtures are not production extractor acceptance. Standalone sandbox
+checks are necessary but do not prove the complete approved source-to-search path.
+See [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing).
 
 ### Unit and property tests
 

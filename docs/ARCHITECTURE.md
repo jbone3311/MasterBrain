@@ -1,6 +1,6 @@
 # Architecture
 
-Updated 2026-09-20. [CODE_MAP.md](CODE_MAP.md) maps executable modules;
+Updated 2026-09-21. [CODE_MAP.md](CODE_MAP.md) maps executable modules;
 [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) explains the owner workflows.
 Sections titled logical components, flows and reliability patterns describe the
 target architecture; not every component is implemented. Current boundaries are
@@ -62,6 +62,22 @@ it does not provision or validate hosted backups, encryption or point-in-time re
 
 ## Style
 
+### Boundary to resolve before binary intake
+
+Current `RecoveryJobs` and `Recovery` select evidence through a quarantine
+receipt. Ready status is accepted there only for a recorded same-parser recovery
+attempt, not as a general attachment-processing entry point. A ready message may
+have deferred binary attachments and no quarantine receipt at all.
+
+The next design must explicitly represent approved processing of such a part,
+including source-version/hash identity, independent result provenance and fenced
+publication. Do not manufacture quarantine or drop a valid body projection to fit
+the existing queue. Require an ADR before schema/API/permission changes. A separate
+isolated reader is not sufficient until authorized extraction/search/recovery is
+integrated. See [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing).
+
+### Deployment style
+
 Begin as a modular monolith plus workers. Separate deployable services only for materially different privileges or scaling: public/API ingress, mailbox connectors, inference quarantine, and mailbox action executor. Use a queue and transactional outbox, but avoid distributed-service complexity where a single process boundary suffices.
 
 ## Logical components
@@ -113,6 +129,11 @@ authenticated request
 `pgvector` keeps vectors with transactional data and supports exact search plus HNSW/IVFFlat indexes ([project](https://github.com/pgvector/pgvector)). Start exact; add HNSW only when benchmarked latency requires it. Keep lexical retrieval first-class because names, addresses, confirmation codes, amounts, and dates are not reliably served by semantic similarity alone.
 
 ## Source of truth and replicas
+
+The list below is the target ownership model. Currently, small raw MIME can be
+stored inline in PostgreSQL and larger evidence uses an explicitly configured
+encrypted local backend. Hosted Blob, vector indexes, entity/state projectors,
+local replicas and action outboxes are not implemented storage components.
 
 - **PostgreSQL:** authoritative normalized/derived state, tenancy, rules, audit, sync cursors, jobs, and vectors.
 - **Object storage:** authoritative encrypted raw MIME/large attachment blobs; PostgreSQL stores hashes and object keys.

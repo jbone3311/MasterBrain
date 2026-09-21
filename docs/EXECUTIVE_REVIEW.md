@@ -1,6 +1,6 @@
 # Executive architecture review
 
-Updated 2026-09-20. Start with [GAME_PLAN.md](GAME_PLAN.md) and
+Updated 2026-09-21. Start with [GAME_PLAN.md](GAME_PLAN.md) and
 [FEATURES_AND_METHODS.md](FEATURES_AND_METHODS.md) for the owner narrative.
 The architecture verdict below is not a production-readiness certificate.
 
@@ -29,6 +29,7 @@ effects make this feedback loop useful without permitting self-modifying automat
 | Historical citations might point at changed text | Immutable normalized version records and evidence IDs; retain parser/hash provenance |
 | “Immutable” could accidentally mean never deletable | Immutable while retained; explicitly authorized retention/purge path covers blobs, projections, vectors, replicas and backup aging |
 | Attachments could disappear on failed extraction | Receipt + append-only event for each part; clear pending/deferred/failed/skipped outcomes; reconciliation must balance |
+| Held-message recovery might be mistaken for general document processing | Ready mail with deferred attachments needs a source/part-bound approval and result path; preserve working body search and keep scanning separate from extraction |
 | Model confidence could authorize effects | Claimed confidence is telemetry; measured calibration, consequence and explicit policy govern review |
 | Moving a message might train the wrong rule | Explicit corrections outrank weak behavioral signals; distinguish user moves from our own writes; decay/review learned rules |
 | An approved proposal could execute unexpectedly | Review status separate from apply/action status; approval binds exact payload/version/expiry in the future executor |
@@ -48,9 +49,11 @@ effects make this feedback loop useful without permitting self-modifying automat
    and operational health. Ship no Internet-facing service before these gates.
 4. Expand the implemented narrow reviewed virtual rules; calibrate local extraction
    on approved labeled data. Add people/projects/obligations as evidence-backed projections.
-5. Add previewed labels/moves/drafts with a separate executor; prove compensation
+5. Add scoped assistant/team access with production authorization and independently
+   verified MCP client support; tenant RLS alone is not shared-account authorization.
+6. Add previewed labels/moves/drafts with a separate executor; prove compensation
    limits and ambiguous-result handling before production effects.
-6. Expand providers, granted team sharing, evaluated hybrid vectors and approved
+7. Expand providers, evaluated hybrid vectors and approved
    remote escalation. Avoid graph infrastructure unless relational limits are measured.
 
 Not yet production-ready: live sync, provider credentials, attachment binary

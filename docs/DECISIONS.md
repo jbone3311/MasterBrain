@@ -5,6 +5,11 @@ live in [adr/](adr/). Later explicit decisions supersede earlier limitations wit
 rewriting their history. The current status is in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 The documentation refresh changes explanations/navigation, not runtime privileges.
 
+September 21 alignment identifies the next unresolved boundary: approved binary
+attachment processing in ready mail. [EB-006](BACKLOG.md#eb-006-next-source-bound-document-processing)
+records the required design/acceptance work. No ADR for that behavior has been
+accepted by this documentation change; ADR-029/030 remain bounded MIME recovery.
+
 ## Accepted
 
 [ADR-033](adr/033_known_answer_synthetic_mailbox.md) adds coherent fictional MIME,

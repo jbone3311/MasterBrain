@@ -1,6 +1,6 @@
 # Operations Runbook
 
-Updated 2026-09-20. The opening sections describe current local/CI recovery.
+Updated 2026-09-21. The opening sections describe current local/CI recovery.
 Daily checks, incident playbooks and SLOs below are production requirements;
 their dashboards, alert delivery, OIDC and provider-action controls are not all
 implemented. [Status](IMPLEMENTATION_STATUS.md) is the capability boundary.
@@ -42,6 +42,12 @@ output or failed ownership-checked cleanup leave mail held with no cached attemp
 Do not raise limits silently. Verify no owned orphan remains after a killed host
 process; never prune or delete unrelated containers. A successful recovery does
 not mean binary attachments were extracted or scanned: inspect receipt accounting.
+
+If an ordinary searchable message has a deferred PDF/Office attachment, this is
+an unsupported extraction capability, not necessarily a stalled recovery job.
+Do not quarantine the message manually, invent a receipt or raise parser limits.
+Keep its body searchable and record the deferred part; the approved general
+document-processing workflow is still to be implemented.
 
 ## Encrypted evidence failures
 

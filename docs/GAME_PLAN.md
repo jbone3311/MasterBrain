@@ -1,6 +1,6 @@
 # Email Brain: the game plan
 
-Updated 2026-09-20. Product direction, not a claim that all features are available.
+Updated 2026-09-21. Product direction, not a claim that all features are available.
 [Implementation status](IMPLEMENTATION_STATUS.md) and the exact-commit
 [build receipt](BUILD_RECEIPT.md) define current evidence.
 
@@ -41,6 +41,34 @@ its own permission and review.
 **Today:** synthetic ingestion, receipts, FTS, proposal review and narrow virtual
 rules work. Binary extraction, automatic project state and mailbox actions in
 this example remain planned. [Features and methods](FEATURES_AND_METHODS.md).
+
+## What the owner will actually use
+
+- **Ask:** find a message, document or current project question and receive bounded
+  evidence, not an unsupported answer or an entire mailbox pasted into a model.
+- **Review:** see what needs attention, what was deferred, what a proposed rule
+  would change and why. Accept, narrow or reject without modifying original mail.
+- **Teach:** confirm a relationship or repeated preference. The service records a
+  proposal and its outcome; it does not assume every casual remark is permission.
+- **Operate:** see account freshness, held items, processing failures and recovery
+  health. An offline model must not stop ingestion or lexical search.
+
+The present local UI covers search, evidence, proposals, narrow rules and recovery.
+It is not yet a complete project dashboard, assistant connection or hosted inbox.
+
+## The immediate implementation gap
+
+Attachment accounting and attachment understanding are separate milestones. We
+already know a PDF arrived and can preserve it. We cannot yet extract/index its
+text in production. Existing processing approvals refer to quarantined **messages**;
+they are not general permission to process every deferred attachment.
+
+The next intake design must support an ordinary searchable email containing an
+unprocessed document. Bind approval to tenant/account, immutable message evidence,
+part path/hash and processor version; retain the working body index throughout.
+Approve the ADR and exact contract before implementation. An isolated PDF reader
+alone is a foundation, not a finished source-to-search feature. Scanning, extraction
+and OCR need distinct outcomes and acceptance evidence.
 
 ## Build sequence
 
