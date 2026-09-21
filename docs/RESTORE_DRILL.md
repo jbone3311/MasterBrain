@@ -1,5 +1,11 @@
 # Synthetic PostgreSQL backup/restore drill
 
+Latest verified implementation: **cefce1d**, [run 35563364090](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35563364090),
+passed 2026-09-20 Pacific. Mixed inline/external evidence: **23 tables, 95 rows,
+two tenants, four encrypted objects**, equal hashes and restored authorization.
+Database-only and empty-object restores were refused. Elapsed 12.43 seconds
+includes container startup; not a production RTO. See [build receipt](BUILD_RECEIPT.md).
+
 Historical verification: code `e3695d8`,
 [restore run 35560344225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35560344225),
 passed on 2026-09-20 Pacific. The expanded fixture includes searchable calendar

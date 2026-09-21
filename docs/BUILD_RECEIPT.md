@@ -2,6 +2,51 @@
 
 Updated 2026-09-20 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Encrypted large-email preservation and two-part restore
+
+Implementation commit **cefce1d**, follow-up pressure tests **0e50870**.
+[CI 35563585338](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35563585338)
+passed at 0e50870; the unchanged runtime/restore implementation passed
+[restore 35563364090](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35563364090)
+at cefce1d. Verified 2026-09-20 Pacific (September 21 UTC).
+
+- **965 Python tests passed**, including **105 real PostgreSQL cases**, no CI skips;
+  **25 Node UI tests passed**. The repeated repository-gate suite is not counted
+  twice. Local results: 860 passed, 105 explicit PostgreSQL skips.
+- Locked dependencies, Ruff, strict typing across 30 source modules, all 16 pack
+  documents/local links, container build and CLI smoke passed. The restore script
+  also passed independent strict typing with `MYPYPATH=src`.
+- Actual PostgreSQL 17 restore verified **23 tables, 95 rows, two tenants and four
+  encrypted external objects**, alongside legacy inline evidence. All table and
+  decrypted raw hashes matched; search/evidence/recovery/rules and tenant RLS passed.
+  Database-only and empty-object restoration were explicitly refused. Elapsed
+  **12.43 seconds** includes container startup, not a production RTO. The drill
+  cleaned up its exact owned container, temporary archive and ciphertext trees.
+- Full Git-history secret scan was clean through 0e50870. The private worktree
+  directory scan also passed before the implementation commit.
+
+Added 72 encrypted-backend tests, 30 Fastmail/worker tests and 24 storage API/unit/
+database cases. Coverage includes authenticated tenant/account context, wrong keys,
+tampering, symlinks/ownership, concurrent publication, crash/fsync failures, fixed
+size budgets, transactional rollback/orphans, SQL manifest forgery, revoked authority
+during staging, persisted old-key reads after rotation, missing-key refusal without
+cursor movement, and large-message progress through a restarted durable worker.
+Independent integration review found no blocking issue; simultaneous mixed
+inline/external writer stress remains a useful additional scenario.
+
+Migration **0009** requires coordinated API/worker/backup-reader upgrade. The
+encrypted filesystem backend is explicit opt-in; it preserves complete raw messages
+up to **16 MiB**, but the parser still caps at **1 MiB**. Larger retained messages
+remain visibly held as `mime_too_large`, not parsed/indexed/extracted. Existing
+inline evidence is unchanged. No automatic object deletion or raw-download API.
+
+No real mailbox, model, cloud/KMS service, binary extractor or Factory runtime was
+activated. Hosted storage/key recovery, production identity/grants, larger isolated
+parsing/extraction, retention/purge and live acceptance remain gates. Two upstream
+test-client deprecations and action-runtime/runner notices remain tracked supply-chain
+work. See [storage contract](LARGE_EVIDENCE_STORAGE.md),
+[ADR-028](adr/028_encrypted_large_evidence.md) and [status](IMPLEMENTATION_STATUS.md).
+
 ## Audited human recovery of held messages
 
 Code/test commit: `063ac14` (implementation `af76838`, follow-up assertions/UI).
