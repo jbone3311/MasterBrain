@@ -287,6 +287,7 @@ test("held-message retry requires an explicit click and binds receipt, account a
   });
   const retry = await prepareHeld(app);
   assert.equal(calls.length, 1, "review must not automatically retry");
+  assert.ok(descendants(app.element("quarantine")).some((n) => n.textContent === "Retry parser: current-parser"));
   assert.ok(descendants(app.element("quarantine")).some((n) => /No mailbox changes.*cached/.test(n.textContent)));
   app.element("results").append("outdated search results");
   await retry.onclick();

@@ -61,6 +61,7 @@ async function heldMessages(account, after = null, version = importVersion) {
     if (data.reprocessing === true && typeof data.retry_parser_version === "string" && data.retry_parser_version) {
       const retry = node("button", "Retry parsing");
       const session = sessionVersion, token = byId("token").value;
+      card.append(node("small", `Retry parser: ${data.retry_parser_version}`));
       card.append(node("p", "Retry retained evidence inside Email Brain only. No mailbox changes, model calls, or raw-content display. A failed attempt is cached for this parser until a parser upgrade."));
       retry.onclick = () => safely(async () => {
         if (retry.disabled) return;
