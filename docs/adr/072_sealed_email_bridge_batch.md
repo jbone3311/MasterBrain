@@ -1,6 +1,6 @@
 # ADR-072 — Sealed explicit Email bridge batch
 
-Status: implemented; hosted verification pending.
+Status: accepted; hosted PostgreSQL and restore verification green.
 
 ## Context
 
@@ -54,3 +54,12 @@ revocation between items, unchanged-plan retry/replay, stale/hidden-version refu
 tenant isolation and content-free receipts. PostgreSQL must demonstrate an injected
 mid-batch failure followed by safe exact-plan retry. Hosted CI and restore must remain
 green. Rollback removes only the plan schema and batch operator.
+
+Acceptance was recorded for runtime revision `0fd8c35` plus compatibility correction
+`7ca0568`. The first hosted run exposed that batch account fencing had accidentally
+moved the legacy one-item target lookup ahead of idempotency-receipt lookup. The
+correction retains the new account fence only for batch calls and restores the
+existing one-item replay/conflict ordering. Corrected
+[CI 35759175176](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175176)
+and [restore 35759175355](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175355)
+are green.

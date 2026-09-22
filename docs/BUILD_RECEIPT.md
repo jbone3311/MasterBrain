@@ -2,6 +2,38 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified sealed Email message bridge batches
+
+Runtime revision **0fd8c35** and legacy one-item idempotency compatibility correction
+**7ca0568** passed
+[CI 35759175176](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175176)
+and [restore 35759175355](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175355),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-batch` accepts one owner-private, canonical-digest-bound
+  plan containing one account, the exact configured revision and 1–100 ordered unique
+  message-version/idempotency-key pairs. Check mode validates without target lookup or
+  data effects; execution reauthenticates before every existing one-item transaction.
+- Unit and CLI tests prove closed schema, digest, private-file, revision, duplicate,
+  scope, ordered-dispatch and content-free receipt contracts. Real PostgreSQL injected
+  a failure on item two, proved only item one had a receipt, then retried the unchanged
+  plan to replay one and record two without duplication.
+- The first hosted run found a backward-compatibility regression: account fencing had
+  moved target lookup ahead of legacy one-item idempotency lookup. Revision `7ca0568`
+  keeps the batch account fence while restoring the established one-item replay and
+  conflict ordering; the corrected full gate is green.
+- CI and deployment each passed **2,454 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **138 Markdown files / 802
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 16.05
+  seconds.
+- The operator does not discover messages, follow preview cursors, skip refused items,
+  bridge attachments/documents, contact a provider or change a mailbox. Existing
+  immutable one-item receipts are the retry authority. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified private Email bridge backfill preview
 
 Runtime revision **4c3347c** and current-version transition assertion correction

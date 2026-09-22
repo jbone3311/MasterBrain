@@ -75,7 +75,7 @@ mean hosted, live-source accepted, or production ready.
   content-free output; hosted PostgreSQL/restore gates green.
 - Private `masterbrain email bridge-batch` command for one owner-private, digest-bound
   list of 1–100 current message versions with fixed keys, account fencing, fail-stop
-  execution and exact-plan retry; hosted verification is pending.
+  execution and exact-plan retry; hosted PostgreSQL/restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -84,7 +84,7 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Email bridge batch/backfill, atomic cross-layer snapshots, automated source coverage
+- Email attachment/document batch backfill, atomic cross-layer snapshots, automated source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.

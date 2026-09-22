@@ -2,11 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4K — sealed Email bridge batch-plan design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define an explicit immutable request contract
-that converts one reviewed preview page into a digest-bound list of version IDs and
-per-item idempotency keys. Preserve single-item transactional fencing and prohibit
-implicit pagination, discovery or best-effort continuation before execution exists.
+**Checkpoint 4L — Email attachment/document batch preview design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define a bounded, read-only preview that
+exposes only opaque attachment occurrences and already-approved document derivatives
+whose current parent messages have been bridged. Preserve message → attachment →
+document dependency order, make incomplete coverage explicit, and add no batch writes
+until the preview contract and PostgreSQL state transitions are accepted.
 
 ## Completed gates
 
@@ -101,13 +102,17 @@ implicit pagination, discovery or best-effort continuation before execution exis
   transition assertion correction `e9cf62f` passed hosted
   [CI 35756327120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35756327120)
   and [restore 35756327113](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35756327113).
+- Checkpoint 4K sealed Email message batch runtime `0fd8c35` plus legacy one-item
+  idempotency-ordering compatibility correction `7ca0568` passed hosted
+  [CI 35759175176](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175176)
+  and [restore 35759175355](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175355).
 
 ## Current work
 
-- Define a closed, bounded and digest-bound batch request assembled from reviewed
-  preview results; do not let an executor discover or continue pages implicitly.
-- Specify per-item keys, fail-stop/retry semantics and result accounting before adding
-  any command that performs more than one bridge transaction.
+- Inventory the exact legacy attachment, approved-extraction and shared bridge states
+  needed for a content-free attachment/document preview.
+- Specify stable ordering, cursor semantics and dependency/readiness labels before
+  adding any multi-item attachment or document writer.
 
 ## Deferred by design
 
