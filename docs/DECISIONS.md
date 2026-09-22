@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-049 FileOS text extraction](adr/049_fileos_text_extraction.md) adds bounded,
+hash-reverified, read-only text/Markdown/HTML/CSV extraction with explicit outcomes
+and live parity against the pinned FOS-Master donor.
+
 [ADR-048 DataCore persistence](adr/048_datacore_persistence.md) adds bounded,
 idempotent FileOS snapshot import, immutable source/evidence/provenance records,
 deterministic chunks and tenant-isolated lexical retrieval without changing Email

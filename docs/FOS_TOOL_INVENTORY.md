@@ -48,10 +48,14 @@ The exact first-tranche source hash is:
 
 ```text
 093f1800e8faff59b70502865f73e4aeaa56112edd43326fc8c7c548cdc5bff8  _SYSTEM/tools/dedup_tool.py
+746932e5ce033a9b8f8bd7155a88dfbb6d1c57a9916aea2230e6afbe1a3ab269  _SYSTEM/tools/doc_extract.py
+823ce03a8d7e2b8c42845ae1685db0ed92391461428b989034b9d83140421a41  _SYSTEM/tests/test_doc_extract.py
 ```
 
-The migration ledger pins the Git commit as the primary provenance. Each later
-tranche must add source hashes for all transitive candidate files before adaptation.
+The migration ledger pins the Git commit as the primary provenance. The extraction
+hashes cover the DC-004 text/Markdown/HTML/CSV candidate and its donor test suite;
+optional PDF/Office/image dependencies remain outside that tranche. Each later tranche
+must add source hashes for all transitive candidate files before adaptation.
 ## Gaps found during inspection
 
 - Common-tool test coverage is uneven: intake/dedupe/extraction are comparatively

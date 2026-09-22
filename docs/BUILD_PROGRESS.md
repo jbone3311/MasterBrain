@@ -2,7 +2,7 @@
 
 ## Active checkpoint
 
-**Checkpoint 2 — Shared persistence and lexical index.** Work occurs on
+**Checkpoint 3 — FileOS adapter and extraction.** Work occurs on
 `codex/masterbrain-foundation` in PR #4.
 
 ## Completed gates
@@ -13,12 +13,14 @@
 - Hosted CI and synthetic PostgreSQL restore green at foundation baseline.
 - Checkpoint 1 shared CLI, contracts, FileOS snapshots and 3,000-file donor parity
   completed in commit `73b58cb`; hosted CI and restore are green.
+- Checkpoint 2 persistence/index completed in commits `20c5fb8` and `380761b`;
+  hosted CI and populated logical restore are green.
 
 ## Current work
 
-- Additive DataCore schema, bounded/idempotent FileOS manifest import, immutable
-  evidence/provenance, deterministic chunks, lexical retrieval and job primitives.
-- PostgreSQL replay, drift, concurrency, rollback, RLS, immutability and restore gates.
+- First read-only FileOS extraction tranche: text, Markdown, HTML and CSV with
+  source-version revalidation, explicit accounting and donor parity.
+- End-to-end snapshot/import/extract/index/search and sibling-failure isolation.
 
 ## Deferred by design
 

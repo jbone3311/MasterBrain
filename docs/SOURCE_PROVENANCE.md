@@ -1,7 +1,8 @@
 # Source and Provenance Contract
 
-Checkpoint 1 introduces dependency-light immutable contracts. They are executable
-Python types, not database tables yet; Checkpoint 2 will persist them additively.
+Checkpoint 1 introduced dependency-light immutable contracts. Checkpoint 2 persists
+them in additive tenant-isolated `brain_*` tables, and Checkpoint 3 begins publishing
+bounded FileOS text through those contracts.
 
 ## Source
 
@@ -47,5 +48,5 @@ KnowledgeCore claim will require a provenance path back to evidence.
 Contracts reject naive timestamps, unsafe locators, non-SHA-256 evidence digests,
 invalid identifiers, nested/unbounded metadata, NUL text and contradictory storage
 state. They add no source permissions or external effects. Existing Email evidence
-tables remain authoritative for the Email prototype until the additive persistence
-and migration gate passes.
+tables remain authoritative for the Email capability; the additive DataCore tables
+are authoritative only for sources imported through the new shared path.

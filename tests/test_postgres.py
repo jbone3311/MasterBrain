@@ -33,6 +33,7 @@ from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError
 from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
+from masterbrain.datacore.extraction import ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 
@@ -330,6 +331,37 @@ def test_datacore_rls_and_immutability(
     with store.transaction(other) as conn:
         assert conn.execute("SELECT count(*) AS n FROM brain_source_versions").fetchone()["n"] == 0
     assert core.search(other, "private evidence") == []
+
+
+def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    good = tmp_path / "good.txt"
+    changed = tmp_path / "changed.txt"
+    unsupported = tmp_path / "image.bin"
+    good.write_text("MasterBrain searchable source truth", encoding="utf-8")
+    changed.write_text("before", encoding="utf-8")
+    unsupported.write_bytes(b"\x00\x01")
+    manifest = fileos_manifest(tmp_path, source_id="files_adapter")
+    changed.write_text("after", encoding="utf-8")
+
+    result = FileOSAdapter(DataCoreStore(store)).publish_snapshot(
+        ctx,
+        tmp_path,
+        manifest,
+        uuid4(),
+        code_revision="test-adapter-v1",
+    )
+    assert result.counts == {"changed": 1, "extracted": 1, "unsupported": 1}
+    by_name = {entry.extraction.locator: entry for entry in result.results}
+    assert by_name["good.txt"].publication is not None
+    assert by_name["changed.txt"].extraction.status is ExtractionStatus.CHANGED
+    assert by_name["image.bin"].extraction.status is ExtractionStatus.UNSUPPORTED
+    hits = DataCoreStore(store).search(ctx, "searchable source")
+    assert len(hits) == 1 and hits[0].locator == "good.txt"
 
 
 def test_foreign_tenant_cannot_see_evidence(

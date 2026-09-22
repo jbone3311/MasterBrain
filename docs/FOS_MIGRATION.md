@@ -53,8 +53,10 @@ Golden fixtures are synthetic and contain no private FileOS data.
 
 | Tranche | Donor baseline | MasterBrain location | Parity | Status |
 |---|---|---|---|---|
-| DC-001 read-only hashing/dedupe | FOS-Master `218d5cae`, `_SYSTEM/tools/dedup_tool.py` | `src/masterbrain/datacore/dedup.py` | `scripts/datacore_parity.py`; hash/name/both synthetic corpus | Extracted; local parity required before merge |
-| DC-002 contracts/snapshot foundation | FOS inventory/index behavior reviewed; new source-neutral contract | `contracts.py`, `fileos.py`, `masterbrain` CLI | contract/fault/symlink/no-mutation tests; donor exclusion/hash behavior | Implemented locally; hosted gate pending |
+| DC-001 read-only hashing/dedupe | FOS-Master `218d5cae`, `_SYSTEM/tools/dedup_tool.py` | `src/masterbrain/datacore/dedup.py` | `scripts/datacore_parity.py`; hash/name/both synthetic corpus | Complete; 3,000-file parity and hosted gate green |
+| DC-002 contracts/snapshot foundation | FOS inventory/index behavior reviewed; new source-neutral contract | `contracts.py`, `fileos.py`, `masterbrain` CLI | contract/fault/symlink/no-mutation tests; donor exclusion/hash behavior | Complete; hosted gate green |
+| DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
+| DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Implemented; hosted gate pending |
 
 DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
 and all delete/move operations. Those omissions do not change the returned scan and
@@ -62,17 +64,13 @@ comparison contracts being adopted; the live-donor harness compares those output
 
 ## Proposed next tranches
 
-1. **DC-002 source item and provenance envelope:** unify Email evidence identifiers
-   and FileOS paths/hashes without moving files.
-2. **DC-003 read-only file scanner/index adapter:** inventory authorized roots in
-   shadow mode; no writes, moves, or deletions.
-3. **DC-004 extraction contract:** port text/CSV/HTML/document metadata first, then
-   archives/images/PDF through isolated workers.
-4. **DC-005 deterministic chunk/index publication:** versioned chunks and lexical
-   index with rebuild and freshness receipts.
-5. **KC-001 claim/entity projection:** import donor lessons without treating model
+1. **DC-004B isolated document workers:** add PDF/Office metadata and text, then
+   archives/images/OCR with format-specific corpora and containment.
+2. **DC-005 rebuild/freshness:** add explicit rebuild and source-drift receipts around
+   the existing deterministic chunk/lexical publication path.
+3. **KC-001 claim/entity projection:** import donor lessons without treating model
    output as truth.
-6. **FileOS effect broker:** last, after read-side parity and explicit safety ADRs.
+4. **FileOS effect broker:** last, after read-side parity and explicit safety ADRs.
 
 ## Cutover and rollback
 

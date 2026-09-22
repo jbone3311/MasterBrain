@@ -15,6 +15,8 @@ from types import ModuleType
 from typing import Any
 
 from masterbrain.datacore import dedup as masterbrain
+from masterbrain.datacore.contracts import stable_id
+from masterbrain.datacore.extraction import extract_source_version
 
 PINNED_FOS_COMMIT = "218d5caec2f20b9047fd3eb8e027dc671acf0c15"
 FIXTURE = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "datacore_parity" / "corpus"
@@ -30,14 +32,20 @@ def load_donor(repo: Path) -> ModuleType:
     return module
 
 
+def load_donor_extractor(repo: Path) -> ModuleType:
+    source = repo / "_SYSTEM" / "tools" / "doc_extract.py"
+    spec = importlib.util.spec_from_file_location("fos_master_doc_extract", source)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load donor module: {source}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def normalize(value: Any, root: Path) -> Any:
     """Remove expected machine/time differences without hiding contract differences."""
     if isinstance(value, dict):
-        return {
-            key: normalize(item, root)
-            for key, item in value.items()
-            if key != "modified"
-        }
+        return {key: normalize(item, root) for key, item in value.items() if key != "modified"}
     if isinstance(value, list):
         return [normalize(item, root) for item in value]
     if isinstance(value, str):
@@ -48,9 +56,7 @@ def normalize(value: Any, root: Path) -> Any:
 def git_commit(repo: Path) -> str:
     import subprocess
 
-    return subprocess.check_output(
-        ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
-    ).strip()
+    return subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
 
 
 def build_stress_corpus(root: Path, total_files: int) -> None:
@@ -115,6 +121,49 @@ def scan_checks(donor: ModuleType, root: Path, prefix: str) -> dict[str, tuple[A
     return checks
 
 
+def extraction_checks(donor: ModuleType, root: Path) -> dict[str, tuple[Any, Any]]:
+    fixtures = {
+        "plain.txt": b"alpha\r\nbeta\r\n",
+        "bom.txt": "café résumé".encode("utf-16"),
+        "latin.md": "café résumé".encode("latin-1"),
+        "table.html": (
+            b"<head><title>hidden</title></head><h1>Heading</h1>"
+            b"<table><tr><th>Date</th><th>Amount</th></tr>"
+            b"<tr><td>2026-01-01</td><td>100</td></tr></table>"
+        ),
+        "rows.csv": b'name,note\r\nAlice,"Line1\r\nLine2"\r\nBob,ok\r\n',
+    }
+    checks: dict[str, tuple[Any, Any]] = {}
+    config = donor.DEFAULT_CONFIG.copy()
+    for name, raw in fixtures.items():
+        path = root / name
+        path.write_bytes(raw)
+        expected_raw = donor.extract_file(path, config)
+        digest = masterbrain.file_hash(path)
+        item_id = stable_id("item", "files_parity", name)
+        item = {
+            "version_id": stable_id("version", item_id, digest, str(len(raw))),
+            "locator": name,
+            "digest": {"algorithm": "sha256", "value": digest},
+            "size_bytes": len(raw),
+        }
+        actual_raw = extract_source_version(root, item)
+        expected = {
+            "text": expected_raw.get("full_text", ""),
+            "encoding_uncertain": expected_raw.get("metadata", {}).get("encoding_uncertain", False),
+            "row_count": expected_raw.get("row_count"),
+            "column_count": expected_raw.get("metadata", {}).get("column_count"),
+        }
+        actual = {
+            "text": actual_raw.text,
+            "encoding_uncertain": actual_raw.metadata.get("encoding_uncertain", False),
+            "row_count": actual_raw.metadata.get("row_count"),
+            "column_count": actual_raw.metadata.get("column_count"),
+        }
+        checks[f"extract-{name}"] = (expected, actual)
+    return checks
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fos-repo", type=Path, required=True)
@@ -128,6 +177,7 @@ def main() -> int:
         parser.error(f"FOS-Master is {commit}; expected pinned donor {PINNED_FOS_COMMIT}")
 
     donor = load_donor(args.fos_repo)
+    donor_extractor = load_donor_extractor(args.fos_repo)
     with tempfile.TemporaryDirectory(prefix="masterbrain-parity-") as directory:
         corpus = Path(directory) / "corpus"
         shutil.copytree(FIXTURE, corpus)
@@ -137,6 +187,9 @@ def main() -> int:
 
         checks = scan_checks(donor, corpus, "fixture")
         checks.update(comparison_checks(donor, corpus))
+        extraction = Path(directory) / "extraction"
+        extraction.mkdir()
+        checks.update(extraction_checks(donor_extractor, extraction))
         if not args.skip_stress:
             stress = Path(directory) / "stress"
             stress.mkdir()
@@ -155,7 +208,7 @@ def main() -> int:
     stress = "disabled" if args.skip_stress else f"{args.stress_files} base files plus edges"
     print(
         f"PASS: DataCore matches FOS-Master {commit}; "
-        f"fixture scans, pair comparisons, hashes, stress={stress}"
+        f"fixture scans, pair comparisons, hashes, text/HTML/CSV extraction, stress={stress}"
     )
     return 0
 
