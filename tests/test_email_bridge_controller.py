@@ -74,6 +74,51 @@ def test_check_authenticates_without_read_or_write(
     core.assert_not_called()
 
 
+def test_bridge_plan_check_is_non_consuming_and_normal_run_is_content_free(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    store = MagicMock()
+    monkeypatch.setattr(control, "Store", Mock(return_value=store))
+    core = MagicMock()
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    account, cursor = uuid4(), uuid4()
+    checked = control.run_email_bridge_plan_controller(
+        path, "runtime-dsn", account, after=cursor, limit=7, check=True
+    )
+    assert checked == {
+        "configuration_valid": True,
+        "execution_verified": False,
+        "operation": "email_bridge_plan",
+        "source_effects": False,
+        "data_effects": False,
+    }
+    core.email_bridge_plan.assert_not_called()
+    core.email_bridge_plan.return_value = {
+        "account_id": str(account),
+        "results": [
+            {
+                "legacy_version_id": str(cursor),
+                "recorded_at": "2026-09-22T00:00:00+00:00",
+                "already_bridged": False,
+            }
+        ],
+        "next_cursor": None,
+        "limit": 7,
+        "source_effects": False,
+        "data_effects": False,
+    }
+    result = control.run_email_bridge_plan_controller(
+        path, "runtime-dsn", account, after=cursor, limit=7
+    )
+    assert result["operation"] == "email_bridge_plan"
+    assert result["source_effects"] is False and result["data_effects"] is False
+    assert not {"subject", "sender", "content", "provider", "locator"} & result.keys()
+    core.email_bridge_plan.assert_called_once_with(ANY, account, after=cursor, limit=7)
+
+
 def test_bridge_returns_only_opaque_bounded_receipt(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -216,6 +261,32 @@ def test_revocation_after_database_preflight_prevents_bridge(
     monkeypatch.setattr(control, "DataCoreStore", core)
     with pytest.raises(control.EmailBridgeControllerError):
         control.run_email_bridge_controller(path, "runtime-dsn", uuid4(), uuid4())
+    core.assert_not_called()
+
+
+def test_revocation_after_database_preflight_prevents_bridge_plan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    calls = 0
+    original = control.WorkerIdentity.authenticate
+
+    def revoke(identity: control.WorkerIdentity) -> object:
+        nonlocal calls
+        calls += 1
+        principal = original(identity)
+        if calls == 2:
+            private_write(path.parent / "credentials.json", [])
+        return principal
+
+    monkeypatch.setattr(control.WorkerIdentity, "authenticate", revoke)
+    core = Mock()
+    monkeypatch.setattr(control, "DataCoreStore", core)
+    with pytest.raises(control.EmailBridgeControllerError):
+        control.run_email_bridge_plan_controller(path, "runtime-dsn", uuid4())
     core.assert_not_called()
 
 

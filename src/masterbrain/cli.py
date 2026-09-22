@@ -17,6 +17,7 @@ from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.email_bridge_controller import (
     run_email_attachment_bridge_controller,
     run_email_bridge_controller,
+    run_email_bridge_plan_controller,
     run_email_document_bridge_controller,
 )
 from masterbrain.fileos_controller import run_fileos_controller
@@ -120,6 +121,14 @@ def build_parser() -> argparse.ArgumentParser:
     bridge.add_argument("--evidence-id", type=UUID, required=True)
     bridge.add_argument("--idempotency-key", type=UUID, required=True)
     bridge.add_argument("--check", action="store_true")
+    bridge_plan = email_commands.add_parser(
+        "bridge-plan", help="Preview current Email versions for bridging"
+    )
+    bridge_plan.add_argument("--config", type=Path, required=True)
+    bridge_plan.add_argument("--account-id", type=UUID, required=True)
+    bridge_plan.add_argument("--after", type=UUID)
+    bridge_plan.add_argument("--limit", type=int, default=25)
+    bridge_plan.add_argument("--check", action="store_true")
     attachment_bridge = email_commands.add_parser(
         "bridge-attachment", help="Bridge one Email attachment occurrence"
     )
@@ -214,6 +223,22 @@ def main(argv: Sequence[str] | None = None) -> None:
                         dsn,
                         args.attachment_id,
                         args.idempotency_key,
+                        check=args.check,
+                    )
+                )
+            )
+        elif args.command == "email" and args.email_command == "bridge-plan":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_email_bridge_plan_controller(
+                        args.config,
+                        dsn,
+                        args.account_id,
+                        after=args.after,
+                        limit=args.limit,
                         check=args.check,
                     )
                 )

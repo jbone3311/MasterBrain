@@ -77,6 +77,51 @@ def run_email_bridge_controller(
     )
 
 
+def run_email_bridge_plan_controller(
+    path: Path,
+    dsn: str,
+    account_id: UUID,
+    *,
+    after: UUID | None = None,
+    limit: int = 25,
+    check: bool = False,
+) -> dict[str, Any]:
+    """Validate or preview current Email versions for explicit bridge operation."""
+    try:
+        if (
+            not dsn
+            or not isinstance(account_id, UUID)
+            or (after is not None and not isinstance(after, UUID))
+            or not 1 <= limit <= 100
+        ):
+            raise EmailBridgeControllerError()
+        config = EmailBridgeControllerConfig.model_validate(_json(path))
+        identity = WorkerIdentity(
+            config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
+        )
+        initial = identity.authenticate()
+        store = Store(dsn)
+        with store.transaction(initial.context):
+            pass
+        _current(identity, initial)
+        if check:
+            return {
+                "configuration_valid": True,
+                "execution_verified": False,
+                "operation": "email_bridge_plan",
+                "source_effects": False,
+                "data_effects": False,
+            }
+        _current(identity, initial)
+        result = DataCoreStore(store).email_bridge_plan(
+            initial.context, account_id, after=after, limit=limit
+        )
+        _current(identity, initial)
+        return {"operation": "email_bridge_plan", **result}
+    except Exception:
+        raise EmailBridgeControllerError() from None
+
+
 def run_email_attachment_bridge_controller(
     path: Path,
     dsn: str,

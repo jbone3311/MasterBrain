@@ -495,6 +495,46 @@ def test_email_bridge_private_operator_publishes_without_legacy_mutation(
     assert store.evidence(ctx, legacy) == before
 
 
+def test_email_bridge_plan_is_stable_bounded_and_labels_existing_bridge(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    store, _ = database
+    ctx, account = tenant
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    messages = [
+        replace(
+            item(f"plan-{ordinal}", body=f"Bridge plan body {ordinal}"),
+            provider_id=f"provider-plan-{ordinal}",
+        )
+        for ordinal in range(3)
+    ]
+    store.ingest_page(ctx, account, None, "bridge-plan-page", messages)
+    first = core.email_bridge_plan(bridge_ctx, account, limit=2)
+    assert first["source_effects"] is False and first["data_effects"] is False
+    assert len(first["results"]) == 2 and first["next_cursor"] is not None
+    assert all(not row["already_bridged"] for row in first["results"])
+    cursor = UUID(first["next_cursor"])
+    second = core.email_bridge_plan(bridge_ctx, account, after=cursor, limit=2)
+    assert len(second["results"]) == 1 and second["next_cursor"] is None
+    selected = UUID(first["results"][0]["legacy_version_id"])
+    core.bridge_current_email_version(
+        bridge_ctx, selected, uuid4(), code_revision="email-bridge-plan-test-v1"
+    )
+    replayed_plan = core.email_bridge_plan(bridge_ctx, account, limit=3)
+    by_version = {
+        row["legacy_version_id"]: row for row in replayed_plan["results"]
+    }
+    assert by_version[str(selected)]["already_bridged"] is True
+    assert sum(row["already_bridged"] for row in replayed_plan["results"]) == 1
+    with pytest.raises(NotFound):
+        core.email_bridge_plan(bridge_ctx, uuid4())
+    with pytest.raises(NotFound):
+        core.email_bridge_plan(bridge_ctx, account, after=uuid4())
+    with pytest.raises(ValueError, match="limit"):
+        core.email_bridge_plan(bridge_ctx, account, limit=101)
+
+
 def test_current_email_search_tracks_legacy_update_and_delete(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
 ) -> None:
@@ -518,6 +558,7 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         if row["source_id"] == first_bridge.source_id
     )
     assert first_coverage["current_counts"]["messages"] == 1
+    assert len(core.email_bridge_plan(bridge_ctx, account)["results"]) == 1
 
     store.ingest_page(
         ctx,
@@ -535,6 +576,7 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         if row["source_id"] == first_bridge.source_id
     )
     assert updated_coverage["current_counts"]["messages"] == 0
+    assert core.email_bridge_plan(bridge_ctx, account)["results"] == []
     second = store.search(ctx, SearchRequest(query="Violet replacement"))[0]["evidence_id"]
     second_bridge = core.bridge_current_email_version(
         bridge_ctx, second, uuid4(), code_revision="current-email-search-v1"
@@ -550,6 +592,7 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         if row["source_id"] == second_bridge.source_id
     )
     assert current_coverage["current_counts"]["messages"] == 1
+    assert len(core.email_bridge_plan(bridge_ctx, account)["results"]) == 1
     with store.transaction(ctx) as conn:
         conn.execute(
             "UPDATE messages SET quarantined=true WHERE account_id=%s "
@@ -565,6 +608,7 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         if row["source_id"] == second_bridge.source_id
     )
     assert quarantined_coverage["current_counts"]["messages"] == 0
+    assert core.email_bridge_plan(bridge_ctx, account)["results"] == []
     with store.transaction(ctx) as conn:
         conn.execute("UPDATE messages SET quarantined=false WHERE account_id=%s", (account,))
 
@@ -584,6 +628,7 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         if row["source_id"] == second_bridge.source_id
     )
     assert deleted_coverage["current_counts"]["messages"] == 0
+    assert core.email_bridge_plan(bridge_ctx, account)["results"] == []
     assert core.search(bridge_ctx, "Violet replacement")
 
 

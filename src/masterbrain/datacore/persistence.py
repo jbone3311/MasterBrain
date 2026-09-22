@@ -248,6 +248,76 @@ class DataCoreStore:
     def __init__(self, store: Store) -> None:
         self.store = store
 
+    def email_bridge_plan(
+        self,
+        ctx: TenantContext,
+        account_id: UUID,
+        *,
+        after: UUID | None = None,
+        limit: int = 25,
+    ) -> dict[str, Any]:
+        """Preview bounded current Email versions for explicit bridge operation."""
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.document.publish")
+        if not isinstance(account_id, UUID) or (after is not None and not isinstance(after, UUID)):
+            raise ValueError("invalid Email bridge plan identity")
+        if not 1 <= limit <= 100:
+            raise ValueError("invalid Email bridge plan limit")
+        with self.store.transaction(ctx) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM mail_accounts WHERE id=%s", (account_id,)
+            ).fetchone():
+                raise NotFound()
+            anchor = None
+            if after is not None:
+                anchor = conn.execute(
+                    "SELECT recorded_at,id FROM message_versions "
+                    "WHERE account_id=%s AND id=%s",
+                    (account_id, after),
+                ).fetchone()
+                if not anchor:
+                    raise NotFound()
+            rows = conn.execute(
+                "SELECT v.id AS legacy_version_id,v.recorded_at,"
+                "(b.legacy_version_id IS NOT NULL) AS already_bridged "
+                "FROM message_versions v JOIN messages m ON m.tenant_id=v.tenant_id "
+                "AND m.account_id=v.account_id AND m.id=v.message_id "
+                "AND m.raw_sha256=v.raw_sha256 AND m.parser_version=v.parser_version "
+                "LEFT JOIN brain_email_bridge_receipts b ON b.tenant_id=v.tenant_id "
+                "AND b.legacy_version_id=v.id WHERE v.account_id=%s "
+                "AND NOT m.deleted AND NOT m.quarantined "
+                "AND (%s::timestamptz IS NULL OR (v.recorded_at,v.id)>(%s,%s)) "
+                "ORDER BY v.recorded_at,v.id LIMIT %s",
+                (
+                    account_id,
+                    anchor["recorded_at"] if anchor else None,
+                    anchor["recorded_at"] if anchor else None,
+                    after,
+                    limit + 1,
+                ),
+            ).fetchall()
+            self.store.audit(
+                conn, ctx, "brain.email_bridge_plan", "mail_account", str(account_id)
+            )
+        page = rows[:limit]
+        return {
+            "account_id": str(account_id),
+            "results": [
+                {
+                    "legacy_version_id": str(row["legacy_version_id"]),
+                    "recorded_at": row["recorded_at"].isoformat(),
+                    "already_bridged": row["already_bridged"],
+                }
+                for row in page
+            ],
+            "next_cursor": (
+                str(page[-1]["legacy_version_id"]) if len(rows) > limit and page else None
+            ),
+            "limit": limit,
+            "source_effects": False,
+            "data_effects": False,
+        }
+
     @staticmethod
     def _email_bridge_result(row: Mapping[str, Any], *, changed: bool) -> EmailBridgeResult:
         return EmailBridgeResult(

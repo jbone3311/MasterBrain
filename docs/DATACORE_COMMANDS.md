@@ -29,9 +29,22 @@ version or code revision. Output contains opaque identities, chunk count and rep
 state, never Email content, addresses or provider identifiers. The command does not
 scan an account, contact a provider, modify a mailbox or redirect legacy Email search.
 
-ADR-071 reserves `masterbrain email bridge-plan` for a future private, read-only and
-cursor-bounded preview of eligible current versions in one explicit account. It is not
-implemented yet; no batch bridge executor or automatic backfill is authorized.
+Preview one bounded page of eligible current versions in an explicit account:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain email bridge-plan \
+  --config /private/operator/email-bridge.json \
+  --account-id 392ef97f-305d-494a-aa2f-7cf29a7f16a3 \
+  --limit 25 \
+  --check
+```
+
+Normal execution returns only version UUIDs, recorded timestamps, already-bridged
+labels and a next cursor. `--after` continues from a returned cursor. `--check` does
+not inspect the account. The command is a read-only operator preview, not execution
+authority; it creates no bridge, contacts no provider and authorizes no batch executor
+or automatic backfill.
 
 ## Bridge one Email attachment or approved PDF derivative
 

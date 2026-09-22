@@ -70,6 +70,9 @@ mean hosted, live-source accepted, or production ready.
 - Bounded `/v1/brain/current-coverage` status across registered FileOS and Email
   sources, including active-generation/completed-run comparison and current bridged
   Email family counts/timestamps; hosted PostgreSQL/restore gates green.
+- Private, read-only `masterbrain email bridge-plan` command for a cursor-bounded page
+  of current visible versions in one explicit account, with already-bridged labels and
+  content-free output; hosted verification is pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -78,8 +81,6 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Private, read-only current Email bridge backfill preview for one explicit account;
-  no batch executor or scheduler (ADR-071).
 - Email bridge batch/backfill, atomic cross-layer snapshots, automated source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
