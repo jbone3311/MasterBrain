@@ -91,9 +91,6 @@ def tenant(database: tuple[Store, str]) -> tuple[TenantContext, UUID]:
                 "email.proposal.create",
                 "email.proposal.read",
                 "email.review",
-                "brain.source.ingest",
-                "brain.document.publish",
-                "brain.search",
             }
         ),
         uuid4(),
@@ -193,11 +190,20 @@ def fileos_manifest(root: Path, *, source_id: str = "files_test", hour: int = 1)
     )
 
 
+def datacore_context(ctx: TenantContext) -> TenantContext:
+    return replace(
+        ctx,
+        scopes=ctx.scopes
+        | frozenset({"brain.source.ingest", "brain.document.publish", "brain.search"}),
+    )
+
+
 def test_datacore_import_replay_drift_publish_and_search(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:
     store, _ = database
     ctx, _ = tenant
+    ctx = datacore_context(ctx)
     core = DataCoreStore(store)
     document = tmp_path / "contract.txt"
     document.write_text(
@@ -250,6 +256,7 @@ def test_datacore_invalid_manifest_is_atomic(
 ) -> None:
     store, _ = database
     ctx, _ = tenant
+    ctx = datacore_context(ctx)
     core = DataCoreStore(store)
     (tmp_path / "one.txt").write_text("one", encoding="utf-8")
     (tmp_path / "two.txt").write_text("two", encoding="utf-8")
@@ -271,6 +278,7 @@ def test_datacore_concurrent_replay_creates_one_version(
 ) -> None:
     store, _ = database
     ctx, _ = tenant
+    ctx = datacore_context(ctx)
     core = DataCoreStore(store)
     (tmp_path / "one.txt").write_text("same", encoding="utf-8")
     manifest = fileos_manifest(tmp_path, source_id="files_concurrent")
@@ -300,12 +308,13 @@ def test_datacore_rls_and_immutability(
 ) -> None:
     store, admin = database
     ctx, _ = tenant
+    ctx = datacore_context(ctx)
     core = DataCoreStore(store)
     (tmp_path / "private.txt").write_text("Tenant one private evidence", encoding="utf-8")
     manifest = fileos_manifest(tmp_path, source_id="files_private")
     core.import_fileos_snapshot(ctx, manifest, uuid4())
     version_id = manifest["items"][0]["version_id"]
-    with pytest.raises(psycopg.errors.RaiseException), store.transaction(ctx) as conn:
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
         conn.execute(
             "UPDATE brain_source_versions SET media_type='text/html' WHERE id=%s", (version_id,)
         )

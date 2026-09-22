@@ -300,8 +300,12 @@ class DataCoreStore:
         document_id = stable_id("document", source_version_id, normalizer, body_sha)
         evidence_id = stable_id("evidence", source_version_id)
         with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:publish:{document_id}",),
+            )
             version = conn.execute(
-                "SELECT source_id,item_id FROM brain_source_versions WHERE id=%s FOR SHARE",
+                "SELECT source_id,item_id FROM brain_source_versions WHERE id=%s",
                 (source_version_id,),
             ).fetchone()
             if not version:
