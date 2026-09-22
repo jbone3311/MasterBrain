@@ -216,9 +216,9 @@ def test_index_build_replay_changed_revision_and_rollback(
     assert rollback["operation"] == "activate_existing"
     assert rollback["activation"]["previous_generation_id"] == second["generation_id"]
     assert (
-        DataCoreStore(store).fileos_index_status(ctx, "files_operational")[
-            "active_generation"
-        ]["generation_id"]
+        DataCoreStore(store).fileos_index_status(
+            pg.datacore_context(ctx), "files_operational"
+        )["active_generation"]["generation_id"]
         == first["generation_id"]
     )
     assert source.joinpath("brief.txt").read_bytes() == before
