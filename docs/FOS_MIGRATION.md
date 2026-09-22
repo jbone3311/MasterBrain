@@ -63,7 +63,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-005C inventory reconciliation evidence | FOS-Master `218d5cae`, `corpus_reconcile.py` lessons | migration 0018 + completed-run item/absence ledgers | exact ledger balance/stale-run refusal/absence/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
 | DC-005D deterministic rebuild preview | Shared normalized document/chunk contracts | `fileos_rebuild_preview` + Brain API | run-bound pagination/hash/identity/chunk verification/no effects | Complete; hosted PostgreSQL and restore gates green |
 | DC-005E immutable index generations | Shared normalized document/chunk contracts | migration 0019 + DataCore active-generation reads | exact generation/replay/activation/rollback/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
-| DC-005F private generation operator | DC-005E generation contract | `masterbrain fileos index` | exact scopes/check/replay/revocation/rollback/query parity | Implemented; hosted gates pending |
+| DC-005F private generation operator | DC-005E generation contract | `masterbrain fileos index` | exact scopes/check/replay/revocation/rollback/query parity | Complete; hosted PostgreSQL and restore gates green |
 
 DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
 and all delete/move operations. Those omissions do not change the returned scan and
@@ -73,9 +73,9 @@ comparison contracts being adopted; the live-donor harness compares those output
 
 1. **DC-004C archives/images/OCR:** separate opt-in workers with format-specific
    corpora, expansion/page budgets and containment.
-2. **DC-005F generation operation:** the private authenticated command and initial
-   deterministic query-parity assertion are implemented; hosted gates and a broader
-   query corpus precede deliberate global current/historical retrieval policy.
+2. **DC-005G retrieval policy:** private generation operation and initial query parity
+   are complete; expand the corpus and define deliberate global current/historical
+   visibility before redirecting existing DataCore or unified search.
 3. **KC-001 claim/entity projection:** import donor lessons without treating model
    output as truth.
 4. **FileOS effect broker:** last, after read-side parity and explicit safety ADRs.

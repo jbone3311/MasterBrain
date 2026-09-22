@@ -2,10 +2,10 @@
 
 ## Active checkpoint
 
-**Checkpoint 3H — private generation operator and query parity.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Add an authenticated, explicit command to
-build/activate or roll back a FileOS index generation, then compare active-generation
-queries with the existing deterministic index. No scheduler or global cutover.
+**Checkpoint 3I — current/historical retrieval contract.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Expand active-generation query parity and
+define an explicit policy for current versus retained historical FileOS evidence before
+any existing global DataCore or unified-search route is redirected.
 
 ## Completed gates
 
@@ -52,13 +52,17 @@ queries with the existing deterministic index. No scheduler or global cutover.
 - Checkpoint 3G immutable index generations revision `b715bf1` passed hosted
   [CI 35725616036](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725616036)
   and [restore 35725615886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725615886).
+- Checkpoint 3H private generation operator runtime `8a50eab` plus test-authorization
+  correction `4716c88` passed hosted
+  [CI 35727909717](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35727909717)
+  and [restore 35727909764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35727909764).
 
 ## Current work
 
-- Reuse the private FileOS configuration and exact worker identity for explicit
-  generation build/activation with non-consuming check mode and scrubbed output.
-- Add deterministic query-parity coverage before any global DataCore search switch;
-  current/historical policy remains a separate decision.
+- Specify current-only, historical and absent-item retrieval semantics without hiding
+  immutable evidence or changing compatibility search by accident.
+- Expand deterministic query parity across multi-document, zero-hit, changed and
+  rolled-back generations before considering an explicit global-search switch.
 
 ## Deferred by design
 

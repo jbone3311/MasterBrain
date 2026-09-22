@@ -34,7 +34,7 @@ mean hosted, live-source accepted, or production ready.
   readiness, append-only activation/reactivation rollback and active-only API search;
   hosted PostgreSQL and populated-restore gates green.
 - Explicit private generation build/activation and activation-only rollback command
-  with exact scopes, check mode and reauthentication; hosted verification pending.
+  with exact scopes, check mode and reauthentication; hosted PostgreSQL/restore green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

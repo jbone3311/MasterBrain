@@ -2,6 +2,40 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified private FileOS index operator
+
+Runtime revision **8a50eab** and test-authorization correction **4716c88** passed
+[CI 35727909717](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35727909717)
+and [restore 35727909764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35727909764),
+observed 2026-09-22 Pacific.
+
+- `masterbrain fileos index` now supports explicit build-and-activate for one exact
+  completed run and activation-only rollback to a ready generation. Closed private
+  configuration, runtime DSN, exact per-operation worker scopes, non-consuming check
+  mode and repeated authentication fence every operation.
+- Hosted PostgreSQL proved build/activation, exact replay, distinct code-revision
+  generation, activation-only rollback, privileged-role refusal, revoked-worker
+  refusal and deterministic active-versus-existing query identities. Source bytes
+  remained unchanged.
+- The hosted suite passed **2,411 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **125 Markdown files / 783 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **61 tables / 229 rows / two tenants / four encrypted
+  objects / two identity bindings** in 24.7 seconds. The 29 restore safety tests passed.
+- Local gates passed **2,057 tests / 354 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. The live donor
+  harness still matched FOS-Master across the adopted corpus and 2,000-file-plus-edge
+  stress set. Local SQL skips are not passes.
+- The first hosted run reached successful rollback, then its verification read used a
+  fixture context without `brain.changes.read`; authorization correctly denied it.
+  Commit `4716c88` uses the established DataCore read context. Runtime permissions and
+  behavior were unchanged; the complete rerun passed.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. The command adds no scanner,
+  scheduler, global-search switch, source effect, cutover, rename or retirement.
+
 ## Verified immutable FileOS index generations and rollback
 
 Revision **b715bf1** passed
