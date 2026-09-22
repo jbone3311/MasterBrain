@@ -619,7 +619,12 @@ def test_email_attachment_bridge_rejects_historical_parent(
         account,
         "attachment-old",
         "attachment-new",
-        [item("attachment-replacement", body="Replacement without attachments")],
+        [
+            replace(
+                item("attachment-replacement", body="Replacement without attachments"),
+                provider_id="provider-attachment-message",
+            )
+        ],
     )
     with pytest.raises(Conflict, match="historical"):
         core.bridge_email_attachment(
