@@ -2,7 +2,7 @@
 
 ## Active checkpoint
 
-**Checkpoint 3 — FileOS adapter and extraction.** Work occurs on
+**Checkpoint 4 — reviewed KnowledgeCore foundation.** Work occurs on
 `codex/masterbrain-foundation` in PR #4.
 
 ## Completed gates
@@ -22,19 +22,23 @@
   and restore
   [35703242983](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35703242983)
   are green.
+- Final receipt revision `ee6b662` passed hosted CI and restore; it changes only
+  measured documentation after the `a06bcad` runtime.
 
 ## Current work
 
-- First read-only FileOS extraction tranche: text, Markdown, HTML and CSV with
-  source-version revalidation, explicit accounting and donor parity.
-- End-to-end snapshot/import/extract/index/search and sibling-failure isolation.
-- Progressive Brain API read slice for compact search, evidence metadata, separately
-  scoped bounded content and change publication.
+- Reviewed, evidence-required entities, aliases, relationships, claims, projects,
+  events, commitments and corrections.
+- Append-only temporal history, conflict preservation, lexical retrieval, exact
+  expansion and bounded changes through `/v1/knowledge`.
+- PostgreSQL/RLS/concurrency/API coverage plus populated logical restore verification.
 
 ## Deferred by design
 
-- File content extraction until read-only inventory contracts are stable.
-- KnowledgeCore and Brain API runtime until shared persistence/indexing exists.
+- Office, PDF, archive, image and OCR migration until isolated DataCore workers have
+  format/fault parity.
+- Automatic knowledge extraction, graph traversal and synthesis until reviewed
+  known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.
 
 ## Rule for updates

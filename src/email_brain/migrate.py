@@ -9,6 +9,18 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "knowledge_entities",
+    "knowledge_entity_aliases",
+    "knowledge_relationships",
+    "knowledge_claims",
+    "knowledge_projects",
+    "knowledge_events",
+    "knowledge_commitments",
+    "knowledge_corrections",
+    "knowledge_evidence",
+    "knowledge_search_documents",
+    "knowledge_change_events",
+    "knowledge_receipts",
     "brain_sources",
     "brain_source_items",
     "brain_source_versions",
@@ -50,6 +62,18 @@ RUNTIME_SELECT = (
     "proposal_evidence",
 )
 RUNTIME_INSERT = (
+    "knowledge_entities",
+    "knowledge_entity_aliases",
+    "knowledge_relationships",
+    "knowledge_claims",
+    "knowledge_projects",
+    "knowledge_events",
+    "knowledge_commitments",
+    "knowledge_corrections",
+    "knowledge_evidence",
+    "knowledge_search_documents",
+    "knowledge_change_events",
+    "knowledge_receipts",
     "brain_sources",
     "brain_source_items",
     "brain_source_versions",

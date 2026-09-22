@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-051 reviewed KnowledgeCore assertions](adr/051_knowledgecore_reviewed_assertions.md)
+adds evidence-required entities, relationships, claims, events, projects, commitments,
+corrections, bitemporal fields and lexical retrieval without automatic model writes.
+
 [ADR-050 Brain API read slice](adr/050_brain_api_read_slice.md) adds source-neutral,
 progressive search/evidence/content/change endpoints with separate scopes and bounded
 untrusted content while preserving legacy Email API compatibility.

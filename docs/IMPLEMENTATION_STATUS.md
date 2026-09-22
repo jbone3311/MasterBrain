@@ -18,13 +18,18 @@ mean hosted, live-source accepted, or production ready.
   safe relative locators, bounded metadata and explicit source-bound evidence.
 - Synthetic DataCore unit corpus and live-donor parity harness pinned to FOS-Master
   commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
+- Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
+  lexical index and progressive evidence/content/change Brain API.
+- Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
+  commitments and corrections with evidence links, temporal history, lexical search,
+  exact reads, change feed, forced RLS and append-only enforcement.
 
 ## Designed, not implemented
 
-- Persistent source/evidence/provenance schema and unified DataCore pipeline.
-- Incremental/enrolled FileOS scanner integration, extraction/OCR/chunking/indexing.
-- KnowledgeCore entities, relationships, claims, events, projects and commitments.
-- Unified Brain API and external LLM client integrations.
+- Incremental/enrolled FileOS scanning and Office/PDF/archive/image/OCR extraction.
+- Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
+  semantic ranking and Email/FOS knowledge migration.
+- Unified cross-source synthesis and external LLM client integrations.
 - Hosted operation and production identity/source enrollment.
 - Any FileOS write, move, quarantine, dedupe deletion, cutover, fold or retirement.
 

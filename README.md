@@ -15,7 +15,7 @@ not been replaced, renamed, or modified.
 The repository name and the internal `email_brain` package remain temporarily for
 Git history and compatibility. They identify the original Email capability, not the
 final product. New source-neutral code enters through `masterbrain.datacore`,
-`masterbrain.knowledgecore`, and the future Brain API boundaries.
+`masterbrain.knowledge`, and the Brain API boundaries.
 
 ## Product shape
 
@@ -46,8 +46,8 @@ FileOS sources ┘       │              │                │
 | Typed reviewed travel/bill memory | Working narrow prototype |
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
 | General file intake/extraction/OCR/chunking | Planned migration |
-| Unified KnowledgeCore graph and retrieval | Designed, not implemented |
-| Brain API for external assistants | Contract designed, not implemented |
+| Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
+| Progressive Brain API read surfaces | Working DataCore and KnowledgeCore prototype |
 | Hosted identity, operations, live sources | Not accepted |
 | FOS-Master cutover or retirement | Explicitly prohibited before parity |
 
@@ -73,6 +73,7 @@ roadmap item is not an implementation claim.
 - [Source and provenance contract](docs/SOURCE_PROVENANCE.md)
 - [DataCore persistence and lexical retrieval](docs/DATACORE_PERSISTENCE.md)
 - [FileOS read-only extraction](docs/FILEOS_EXTRACTION.md)
+- [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
 - [Code map](docs/CODE_MAP.md)

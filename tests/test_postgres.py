@@ -36,6 +36,16 @@ from email_brain.synthetic import fake_email
 from masterbrain.datacore.extraction import ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import (
+    ClaimWrite,
+    CommitmentWrite,
+    CorrectionWrite,
+    EntityWrite,
+    EventWrite,
+    ProjectWrite,
+    RelationshipWrite,
+)
 
 pytestmark = pytest.mark.postgres
 
@@ -406,6 +416,255 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert changes.status_code == 200
     assert len(changes.json()["results"]) == 1
     assert changes.json()["next_cursor"] is not None
+
+
+def knowledge_context(ctx: TenantContext) -> TenantContext:
+    return replace(
+        datacore_context(ctx),
+        scopes=datacore_context(ctx).scopes
+        | frozenset(
+            {
+                "knowledge.review",
+                "knowledge.read",
+                "knowledge.search",
+                "knowledge.changes.read",
+            }
+        ),
+    )
+
+
+def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = knowledge_context(ctx)
+    source = tmp_path / "knowledge.txt"
+    source.write_text("Alex at Acme committed to renew Project Atlas in October.", encoding="utf-8")
+    manifest = fileos_manifest(tmp_path, source_id="files_knowledge")
+    published = FileOSAdapter(DataCoreStore(store)).publish_snapshot(
+        ctx, tmp_path, manifest, uuid4(), code_revision="knowledge-test-v1"
+    )
+    evidence_id = next(
+        item.publication.evidence_id for item in published.results if item.publication is not None
+    )
+    common = {
+        "evidence_ids": [evidence_id],
+        "source_quote": "Alex at Acme committed to renew Project Atlas in October.",
+        "confidence": 0.9,
+        "observed_at": datetime(2026, 9, 22, tzinfo=UTC),
+        "reviewed": True,
+    }
+    knowledge = KnowledgeCore(store)
+    alice_key = uuid4()
+    alice = EntityWrite(
+        kind="entity", entity_type="person", name="Alex Example", aliases=["Alex"], **common
+    )
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        concurrent = list(pool.map(lambda _: knowledge.publish(ctx, alice, alice_key), range(2)))
+    assert {result.object_id for result in concurrent} == {concurrent[0].object_id}
+    assert sorted(result.changed for result in concurrent) == [False, True]
+    assert knowledge.publish(ctx, alice, alice_key).changed is False
+    with pytest.raises(Conflict):
+        knowledge.publish(ctx, alice.model_copy(update={"name": "Different"}), alice_key)
+
+    acme = knowledge.publish(
+        ctx,
+        EntityWrite(
+            kind="entity",
+            entity_type="organization",
+            name="Acme Holdings",
+            aliases=["Acme"],
+            **common,
+        ),
+        uuid4(),
+    )
+    relationship = knowledge.publish(
+        ctx,
+        RelationshipWrite(
+            kind="relationship",
+            subject_entity_id=concurrent[0].object_id,
+            predicate="affiliated_with",
+            object_entity_id=acme.object_id,
+            **common,
+        ),
+        uuid4(),
+    )
+    first_claim = knowledge.publish(
+        ctx,
+        ClaimWrite(
+            kind="claim",
+            subject_entity_id=concurrent[0].object_id,
+            predicate="renewal_month",
+            value="September",
+            assertion_status="disputed",
+            **common,
+        ),
+        uuid4(),
+    )
+    second_claim = knowledge.publish(
+        ctx,
+        ClaimWrite(
+            kind="claim",
+            subject_entity_id=concurrent[0].object_id,
+            predicate="renewal_month",
+            value="October",
+            supersedes_id=first_claim.object_id,
+            **common,
+        ),
+        uuid4(),
+    )
+    project = knowledge.publish(
+        ctx,
+        ProjectWrite(
+            kind="project",
+            title="Project Atlas",
+            description="Renewal program",
+            state="active",
+            **common,
+        ),
+        uuid4(),
+    )
+    event = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event",
+            event_type="renewal_review",
+            title="Atlas renewal review",
+            description="Review the renewal evidence",
+            starts_at=datetime(2026, 10, 1, tzinfo=UTC),
+            valid_from=datetime(2026, 9, 22, tzinfo=UTC),
+            project_id=project.object_id,
+            **common,
+        ),
+        uuid4(),
+    )
+    commitment = knowledge.publish(
+        ctx,
+        CommitmentWrite(
+            kind="commitment",
+            description="Alex will submit the Atlas renewal package",
+            state="open",
+            owner_entity_id=concurrent[0].object_id,
+            counterparty_entity_id=acme.object_id,
+            project_id=project.object_id,
+            due_at=datetime(2026, 10, 15, tzinfo=UTC),
+            valid_from=datetime(2026, 9, 22, tzinfo=UTC),
+            **common,
+        ),
+        uuid4(),
+    )
+    correction = knowledge.publish(
+        ctx,
+        CorrectionWrite(
+            kind="correction",
+            target_kind="claim",
+            target_id=first_claim.object_id,
+            replacement_id=second_claim.object_id,
+            reason="Later reviewed evidence corrects the month.",
+            evidence_ids=[evidence_id],
+            source_quote=common["source_quote"],
+            observed_at=common["observed_at"],
+            reviewed=True,
+        ),
+        uuid4(),
+    )
+    assert {
+        relationship.object_kind,
+        event.object_kind,
+        commitment.object_kind,
+        correction.object_kind,
+    } == {"relationship", "event", "commitment", "correction"}
+    with store.transaction(ctx) as conn:
+        claims = conn.execute(
+            "SELECT id,value,assertion_status,supersedes_id FROM knowledge_claims "
+            "ORDER BY recorded_at,id"
+        ).fetchall()
+        assert len(claims) == 2
+        assert {row["value"] for row in claims} == {"September", "October"}
+        assert next(row for row in claims if row["value"] == "October")["supersedes_id"] == (
+            first_claim.object_id
+        )
+
+    hits = knowledge.search(ctx, "October", kinds=["claim"])
+    assert len(hits) == 1 and hits[0].object_id == second_claim.object_id
+    loaded = knowledge.get(ctx, "commitment", commitment.object_id)
+    assert loaded["description"].startswith("Alex will submit")
+    assert loaded["valid_from"] == datetime(2026, 9, 22, tzinfo=UTC)
+    assert loaded["evidence"][0]["evidence_id"] == evidence_id
+    page = knowledge.changes(ctx, limit=2)
+    assert len(page["results"]) == 2 and page["next_cursor"] is not None
+    second_page = knowledge.changes(ctx, after=page["next_cursor"], limit=50)
+    assert second_page["results"]
+
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
+        conn.execute(
+            "UPDATE knowledge_claims SET value='silently changed' WHERE id=%s",
+            (second_claim.object_id,),
+        )
+
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Knowledge other')", (other_tenant,))
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
+    assert knowledge.search(other, "October") == []
+    with pytest.raises(NotFound):
+        knowledge.get(other, "claim", second_claim.object_id)
+
+    token = secrets.token_urlsafe(40)
+    api = TestClient(
+        create_app(
+            store,
+            TokenRegistry(
+                [
+                    Credential(
+                        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+                        tenant_id=ctx.tenant_id,
+                        actor_id=ctx.actor_id,
+                        scopes={
+                            "knowledge.search",
+                            "knowledge.read",
+                            "knowledge.changes.read",
+                            "knowledge.review",
+                        },
+                        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+                        client_kind="human",
+                    )
+                ]
+            ),
+        )
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+    searched = api.post(
+        "/v1/knowledge/search",
+        json={"query": "Atlas renewal", "limit": 10},
+        headers=headers,
+    )
+    assert searched.status_code == 200 and searched.json()["results"]
+    fetched = api.get(f"/v1/knowledge/project/{project.object_id}", headers=headers)
+    assert fetched.status_code == 200 and fetched.json()["title"] == "Project Atlas"
+    created = api.post(
+        "/v1/knowledge/assertions",
+        json={
+            "assertion": {
+                "kind": "entity",
+                "entity_type": "artifact",
+                "name": "Renewal package",
+                "aliases": [],
+                "evidence_ids": [evidence_id],
+                "source_quote": common["source_quote"],
+                "confidence": 0.9,
+                "observed_at": "2026-09-22T00:00:00Z",
+                "reviewed": True,
+            }
+        },
+        headers={**headers, "Idempotency-Key": str(uuid4())},
+    )
+    assert created.status_code == 201 and created.json()["reviewed"] is True
 
 
 def test_foreign_tenant_cannot_see_evidence(

@@ -54,6 +54,8 @@ from email_brain.synthetic_formats import pdf_bytes
 from masterbrain.datacore.contracts import stable_id
 from masterbrain.datacore.fileos import SNAPSHOT_VERSION
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import ClaimWrite, EntityWrite
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 LABEL = "com.cw-email-brain.synthetic-restore"
@@ -222,6 +224,8 @@ class SeededTenant:
     identity_id: UUID
     brain_document_id: str
     brain_evidence_id: str
+    knowledge_entity_id: str
+    knowledge_claim_id: str
 
 
 class SyntheticDocumentProcessor:
@@ -327,6 +331,10 @@ def seed(
                     "brain.source.ingest",
                     "brain.document.publish",
                     "brain.search",
+                    "knowledge.review",
+                    "knowledge.read",
+                    "knowledge.search",
+                    "knowledge.changes.read",
                 }
             ),
             uuid4(),
@@ -370,6 +378,37 @@ def seed(
             code_revision="synthetic-restore-v1",
         )
         require(brain_document.changed, "DataCore restore seed publication failed")
+        knowledge = KnowledgeCore(store)
+        entity = knowledge.publish(
+            context,
+            EntityWrite(
+                kind="entity",
+                entity_type="organization",
+                name=f"Synthetic {keyword} organization",
+                aliases=[f"Knowledge restore {keyword}"],
+                evidence_ids=[brain_document.evidence_id],
+                source_quote=body,
+                confidence=1,
+                observed_at=now,
+                reviewed=True,
+            ),
+            uuid4(),
+        )
+        claim = knowledge.publish(
+            context,
+            ClaimWrite(
+                kind="claim",
+                subject_entity_id=entity.object_id,
+                predicate="restore.status",
+                value=f"knowledgecoreproof {keyword}",
+                evidence_ids=[brain_document.evidence_id],
+                source_quote=body,
+                confidence=1,
+                observed_at=now,
+                reviewed=True,
+            ),
+            uuid4(),
+        )
         items = [
             IngestItem("good-event", "good-message", "v1", now, synthetic_mime(keyword)),
             IngestItem("poison-event", "poison-message", "v1", now, b""),
@@ -539,6 +578,8 @@ def seed(
                 identity_id,
                 brain_document.document_id,
                 brain_document.evidence_id,
+                entity.object_id,
+                claim.object_id,
             )
         )
     return tenants
@@ -688,6 +729,29 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             not DataCoreStore(store).search(ctx, foreign.keyword),
             "foreign restored DataCore evidence accessible",
         )
+        knowledge = KnowledgeCore(store)
+        knowledge_hits = knowledge.search(ctx, f"knowledgecoreproof {current.keyword}")
+        require(
+            len(knowledge_hits) == 1
+            and knowledge_hits[0].object_id == current.knowledge_claim_id
+            and knowledge_hits[0].evidence_ids == (current.brain_evidence_id,),
+            "restored KnowledgeCore retrieval changed",
+        )
+        require(
+            knowledge.get(ctx, "entity", current.knowledge_entity_id)["name"]
+            == f"Synthetic {current.keyword} organization",
+            "restored KnowledgeCore entity changed",
+        )
+        require(
+            not knowledge.search(ctx, f"knowledgecoreproof {foreign.keyword}"),
+            "foreign restored KnowledgeCore assertion accessible",
+        )
+        try:
+            knowledge.get(ctx, "entity", foreign.knowledge_entity_id)
+        except NotFound:
+            pass
+        else:
+            raise DrillFailure("foreign restored KnowledgeCore entity accessible")
         try:
             store.document_evidence(ctx, foreign.document_id)
         except NotFound:

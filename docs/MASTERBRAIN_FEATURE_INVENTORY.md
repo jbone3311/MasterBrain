@@ -28,42 +28,42 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 
 | Capability | Required behavior | State |
 |---|---|---|
-| Intake envelope | Stable source/item/version IDs, observed time, actor, policy | Designed |
+| Intake envelope | Stable source/item/version IDs, observed time, actor, policy | Implemented FileOS slice |
 | Hashing | Streaming content digests with algorithm/version | Implemented first tranche |
 | Dedupe | Exact-content groups; signals distinct from deletion authority | Implemented read-only first tranche |
-| Evidence | Immutable original bytes or provider-bound immutable reference | Email implementation exists; generalization planned |
+| Evidence | Immutable original bytes or provider-bound immutable reference | Shared FileOS metadata/evidence plus Email originals implemented |
 | File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | Partial Email implementation; donor inventory complete |
 | OCR | Explicitly approved, isolated, page/image outputs with confidence | Planned |
 | Normalization | Source-neutral document/message representation | Email-specific implementation exists; generalization planned |
 | Metadata | Source and extracted metadata, versioned independently | Partial |
-| Provenance | Every derivative links source, transform, version, code and time | Partial; unified model designed |
-| Chunking | Deterministic, versioned chunks retaining evidence offsets | Planned |
-| Indexing | Lexical first, optional vector, rebuildable and freshness-aware | Email FTS implemented; unified index planned |
+| Provenance | Every derivative links source, transform, version, code and time | Implemented FileOS text slice |
+| Chunking | Deterministic, versioned chunks retaining evidence offsets | Implemented bounded text slice |
+| Indexing | Lexical first, optional vector, rebuildable and freshness-aware | Shared lexical slice implemented |
 | Database primitives | tenancy, audit, jobs, leases, idempotency, outbox, retention | Strong Email foundation; extraction planned |
 
 ## KnowledgeCore
 
 | Capability | Required behavior | State |
 |---|---|---|
-| Entities | People, organizations, places, accounts, documents; aliases | Planned |
-| Relationships | Typed, directional, temporal, evidence-backed | Planned |
-| Facts/claims | Assertion, value, confidence, extractor, valid/observed time | Donor and Email narrow precedents; unified model planned |
-| Events/timeline | Event time distinct from ingestion time | Planned |
-| Projects | Membership, state, milestones, decisions, source coverage | Planned |
-| Commitments | Owner, counterparty, due state, fulfillment/cancellation evidence | Planned |
-| Corrections | Supersede without erasing history; retain contradictions | Email memory precedent exists |
-| Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Planned |
+| Entities | People, organizations, places, accounts, artifacts; aliases | Reviewed append/read implemented |
+| Relationships | Typed, directional, temporal, evidence-backed | Reviewed append/read implemented |
+| Facts/claims | Assertion, value, confidence, reviewer, valid/observed time | Reviewed append/read implemented |
+| Events/timeline | Event time distinct from ingestion time | Reviewed event records implemented |
+| Projects | State and evidence; future members/milestones/decisions | Reviewed base record implemented |
+| Commitments | Owner, counterparty, due state and evidence | Reviewed append/read implemented |
+| Corrections | Supersede without erasing history; retain contradictions | Implemented append-only links |
+| Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Knowledge lexical slice implemented; graph/semantic planned |
 | Freshness | Source sync, extraction, indexing and interpretation freshness separated | Partial Email implementation |
 
 ## Brain API and clients
 
 | Capability | Required behavior | State |
 |---|---|---|
-| Search | Compact ranked hits across Email and files | Email API implemented; unified contract designed |
+| Search | Compact ranked hits across Email and files | DataCore and KnowledgeCore lexical APIs implemented; unified ranking planned |
 | Answer | Evidence-backed synthesis with uncertainty and coverage | Designed |
-| Expand | Fetch selected entity/project/claim/timeline/chunk | Designed |
-| Evidence | Drill from claim/chunk to immutable original | Email reader implemented; unified contract designed |
-| Change feeds | Cursor-based non-consuming updates by layer | Email memory precedent; unified feeds planned |
+| Expand | Fetch selected entity/project/claim/timeline/chunk | Exact DataCore/KnowledgeCore expansion implemented |
+| Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |
+| Change feeds | Cursor-based non-consuming updates by layer | DataCore and KnowledgeCore feeds implemented |
 | Client neutrality | Same typed contract for Claude, Grok, ChatGPT, other LLMs | Designed |
 | Budget controls | max results/bytes/tokens, field selection, continuation | Designed |
 | Effects | Typed proposal → policy → preview → approval → executor | Designed; no broad effects enabled |

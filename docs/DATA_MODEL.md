@@ -1,8 +1,8 @@
 # MasterBrain Data Model
 
-This is the target source-neutral model. Existing migrations remain the executable
-Email schema until additive MasterBrain migrations are approved. Names below are
-logical and do not imply current tables.
+This document combines implemented source-neutral tables with the remaining target
+model. Migrations `0015` and `0016` implement the first DataCore and KnowledgeCore
+slices; names not identified as implemented remain logical targets.
 
 ## Identity and access
 
@@ -42,6 +42,12 @@ explicit, not inferred from filename.
   implies permission to remove a source item.
 
 ## KnowledgeCore
+
+Migration `0016_knowledgecore.sql` implements append-only tenant-scoped tables for
+all objects below, evidence links, lexical search documents, change events and
+idempotency receipts. The first service requires human-reviewed writes and existing
+DataCore evidence. Participant sets, milestones, graph traversal and automated
+extraction remain targets.
 
 - **entity** and **entity_alias**: people, organizations, places, accounts, artifacts.
 - **relationship**: typed endpoints, direction, validity interval and evidence.

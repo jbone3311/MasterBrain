@@ -13,6 +13,7 @@ The retained `email_brain` tree is the Email capability. New shared code begins 
 | FOS live-donor parity | [parity harness](../scripts/datacore_parity.py), [synthetic corpus](../tests/fixtures/datacore_parity/corpus/), [unit contract](../tests/test_datacore_dedup.py), [stress tests](../tests/test_datacore_stress.py) |
 | Structured travel/bill memory | [memory.py](../src/email_brain/memory.py), [memory_schema.py](../src/email_brain/memory_schema.py), [memory_extract.py](../src/email_brain/memory_extract.py), [memory.js](../src/email_brain/web/memory.js), [migration 0014](../migrations/0014_structured_memory.sql) |
 | Shared DataCore persistence | [persistence.py](../src/masterbrain/datacore/persistence.py), [migration 0015](../migrations/0015_datacore_persistence.sql), [contract](DATACORE_PERSISTENCE.md) |
+| Reviewed KnowledgeCore | [knowledge.py](../src/masterbrain/knowledge.py), [knowledge_schema.py](../src/masterbrain/knowledge_schema.py), [migration 0016](../migrations/0016_knowledgecore.sql), [contract](KNOWLEDGECORE.md) |
 | Demo/migrate/serve | [cli.py](../src/email_brain/cli.py) |
 | REST/request boundary | [api.py](../src/email_brain/api.py), [schemas.py](../src/email_brain/schemas.py) |
 | Bootstrap identity | [auth.py](../src/email_brain/auth.py) |
@@ -70,7 +71,7 @@ See [configuration and shutdown](PROCESSING_CONTROLLER.md).
 
 ## Contract versus code
 
-Future tables in [DATA_MODEL.md](DATA_MODEL.md) are not migrations; future MCP tools
+Unmarked future tables in [DATA_MODEL.md](DATA_MODEL.md) are not migrations; future MCP tools
 in [API_MCP_SPEC.md](API_MCP_SPEC.md) are not registered endpoints. `api.py` is the
 implemented bounded surface. The [access-token foundation](IDENTITY_AUTH.md) is
 executable; complete production login/lifecycle is not supplied by API docs.

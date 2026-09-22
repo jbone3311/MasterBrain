@@ -2,8 +2,8 @@
 
 The Brain API is MasterBrain's model-neutral, least-privilege access layer. It serves
 humans and authorized clients such as Claude, Grok, ChatGPT, and future assistants.
-The first implemented read slice lives under `/v1/brain`; KnowledgeCore resources
-and synthesis remain target contracts.
+Implemented DataCore access lives under `/v1/brain`; the first reviewed KnowledgeCore
+publish/read slice lives under `/v1/knowledge`. Synthesis remains a target contract.
 
 ## Progressive access
 
@@ -23,9 +23,15 @@ objects, general SQL, or an unbounded corpus dump.
 - `GET /v1/brain/evidence/{id}` — implemented metadata/citation expansion.
 - `POST /v1/brain/evidence/{id}/content` — implemented separately scoped bounded text.
 - `GET /v1/brain/changes` — implemented cursor-bounded DataCore change feed.
+- `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required
+  append with a UUID idempotency key.
+- `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
+  relationship, claim, event, project, commitment and correction records.
+- `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion.
+- `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change feed.
 - `POST /v1/search` — retained Email capability search during compatibility migration.
 - `POST /v1/answers` — bounded synthesis from retrieved evidence; returns citations.
-- `GET /v1/entities/{id}` and `/relationships` — graph objects and cited attributes.
+- Future graph traversal — related objects and cited attributes beyond exact lookup.
 - `GET /v1/projects/{id}` — project state, members, commitments, events, evidence.
 - `GET /v1/claims/{id}` — claim versions, support, contradictions, and supersession.
 - `GET /v1/timeline` — cursor/time-bounded events.

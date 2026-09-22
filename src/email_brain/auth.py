@@ -32,6 +32,10 @@ SCOPES = frozenset(
         "brain.changes.read",
         "brain.source.ingest",
         "brain.document.publish",
+        "knowledge.search",
+        "knowledge.read",
+        "knowledge.changes.read",
+        "knowledge.review",
     }
 )
 
@@ -79,7 +83,10 @@ class TokenRegistry:
             raise ValueError("1..100 credentials required")
         if len({c.token_sha256 for c in credentials}) != len(credentials):
             raise ValueError("duplicate credential digest")
-        if any(c.client_kind != "human" and "email.review" in c.scopes for c in credentials):
+        if any(
+            c.client_kind != "human" and {"email.review", "knowledge.review"} & c.scopes
+            for c in credentials
+        ):
             raise ValueError("review is human-only")
         if any(
             c.client_kind != "worker"

@@ -40,6 +40,8 @@ from email_brain.schemas import (
 )
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import KnowledgePublishRequest, KnowledgeSearchRequest
 from masterbrain.schemas import BrainSearchRequest, EvidenceContentRequest
 
 log = logging.getLogger("email_brain.requests")
@@ -107,6 +109,7 @@ def create_app(
     message_reader = MessageReader(store)
     memory = Memory(store)
     brain = brain_store or DataCoreStore(store)
+    knowledge = KnowledgeCore(store)
     if browser_auth is not None:
         if browser_auth.authenticator.store is not store:
             raise ValueError("browser and API must share the same Store")
@@ -407,6 +410,60 @@ def create_app(
         limit: Annotated[int, Query(ge=1, le=50)] = 25,
     ) -> dict[str, Any]:
         return brain.changes(principal.context, after=after, limit=limit)
+
+    @app.post("/v1/knowledge/assertions", status_code=201)
+    def publish_knowledge(
+        body: KnowledgePublishRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        result = knowledge.publish(principal.context, body.assertion, idempotency_key)
+        return {
+            "object_kind": result.object_kind,
+            "object_id": result.object_id,
+            "changed": result.changed,
+            "reviewed": True,
+        }
+
+    @app.post("/v1/knowledge/search")
+    def search_knowledge(
+        body: KnowledgeSearchRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.search"))],
+    ) -> dict[str, Any]:
+        hits = knowledge.search(
+            principal.context, body.query, limit=body.limit, kinds=list(body.kinds)
+        )
+        return {
+            "results": [
+                {
+                    "object_kind": hit.object_kind,
+                    "object_id": hit.object_id,
+                    "title": hit.title,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                    "evidence_ids": hit.evidence_ids,
+                }
+                for hit in hits
+            ],
+            "page": {"next_cursor": None, "truncated": False},
+            "untrusted_content": True,
+        }
+
+    @app.get("/v1/knowledge/changes")
+    def knowledge_changes(
+        principal: Annotated[Principal, Depends(require("knowledge.changes.read"))],
+        after: str | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return knowledge.changes(principal.context, after=after, limit=limit)
+
+    @app.get("/v1/knowledge/{kind}/{object_id}")
+    def knowledge_object(
+        kind: str,
+        object_id: str,
+        principal: Annotated[Principal, Depends(require("knowledge.read"))],
+    ) -> dict[str, Any]:
+        return knowledge.get(principal.context, kind, object_id)
 
     @app.get("/v1/accounts/{account_id}/quarantine")
     def quarantine(
