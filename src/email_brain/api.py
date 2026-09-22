@@ -396,7 +396,13 @@ def create_app(
     ) -> dict[str, Any]:
         if "knowledge.search" not in principal.context.scopes:
             raise HTTPException(403, "scope_denied")
-        evidence_hits = brain.search(principal.context, body.query, limit=body.evidence_limit)
+        evidence_hits = (
+            brain.search_current_fileos(
+                principal.context, body.query, limit=body.evidence_limit
+            )
+            if body.evidence_visibility == "current_fileos"
+            else brain.search(principal.context, body.query, limit=body.evidence_limit)
+        )
         knowledge_hits = knowledge.search(
             principal.context,
             body.query,
@@ -406,6 +412,11 @@ def create_app(
         return {
             "mode": "grouped_lexical",
             "ranking": "within_layer_only",
+            "evidence_visibility": (
+                "current_fileos_active_generations"
+                if body.evidence_visibility == "current_fileos"
+                else "retained_history_compatible"
+            ),
             "layers": {
                 "evidence": [
                     {

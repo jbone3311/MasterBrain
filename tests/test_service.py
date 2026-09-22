@@ -285,15 +285,32 @@ def test_unified_search_is_grouped_bounded_and_requires_both_scopes() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["ranking"] == "within_layer_only"
+    assert body["evidence_visibility"] == "retained_history_compatible"
     assert body["layers"]["evidence"][0]["evidence_id"] == "evidence_" + "3" * 32
     assert body["layers"]["knowledge"][0]["object_kind"] == "project"
     brain.search.assert_called_once()
     knowledge.search.assert_called_once()
     assert knowledge.search.call_args.kwargs["kinds"] == ["project"]
+    brain.search_current_fileos.return_value = brain.search.return_value
+    current = client.post(
+        "/v1/brain/unified-search",
+        json={
+            "query": "Atlas",
+            "evidence_visibility": "current_fileos",
+            "evidence_limit": 2,
+            "knowledge_limit": 2,
+        },
+        headers=headers,
+    )
+    assert current.status_code == 200
+    assert current.json()["evidence_visibility"] == "current_fileos_active_generations"
+    brain.search_current_fileos.assert_called_once()
+    assert brain.search.call_count == 1
     for invalid in (
         {"query": "Atlas", "evidence_limit": 26},
         {"query": "Atlas", "knowledge_limit": 0},
         {"query": "Atlas", "knowledge_kinds": ["project", "project"]},
+        {"query": "Atlas", "evidence_visibility": "automatic"},
     ):
         assert (
             client.post("/v1/brain/unified-search", json=invalid, headers=headers).status_code

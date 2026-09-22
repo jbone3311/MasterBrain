@@ -28,6 +28,8 @@ exact tested commits and results.
   reauthentication and scrubbed receipts (ADR-059). It is not a scheduler or cutover.
 - Added an explicitly current FileOS search across each source's latest activated
   generation while preserving existing historical compatibility search (ADR-060).
+- Extended grouped DataCore/KnowledgeCore retrieval with an explicit current-FileOS
+  evidence mode; retained history remains the compatibility default (ADR-061).
 
 ### Tools discussion (documentation only)
 

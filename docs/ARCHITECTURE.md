@@ -70,6 +70,10 @@ Current FileOS retrieval is an explicit cross-source read over each source's new
 activation. Existing compatibility and unified search remain unchanged and may expose
 retained historical derivatives; clients choose the current-only route deliberately.
 
+Grouped retrieval exposes the same choice: retained-history evidence is the backward-
+compatible default, while `current_fileos` composes active FileOS evidence with
+reviewed KnowledgeCore results. Ranks and limits remain separate by layer.
+
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.

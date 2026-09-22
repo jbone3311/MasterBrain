@@ -54,7 +54,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Projects | State and evidence; future members/milestones/decisions | Reviewed base record implemented |
 | Commitments | Owner, counterparty, due state and evidence | Reviewed append/read implemented |
 | Corrections | Supersede without erasing history; retain contradictions | Implemented append-only links |
-| Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Knowledge lexical slice implemented; graph/semantic planned |
+| Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Grouped retained/current FileOS + reviewed knowledge lexical slice implemented; graph/semantic planned |
 | Freshness | Source sync, extraction, indexing and interpretation freshness separated | Partial Email implementation |
 
 ## Brain API and clients

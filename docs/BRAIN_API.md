@@ -36,7 +36,8 @@ objects, general SQL, or an unbounded corpus dump.
 - `POST /v1/brain/fileos-search` — implemented current FileOS search across the newest
   activated generation of every authorized source; requires `brain.search`.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
-  KnowledgeCore assertion search; requires both search scopes and keeps ranks separate.
+  KnowledgeCore assertion search; requires both search scopes, keeps ranks separate,
+  and accepts explicit `retained` or `current_fileos` evidence visibility.
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required
   append with a UUID idempotency key.
 - `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
@@ -89,7 +90,8 @@ decisions.
 - Cross-layer results remain grouped because ranks from separate indexes are not
   calibrated as one global score.
 - Current FileOS search is explicit. Compatibility DataCore and unified search may
-  still include retained historical derivatives until a later deliberate migration.
+- Grouped search defaults to retained-history compatibility. Clients may explicitly
+  select current FileOS generations without changing the KnowledgeCore layer.
 - Semantic/vector ranking is optional and cannot suppress exact evidence lookup.
 - Answers distinguish source statements from inferred conclusions.
 - Conflicting claims are returned as conflicts, not silently collapsed.

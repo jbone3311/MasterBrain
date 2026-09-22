@@ -3,9 +3,9 @@
 ## Active checkpoint
 
 **Checkpoint 3J — current-aware unified retrieval contract.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Design an explicit grouped composition of
-current FileOS generations with reviewed KnowledgeCore results without changing the
-historical compatibility route or pretending ranks are globally calibrated.
+`codex/masterbrain-foundation` in PR #4. The explicit grouped composition of current
+FileOS generations with reviewed KnowledgeCore results is implemented locally without
+changing the retained-history default or pretending ranks are globally calibrated.
 
 ## Completed gates
 
@@ -63,9 +63,9 @@ historical compatibility route or pretending ranks are globally calibrated.
 
 ## Current work
 
-- Specify an additive grouped route for current FileOS plus reviewed KnowledgeCore,
-  preserving separate ranks, scopes, evidence links and explicit visibility labels.
-- Keep Email migration, synthesis and any compatibility-route switch behind their own
+- Prove current/retained selection, both-scope enforcement, evidence links and grouped
+  ranks in hosted PostgreSQL.
+- Keep Email migration, synthesis and any default-route switch behind their own
   evaluation and acceptance gates.
 
 ## Deferred by design

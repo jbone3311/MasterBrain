@@ -1,5 +1,7 @@
 """Closed, bounded request contracts for the source-neutral Brain API."""
 
+from typing import Literal
+
 from pydantic import Field, field_validator
 
 from email_brain.schemas import ClosedModel
@@ -20,6 +22,7 @@ class UnifiedSearchRequest(ClosedModel):
     evidence_limit: int = Field(default=10, ge=1, le=25, strict=True)
     knowledge_limit: int = Field(default=10, ge=1, le=25, strict=True)
     knowledge_kinds: list[KnowledgeKind] = Field(default_factory=list, max_length=7)
+    evidence_visibility: Literal["retained", "current_fileos"] = "retained"
 
     @field_validator("knowledge_kinds")
     @classmethod

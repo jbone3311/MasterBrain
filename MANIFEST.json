@@ -32,6 +32,7 @@
     "immutable FileOS index generations, activation receipts and rollback",
     "explicit private FileOS generation and rollback operator",
     "current FileOS search across active generations",
+    "explicit current FileOS and KnowledgeCore grouped retrieval",
     "DataCore persistence, lexical retrieval and progressive Brain API",
     "reviewed KnowledgeCore assertions, retrieval and changes",
     "grouped DataCore and KnowledgeCore search",

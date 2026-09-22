@@ -812,11 +812,36 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     source = tmp_path / "knowledge.txt"
     source.write_text("Alex at Acme committed to renew Project Atlas in October.", encoding="utf-8")
     manifest = fileos_manifest(tmp_path, source_id="files_knowledge")
-    published = FileOSAdapter(DataCoreStore(store)).publish_snapshot(
-        ctx, tmp_path, manifest, uuid4(), code_revision="knowledge-test-v1"
+    core = DataCoreStore(store)
+    run_id = uuid4()
+    published = FileOSAdapter(core).publish_snapshot(
+        ctx, tmp_path, manifest, run_id, code_revision="knowledge-test-v1"
     )
     evidence_id = next(
         item.publication.evidence_id for item in published.results if item.publication is not None
+    )
+    outcomes_by_version = {
+        item.extraction.version_id: item.extraction.status.value
+        for item in published.results
+    }
+    core.complete_fileos_run(
+        ctx,
+        manifest,
+        run_id,
+        outcomes=published.counts,
+        item_outcomes={
+            item["item_id"]: outcomes_by_version[item["version_id"]]
+            for item in manifest["items"]
+        },
+        published_documents=1,
+        code_revision="knowledge-test-v1",
+        document_processor_version=None,
+    )
+    generation = core.build_fileos_index_generation(
+        ctx, "files_knowledge", run_id, code_revision="knowledge-index-v1"
+    )
+    core.activate_fileos_index_generation(
+        ctx, "files_knowledge", generation.generation_id, uuid4()
     )
     common = {
         "evidence_ids": [evidence_id],
@@ -1030,6 +1055,24 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert unified.json()["ranking"] == "within_layer_only"
     assert unified.json()["layers"]["evidence"][0]["evidence_id"] == evidence_id
     assert unified.json()["layers"]["knowledge"][0]["object_id"] == project.object_id
+    current_unified = api.post(
+        "/v1/brain/unified-search",
+        json={
+            "query": "Project Atlas",
+            "evidence_visibility": "current_fileos",
+            "evidence_limit": 5,
+            "knowledge_limit": 5,
+            "knowledge_kinds": ["project"],
+        },
+        headers=headers,
+    )
+    assert current_unified.status_code == 200
+    assert (
+        current_unified.json()["evidence_visibility"]
+        == "current_fileos_active_generations"
+    )
+    assert current_unified.json()["layers"]["evidence"][0]["evidence_id"] == evidence_id
+    assert current_unified.json()["layers"]["knowledge"][0]["object_id"] == project.object_id
     fetched = api.get(f"/v1/knowledge/project/{project.object_id}", headers=headers)
     assert fetched.status_code == 200 and fetched.json()["title"] == "Project Atlas"
     created = api.post(

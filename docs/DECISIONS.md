@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-061 current-aware grouped retrieval](adr/061_current_aware_unified_search.md)
+adds an explicit current-FileOS evidence mode to grouped KnowledgeCore search while
+preserving retained-history compatibility and separate ranks.
+
 [ADR-060 current FileOS search](adr/060_current_fileos_search.md) adds a cross-source
 read over latest activated generations without silently redirecting compatibility or
 unified search.

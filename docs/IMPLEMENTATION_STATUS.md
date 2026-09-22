@@ -37,6 +37,8 @@ mean hosted, live-source accepted, or production ready.
   with exact scopes, check mode and reauthentication; hosted PostgreSQL/restore green.
 - Explicit cross-source current FileOS search over newest activations while historical
   compatibility search remains unchanged; hosted PostgreSQL/restore green.
+- Explicit current-FileOS evidence mode for grouped KnowledgeCore retrieval with
+  retained-history default and separate ranks; hosted verification pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

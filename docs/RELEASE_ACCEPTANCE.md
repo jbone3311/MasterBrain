@@ -32,6 +32,8 @@ operator, date, result, exceptions and rollback receipt.
   content, credentials or database diagnostics.
 - Current FileOS retrieval selects only each source's latest activation; rollback
   changes current results while retained historical evidence remains accessible.
+- Grouped retrieval labels retained versus current FileOS visibility and never merges
+  evidence and KnowledgeCore ranks into a misleading global score.
 - Source freshness advances only on an immutable receipt whose terminal counts cover
   the exact intake manifest; crash prefixes and conflicts never report complete.
 - Inventory membership balances exactly against its completion receipt; absence is
