@@ -1,4 +1,10 @@
-# Private archive-member text operator plan
+# Private archive-member text operator
+
+Status: implemented in checkpoints `257ab30` and `d66de6e`; FOS-Master remains
+unchanged at pinned donor commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
+The hardened revision passed 2,556 hosted Python tests and the real restricted-image
+member checks in [CI 35795580456](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35795580456),
+plus [restore 35795580548](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35795580548).
 
 ## Purpose
 
@@ -19,6 +25,18 @@ The owner-private version-1 configuration contains only:
 Configuration and credential files use the existing owner-private/no-symlink checks.
 The expiring worker has exactly `brain.source.ingest` and `brain.document.publish`.
 The DSN remains environment-only and the runtime role is preflighted before execution.
+
+```json
+{
+  "version": 1,
+  "root": "/absolute/authorized/fileos/root",
+  "archive_image_id": "sha256:<64 lowercase hex characters>",
+  "docker_binary": "/absolute/path/to/docker",
+  "credentials_file": "/private/operator/credentials.json",
+  "token_file": "/private/operator/token",
+  "code_revision": "deployed-revision"
+}
+```
 
 ## Sequence
 
@@ -59,3 +77,11 @@ FileOS write/effect or FOS-Master cutover is authorized.
   with one generic error and no partial derivative;
 - full PostgreSQL, restore, real archive image, donor parity and source immutability
   gates remain green.
+
+The unit suite directly covers closed/private configuration, immutable image syntax,
+exact scopes, unsafe locators and a check that cannot query DataCore or read a member.
+The PostgreSQL suite covers flat and nested publication, exact replay, nine repeated
+authorization checks across check/publish/replay, credential revocation, runtime-role
+refusal, content-free output and processor-fault atomicity. The dedicated container
+suite continues to exercise the same member reader against the real restricted image;
+the pinned donor's 47 archive tests and six-case live parity corpus remain green.

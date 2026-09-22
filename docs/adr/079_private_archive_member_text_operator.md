@@ -1,6 +1,7 @@
 # ADR-079 — Require a private one-member operator before archive text publication
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `257ab30`, with operator-specific negative and
+PostgreSQL acceptance coverage completed in `d66de6e`.
 
 ## Context
 

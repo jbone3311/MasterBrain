@@ -2,11 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4R — private archive-member text operator design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define an explicit authenticated command that
-resolves one inventory/member, revalidates the configured FileOS root, invokes the
-immutable archive image and publishes one accepted text derivative. Preserve check
-mode, reauthentication, exact scopes and content-free output; no batch or public API.
+**Checkpoint 4S — current archive-derivative search design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Specify an explicit, independently bounded
+search layer for published archive-member text whose parent FileOS source and sealed
+inventory member are still current. Preserve retained-history search, active FileOS
+generation semantics and separate ranks; do not silently add derivatives to an old
+generation or authorize automatic archive fan-out.
 
 ## Completed gates
 
@@ -132,11 +133,17 @@ mode, reauthentication, exact scopes and content-free output; no batch or public
   2,530 hosted Python tests, migration/forced-RLS/replay/current-fence tests and
   [CI 35792838710](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35792838710)
   plus [restore 35792838718](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35792838718).
+- Checkpoint 4R private archive-member operator design `debd740`, runtime `257ab30`
+  and hardened acceptance `d66de6e` passed 2,556 hosted Python tests, flat/nested
+  forced-RLS publication, replay/revocation/fault tests, the real restricted member
+  image, the pinned donor's 47 archive tests and six-case live parity corpus, plus
+  [CI 35795580456](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35795580456)
+  and [restore 35795580548](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35795580548).
 
 ## Current work
 
-- Specify the least-privilege private operator for one archive-member text derivative,
-  including non-consuming check mode and post-read authorization/current rechecks.
+- Specify current-only archive-derivative search as a separate, bounded retrieval
+  layer with current parent/inventory/member fences and no generation mutation.
 
 ## Deferred by design
 

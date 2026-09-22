@@ -41,6 +41,11 @@ mean hosted, live-source accepted, or production ready.
   parent archive plus inventory provenance, idempotent receipts and transaction-time
   current-parent/member revalidation. It stores no raw member bytes and remains absent
   from current-generation search; hosted PostgreSQL/restore gates are green.
+- Private `masterbrain fileos archive-text` publication for one explicit persisted
+  inventory/member pair, with immutable worker image binding, exact shared scopes,
+  non-consuming check mode, repeated reauthentication, content-free output and exact
+  replay. It grants no archive enumeration, batch, scheduling, public API, raw-byte
+  return or source effect.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -115,8 +120,8 @@ mean hosted, live-source accepted, or production ready.
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy image/OCR extraction. Archive-derived
-  private operation, current-search visibility and non-text extraction remain follow-on
-  gates; automatic archive fan-out remains prohibited.
+  current-search visibility and non-text extraction remain follow-on gates; automatic
+  archive fan-out remains prohibited.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

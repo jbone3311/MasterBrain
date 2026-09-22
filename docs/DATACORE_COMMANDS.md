@@ -209,6 +209,37 @@ an immutable completion ID/time/recorded flag, and the invariant
 This is explicit one-snapshot operation, not a watcher or automatic live-root
 enrollment.
 
+## Publish one selected archive text member
+
+After a source snapshot and its isolated archive inventory have been persisted, first
+validate the private one-member command:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain fileos archive-text \
+  --config /private/operator/archive-member.json \
+  --inventory-id archive_inventory_0123456789abcdef0123456789abcdef \
+  --member-locator reports/summary.md \
+  --idempotency-key 93c5a004-81ab-45b6-8652-e8ced2b40e47 \
+  --check
+```
+
+The closed version-1 config binds the absolute authorized FileOS root, immutable
+`sha256:` archive worker image, absolute Docker binary, private credential/token files
+and deployed code revision. Its expiring worker has exactly `brain.source.ingest` and
+`brain.document.publish`. `--check` validates configuration, authentication and the
+least-privileged database role without querying the inventory, invoking Docker,
+reading the source or consuming the key.
+
+Remove `--check` only for the exact reviewed inventory/member pair. The source archive
+must still be current and byte-identical before and after the fixed restricted worker
+read. Eligible bounded text is published as one deterministic derivative with parent
+archive and inventory provenance. Reuse the exact key only after an uncertain result.
+Output is content-free: opaque IDs, chunk count, replay state and
+`source_effects: false`; it never includes the locator, path, bytes or normalized text.
+There is no enumeration, glob, batch, automatic sibling continuation, public route or
+current-search activation.
+
 ## Build, activate or roll back a FileOS index generation
 
 After a snapshot has a completed run receipt, validate a one-shot generation command:
