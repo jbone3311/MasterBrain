@@ -476,6 +476,17 @@ def create_app(
     ) -> dict[str, Any]:
         return brain.fileos_inventory(principal.context, source_id)
 
+    @app.get("/v1/brain/sources/{source_id}/rebuild-preview")
+    def brain_source_rebuild_preview(
+        source_id: str,
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        after: str | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return brain.fileos_rebuild_preview(
+            principal.context, source_id, after=after, limit=limit
+        )
+
     @app.post("/v1/knowledge/assertions", status_code=201)
     def publish_knowledge(
         body: KnowledgePublishRequest,

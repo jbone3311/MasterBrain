@@ -380,6 +380,9 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-057 read-only rebuild preview](adr/057_fileos_rebuild_preview.md) verifies current
+normalized documents and chunks before any index-rebuild executor is authorized.
+
 [ADR-056 completed-inventory reconciliation](adr/056_fileos_inventory_reconciliation.md)
 adds exact per-run membership and immutable absence evidence without deletion or
 search-visibility effects.

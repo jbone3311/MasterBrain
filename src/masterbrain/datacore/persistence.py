@@ -576,6 +576,156 @@ class DataCoreStore:
             self.store.audit(conn, ctx, "brain.fileos_inventory_read", "brain_source", source_id)
             return result
 
+    def fileos_rebuild_preview(
+        self,
+        ctx: TenantContext,
+        source_id: str,
+        *,
+        after: str | None = None,
+        limit: int = 25,
+    ) -> dict[str, Any]:
+        """Verify a bounded page of current deterministic index artifacts without writes."""
+        self.store.require(ctx, "brain.changes.read")
+        if (
+            not _IDENTITY.fullmatch(source_id)
+            or (after is not None and not _IDENTITY.fullmatch(after))
+            or not 1 <= limit <= 50
+        ):
+            raise ValueError("invalid FileOS rebuild preview request")
+        with self.store.transaction(ctx) as conn:
+            source = conn.execute(
+                "SELECT 1 FROM brain_sources WHERE id=%s AND kind='fileos'", (source_id,)
+            ).fetchone()
+            if not source:
+                raise NotFound()
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:fileos-source:{source_id}",),
+            )
+            latest = conn.execute(
+                "SELECT actor_id,run_id,observed_at,item_count "
+                "FROM brain_fileos_run_receipts WHERE source_id=%s "
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
+                (source_id,),
+            ).fetchone()
+            if not latest:
+                self.store.audit(
+                    conn, ctx, "brain.fileos_rebuild_preview", "brain_source", source_id
+                )
+                return {
+                    "source_id": source_id,
+                    "status": "no_completed_run",
+                    "run_id": None,
+                    "observed_at": None,
+                    "total_items": None,
+                    "results": [],
+                    "next_cursor": None,
+                    "source_effects": False,
+                    "data_effects": False,
+                }
+            if after is not None and not conn.execute(
+                "SELECT 1 FROM brain_fileos_run_items "
+                "WHERE actor_id=%s AND run_id=%s AND item_id=%s",
+                (latest["actor_id"], latest["run_id"], after),
+            ).fetchone():
+                raise NotFound()
+            rows = conn.execute(
+                "SELECT ri.item_id,ri.version_id,ri.outcome,e.id AS evidence_id,"
+                "d.id AS document_id,d.normalizer,d.body_sha256,d.body "
+                "FROM brain_fileos_run_items ri "
+                "JOIN brain_evidence e ON e.tenant_id=ri.tenant_id "
+                "AND e.source_version_id=ri.version_id "
+                "LEFT JOIN LATERAL (SELECT nd.id,nd.normalizer,nd.body_sha256,nd.body "
+                "FROM brain_normalized_documents nd WHERE nd.tenant_id=ri.tenant_id "
+                "AND nd.evidence_id=e.id ORDER BY nd.created_at DESC,nd.id DESC LIMIT 1) d "
+                "ON true WHERE ri.actor_id=%s AND ri.run_id=%s AND ri.item_id>%s "
+                "ORDER BY ri.item_id LIMIT %s",
+                (latest["actor_id"], latest["run_id"], after or "", limit + 1),
+            ).fetchall()
+            has_more = len(rows) > limit
+            page = rows[:limit]
+            document_ids = [row["document_id"] for row in page if row["document_id"]]
+            chunk_rows = (
+                conn.execute(
+                    "SELECT document_id,id,ordinal,start_offset,end_offset,text,sha256 "
+                    "FROM brain_chunks WHERE document_id=ANY(%s) "
+                    "ORDER BY document_id,ordinal",
+                    (document_ids,),
+                ).fetchall()
+                if document_ids
+                else []
+            )
+            chunks_by_document: dict[str, list[dict[str, Any]]] = {}
+            for chunk in chunk_rows:
+                chunks_by_document.setdefault(chunk["document_id"], []).append(chunk)
+            results: list[dict[str, Any]] = []
+            for row in page:
+                document_id = row["document_id"]
+                if document_id is None:
+                    disposition = "source_reprocess_required"
+                    expected_chunks = None
+                    stored_chunks = 0
+                else:
+                    body = row["body"]
+                    body_sha = hashlib.sha256(body.encode()).hexdigest()
+                    expected_document_id = stable_id(
+                        "document", row["version_id"], row["normalizer"], body_sha
+                    )
+                    expected = [
+                        {
+                            "document_id": document_id,
+                            "id": stable_id(
+                                "chunk",
+                                document_id,
+                                str(ordinal),
+                                hashlib.sha256(text.encode()).hexdigest(),
+                            ),
+                            "ordinal": ordinal,
+                            "start_offset": start,
+                            "end_offset": end,
+                            "text": text,
+                            "sha256": hashlib.sha256(text.encode()).hexdigest(),
+                        }
+                        for ordinal, (start, end, text) in enumerate(
+                            deterministic_chunks(body)
+                        )
+                    ]
+                    stored = chunks_by_document.get(document_id, [])
+                    valid = (
+                        row["body_sha256"] == body_sha
+                        and document_id == expected_document_id
+                        and stored == expected
+                    )
+                    disposition = "verified" if valid else "rebuild_required"
+                    expected_chunks = len(expected)
+                    stored_chunks = len(stored)
+                results.append(
+                    {
+                        "item_id": row["item_id"],
+                        "version_id": row["version_id"],
+                        "evidence_id": row["evidence_id"],
+                        "document_id": document_id,
+                        "source_outcome": row["outcome"],
+                        "disposition": disposition,
+                        "expected_chunks": expected_chunks,
+                        "stored_chunks": stored_chunks,
+                    }
+                )
+            self.store.audit(
+                conn, ctx, "brain.fileos_rebuild_preview", "brain_source", source_id
+            )
+            return {
+                "source_id": source_id,
+                "status": "complete",
+                "run_id": latest["run_id"],
+                "observed_at": latest["observed_at"],
+                "total_items": latest["item_count"],
+                "results": results,
+                "next_cursor": page[-1]["item_id"] if has_more else None,
+                "source_effects": False,
+                "data_effects": False,
+            }
+
     def publish_text(
         self,
         ctx: TenantContext,

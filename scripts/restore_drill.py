@@ -757,6 +757,17 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             and inventory["newly_absent_items"] == 0,
             "restored DataCore FileOS inventory ledger changed",
         )
+        preview = DataCoreStore(store).fileos_rebuild_preview(
+            ctx, f"files_{current.keyword}", limit=1
+        )
+        require(
+            preview["run_id"] == current.brain_run_id
+            and len(preview["results"]) == 1
+            and preview["results"][0]["disposition"] == "verified"
+            and not preview["source_effects"]
+            and not preview["data_effects"],
+            "restored DataCore rebuild preview changed",
+        )
         knowledge = KnowledgeCore(store)
         knowledge_hits = knowledge.search(ctx, f"knowledgecoreproof {current.keyword}")
         require(

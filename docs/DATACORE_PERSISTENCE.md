@@ -71,3 +71,9 @@ newer completed observation can become current; a stale completion conflicts. Mi
 items are recorded only by comparing two consecutive completed ledgers, so partial
 imports cannot manufacture deletion. Absence retains all evidence and does not yet
 change search visibility.
+
+`fileos_rebuild_preview` reads a maximum of 50 opaque item records from the latest
+completed ledger while holding the source completion lock. It recomputes normalized
+body/document/chunk hashes and identities, returning only verification dispositions
+and counts. The cursor is bound to that exact run. The preview writes only the normal
+access audit; it does not execute a rebuild or change source/index state.

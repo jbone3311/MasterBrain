@@ -73,6 +73,10 @@ receipt counts. Per-source serialization and monotonic observation time prevent 
 completion from replacing newer state. Absence is inferred only between two completed
 ledgers; it retains evidence and does not authorize hiding, deletion or any file effect.
 
+Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
+dispositions and counts without paths or text. It uses the source completion lock and
+run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

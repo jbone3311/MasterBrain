@@ -444,6 +444,28 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         "absent_evidence_retained": True,
         "search_visibility_changed": False,
     }
+    preview_page_one = core.fileos_rebuild_preview(ctx, "files_adapter", limit=2)
+    assert preview_page_one["run_id"] == run_id
+    assert preview_page_one["total_items"] == 3
+    assert preview_page_one["next_cursor"] is not None
+    preview_page_two = core.fileos_rebuild_preview(
+        ctx,
+        "files_adapter",
+        after=preview_page_one["next_cursor"],
+        limit=2,
+    )
+    preview_results = preview_page_one["results"] + preview_page_two["results"]
+    assert sorted(item["disposition"] for item in preview_results) == [
+        "source_reprocess_required",
+        "source_reprocess_required",
+        "verified",
+    ]
+    assert all("locator" not in item and "body" not in item for item in preview_results)
+    assert preview_page_two["next_cursor"] is None
+    assert preview_page_two["source_effects"] is False
+    assert preview_page_two["data_effects"] is False
+    with pytest.raises(NotFound):
+        core.fileos_rebuild_preview(ctx, "files_adapter", after="item_missing")
 
     unsupported.unlink()
     next_manifest = fileos_manifest(tmp_path, source_id="files_adapter", hour=2)
@@ -550,6 +572,14 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert inventory_response.status_code == 200
     assert inventory_response.json()["run_id"] == str(next_run_id)
     assert inventory_response.json()["newly_absent_items"] == 1
+    preview_response = api.get(
+        "/v1/brain/sources/files_adapter/rebuild-preview?limit=2", headers=headers
+    )
+    assert preview_response.status_code == 200
+    assert preview_response.json()["run_id"] == str(next_run_id)
+    assert {item["disposition"] for item in preview_response.json()["results"]} == {
+        "verified"
+    }
     with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
         conn.execute(
             "UPDATE brain_fileos_run_receipts SET outcomes='{}' WHERE tenant_id=%s",

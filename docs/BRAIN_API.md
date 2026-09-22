@@ -27,6 +27,8 @@ objects, general SQL, or an unbounded corpus dump.
   FileOS run or explicit `no_completed_run`; requires `brain.changes.read`.
 - `GET /v1/brain/sources/{source_id}/inventory` — implemented latest completed
   membership/new-absence counts; preserves evidence and requires `brain.changes.read`.
+- `GET /v1/brain/sources/{source_id}/rebuild-preview` — implemented paginated,
+  read-only deterministic document/chunk verification for the latest complete run.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes and keeps ranks separate.
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required

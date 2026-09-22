@@ -28,6 +28,8 @@ mean hosted, live-source accepted, or production ready.
   hosted PostgreSQL and populated-restore gates green.
 - Exact completed-run item ledger, stale-completion refusal, immutable absence events
   and bounded inventory counts; hosted PostgreSQL and populated-restore gates green.
+- Paginated, run-bound deterministic FileOS rebuild preview with no source or index
+  effects; hosted PostgreSQL/restore acceptance pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
