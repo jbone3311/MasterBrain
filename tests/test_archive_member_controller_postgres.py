@@ -9,6 +9,7 @@ import secrets
 import zipfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
 import pytest
@@ -101,15 +102,18 @@ def setup_operator(tmp_path: Path, ctx: TenantContext, store) -> tuple[Path, Pat
     return path, root, inventory.inventory_id, "folder/proof.md", raw
 
 
+@pytest.mark.parametrize("selected_locator", ["folder/proof.md", "sibling.txt"])
 def test_check_publish_replay_and_content_free_output(
     database: tuple[object, str],
     tenant: tuple[TenantContext, UUID],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    selected_locator: str,
 ) -> None:
     store, _ = database
     ctx, _ = tenant
-    path, root, inventory_id, locator, raw = setup_operator(tmp_path, ctx, store)
+    path, root, inventory_id, _, raw = setup_operator(tmp_path, ctx, store)
+    locator = selected_locator
     monkeypatch.setattr(controller, "DockerArchiveMemberProcessor", LocalArchiveMemberProcessor)
     authorization_checks = 0
     authenticate_current = controller._current
@@ -187,3 +191,29 @@ def test_unsafe_selection_and_admin_dsn_are_generic(
         run_archive_member_controller(path, store.dsn, inventory_id, "../secret.txt", uuid4())
     with pytest.raises(ArchiveMemberControllerError, match="sensitive details suppressed"):
         run_archive_member_controller(path, admin, inventory_id, locator, uuid4(), check=True)
+
+
+def test_processor_fault_is_generic_and_publishes_nothing(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    path, _, inventory_id, locator, _ = setup_operator(tmp_path, ctx, store)
+    processor = MagicMock()
+    processor.return_value.read.side_effect = RuntimeError("sensitive processor fault")
+    monkeypatch.setattr(controller, "DockerArchiveMemberProcessor", processor)
+    with pytest.raises(
+        ArchiveMemberControllerError, match="sensitive details suppressed"
+    ) as caught:
+        run_archive_member_controller(path, store.dsn, inventory_id, locator, uuid4())
+    assert "processor fault" not in str(caught.value)
+    with store.transaction(pg.datacore_context(ctx)) as conn:
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_archive_member_text_receipts").fetchone()[
+                "n"
+            ]
+            == 0
+        )
