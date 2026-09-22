@@ -69,3 +69,7 @@ jobs:
         run: |
           archive_image_id="$(docker image inspect masterbrain-archives-ci --format '{{.Id}}')"
           MASTERBRAIN_ARCHIVE_IMAGE_ID="$archive_image_id" uv run pytest -q tests/container_archive_checks.py
+      - name: Actual hash-bound restricted FileOS archive member read
+        run: |
+          archive_image_id="$(docker image inspect masterbrain-archives-ci --format '{{.Id}}')"
+          MASTERBRAIN_ARCHIVE_IMAGE_ID="$archive_image_id" uv run pytest -q tests/container_archive_member_checks.py

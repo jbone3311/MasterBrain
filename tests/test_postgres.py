@@ -485,9 +485,10 @@ def test_email_bridge_rejects_historical_and_hidden_versions(
             bridge_ctx, current, uuid4(), code_revision="email-bridge-test-v1"
         )
     with store.transaction(bridge_ctx) as conn:
-        assert conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()[
-            "n"
-        ] == 0
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()["n"]
+            == 0
+        )
 
 
 def test_email_bridge_concurrent_requests_publish_once(
@@ -512,12 +513,14 @@ def test_email_bridge_concurrent_requests_publish_once(
     assert sorted(result.changed for result in results) == [False, True]
     assert results[0].document_id == results[1].document_id
     with store.transaction(bridge_ctx) as conn:
-        assert conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()[
-            "n"
-        ] == 1
-        assert conn.execute("SELECT count(*) AS n FROM brain_normalized_documents").fetchone()[
-            "n"
-        ] == 1
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_normalized_documents").fetchone()["n"]
+            == 1
+        )
 
 
 def test_email_bridge_private_operator_publishes_without_legacy_mutation(
@@ -563,9 +566,7 @@ def test_email_bridge_plan_is_stable_bounded_and_labels_existing_bridge(
         bridge_ctx, selected, uuid4(), code_revision="email-bridge-plan-test-v1"
     )
     replayed_plan = core.email_bridge_plan(bridge_ctx, account, limit=3)
-    by_version = {
-        row["legacy_version_id"]: row for row in replayed_plan["results"]
-    }
+    by_version = {row["legacy_version_id"]: row for row in replayed_plan["results"]}
     assert by_version[str(selected)]["already_bridged"] is True
     assert sum(row["already_bridged"] for row in replayed_plan["results"]) == 1
     with pytest.raises(NotFound):
@@ -629,9 +630,10 @@ def test_email_bridge_batch_fail_stop_and_exact_retry(
     checked = run_email_bridge_batch_controller(config, plan, store.dsn, check=True)
     assert checked["execution_verified"] is False and checked["requested"] == 3
     with store.transaction(bridge_ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_email_bridge_receipts"
-        ).fetchone()["n"] == 0
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()["n"]
+            == 0
+        )
 
     original = DataCoreStore.bridge_current_email_version
     calls = 0
@@ -650,9 +652,10 @@ def test_email_bridge_batch_fail_stop_and_exact_retry(
         items[1].legacy_version_id
     )
     with store.transaction(bridge_ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_email_bridge_receipts"
-        ).fetchone()["n"] == 1
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()["n"]
+            == 1
+        )
 
     monkeypatch.setattr(DataCoreStore, "bridge_current_email_version", original)
     completed = run_email_bridge_batch_controller(config, plan, store.dsn)
@@ -662,9 +665,10 @@ def test_email_bridge_batch_fail_stop_and_exact_retry(
         str(item.legacy_version_id) for item in items
     ]
     with store.transaction(bridge_ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_email_bridge_receipts"
-        ).fetchone()["n"] == 3
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()["n"]
+            == 3
+        )
 
 
 def test_email_attachment_batch_fail_stop_account_fence_and_exact_retry(
@@ -680,12 +684,10 @@ def test_email_attachment_batch_fail_stop_account_fence_and_exact_retry(
     code_revision = "email-attachment-batch-test-v1"
     config = email_bridge_config(tmp_path, ctx, code_revision)
     store.ingest_page(ctx, account, None, "attachment-batch-page", [attachment_item()])
-    parent_id = store.search(
-        ctx, SearchRequest(query="Synthetic attachment accounting")
-    )[0]["evidence_id"]
-    core.bridge_current_email_version(
-        bridge_ctx, parent_id, uuid4(), code_revision=code_revision
-    )
+    parent_id = store.search(ctx, SearchRequest(query="Synthetic attachment accounting"))[0][
+        "evidence_id"
+    ]
+    core.bridge_current_email_version(bridge_ctx, parent_id, uuid4(), code_revision=code_revision)
     preview = core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"]
     assert len(preview) == 3
     items = [
@@ -702,9 +704,7 @@ def test_email_attachment_batch_fail_stop_account_fence_and_exact_retry(
             code_revision=code_revision,
             expected_account_id=uuid4(),
         )
-    digest = email_part_bridge_batch_sha256(
-        1, account, "attachment", code_revision, items
-    )
+    digest = email_part_bridge_batch_sha256(1, account, "attachment", code_revision, items)
     plan = tmp_path / "attachment-batch.json"
     plan.write_text(
         json.dumps(
@@ -719,9 +719,10 @@ def test_email_attachment_batch_fail_stop_account_fence_and_exact_retry(
         )
     )
     plan.chmod(0o600)
-    assert run_email_part_bridge_batch_controller(
-        config, plan, store.dsn, check=True
-    )["data_effects"] is False
+    assert (
+        run_email_part_bridge_batch_controller(config, plan, store.dsn, check=True)["data_effects"]
+        is False
+    )
     original = DataCoreStore.bridge_email_attachment
     calls = 0
 
@@ -736,17 +737,23 @@ def test_email_attachment_batch_fail_stop_account_fence_and_exact_retry(
     stopped = run_email_part_bridge_batch_controller(config, plan, store.dsn)
     assert stopped["complete"] is False and stopped["completed"] == 1
     with store.transaction(bridge_ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
-        ).fetchone()["n"] == 1
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
+            ).fetchone()["n"]
+            == 1
+        )
     monkeypatch.setattr(DataCoreStore, "bridge_email_attachment", original)
     completed = run_email_part_bridge_batch_controller(config, plan, store.dsn)
     assert completed["complete"] is True
     assert completed["recorded"] == 2 and completed["replayed"] == 1
     with store.transaction(bridge_ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
-        ).fetchone()["n"] == 3
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
+            ).fetchone()["n"]
+            == 3
+        )
 
 
 def test_current_email_search_tracks_legacy_update_and_delete(
@@ -870,9 +877,9 @@ def test_email_attachment_bridge_preserves_occurrences_and_outcomes(
     bridge_ctx = datacore_context(ctx)
     core = DataCoreStore(store)
     store.ingest_page(ctx, account, None, "attachment-page", [attachment_item()])
-    legacy_parent = store.search(
-        ctx, SearchRequest(query="Synthetic attachment accounting")
-    )[0]["evidence_id"]
+    legacy_parent = store.search(ctx, SearchRequest(query="Synthetic attachment accounting"))[0][
+        "evidence_id"
+    ]
     parent = core.bridge_current_email_version(
         bridge_ctx, legacy_parent, uuid4(), code_revision="attachment-bridge-test-v1"
     )
@@ -895,9 +902,7 @@ def test_email_attachment_bridge_preserves_occurrences_and_outcomes(
     assert deferred[0].document_id is None and deferred[0].chunks == 0
     assert len({result.evidence_id for result in extracted}) == 2
     hits = core.search(bridge_ctx, "Cobalt attachment covenant")
-    assert {hit.evidence_id for hit in hits} == {
-        result.evidence_id for result in extracted
-    }
+    assert {hit.evidence_id for hit in hits} == {result.evidence_id for result in extracted}
     family = core.search_current_email_family(
         bridge_ctx,
         "Cobalt attachment covenant",
@@ -951,9 +956,9 @@ def test_email_attachment_bridge_rejects_historical_parent(
     bridge_ctx = datacore_context(ctx)
     core = DataCoreStore(store)
     store.ingest_page(ctx, account, None, "attachment-old", [attachment_item("attachment-old")])
-    legacy_parent = store.search(
-        ctx, SearchRequest(query="Synthetic attachment accounting")
-    )[0]["evidence_id"]
+    legacy_parent = store.search(ctx, SearchRequest(query="Synthetic attachment accounting"))[0][
+        "evidence_id"
+    ]
     attachment_id = store.evidence(ctx, legacy_parent)["attachments"][0]["id"]
     core.bridge_current_email_version(
         bridge_ctx, legacy_parent, uuid4(), code_revision="attachment-bridge-test-v1"
@@ -977,14 +982,15 @@ def test_email_attachment_bridge_rejects_historical_parent(
             uuid4(),
             code_revision="attachment-bridge-test-v1",
         )
-    family = core.search_current_email_family(
-        bridge_ctx, "Synthetic attachment accounting"
-    )
+    family = core.search_current_email_family(bridge_ctx, "Synthetic attachment accounting")
     assert family.messages == () and family.attachments == () and family.documents == ()
     with store.transaction(bridge_ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
-        ).fetchone()["n"] == 0
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
+            ).fetchone()["n"]
+            == 0
+        )
 
 
 def test_datacore_invalid_manifest_is_atomic(
@@ -1090,23 +1096,24 @@ def test_archive_manifest_record_replay_concurrency_and_no_search_effect(
     with ThreadPoolExecutor(max_workers=2) as pool:
         concurrent = list(
             pool.map(
-                lambda _: core.record_archive_inventory(
-                    ctx, result, ARCHIVE_PROCESSOR, uuid4()
-                ),
+                lambda _: core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4()),
                 range(2),
             )
         )
     assert all(item == replace(first, changed=False) for item in concurrent)
     with store.transaction(ctx) as conn:
-        assert conn.execute("SELECT count(*) AS n FROM brain_archive_inventories").fetchone()[
-            "n"
-        ] == 1
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_archive_inventories").fetchone()["n"] == 1
+        )
         assert conn.execute("SELECT count(*) AS n FROM brain_archive_members").fetchone()[
             "n"
         ] == len(result.members)
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_archive_inventory_receipts"
-        ).fetchone()["n"] == 3
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_archive_inventory_receipts").fetchone()[
+                "n"
+            ]
+            == 3
+        )
         after_changes = conn.execute(
             "SELECT count(*) AS n FROM brain_change_events WHERE source_id=%s",
             ("files_archive_manifest",),
@@ -1197,6 +1204,82 @@ def test_archive_manifest_forced_rls_and_append_only(
             assert conn.execute(f"SELECT count(*) AS n FROM {table}").fetchone()["n"] == 0
 
 
+def test_archive_member_target_requires_current_non_container_and_rls(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    raw, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_member_target")
+    recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
+    member = result.members[0]
+    target = core.archive_member_target(ctx, recorded.inventory_id, member.locator)
+    assert (
+        target.source_version_id,
+        target.source_sha256,
+        target.source_size_bytes,
+        target.member_locator,
+        target.member_sha256,
+        target.member_size_bytes,
+    ) == (
+        result.source.version_id,
+        result.source.sha256,
+        len(raw),
+        member.locator,
+        member.sha256,
+        member.observed_size,
+    )
+
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Member other')", (other_tenant,))
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
+    with pytest.raises(NotFound):
+        core.archive_member_target(other, recorded.inventory_id, member.locator)
+
+    (tmp_path / "fixture.zip").write_bytes(raw + b"new version")
+    newer = fileos_manifest(tmp_path, source_id="files_member_target", hour=2)
+    core.import_fileos_snapshot(ctx, newer, uuid4())
+    with pytest.raises(NotFound):
+        core.archive_member_target(ctx, recorded.inventory_id, member.locator)
+
+
+def test_archive_member_target_refuses_intermediate_container(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    inner = io.BytesIO()
+    with zipfile.ZipFile(inner, "w") as archive:
+        archive.writestr("proof.txt", b"nested")
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w") as archive:
+        archive.writestr("inner.zip", inner.getvalue())
+    raw = output.getvalue()
+    (tmp_path / "nested.zip").write_bytes(raw)
+    manifest = fileos_manifest(tmp_path, source_id="files_member_container")
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    item = next(item for item in manifest["items"] if item["locator"] == "nested.zip")
+    source = source_for(
+        raw,
+        item["version_id"],
+        item["locator"],
+        item["digest"]["value"],
+        item["media_type"],
+    )
+    result = inventory_archive(raw, source)
+    recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
+    with pytest.raises(NotFound):
+        core.archive_member_target(ctx, recorded.inventory_id, "inner.zip")
+
+
 def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:
@@ -1233,9 +1316,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         "partial_runs_included": False,
     }
     initial_coverage = next(
-        row
-        for row in core.current_coverage(ctx)["results"]
-        if row["source_id"] == "files_adapter"
+        row for row in core.current_coverage(ctx)["results"] if row["source_id"] == "files_adapter"
     )
     assert initial_coverage["status"] == "no_active_generation"
     assert initial_coverage["active_generation"] is None
@@ -1368,9 +1449,10 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         ).recorded
         is False
     )
-    assert core.fileos_index_status(ctx, "files_adapter")["active_generation"][
-        "generation_id"
-    ] == first_generation.generation_id
+    assert (
+        core.fileos_index_status(ctx, "files_adapter")["active_generation"]["generation_id"]
+        == first_generation.generation_id
+    )
     active_first_hits = core.search_fileos_active(ctx, "files_adapter", "searchable source")
     existing_first_hits = core.search(ctx, "searchable source")
     assert len(active_first_hits) == 1
@@ -1394,8 +1476,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         code_revision="test-adapter-v1",
     )
     next_by_version = {
-        entry.extraction.version_id: entry.extraction.status.value
-        for entry in next_result.results
+        entry.extraction.version_id: entry.extraction.status.value for entry in next_result.results
     }
     core.complete_fileos_run(
         ctx,
@@ -1403,8 +1484,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         next_run_id,
         outcomes=next_result.counts,
         item_outcomes={
-            item["item_id"]: next_by_version[item["version_id"]]
-            for item in next_manifest["items"]
+            item["item_id"]: next_by_version[item["version_id"]] for item in next_manifest["items"]
         },
         published_documents=2,
         code_revision="test-adapter-v1",
@@ -1478,9 +1558,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         )
     other_root = tmp_path / "other-source"
     other_root.mkdir()
-    (other_root / "other.txt").write_text(
-        "MasterBrain searchable constellation", encoding="utf-8"
-    )
+    (other_root / "other.txt").write_text("MasterBrain searchable constellation", encoding="utf-8")
     other_manifest = fileos_manifest(other_root, source_id="files_other", hour=3)
     other_run_id = uuid4()
     other_result = FileOSAdapter(core).publish_snapshot(
@@ -1491,8 +1569,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         code_revision="test-adapter-v1",
     )
     other_by_version = {
-        item.extraction.version_id: item.extraction.status.value
-        for item in other_result.results
+        item.extraction.version_id: item.extraction.status.value for item in other_result.results
     }
     core.complete_fileos_run(
         ctx,
@@ -1586,9 +1663,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert freshness.json()["status"] == "complete"
     assert freshness.json()["latest_complete_run"]["run_id"] == str(next_run_id)
     assert freshness.json()["latest_complete_run"]["outcomes"] == next_result.counts
-    inventory_response = api.get(
-        "/v1/brain/sources/files_adapter/inventory", headers=headers
-    )
+    inventory_response = api.get("/v1/brain/sources/files_adapter/inventory", headers=headers)
     assert inventory_response.status_code == 200
     assert inventory_response.json()["run_id"] == str(next_run_id)
     assert inventory_response.json()["newly_absent_items"] == 1
@@ -1597,9 +1672,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     )
     assert preview_response.status_code == 200
     assert preview_response.json()["run_id"] == str(next_run_id)
-    assert {item["disposition"] for item in preview_response.json()["results"]} == {
-        "verified"
-    }
+    assert {item["disposition"] for item in preview_response.json()["results"]} == {"verified"}
     index_response = api.get("/v1/brain/sources/files_adapter/index", headers=headers)
     assert index_response.status_code == 200
     assert (
@@ -1676,8 +1749,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         item.publication.evidence_id for item in published.results if item.publication is not None
     )
     outcomes_by_version = {
-        item.extraction.version_id: item.extraction.status.value
-        for item in published.results
+        item.extraction.version_id: item.extraction.status.value for item in published.results
     }
     core.complete_fileos_run(
         ctx,
@@ -1685,8 +1757,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         run_id,
         outcomes=published.counts,
         item_outcomes={
-            item["item_id"]: outcomes_by_version[item["version_id"]]
-            for item in manifest["items"]
+            item["item_id"]: outcomes_by_version[item["version_id"]] for item in manifest["items"]
         },
         published_documents=1,
         code_revision="knowledge-test-v1",
@@ -1695,9 +1766,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     generation = core.build_fileos_index_generation(
         ctx, "files_knowledge", run_id, code_revision="knowledge-index-v1"
     )
-    core.activate_fileos_index_generation(
-        ctx, "files_knowledge", generation.generation_id, uuid4()
-    )
+    core.activate_fileos_index_generation(ctx, "files_knowledge", generation.generation_id, uuid4())
     store.ingest_page(
         ctx,
         account,
@@ -1705,9 +1774,9 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         "knowledge-email-page",
         [item("knowledge-email", body="Project Atlas current Email evidence")],
     )
-    legacy_email = store.search(
-        ctx, SearchRequest(query="Project Atlas current Email evidence")
-    )[0]["evidence_id"]
+    legacy_email = store.search(ctx, SearchRequest(query="Project Atlas current Email evidence"))[
+        0
+    ]["evidence_id"]
     current_email = core.bridge_current_email_version(
         ctx, legacy_email, uuid4(), code_revision="knowledge-current-email-v1"
     )
@@ -1923,9 +1992,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     )
     assert unified.status_code == 200
     assert unified.json()["ranking"] == "within_layer_only"
-    assert evidence_id in {
-        row["evidence_id"] for row in unified.json()["layers"]["evidence"]
-    }
+    assert evidence_id in {row["evidence_id"] for row in unified.json()["layers"]["evidence"]}
     assert unified.json()["layers"]["knowledge"][0]["object_id"] == project.object_id
     current_unified = api.post(
         "/v1/brain/unified-search",
@@ -1939,10 +2006,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         headers=headers,
     )
     assert current_unified.status_code == 200
-    assert (
-        current_unified.json()["evidence_visibility"]
-        == "current_fileos_active_generations"
-    )
+    assert current_unified.json()["evidence_visibility"] == "current_fileos_active_generations"
     assert current_unified.json()["layers"]["evidence"][0]["evidence_id"] == evidence_id
     assert current_unified.json()["layers"]["knowledge"][0]["object_id"] == project.object_id
     grouped_current = api.post(
@@ -1974,9 +2038,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert first_coverage.json()["next_cursor"] is not None
     coverage_response = api.get("/v1/brain/current-coverage?limit=50", headers=headers)
     assert coverage_response.status_code == 200
-    coverage = {
-        row["source_id"]: row for row in coverage_response.json()["results"]
-    }
+    coverage = {row["source_id"]: row for row in coverage_response.json()["results"]}
     fileos_coverage = coverage["files_knowledge"]
     assert fileos_coverage["status"] == "search_ready"
     assert fileos_coverage["active_generation"]["generation_id"] == generation.generation_id

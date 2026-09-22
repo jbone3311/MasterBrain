@@ -66,6 +66,8 @@ class _Invalid(Exception):
 @dataclass(slots=True)
 class _State:
     source: ArchiveSource
+    target_locator: str | None = None
+    selected: bytes | None = None
     members: list[ArchiveMember] = field(default_factory=list)
     skipped: list[ArchiveSkip] = field(default_factory=list)
     locators: set[str] = field(default_factory=set)
@@ -177,6 +179,8 @@ def _record(
             is_container,
         )
     )
+    if locator == state.target_locator:
+        state.selected = raw
 
 
 def _handle_member(
@@ -303,13 +307,15 @@ def _inventory(
         _inventory_tar(state, raw, depth, prefix, parent)
 
 
-def inventory_archive(raw: bytes, source: ArchiveSource) -> ArchiveResult:
+def _run_inventory(
+    raw: bytes, source: ArchiveSource, target_locator: str | None = None
+) -> tuple[ArchiveResult, bytes | None]:
     kind = _kind(raw)
     if kind is None:
         reason = "invalid_archive" if _looks_corrupt_archive(raw) else "unsupported_format"
         status = "failed" if reason == "invalid_archive" else "refused"
-        return ArchiveResult(source, status, reason, None)
-    state = _State(source)
+        return ArchiveResult(source, status, reason, None), None
+    state = _State(source, target_locator)
     try:
         _inventory(state, raw, kind, 0)
     except _Bomb:
@@ -322,7 +328,7 @@ def inventory_archive(raw: bytes, source: ArchiveSource) -> ArchiveResult:
             file_count=state.file_count,
             total_uncompressed_bytes=state.total_bytes,
             bomb_suspected=True,
-        )
+        ), None
     except _Duplicate:
         return ArchiveResult(
             source,
@@ -331,10 +337,10 @@ def inventory_archive(raw: bytes, source: ArchiveSource) -> ArchiveResult:
             kind,
             file_count=state.file_count,
             total_uncompressed_bytes=state.total_bytes,
-        )
+        ), None
     except _Invalid:
         if not state.members:
-            return ArchiveResult(source, "failed", "invalid_archive", kind)
+            return ArchiveResult(source, "failed", "invalid_archive", kind), None
         state.skip(source.locator, "unreadable", 0, None)
     reason = "bounded_archive_partial_v1" if state.skipped else "bounded_archive_v1"
     status = "partial" if state.skipped else "complete"
@@ -347,7 +353,39 @@ def inventory_archive(raw: bytes, source: ArchiveSource) -> ArchiveResult:
         tuple(state.skipped),
         state.file_count,
         state.total_bytes,
-    )
+    ), state.selected
+
+
+def inventory_archive(raw: bytes, source: ArchiveSource) -> ArchiveResult:
+    return _run_inventory(raw, source)[0]
+
+
+def read_archive_member(
+    raw: bytes,
+    source: ArchiveSource,
+    *,
+    locator: str,
+    sha256: str,
+    size_bytes: int,
+    depth: int,
+    parent_locator: str | None,
+) -> bytes:
+    """Rerun accepted inventory and return only one exact non-container member."""
+    result, selected = _run_inventory(raw, source, locator)
+    if result.status not in {"complete", "partial"} or selected is None:
+        raise ArchiveUnavailable()
+    matches = [member for member in result.members if member.locator == locator]
+    if len(matches) != 1:
+        raise ArchiveUnavailable()
+    member = matches[0]
+    if (
+        member.is_container
+        or _kind(selected) is not None
+        or (member.sha256, member.observed_size, member.depth, member.parent_locator)
+        != (sha256, size_bytes, depth, parent_locator)
+    ):
+        raise ArchiveUnavailable()
+    return selected
 
 
 def process_request(payload: bytes) -> bytes:

@@ -161,6 +161,24 @@ class ArchiveInventoryRecord:
     changed: bool
 
 
+@dataclass(frozen=True, slots=True)
+class ArchiveMemberTargetRecord:
+    inventory_id: str
+    inventory_processor_version: str
+    source_id: str
+    item_id: str
+    source_version_id: str
+    source_locator: str
+    source_sha256: str
+    source_size_bytes: int
+    source_media_type: str
+    member_locator: str
+    member_sha256: str
+    member_size_bytes: int
+    member_depth: int
+    member_parent_locator: str | None
+
+
 def _canonical_digest(value: object) -> str:
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     return hashlib.sha256(encoded).hexdigest()
@@ -290,8 +308,7 @@ class DataCoreStore:
             anchor = None
             if after is not None:
                 anchor = conn.execute(
-                    "SELECT recorded_at,id FROM message_versions "
-                    "WHERE account_id=%s AND id=%s",
+                    "SELECT recorded_at,id FROM message_versions WHERE account_id=%s AND id=%s",
                     (account_id, after),
                 ).fetchone()
                 if not anchor:
@@ -315,9 +332,7 @@ class DataCoreStore:
                     limit + 1,
                 ),
             ).fetchall()
-            self.store.audit(
-                conn, ctx, "brain.email_bridge_plan", "mail_account", str(account_id)
-            )
+            self.store.audit(conn, ctx, "brain.email_bridge_plan", "mail_account", str(account_id))
         page = rows[:limit]
         return {
             "account_id": str(account_id),
@@ -598,8 +613,7 @@ class DataCoreStore:
                 or snapshot.get("parser_version") != row["parser_version"]
                 or (subject, sender, body) != (row["subject"], row["sender"], row["clean_text"])
                 or any(
-                    isinstance(value, str) and "\x00" in value
-                    for value in (subject, sender, body)
+                    isinstance(value, str) and "\x00" in value for value in (subject, sender, body)
                 )
             ):
                 raise Conflict("Email projection no longer matches immutable evidence")
@@ -703,9 +717,7 @@ class DataCoreStore:
             )
 
             body_sha = hashlib.sha256(normalized.encode()).hexdigest()
-            document_id = stable_id(
-                "document", version_id, EMAIL_NORMALIZER_VERSION, body_sha
-            )
+            document_id = stable_id("document", version_id, EMAIL_NORMALIZER_VERSION, body_sha)
             conn.execute(
                 "INSERT INTO brain_normalized_documents(tenant_id,id,evidence_id,normalizer,"
                 "body_sha256,body) VALUES (%s,%s,%s,%s,%s,%s)",
@@ -1652,6 +1664,64 @@ class DataCoreStore:
                 True,
             )
 
+    def archive_member_target(
+        self, ctx: TenantContext, inventory_id: str, member_locator: str
+    ) -> ArchiveMemberTargetRecord:
+        """Resolve one current, accepted, non-container member through forced RLS."""
+        self.store.require(ctx, "brain.source.ingest")
+        if (
+            not isinstance(inventory_id, str)
+            or not re.fullmatch(r"archive_inventory_[a-f0-9]{32}", inventory_id)
+            or not isinstance(member_locator, str)
+            or not 1 <= len(member_locator) <= 1024
+            or "\x00" in member_locator
+            or "\\" in member_locator
+        ):
+            raise ValueError("invalid archive member selection")
+        with self.store.transaction(ctx) as conn:
+            row = conn.execute(
+                "SELECT a.id AS inventory_id,a.processor_version,a.source_id,a.item_id,"
+                "a.source_version_id,i.locator AS source_locator,v.sha256 AS source_sha256,"
+                "v.size_bytes AS source_size_bytes,v.media_type AS source_media_type,"
+                "m.locator AS member_locator,m.sha256 AS member_sha256,"
+                "m.observed_size AS member_size_bytes,m.depth AS member_depth,"
+                "m.parent_locator AS member_parent_locator "
+                "FROM brain_archive_inventories a JOIN brain_archive_members m "
+                "ON m.tenant_id=a.tenant_id AND m.inventory_id=a.id "
+                "JOIN brain_source_versions v ON v.tenant_id=a.tenant_id "
+                "AND v.id=a.source_version_id JOIN brain_source_items i "
+                "ON i.tenant_id=v.tenant_id AND i.source_id=v.source_id AND i.id=v.item_id "
+                "WHERE a.id=%s AND m.locator=%s AND NOT m.is_container "
+                "AND a.status IN ('complete','partial') "
+                "AND i.current_version_id=a.source_version_id",
+                (inventory_id, member_locator),
+            ).fetchone()
+            if not row:
+                raise NotFound()
+            self.store.audit(
+                conn,
+                ctx,
+                "brain.archive_member_selected",
+                "archive_inventory",
+                inventory_id,
+            )
+            return ArchiveMemberTargetRecord(
+                row["inventory_id"],
+                row["processor_version"],
+                row["source_id"],
+                row["item_id"],
+                row["source_version_id"],
+                row["source_locator"],
+                row["source_sha256"],
+                row["source_size_bytes"],
+                row["source_media_type"],
+                row["member_locator"],
+                row["member_sha256"],
+                row["member_size_bytes"],
+                row["member_depth"],
+                row["member_parent_locator"],
+            )
+
     def import_fileos_snapshot(
         self,
         ctx: TenantContext,
@@ -2015,13 +2085,12 @@ class DataCoreStore:
         if not 1 <= limit <= 50:
             raise ValueError("invalid coverage limit")
         with self.store.transaction(ctx) as conn:
-            generated = conn.execute(
-                "SELECT clock_timestamp() AS generated_at"
-            ).fetchone()
+            generated = conn.execute("SELECT clock_timestamp() AS generated_at").fetchone()
             assert generated is not None
-            if after is not None and not conn.execute(
-                "SELECT 1 FROM brain_sources WHERE id=%s", (after,)
-            ).fetchone():
+            if (
+                after is not None
+                and not conn.execute("SELECT 1 FROM brain_sources WHERE id=%s", (after,)).fetchone()
+            ):
                 raise NotFound()
             rows = conn.execute(
                 "WITH current_parents AS ("
@@ -2078,9 +2147,7 @@ class DataCoreStore:
                 "ON s.kind='fileos' ORDER BY s.id",
                 (after, after, limit + 1),
             ).fetchall()
-            self.store.audit(
-                conn, ctx, "brain.current_coverage_read", "brain_source", "registered"
-            )
+            self.store.audit(conn, ctx, "brain.current_coverage_read", "brain_source", "registered")
         page = rows[:limit]
         results: list[dict[str, Any]] = []
         for row in page:
@@ -2112,9 +2179,7 @@ class DataCoreStore:
                     {
                         **common,
                         "coverage": "active_generation_only",
-                        "status": (
-                            "search_ready" if generation else "no_active_generation"
-                        ),
+                        "status": ("search_ready" if generation else "no_active_generation"),
                         "active_generation": generation,
                         "latest_complete_run": latest_run,
                         "latest_completion_is_active": bool(
@@ -2253,11 +2318,14 @@ class DataCoreStore:
                     "source_effects": False,
                     "data_effects": False,
                 }
-            if after is not None and not conn.execute(
-                "SELECT 1 FROM brain_fileos_run_items "
-                "WHERE actor_id=%s AND run_id=%s AND item_id=%s",
-                (latest["actor_id"], latest["run_id"], after),
-            ).fetchone():
+            if (
+                after is not None
+                and not conn.execute(
+                    "SELECT 1 FROM brain_fileos_run_items "
+                    "WHERE actor_id=%s AND run_id=%s AND item_id=%s",
+                    (latest["actor_id"], latest["run_id"], after),
+                ).fetchone()
+            ):
                 raise NotFound()
             rows = conn.execute(
                 "SELECT ri.item_id,ri.version_id,ri.outcome,e.id AS evidence_id,"
@@ -2316,9 +2384,7 @@ class DataCoreStore:
                             "text": text,
                             "sha256": hashlib.sha256(text.encode()).hexdigest(),
                         }
-                        for ordinal, (start, end, text) in enumerate(
-                            deterministic_chunks(body)
-                        )
+                        for ordinal, (start, end, text) in enumerate(deterministic_chunks(body))
                     ]
                     stored = chunks_by_document.get(document_id, [])
                     valid = (
@@ -2341,9 +2407,7 @@ class DataCoreStore:
                         "stored_chunks": stored_chunks,
                     }
                 )
-            self.store.audit(
-                conn, ctx, "brain.fileos_rebuild_preview", "brain_source", source_id
-            )
+            self.store.audit(conn, ctx, "brain.fileos_rebuild_preview", "brain_source", source_id)
             return {
                 "source_id": source_id,
                 "status": "complete",
@@ -2419,12 +2483,8 @@ class DataCoreStore:
                     if total_text_bytes > MAX_GENERATION_TEXT_BYTES:
                         raise ValueError("index generation text bound exceeded")
                     body_sha = hashlib.sha256(encoded).hexdigest()
-                    if (
-                        row["body_sha256"] != body_sha
-                        or document_id
-                        != stable_id(
-                            "document", row["version_id"], row["normalizer"], body_sha
-                        )
+                    if row["body_sha256"] != body_sha or document_id != stable_id(
+                        "document", row["version_id"], row["normalizer"], body_sha
                     ):
                         raise Conflict("normalized document identity changed")
                     disposition = "indexed"
@@ -2591,9 +2651,7 @@ class DataCoreStore:
             or not isinstance(idempotency_key, UUID)
         ):
             raise ValueError("invalid index activation request")
-        request_hash = _canonical_digest(
-            {"source_id": source_id, "generation_id": generation_id}
-        )
+        request_hash = _canonical_digest({"source_id": source_id, "generation_id": generation_id})
         with self.store.transaction(ctx) as conn:
             conn.execute(
                 "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
@@ -2647,9 +2705,7 @@ class DataCoreStore:
                 ),
             ).fetchone()
             assert row is not None
-            return IndexActivation(
-                source_id, generation_id, previous_id, row["activated_at"], True
-            )
+            return IndexActivation(source_id, generation_id, previous_id, row["activated_at"], True)
 
     def fileos_index_status(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
         """Return the active immutable index generation without exposing content."""
@@ -2712,9 +2768,7 @@ class DataCoreStore:
                 "ORDER BY rank DESC,c.id LIMIT %s",
                 (query, query, active["generation_id"], query, limit),
             ).fetchall()
-            self.store.audit(
-                conn, ctx, "brain.fileos_active_search", "brain_source", source_id
-            )
+            self.store.audit(conn, ctx, "brain.fileos_active_search", "brain_source", source_id)
             return [SearchHit(**row) for row in rows]
 
     def search_current_fileos(
