@@ -362,6 +362,50 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert by_name["image.bin"].extraction.status is ExtractionStatus.UNSUPPORTED
     hits = DataCoreStore(store).search(ctx, "searchable source")
     assert len(hits) == 1 and hits[0].locator == "good.txt"
+    token = secrets.token_urlsafe(40)
+    api = TestClient(
+        create_app(
+            store,
+            TokenRegistry(
+                [
+                    Credential(
+                        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+                        tenant_id=ctx.tenant_id,
+                        actor_id=ctx.actor_id,
+                        scopes={
+                            "brain.search",
+                            "brain.evidence.read",
+                            "brain.content.read",
+                            "brain.changes.read",
+                        },
+                        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+                        client_kind="assistant",
+                    )
+                ]
+            ),
+        )
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+    searched = api.post(
+        "/v1/brain/search", json={"query": "searchable source", "limit": 5}, headers=headers
+    )
+    assert searched.status_code == 200
+    evidence_id = searched.json()["results"][0]["evidence_id"]
+    evidence = api.get(f"/v1/brain/evidence/{evidence_id}", headers=headers)
+    assert evidence.status_code == 200
+    good_item = next(item for item in manifest["items"] if item["locator"] == "good.txt")
+    assert evidence.json()["sha256"] == good_item["digest"]["value"]
+    content = api.post(
+        f"/v1/brain/evidence/{evidence_id}/content",
+        json={"max_chars": 12},
+        headers=headers,
+    )
+    assert content.status_code == 200
+    assert content.json()["truncated"] is True and content.json()["returned_chars"] == 12
+    changes = api.get("/v1/brain/changes?limit=1", headers=headers)
+    assert changes.status_code == 200
+    assert len(changes.json()["results"]) == 1
+    assert changes.json()["next_cursor"] is not None
 
 
 def test_foreign_tenant_cannot_see_evidence(

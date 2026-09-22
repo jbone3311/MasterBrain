@@ -39,6 +39,8 @@ from email_brain.schemas import (
     SearchRequest,
 )
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
+from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.schemas import BrainSearchRequest, EvidenceContentRequest
 
 log = logging.getLogger("email_brain.requests")
 WEB = Path(__file__).parent / "web"
@@ -86,6 +88,7 @@ def create_app(
     store: Store,
     registry: Authenticator,
     *,
+    brain_store: DataCoreStore | None = None,
     recovery_parser_version: str | None = None,
     document_processor_version: str | None = None,
     browser_auth: BrowserAuth | None = None,
@@ -103,6 +106,7 @@ def create_app(
     document_jobs = DocumentJobs(store, document_processor_version)
     message_reader = MessageReader(store)
     memory = Memory(store)
+    brain = brain_store or DataCoreStore(store)
     if browser_auth is not None:
         if browser_auth.authenticator.store is not store:
             raise ValueError("browser and API must share the same Store")
@@ -355,6 +359,54 @@ def create_app(
             "untrusted_content": True,
             "results": store.search(principal.context, body),
         }
+
+    @app.post("/v1/brain/search")
+    def brain_search(
+        body: BrainSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        hits = brain.search(principal.context, body.query, limit=body.limit)
+        return {
+            "mode": "lexical",
+            "results": [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ],
+            "page": {"next_cursor": None, "truncated": False},
+            "policy": {"scope": "brain.search", "redactions": []},
+            "untrusted_content": True,
+        }
+
+    @app.get("/v1/brain/evidence/{evidence_id}")
+    def brain_evidence(
+        evidence_id: str,
+        principal: Annotated[Principal, Depends(require("brain.evidence.read"))],
+    ) -> dict[str, Any]:
+        return brain.evidence(principal.context, evidence_id)
+
+    @app.post("/v1/brain/evidence/{evidence_id}/content")
+    def brain_evidence_content(
+        evidence_id: str,
+        body: EvidenceContentRequest,
+        principal: Annotated[Principal, Depends(require("brain.content.read"))],
+    ) -> dict[str, Any]:
+        return brain.evidence_content(principal.context, evidence_id, max_chars=body.max_chars)
+
+    @app.get("/v1/brain/changes")
+    def brain_changes(
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        after: str | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return brain.changes(principal.context, after=after, limit=limit)
 
     @app.get("/v1/accounts/{account_id}/quarantine")
     def quarantine(

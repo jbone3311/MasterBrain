@@ -2,7 +2,8 @@
 
 The Brain API is MasterBrain's model-neutral, least-privilege access layer. It serves
 humans and authorized clients such as Claude, Grok, ChatGPT, and future assistants.
-This is the target contract; the current API remains an Email-only prototype.
+The first implemented read slice lives under `/v1/brain`; KnowledgeCore resources
+and synthesis remain target contracts.
 
 ## Progressive access
 
@@ -18,15 +19,18 @@ objects, general SQL, or an unbounded corpus dump.
 
 ## Versioned resources
 
-- `POST /v1/search` — hybrid cross-source search with source/type/time filters.
+- `POST /v1/brain/search` — implemented compact DataCore lexical search.
+- `GET /v1/brain/evidence/{id}` — implemented metadata/citation expansion.
+- `POST /v1/brain/evidence/{id}/content` — implemented separately scoped bounded text.
+- `GET /v1/brain/changes` — implemented cursor-bounded DataCore change feed.
+- `POST /v1/search` — retained Email capability search during compatibility migration.
 - `POST /v1/answers` — bounded synthesis from retrieved evidence; returns citations.
 - `GET /v1/entities/{id}` and `/relationships` — graph objects and cited attributes.
 - `GET /v1/projects/{id}` — project state, members, commitments, events, evidence.
 - `GET /v1/claims/{id}` — claim versions, support, contradictions, and supersession.
 - `GET /v1/timeline` — cursor/time-bounded events.
-- `GET /v1/evidence/{id}` — metadata and safe preview.
-- `POST /v1/evidence/{id}/content` — separately authorized verified content access.
-- `GET /v1/changes` — non-consuming source/DataCore/KnowledgeCore change feed.
+- Future unified evidence/change routes will compose Email, DataCore and KnowledgeCore
+  only after their evidence identities share a proven migration path.
 - `POST /v1/proposals` — typed proposed change; never direct provider/filesystem access.
 
 Resource names may evolve through an ADR before implementation. IDs are opaque and

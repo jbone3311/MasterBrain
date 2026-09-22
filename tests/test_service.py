@@ -15,6 +15,7 @@ from email_brain.auth import Credential, TokenRegistry
 from email_brain.inference import Route, RoutingPolicy, route, validate_classification
 from email_brain.normalize import normalize
 from email_brain.store import Store
+from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 
 TOKEN = "synthetic-test-token-not-a-real-credential-000000"
 
@@ -132,6 +133,93 @@ def test_health_is_not_readiness(client: TestClient) -> None:
 def test_no_action_endpoint(client: TestClient) -> None:
     for path in ("/v1/actions", "/v1/send", "/v1/delete", "/v1/sql"):
         assert client.post(path, json={}).status_code == 404
+
+
+def test_brain_api_progressive_scopes_and_bounds() -> None:
+    store = MagicMock(spec=Store)
+    brain = MagicMock(spec=DataCoreStore)
+    brain.search.return_value = [
+        SearchHit(
+            "chunk_" + "1" * 32,
+            "document_" + "2" * 32,
+            "evidence_" + "3" * 32,
+            "files_test",
+            "folder/report.txt",
+            "bounded untrusted excerpt",
+            0.5,
+        )
+    ]
+    brain.evidence.return_value = {
+        "id": "evidence_" + "3" * 32,
+        "sha256": "a" * 64,
+        "original_content_available": False,
+        "untrusted_content": True,
+    }
+    brain.evidence_content.return_value = {
+        "content": "bounded",
+        "truncated": False,
+        "untrusted_content": True,
+    }
+    brain.changes.return_value = {"results": [], "next_cursor": None, "limit": 25}
+    evidence_id = "evidence_" + "3" * 32
+
+    search_client = TestClient(create_app(store, registry({"brain.search"}), brain_store=brain))
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = search_client.post(
+        "/v1/brain/search", json={"query": "report", "limit": 5}, headers=headers
+    )
+    assert response.status_code == 200
+    assert response.json()["results"][0]["evidence_id"] == evidence_id
+    assert response.json()["untrusted_content"] is True
+    assert (
+        search_client.get(f"/v1/brain/evidence/{evidence_id}", headers=headers).status_code == 403
+    )
+
+    evidence_client = TestClient(
+        create_app(store, registry({"brain.evidence.read"}), brain_store=brain)
+    )
+    assert (
+        evidence_client.get(f"/v1/brain/evidence/{evidence_id}", headers=headers).status_code == 200
+    )
+    assert (
+        evidence_client.post(
+            f"/v1/brain/evidence/{evidence_id}/content",
+            json={"max_chars": 100},
+            headers=headers,
+        ).status_code
+        == 403
+    )
+
+    content_client = TestClient(
+        create_app(store, registry({"brain.content.read"}), brain_store=brain)
+    )
+    assert (
+        content_client.post(
+            f"/v1/brain/evidence/{evidence_id}/content",
+            json={"max_chars": 100},
+            headers=headers,
+        ).json()["content"]
+        == "bounded"
+    )
+    assert (
+        content_client.post(
+            f"/v1/brain/evidence/{evidence_id}/content",
+            json={"max_chars": 16001},
+            headers=headers,
+        ).status_code
+        == 422
+    )
+
+    changes_client = TestClient(
+        create_app(store, registry({"brain.changes.read"}), brain_store=brain)
+    )
+    assert changes_client.get("/v1/brain/changes?limit=25", headers=headers).status_code == 200
+
+
+def test_brain_write_scopes_are_worker_only() -> None:
+    for scope in ("brain.source.ingest", "brain.document.publish"):
+        with pytest.raises(ValueError, match="worker-only"):
+            registry({scope}, "human")
 
 
 def test_expiry_and_bad_token() -> None:

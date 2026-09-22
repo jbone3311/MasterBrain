@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-050 Brain API read slice](adr/050_brain_api_read_slice.md) adds source-neutral,
+progressive search/evidence/content/change endpoints with separate scopes and bounded
+untrusted content while preserving legacy Email API compatibility.
+
 [ADR-049 FileOS text extraction](adr/049_fileos_text_extraction.md) adds bounded,
 hash-reverified, read-only text/Markdown/HTML/CSV extraction with explicit outcomes
 and live parity against the pinned FOS-Master donor.

@@ -26,6 +26,12 @@ SCOPES = frozenset(
         "email.ingest",
         "email.process",
         "email.document.process",
+        "brain.search",
+        "brain.evidence.read",
+        "brain.content.read",
+        "brain.changes.read",
+        "brain.source.ingest",
+        "brain.document.publish",
     }
 )
 
@@ -76,7 +82,14 @@ class TokenRegistry:
         if any(c.client_kind != "human" and "email.review" in c.scopes for c in credentials):
             raise ValueError("review is human-only")
         if any(
-            c.client_kind != "worker" and {"email.process", "email.document.process"} & c.scopes
+            c.client_kind != "worker"
+            and {
+                "email.process",
+                "email.document.process",
+                "brain.source.ingest",
+                "brain.document.publish",
+            }
+            & c.scopes
             for c in credentials
         ):
             raise ValueError("processing is worker-only")

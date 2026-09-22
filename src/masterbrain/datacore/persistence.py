@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Iterator, Mapping
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -27,6 +28,7 @@ MAX_MANIFEST_ITEMS = 10_000
 MAX_NORMALIZED_BYTES = 1_048_576
 CHUNK_CHARACTERS = 1_000
 NORMALIZER_VERSION = "plain-text-v1"
+_IDENTITY = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -388,4 +390,97 @@ class DataCoreStore:
                 "ORDER BY rank DESC,c.id LIMIT %s",
                 (query, query, query, limit),
             ).fetchall()
+            self.store.audit(conn, ctx, "brain.search", "query")
         return [SearchHit(**row) for row in rows]
+
+    def evidence(self, ctx: TenantContext, evidence_id: str) -> dict[str, Any]:
+        self.store.require(ctx, "brain.evidence.read")
+        if not _IDENTITY.fullmatch(evidence_id):
+            raise NotFound()
+        with self.store.transaction(ctx) as conn:
+            row = conn.execute(
+                "SELECT e.id,e.sha256,e.storage,e.retained,e.created_at,"
+                "v.id AS source_version_id,v.observed_at,v.size_bytes,v.media_type,"
+                "v.source_id,i.id AS source_item_id,i.locator,s.kind AS source_kind,"
+                "d.id AS document_id,d.normalizer,d.created_at AS indexed_at,"
+                "(SELECT count(*) FROM brain_chunks c WHERE c.tenant_id=e.tenant_id "
+                "AND c.document_id=d.id) AS chunk_count "
+                "FROM brain_evidence e JOIN brain_source_versions v ON "
+                "v.tenant_id=e.tenant_id AND v.id=e.source_version_id "
+                "JOIN brain_source_items i ON i.tenant_id=v.tenant_id AND i.id=v.item_id "
+                "JOIN brain_sources s ON s.tenant_id=v.tenant_id AND s.id=v.source_id "
+                "LEFT JOIN LATERAL (SELECT nd.id,nd.normalizer,nd.created_at "
+                "FROM brain_normalized_documents nd WHERE nd.tenant_id=e.tenant_id "
+                "AND nd.evidence_id=e.id ORDER BY nd.created_at DESC,nd.id DESC LIMIT 1) d "
+                "ON true WHERE e.id=%s",
+                (evidence_id,),
+            ).fetchone()
+            if not row:
+                raise NotFound()
+            self.store.audit(conn, ctx, "brain.evidence_read", "brain_evidence", evidence_id)
+            return {**row, "original_content_available": False, "untrusted_content": True}
+
+    def evidence_content(
+        self, ctx: TenantContext, evidence_id: str, *, max_chars: int = 4000
+    ) -> dict[str, Any]:
+        self.store.require(ctx, "brain.content.read")
+        if not _IDENTITY.fullmatch(evidence_id) or not 1 <= max_chars <= 16_000:
+            raise ValueError("invalid evidence content request")
+        with self.store.transaction(ctx) as conn:
+            row = conn.execute(
+                "SELECT d.id AS document_id,d.body,d.body_sha256,d.normalizer,d.created_at "
+                "FROM brain_normalized_documents d WHERE d.evidence_id=%s "
+                "ORDER BY d.created_at DESC,d.id DESC LIMIT 1",
+                (evidence_id,),
+            ).fetchone()
+            if not row:
+                raise NotFound()
+            body = row.pop("body")
+            self.store.audit(conn, ctx, "brain.content_read", "brain_evidence", evidence_id)
+            return {
+                **row,
+                "evidence_id": evidence_id,
+                "content": body[:max_chars],
+                "truncated": len(body) > max_chars,
+                "returned_chars": min(len(body), max_chars),
+                "untrusted_content": True,
+            }
+
+    def changes(
+        self,
+        ctx: TenantContext,
+        *,
+        after: str | None = None,
+        limit: int = 25,
+    ) -> dict[str, Any]:
+        self.store.require(ctx, "brain.changes.read")
+        if after is not None and not _IDENTITY.fullmatch(after):
+            raise NotFound()
+        if not 1 <= limit <= 50:
+            raise ValueError("invalid change limit")
+        with self.store.transaction(ctx) as conn:
+            anchor = None
+            if after is not None:
+                anchor = conn.execute(
+                    "SELECT recorded_at,id FROM brain_change_events WHERE id=%s", (after,)
+                ).fetchone()
+                if not anchor:
+                    raise NotFound()
+            rows = conn.execute(
+                "SELECT id,source_id,item_id,version_id,kind,recorded_at "
+                "FROM brain_change_events WHERE (%s::timestamptz IS NULL OR "
+                "(recorded_at,id)>(%s,%s)) ORDER BY recorded_at,id LIMIT %s",
+                (
+                    anchor["recorded_at"] if anchor else None,
+                    anchor["recorded_at"] if anchor else None,
+                    after,
+                    limit + 1,
+                ),
+            ).fetchall()
+            self.store.audit(conn, ctx, "brain.changes_read", "change_feed")
+        page = rows[:limit]
+        return {
+            "results": page,
+            "next_cursor": page[-1]["id"] if len(rows) > limit and page else None,
+            "limit": limit,
+        }

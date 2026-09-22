@@ -21,6 +21,8 @@
 - First read-only FileOS extraction tranche: text, Markdown, HTML and CSV with
   source-version revalidation, explicit accounting and donor parity.
 - End-to-end snapshot/import/extract/index/search and sibling-failure isolation.
+- Progressive Brain API read slice for compact search, evidence metadata, separately
+  scoped bounded content and change publication.
 
 ## Deferred by design
 
