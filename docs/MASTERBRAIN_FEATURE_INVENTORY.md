@@ -22,7 +22,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Held-out-test and cross-domain dedupe protections | Donor only; required invariant | DataCore policy + effect broker |
 | FileOS | Intake classification/routing/preflight | Donor only | FileOS adapter + DataCore |
 | FileOS | PDF/DOCX/XLSX text/metadata extraction and indexing | Isolated shared tranche; hosted container/SQL gate green | DataCore |
-| FileOS | Authenticated idempotent snapshot publication | Explicit one-shot command implemented; hosted SQL pending | DataCore operator |
+| FileOS | Authenticated idempotent snapshot publication | Explicit one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
 
 ## DataCore

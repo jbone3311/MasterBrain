@@ -2,6 +2,36 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified authenticated FileOS publication command
+
+Runtime revision **e7f319cae5a68e4a2072a326fba9ab853cb15643** and the
+tenant-isolated test correction **aaaf156a0c8ad6f7243fd11300da2b4309f59ded** passed
+[CI 35713893737](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893737)
+and [restore 35713893769](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893769),
+observed 2026-09-22 Pacific.
+
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated the suite. Ruff, strict mypy over **65 source files**,
+  **134 Node contracts**, and documentation verification over **120 Markdown files /
+  774 local paths and fragments** passed.
+- Real PostgreSQL cases proved non-mutating preflight, least-privileged publication,
+  exact idempotent replay, deterministic no-duplicate documents, source byte/mtime
+  preservation, privileged DSN refusal and revoked local worker refusal.
+- All restricted runtime boundaries stayed green: five real MIME-container cases, 15
+  Email PDF-container cases and five FileOS PDF/DOCX/XLSX container/SQL cases. The
+  populated PostgreSQL 17 restore passed in 26 seconds.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. Local SQL skips
+  are not passes; the hosted suite exercised the new two-case SQL module.
+- The first hosted run exposed a test-only cross-tenant counting error: the denial
+  assertion observed the successful fixture from another tenant. The query was scoped
+  to its own tenant; runtime code and permissions were unchanged, and the complete
+  rerun passed.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. This command adds no scheduler,
+  public upload, durable whole-run completion receipt, file effect, cutover, rename or
+  retirement.
+
 ## Verified isolated FileOS PDF and Office extraction
 
 Runtime/test revision **a6488c66ff5027789be093374b9b269f2c945fa2** adds the

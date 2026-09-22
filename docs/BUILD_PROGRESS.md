@@ -2,7 +2,7 @@
 
 ## Active checkpoint
 
-**Checkpoint 3C — enrolled incremental FileOS operation.** Work occurs on
+**Checkpoint 3D — durable FileOS run receipt and freshness.** Work occurs on
 `codex/masterbrain-foundation` in PR #4.
 
 ## Completed gates
@@ -33,15 +33,17 @@
 - Checkpoint 3B isolated PDF/DOCX/XLSX revision `a6488c6` passed hosted
   [CI 35711403192](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403192)
   and [restore 35711403138](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403138).
+- Checkpoint 3C authenticated publication runtime `e7f319c` plus tenant-isolated test
+  correction `aaaf156` passed hosted
+  [CI 35713893737](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893737)
+  and [restore 35713893769](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893769).
 
 ## Current work
 
-- Narrow private-config operator command now validates and publishes an exact snapshot
-  without granting source-write authority; hosted PostgreSQL gate is pending.
-- Exact request replay and source drift are visible; durable whole-run completion
-  receipts and automated scheduling remain the next operational step.
-- Exercise text and isolated document paths together through the controller in hosted
-  PostgreSQL/container gates.
+- Add an append-only completion receipt only after every manifest item is accounted,
+  with exact run identity, outcome counts and processor/code provenance.
+- Expose bounded source freshness/latest-run state without paths or content.
+- Prove crash-prefix retry, receipt replay/conflict, immutability, RLS and restore.
 
 ## Deferred by design
 

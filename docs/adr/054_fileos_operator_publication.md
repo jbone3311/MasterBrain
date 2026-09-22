@@ -1,7 +1,6 @@
 # ADR-054 — Explicit authenticated FileOS publication
 
-Status: accepted for the additive prototype tranche on 2026-09-22, pending the first
-hosted PostgreSQL gate.
+Status: accepted and verified for the additive prototype tranche on 2026-09-22.
 
 ## Decision
 
@@ -36,6 +35,12 @@ Output contains source ID, counts and outcome codes only—never the root, locat
 DSN, token, content or parser diagnostics. A rejected or changed sibling is explicit
 and does not authorize a source write. Automated scheduling, live root enrollment,
 cursoring and a durable whole-run completion receipt remain later work.
+
+Runtime revision `e7f319c` plus tenant-isolated assertion correction `aaaf156` passed
+[CI 35713893737](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893737)
+and [restore 35713893769](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893769).
+The hosted cases cover successful publication/replay/no-mutation, privileged-role
+refusal and revoked-local-worker refusal.
 
 ## Rollback
 

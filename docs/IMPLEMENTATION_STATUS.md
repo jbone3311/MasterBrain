@@ -23,7 +23,7 @@ mean hosted, live-source accepted, or production ready.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted
   worker image with archive/active-content bounds; hosted container and restore gates green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
-  idempotent replay and repeated authorization; hosted PostgreSQL acceptance pending.
+  idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
