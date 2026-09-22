@@ -99,6 +99,7 @@ roadmap item is not an implementation claim.
 - [FileOS archive donor audit and extraction plan](docs/FILEOS_ARCHIVE_EXTRACTION.md)
 - [Archive manifest persistence plan](docs/ARCHIVE_MANIFEST_PERSISTENCE.md)
 - [Hash-bound archive member read contract](docs/ARCHIVE_MEMBER_READ.md)
+- [Archive member text derivative plan](docs/ARCHIVE_MEMBER_TEXT.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)

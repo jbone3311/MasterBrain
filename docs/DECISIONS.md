@@ -10,18 +10,22 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-078](adr/078_archive_member_text_derivative.md) gives one explicitly selected
+archive member its own derived evidence identity before bounded text publication.
+Implementation is pending.
+
 [ADR-077](adr/077_hash_bound_archive_member_read.md) defines a separate isolated
 command that returns at most one persisted non-container member by exact source and
-member hash/size, capped at 8 MiB and still unscanned. Implementation is pending.
+member hash/size, capped at 8 MiB and still unscanned. Implemented in `c7d2d27`.
 
 [ADR-076](adr/076_archive_manifest_persistence.md) defines an append-only forced-RLS
 hash-manifest ledger for accepted archive inventories. It creates no child evidence,
-member reads or search visibility; implementation is pending.
+member reads or search visibility. Implemented in `03dbb98` with correction `08ccb68`.
 
 [ADR-075](adr/075_fileos_archive_inventory_worker.md) defines an isolated in-memory
 ZIP/TAR inventory worker before any member-byte or search publication. It preserves
 the pinned donor's bounded recognition/accounting contract while explicitly refusing
-duplicate-name ambiguity and bomb publication; implementation is pending.
+duplicate-name ambiguity and bomb publication. Implemented in `26473de`.
 
 [ADR-074](adr/074_sealed_email_part_bridge_batch.md) defines a digest-bound,
 single-kind attachment or approved-document plan with fixed per-item keys, fail-stop
