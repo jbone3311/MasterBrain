@@ -2,6 +2,31 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified current-only bridged Email retrieval
+
+Revision **743fb9e** passed
+[CI 35737349912](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35737349912)
+and [restore 35737349873](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35737349873),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.search_current_email` and `POST /v1/brain/email-search` return only
+  explicitly bridged Email documents whose shared current pointer and legacy immutable
+  raw/parser version still agree and whose message is not deleted or quarantined.
+- Hosted PostgreSQL proved initial visibility, update-before-rebridge disappearance,
+  new-version visibility, bounds, and immediate delete hiding while retained DataCore
+  history remains queryable. API contracts prove explicit `brain.search` scope,
+  current-visibility labeling and bounded untrusted results.
+- Hosted CI and deployment each passed **2,430 Python tests** with PostgreSQL and no
+  skips; **134 Node contracts**, five MIME-container, 15 Email PDF-container and five
+  FileOS document-container cases passed. Documentation covered **130 Markdown files /
+  791 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **62 tables / 230
+  rows / two tenants / four encrypted objects / two identity bindings** in 15.54 seconds.
+- The route is additive and incomplete by definition: unbridged Email is absent.
+  Legacy Email search remains authoritative. No automatic bridge, attachment migration,
+  global ranking, unified-mode redirect or mailbox effect is implied. FOS-Master remains
+  unchanged at **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified private one-version Email bridge operator
 
 Revision **f600508** passed

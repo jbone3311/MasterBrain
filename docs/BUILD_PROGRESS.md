@@ -2,10 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4C — current bridged Email retrieval.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define a shared read that returns only
-explicitly bridged Email evidence whose legacy message remains current, visible and
-tenant-authorized at query time. Existing Email search stays authoritative.
+**Checkpoint 4D — Email attachment evidence bridge design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Inventory attachment receipt, approved
+document-extraction and raw MIME part identities; define a replayable mapping into
+shared part/evidence/document/provenance primitives. Do not copy unsafe bytes, flatten
+occurrences, or redirect existing attachment/document search before parity.
 
 ## Completed gates
 
@@ -70,13 +71,16 @@ tenant-authorized at query time. Existing Email search stays authoritative.
 - Checkpoint 4B private Email bridge operator revision `f600508` passed hosted
   [CI 35736010764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010764)
   and [restore 35736010659](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010659).
+- Checkpoint 4C current bridged Email search revision `743fb9e` passed hosted
+  [CI 35737349912](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35737349912)
+  and [restore 35737349873](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35737349873).
 
 ## Current work
 
-- Define current-only bridged Email visibility against both shared and legacy current
-  pointers, including later update/delete/quarantine behavior.
-- Expose a bounded read route only after SQL identity parity, scope, RLS and regression
-  tests pass; do not redirect the existing Email endpoint.
+- Inventory legacy attachment occurrence/document identities, statuses, MIME locators,
+  extraction revisions and parser provenance against DataCore's target part model.
+- Write the attachment bridge ADR and synthetic golden corpus before schema or runtime
+  changes. Preserve every occurrence and original MIME evidence.
 
 ## Deferred by design
 
