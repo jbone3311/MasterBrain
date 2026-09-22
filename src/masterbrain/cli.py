@@ -15,6 +15,7 @@ from uuid import UUID
 from masterbrain.datacore.dedup import DEFAULT_CONFIG, compare_files, file_hash, find_duplicates
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.fileos_controller import run_fileos_controller
+from masterbrain.fileos_index_controller import run_fileos_index_controller
 
 
 def _json(value: Any) -> str:
@@ -99,6 +100,13 @@ def build_parser() -> argparse.ArgumentParser:
     publish.add_argument("--config", type=Path, required=True)
     publish.add_argument("--idempotency-key", type=UUID, required=True)
     publish.add_argument("--check", action="store_true")
+    index = file_commands.add_parser("index", help="Build/activate a FileOS index generation")
+    index.add_argument("--config", type=Path, required=True)
+    target = index.add_mutually_exclusive_group(required=True)
+    target.add_argument("--run-id", type=UUID)
+    target.add_argument("--generation-id")
+    index.add_argument("--idempotency-key", type=UUID, required=True)
+    index.add_argument("--check", action="store_true")
     return parser
 
 
@@ -135,6 +143,22 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(
                 _json(
                     run_fileos_controller(args.config, dsn, args.idempotency_key, check=args.check)
+                )
+            )
+        elif args.command == "fileos" and args.file_command == "index":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_fileos_index_controller(
+                        args.config,
+                        dsn,
+                        args.idempotency_key,
+                        run_id=args.run_id,
+                        generation_id=args.generation_id,
+                        check=args.check,
+                    )
                 )
             )
     except (OSError, ValueError):

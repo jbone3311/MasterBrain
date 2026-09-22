@@ -23,6 +23,9 @@ exact tested commits and results.
   readiness, append-only activation/rollback receipts and active-generation Brain API
   reads (ADR-058). FOS-Master and source files remain unchanged; hosted verification
   is recorded only after the branch gates pass.
+- Added an explicit private FileOS index command for build-and-activate or activation-
+  only rollback, with exact per-operation worker scopes, non-consuming check mode,
+  reauthentication and scrubbed receipts (ADR-059). It is not a scheduler or cutover.
 
 ### Tools discussion (documentation only)
 

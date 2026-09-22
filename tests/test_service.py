@@ -218,7 +218,7 @@ def test_brain_api_progressive_scopes_and_bounds() -> None:
 
 
 def test_brain_write_scopes_are_worker_only() -> None:
-    for scope in ("brain.source.ingest", "brain.document.publish"):
+    for scope in ("brain.source.ingest", "brain.document.publish", "brain.index.activate"):
         with pytest.raises(ValueError, match="worker-only"):
             registry({scope}, "human")
 

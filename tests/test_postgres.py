@@ -516,7 +516,16 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert core.fileos_index_status(ctx, "files_adapter")["active_generation"][
         "generation_id"
     ] == first_generation.generation_id
-    assert len(core.search_fileos_active(ctx, "files_adapter", "searchable source")) == 1
+    active_first_hits = core.search_fileos_active(ctx, "files_adapter", "searchable source")
+    existing_first_hits = core.search(ctx, "searchable source")
+    assert len(active_first_hits) == 1
+    assert [
+        (hit.chunk_id, hit.document_id, hit.evidence_id, hit.source_id, hit.locator)
+        for hit in active_first_hits
+    ] == [
+        (hit.chunk_id, hit.document_id, hit.evidence_id, hit.source_id, hit.locator)
+        for hit in existing_first_hits
+    ]
     assert core.search_fileos_active(ctx, "files_adapter", "after") == []
 
     unsupported.unlink()
@@ -567,6 +576,22 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         uuid4(),
     )
     assert second_activation.previous_generation_id == first_generation.generation_id
+    for query in (
+        "MasterBrain searchable",
+        "source truth",
+        "after",
+        "term-not-present-anywhere",
+    ):
+        active_identity = [
+            (hit.chunk_id, hit.document_id, hit.evidence_id, hit.source_id, hit.locator)
+            for hit in core.search_fileos_active(ctx, "files_adapter", query)
+        ]
+        existing_identity = [
+            (hit.chunk_id, hit.document_id, hit.evidence_id, hit.source_id, hit.locator)
+            for hit in core.search(ctx, query)
+            if hit.source_id == "files_adapter"
+        ]
+        assert active_identity == existing_identity
     after_hits = core.search_fileos_active(ctx, "files_adapter", "after")
     assert len(after_hits) == 1 and after_hits[0].locator == "changed.txt"
     rollback = core.activate_fileos_index_generation(

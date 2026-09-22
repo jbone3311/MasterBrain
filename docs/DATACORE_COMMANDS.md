@@ -85,6 +85,42 @@ an immutable completion ID/time/recorded flag, and the invariant
 This is explicit one-snapshot operation, not a watcher or automatic live-root
 enrollment.
 
+## Build, activate or roll back a FileOS index generation
+
+After a snapshot has a completed run receipt, validate a one-shot generation command:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain fileos index \
+  --config /private/operator/fileos-primary-index.json \
+  --run-id 93c5a004-81ab-45b6-8652-e8ced2b40e47 \
+  --idempotency-key 29f84819-a8ce-4235-9910-54404f85f8c7 \
+  --check
+```
+
+Remove `--check` to build an immutable generation for that exact latest completed run
+and activate it. The private closed configuration binds `source_id`,
+`credentials_file`, `token_file` and `code_revision`. Its worker must have exactly
+`brain.document.publish` and `brain.index.activate`. A crash after generation readiness
+but before activation is safe: reuse the exact run, code revision and activation key.
+
+Rollback activates an existing ready generation without rebuilding it:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain fileos index \
+  --config /private/operator/fileos-primary-rollback.json \
+  --generation-id index_generation_opaque \
+  --idempotency-key ad27bd64-313e-4b4a-8788-c7a3e782276c \
+  --check
+```
+
+Activation-only credentials must have exactly `brain.index.activate`; their config may
+omit `code_revision`. Use a fresh key for each new activation intent and reuse it only
+for an uncertain retry of the same generation. Output contains opaque generation IDs,
+counts, digests, receipt times and replay flags only. The command never scans or
+changes source files and does not redirect existing global search.
+
 ## Donor parity
 
 ```sh

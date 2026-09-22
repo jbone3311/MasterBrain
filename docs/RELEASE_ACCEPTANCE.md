@@ -27,6 +27,9 @@ operator, date, result, exceptions and rollback receipt.
   is completion/plan/code/chunker-bound, idempotent, transactionally closed and
   immutable; activation is separately authorized and prior-generation reactivation
   proves rollback before any global search cutover.
+- Generation check mode is non-consuming; build and rollback credentials have exact
+  operation scopes, revocation fences activation, and output contains no paths,
+  content, credentials or database diagnostics.
 - Source freshness advances only on an immutable receipt whose terminal counts cover
   the exact intake manifest; crash prefixes and conflicts never report complete.
 - Inventory membership balances exactly against its completion receipt; absence is

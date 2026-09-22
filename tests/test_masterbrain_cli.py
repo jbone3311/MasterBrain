@@ -103,3 +103,51 @@ def test_cli_publish_uses_masterbrain_dsn_and_scrubs_it(
         "source_effects": False,
     }
     assert dsn not in output
+
+
+def test_cli_index_uses_masterbrain_dsn_and_explicit_target(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    key = "93c5a004-81ab-45b6-8652-e8ced2b40e47"
+    run_id = "b22f0f5c-a784-46a1-95a7-b2b96e1f8396"
+    config = tmp_path / "index.json"
+    config.write_text("not opened by this dispatch test")
+    dsn = "postgresql://secret:secret@example.invalid/private"
+    monkeypatch.setenv("MASTERBRAIN_DSN", dsn)
+    monkeypatch.setattr(
+        cli,
+        "run_fileos_index_controller",
+        lambda path, received_dsn, received_key, **options: {
+            "config": path == config,
+            "dsn": received_dsn == dsn,
+            "key": str(received_key) == key,
+            "run_id": str(options["run_id"]) == run_id,
+            "generation_id": options["generation_id"],
+            "check": options["check"],
+            "source_effects": False,
+        },
+    )
+    main(
+        [
+            "fileos",
+            "index",
+            "--config",
+            str(config),
+            "--run-id",
+            run_id,
+            "--idempotency-key",
+            key,
+            "--check",
+        ]
+    )
+    output = capsys.readouterr().out
+    assert json.loads(output) == {
+        "check": True,
+        "config": True,
+        "dsn": True,
+        "generation_id": None,
+        "key": True,
+        "run_id": True,
+        "source_effects": False,
+    }
+    assert dsn not in output

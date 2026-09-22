@@ -83,6 +83,12 @@ chunker version. PostgreSQL refuses incomplete readiness, post-ready append, mut
 and cross-tenant access. Activation uses a distinct scope and idempotency receipt;
 rollback reactivates a prior ready generation without deleting evidence or derivatives.
 
+The index operator reads credentials only from owner-private files and the DSN only
+from the runtime environment. Build-and-activate requires exactly the publish and
+activation scopes; rollback requires exactly activation. It reauthenticates between
+build and activation and after completion, returns no paths/content/secrets, and has
+no source, Docker or scheduling authority.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

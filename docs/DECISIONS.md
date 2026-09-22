@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-059 private FileOS index operator](adr/059_fileos_index_operator.md) adds an
+explicit authenticated build/activate and activation-only rollback command with exact
+worker scopes. It does not schedule work or switch global search.
+
 [ADR-058 immutable FileOS index generations](adr/058_fileos_index_generations.md)
 adds completion-bound, deterministic lexical generations, append-only activation and
 reactivation rollback. Mutation remains a trusted library operation until a narrow

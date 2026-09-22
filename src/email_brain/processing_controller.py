@@ -179,6 +179,8 @@ class WorkerIdentity:
             frozenset({"email.document.process"}),
             frozenset({"email.ingest"}),
             frozenset({"brain.source.ingest", "brain.document.publish"}),
+            frozenset({"brain.document.publish", "brain.index.activate"}),
+            frozenset({"brain.index.activate"}),
         }:
             raise ControllerError()
         self.config = config

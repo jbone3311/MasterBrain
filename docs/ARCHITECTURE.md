@@ -61,6 +61,11 @@ Readiness is a database-checked closure over generation items and chunks. A sepa
 append-only activation selects the searchable generation, and rollback reactivates a
 prior ready generation. Rebuild does not reread or mutate source files.
 
+Generation operation is a separate private one-shot command. Build-and-activate uses
+an exact two-scope worker; activation-only rollback uses only the activation scope.
+Check mode validates configuration, identity and database role without building or
+activating. No scheduler or public mutation route owns this authority.
+
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.
