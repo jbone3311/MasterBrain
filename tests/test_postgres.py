@@ -6,9 +6,11 @@ CI supplies the database; no real credentials/accounts/mailboxes are involved.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import secrets
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
@@ -34,6 +36,8 @@ from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError
 from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
+from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
+from masterbrain.datacore.archive_worker import inventory_archive
 from masterbrain.datacore.extraction import ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
@@ -240,6 +244,35 @@ def fileos_manifest(root: Path, *, source_id: str = "files_test", hour: int = 1)
         source_id=source_id,
         observed_at=datetime(2026, 9, 22, hour, tzinfo=UTC),
     )
+
+
+ARCHIVE_PROCESSOR = "sandbox-fileos-archive-v1-" + "a" * 64
+
+
+def archive_fixture(
+    core: DataCoreStore,
+    ctx: TenantContext,
+    root: Path,
+    *,
+    source_id: str,
+    hour: int = 1,
+) -> tuple[bytes, dict[str, Any], ArchiveResult]:
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w") as archive:
+        archive.writestr("folder/proof.txt", b"hash-only archive proof")
+    raw = output.getvalue()
+    (root / "fixture.zip").write_bytes(raw)
+    manifest = fileos_manifest(root, source_id=source_id, hour=hour)
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    item = manifest["items"][0]
+    source = source_for(
+        raw,
+        item["version_id"],
+        item["locator"],
+        item["digest"]["value"],
+        item["media_type"],
+    )
+    return raw, manifest, inventory_archive(raw, source)
 
 
 def datacore_context(ctx: TenantContext) -> TenantContext:
@@ -1033,6 +1066,135 @@ def test_datacore_rls_and_immutability(
     with store.transaction(other) as conn:
         assert conn.execute("SELECT count(*) AS n FROM brain_source_versions").fetchone()["n"] == 0
     assert core.search(other, "private evidence") == []
+
+
+def test_archive_manifest_record_replay_concurrency_and_no_search_effect(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    _, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_archive_manifest")
+    before_search = core.search(ctx, "hash-only archive proof")
+    with store.transaction(ctx) as conn:
+        before_changes = conn.execute(
+            "SELECT count(*) AS n FROM brain_change_events WHERE source_id=%s",
+            ("files_archive_manifest",),
+        ).fetchone()["n"]
+
+    key = uuid4()
+    first = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, key)
+    replay = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, key)
+    assert first.changed is True and replay == replace(first, changed=False)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        concurrent = list(
+            pool.map(
+                lambda _: core.record_archive_inventory(
+                    ctx, result, ARCHIVE_PROCESSOR, uuid4()
+                ),
+                range(2),
+            )
+        )
+    assert all(item == replace(first, changed=False) for item in concurrent)
+    with store.transaction(ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM brain_archive_inventories").fetchone()[
+            "n"
+        ] == 1
+        assert conn.execute("SELECT count(*) AS n FROM brain_archive_members").fetchone()[
+            "n"
+        ] == len(result.members)
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_archive_inventory_receipts"
+        ).fetchone()["n"] == 3
+        after_changes = conn.execute(
+            "SELECT count(*) AS n FROM brain_change_events WHERE source_id=%s",
+            ("files_archive_manifest",),
+        ).fetchone()["n"]
+    assert core.search(ctx, "hash-only archive proof") == before_search == []
+    assert after_changes == before_changes
+
+
+def test_archive_manifest_rejects_terminal_drift_and_stale_parent(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    raw, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_archive_fences")
+    bomb_raw = io.BytesIO()
+    with zipfile.ZipFile(bomb_raw, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("bomb.bin", b"0" * (1024 * 1024))
+    bomb = bomb_raw.getvalue()
+    bomb_source = source_for(
+        bomb,
+        "version_" + hashlib.sha256(bomb).hexdigest()[:32],
+        "bomb.zip",
+        hashlib.sha256(bomb).hexdigest(),
+        "application/zip",
+    )
+    with pytest.raises(ValueError, match="accepted archive"):
+        core.record_archive_inventory(
+            ctx, inventory_archive(bomb, bomb_source), ARCHIVE_PROCESSOR, uuid4()
+        )
+
+    key = uuid4()
+    core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, key)
+    drift = replace(
+        result,
+        status="partial",
+        reason="bounded_archive_partial_v1",
+        skipped=(ArchiveSkip("diagnostic", "unreadable", 0, None),),
+    )
+    with pytest.raises(Conflict, match="idempotency key"):
+        core.record_archive_inventory(ctx, drift, ARCHIVE_PROCESSOR, key)
+    with pytest.raises(Conflict, match="different manifest"):
+        core.record_archive_inventory(ctx, drift, ARCHIVE_PROCESSOR, uuid4())
+
+    (tmp_path / "fixture.zip").write_bytes(raw + b"changed")
+    newer = fileos_manifest(tmp_path, source_id="files_archive_fences", hour=2)
+    core.import_fileos_snapshot(ctx, newer, uuid4())
+    with pytest.raises(Conflict, match="historical"):
+        core.record_archive_inventory(
+            ctx,
+            result,
+            "sandbox-fileos-archive-v1-" + "b" * 64,
+            uuid4(),
+        )
+
+
+def test_archive_manifest_forced_rls_and_append_only(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    _, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_archive_private")
+    recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
+        conn.execute(
+            "UPDATE brain_archive_inventories SET status='partial' WHERE id=%s",
+            (recorded.inventory_id,),
+        )
+
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Archive other')", (other_tenant,))
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
+    with store.transaction(other) as conn:
+        for table in (
+            "brain_archive_inventories",
+            "brain_archive_members",
+            "brain_archive_skips",
+            "brain_archive_inventory_receipts",
+        ):
+            assert conn.execute(f"SELECT count(*) AS n FROM {table}").fetchone()["n"] == 0
 
 
 def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(

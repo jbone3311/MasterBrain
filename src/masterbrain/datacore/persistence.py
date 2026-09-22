@@ -15,6 +15,12 @@ from psycopg.types.json import Jsonb
 
 from email_brain.domain.models import TenantContext
 from email_brain.store import Conflict, NotFound, Store
+from masterbrain.datacore.archive_contract import (
+    ArchiveResult,
+    ArchiveUnavailable,
+)
+from masterbrain.datacore.archive_contract import decode_result as decode_archive_result
+from masterbrain.datacore.archive_contract import encode_result as encode_archive_result
 from masterbrain.datacore.contracts import (
     Digest,
     SourceItemVersion,
@@ -36,6 +42,7 @@ INDEX_CHUNKER_VERSION = "deterministic-chunks-v1"
 MAX_GENERATION_TEXT_BYTES = 64 * 1_048_576
 MAX_GENERATION_CHUNKS = 100_000
 _IDENTITY = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
+_ARCHIVE_PROCESSOR = re.compile(r"^sandbox-fileos-archive-v1-[a-f0-9]{64}$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,6 +147,18 @@ class IndexActivation:
     previous_generation_id: str | None
     activated_at: datetime
     recorded: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ArchiveInventoryRecord:
+    inventory_id: str
+    source_id: str
+    item_id: str
+    source_version_id: str
+    processor_version: str
+    member_count: int
+    skipped_count: int
+    changed: bool
 
 
 def _canonical_digest(value: object) -> str:
@@ -1423,6 +1442,213 @@ class DataCoreStore:
                 document_id,
                 len(chunks),
                 row["extraction_status"],
+                True,
+            )
+
+    @staticmethod
+    def _archive_inventory_record(
+        row: Mapping[str, Any], *, changed: bool
+    ) -> ArchiveInventoryRecord:
+        return ArchiveInventoryRecord(
+            row["id"],
+            row["source_id"],
+            row["item_id"],
+            row["source_version_id"],
+            row["processor_version"],
+            row["member_count"],
+            row["skipped_count"],
+            changed,
+        )
+
+    def record_archive_inventory(
+        self,
+        ctx: TenantContext,
+        result: ArchiveResult,
+        processor_version: str,
+        idempotency_key: UUID,
+    ) -> ArchiveInventoryRecord:
+        """Persist one accepted hash-only archive manifest; never publish child evidence."""
+        self.store.require(ctx, "brain.source.ingest")
+        if (
+            not isinstance(result, ArchiveResult)
+            or not isinstance(processor_version, str)
+            or not _ARCHIVE_PROCESSOR.fullmatch(processor_version)
+            or not isinstance(idempotency_key, UUID)
+            or result.status not in {"complete", "partial"}
+        ):
+            raise ValueError("invalid accepted archive inventory")
+        try:
+            validated = decode_archive_result(encode_archive_result(result), result.source)
+        except ArchiveUnavailable:
+            raise ValueError("invalid accepted archive inventory") from None
+        if validated != result or result.format not in {"zip", "tar"}:
+            raise ValueError("invalid accepted archive inventory")
+        result_data = asdict(result)
+        result_sha = _canonical_digest(result_data)
+        request_hash = _canonical_digest(
+            {
+                "contract": "archive-inventory-persistence-v1",
+                "processor_version": processor_version,
+                "result_sha256": result_sha,
+            }
+        )
+        inventory_id = stable_id(
+            "archive_inventory", result.source.version_id, processor_version, result_sha
+        )
+        columns = (
+            "id,source_id,item_id,source_version_id,processor_version,member_count,"
+            "skipped_count,result_sha256"
+        )
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:archive:{result.source.version_id}:{processor_version}",),
+            )
+            receipt = conn.execute(
+                "SELECT r.request_hash,i." + columns.replace(",", ",i.") + " "
+                "FROM brain_archive_inventory_receipts r JOIN brain_archive_inventories i "
+                "ON i.tenant_id=r.tenant_id AND i.id=r.inventory_id "
+                "WHERE r.actor_id=%s AND r.idempotency_key=%s",
+                (ctx.actor_id, idempotency_key),
+            ).fetchone()
+            if receipt:
+                if receipt["request_hash"] != request_hash:
+                    raise Conflict("idempotency key reused for a different archive inventory")
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.archive_inventory_replayed",
+                    "source_version",
+                    result.source.version_id,
+                )
+                return self._archive_inventory_record(receipt, changed=False)
+
+            source = conn.execute(
+                "SELECT v.source_id,v.item_id,v.sha256,v.size_bytes,v.media_type,i.locator,"
+                "i.current_version_id,s.kind FROM brain_source_versions v "
+                "JOIN brain_source_items i ON i.tenant_id=v.tenant_id AND i.source_id=v.source_id "
+                "AND i.id=v.item_id JOIN brain_sources s ON s.tenant_id=v.tenant_id "
+                "AND s.id=v.source_id WHERE v.id=%s FOR UPDATE OF i",
+                (result.source.version_id,),
+            ).fetchone()
+            expected = result.source
+            if not source:
+                raise NotFound()
+            if source["kind"] != SourceKind.FILEOS.value:
+                raise Conflict("archive parent is not a FileOS source version")
+            if source["current_version_id"] != expected.version_id:
+                raise Conflict("archive parent source version is historical")
+            if (
+                source["sha256"],
+                source["size_bytes"],
+                source["media_type"],
+                source["locator"],
+            ) != (expected.sha256, expected.size_bytes, expected.media_type, expected.locator):
+                raise Conflict("archive parent identity does not match immutable source")
+
+            prior = conn.execute(
+                f"SELECT {columns} FROM brain_archive_inventories "
+                "WHERE source_version_id=%s AND processor_version=%s",
+                (expected.version_id, processor_version),
+            ).fetchone()
+            if prior:
+                if prior["result_sha256"] != result_sha:
+                    raise Conflict("archive processor produced a different manifest")
+                conn.execute(
+                    "INSERT INTO brain_archive_inventory_receipts(tenant_id,actor_id,"
+                    "idempotency_key,request_hash,inventory_id) VALUES (%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id,
+                        ctx.actor_id,
+                        idempotency_key,
+                        request_hash,
+                        prior["id"],
+                    ),
+                )
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.archive_inventory_replayed",
+                    "source_version",
+                    expected.version_id,
+                )
+                return self._archive_inventory_record(prior, changed=False)
+
+            conn.execute(
+                "INSERT INTO brain_archive_inventories(tenant_id,id,source_id,item_id,"
+                "source_version_id,processor_version,result_sha256,archive_format,status,"
+                "reason,member_count,skipped_count,file_count,total_uncompressed_bytes) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id,
+                    inventory_id,
+                    source["source_id"],
+                    source["item_id"],
+                    expected.version_id,
+                    processor_version,
+                    result_sha,
+                    result.format,
+                    result.status,
+                    result.reason,
+                    len(result.members),
+                    len(result.skipped),
+                    result.file_count,
+                    result.total_uncompressed_bytes,
+                ),
+            )
+            for ordinal, member in enumerate(result.members):
+                conn.execute(
+                    "INSERT INTO brain_archive_members(tenant_id,inventory_id,ordinal,locator,"
+                    "sha256,declared_size,observed_size,media_hint,depth,parent_locator,"
+                    "is_container) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id,
+                        inventory_id,
+                        ordinal,
+                        member.locator,
+                        member.sha256,
+                        member.declared_size,
+                        member.observed_size,
+                        member.media_hint,
+                        member.depth,
+                        member.parent_locator,
+                        member.is_container,
+                    ),
+                )
+            for ordinal, skipped in enumerate(result.skipped):
+                conn.execute(
+                    "INSERT INTO brain_archive_skips(tenant_id,inventory_id,ordinal,locator,"
+                    "reason,depth,parent_locator) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id,
+                        inventory_id,
+                        ordinal,
+                        skipped.locator,
+                        skipped.reason,
+                        skipped.depth,
+                        skipped.parent_locator,
+                    ),
+                )
+            conn.execute(
+                "INSERT INTO brain_archive_inventory_receipts(tenant_id,actor_id,"
+                "idempotency_key,request_hash,inventory_id) VALUES (%s,%s,%s,%s,%s)",
+                (ctx.tenant_id, ctx.actor_id, idempotency_key, request_hash, inventory_id),
+            )
+            self.store.audit(
+                conn,
+                ctx,
+                "brain.archive_inventory_recorded",
+                "source_version",
+                expected.version_id,
+            )
+            return ArchiveInventoryRecord(
+                inventory_id,
+                source["source_id"],
+                source["item_id"],
+                expected.version_id,
+                processor_version,
+                len(result.members),
+                len(result.skipped),
                 True,
             )
 
