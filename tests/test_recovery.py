@@ -452,6 +452,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0021_email_attachment_bridge.sql",
             "0022_email_document_extraction_bridge.sql",
             "0023_archive_manifests.sql",
+            "0024_archive_member_text_derivatives.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(

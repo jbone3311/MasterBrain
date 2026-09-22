@@ -37,8 +37,12 @@ from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
+from masterbrain.datacore.archive_member_text import (
+    archive_member_version_id,
+    publish_extracted_archive_member_text,
+)
 from masterbrain.datacore.archive_worker import inventory_archive
-from masterbrain.datacore.extraction import ExtractionStatus, FileOSAdapter
+from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.email_bridge_controller import (
@@ -1200,6 +1204,7 @@ def test_archive_manifest_forced_rls_and_append_only(
             "brain_archive_members",
             "brain_archive_skips",
             "brain_archive_inventory_receipts",
+            "brain_archive_member_text_receipts",
         ):
             assert conn.execute(f"SELECT count(*) AS n FROM {table}").fetchone()["n"] == 0
 
@@ -1278,6 +1283,111 @@ def test_archive_member_target_refuses_intermediate_container(
     recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
     with pytest.raises(NotFound):
         core.archive_member_target(ctx, recorded.inventory_id, "inner.zip")
+
+
+def test_archive_member_text_publication_is_distinct_replayable_and_not_current_search(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    _, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_member_text")
+    recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
+    member = result.members[0]
+    target = core.archive_member_target(ctx, recorded.inventory_id, member.locator)
+    extraction = ExtractionResult(
+        archive_member_version_id(target),
+        member.locator,
+        ExtractionStatus.EXTRACTED,
+        "explicit archive derivative searchable proof",
+        metadata={"extractor_version": "fileos-text-v1"},
+    )
+    key = uuid4()
+    first = publish_extracted_archive_member_text(
+        core, ctx, target, extraction, code_revision="test-revision", idempotency_key=key
+    )
+    replay = publish_extracted_archive_member_text(
+        core, ctx, target, extraction, code_revision="test-revision", idempotency_key=key
+    )
+    second_key = publish_extracted_archive_member_text(
+        core, ctx, target, extraction, code_revision="test-revision", idempotency_key=uuid4()
+    )
+    assert first.changed is True
+    assert replay == replace(first, changed=False) == second_key
+    assert first.version_id != result.source.version_id
+    assert core.search(ctx, "archive derivative searchable")[0].evidence_id == first.evidence_id
+    assert core.search_current_fileos(ctx, "archive derivative searchable") == []
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_archive_member_text_receipts").fetchone()[
+                "n"
+            ]
+            == 2
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_source_versions WHERE id=%s", (first.version_id,)
+            ).fetchone()["n"]
+            == 1
+        )
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
+        conn.execute(
+            "UPDATE brain_archive_member_text_receipts SET code_revision='changed' "
+            "WHERE inventory_id=%s",
+            (target.inventory_id,),
+        )
+    changed_extraction = replace(extraction, text="different archive derivative")
+    with pytest.raises(Conflict, match="idempotency key"):
+        publish_extracted_archive_member_text(
+            core,
+            ctx,
+            target,
+            changed_extraction,
+            code_revision="test-revision",
+            idempotency_key=key,
+        )
+    with pytest.raises(Conflict, match="different provenance"):
+        publish_extracted_archive_member_text(
+            core,
+            ctx,
+            target,
+            changed_extraction,
+            code_revision="test-revision",
+            idempotency_key=uuid4(),
+        )
+
+
+def test_archive_member_text_publication_rechecks_current_parent_and_target(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    raw, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_member_text_fence")
+    recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
+    target = core.archive_member_target(ctx, recorded.inventory_id, result.members[0].locator)
+    extraction = ExtractionResult(
+        archive_member_version_id(target),
+        target.member_locator,
+        ExtractionStatus.EXTRACTED,
+        "stale archive derivative",
+        metadata={"extractor_version": "fileos-text-v1"},
+    )
+    (tmp_path / "fixture.zip").write_bytes(raw + b"changed")
+    core.import_fileos_snapshot(
+        ctx, fileos_manifest(tmp_path, source_id="files_member_text_fence", hour=2), uuid4()
+    )
+    with pytest.raises(Conflict, match="no longer current"):
+        publish_extracted_archive_member_text(
+            core,
+            ctx,
+            target,
+            extraction,
+            code_revision="test-revision",
+            idempotency_key=uuid4(),
+        )
 
 
 def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(

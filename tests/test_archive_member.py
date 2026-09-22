@@ -180,6 +180,7 @@ def persisted(raw: bytes) -> ArchiveMemberTargetRecord:
         target.locator,
         target.sha256,
         target.size_bytes,
+        "text/plain",
         target.depth,
         target.parent_locator,
     )
