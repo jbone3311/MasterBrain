@@ -2,11 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4D — Email attachment evidence bridge design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Inventory attachment receipt, approved
-document-extraction and raw MIME part identities; define a replayable mapping into
-shared part/evidence/document/provenance primitives. Do not copy unsafe bytes, flatten
-occurrences, or redirect existing attachment/document search before parity.
+**Checkpoint 4E — approved Email document-extraction derivative bridge.** Work occurs
+on `codex/masterbrain-foundation` in PR #4. Map one immutable, approved legacy
+document-extraction revision onto the already-bridged attachment occurrence using a
+separate append-only receipt, bounded derivative document/chunk publication and exact
+extractor provenance. Do not rewrite the occurrence bridge, copy attachment bytes,
+broaden format approval or redirect existing attachment/document search before parity.
 
 ## Completed gates
 
@@ -74,13 +75,17 @@ occurrences, or redirect existing attachment/document search before parity.
 - Checkpoint 4C current bridged Email search revision `743fb9e` passed hosted
   [CI 35737349912](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35737349912)
   and [restore 35737349873](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35737349873).
+- Checkpoint 4D Email attachment occurrence/text bridge runtime `02eefb5` plus
+  historical-parent fixture correction `aaf8df0` passed hosted
+  [CI 35740735789](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740735789)
+  and [restore 35740736075](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740736075).
 
 ## Current work
 
-- Inventory legacy attachment occurrence/document identities, statuses, MIME locators,
-  extraction revisions and parser provenance against DataCore's target part model.
-- Write the attachment bridge ADR and synthetic golden corpus before schema or runtime
-  changes. Preserve every occurrence and original MIME evidence.
+- Inventory the immutable approved-PDF extraction revision, approval linkage, extractor
+  identity/version, content digest and source attachment occurrence.
+- Write the derivative-bridge ADR and synthetic PostgreSQL cases before schema or
+  runtime changes. Preserve the occurrence bridge and make exact replay auditable.
 
 ## Deferred by design
 

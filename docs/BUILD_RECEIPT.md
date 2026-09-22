@@ -2,6 +2,43 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified additive Email attachment occurrence/text bridge
+
+Runtime revision **02eefb5** and historical-parent fixture correction **aaf8df0**
+passed [CI 35740735789](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740735789)
+and [restore 35740736075](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740736075),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.bridge_email_attachment` maps one explicit legacy attachment
+  occurrence beneath its already-bridged, still-current Email evidence. Deterministic
+  child item/version/evidence and `brain_parts` identities preserve occurrences even
+  when two attachments share bytes; the retained parent MIME remains authoritative.
+- Non-empty legacy extracted text publishes through `email-attachment-text-v1` with
+  chunks and provenance. Empty extracted or deferred/skipped/failed/pending receipts
+  produce explicit zero-document accounting. The bridge never reads, decodes,
+  executes, scans, downloads or copies attachment bytes.
+- Migration 0021 adds forced-RLS, append-only `brain_parts` and
+  `brain_email_attachment_bridge_receipts`. Tests prove duplicate-occurrence
+  preservation, extracted and deferred outcomes, exact replay, historical-parent
+  rejection, rollback, tenant isolation and immutability.
+- CI and deployment each passed **2,432 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **131 Markdown files / 793
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **64 tables / 231
+  rows / two tenants / four encrypted objects / two identity bindings** in 24.14
+  seconds.
+- The first hosted application run exposed a test-only history-fixture error: it
+  created a different provider message rather than a newer version of the bridged
+  parent. Correction `aaf8df0` fixed only the fixture, after which the intended
+  current-parent rejection passed. The first restore attempt then failed during
+  disposable Docker-cluster startup before migration; the unchanged failed job was
+  rerun and passed in 38 seconds.
+- Existing Email attachment/document search and citations remain authoritative. There
+  is no batch bridge, approved-PDF derivative bridge, byte extraction, global search
+  cutover or mailbox effect. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified current-only bridged Email retrieval
 
 Revision **743fb9e** passed

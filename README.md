@@ -58,7 +58,7 @@ FileOS sources ┘       │              │                │
 | Current Email evidence bridge into DataCore | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Private one-version Email bridge command | Implemented; hosted PostgreSQL and restore gates green |
 | Current-only bridged Email Brain API search | Implemented; hosted PostgreSQL and restore gates green |
-| Email attachment occurrence/text bridge | Implemented additive library path; hosted verification pending |
+| Email attachment occurrence/text bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Archives, images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |

@@ -52,7 +52,7 @@ mean hosted, live-source accepted, or production ready.
 - Additive Email attachment-occurrence bridge with distinct child evidence/parts,
   duplicate occurrence preservation, bounded legacy-text publication and explicit
   zero-document outcomes. Existing Email attachment/document behavior is unchanged;
-  hosted verification is pending.
+  hosted PostgreSQL/restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

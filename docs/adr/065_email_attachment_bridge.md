@@ -1,6 +1,7 @@
 # ADR-065 — Additive Email attachment-occurrence bridge
 
-Status: accepted for implementation; hosted verification pending.
+Status: accepted and verified in runtime revision `02eefb5` with test-fixture
+correction `aaf8df0`.
 
 ## Context
 
@@ -56,3 +57,11 @@ parent fencing, transaction rollback, tenant isolation and immutability. All exi
 Email/FileOS suites and populated restore must remain green. Rollback stops bridge
 invocation; immutable shared rows remain auditable and existing Email behavior is
 unchanged.
+
+This gate passed hosted
+[CI 35740735789](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740735789)
+and [restore 35740736075](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740736075)
+on 2026-09-22 Pacific. CI and deployment each passed 2,432 Python tests; the
+PostgreSQL 17 restore verified 64 tables and 231 rows. The first restore attempt
+failed during disposable Docker-cluster startup before migration; its failed job was
+rerun unchanged and passed. See `docs/BUILD_RECEIPT.md` for complete measured totals.
