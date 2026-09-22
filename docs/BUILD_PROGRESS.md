@@ -2,11 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4J — Email bridge backfill preview design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define a bounded, non-consuming plan over
-current visible Email versions that reports already bridged versus eligible work using
-opaque identities only. Establish stable cursor/replay semantics, exact authorization
-and race fencing before any multi-item bridge executor is allowed.
+**Checkpoint 4K — sealed Email bridge batch-plan design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define an explicit immutable request contract
+that converts one reviewed preview page into a digest-bound list of version IDs and
+per-item idempotency keys. Preserve single-item transactional fencing and prohibit
+implicit pagination, discovery or best-effort continuation before execution exists.
 
 ## Completed gates
 
@@ -97,13 +97,17 @@ and race fencing before any multi-item bridge executor is allowed.
   revision `c2c97da` passed hosted
   [CI 35753479059](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35753479059)
   and [restore 35753479343](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35753479343).
+- Checkpoint 4J private Email bridge preview runtime `4c3347c` plus current-version
+  transition assertion correction `e9cf62f` passed hosted
+  [CI 35756327120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35756327120)
+  and [restore 35756327113](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35756327113).
 
 ## Current work
 
-- Inventory current Email-version selection and the single-item bridge's race/
-  idempotency guarantees before defining any batch plan.
-- Specify a bounded preview that cannot consume work or expose message content,
-  provider identifiers or mailbox enumeration to ordinary Brain clients.
+- Define a closed, bounded and digest-bound batch request assembled from reviewed
+  preview results; do not let an executor discover or continue pages implicitly.
+- Specify per-item keys, fail-stop/retry semantics and result accounting before adding
+  any command that performs more than one bridge transaction.
 
 ## Deferred by design
 

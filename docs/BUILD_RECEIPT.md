@@ -2,6 +2,36 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified private Email bridge backfill preview
+
+Runtime revision **4c3347c** and current-version transition assertion correction
+**e9cf62f** passed
+[CI 35756327120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35756327120)
+and [restore 35756327113](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35756327113),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-plan` reads one explicit account through the same private
+  closed configuration and exact worker scopes as the one-item bridge. It returns a
+  1–100 item page containing only version UUID, recorded time, already-bridged state
+  and next cursor; `--check` does not inspect the account.
+- PostgreSQL proves stable `(recorded_at, version_id)` pagination, bridged labeling,
+  current-version replacement after update, quarantine/delete exclusion, invalid
+  account/cursor refusal and tenant isolation. Controller tests prove exact scopes,
+  revocation checks and content-free output.
+- The first hosted run exposed an invalid test expectation: after an update the new
+  current unbridged version correctly replaces the historical version in the plan.
+  Revision `e9cf62f` asserts that identity/state transition; runtime code was unchanged.
+- CI and deployment each passed **2,446 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **137 Markdown files / 801
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 19.41
+  seconds.
+- The preview creates no bridge, reserves no work, contacts no provider and grants no
+  batch execution authority. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified current-source coverage status
 
 Runtime revision **82012e9** and state-transition stress revision **c2c97da** passed

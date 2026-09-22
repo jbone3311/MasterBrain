@@ -1,6 +1,7 @@
 # ADR-071 — Private Email bridge backfill preview
 
-Status: implemented; hosted verification pending.
+Status: implemented and hosted-verified in runtime revision `4c3347c`; current-version
+transition assertion corrected in `e9cf62f`.
 
 ## Context
 

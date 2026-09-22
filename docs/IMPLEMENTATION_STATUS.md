@@ -72,7 +72,7 @@ mean hosted, live-source accepted, or production ready.
   Email family counts/timestamps; hosted PostgreSQL/restore gates green.
 - Private, read-only `masterbrain email bridge-plan` command for a cursor-bounded page
   of current visible versions in one explicit account, with already-bridged labels and
-  content-free output; hosted verification is pending.
+  content-free output; hosted PostgreSQL/restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

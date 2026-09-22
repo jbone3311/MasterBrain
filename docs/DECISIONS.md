@@ -13,7 +13,7 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 [ADR-071](adr/071_email_bridge_backfill_preview.md) defines a private, bounded and
 non-consuming current-Email bridge plan for one explicit account. It establishes safe
 selection and paging without adding batch writes, provider access or a Brain API
-mailbox-enumeration surface; hosted verification is pending.
+mailbox-enumeration surface; hosted PostgreSQL and restore verification are green.
 
 [ADR-070](adr/070_current_source_coverage.md) defines a bounded, separately authorized
 status view for active FileOS generation readiness and explicitly bridged current Email
