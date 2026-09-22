@@ -36,6 +36,11 @@ mean hosted, live-source accepted, or production ready.
   file identity before/after, and independently verifies the returned member hash and
   size. Output is capped at 8 MiB, remains unscanned and is not persisted or searched;
   hosted PostgreSQL/container/restore gates are green.
+- Explicit one-member text/Markdown/HTML/CSV normalization and append-only derived
+  evidence publication with deterministic child source/version/evidence identities,
+  parent archive plus inventory provenance, idempotent receipts and transaction-time
+  current-parent/member revalidation. It stores no raw member bytes and remains absent
+  from current-generation search; hosted PostgreSQL/restore gates are green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -110,7 +115,8 @@ mean hosted, live-source accepted, or production ready.
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy image/OCR extraction. Archive-derived
-  normalization, evidence publication and search remain designed follow-on gates.
+  private operation, current-search visibility and non-text extraction remain follow-on
+  gates; automatic archive fan-out remains prohibited.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

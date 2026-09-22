@@ -12,7 +12,7 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-078](adr/078_archive_member_text_derivative.md) gives one explicitly selected
 archive member its own derived evidence identity before bounded text publication.
-Implementation is pending.
+Implemented in `97aeab1`.
 
 [ADR-077](adr/077_hash_bound_archive_member_read.md) defines a separate isolated
 command that returns at most one persisted non-container member by exact source and

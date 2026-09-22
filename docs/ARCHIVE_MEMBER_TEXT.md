@@ -1,4 +1,6 @@
-# Archive member text derivative plan
+# Archive member text derivative contract
+
+Implemented in `97aeab1`. Hosted CI 35792838710 and restore 35792838718 are green.
 
 ## Purpose
 
@@ -62,3 +64,10 @@ empty or failed members record no child evidence in the first tranche.
 - no automatic siblings, no raw-byte retention and no current-search visibility;
 - full PostgreSQL, populated restore, pinned donor and hostile archive gates remain
   green.
+
+The first persistence tranche passed all listed gates. Migration `0024` adds the
+forced-RLS append-only receipt. The runtime publishes deterministic child source,
+evidence, document, chunks and two-input provenance only after transaction-time parent
+and member revalidation. Exact replay and concurrent identities converge; drift and
+idempotency-key reuse fail closed. The derivative appears only in retained-history
+search, not current-generation search. No raw member bytes are stored.

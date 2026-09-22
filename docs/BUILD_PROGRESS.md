@@ -2,11 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4Q — archive-derived text extraction design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define how one explicit, hash-bound member
-read can enter the existing bounded text normalization path with immutable parent/
-member provenance and no automatic archive fan-out. Design persistence, replay and
-current-source fences before adding a command or search publication.
+**Checkpoint 4R — private archive-member text operator design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define an explicit authenticated command that
+resolves one inventory/member, revalidates the configured FileOS root, invokes the
+immutable archive image and publishes one accepted text derivative. Preserve check
+mode, reauthentication, exact scopes and content-free output; no batch or public API.
 
 ## Completed gates
 
@@ -128,11 +128,15 @@ current-source fences before adding a command or search publication.
   archive-member invocation and
   [CI 35789652225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35789652225)
   plus [restore 35789652166](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35789652166).
+- Checkpoint 4Q archive-member text design `60903a9` and runtime `97aeab1` passed
+  2,530 hosted Python tests, migration/forced-RLS/replay/current-fence tests and
+  [CI 35792838710](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35792838710)
+  plus [restore 35792838718](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35792838718).
 
 ## Current work
 
-- Specify one-member plain-text normalization and append-only derived evidence without
-  expanding an archive automatically or weakening current-version/replay fences.
+- Specify the least-privilege private operator for one archive-member text derivative,
+  including non-consuming check mode and post-read authorization/current rechecks.
 
 ## Deferred by design
 

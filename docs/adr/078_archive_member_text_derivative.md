@@ -1,6 +1,6 @@
 # ADR-078 — Model an archive member as derived evidence before text publication
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `97aeab1`; hosted CI/restore green.
 
 ## Context
 
