@@ -512,6 +512,12 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     first_family = core.search_current_email_family(bridge_ctx, "Amber current")
     assert [hit.evidence_id for hit in first_family.messages] == [first_bridge.evidence_id]
     assert first_family.attachments == () and first_family.documents == ()
+    first_coverage = next(
+        row
+        for row in core.current_coverage(bridge_ctx)["results"]
+        if row["source_id"] == first_bridge.source_id
+    )
+    assert first_coverage["current_counts"]["messages"] == 1
 
     store.ingest_page(
         ctx,
@@ -523,6 +529,12 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     assert core.search_current_email(bridge_ctx, "Amber current") == []
     assert core.search_current_email_family(bridge_ctx, "Amber current").messages == ()
     assert core.search_current_email(bridge_ctx, "Violet replacement") == []
+    updated_coverage = next(
+        row
+        for row in core.current_coverage(bridge_ctx)["results"]
+        if row["source_id"] == first_bridge.source_id
+    )
+    assert updated_coverage["current_counts"]["messages"] == 0
     second = store.search(ctx, SearchRequest(query="Violet replacement"))[0]["evidence_id"]
     second_bridge = core.bridge_current_email_version(
         bridge_ctx, second, uuid4(), code_revision="current-email-search-v1"
@@ -532,6 +544,12 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     assert core.search_current_email(bridge_ctx, "Violet replacement", limit=1) == second_hits
     second_family = core.search_current_email_family(bridge_ctx, "Violet replacement")
     assert [hit.evidence_id for hit in second_family.messages] == [second_bridge.evidence_id]
+    current_coverage = next(
+        row
+        for row in core.current_coverage(bridge_ctx)["results"]
+        if row["source_id"] == second_bridge.source_id
+    )
+    assert current_coverage["current_counts"]["messages"] == 1
     with store.transaction(ctx) as conn:
         conn.execute(
             "UPDATE messages SET quarantined=true WHERE account_id=%s "
@@ -541,6 +559,12 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     quarantined = core.search_current_email_family(bridge_ctx, "Violet replacement")
     assert quarantined.messages == () and quarantined.attachments == ()
     assert quarantined.documents == ()
+    quarantined_coverage = next(
+        row
+        for row in core.current_coverage(bridge_ctx)["results"]
+        if row["source_id"] == second_bridge.source_id
+    )
+    assert quarantined_coverage["current_counts"]["messages"] == 0
     with store.transaction(ctx) as conn:
         conn.execute("UPDATE messages SET quarantined=false WHERE account_id=%s", (account,))
 
@@ -554,6 +578,12 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     assert core.search_current_email(bridge_ctx, "Violet replacement") == []
     deleted = core.search_current_email_family(bridge_ctx, "Violet replacement")
     assert deleted.messages == () and deleted.attachments == () and deleted.documents == ()
+    deleted_coverage = next(
+        row
+        for row in core.current_coverage(bridge_ctx)["results"]
+        if row["source_id"] == second_bridge.source_id
+    )
+    assert deleted_coverage["current_counts"]["messages"] == 0
     assert core.search(bridge_ctx, "Violet replacement")
 
 
@@ -798,6 +828,15 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         "latest_complete_run": None,
         "partial_runs_included": False,
     }
+    initial_coverage = next(
+        row
+        for row in core.current_coverage(ctx)["results"]
+        if row["source_id"] == "files_adapter"
+    )
+    assert initial_coverage["status"] == "no_active_generation"
+    assert initial_coverage["active_generation"] is None
+    assert initial_coverage["latest_complete_run"] is None
+    assert initial_coverage["latest_completion_is_active"] is False
     receipt = core.complete_fileos_run(
         ctx,
         manifest,
