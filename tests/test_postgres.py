@@ -558,7 +558,14 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         if row["source_id"] == first_bridge.source_id
     )
     assert first_coverage["current_counts"]["messages"] == 1
-    assert len(core.email_bridge_plan(bridge_ctx, account)["results"]) == 1
+    first_plan = core.email_bridge_plan(bridge_ctx, account)["results"]
+    assert first_plan == [
+        {
+            "legacy_version_id": str(first),
+            "recorded_at": first_plan[0]["recorded_at"],
+            "already_bridged": True,
+        }
+    ]
 
     store.ingest_page(
         ctx,
@@ -576,8 +583,12 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         if row["source_id"] == first_bridge.source_id
     )
     assert updated_coverage["current_counts"]["messages"] == 0
-    assert core.email_bridge_plan(bridge_ctx, account)["results"] == []
+    updated_plan = core.email_bridge_plan(bridge_ctx, account)["results"]
+    assert len(updated_plan) == 1
+    assert updated_plan[0]["legacy_version_id"] != str(first)
+    assert updated_plan[0]["already_bridged"] is False
     second = store.search(ctx, SearchRequest(query="Violet replacement"))[0]["evidence_id"]
+    assert updated_plan[0]["legacy_version_id"] == str(second)
     second_bridge = core.bridge_current_email_version(
         bridge_ctx, second, uuid4(), code_revision="current-email-search-v1"
     )
@@ -592,7 +603,10 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         if row["source_id"] == second_bridge.source_id
     )
     assert current_coverage["current_counts"]["messages"] == 1
-    assert len(core.email_bridge_plan(bridge_ctx, account)["results"]) == 1
+    current_plan = core.email_bridge_plan(bridge_ctx, account)["results"]
+    assert len(current_plan) == 1
+    assert current_plan[0]["legacy_version_id"] == str(second)
+    assert current_plan[0]["already_bridged"] is True
     with store.transaction(ctx) as conn:
         conn.execute(
             "UPDATE messages SET quarantined=true WHERE account_id=%s "
@@ -611,6 +625,8 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     assert core.email_bridge_plan(bridge_ctx, account)["results"] == []
     with store.transaction(ctx) as conn:
         conn.execute("UPDATE messages SET quarantined=false WHERE account_id=%s", (account,))
+    restored_plan = core.email_bridge_plan(bridge_ctx, account)["results"]
+    assert len(restored_plan) == 1 and restored_plan[0]["already_bridged"] is True
 
     store.ingest_page(
         ctx,
