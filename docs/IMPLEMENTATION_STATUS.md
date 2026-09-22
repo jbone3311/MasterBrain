@@ -65,8 +65,8 @@ mean hosted, live-source accepted, or production ready.
   restore gates green.
 - Explicit `/v1/brain/current-search` grouped read across active FileOS, current Email
   family and reviewed KnowledgeCore results with independent bounds/ranks, partial-
-  coverage labels and declared independent-layer consistency; hosted verification is
-  pending.
+  coverage labels and declared independent-layer consistency; hosted PostgreSQL/
+  restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

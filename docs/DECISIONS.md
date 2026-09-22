@@ -12,8 +12,8 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-069](adr/069_grouped_current_source_search.md) defines a compact grouped read
 across active FileOS, current Email-family evidence and reviewed KnowledgeCore with
-independent limits/ranks and explicit partial coverage. Implementation and hosted
-verification are pending.
+independent limits/ranks and explicit partial coverage. Hosted PostgreSQL and restore
+verification are green.
 
 [ADR-068](adr/068_current_email_family_search.md) defines a separate, layered current-
 only read for bridged Email messages, attachment text and approved PDF derivatives.

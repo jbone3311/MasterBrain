@@ -2,6 +2,37 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified grouped current-source search
+
+Runtime revision **8da5b36** and mixed-source assertion correction **7939674** passed
+[CI 35751228402](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35751228402)
+and [restore 35751228447](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35751228447),
+observed 2026-09-22 Pacific.
+
+- `POST /v1/brain/current-search` returns separately bounded and ranked active FileOS,
+  current Email message/attachment/document and reviewed KnowledgeCore groups. It
+  declares within-group-only rank meaning, independent layer reads and incomplete
+  coverage instead of implying a globally comparable or complete answer.
+- API tests prove both required scopes, closed bounds/kinds, exact group labels,
+  independent limits and missing-group behavior. PostgreSQL returns all three source
+  families together while retaining the existing routes and drill-down identities.
+- The first hosted run exposed an obsolete test assumption, not a runtime defect:
+  retained mixed-source search correctly returned Email as well as FileOS, while the
+  fixture required FileOS to rank first. Revision `7939674` now asserts the promised
+  presence contract; product code and ranking behavior were unchanged.
+- CI and deployment each passed **2,441 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **135 Markdown files / 799
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 25.6
+  seconds.
+- Coverage is intentionally partial: FileOS requires an active immutable generation,
+  Email requires explicit current bridges and KnowledgeCore remains reviewed retained
+  state. There is no cross-layer atomic snapshot, scan, provider access, synthesis or
+  cutover. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified current-only layered Email-family search
 
 Revision **9b427e1** passed

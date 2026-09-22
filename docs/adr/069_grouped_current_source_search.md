@@ -1,6 +1,7 @@
 # ADR-069 — Grouped current-source and KnowledgeCore search
 
-Status: accepted for implementation; hosted verification pending.
+Status: implemented and hosted-verified in runtime revision `8da5b36`; mixed-source
+fixture assertion corrected in `7939674`.
 
 ## Context
 

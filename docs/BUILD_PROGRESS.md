@@ -2,11 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4H — grouped current-source retrieval.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Design one compact Brain API read that groups
-active FileOS evidence, current Email message/attachment/document evidence and reviewed
-KnowledgeCore assertions with separate limits and ranks. Preserve existing endpoints,
-make partial source coverage explicit and do not imply cross-layer score comparability.
+**Checkpoint 4I — current-source coverage and freshness design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define a bounded, authorization-safe status
+view that tells an LLM which FileOS and Email sources can contribute to current search,
+which coverage is missing or stale and what timestamps support that conclusion. Keep
+status separate from search, expose no provider/filesystem enumeration and preserve the
+existing independent-read consistency contract.
 
 ## Completed gates
 
@@ -89,13 +90,17 @@ make partial source coverage explicit and do not imply cross-layer score compara
 - Checkpoint 4G layered current Email-family search revision `9b427e1` passed hosted
   [CI 35749176559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176559)
   and [restore 35749176556](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176556).
+- Checkpoint 4H grouped current-source search runtime `8da5b36` plus mixed-source
+  assertion correction `7939674` passed hosted
+  [CI 35751228402](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35751228402)
+  and [restore 35751228447](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35751228447).
 
 ## Current work
 
-- Define grouped response/freshness semantics and independent source/knowledge limits
-  before changing the existing unified route.
-- Add mixed-source synthetic cases proving source absence, current-state fencing and
-  non-comparable ranks before exposing the new view.
+- Inventory the exact currentness and timestamp facts already present for FileOS and
+  bridged Email without adding a scheduler or source-enumeration side channel.
+- Define bounded status semantics, authorization, caps and missing/stale states before
+  adding a route or persistence query.
 
 ## Deferred by design
 
