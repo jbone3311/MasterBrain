@@ -1,6 +1,8 @@
 # Current archive-derivative search design
 
-Status: checkpoint 4S design; runtime not yet implemented.
+Status: implemented in `6c7b043`. The runtime passed 2,556 hosted Python tests and all
+restricted worker gates in [CI 35796920249](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35796920249),
+plus the populated [restore 35796920235](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35796920235).
 
 ## Purpose
 
@@ -75,3 +77,12 @@ No active-generation mutation, generation rebuild, rank merging, semantic search
 coverage claim for unpublished siblings, archive batch, non-text extraction, OCR,
 public mutation, source effect or FOS-Master cutover is authorized.
 
+## Implemented result
+
+Migration `0025` adds only the tenant-leading lookup index. The forced-RLS query uses
+an `EXISTS` fence so multiple exact-replay receipts cannot duplicate a chunk. It joins
+the receipt to the sealed inventory/member, current parent item, parent evidence,
+current child item, child version/evidence/document and chunk; hash, size and media
+type must agree. `/v1/brain/current-search` exposes the separately limited
+`archive_members` layer and the declared partial-coverage label. Parent replacement
+hides the derivative there while retained-history search continues to return it.

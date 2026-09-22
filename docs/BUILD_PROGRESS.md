@@ -2,12 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4S — current archive-derivative search design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Specify an explicit, independently bounded
-search layer for published archive-member text whose parent FileOS source and sealed
-inventory member are still current. Preserve retained-history search, active FileOS
-generation semantics and separate ranks; do not silently add derivatives to an old
-generation or authorize automatic archive fan-out.
+**Checkpoint 4T — archive-member publication preview design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Specify a private, read-only, cursor-bounded
+view of eligible non-container text members in one explicit current archive inventory,
+including already-published state and stable ordering. It must not read member bytes,
+invoke Docker, allocate idempotency keys or authorize batch execution.
 
 ## Completed gates
 
@@ -139,16 +138,22 @@ generation or authorize automatic archive fan-out.
   image, the pinned donor's 47 archive tests and six-case live parity corpus, plus
   [CI 35795580456](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35795580456)
   and [restore 35795580548](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35795580548).
+- Checkpoint 4S current archive-derivative search design `d50db4c` and runtime
+  `6c7b043` passed 2,556 hosted Python tests, forced-RLS current/stale transition,
+  replay-deduplicated query and API/schema tests, the new migration and populated
+  restore, all restricted worker containers, plus
+  [CI 35796920249](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35796920249)
+  and [restore 35796920235](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35796920235).
 
 ## Current work
 
-- Specify current-only archive-derivative search as a separate, bounded retrieval
-  layer with current parent/inventory/member fences and no generation mutation.
+- Specify a non-consuming archive-member publication preview with stable cursor,
+  explicit eligibility and already-published state before any sealed batch executor.
 
 ## Deferred by design
 
-- Archive-derived extraction/search, images and OCR until separate format/fault/
-  persistence gates exist.
+- Archive-member batch publication, non-text extraction, images and OCR until separate
+  selection/format/fault/persistence gates exist.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.

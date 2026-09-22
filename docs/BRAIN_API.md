@@ -41,10 +41,11 @@ objects, general SQL, or an unbounded corpus dump.
 - `POST /v1/brain/email-family-search` — implemented current-only, independently
   bounded message/attachment/approved-document layers with within-layer ranks;
   requires `brain.search`.
-- `POST /v1/brain/current-search` — implemented grouped active-FileOS, current-Email-
-  family and reviewed-KnowledgeCore lexical read with independent limits/ranks,
-  explicit partial coverage and independent-layer consistency; requires both search
-  scopes.
+- `POST /v1/brain/current-search` — implemented grouped active-FileOS, explicitly
+  published current archive-member, current-Email-family and reviewed-KnowledgeCore
+  lexical read with independent limits/ranks, explicit partial coverage and
+  independent-layer consistency; requires both search scopes. `archive_member_limit`
+  is 1–20 and the archive result locator is opaque.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
   `brain.changes.read`, is cursor-bounded and does not enumerate providers or paths.
@@ -102,8 +103,9 @@ decisions.
 - Deterministic filters and lexical search work without an LLM.
 - Cross-layer results remain grouped because ranks from separate indexes are not
   calibrated as one global score.
-- Current FileOS and bridged-Email searches are explicit. Compatibility DataCore
-  search retains historical evidence unless the client selects a current-only route.
+- Current FileOS, published archive-member and bridged-Email searches are explicit.
+  Compatibility DataCore search retains historical evidence unless the client selects
+  a current-only route.
 - Grouped search defaults to retained-history compatibility. Clients may explicitly
   select current FileOS generations without changing the KnowledgeCore layer.
 - Semantic/vector ranking is optional and cannot suppress exact evidence lookup.

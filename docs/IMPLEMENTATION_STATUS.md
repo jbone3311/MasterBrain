@@ -46,6 +46,11 @@ mean hosted, live-source accepted, or production ready.
   non-consuming check mode, repeated reauthentication, content-free output and exact
   replay. It grants no archive enumeration, batch, scheduling, public API, raw-byte
   return or source effect.
+- Independently bounded current archive-member lexical search, fenced through the
+  current parent archive plus sealed inventory/member and exact derivative identities.
+  `/v1/brain/current-search` exposes it separately from immutable active FileOS
+  generations with explicit partial coverage; stale parents disappear while retained
+  history remains available. Hosted PostgreSQL/container/restore gates are green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -119,8 +124,8 @@ mean hosted, live-source accepted, or production ready.
   source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
-  scheduling/global-search cutover and legacy image/OCR extraction. Archive-derived
-  current-search visibility and non-text extraction remain follow-on gates; automatic
+  scheduling/global-search cutover and legacy image/OCR extraction. Archive-member
+  preview/batch operation and non-text extraction remain follow-on gates; automatic
   archive fan-out remains prohibited.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.

@@ -1,6 +1,6 @@
 # ADR-080 — Keep current archive derivatives in an independently ranked layer
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `6c7b043`.
 
 ## Context
 
@@ -36,4 +36,3 @@ for drill-down.
 Remove the new read method, request field and response layer. Append-only derivative
 receipts and retained-history retrieval remain intact; no source, generation or
 FOS-Master state changes.
-

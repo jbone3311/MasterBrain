@@ -101,7 +101,7 @@ roadmap item is not an implementation claim.
 - [Hash-bound archive member read contract](docs/ARCHIVE_MEMBER_READ.md)
 - [Archive member text derivative contract](docs/ARCHIVE_MEMBER_TEXT.md)
 - [Private archive-member text operator contract](docs/ARCHIVE_MEMBER_OPERATOR.md)
-- [Current archive-derivative search design](docs/ARCHIVE_DERIVATIVE_SEARCH.md)
+- [Current archive-derivative search contract](docs/ARCHIVE_DERIVATIVE_SEARCH.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
