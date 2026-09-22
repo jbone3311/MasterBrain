@@ -2,11 +2,14 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## MasterBrain foundation — local checkpoint
+## Verified MasterBrain foundation
 
-Revision **25b941c2540d3e8f983e21322e8e6563ea568814** establishes the MasterBrain
-identity and ADR-047 boundaries, plus the first read-only DataCore donor extraction.
-Publication CI/restore has not yet run for this revision.
+Runtime/test revision **fa514df9aef97c1e339996478ca97b92eaa434c7** establishes
+the MasterBrain identity and ADR-047 boundaries, plus the first read-only DataCore
+donor extraction. It passed
+[CI 35696953888](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35696953888)
+and [restore 35696953874](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35696953874),
+observed 2026-09-21 Pacific. Later receipt-only changes do not alter this runtime.
 
 - Full local Python suite: **1,969 passed / 344 explicit PostgreSQL skips** with two
   pre-existing dependency deprecation warnings. The skipped SQL cases are not passes.
@@ -21,6 +24,9 @@ Publication CI/restore has not yet run for this revision.
 - Local Python 3.14 did not load the pre-existing editable-install `.pth` inside two
   isolated subprocess tests. A normal wheel reinstall made both tests pass; the same
   issue affected the untouched `email_brain` import and was not a product regression.
+- The first CI run correctly rejected a synthetic file named with the forbidden `.db`
+  extension. The fixture was replaced with a safe AppleDouble-style exclusion case;
+  no gate was weakened. The full CI and restore rerun above passed.
 - No live source, database migration, file move/delete, remote model, cloud resource,
   FileOS cutover, FOS-Master modification/rename/retirement, or Brain API runtime was
   added. Golden/shadow/production acceptance remains open.
