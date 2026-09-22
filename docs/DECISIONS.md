@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-062](adr/062_email_evidence_bridge.md) defines an additive, replayable bridge
+from one current immutable Email version into shared DataCore identities, chunks and
+provenance. Existing Email ingestion/search remain authoritative; no mailbox access,
+automatic backfill or cutover is granted. Hosted verification is pending.
+
 [ADR-046](adr/046_structured_memory.md) adds reviewed trip/flight/hotel/bill memory,
 immutable revisions, independent change cursors and explicit partial freshness.
 Migration 0014 and bounded REST/developer UI do not imply automatic interpretation.

@@ -270,6 +270,146 @@ def test_datacore_import_replay_drift_publish_and_search(
         assert conn.execute("SELECT count(*) AS n FROM brain_source_versions").fetchone()["n"] == 2
 
 
+def test_email_bridge_is_replayable_searchable_and_closed(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    store, admin = database
+    ctx, account = tenant
+    store.ingest_page(ctx, account, None, "bridge-1", [item(body="Cobalt renewal covenant")])
+    legacy = store.search(ctx, SearchRequest(query="Cobalt"))[0]["evidence_id"]
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    key = uuid4()
+
+    bridged = core.bridge_current_email_version(
+        bridge_ctx, legacy, key, code_revision="email-bridge-test-v1"
+    )
+    assert bridged.changed is True
+    replay = core.bridge_current_email_version(
+        bridge_ctx, legacy, key, code_revision="email-bridge-test-v1"
+    )
+    assert replay == replace(bridged, changed=False)
+    second_key = core.bridge_current_email_version(
+        bridge_ctx, legacy, uuid4(), code_revision="email-bridge-test-v1"
+    )
+    assert second_key == replay
+    with pytest.raises(Conflict, match="different Email bridge"):
+        core.bridge_current_email_version(
+            bridge_ctx, uuid4(), key, code_revision="email-bridge-test-v1"
+        )
+    with pytest.raises(Conflict, match="different provenance"):
+        core.bridge_current_email_version(
+            bridge_ctx, legacy, uuid4(), code_revision="email-bridge-test-v2"
+        )
+
+    hits = core.search(bridge_ctx, "Cobalt renewal")
+    assert len(hits) == 1
+    assert hits[0].evidence_id == bridged.evidence_id
+    assert hits[0].locator.startswith("message/")
+    assert "provider-message" not in hits[0].locator
+    with store.transaction(bridge_ctx) as conn:
+        receipt = conn.execute(
+            "SELECT account_id,legacy_version_id,normalizer,chunk_count "
+            "FROM brain_email_bridge_receipts WHERE legacy_version_id=%s",
+            (legacy,),
+        ).fetchone()
+        assert receipt == {
+            "account_id": account,
+            "legacy_version_id": legacy,
+            "normalizer": "email-message-v1",
+            "chunk_count": bridged.chunks,
+        }
+        evidence = conn.execute(
+            "SELECT storage,retained FROM brain_evidence WHERE id=%s",
+            (bridged.evidence_id,),
+        ).fetchone()
+        assert evidence == {"storage": "inline", "retained": True}
+        assert conn.execute("SELECT count(*) AS n FROM raw_objects").fetchone()["n"] == 1
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_provenance p "
+                "JOIN brain_provenance_inputs i ON i.tenant_id=p.tenant_id "
+                "AND i.provenance_id=p.id WHERE p.output_id=%s AND i.input_id=%s",
+                (bridged.document_id, bridged.evidence_id),
+            ).fetchone()["n"]
+            == 1
+        )
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE brain_email_bridge_receipts SET chunk_count=2 "
+            "WHERE tenant_id=%s AND legacy_version_id=%s",
+            (ctx.tenant_id, legacy),
+        )
+
+
+def test_email_bridge_rejects_historical_and_hidden_versions(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    store, _ = database
+    ctx, account = tenant
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    store.ingest_page(ctx, account, None, "bridge-old", [item(body="Old bridge text")])
+    old = store.search(ctx, SearchRequest(query="Old bridge"))[0]["evidence_id"]
+    store.ingest_page(
+        ctx,
+        account,
+        "bridge-old",
+        "bridge-new",
+        [item("bridge-update", body="New bridge text")],
+    )
+    with pytest.raises(Conflict, match="current Email evidence"):
+        core.bridge_current_email_version(
+            bridge_ctx, old, uuid4(), code_revision="email-bridge-test-v1"
+        )
+    current = store.search(ctx, SearchRequest(query="New bridge"))[0]["evidence_id"]
+    store.ingest_page(
+        ctx,
+        account,
+        "bridge-new",
+        "bridge-deleted",
+        [replace(item("bridge-delete"), raw=None)],
+    )
+    with pytest.raises(Conflict, match="not currently visible"):
+        core.bridge_current_email_version(
+            bridge_ctx, current, uuid4(), code_revision="email-bridge-test-v1"
+        )
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()[
+            "n"
+        ] == 0
+
+
+def test_email_bridge_concurrent_requests_publish_once(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    store, _ = database
+    ctx, account = tenant
+    store.ingest_page(ctx, account, None, "bridge-race", [item(body="Parallel bridge")])
+    legacy = store.search(ctx, SearchRequest(query="Parallel bridge"))[0]["evidence_id"]
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    keys = (uuid4(), uuid4())
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(
+            pool.map(
+                lambda key: core.bridge_current_email_version(
+                    bridge_ctx, legacy, key, code_revision="email-bridge-test-v1"
+                ),
+                keys,
+            )
+        )
+    assert sorted(result.changed for result in results) == [False, True]
+    assert results[0].document_id == results[1].document_id
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM brain_email_bridge_receipts").fetchone()[
+            "n"
+        ] == 1
+        assert conn.execute("SELECT count(*) AS n FROM brain_normalized_documents").fetchone()[
+            "n"
+        ] == 1
+
+
 def test_datacore_invalid_manifest_is_atomic(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:

@@ -28,6 +28,7 @@ MAX_MANIFEST_ITEMS = 10_000
 MAX_NORMALIZED_BYTES = 1_048_576
 CHUNK_CHARACTERS = 1_000
 NORMALIZER_VERSION = "plain-text-v1"
+EMAIL_NORMALIZER_VERSION = "email-message-v1"
 FILEOS_TEXT_EXTRACTOR_VERSION = "fileos-text-v1"
 INDEX_CHUNKER_VERSION = "deterministic-chunks-v1"
 MAX_GENERATION_TEXT_BYTES = 64 * 1_048_576
@@ -47,6 +48,17 @@ class ImportResult:
 class PublishedDocument:
     document_id: str
     evidence_id: str
+    chunks: int
+    changed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class EmailBridgeResult:
+    source_id: str
+    item_id: str
+    version_id: str
+    evidence_id: str
+    document_id: str
     chunks: int
     changed: bool
 
@@ -201,6 +213,319 @@ class DataCoreStore:
 
     def __init__(self, store: Store) -> None:
         self.store = store
+
+    @staticmethod
+    def _email_bridge_result(row: Mapping[str, Any], *, changed: bool) -> EmailBridgeResult:
+        return EmailBridgeResult(
+            source_id=row["source_id"],
+            item_id=row["item_id"],
+            version_id=row["version_id"],
+            evidence_id=row["evidence_id"],
+            document_id=row["document_id"],
+            chunks=row["chunk_count"],
+            changed=changed,
+        )
+
+    def bridge_current_email_version(
+        self,
+        ctx: TenantContext,
+        legacy_version_id: UUID,
+        idempotency_key: UUID,
+        *,
+        code_revision: str,
+    ) -> EmailBridgeResult:
+        """Map one current immutable Email version into shared DataCore primitives."""
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.document.publish")
+        if not code_revision or len(code_revision) > 200 or "\x00" in code_revision:
+            raise ValueError("invalid bridge code revision")
+        request_hash = _canonical_digest(
+            {
+                "legacy_version_id": str(legacy_version_id),
+                "normalizer": EMAIL_NORMALIZER_VERSION,
+                "code_revision": code_revision,
+            }
+        )
+        receipt_columns = (
+            "source_id,item_id,version_id,evidence_id,document_id,chunk_count,request_hash"
+        )
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:email-bridge:{legacy_version_id}",),
+            )
+            receipt = conn.execute(
+                f"SELECT {receipt_columns} FROM brain_email_bridge_receipts "
+                "WHERE actor_id=%s AND idempotency_key=%s",
+                (ctx.actor_id, idempotency_key),
+            ).fetchone()
+            if receipt:
+                if receipt["request_hash"] != request_hash:
+                    raise Conflict("idempotency key reused for a different Email bridge")
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.email_bridge_replayed",
+                    "message_version",
+                    str(legacy_version_id),
+                )
+                return self._email_bridge_result(receipt, changed=False)
+
+            prior = conn.execute(
+                f"SELECT {receipt_columns} FROM brain_email_bridge_receipts "
+                "WHERE legacy_version_id=%s",
+                (legacy_version_id,),
+            ).fetchone()
+            if prior:
+                if prior["request_hash"] != request_hash:
+                    raise Conflict("Email evidence was bridged with different provenance")
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.email_bridge_replayed",
+                    "message_version",
+                    str(legacy_version_id),
+                )
+                return self._email_bridge_result(prior, changed=False)
+
+            row = conn.execute(
+                "SELECT v.id AS legacy_version_id,v.account_id,v.message_id,v.raw_sha256,"
+                "v.provider_version,v.snapshot,v.parser_version,v.recorded_at,"
+                "m.raw_sha256 AS current_raw_sha256,m.parser_version AS current_parser_version,"
+                "m.subject,m.sender,m.clean_text,m.received_at,m.deleted,m.quarantined,"
+                "a.provider,octet_length(r.raw_mime) AS raw_size "
+                "FROM message_versions v JOIN messages m ON m.tenant_id=v.tenant_id "
+                "AND m.account_id=v.account_id AND m.id=v.message_id "
+                "JOIN mail_accounts a ON a.tenant_id=v.tenant_id AND a.id=v.account_id "
+                "JOIN raw_objects r ON r.tenant_id=v.tenant_id AND r.account_id=v.account_id "
+                "AND r.sha256=v.raw_sha256 WHERE v.id=%s FOR SHARE OF v,m,a,r",
+                (legacy_version_id,),
+            ).fetchone()
+            if not row:
+                raise NotFound()
+            if row["deleted"] or row["quarantined"]:
+                raise Conflict("Email evidence is not currently visible")
+            if (
+                row["raw_sha256"] != row["current_raw_sha256"]
+                or row["parser_version"] != row["current_parser_version"]
+            ):
+                raise Conflict("only the current Email evidence version can be bridged")
+            snapshot = row["snapshot"]
+            if not isinstance(snapshot, dict):
+                raise Conflict("Email evidence snapshot is invalid")
+            subject, sender, body = (
+                snapshot.get("subject"),
+                snapshot.get("sender"),
+                snapshot.get("text"),
+            )
+            if (
+                not all(isinstance(value, str) for value in (subject, sender, body))
+                or snapshot.get("parser_version") != row["parser_version"]
+                or (subject, sender, body) != (row["subject"], row["sender"], row["clean_text"])
+                or any(
+                    isinstance(value, str) and "\x00" in value
+                    for value in (subject, sender, body)
+                )
+            ):
+                raise Conflict("Email projection no longer matches immutable evidence")
+            subject = cast(str, subject)
+            sender = cast(str, sender)
+            body = cast(str, body)
+            normalized = f"Subject: {subject}\nFrom: {sender}\n\n{body}"
+            if len(normalized.encode()) > MAX_NORMALIZED_BYTES:
+                raise ValueError("normalized Email evidence exceeds its safe bound")
+
+            account_id = UUID(str(row["account_id"]))
+            message_id = UUID(str(row["message_id"]))
+            source_id = stable_id("email", str(account_id))
+            item_id = stable_id("emailitem", str(message_id))
+            version_id = stable_id(
+                "emailversion",
+                str(legacy_version_id),
+                row["raw_sha256"],
+                row["parser_version"],
+            )
+            evidence_id = stable_id("evidence", version_id)
+            locator = f"message/{message_id}"
+            observed_at = row["received_at"]
+            metadata = {
+                "legacy_version_id": str(legacy_version_id),
+                "parser_version": row["parser_version"],
+                "provider": row["provider"],
+                "truncated": bool(snapshot.get("truncated", False)),
+            }
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,%s,'email',%s) "
+                "ON CONFLICT (tenant_id,id) DO NOTHING",
+                (ctx.tenant_id, source_id, f"Email source {source_id[-8:]}"),
+            )
+            source = conn.execute(
+                "SELECT kind FROM brain_sources WHERE id=%s FOR UPDATE", (source_id,)
+            ).fetchone()
+            if not source or source["kind"] != "email":
+                raise Conflict("Email source identity has a different kind")
+            conn.execute(
+                "INSERT INTO brain_source_items(tenant_id,source_id,id,locator,current_version_id,"
+                "first_seen_at,last_seen_at) VALUES (%s,%s,%s,%s,%s,%s,%s) "
+                "ON CONFLICT (tenant_id,id) DO NOTHING",
+                (
+                    ctx.tenant_id,
+                    source_id,
+                    item_id,
+                    locator,
+                    version_id,
+                    observed_at,
+                    observed_at,
+                ),
+            )
+            item = conn.execute(
+                "SELECT source_id,locator FROM brain_source_items WHERE id=%s FOR UPDATE",
+                (item_id,),
+            ).fetchone()
+            if not item or (item["source_id"], item["locator"]) != (source_id, locator):
+                raise Conflict("Email source item identity changed")
+            conn.execute(
+                "INSERT INTO brain_source_versions(tenant_id,source_id,item_id,id,observed_at,"
+                "sha256,size_bytes,media_type,metadata) VALUES (%s,%s,%s,%s,%s,%s,%s,"
+                "'message/rfc822',%s) ON CONFLICT (tenant_id,id) DO NOTHING",
+                (
+                    ctx.tenant_id,
+                    source_id,
+                    item_id,
+                    version_id,
+                    observed_at,
+                    row["raw_sha256"],
+                    row["raw_size"],
+                    Jsonb(metadata),
+                ),
+            )
+            version = conn.execute(
+                "SELECT source_id,item_id,sha256,size_bytes,media_type,metadata "
+                "FROM brain_source_versions WHERE id=%s",
+                (version_id,),
+            ).fetchone()
+            expected_version = {
+                "source_id": source_id,
+                "item_id": item_id,
+                "sha256": row["raw_sha256"],
+                "size_bytes": row["raw_size"],
+                "media_type": "message/rfc822",
+                "metadata": metadata,
+            }
+            if version != expected_version:
+                raise Conflict("Email source version identity changed")
+            conn.execute(
+                "UPDATE brain_source_items SET first_seen_at=least(first_seen_at,%s),"
+                "last_seen_at=greatest(last_seen_at,%s),current_version_id=%s WHERE id=%s",
+                (observed_at, observed_at, version_id, item_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_evidence(tenant_id,id,source_version_id,sha256,"
+                "storage,retained) "
+                "VALUES (%s,%s,%s,%s,'inline',true) ON CONFLICT DO NOTHING",
+                (ctx.tenant_id, evidence_id, version_id, row["raw_sha256"]),
+            )
+
+            body_sha = hashlib.sha256(normalized.encode()).hexdigest()
+            document_id = stable_id(
+                "document", version_id, EMAIL_NORMALIZER_VERSION, body_sha
+            )
+            conn.execute(
+                "INSERT INTO brain_normalized_documents(tenant_id,id,evidence_id,normalizer,"
+                "body_sha256,body) VALUES (%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id,
+                    document_id,
+                    evidence_id,
+                    EMAIL_NORMALIZER_VERSION,
+                    body_sha,
+                    normalized,
+                ),
+            )
+            chunks = list(deterministic_chunks(normalized))
+            for ordinal, (start, end, chunk) in enumerate(chunks):
+                chunk_sha = hashlib.sha256(chunk.encode()).hexdigest()
+                chunk_id = stable_id("chunk", document_id, str(ordinal), chunk_sha)
+                conn.execute(
+                    "INSERT INTO brain_chunks(tenant_id,id,document_id,ordinal,start_offset,"
+                    "end_offset,text,sha256) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id,
+                        chunk_id,
+                        document_id,
+                        ordinal,
+                        start,
+                        end,
+                        chunk,
+                        chunk_sha,
+                    ),
+                )
+            config_sha = _canonical_digest(
+                {"chunk_characters": CHUNK_CHARACTERS, "fields": ["subject", "sender", "text"]}
+            )
+            provenance_id = stable_id("provenance", document_id, code_revision, config_sha)
+            conn.execute(
+                "INSERT INTO brain_provenance(tenant_id,id,output_id,transform,transform_version,"
+                "code_revision,configuration_sha256,created_at) VALUES (%s,%s,%s,"
+                "'bridge_email_message',%s,%s,%s,clock_timestamp())",
+                (
+                    ctx.tenant_id,
+                    provenance_id,
+                    document_id,
+                    EMAIL_NORMALIZER_VERSION,
+                    code_revision,
+                    config_sha,
+                ),
+            )
+            conn.execute(
+                "INSERT INTO brain_provenance_inputs(tenant_id,provenance_id,input_id,ordinal) "
+                "VALUES (%s,%s,%s,0)",
+                (ctx.tenant_id, provenance_id, evidence_id),
+            )
+            for kind in ("source_version_added", "document_published"):
+                changed_id = version_id if kind == "source_version_added" else document_id
+                change_id = stable_id("change", kind, changed_id)
+                conn.execute(
+                    "INSERT INTO brain_change_events(tenant_id,id,source_id,item_id,"
+                    "version_id,kind) "
+                    "VALUES (%s,%s,%s,%s,%s,%s)",
+                    (ctx.tenant_id, change_id, source_id, item_id, version_id, kind),
+                )
+            conn.execute(
+                "INSERT INTO brain_email_bridge_receipts(tenant_id,actor_id,idempotency_key,"
+                "account_id,legacy_version_id,source_id,item_id,version_id,evidence_id,"
+                "document_id,chunk_count,normalizer,code_revision,request_hash) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id,
+                    ctx.actor_id,
+                    idempotency_key,
+                    account_id,
+                    legacy_version_id,
+                    source_id,
+                    item_id,
+                    version_id,
+                    evidence_id,
+                    document_id,
+                    len(chunks),
+                    EMAIL_NORMALIZER_VERSION,
+                    code_revision,
+                    request_hash,
+                ),
+            )
+            self.store.audit(
+                conn, ctx, "brain.email_bridge_recorded", "message_version", str(legacy_version_id)
+            )
+            return EmailBridgeResult(
+                source_id,
+                item_id,
+                version_id,
+                evidence_id,
+                document_id,
+                len(chunks),
+                True,
+            )
 
     def import_fileos_snapshot(
         self,
