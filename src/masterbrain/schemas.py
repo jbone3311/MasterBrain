@@ -13,6 +13,13 @@ class BrainSearchRequest(ClosedModel):
     limit: int = Field(default=10, ge=1, le=50, strict=True)
 
 
+class EmailFamilySearchRequest(ClosedModel):
+    query: str = Field(min_length=1, max_length=500)
+    message_limit: int = Field(default=10, ge=1, le=25, strict=True)
+    attachment_limit: int = Field(default=10, ge=1, le=25, strict=True)
+    document_limit: int = Field(default=10, ge=1, le=25, strict=True)
+
+
 class EvidenceContentRequest(ClosedModel):
     max_chars: int = Field(default=4000, ge=1, le=16000, strict=True)
 

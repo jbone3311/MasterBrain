@@ -102,6 +102,13 @@ class SearchHit:
 
 
 @dataclass(frozen=True, slots=True)
+class EmailFamilySearch:
+    messages: tuple[SearchHit, ...]
+    attachments: tuple[SearchHit, ...]
+    documents: tuple[SearchHit, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class FileOSRunReceipt:
     run_id: UUID
     source_id: str
@@ -2157,6 +2164,98 @@ class DataCoreStore:
                 conn, ctx, "brain.current_email_search", "brain_index", "email_bridged"
             )
             return [SearchHit(**row) for row in rows]
+
+    def search_current_email_family(
+        self,
+        ctx: TenantContext,
+        query: str,
+        *,
+        message_limit: int = 10,
+        attachment_limit: int = 10,
+        document_limit: int = 10,
+    ) -> EmailFamilySearch:
+        """Search current bridged Email representations with independent ranks."""
+        self.store.require(ctx, "brain.search")
+        limits = (message_limit, attachment_limit, document_limit)
+        if (
+            not query.strip()
+            or len(query) > 500
+            or "\x00" in query
+            or any(not 1 <= limit <= 25 for limit in limits)
+        ):
+            raise ValueError("invalid current Email family search")
+        with self.store.transaction(ctx) as conn:
+            rows = conn.execute(
+                "WITH current_parents AS ("
+                "SELECT eb.tenant_id,eb.account_id,eb.legacy_version_id,eb.source_id,"
+                "eb.item_id,eb.version_id,eb.evidence_id,eb.document_id,pi.locator "
+                "FROM brain_email_bridge_receipts eb JOIN message_versions mv ON "
+                "mv.tenant_id=eb.tenant_id AND mv.account_id=eb.account_id "
+                "AND mv.id=eb.legacy_version_id JOIN messages m ON "
+                "m.tenant_id=mv.tenant_id AND m.account_id=mv.account_id "
+                "AND m.id=mv.message_id AND m.raw_sha256=mv.raw_sha256 "
+                "AND m.parser_version=mv.parser_version JOIN brain_source_items pi ON "
+                "pi.tenant_id=eb.tenant_id AND pi.id=eb.item_id "
+                "AND pi.current_version_id=eb.version_id "
+                "WHERE NOT m.deleted AND NOT m.quarantined), family AS ("
+                "SELECT 'message'::text AS result_kind,c.id AS chunk_id,c.document_id,"
+                "p.evidence_id,p.source_id,p.locator,c.text,c.search_vector "
+                "FROM current_parents p JOIN brain_normalized_documents d ON "
+                "d.tenant_id=p.tenant_id AND d.id=p.document_id "
+                "JOIN brain_chunks c ON c.tenant_id=d.tenant_id AND c.document_id=d.id "
+                "UNION ALL SELECT 'attachment',c.id,c.document_id,ab.evidence_id,"
+                "ab.source_id,ai.locator,c.text,c.search_vector FROM current_parents p "
+                "JOIN brain_email_attachment_bridge_receipts ab ON "
+                "ab.tenant_id=p.tenant_id AND ab.parent_evidence_id=p.evidence_id "
+                "JOIN brain_source_items ai ON ai.tenant_id=ab.tenant_id "
+                "AND ai.id=ab.item_id AND ai.current_version_id=ab.version_id "
+                "JOIN brain_normalized_documents d ON d.tenant_id=ab.tenant_id "
+                "AND d.id=ab.document_id JOIN brain_chunks c ON c.tenant_id=d.tenant_id "
+                "AND c.document_id=d.id UNION ALL SELECT 'document',c.id,c.document_id,"
+                "db.evidence_id,db.source_id,ai.locator,c.text,c.search_vector "
+                "FROM current_parents p JOIN brain_email_attachment_bridge_receipts ab "
+                "ON ab.tenant_id=p.tenant_id AND ab.parent_evidence_id=p.evidence_id "
+                "JOIN brain_email_document_bridge_receipts db ON db.tenant_id=ab.tenant_id "
+                "AND db.legacy_attachment_id=ab.legacy_attachment_id "
+                "AND db.source_id=ab.source_id AND db.item_id=ab.item_id "
+                "AND db.version_id=ab.version_id AND db.evidence_id=ab.evidence_id "
+                "JOIN brain_source_items ai ON ai.tenant_id=db.tenant_id "
+                "AND ai.id=db.item_id AND ai.current_version_id=db.version_id "
+                "JOIN brain_normalized_documents d ON d.tenant_id=db.tenant_id "
+                "AND d.id=db.document_id JOIN brain_chunks c ON c.tenant_id=d.tenant_id "
+                "AND c.document_id=d.id), matches AS (SELECT result_kind,chunk_id,"
+                "document_id,evidence_id,source_id,locator,"
+                "ts_headline('simple',text,plainto_tsquery('simple',%s),"
+                "'MaxWords=35,MinWords=10') AS excerpt,"
+                "ts_rank_cd(search_vector,plainto_tsquery('simple',%s)) AS rank "
+                "FROM family WHERE search_vector @@ plainto_tsquery('simple',%s)), "
+                "ranked AS (SELECT *,row_number() OVER (PARTITION BY result_kind "
+                "ORDER BY rank DESC,chunk_id) AS result_ordinal FROM matches) "
+                "SELECT result_kind,chunk_id,document_id,evidence_id,source_id,locator,"
+                "excerpt,rank FROM ranked WHERE "
+                "(result_kind='message' AND result_ordinal<=%s) OR "
+                "(result_kind='attachment' AND result_ordinal<=%s) OR "
+                "(result_kind='document' AND result_ordinal<=%s) "
+                "ORDER BY CASE result_kind WHEN 'message' THEN 1 WHEN 'attachment' THEN 2 "
+                "ELSE 3 END,rank DESC,chunk_id",
+                (query, query, query, message_limit, attachment_limit, document_limit),
+            ).fetchall()
+            self.store.audit(
+                conn, ctx, "brain.current_email_family_search", "brain_index", "email_family"
+            )
+        buckets: dict[str, list[SearchHit]] = {
+            "message": [],
+            "attachment": [],
+            "document": [],
+        }
+        for row in rows:
+            kind = row.pop("result_kind")
+            buckets[kind].append(SearchHit(**row))
+        return EmailFamilySearch(
+            tuple(buckets["message"]),
+            tuple(buckets["attachment"]),
+            tuple(buckets["document"]),
+        )
 
     def publish_text(
         self,

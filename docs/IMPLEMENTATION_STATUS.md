@@ -59,6 +59,10 @@ mean hosted, live-source accepted, or production ready.
 - Private `masterbrain email bridge-attachment` and `bridge-document` commands using
   the existing closed configuration, exact shared worker scopes, non-consuming checks,
   reauthentication and content-free output; hosted PostgreSQL/restore gates green.
+- Explicit `/v1/brain/email-family-search` read with independently bounded/ranked
+  message, attachment-text and approved-document layers, each fenced by current legacy
+  parent and shared pointers. Existing reads remain unchanged; hosted verification is
+  pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -67,8 +71,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Email bridge batch/backfill, grouped all-current Email-family retrieval and any
-  redirect of legacy Email search.
+- Email bridge batch/backfill, KnowledgeCore grouping of current Email-family evidence
+  and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,

@@ -509,6 +509,9 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     )
     first_hits = core.search_current_email(bridge_ctx, "Amber current")
     assert [hit.evidence_id for hit in first_hits] == [first_bridge.evidence_id]
+    first_family = core.search_current_email_family(bridge_ctx, "Amber current")
+    assert [hit.evidence_id for hit in first_family.messages] == [first_bridge.evidence_id]
+    assert first_family.attachments == () and first_family.documents == ()
 
     store.ingest_page(
         ctx,
@@ -518,6 +521,7 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         [item("current-email-update", body="Violet replacement term")],
     )
     assert core.search_current_email(bridge_ctx, "Amber current") == []
+    assert core.search_current_email_family(bridge_ctx, "Amber current").messages == ()
     assert core.search_current_email(bridge_ctx, "Violet replacement") == []
     second = store.search(ctx, SearchRequest(query="Violet replacement"))[0]["evidence_id"]
     second_bridge = core.bridge_current_email_version(
@@ -526,6 +530,19 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     second_hits = core.search_current_email(bridge_ctx, "Violet replacement")
     assert [hit.evidence_id for hit in second_hits] == [second_bridge.evidence_id]
     assert core.search_current_email(bridge_ctx, "Violet replacement", limit=1) == second_hits
+    second_family = core.search_current_email_family(bridge_ctx, "Violet replacement")
+    assert [hit.evidence_id for hit in second_family.messages] == [second_bridge.evidence_id]
+    with store.transaction(ctx) as conn:
+        conn.execute(
+            "UPDATE messages SET quarantined=true WHERE account_id=%s "
+            "AND raw_sha256=(SELECT raw_sha256 FROM message_versions WHERE id=%s)",
+            (account, second),
+        )
+    quarantined = core.search_current_email_family(bridge_ctx, "Violet replacement")
+    assert quarantined.messages == () and quarantined.attachments == ()
+    assert quarantined.documents == ()
+    with store.transaction(ctx) as conn:
+        conn.execute("UPDATE messages SET quarantined=false WHERE account_id=%s", (account,))
 
     store.ingest_page(
         ctx,
@@ -535,6 +552,8 @@ def test_current_email_search_tracks_legacy_update_and_delete(
         [replace(item("current-email-delete"), raw=None)],
     )
     assert core.search_current_email(bridge_ctx, "Violet replacement") == []
+    deleted = core.search_current_email_family(bridge_ctx, "Violet replacement")
+    assert deleted.messages == () and deleted.attachments == () and deleted.documents == ()
     assert core.search(bridge_ctx, "Violet replacement")
 
 
@@ -572,6 +591,21 @@ def test_email_attachment_bridge_preserves_occurrences_and_outcomes(
     assert len({result.evidence_id for result in extracted}) == 2
     hits = core.search(bridge_ctx, "Cobalt attachment covenant")
     assert {hit.evidence_id for hit in hits} == {
+        result.evidence_id for result in extracted
+    }
+    family = core.search_current_email_family(
+        bridge_ctx,
+        "Cobalt attachment covenant",
+        message_limit=1,
+        attachment_limit=1,
+        document_limit=1,
+    )
+    assert family.messages == () and family.documents == ()
+    assert len(family.attachments) == 1
+    all_occurrences = core.search_current_email_family(
+        bridge_ctx, "Cobalt attachment covenant", attachment_limit=2
+    )
+    assert {hit.evidence_id for hit in all_occurrences.attachments} == {
         result.evidence_id for result in extracted
     }
 
@@ -638,6 +672,10 @@ def test_email_attachment_bridge_rejects_historical_parent(
             uuid4(),
             code_revision="attachment-bridge-test-v1",
         )
+    family = core.search_current_email_family(
+        bridge_ctx, "Synthetic attachment accounting"
+    )
+    assert family.messages == () and family.attachments == () and family.documents == ()
     with store.transaction(bridge_ctx) as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"

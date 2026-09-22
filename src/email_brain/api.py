@@ -39,10 +39,15 @@ from email_brain.schemas import (
     SearchRequest,
 )
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
-from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import KnowledgePublishRequest, KnowledgeSearchRequest
-from masterbrain.schemas import BrainSearchRequest, EvidenceContentRequest, UnifiedSearchRequest
+from masterbrain.schemas import (
+    BrainSearchRequest,
+    EmailFamilySearchRequest,
+    EvidenceContentRequest,
+    UnifiedSearchRequest,
+)
 
 log = logging.getLogger("email_brain.requests")
 WEB = Path(__file__).parent / "web"
@@ -574,6 +579,44 @@ def create_app(
                 for hit in hits
             ],
             "visibility": "current_bridged_email",
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/email-family-search")
+    def brain_current_email_family_search(
+        body: EmailFamilySearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        family = brain.search_current_email_family(
+            principal.context,
+            body.query,
+            message_limit=body.message_limit,
+            attachment_limit=body.attachment_limit,
+            document_limit=body.document_limit,
+        )
+
+        def compact(hits: tuple[SearchHit, ...]) -> list[dict[str, Any]]:
+            return [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ]
+
+        return {
+            "layers": {
+                "messages": compact(family.messages),
+                "attachments": compact(family.attachments),
+                "documents": compact(family.documents),
+            },
+            "visibility": "current_bridged_email_family",
+            "ranking": "within_layer_only",
             "untrusted_content": True,
         }
 

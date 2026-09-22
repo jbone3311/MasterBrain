@@ -177,6 +177,10 @@ def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(
     assert [hit.evidence_id for hit in core.search(bridge_ctx, "pdfonlyproof")] == [
         attachment["evidence_id"]
     ]
+    family = core.search_current_email_family(bridge_ctx, "pdfonlyproof")
+    assert family.messages == () and family.attachments == ()
+    assert len(family.documents) == 1
+    assert family.documents[0].document_id == derived["document_id"]
     replay = core.bridge_email_document_extraction(
         bridge_ctx, extraction_id, uuid4(), code_revision="pdf-derivative-test-v1"
     )

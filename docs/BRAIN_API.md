@@ -38,6 +38,9 @@ objects, general SQL, or an unbounded corpus dump.
 - `POST /v1/brain/email-search` — implemented current-only search across explicitly
   bridged Email versions that remain current and visible in the legacy Email state;
   requires `brain.search`.
+- `POST /v1/brain/email-family-search` — implemented current-only, independently
+  bounded message/attachment/approved-document layers with within-layer ranks;
+  requires `brain.search`.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes, keeps ranks separate,
   and accepts explicit `retained` or `current_fileos` evidence visibility.

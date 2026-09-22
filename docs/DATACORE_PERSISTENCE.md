@@ -80,6 +80,12 @@ isolated format workers.
 at most 50 compact chunk hits, and includes document, evidence, source and locator
 identities for drill-down. Direct assistant SQL is not an API.
 
+`search_current_email_family` separately ranks current bridged message documents,
+ADR-065 attachment text and ADR-066 approved PDF derivatives. Each layer has its own
+1–25 result bound and every branch rejoins the current visible legacy parent plus
+shared parent/child current pointers. Generic retained-history and message-only search
+remain unchanged.
+
 ## Recovery and operations
 
 The existing migration checksum lock and least-privilege grant path include these

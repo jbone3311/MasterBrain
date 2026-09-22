@@ -55,14 +55,14 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Projects | State and evidence; future members/milestones/decisions | Reviewed base record implemented |
 | Commitments | Owner, counterparty, due state and evidence | Reviewed append/read implemented |
 | Corrections | Supersede without erasing history; retain contradictions | Implemented append-only links |
-| Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Grouped retained/current FileOS + reviewed knowledge lexical slice implemented; graph/semantic planned |
+| Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Grouped retained/current FileOS + reviewed knowledge and layered current Email-family lexical slices implemented; graph/semantic planned |
 | Freshness | Source sync, extraction, indexing and interpretation freshness separated | Partial Email implementation |
 
 ## Brain API and clients
 
 | Capability | Required behavior | State |
 |---|---|---|
-| Search | Compact ranked hits across Email and files | Explicit current bridged-Email and active-FileOS routes plus retained grouped search implemented; all-current grouping planned |
+| Search | Compact ranked hits across Email and files | Explicit current Email message/family and active-FileOS routes plus retained grouped search implemented; all-current knowledge grouping planned |
 | Answer | Evidence-backed synthesis with uncertainty and coverage | Designed |
 | Expand | Fetch selected entity/project/claim/timeline/chunk | Exact DataCore/KnowledgeCore expansion implemented |
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |

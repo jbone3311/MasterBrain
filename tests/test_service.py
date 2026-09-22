@@ -15,7 +15,7 @@ from email_brain.auth import Credential, TokenRegistry
 from email_brain.inference import Route, RoutingPolicy, route, validate_classification
 from email_brain.normalize import normalize
 from email_brain.store import Store
-from masterbrain.datacore.persistence import DataCoreStore, SearchHit
+from masterbrain.datacore.persistence import DataCoreStore, EmailFamilySearch, SearchHit
 from masterbrain.knowledge import KnowledgeCore, KnowledgeHit
 
 TOKEN = "synthetic-test-token-not-a-real-credential-000000"
@@ -260,6 +260,70 @@ def test_current_email_search_is_explicit_bounded_and_scoped() -> None:
         ).status_code
         == 422
     )
+
+
+def test_current_email_family_search_is_layered_bounded_and_scoped() -> None:
+    store = MagicMock(spec=Store)
+    brain = MagicMock(spec=DataCoreStore)
+
+    def hit(marker: str, locator: str) -> SearchHit:
+        return SearchHit(
+            "chunk_" + marker * 32,
+            "document_" + marker * 32,
+            "evidence_" + marker * 32,
+            "email_" + "4" * 32,
+            locator,
+            "bounded Email family excerpt",
+            0.5,
+        )
+
+    brain.search_current_email_family.return_value = EmailFamilySearch(
+        (hit("1", "message/00000000-0000-0000-0000-000000000001"),),
+        (hit("2", "attachment/00000000-0000-0000-0000-000000000002"),),
+        (hit("3", "attachment/00000000-0000-0000-0000-000000000003"),),
+    )
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    denied = TestClient(create_app(store, registry({"brain.evidence.read"}), brain_store=brain))
+    assert (
+        denied.post(
+            "/v1/brain/email-family-search", json={"query": "renewal"}, headers=headers
+        ).status_code
+        == 403
+    )
+    client = TestClient(create_app(store, registry({"brain.search"}), brain_store=brain))
+    response = client.post(
+        "/v1/brain/email-family-search",
+        json={
+            "query": "renewal",
+            "message_limit": 3,
+            "attachment_limit": 4,
+            "document_limit": 5,
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["visibility"] == "current_bridged_email_family"
+    assert body["ranking"] == "within_layer_only"
+    assert set(body["layers"]) == {"messages", "attachments", "documents"}
+    assert all(len(layer) == 1 for layer in body["layers"].values())
+    assert body["untrusted_content"] is True
+    brain.search_current_email_family.assert_called_once()
+    assert brain.search_current_email_family.call_args.kwargs == {
+        "message_limit": 3,
+        "attachment_limit": 4,
+        "document_limit": 5,
+    }
+    for invalid in (
+        {"query": "renewal", "message_limit": 26},
+        {"query": "renewal", "attachment_limit": 0},
+        {"query": "renewal", "document_limit": True},
+        {"query": "renewal", "extra": "closed"},
+    ):
+        assert (
+            client.post("/v1/brain/email-family-search", json=invalid, headers=headers).status_code
+            == 422
+        )
 
 
 def test_brain_write_scopes_are_worker_only() -> None:
