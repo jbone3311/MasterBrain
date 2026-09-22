@@ -62,6 +62,7 @@ FileOS sources ┘       │              │                │
 | Approved Email PDF derivative bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Current-only layered Email-family Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Grouped current FileOS + Email-family + KnowledgeCore search | Implemented; hosted PostgreSQL and restore gates green |
+| Current-source coverage/readiness status | Implemented; hosted verification pending |
 | Archives, images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |

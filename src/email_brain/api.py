@@ -555,6 +555,14 @@ def create_app(
     ) -> dict[str, Any]:
         return brain.changes(principal.context, after=after, limit=limit)
 
+    @app.get("/v1/brain/current-coverage")
+    def brain_current_coverage(
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        after: str | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return brain.current_coverage(principal.context, after=after, limit=limit)
+
     @app.get("/v1/brain/sources/{source_id}/freshness")
     def brain_source_freshness(
         source_id: str,

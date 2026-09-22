@@ -1432,6 +1432,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         )
     other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
     assert knowledge.search(other, "October") == []
+    assert core.current_coverage(other)["results"] == []
     with pytest.raises(NotFound):
         knowledge.get(other, "claim", second_claim.object_id)
 
@@ -1447,6 +1448,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
                         actor_id=ctx.actor_id,
                         scopes={
                             "brain.search",
+                            "brain.changes.read",
                             "knowledge.search",
                             "knowledge.read",
                             "knowledge.changes.read",
@@ -1523,6 +1525,27 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert grouped["layers"]["email_attachments"] == []
     assert grouped["layers"]["email_documents"] == []
     assert grouped["layers"]["knowledge"][0]["object_id"] == project.object_id
+    first_coverage = api.get("/v1/brain/current-coverage?limit=1", headers=headers)
+    assert first_coverage.status_code == 200
+    assert first_coverage.json()["complete"] is False
+    assert first_coverage.json()["next_cursor"] is not None
+    coverage_response = api.get("/v1/brain/current-coverage?limit=50", headers=headers)
+    assert coverage_response.status_code == 200
+    coverage = {
+        row["source_id"]: row for row in coverage_response.json()["results"]
+    }
+    fileos_coverage = coverage["files_knowledge"]
+    assert fileos_coverage["status"] == "search_ready"
+    assert fileos_coverage["active_generation"]["generation_id"] == generation.generation_id
+    assert fileos_coverage["latest_completion_is_active"] is True
+    email_coverage = coverage[current_email.source_id]
+    assert email_coverage["coverage"] == "explicit_bridges_only"
+    assert email_coverage["current_counts"] == {
+        "messages": 1,
+        "attachments": 0,
+        "documents": 0,
+    }
+    assert email_coverage["latest_current_bridge_at"]["messages"] is not None
     fetched = api.get(f"/v1/knowledge/project/{project.object_id}", headers=headers)
     assert fetched.status_code == 200 and fetched.json()["title"] == "Project Atlas"
     created = api.post(

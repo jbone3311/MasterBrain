@@ -1535,6 +1535,161 @@ class DataCoreStore:
             "partial_runs_included": False,
         }
 
+    def current_coverage(
+        self,
+        ctx: TenantContext,
+        *,
+        after: str | None = None,
+        limit: int = 25,
+    ) -> dict[str, Any]:
+        """Summarize bounded current-search coverage for registered sources."""
+        self.store.require(ctx, "brain.changes.read")
+        if after is not None and not _IDENTITY.fullmatch(after):
+            raise NotFound()
+        if not 1 <= limit <= 50:
+            raise ValueError("invalid coverage limit")
+        with self.store.transaction(ctx) as conn:
+            generated = conn.execute(
+                "SELECT clock_timestamp() AS generated_at"
+            ).fetchone()
+            assert generated is not None
+            if after is not None and not conn.execute(
+                "SELECT 1 FROM brain_sources WHERE id=%s", (after,)
+            ).fetchone():
+                raise NotFound()
+            rows = conn.execute(
+                "WITH current_parents AS ("
+                "SELECT eb.tenant_id,eb.source_id,eb.evidence_id,eb.created_at "
+                "FROM brain_email_bridge_receipts eb JOIN message_versions mv ON "
+                "mv.tenant_id=eb.tenant_id AND mv.account_id=eb.account_id "
+                "AND mv.id=eb.legacy_version_id JOIN messages m ON "
+                "m.tenant_id=mv.tenant_id AND m.account_id=mv.account_id "
+                "AND m.id=mv.message_id AND m.raw_sha256=mv.raw_sha256 "
+                "AND m.parser_version=mv.parser_version JOIN brain_source_items pi ON "
+                "pi.tenant_id=eb.tenant_id AND pi.id=eb.item_id "
+                "AND pi.current_version_id=eb.version_id "
+                "WHERE NOT m.deleted AND NOT m.quarantined), current_attachments AS ("
+                "SELECT ab.tenant_id,ab.source_id,ab.legacy_attachment_id,ab.item_id,"
+                "ab.version_id,ab.evidence_id,ab.created_at FROM current_parents p "
+                "JOIN brain_email_attachment_bridge_receipts ab ON "
+                "ab.tenant_id=p.tenant_id AND ab.parent_evidence_id=p.evidence_id "
+                "JOIN brain_source_items ai ON ai.tenant_id=ab.tenant_id "
+                "AND ai.id=ab.item_id AND ai.current_version_id=ab.version_id), "
+                "current_documents AS (SELECT db.tenant_id,db.source_id,db.created_at "
+                "FROM current_attachments a JOIN brain_email_document_bridge_receipts db ON "
+                "db.tenant_id=a.tenant_id "
+                "AND db.legacy_attachment_id=a.legacy_attachment_id "
+                "AND db.source_id=a.source_id AND db.item_id=a.item_id "
+                "AND db.version_id=a.version_id AND db.evidence_id=a.evidence_id), "
+                "selected AS (SELECT id,kind,status,created_at FROM brain_sources "
+                "WHERE (%s::text IS NULL OR id>%s) ORDER BY id LIMIT %s) "
+                "SELECT s.id AS source_id,s.kind,s.status AS configured_status,"
+                "s.created_at AS registered_at,a.generation_id,a.activated_at,"
+                "g.run_actor_id,g.run_id,g.observed_at AS generation_observed_at,"
+                "g.item_count,g.document_count,g.chunk_count,lr.actor_id AS latest_run_actor_id,"
+                "lr.run_id AS latest_run_id,lr.observed_at AS latest_run_observed_at,"
+                "lr.completed_at AS latest_run_completed_at,"
+                "COALESCE((SELECT count(*) FROM current_parents p "
+                "WHERE p.source_id=s.id),0)::integer AS email_message_count,"
+                "(SELECT max(p.created_at) FROM current_parents p "
+                "WHERE p.source_id=s.id) AS latest_message_bridge_at,"
+                "COALESCE((SELECT count(*) FROM current_attachments ea "
+                "WHERE ea.source_id=s.id),0)::integer AS email_attachment_count,"
+                "(SELECT max(ea.created_at) FROM current_attachments ea "
+                "WHERE ea.source_id=s.id) AS latest_attachment_bridge_at,"
+                "COALESCE((SELECT count(*) FROM current_documents ed "
+                "WHERE ed.source_id=s.id),0)::integer AS email_document_count,"
+                "(SELECT max(ed.created_at) FROM current_documents ed "
+                "WHERE ed.source_id=s.id) AS latest_document_bridge_at "
+                "FROM selected s LEFT JOIN LATERAL (SELECT generation_id,activated_at "
+                "FROM brain_index_activations WHERE source_id=s.id "
+                "ORDER BY activated_at DESC,idempotency_key DESC LIMIT 1) a "
+                "ON s.kind='fileos' LEFT JOIN brain_index_generations g "
+                "ON g.id=a.generation_id AND g.source_id=s.id LEFT JOIN LATERAL ("
+                "SELECT actor_id,run_id,observed_at,completed_at "
+                "FROM brain_fileos_run_receipts WHERE source_id=s.id "
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1) lr "
+                "ON s.kind='fileos' ORDER BY s.id",
+                (after, after, limit + 1),
+            ).fetchall()
+            self.store.audit(
+                conn, ctx, "brain.current_coverage_read", "brain_source", "registered"
+            )
+        page = rows[:limit]
+        results: list[dict[str, Any]] = []
+        for row in page:
+            common = {
+                "source_id": row["source_id"],
+                "kind": row["kind"],
+                "configured_status": row["configured_status"],
+                "registered_at": row["registered_at"],
+            }
+            if row["kind"] == "fileos":
+                generation = None
+                if row["generation_id"] is not None:
+                    generation = {
+                        "generation_id": row["generation_id"],
+                        "activated_at": row["activated_at"],
+                        "observed_at": row["generation_observed_at"],
+                        "item_count": row["item_count"],
+                        "document_count": row["document_count"],
+                        "chunk_count": row["chunk_count"],
+                    }
+                latest_run = None
+                if row["latest_run_id"] is not None:
+                    latest_run = {
+                        "run_id": row["latest_run_id"],
+                        "observed_at": row["latest_run_observed_at"],
+                        "completed_at": row["latest_run_completed_at"],
+                    }
+                results.append(
+                    {
+                        **common,
+                        "coverage": "active_generation_only",
+                        "status": (
+                            "search_ready" if generation else "no_active_generation"
+                        ),
+                        "active_generation": generation,
+                        "latest_complete_run": latest_run,
+                        "latest_completion_is_active": bool(
+                            generation
+                            and row["latest_run_id"] == row["run_id"]
+                            and row["latest_run_actor_id"] == row["run_actor_id"]
+                        ),
+                    }
+                )
+            else:
+                counts = {
+                    "messages": row["email_message_count"],
+                    "attachments": row["email_attachment_count"],
+                    "documents": row["email_document_count"],
+                }
+                results.append(
+                    {
+                        **common,
+                        "coverage": "explicit_bridges_only",
+                        "status": (
+                            "current_evidence_available"
+                            if any(counts.values())
+                            else "no_current_bridged_evidence"
+                        ),
+                        "current_counts": counts,
+                        "latest_current_bridge_at": {
+                            "messages": row["latest_message_bridge_at"],
+                            "attachments": row["latest_attachment_bridge_at"],
+                            "documents": row["latest_document_bridge_at"],
+                        },
+                    }
+                )
+        return {
+            "generated_at": generated["generated_at"],
+            "complete": False,
+            "semantics": "registered_sources_and_explicit_bridges_only",
+            "results": results,
+            "next_cursor": page[-1]["source_id"] if len(rows) > limit and page else None,
+            "limit": limit,
+        }
+
     def fileos_inventory(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
         """Summarize membership and newly observed absence for the latest complete run."""
         self.store.require(ctx, "brain.changes.read")

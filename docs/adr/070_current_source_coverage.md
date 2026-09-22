@@ -1,6 +1,6 @@
 # ADR-070 — Bounded current-source coverage status
 
-Status: accepted for implementation.
+Status: implemented; hosted verification pending.
 
 ## Context
 
@@ -34,8 +34,9 @@ kind-specific status:
 
 The response declares `complete: false`, `generated_at`, pagination state and exact
 semantics. Counts and timestamps come from one authorized database transaction, unlike
-the independently read search layers. Paused sources remain visible in status but do
-not gain search readiness; current search behavior remains unchanged in this tranche.
+the independently read search layers. Configured source status remains an explicit,
+informational field in this tranche; activation/current-pointer state continues to
+determine search readiness so existing search behavior is unchanged.
 
 ## Safety and compatibility
 

@@ -217,6 +217,34 @@ def test_brain_api_progressive_scopes_and_bounds() -> None:
     assert changes_client.get("/v1/brain/changes?limit=25", headers=headers).status_code == 200
 
 
+def test_current_coverage_is_bounded_paginated_and_separately_scoped() -> None:
+    store = MagicMock(spec=Store)
+    brain = MagicMock(spec=DataCoreStore)
+    brain.current_coverage.return_value = {
+        "generated_at": datetime(2026, 9, 22, tzinfo=UTC),
+        "complete": False,
+        "semantics": "registered_sources_and_explicit_bridges_only",
+        "results": [],
+        "next_cursor": None,
+        "limit": 7,
+    }
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    denied = TestClient(create_app(store, registry({"brain.search"}), brain_store=brain))
+    assert denied.get("/v1/brain/current-coverage", headers=headers).status_code == 403
+    client = TestClient(
+        create_app(store, registry({"brain.changes.read"}), brain_store=brain)
+    )
+    response = client.get(
+        "/v1/brain/current-coverage?after=files_alpha&limit=7", headers=headers
+    )
+    assert response.status_code == 200
+    assert response.json()["complete"] is False
+    assert response.json()["semantics"] == "registered_sources_and_explicit_bridges_only"
+    assert brain.current_coverage.call_args.kwargs == {"after": "files_alpha", "limit": 7}
+    for query in ("?limit=0", "?limit=51"):
+        assert client.get("/v1/brain/current-coverage" + query, headers=headers).status_code == 422
+
+
 def test_current_email_search_is_explicit_bounded_and_scoped() -> None:
     store = MagicMock(spec=Store)
     brain = MagicMock(spec=DataCoreStore)
