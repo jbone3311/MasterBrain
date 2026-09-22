@@ -1,7 +1,9 @@
 # ADR-058 — Immutable FileOS index generations and activation rollback
 
-Status: accepted for implementation; hosted PostgreSQL and restore verification are
-pending on the branch receipt.
+Status: accepted and verified for the additive prototype tranche on 2026-09-22.
+Revision `b715bf1` passed hosted
+[CI 35725616036](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725616036)
+and [restore 35725615886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725615886).
 
 ## Decision
 

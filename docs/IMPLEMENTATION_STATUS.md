@@ -32,7 +32,7 @@ mean hosted, live-source accepted, or production ready.
   effects; hosted PostgreSQL and populated-restore gates green.
 - Immutable, latest-completion-bound FileOS lexical generations with database-checked
   readiness, append-only activation/reactivation rollback and active-only API search;
-  hosted PostgreSQL and restore verification pending on the branch.
+  hosted PostgreSQL and populated-restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

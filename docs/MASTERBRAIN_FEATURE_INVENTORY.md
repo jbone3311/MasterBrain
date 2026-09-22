@@ -39,7 +39,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Metadata | Source and extracted metadata, versioned independently | Partial |
 | Provenance | Every derivative links source, transform, version, code and time | Implemented FileOS text slice |
 | Chunking | Deterministic, versioned chunks retaining evidence offsets | Implemented bounded text slice |
-| Indexing | Lexical first, optional vector, rebuildable and freshness-aware | Immutable FileOS generation/activation path implemented; hosted verification pending |
+| Indexing | Lexical first, optional vector, rebuildable and freshness-aware | Immutable FileOS generation/activation path implemented; hosted gates green |
 | Database primitives | tenancy, audit, jobs, leases, idempotency, outbox, retention | Strong Email foundation; extraction planned |
 
 ## KnowledgeCore

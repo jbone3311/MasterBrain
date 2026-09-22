@@ -2,6 +2,36 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified immutable FileOS index generations and rollback
+
+Revision **b715bf1** passed
+[CI 35725616036](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725616036)
+and [restore 35725615886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725615886),
+observed 2026-09-22 Pacific.
+
+- Migration 0019 adds forced-RLS, immutable generation/item/chunk/readiness tables and
+  append-only activations. PostgreSQL validates exact declared closure before readiness
+  and rejects post-ready append. Generation identity binds the latest completed run,
+  exact plan, code revision and chunker version.
+- Hosted PostgreSQL proved deterministic replay, a distinct generation for a changed
+  code revision, changed-run generation, activation replay/conflict, active-only
+  queries, prior-generation rollback/reactivation, API reads and immutable closure.
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **124 Markdown files / 780 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **61 tables / 229 rows / two tenants / four encrypted
+  objects / two identity bindings**, including the same active generation and query
+  result, in 17.86 seconds. The 29 restore safety tests also passed.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. The live donor
+  harness matched the pinned FOS-Master baseline across adopted extraction and a
+  2,000-file-plus-edge stress corpus. Local SQL skips are not passes.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. No scheduler, automatic generation,
+  global-search switch, source effect, cutover, rename or retirement exists.
+
 ## Verified deterministic FileOS rebuild preview
 
 Revision **0653a35d5376efcee5151c35a827f9fa715d242d** passed

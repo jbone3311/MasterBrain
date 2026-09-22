@@ -2,10 +2,10 @@
 
 ## Active checkpoint
 
-**Checkpoint 3G — rebuild generation/execution contract.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. The additive immutable generation, readiness,
-activation/reactivation rollback and active-only read path are implemented locally.
-Hosted PostgreSQL and restore gates are still required before this checkpoint closes.
+**Checkpoint 3H — private generation operator and query parity.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Add an authenticated, explicit command to
+build/activate or roll back a FileOS index generation, then compare active-generation
+queries with the existing deterministic index. No scheduler or global cutover.
 
 ## Completed gates
 
@@ -49,13 +49,16 @@ Hosted PostgreSQL and restore gates are still required before this checkpoint cl
 - Checkpoint 3F deterministic rebuild preview revision `0653a35` passed hosted
   [CI 35720358559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358559)
   and [restore 35720358811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358811).
+- Checkpoint 3G immutable index generations revision `b715bf1` passed hosted
+  [CI 35725616036](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725616036)
+  and [restore 35725615886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725615886).
 
 ## Current work
 
-- Prove migration 0019, readiness closure, RLS, deterministic replay, activation
-  conflict, rollback query behavior and restored active state in hosted PostgreSQL.
-- Add the private generation operator only after those gates pass; global DataCore
-  search remains unchanged until an explicit current/historical policy is accepted.
+- Reuse the private FileOS configuration and exact worker identity for explicit
+  generation build/activation with non-consuming check mode and scrubbed output.
+- Add deterministic query-parity coverage before any global DataCore search switch;
+  current/historical policy remains a separate decision.
 
 ## Deferred by design
 

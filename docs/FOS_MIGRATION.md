@@ -62,7 +62,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-005B completion/freshness | Shared intake/publication contracts | migration 0017 + DataCore/Brain freshness | exact binding/counts/replay/immutability/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
 | DC-005C inventory reconciliation evidence | FOS-Master `218d5cae`, `corpus_reconcile.py` lessons | migration 0018 + completed-run item/absence ledgers | exact ledger balance/stale-run refusal/absence/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
 | DC-005D deterministic rebuild preview | Shared normalized document/chunk contracts | `fileos_rebuild_preview` + Brain API | run-bound pagination/hash/identity/chunk verification/no effects | Complete; hosted PostgreSQL and restore gates green |
-| DC-005E immutable index generations | Shared normalized document/chunk contracts | migration 0019 + DataCore active-generation reads | exact generation/replay/activation/rollback/RLS/restore | Implemented; hosted gates pending |
+| DC-005E immutable index generations | Shared normalized document/chunk contracts | migration 0019 + DataCore active-generation reads | exact generation/replay/activation/rollback/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
 
 DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
 and all delete/move operations. Those omissions do not change the returned scan and
