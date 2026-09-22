@@ -127,10 +127,10 @@ enters this design.
 
 ## Current work
 
-- Audit how a second isolated pass can select exactly one nested member without paths,
-  ambient state or returning unrelated bytes.
-- Define compressed-input/member-output bounds, persisted identity checks, nested
-  traversal semantics and parent revalidation before implementation.
+- Implement ADR-077's closed one-member contract, fixed child command and parent
+  verifier with an independent 8 MiB output cap.
+- Add forced-RLS current-inventory resolution, source revalidation, nested ZIP/TAR
+  identity tests, hostile/fault corpus and actual restricted-container invocation.
 
 ## Deferred by design
 

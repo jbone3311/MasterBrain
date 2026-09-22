@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-077](adr/077_hash_bound_archive_member_read.md) defines a separate isolated
+command that returns at most one persisted non-container member by exact source and
+member hash/size, capped at 8 MiB and still unscanned. Implementation is pending.
+
 [ADR-076](adr/076_archive_manifest_persistence.md) defines an append-only forced-RLS
 hash-manifest ledger for accepted archive inventories. It creates no child evidence,
 member reads or search visibility; implementation is pending.
