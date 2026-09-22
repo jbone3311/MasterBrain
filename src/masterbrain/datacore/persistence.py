@@ -30,6 +30,7 @@ CHUNK_CHARACTERS = 1_000
 NORMALIZER_VERSION = "plain-text-v1"
 EMAIL_NORMALIZER_VERSION = "email-message-v1"
 EMAIL_ATTACHMENT_NORMALIZER_VERSION = "email-attachment-text-v1"
+EMAIL_DOCUMENT_NORMALIZER_PREFIX = "email-pdf-v1"
 FILEOS_TEXT_EXTRACTOR_VERSION = "fileos-text-v1"
 INDEX_CHUNKER_VERSION = "deterministic-chunks-v1"
 MAX_GENERATION_TEXT_BYTES = 64 * 1_048_576
@@ -74,6 +75,18 @@ class EmailAttachmentBridgeResult:
     document_id: str | None
     chunks: int
     outcome: str
+    changed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class EmailDocumentBridgeResult:
+    source_id: str
+    item_id: str
+    version_id: str
+    evidence_id: str
+    document_id: str
+    chunks: int
+    extraction_status: str
     changed: bool
 
 
@@ -901,6 +914,268 @@ class DataCoreStore:
                 document_id,
                 len(chunks),
                 row["status"],
+                True,
+            )
+
+    @staticmethod
+    def _email_document_bridge_result(
+        row: Mapping[str, Any], *, changed: bool
+    ) -> EmailDocumentBridgeResult:
+        return EmailDocumentBridgeResult(
+            source_id=row["source_id"],
+            item_id=row["item_id"],
+            version_id=row["version_id"],
+            evidence_id=row["evidence_id"],
+            document_id=row["document_id"],
+            chunks=row["chunk_count"],
+            extraction_status=row["extraction_status"],
+            changed=changed,
+        )
+
+    def bridge_email_document_extraction(
+        self,
+        ctx: TenantContext,
+        legacy_extraction_id: UUID,
+        idempotency_key: UUID,
+        *,
+        code_revision: str,
+    ) -> EmailDocumentBridgeResult:
+        """Publish one approved legacy PDF derivative on existing attachment evidence."""
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.document.publish")
+        if not code_revision or len(code_revision) > 200 or "\x00" in code_revision:
+            raise ValueError("invalid document bridge code revision")
+        request_hash = _canonical_digest(
+            {
+                "legacy_extraction_id": str(legacy_extraction_id),
+                "bridge_contract": "email-document-bridge-v1",
+                "code_revision": code_revision,
+            }
+        )
+        receipt_columns = (
+            "source_id,item_id,version_id,evidence_id,document_id,chunk_count,"
+            "extraction_status,request_hash"
+        )
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:email-document-bridge:{legacy_extraction_id}",),
+            )
+            receipt = conn.execute(
+                f"SELECT {receipt_columns} FROM brain_email_document_bridge_receipts "
+                "WHERE actor_id=%s AND idempotency_key=%s",
+                (ctx.actor_id, idempotency_key),
+            ).fetchone()
+            if receipt:
+                if receipt["request_hash"] != request_hash:
+                    raise Conflict("idempotency key reused for a different document bridge")
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.email_document_bridge_replayed",
+                    "document_extraction",
+                    str(legacy_extraction_id),
+                )
+                return self._email_document_bridge_result(receipt, changed=False)
+            prior = conn.execute(
+                f"SELECT {receipt_columns} FROM brain_email_document_bridge_receipts "
+                "WHERE legacy_extraction_id=%s",
+                (legacy_extraction_id,),
+            ).fetchone()
+            if prior:
+                if prior["request_hash"] != request_hash:
+                    raise Conflict("Email document was bridged with different provenance")
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.email_document_bridge_replayed",
+                    "document_extraction",
+                    str(legacy_extraction_id),
+                )
+                return self._email_document_bridge_result(prior, changed=False)
+
+            identity = conn.execute(
+                "SELECT account_id FROM document_extractions WHERE id=%s",
+                (legacy_extraction_id,),
+            ).fetchone()
+            if not identity:
+                raise NotFound()
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:{identity['account_id']}",),
+            )
+            row = conn.execute(
+                "SELECT d.id AS legacy_extraction_id,d.account_id,d.receipt_id AS "
+                "legacy_attachment_id,d.processor_version,d.policy_version,d.revision AS "
+                "extraction_revision,d.status AS extraction_status,d.extracted_text,d.result,"
+                "approval.id AS legacy_approval_job_id,a.evidence_id AS "
+                "legacy_parent_version_id,mv.raw_sha256,mv.parser_version,m.deleted,"
+                "m.quarantined,m.raw_sha256 AS current_raw_sha256,m.parser_version AS "
+                "current_parser_version,ab.source_id,ab.item_id,ab.version_id,ab.evidence_id "
+                "FROM document_extractions d JOIN attachment_receipts a ON "
+                "a.tenant_id=d.tenant_id AND a.account_id=d.account_id AND a.id=d.receipt_id "
+                "JOIN brain_email_attachment_bridge_receipts ab ON ab.tenant_id=d.tenant_id "
+                "AND ab.account_id=d.account_id AND ab.legacy_attachment_id=d.receipt_id "
+                "JOIN message_versions mv ON mv.tenant_id=a.tenant_id "
+                "AND mv.account_id=a.account_id AND mv.id=a.evidence_id "
+                "JOIN messages m ON m.tenant_id=mv.tenant_id AND m.account_id=mv.account_id "
+                "AND m.id=mv.message_id JOIN brain_source_items ai ON "
+                "ai.tenant_id=ab.tenant_id AND ai.id=ab.item_id "
+                "AND ai.current_version_id=ab.version_id "
+                "JOIN brain_email_bridge_receipts eb ON eb.tenant_id=mv.tenant_id "
+                "AND eb.account_id=mv.account_id AND eb.legacy_version_id=mv.id "
+                "JOIN brain_source_items pi ON pi.tenant_id=eb.tenant_id "
+                "AND pi.id=eb.item_id AND pi.current_version_id=eb.version_id "
+                "JOIN LATERAL (SELECT j.id FROM document_jobs j WHERE "
+                "j.tenant_id=d.tenant_id AND j.account_id=d.account_id "
+                "AND j.receipt_id=d.receipt_id AND j.extraction_id=d.id "
+                "AND j.processor_version=d.processor_version "
+                "AND j.policy_version=d.policy_version AND j.status='completed' "
+                "AND j.outcome='result_saved' ORDER BY j.created_at,j.id LIMIT 1) approval "
+                "ON true WHERE d.id=%s",
+                (legacy_extraction_id,),
+            ).fetchone()
+            if not row:
+                raise Conflict(
+                    "document extraction is not approved on a bridged current attachment"
+                )
+            if row["deleted"] or row["quarantined"]:
+                raise Conflict("document parent is not currently visible")
+            if (
+                row["raw_sha256"] != row["current_raw_sha256"]
+                or row["parser_version"] != row["current_parser_version"]
+            ):
+                raise Conflict("document parent evidence is historical")
+            text = row["extracted_text"]
+            if (
+                row["extraction_status"] not in {"extracted", "partial"}
+                or not isinstance(text, str)
+                or not text
+                or "\x00" in text
+                or len(text.encode()) > MAX_NORMALIZED_BYTES
+            ):
+                raise Conflict("document extraction is outside the shared text contract")
+            normalizer = (
+                f"{EMAIL_DOCUMENT_NORMALIZER_PREFIX}:{row['processor_version']}:"
+                f"{row['policy_version']}"
+            )
+            if len(normalizer) > 200:
+                raise Conflict("document extractor identity is outside the shared contract")
+            result_sha = _canonical_digest(row["result"])
+            body_sha = hashlib.sha256(text.encode()).hexdigest()
+            document_id = stable_id("document", row["version_id"], normalizer, body_sha)
+            conn.execute(
+                "INSERT INTO brain_normalized_documents(tenant_id,id,evidence_id,normalizer,"
+                "body_sha256,body) VALUES (%s,%s,%s,%s,%s,%s)",
+                (ctx.tenant_id, document_id, row["evidence_id"], normalizer, body_sha, text),
+            )
+            chunks = list(deterministic_chunks(text))
+            for ordinal, (start, end, chunk) in enumerate(chunks):
+                chunk_sha = hashlib.sha256(chunk.encode()).hexdigest()
+                chunk_id = stable_id("chunk", document_id, str(ordinal), chunk_sha)
+                conn.execute(
+                    "INSERT INTO brain_chunks(tenant_id,id,document_id,ordinal,start_offset,"
+                    "end_offset,text,sha256) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id,
+                        chunk_id,
+                        document_id,
+                        ordinal,
+                        start,
+                        end,
+                        chunk,
+                        chunk_sha,
+                    ),
+                )
+            config_sha = _canonical_digest(
+                {
+                    "chunk_characters": CHUNK_CHARACTERS,
+                    "source": "document_extractions",
+                    "processor_version": row["processor_version"],
+                    "policy_version": row["policy_version"],
+                    "extraction_revision": row["extraction_revision"],
+                    "extraction_status": row["extraction_status"],
+                    "result_sha256": result_sha,
+                }
+            )
+            provenance_id = stable_id("provenance", document_id, code_revision, config_sha)
+            conn.execute(
+                "INSERT INTO brain_provenance(tenant_id,id,output_id,transform,"
+                "transform_version,code_revision,configuration_sha256,created_at) "
+                "VALUES (%s,%s,%s,'bridge_email_document_extraction',%s,%s,%s,"
+                "clock_timestamp())",
+                (
+                    ctx.tenant_id,
+                    provenance_id,
+                    document_id,
+                    normalizer,
+                    code_revision,
+                    config_sha,
+                ),
+            )
+            conn.execute(
+                "INSERT INTO brain_provenance_inputs(tenant_id,provenance_id,input_id,ordinal) "
+                "VALUES (%s,%s,%s,0)",
+                (ctx.tenant_id, provenance_id, row["evidence_id"]),
+            )
+            change_id = stable_id("change", "document_published", document_id)
+            conn.execute(
+                "INSERT INTO brain_change_events(tenant_id,id,source_id,item_id,version_id,kind) "
+                "VALUES (%s,%s,%s,%s,%s,'document_published')",
+                (
+                    ctx.tenant_id,
+                    change_id,
+                    row["source_id"],
+                    row["item_id"],
+                    row["version_id"],
+                ),
+            )
+            conn.execute(
+                "INSERT INTO brain_email_document_bridge_receipts(tenant_id,actor_id,"
+                "idempotency_key,account_id,legacy_attachment_id,legacy_extraction_id,"
+                "legacy_approval_job_id,source_id,item_id,version_id,evidence_id,document_id,"
+                "chunk_count,extraction_status,extraction_revision,processor_version,"
+                "policy_version,normalizer,result_sha256,code_revision,request_hash) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id,
+                    ctx.actor_id,
+                    idempotency_key,
+                    row["account_id"],
+                    row["legacy_attachment_id"],
+                    legacy_extraction_id,
+                    row["legacy_approval_job_id"],
+                    row["source_id"],
+                    row["item_id"],
+                    row["version_id"],
+                    row["evidence_id"],
+                    document_id,
+                    len(chunks),
+                    row["extraction_status"],
+                    row["extraction_revision"],
+                    row["processor_version"],
+                    row["policy_version"],
+                    normalizer,
+                    result_sha,
+                    code_revision,
+                    request_hash,
+                ),
+            )
+            self.store.audit(
+                conn,
+                ctx,
+                "brain.email_document_bridge_recorded",
+                "document_extraction",
+                str(legacy_extraction_id),
+            )
+            return EmailDocumentBridgeResult(
+                row["source_id"],
+                row["item_id"],
+                row["version_id"],
+                row["evidence_id"],
+                document_id,
+                len(chunks),
+                row["extraction_status"],
                 True,
             )
 
