@@ -2,6 +2,29 @@
 
 Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## MasterBrain foundation — local checkpoint
+
+Revision **25b941c2540d3e8f983e21322e8e6563ea568814** establishes the MasterBrain
+identity and ADR-047 boundaries, plus the first read-only DataCore donor extraction.
+Publication CI/restore has not yet run for this revision.
+
+- Full local Python suite: **1,969 passed / 344 explicit PostgreSQL skips** with two
+  pre-existing dependency deprecation warnings. The skipped SQL cases are not passes.
+- **134 Node contracts** passed. Full Ruff and strict mypy over **53 source files**
+  passed. The deployment/repository quality gate and diff checks passed.
+- Documentation gate passed: **105 Markdown files / 740 local paths/fragments**.
+- The live-donor harness passed hash, name and combined duplicate scans against an
+  unchanged FOS-Master checkout at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. The focused DataCore suite passed
+  three cases. The synthetic corpus includes exact duplicates, name versions, empty
+  duplicates and donor exclusion patterns.
+- Local Python 3.14 did not load the pre-existing editable-install `.pth` inside two
+  isolated subprocess tests. A normal wheel reinstall made both tests pass; the same
+  issue affected the untouched `email_brain` import and was not a product regression.
+- No live source, database migration, file move/delete, remote model, cloud resource,
+  FileOS cutover, FOS-Master modification/rename/retirement, or Brain API runtime was
+  added. Golden/shadow/production acceptance remains open.
+
 ## Verified structured memory
 
 Runtime/test revision **9769a22170279beb705d3674576fcd098ba8c966** passed
