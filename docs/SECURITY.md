@@ -91,10 +91,11 @@ no source, Docker or scheduling authority.
 
 The Email bridge operator uses the same private-file and safe-runtime checks with
 exactly the shared ingest and document-publication scopes. It accepts one explicit
-legacy evidence UUID, reauthenticates around the transaction and returns only opaque
-identities/counts. It has no Email ingest, provider, original-content, mailbox-write,
-scan, scheduler or batch authority. The bridge transaction shares the Email account
-advisory lock so a current version cannot become historical during publication.
+legacy message, attachment or approved-extraction UUID, reauthenticates around the
+transaction and returns only opaque identities/counts/status. It has no Email ingest,
+document approval, provider, original-content, mailbox-write, scan, scheduler or batch
+authority. The bridge transactions share the Email account advisory lock so a current
+version cannot become historical during publication.
 Current bridged-Email search independently rejoins the receipt to the legacy current
 message on every query and excludes deleted/quarantined state. It returns bounded
 untrusted excerpts and opaque identities only; it does not expose raw MIME or grant

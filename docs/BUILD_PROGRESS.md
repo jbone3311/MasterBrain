@@ -2,11 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4F — private Email attachment/document bridge operator.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Add explicit one-occurrence and one-extraction
-commands using private closed configuration, exact existing shared worker scopes,
-non-consuming checks, reauthentication and content-free output. Do not enumerate a
-mailbox, approve documents, read bytes or redirect existing Email search.
+**Checkpoint 4G — current Email-family retrieval.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Design an explicit current-only read that can
+return bridged message text, attachment text and approved PDF derivatives while
+rechecking the legacy parent and shared current pointers. Preserve the existing
+message-only endpoint and retained-history search until the broader contract is proven.
 
 ## Completed gates
 
@@ -82,13 +82,17 @@ mailbox, approve documents, read bytes or redirect existing Email search.
   tenant-isolation fixture correction `c183a07` passed hosted
   [CI 35743436225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436225)
   and [restore 35743436167](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436167).
+- Checkpoint 4F private Email attachment/document bridge commands revision `6156b70`
+  passed hosted
+  [CI 35745615962](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615962)
+  and [restore 35745615958](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615958).
 
 ## Current work
 
-- Reuse the existing private Email bridge controller/config boundary for explicit
-  attachment and approved-document identifiers.
-- Add denial, preflight, scrubbed-output and real PostgreSQL command cases before
-  claiming an operable bridge path.
+- Specify result kinds, independent bounds/ranks and current-parent joins for Email
+  message, attachment and approved-document results.
+- Add synthetic update/delete/quarantine cases before exposing the broader read in the
+  Brain API.
 
 ## Deferred by design
 

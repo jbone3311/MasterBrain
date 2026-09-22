@@ -56,7 +56,7 @@ FileOS sources ┘       │              │                │
 | Cross-source current FileOS search | Implemented; hosted PostgreSQL and restore gates green |
 | Current FileOS + KnowledgeCore grouped retrieval | Implemented; hosted PostgreSQL and restore gates green |
 | Current Email evidence bridge into DataCore | Implemented additive library path; hosted PostgreSQL and restore gates green |
-| Private one-version Email bridge command | Implemented; hosted PostgreSQL and restore gates green |
+| Private Email message/attachment/document bridge commands | Implemented; hosted PostgreSQL and restore gates green |
 | Current-only bridged Email Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Email attachment occurrence/text bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Approved Email PDF derivative bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |

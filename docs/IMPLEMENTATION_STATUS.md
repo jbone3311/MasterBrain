@@ -56,6 +56,9 @@ mean hosted, live-source accepted, or production ready.
 - Additive approved Email PDF derivative bridge from one immutable completed legacy
   extraction onto its existing attachment evidence, with exact approval/result/
   processor provenance and no byte access; hosted PostgreSQL/restore gates green.
+- Private `masterbrain email bridge-attachment` and `bridge-document` commands using
+  the existing closed configuration, exact shared worker scopes, non-consuming checks,
+  reauthentication and content-free output; hosted PostgreSQL/restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -64,8 +67,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Email bridge batch/backfill, attachment/document bridge operator, grouped all-current
-  retrieval and any redirect of legacy Email search.
+- Email bridge batch/backfill, grouped all-current Email-family retrieval and any
+  redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,

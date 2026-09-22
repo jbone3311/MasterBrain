@@ -2,6 +2,33 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified private Email attachment/document bridge commands
+
+Revision **6156b70** passed
+[CI 35745615962](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615962)
+and [restore 35745615958](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615958),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-attachment` and `masterbrain email bridge-document` accept
+  one explicit legacy UUID, the existing private closed config and an idempotency UUID.
+  Both require the exact shared ingest/document scopes, perform a non-consuming check,
+  reauthenticate around execution and return only opaque IDs, counts/status and replay
+  state.
+- Unit and command tests prove exact dispatch, scope/config denial, revocation,
+  content-free scrubbed output and no target inspection during `--check`. PostgreSQL
+  executed both operators through the approved PDF path, then proved shared search,
+  replay, RLS, immutability and unchanged legacy evidence behavior.
+- CI and deployment each passed **2,439 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **133 Markdown files / 796
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 23.71
+  seconds.
+- The commands do not enumerate Email, approve/process documents, read bytes, contact
+  providers, schedule work, mutate mailboxes or redirect legacy search. FOS-Master
+  remains unchanged at **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified approved Email PDF derivative bridge
 
 Runtime revision **cd425d0** and tenant-isolation fixture correction **c183a07**

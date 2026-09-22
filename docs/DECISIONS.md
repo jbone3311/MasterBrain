@@ -12,8 +12,8 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-067](adr/067_email_part_bridge_operator.md) defines explicit private commands
 for one Email attachment occurrence or one approved PDF derivative, reusing the exact
-shared worker scopes and non-consuming preflight. Implementation and hosted
-verification are pending.
+shared worker scopes and non-consuming preflight. Hosted PostgreSQL and restore
+verification are green.
 
 [ADR-066](adr/066_email_document_extraction_bridge.md) defines a separate additive
 bridge for an immutable approved Email PDF extraction onto its existing shared
