@@ -2,10 +2,10 @@
 
 ## Active checkpoint
 
-**Checkpoint 3J — current-aware unified retrieval contract.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. The explicit grouped composition of current
-FileOS generations with reviewed KnowledgeCore results is implemented locally without
-changing the retained-history default or pretending ranks are globally calibrated.
+**Checkpoint 4A — Email evidence bridge into DataCore.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define an additive, replayable mapping from
+retained Email evidence into shared source/version/evidence/document/chunk identities
+without replacing the battle-tested Email ingestion tables or losing MIME provenance.
 
 ## Completed gates
 
@@ -60,13 +60,16 @@ changing the retained-history default or pretending ranks are globally calibrate
   `83f5747` passed hosted
   [CI 35729843020](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843020)
   and [restore 35729843019](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843019).
+- Checkpoint 3J current-aware grouped retrieval revision `8bada56` passed hosted
+  [CI 35731669724](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35731669724)
+  and [restore 35731669604](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35731669604).
 
 ## Current work
 
-- Prove current/retained selection, both-scope enforcement, evidence links and grouped
-  ranks in hosted PostgreSQL.
-- Keep Email migration, synthesis and any default-route switch behind their own
-  evaluation and acceptance gates.
+- Inventory Email message/evidence/attachment identities and define a non-destructive
+  bridge receipt with exact legacy-to-shared provenance and replay behavior.
+- Publish a bounded synthetic Email corpus through the bridge, then prove shared search
+  parity before any existing Email API or ingestion path is redirected.
 
 ## Deferred by design
 

@@ -54,7 +54,7 @@ FileOS sources ┘       │              │                │
 | Immutable FileOS index generations, activation and rollback | Implemented; hosted PostgreSQL and restore gates green |
 | Private FileOS generation/rollback operator | Implemented; hosted PostgreSQL and restore gates green |
 | Cross-source current FileOS search | Implemented; hosted PostgreSQL and restore gates green |
-| Current FileOS + KnowledgeCore grouped retrieval | Implemented on branch; hosted PostgreSQL pending |
+| Current FileOS + KnowledgeCore grouped retrieval | Implemented; hosted PostgreSQL and restore gates green |
 | Archives, images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |

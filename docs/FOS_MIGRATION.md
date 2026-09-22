@@ -65,7 +65,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-005E immutable index generations | Shared normalized document/chunk contracts | migration 0019 + DataCore active-generation reads | exact generation/replay/activation/rollback/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
 | DC-005F private generation operator | DC-005E generation contract | `masterbrain fileos index` | exact scopes/check/replay/revocation/rollback/query parity | Complete; hosted PostgreSQL and restore gates green |
 | DC-005G current FileOS retrieval | DC-005E active generations | Brain API `/v1/brain/fileos-search` | two-source/multi-query parity/rollback/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
-| DC-005H current-aware grouped retrieval | DC-005G + reviewed KnowledgeCore | explicit unified-search visibility | compatibility/current selection/scopes/RLS | Implemented; hosted gates pending |
+| DC-005H current-aware grouped retrieval | DC-005G + reviewed KnowledgeCore | explicit unified-search visibility | compatibility/current selection/scopes/RLS | Complete; hosted PostgreSQL and restore gates green |
 
 DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
 and all delete/move operations. Those omissions do not change the returned scan and
