@@ -63,3 +63,9 @@ jobs:
         run: |
           document_image_id="$(docker image inspect masterbrain-documents-ci --format '{{.Id}}')"
           MASTERBRAIN_DOCUMENT_IMAGE_ID="$document_image_id" uv run pytest -q tests/container_document_checks.py
+      - name: Build dedicated FileOS archive worker (not the API image)
+        run: docker build -f Dockerfile.archives -t masterbrain-archives-ci .
+      - name: Actual source-bound restricted FileOS archive inventory
+        run: |
+          archive_image_id="$(docker image inspect masterbrain-archives-ci --format '{{.Id}}')"
+          MASTERBRAIN_ARCHIVE_IMAGE_ID="$archive_image_id" uv run pytest -q tests/container_archive_checks.py
