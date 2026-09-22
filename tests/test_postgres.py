@@ -209,6 +209,7 @@ def datacore_context(ctx: TenantContext) -> TenantContext:
             {
                 "brain.source.ingest",
                 "brain.document.publish",
+                "brain.index.activate",
                 "brain.search",
                 "brain.changes.read",
             }
@@ -466,6 +467,57 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert preview_page_two["data_effects"] is False
     with pytest.raises(NotFound):
         core.fileos_rebuild_preview(ctx, "files_adapter", after="item_missing")
+    first_generation = core.build_fileos_index_generation(
+        ctx,
+        "files_adapter",
+        run_id,
+        code_revision="test-index-v1",
+    )
+    assert first_generation.recorded is True
+    assert first_generation.item_count == 3
+    assert first_generation.document_count == 1
+    assert first_generation.chunk_count == 1
+    assert (
+        core.build_fileos_index_generation(
+            ctx,
+            "files_adapter",
+            run_id,
+            code_revision="test-index-v1",
+        ).recorded
+        is False
+    )
+    revised_generation = core.build_fileos_index_generation(
+        ctx,
+        "files_adapter",
+        run_id,
+        code_revision="test-index-v2",
+    )
+    assert revised_generation.recorded is True
+    assert revised_generation.generation_id != first_generation.generation_id
+    assert revised_generation.plan_sha256 != first_generation.plan_sha256
+    first_activation_key = uuid4()
+    first_activation = core.activate_fileos_index_generation(
+        ctx,
+        "files_adapter",
+        first_generation.generation_id,
+        first_activation_key,
+    )
+    assert first_activation.recorded is True
+    assert first_activation.previous_generation_id is None
+    assert (
+        core.activate_fileos_index_generation(
+            ctx,
+            "files_adapter",
+            first_generation.generation_id,
+            first_activation_key,
+        ).recorded
+        is False
+    )
+    assert core.fileos_index_status(ctx, "files_adapter")["active_generation"][
+        "generation_id"
+    ] == first_generation.generation_id
+    assert len(core.search_fileos_active(ctx, "files_adapter", "searchable source")) == 1
+    assert core.search_fileos_active(ctx, "files_adapter", "after") == []
 
     unsupported.unlink()
     next_manifest = fileos_manifest(tmp_path, source_id="files_adapter", hour=2)
@@ -499,6 +551,46 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert inventory["present_items"] == 2
     assert inventory["newly_absent_items"] == 1
     assert inventory["absent_evidence_retained"] is True
+    second_generation = core.build_fileos_index_generation(
+        ctx,
+        "files_adapter",
+        next_run_id,
+        code_revision="test-index-v1",
+    )
+    assert second_generation.recorded is True
+    assert second_generation.item_count == 2
+    assert second_generation.document_count == 2
+    second_activation = core.activate_fileos_index_generation(
+        ctx,
+        "files_adapter",
+        second_generation.generation_id,
+        uuid4(),
+    )
+    assert second_activation.previous_generation_id == first_generation.generation_id
+    after_hits = core.search_fileos_active(ctx, "files_adapter", "after")
+    assert len(after_hits) == 1 and after_hits[0].locator == "changed.txt"
+    rollback = core.activate_fileos_index_generation(
+        ctx,
+        "files_adapter",
+        first_generation.generation_id,
+        uuid4(),
+    )
+    assert rollback.previous_generation_id == second_generation.generation_id
+    assert core.search_fileos_active(ctx, "files_adapter", "after") == []
+    reactivate = core.activate_fileos_index_generation(
+        ctx,
+        "files_adapter",
+        second_generation.generation_id,
+        uuid4(),
+    )
+    assert reactivate.previous_generation_id == first_generation.generation_id
+    with pytest.raises(Conflict, match="key reused"):
+        core.activate_fileos_index_generation(
+            ctx,
+            "files_adapter",
+            second_generation.generation_id,
+            first_activation_key,
+        )
     stale_run_id = uuid4()
     core.import_fileos_snapshot(ctx, manifest, stale_run_id)
     with pytest.raises(Conflict, match="not newer"):
@@ -580,9 +672,29 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert {item["disposition"] for item in preview_response.json()["results"]} == {
         "verified"
     }
+    index_response = api.get("/v1/brain/sources/files_adapter/index", headers=headers)
+    assert index_response.status_code == 200
+    assert (
+        index_response.json()["active_generation"]["generation_id"]
+        == second_generation.generation_id
+    )
+    active_search = api.post(
+        "/v1/brain/sources/files_adapter/search",
+        json={"query": "after", "limit": 5},
+        headers=headers,
+    )
+    assert active_search.status_code == 200
+    assert active_search.json()["active_generation_only"] is True
+    assert active_search.json()["results"][0]["locator"] == "changed.txt"
     with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
         conn.execute(
             "UPDATE brain_fileos_run_receipts SET outcomes='{}' WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        )
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO brain_index_generation_items "
+            "SELECT * FROM brain_index_generation_items WHERE tenant_id=%s LIMIT 1",
             (ctx.tenant_id,),
         )
     with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:

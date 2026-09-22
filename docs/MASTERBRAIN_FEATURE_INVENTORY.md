@@ -39,7 +39,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Metadata | Source and extracted metadata, versioned independently | Partial |
 | Provenance | Every derivative links source, transform, version, code and time | Implemented FileOS text slice |
 | Chunking | Deterministic, versioned chunks retaining evidence offsets | Implemented bounded text slice |
-| Indexing | Lexical first, optional vector, rebuildable and freshness-aware | Shared lexical slice implemented |
+| Indexing | Lexical first, optional vector, rebuildable and freshness-aware | Immutable FileOS generation/activation path implemented; hosted verification pending |
 | Database primitives | tenancy, audit, jobs, leases, idempotency, outbox, retention | Strong Email foundation; extraction planned |
 
 ## KnowledgeCore
@@ -60,7 +60,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 
 | Capability | Required behavior | State |
 |---|---|---|
-| Search | Compact ranked hits across Email and files | Grouped DataCore/KnowledgeCore API implemented; Email migration/global ranking planned |
+| Search | Compact ranked hits across Email and files | Grouped DataCore/KnowledgeCore plus FileOS active-generation APIs implemented; Email migration/global ranking planned |
 | Answer | Evidence-backed synthesis with uncertainty and coverage | Designed |
 | Expand | Fetch selected entity/project/claim/timeline/chunk | Exact DataCore/KnowledgeCore expansion implemented |
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |

@@ -30,6 +30,9 @@ mean hosted, live-source accepted, or production ready.
   and bounded inventory counts; hosted PostgreSQL and populated-restore gates green.
 - Paginated, run-bound deterministic FileOS rebuild preview with no source or index
   effects; hosted PostgreSQL and populated-restore gates green.
+- Immutable, latest-completion-bound FileOS lexical generations with database-checked
+  readiness, append-only activation/reactivation rollback and active-only API search;
+  hosted PostgreSQL and restore verification pending on the branch.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -38,8 +41,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Scheduled/incremental FileOS scanning, source cursors, automatic rebuild/current-
-  visibility policy and legacy Office/archive/image/OCR extraction.
+- Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
+  operator command/global-search cutover and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

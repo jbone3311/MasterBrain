@@ -487,6 +487,39 @@ def create_app(
             principal.context, source_id, after=after, limit=limit
         )
 
+    @app.get("/v1/brain/sources/{source_id}/index")
+    def brain_source_index_status(
+        source_id: str,
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+    ) -> dict[str, Any]:
+        return brain.fileos_index_status(principal.context, source_id)
+
+    @app.post("/v1/brain/sources/{source_id}/search")
+    def brain_source_active_search(
+        source_id: str,
+        body: BrainSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        hits = brain.search_fileos_active(
+            principal.context, source_id, body.query, limit=body.limit
+        )
+        return {
+            "source_id": source_id,
+            "results": [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ],
+            "active_generation_only": True,
+            "untrusted_content": True,
+        }
+
     @app.post("/v1/knowledge/assertions", status_code=201)
     def publish_knowledge(
         body: KnowledgePublishRequest,

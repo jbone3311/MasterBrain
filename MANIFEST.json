@@ -29,6 +29,7 @@
     "append-only FileOS completion receipts and latest-complete freshness",
     "immutable FileOS completed-inventory and absence reconciliation evidence",
     "read-only deterministic FileOS rebuild preview",
+    "immutable FileOS index generations, activation receipts and rollback",
     "DataCore persistence, lexical retrieval and progressive Brain API",
     "reviewed KnowledgeCore assertions, retrieval and changes",
     "grouped DataCore and KnowledgeCore search",

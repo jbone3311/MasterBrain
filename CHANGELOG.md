@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — through 2026-09-21
+## Unreleased — through 2026-09-22
 
 The package remains version 0.1.0, a synthetic-data prototype. These entries do
 not announce a production release. [Build receipts](docs/BUILD_RECEIPT.md) retain
@@ -19,6 +19,10 @@ exact tested commits and results.
 - Added shared `masterbrain` hash/compare/duplicates/snapshot commands, immutable
   source/evidence/provenance contracts, safe read-only FileOS manifests and expanded
   3,000-file donor parity plus fault/symlink/no-mutation stress coverage.
+- Added completion-bound immutable FileOS lexical generations, database-validated
+  readiness, append-only activation/rollback receipts and active-generation Brain API
+  reads (ADR-058). FOS-Master and source files remain unchanged; hosted verification
+  is recorded only after the branch gates pass.
 
 ### Tools discussion (documentation only)
 

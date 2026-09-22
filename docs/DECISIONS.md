@@ -380,6 +380,11 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-058 immutable FileOS index generations](adr/058_fileos_index_generations.md)
+adds completion-bound, deterministic lexical generations, append-only activation and
+reactivation rollback. Mutation remains a trusted library operation until a narrow
+operator command is separately accepted.
+
 [ADR-057 read-only rebuild preview](adr/057_fileos_rebuild_preview.md) verifies current
 normalized documents and chunks before any index-rebuild executor is authorized.
 

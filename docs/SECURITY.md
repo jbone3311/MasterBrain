@@ -77,6 +77,12 @@ Rebuild preview is bounded to 50 current-ledger items and returns opaque identit
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.
 
+Index generation is separately authorized and transactionally bound to the latest
+completed run. Its immutable identity includes the exact item plan, code revision and
+chunker version. PostgreSQL refuses incomplete readiness, post-ready append, mutation
+and cross-tenant access. Activation uses a distinct scope and idempotency receipt;
+rollback reactivates a prior ready generation without deleting evidence or derivatives.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

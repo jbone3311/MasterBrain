@@ -4,9 +4,10 @@ Roadmap entries are targets, not implementation claims. Gates are dependency-ord
 
 ## Next build packages
 
-The immediate packages are DC-002 source/provenance envelope, DC-003 read-only FileOS
-scanner/index adapter, and DC-004 extraction contract. Their detailed safety and
-parity sequence is in [FOS_MIGRATION.md](FOS_MIGRATION.md).
+The immediate package is DC-005E/005F: prove immutable FileOS index generations and
+rollback in hosted PostgreSQL, then add a narrow private operator command and a
+query-parity corpus before considering global-search activation. Archives/images/OCR,
+automatic KnowledgeCore projection and all source effects remain later packages.
 
 ## Phase 0 — Identity and baseline (current)
 

@@ -3,9 +3,9 @@
 ## Active checkpoint
 
 **Checkpoint 3G — rebuild generation/execution contract.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Design an additive generation that can replace
-a corrupt derived index without mutating evidence or pretending an absent source is
-current. No executor is authorized yet.
+`codex/masterbrain-foundation` in PR #4. The additive immutable generation, readiness,
+activation/reactivation rollback and active-only read path are implemented locally.
+Hosted PostgreSQL and restore gates are still required before this checkpoint closes.
 
 ## Completed gates
 
@@ -52,10 +52,10 @@ current. No executor is authorized yet.
 
 ## Current work
 
-- Specify an additive index-generation identity, activation receipt and rollback rule.
-- Separate derivation rebuild from source reprocessing and current/historical retrieval.
-- Require preview-plan binding, idempotency, RLS, crash recovery and query parity before
-  any generation can become active.
+- Prove migration 0019, readiness closure, RLS, deterministic replay, activation
+  conflict, rollback query behavior and restored active state in hosted PostgreSQL.
+- Add the private generation operator only after those gates pass; global DataCore
+  search remains unchanged until an explicit current/historical policy is accepted.
 
 ## Deferred by design
 

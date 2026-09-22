@@ -29,6 +29,9 @@ MAX_NORMALIZED_BYTES = 1_048_576
 CHUNK_CHARACTERS = 1_000
 NORMALIZER_VERSION = "plain-text-v1"
 FILEOS_TEXT_EXTRACTOR_VERSION = "fileos-text-v1"
+INDEX_CHUNKER_VERSION = "deterministic-chunks-v1"
+MAX_GENERATION_TEXT_BYTES = 64 * 1_048_576
+MAX_GENERATION_CHUNKS = 100_000
 _IDENTITY = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 
 
@@ -68,6 +71,28 @@ class FileOSRunReceipt:
     item_count: int
     outcomes: dict[str, int]
     published_documents: int
+    recorded: bool
+
+
+@dataclass(frozen=True, slots=True)
+class IndexGeneration:
+    generation_id: str
+    source_id: str
+    run_id: UUID
+    item_count: int
+    document_count: int
+    chunk_count: int
+    plan_sha256: str
+    ready_at: datetime
+    recorded: bool
+
+
+@dataclass(frozen=True, slots=True)
+class IndexActivation:
+    source_id: str
+    generation_id: str
+    previous_generation_id: str | None
+    activated_at: datetime
     recorded: bool
 
 
@@ -725,6 +750,366 @@ class DataCoreStore:
                 "source_effects": False,
                 "data_effects": False,
             }
+
+    def build_fileos_index_generation(
+        self,
+        ctx: TenantContext,
+        source_id: str,
+        expected_run_id: UUID,
+        *,
+        code_revision: str,
+    ) -> IndexGeneration:
+        """Build one immutable lexical generation from normalized evidence."""
+        self.store.require(ctx, "brain.document.publish")
+        if (
+            not _IDENTITY.fullmatch(source_id)
+            or not isinstance(expected_run_id, UUID)
+            or not code_revision
+            or len(code_revision) > 200
+            or "\x00" in code_revision
+        ):
+            raise ValueError("invalid index generation request")
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:fileos-source:{source_id}",),
+            )
+            run = conn.execute(
+                "SELECT actor_id,run_id,observed_at,item_count "
+                "FROM brain_fileos_run_receipts WHERE source_id=%s "
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
+                (source_id,),
+            ).fetchone()
+            if not run:
+                raise NotFound()
+            if run["run_id"] != expected_run_id:
+                raise Conflict("index generation is not bound to the latest complete run")
+            rows = conn.execute(
+                "SELECT ri.item_id,ri.version_id,ri.outcome,e.id AS evidence_id,"
+                "d.id AS document_id,d.normalizer,d.body_sha256,d.body "
+                "FROM brain_fileos_run_items ri JOIN brain_evidence e "
+                "ON e.tenant_id=ri.tenant_id AND e.source_version_id=ri.version_id "
+                "LEFT JOIN LATERAL (SELECT nd.id,nd.normalizer,nd.body_sha256,nd.body "
+                "FROM brain_normalized_documents nd WHERE nd.tenant_id=ri.tenant_id "
+                "AND nd.evidence_id=e.id ORDER BY nd.created_at DESC,nd.id DESC LIMIT 1) d "
+                "ON true WHERE ri.actor_id=%s AND ri.run_id=%s ORDER BY ri.item_id",
+                (run["actor_id"], expected_run_id),
+            ).fetchall()
+            if len(rows) != run["item_count"]:
+                raise Conflict("completed inventory ledger is incomplete")
+            plan_items: list[dict[str, Any]] = []
+            generated_chunks: list[dict[str, Any]] = []
+            total_text_bytes = 0
+            document_count = 0
+            for row in rows:
+                if row["evidence_id"] != stable_id("evidence", row["version_id"]):
+                    raise Conflict("evidence identity changed")
+                document_id = row["document_id"]
+                disposition = "not_indexed"
+                body_sha: str | None = None
+                if document_id is not None:
+                    body = row["body"]
+                    encoded = body.encode()
+                    total_text_bytes += len(encoded)
+                    if total_text_bytes > MAX_GENERATION_TEXT_BYTES:
+                        raise ValueError("index generation text bound exceeded")
+                    body_sha = hashlib.sha256(encoded).hexdigest()
+                    if (
+                        row["body_sha256"] != body_sha
+                        or document_id
+                        != stable_id(
+                            "document", row["version_id"], row["normalizer"], body_sha
+                        )
+                    ):
+                        raise Conflict("normalized document identity changed")
+                    disposition = "indexed"
+                    document_count += 1
+                    for ordinal, (start, end, text) in enumerate(deterministic_chunks(body)):
+                        chunk_sha = hashlib.sha256(text.encode()).hexdigest()
+                        generated_chunks.append(
+                            {
+                                "document_id": document_id,
+                                "id": stable_id("chunk", document_id, str(ordinal), chunk_sha),
+                                "ordinal": ordinal,
+                                "start_offset": start,
+                                "end_offset": end,
+                                "text": text,
+                                "sha256": chunk_sha,
+                            }
+                        )
+                        if len(generated_chunks) > MAX_GENERATION_CHUNKS:
+                            raise ValueError("index generation chunk bound exceeded")
+                elif row["outcome"] == "extracted":
+                    raise Conflict("completed extraction is missing its document")
+                plan_items.append(
+                    {
+                        "item_id": row["item_id"],
+                        "version_id": row["version_id"],
+                        "outcome": row["outcome"],
+                        "evidence_id": row["evidence_id"],
+                        "document_id": document_id,
+                        "body_sha256": body_sha,
+                        "disposition": disposition,
+                    }
+                )
+            plan_sha = _canonical_digest(
+                {
+                    "source_id": source_id,
+                    "run_actor_id": str(run["actor_id"]),
+                    "run_id": str(expected_run_id),
+                    "observed_at": run["observed_at"].isoformat(),
+                    "code_revision": code_revision,
+                    "chunker_version": INDEX_CHUNKER_VERSION,
+                    "items": plan_items,
+                }
+            )
+            generation_id = stable_id(
+                "index_generation",
+                source_id,
+                str(expected_run_id),
+                INDEX_CHUNKER_VERSION,
+                plan_sha,
+            )
+            existing = conn.execute(
+                "SELECT g.run_id,g.item_count,g.document_count,g.chunk_count,g.plan_sha256,"
+                "r.ready_at FROM brain_index_generations g "
+                "LEFT JOIN brain_index_generation_receipts r ON r.generation_id=g.id "
+                "WHERE g.id=%s",
+                (generation_id,),
+            ).fetchone()
+            expected = {
+                "run_id": expected_run_id,
+                "item_count": len(rows),
+                "document_count": document_count,
+                "chunk_count": len(generated_chunks),
+                "plan_sha256": plan_sha,
+            }
+            if existing:
+                ready_at = existing.pop("ready_at")
+                if ready_at is None or existing != expected:
+                    raise Conflict("index generation identity changed")
+                return IndexGeneration(
+                    generation_id,
+                    source_id,
+                    expected_run_id,
+                    len(rows),
+                    document_count,
+                    len(generated_chunks),
+                    plan_sha,
+                    ready_at,
+                    False,
+                )
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,run_actor_id,"
+                "run_id,observed_at,plan_sha256,code_revision,chunker_version,item_count,"
+                "document_count,chunk_count) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id,
+                    generation_id,
+                    source_id,
+                    run["actor_id"],
+                    expected_run_id,
+                    run["observed_at"],
+                    plan_sha,
+                    code_revision,
+                    INDEX_CHUNKER_VERSION,
+                    len(rows),
+                    document_count,
+                    len(generated_chunks),
+                ),
+            )
+            for item in plan_items:
+                conn.execute(
+                    "INSERT INTO brain_index_generation_items(tenant_id,generation_id,"
+                    "source_id,item_id,version_id,outcome,disposition,evidence_id,document_id) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id,
+                        generation_id,
+                        source_id,
+                        item["item_id"],
+                        item["version_id"],
+                        item["outcome"],
+                        item["disposition"],
+                        item["evidence_id"],
+                        item["document_id"],
+                    ),
+                )
+            for chunk in generated_chunks:
+                conn.execute(
+                    "INSERT INTO brain_index_generation_chunks(tenant_id,generation_id,"
+                    "source_id,document_id,id,ordinal,start_offset,end_offset,text,sha256) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id,
+                        generation_id,
+                        source_id,
+                        chunk["document_id"],
+                        chunk["id"],
+                        chunk["ordinal"],
+                        chunk["start_offset"],
+                        chunk["end_offset"],
+                        chunk["text"],
+                        chunk["sha256"],
+                    ),
+                )
+            receipt = conn.execute(
+                "INSERT INTO brain_index_generation_receipts(tenant_id,generation_id,source_id) "
+                "VALUES (%s,%s,%s) RETURNING ready_at",
+                (ctx.tenant_id, generation_id, source_id),
+            ).fetchone()
+            assert receipt is not None
+            return IndexGeneration(
+                generation_id,
+                source_id,
+                expected_run_id,
+                len(rows),
+                document_count,
+                len(generated_chunks),
+                plan_sha,
+                receipt["ready_at"],
+                True,
+            )
+
+    def activate_fileos_index_generation(
+        self,
+        ctx: TenantContext,
+        source_id: str,
+        generation_id: str,
+        idempotency_key: UUID,
+    ) -> IndexActivation:
+        """Append an activation receipt; reactivating an older generation is rollback."""
+        self.store.require(ctx, "brain.index.activate")
+        if (
+            not _IDENTITY.fullmatch(source_id)
+            or not _IDENTITY.fullmatch(generation_id)
+            or not isinstance(idempotency_key, UUID)
+        ):
+            raise ValueError("invalid index activation request")
+        request_hash = _canonical_digest(
+            {"source_id": source_id, "generation_id": generation_id}
+        )
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:fileos-source:{source_id}",),
+            )
+            existing = conn.execute(
+                "SELECT source_id,generation_id,previous_generation_id,request_hash,"
+                "activated_at FROM brain_index_activations "
+                "WHERE actor_id=%s AND idempotency_key=%s",
+                (ctx.actor_id, idempotency_key),
+            ).fetchone()
+            if existing:
+                if (
+                    existing["request_hash"] != request_hash
+                    or existing["source_id"] != source_id
+                    or existing["generation_id"] != generation_id
+                ):
+                    raise Conflict("index activation key reused")
+                return IndexActivation(
+                    source_id,
+                    generation_id,
+                    existing["previous_generation_id"],
+                    existing["activated_at"],
+                    False,
+                )
+            ready = conn.execute(
+                "SELECT 1 FROM brain_index_generation_receipts "
+                "WHERE generation_id=%s AND source_id=%s",
+                (generation_id, source_id),
+            ).fetchone()
+            if not ready:
+                raise NotFound()
+            previous = conn.execute(
+                "SELECT generation_id FROM brain_index_activations WHERE source_id=%s "
+                "ORDER BY activated_at DESC,idempotency_key DESC LIMIT 1",
+                (source_id,),
+            ).fetchone()
+            previous_id = previous["generation_id"] if previous else None
+            row = conn.execute(
+                "INSERT INTO brain_index_activations(tenant_id,actor_id,idempotency_key,"
+                "source_id,generation_id,previous_generation_id,request_hash) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING activated_at",
+                (
+                    ctx.tenant_id,
+                    ctx.actor_id,
+                    idempotency_key,
+                    source_id,
+                    generation_id,
+                    previous_id,
+                    request_hash,
+                ),
+            ).fetchone()
+            assert row is not None
+            return IndexActivation(
+                source_id, generation_id, previous_id, row["activated_at"], True
+            )
+
+    def fileos_index_status(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
+        """Return the active immutable index generation without exposing content."""
+        self.store.require(ctx, "brain.changes.read")
+        if not _IDENTITY.fullmatch(source_id):
+            raise NotFound()
+        with self.store.transaction(ctx) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM brain_sources WHERE id=%s AND kind='fileos'", (source_id,)
+            ).fetchone():
+                raise NotFound()
+            row = conn.execute(
+                "SELECT a.generation_id,a.previous_generation_id,a.activated_at,g.run_id,"
+                "g.observed_at,g.item_count,g.document_count,g.chunk_count,g.plan_sha256,"
+                "g.chunker_version FROM brain_index_activations a "
+                "JOIN brain_index_generations g ON g.id=a.generation_id "
+                "WHERE a.source_id=%s ORDER BY a.activated_at DESC,a.idempotency_key DESC LIMIT 1",
+                (source_id,),
+            ).fetchone()
+            self.store.audit(conn, ctx, "brain.fileos_index_status", "brain_source", source_id)
+            return {
+                "source_id": source_id,
+                "status": "active" if row else "no_active_generation",
+                "active_generation": row,
+            }
+
+    def search_fileos_active(
+        self, ctx: TenantContext, source_id: str, query: str, *, limit: int = 10
+    ) -> list[SearchHit]:
+        """Search only the source's append-only active index generation."""
+        self.store.require(ctx, "brain.search")
+        if (
+            not _IDENTITY.fullmatch(source_id)
+            or not query.strip()
+            or len(query) > 500
+            or "\x00" in query
+            or not 1 <= limit <= 50
+        ):
+            raise ValueError("invalid active FileOS search")
+        with self.store.transaction(ctx) as conn:
+            active = conn.execute(
+                "SELECT generation_id FROM brain_index_activations WHERE source_id=%s "
+                "ORDER BY activated_at DESC,idempotency_key DESC LIMIT 1",
+                (source_id,),
+            ).fetchone()
+            if not active:
+                raise NotFound()
+            rows = conn.execute(
+                "SELECT c.id AS chunk_id,c.document_id,i.evidence_id,i.source_id,si.locator,"
+                "ts_headline('simple',c.text,plainto_tsquery('simple',%s),"
+                "'MaxWords=35,MinWords=10') AS excerpt,"
+                "ts_rank_cd(c.search_vector,plainto_tsquery('simple',%s)) AS rank "
+                "FROM brain_index_generation_chunks c "
+                "JOIN brain_index_generation_items i ON i.tenant_id=c.tenant_id "
+                "AND i.generation_id=c.generation_id AND i.document_id=c.document_id "
+                "JOIN brain_source_items si ON si.tenant_id=i.tenant_id AND si.id=i.item_id "
+                "WHERE c.generation_id=%s "
+                "AND c.search_vector @@ plainto_tsquery('simple',%s) "
+                "ORDER BY rank DESC,c.id LIMIT %s",
+                (query, query, active["generation_id"], query, limit),
+            ).fetchall()
+            self.store.audit(
+                conn, ctx, "brain.fileos_active_search", "brain_source", source_id
+            )
+            return [SearchHit(**row) for row in rows]
 
     def publish_text(
         self,

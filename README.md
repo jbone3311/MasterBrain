@@ -51,6 +51,7 @@ FileOS sources ┘       │              │                │
 | FileOS completion receipts and source freshness | Implemented; hosted PostgreSQL and restore gates green |
 | Completed FileOS inventory and absence reconciliation evidence | Implemented; hosted PostgreSQL and restore gates green |
 | Deterministic FileOS rebuild preview | Implemented; hosted PostgreSQL and restore gates green |
+| Immutable FileOS index generations, activation and rollback | Implemented on branch; hosted PostgreSQL/restore verification pending |
 | Archives, images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped DataCore/KnowledgeCore search | Working shared prototype |
@@ -95,7 +96,7 @@ corpus, integrate behind DataCore, then prove operational parity. Only after tho
 gates may FileOS switch to shared DataCore; folding or renaming FOS-Master is a later,
 separately approved decision.
 
-The first tranches are intentionally read-only:
+The source-facing commands remain intentionally read-only:
 
 ```sh
 uv run python scripts/datacore_parity.py --fos-repo ../FOS-Master

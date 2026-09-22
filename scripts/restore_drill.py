@@ -225,6 +225,7 @@ class SeededTenant:
     brain_document_id: str
     brain_evidence_id: str
     brain_run_id: UUID
+    brain_generation_id: str
     knowledge_entity_id: str
     knowledge_claim_id: str
 
@@ -331,6 +332,7 @@ def seed(
                     "email.review",
                     "brain.source.ingest",
                     "brain.document.publish",
+                    "brain.index.activate",
                     "brain.search",
                     "brain.changes.read",
                     "knowledge.review",
@@ -392,6 +394,20 @@ def seed(
             document_processor_version=None,
         )
         require(run_receipt.recorded, "DataCore run receipt seed failed")
+        generation = datacore.build_fileos_index_generation(
+            context,
+            source_id,
+            brain_run_id,
+            code_revision="synthetic-restore-v1",
+        )
+        require(generation.recorded, "DataCore index generation seed failed")
+        activation = datacore.activate_fileos_index_generation(
+            context,
+            source_id,
+            generation.generation_id,
+            uuid4(),
+        )
+        require(activation.recorded, "DataCore index activation seed failed")
         knowledge = KnowledgeCore(store)
         entity = knowledge.publish(
             context,
@@ -593,6 +609,7 @@ def seed(
                 brain_document.document_id,
                 brain_document.evidence_id,
                 brain_run_id,
+                generation.generation_id,
                 entity.object_id,
                 claim.object_id,
             )
@@ -767,6 +784,23 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             and not preview["source_effects"]
             and not preview["data_effects"],
             "restored DataCore rebuild preview changed",
+        )
+        index_status = DataCoreStore(store).fileos_index_status(
+            ctx, f"files_{current.keyword}"
+        )
+        require(
+            index_status["status"] == "active"
+            and index_status["active_generation"]["generation_id"]
+            == current.brain_generation_id,
+            "restored DataCore active index generation changed",
+        )
+        generation_hits = DataCoreStore(store).search_fileos_active(
+            ctx, f"files_{current.keyword}", f"masterbrainrestore {current.keyword}"
+        )
+        require(
+            len(generation_hits) == 1
+            and generation_hits[0].document_id == current.brain_document_id,
+            "restored DataCore active-generation search changed",
         )
         knowledge = KnowledgeCore(store)
         knowledge_hits = knowledge.search(ctx, f"knowledgecoreproof {current.keyword}")

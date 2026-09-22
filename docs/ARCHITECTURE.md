@@ -56,6 +56,11 @@ append-only receipt whose terminal outcome counts cover the exact manifest advan
 source's latest-complete freshness. A crash prefix stays replayable and visible as not
 complete; it cannot masquerade as a fresh source.
 
+FileOS index rebuilds publish immutable generations from one exact completed run.
+Readiness is a database-checked closure over generation items and chunks. A separate
+append-only activation selects the searchable generation, and rollback reactivates a
+prior ready generation. Rebuild does not reread or mutate source files.
+
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.

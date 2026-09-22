@@ -1,7 +1,7 @@
 # MasterBrain Data Model
 
 This document combines implemented source-neutral tables with the remaining target
-model. Migrations `0015` through `0018` implement the first DataCore,
+model. Migrations `0015` through `0019` implement the first DataCore,
 KnowledgeCore and FileOS completion/freshness slices; names not identified as
 implemented remain logical targets.
 
@@ -74,6 +74,11 @@ freshness view; intake and partial document prefixes do not.
 Migration `0018_fileos_inventory_reconciliation.sql` binds every completed receipt to
 an exact immutable item/outcome ledger. Consecutive complete ledgers produce immutable
 absence events without deleting evidence or treating partial work as a full inventory.
+
+Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
+generations, exact item/chunk membership, a database-validated readiness receipt and
+append-only activations. The active FileOS read path follows the latest activation;
+rollback appends an activation of an older ready generation rather than rewriting it.
 
 - **job**, **lease**, **checkpoint**, **inbox**, **outbox**, **idempotency_record**
 - **audit_event**, **policy_decision**, **change_feed**, **retention_action**

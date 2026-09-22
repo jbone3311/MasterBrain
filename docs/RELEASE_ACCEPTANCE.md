@@ -23,8 +23,10 @@ operator, date, result, exceptions and rollback receipt.
 - Document workers prove network isolation, read-only root, dropped capabilities,
   process/resource/output limits, dependency separation and closed-result validation.
 - Chunk/index rebuild produces equivalent identities and query results.
-- Rebuild preview is run-bound, paginated and side-effect free; any later executor
-  requires a separate idempotent generation and rollback acceptance gate.
+- Rebuild preview is run-bound, paginated and side-effect free. Generation execution
+  is completion/plan/code/chunker-bound, idempotent, transactionally closed and
+  immutable; activation is separately authorized and prior-generation reactivation
+  proves rollback before any global search cutover.
 - Source freshness advances only on an immutable receipt whose terminal counts cover
   the exact intake manifest; crash prefixes and conflicts never report complete.
 - Inventory membership balances exactly against its completion receipt; absence is

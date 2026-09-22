@@ -20,6 +20,11 @@ EmailBrain table and does not alter FOS-Master.
 | `brain_fileos_run_receipts` | Fully accounted run, outcomes and provenance | Append-only |
 | `brain_fileos_run_items` | Exact item/outcome membership of a completed run | Append-only |
 | `brain_fileos_absence_events` | Item absent between consecutive completed inventories | Append-only |
+| `brain_index_generations` | Run/code/chunker-bound generation identity and counts | Append-only |
+| `brain_index_generation_items` | Exact per-generation item/document disposition | Append-only |
+| `brain_index_generation_chunks` | Deterministically rebuilt lexical chunks | Append-only |
+| `brain_index_generation_receipts` | Database-validated generation readiness | Append-only |
+| `brain_index_activations` | Active generation selection and rollback history | Append-only |
 
 Every table carries `tenant_id`, has forced PostgreSQL row-level security and is
 available only through explicit runtime-role grants. FileOS evidence is
@@ -77,3 +82,15 @@ completed ledger while holding the source completion lock. It recomputes normali
 body/document/chunk hashes and identities, returning only verification dispositions
 and counts. The cursor is bound to that exact run. The preview writes only the normal
 access audit; it does not execute a rebuild or change source/index state.
+
+Migration `0019_datacore_index_generations.sql` executes the separately accepted
+derivative rebuild. It reconstructs bounded chunks from verified normalized documents
+for the exact latest completed run. The plan digest and generation ID include the run,
+observation, item/evidence/document identities, code revision and chunker version.
+PostgreSQL validates declared counts before readiness and prevents later append.
+
+Activation requires `brain.index.activate` and an idempotency key. Active-generation
+search reads only the newest append-only activation for one FileOS source. Reactivating
+an older ready generation is rollback; no evidence or index generation is mutated.
+Generation build/activation are library operations in this tranche, not public API
+mutations or automatic scheduling.

@@ -29,6 +29,10 @@ objects, general SQL, or an unbounded corpus dump.
   membership/new-absence counts; preserves evidence and requires `brain.changes.read`.
 - `GET /v1/brain/sources/{source_id}/rebuild-preview` — implemented paginated,
   read-only deterministic document/chunk verification for the latest complete run.
+- `GET /v1/brain/sources/{source_id}/index` — implemented active immutable FileOS
+  generation status; requires `brain.changes.read`.
+- `POST /v1/brain/sources/{source_id}/search` — implemented bounded lexical search
+  against only that source's active generation; requires `brain.search`.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes and keeps ranks separate.
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required
