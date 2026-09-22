@@ -2,6 +2,36 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified deterministic FileOS rebuild preview
+
+Revision **0653a35d5376efcee5151c35a827f9fa715d242d** passed
+[CI 35720358559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358559)
+and [restore 35720358811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358811),
+observed 2026-09-22 Pacific.
+
+- The run-bound, paginated preview recomputes body digests, deterministic document IDs,
+  chunk ranges, chunk digests and chunk IDs for the latest completed inventory. It
+  returns `verified`, `rebuild_required` or `source_reprocess_required` without paths,
+  text, source effects or DataCore effects.
+- The source completion lock prevents a page from mixing inventory runs; page cursors
+  must belong to the exact current run. PostgreSQL/API cases proved two-page traversal,
+  unknown-cursor refusal, verified and source-reprocess classifications, bounded output
+  and no disclosure fields.
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **123 Markdown files / 779 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **56 tables / 218 rows / two tenants / four encrypted
+  objects / two identity bindings** and a `verified` restored rebuild preview in 16.17
+  seconds. The 29 restore safety tests also passed.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. Local SQL skips
+  are not passes; the hosted run is the authoritative database result.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. No rebuild executor, active-generation
+  switch, search-visibility change, file effect, cutover, rename or retirement exists.
+
 ## Verified FileOS completed-inventory reconciliation evidence
 
 Revision **77ccc81f0659727e2c26fe0c952421e9ac98f14d** passed

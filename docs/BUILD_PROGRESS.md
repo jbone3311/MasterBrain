@@ -2,9 +2,10 @@
 
 ## Active checkpoint
 
-**Checkpoint 3F — deterministic rebuild preview.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define a read-only plan over the latest
-completed inventory before any rebuild execution or search-visibility policy.
+**Checkpoint 3G — rebuild generation/execution contract.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Design an additive generation that can replace
+a corrupt derived index without mutating evidence or pretending an absent source is
+current. No executor is authorized yet.
 
 ## Completed gates
 
@@ -45,14 +46,16 @@ completed inventory before any rebuild execution or search-visibility policy.
 - Checkpoint 3E completed-inventory/absence reconciliation revision `77ccc81` passed
   hosted [CI 35718606046](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606046)
   and [restore 35718606093](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606093).
+- Checkpoint 3F deterministic rebuild preview revision `0653a35` passed hosted
+  [CI 35720358559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358559)
+  and [restore 35720358811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358811).
 
 ## Current work
 
-- Specify a deterministic rebuild plan derived only from the latest completed ledger.
-- Classify current versions as already indexed, rebuildable or non-rebuildable without
-  changing documents, chunks, search visibility or source bytes.
-- Prove plan replay, stale-ledger fencing, tenant isolation and bounded output before
-  adding any execution mode.
+- Specify an additive index-generation identity, activation receipt and rollback rule.
+- Separate derivation rebuild from source reprocessing and current/historical retrieval.
+- Require preview-plan binding, idempotency, RLS, crash recovery and query parity before
+  any generation can become active.
 
 ## Deferred by design
 

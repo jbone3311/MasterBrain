@@ -1,7 +1,9 @@
 # ADR-057 — Read-only deterministic rebuild preview
 
-Status: accepted for an additive prototype tranche on 2026-09-22, pending hosted
-PostgreSQL and populated-restore gates.
+Status: accepted and verified for the additive prototype tranche on 2026-09-22.
+Revision `0653a35` passed hosted
+[CI 35720358559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358559)
+and [restore 35720358811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358811).
 
 ## Decision
 
