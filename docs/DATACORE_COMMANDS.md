@@ -1,9 +1,34 @@
 # MasterBrain Shared Commands
 
 The `masterbrain` command is the source-neutral operator surface. It currently offers
-read-only DataCore and FileOS inventory commands. The legacy `email-brain` command
-remains the Email capability surface. No shared command moves, renames, quarantines,
-deletes or modifies a source file.
+read-only DataCore and FileOS inventory commands plus explicit private publication
+commands. The legacy `email-brain` command remains the Email capability surface. No
+shared command moves, renames, quarantines, deletes or modifies a source file or
+mailbox.
+
+## Bridge one current Email evidence version
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain email bridge \
+  --config /private/operator/email-bridge.json \
+  --evidence-id b22f0f5c-a784-46a1-95a7-b2b96e1f8396 \
+  --idempotency-key 93c5a004-81ab-45b6-8652-e8ced2b40e47 \
+  --check
+```
+
+The owner-private closed config contains `version: 1`, absolute `credentials_file`
+and `token_file` paths, and `code_revision`. Its expiring worker must have exactly
+`brain.source.ingest` and `brain.document.publish`. `--check` authenticates and
+validates the safe runtime database role without reading or writing the selected
+evidence. Remove it only after preflight succeeds.
+
+Normal execution maps only the named current, visible Email version into DataCore.
+Reuse the exact key after an uncertain result; never reuse it for another evidence
+version or code revision. Output contains opaque identities, chunk count and replay
+state, never Email content, addresses or provider identifiers. The command does not
+scan an account, bridge attachments, contact a provider, modify a mailbox or redirect
+legacy Email search.
 
 ## Hash one file
 

@@ -89,6 +89,13 @@ activation scopes; rollback requires exactly activation. It reauthenticates betw
 build and activation and after completion, returns no paths/content/secrets, and has
 no source, Docker or scheduling authority.
 
+The Email bridge operator uses the same private-file and safe-runtime checks with
+exactly the shared ingest and document-publication scopes. It accepts one explicit
+legacy evidence UUID, reauthenticates around the transaction and returns only opaque
+identities/counts. It has no Email ingest, provider, original-content, mailbox-write,
+scan, scheduler or batch authority. The bridge transaction shares the Email account
+advisory lock so a current version cannot become historical during publication.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

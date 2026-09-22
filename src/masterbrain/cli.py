@@ -14,6 +14,7 @@ from uuid import UUID
 
 from masterbrain.datacore.dedup import DEFAULT_CONFIG, compare_files, file_hash, find_duplicates
 from masterbrain.datacore.fileos import snapshot_tree
+from masterbrain.email_bridge_controller import run_email_bridge_controller
 from masterbrain.fileos_controller import run_fileos_controller
 from masterbrain.fileos_index_controller import run_fileos_index_controller
 
@@ -107,6 +108,14 @@ def build_parser() -> argparse.ArgumentParser:
     target.add_argument("--generation-id")
     index.add_argument("--idempotency-key", type=UUID, required=True)
     index.add_argument("--check", action="store_true")
+
+    email = commands.add_parser("email", help="Explicit Email source migration commands")
+    email_commands = email.add_subparsers(dest="email_command", required=True)
+    bridge = email_commands.add_parser("bridge", help="Bridge one current Email version")
+    bridge.add_argument("--config", type=Path, required=True)
+    bridge.add_argument("--evidence-id", type=UUID, required=True)
+    bridge.add_argument("--idempotency-key", type=UUID, required=True)
+    bridge.add_argument("--check", action="store_true")
     return parser
 
 
@@ -157,6 +166,21 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.idempotency_key,
                         run_id=args.run_id,
                         generation_id=args.generation_id,
+                        check=args.check,
+                    )
+                )
+            )
+        elif args.command == "email" and args.email_command == "bridge":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_email_bridge_controller(
+                        args.config,
+                        dsn,
+                        args.evidence_id,
+                        args.idempotency_key,
                         check=args.check,
                     )
                 )

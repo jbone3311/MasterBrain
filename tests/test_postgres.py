@@ -6,6 +6,7 @@ CI supplies the database; no real credentials/accounts/mailboxes are involved.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import secrets
 from concurrent.futures import ThreadPoolExecutor
@@ -36,6 +37,7 @@ from email_brain.synthetic import fake_email
 from masterbrain.datacore.extraction import ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.email_bridge_controller import run_email_bridge_controller
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
     ClaimWrite,
@@ -408,6 +410,53 @@ def test_email_bridge_concurrent_requests_publish_once(
         assert conn.execute("SELECT count(*) AS n FROM brain_normalized_documents").fetchone()[
             "n"
         ] == 1
+
+
+def test_email_bridge_private_operator_publishes_without_legacy_mutation(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, account = tenant
+    store.ingest_page(ctx, account, None, "bridge-command", [item(body="Operator bridge")])
+    legacy = store.search(ctx, SearchRequest(query="Operator bridge"))[0]["evidence_id"]
+    token = secrets.token_urlsafe(40)
+    credentials = tmp_path / "credentials.json"
+    token_file = tmp_path / "token"
+    config = tmp_path / "bridge.json"
+    credentials.write_text(
+        json.dumps(
+            [
+                {
+                    "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+                    "tenant_id": str(ctx.tenant_id),
+                    "actor_id": str(ctx.actor_id),
+                    "scopes": ["brain.source.ingest", "brain.document.publish"],
+                    "client_kind": "worker",
+                    "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+                }
+            ]
+        )
+    )
+    token_file.write_text(token)
+    for private in (credentials, token_file):
+        private.chmod(0o600)
+    config.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "credentials_file": str(credentials),
+                "token_file": str(token_file),
+                "code_revision": "email-bridge-command-test-v1",
+            }
+        )
+    )
+    config.chmod(0o600)
+    before = store.evidence(ctx, legacy)
+    result = run_email_bridge_controller(config, store.dsn, legacy, uuid4())
+    assert result["recorded"] is True
+    assert result["source_effects"] is False
+    assert DataCoreStore(store).search(datacore_context(ctx), "Operator bridge")
+    assert store.evidence(ctx, legacy) == before
 
 
 def test_datacore_invalid_manifest_is_atomic(

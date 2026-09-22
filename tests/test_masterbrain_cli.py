@@ -151,3 +151,49 @@ def test_cli_index_uses_masterbrain_dsn_and_explicit_target(
         "source_effects": False,
     }
     assert dsn not in output
+
+
+def test_cli_email_bridge_uses_explicit_evidence_and_scrubs_dsn(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    key = "93c5a004-81ab-45b6-8652-e8ced2b40e47"
+    evidence = "b22f0f5c-a784-46a1-95a7-b2b96e1f8396"
+    config = tmp_path / "email-bridge.json"
+    config.write_text("not opened by this dispatch test")
+    dsn = "postgresql://secret:secret@example.invalid/private"
+    monkeypatch.setenv("MASTERBRAIN_DSN", dsn)
+    monkeypatch.setattr(
+        cli,
+        "run_email_bridge_controller",
+        lambda path, received_dsn, received_evidence, received_key, check: {
+            "config": path == config,
+            "dsn": received_dsn == dsn,
+            "evidence": str(received_evidence) == evidence,
+            "key": str(received_key) == key,
+            "check": check,
+            "source_effects": False,
+        },
+    )
+    main(
+        [
+            "email",
+            "bridge",
+            "--config",
+            str(config),
+            "--evidence-id",
+            evidence,
+            "--idempotency-key",
+            key,
+            "--check",
+        ]
+    )
+    output = capsys.readouterr().out
+    assert json.loads(output) == {
+        "check": True,
+        "config": True,
+        "dsn": True,
+        "evidence": True,
+        "key": True,
+        "source_effects": False,
+    }
+    assert dsn not in output
