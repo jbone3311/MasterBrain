@@ -15,6 +15,13 @@
   completed in commit `73b58cb`; hosted CI and restore are green.
 - Checkpoint 2 persistence/index completed in commits `20c5fb8` and `380761b`;
   hosted CI and populated logical restore are green.
+- Checkpoint 3A text/Markdown/HTML/CSV extraction completed in `afebced`; hosted CI,
+  donor parity and restore are green.
+- Progressive Brain API read slice completed in `a06bcad`; hosted CI
+  [35703242987](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35703242987)
+  and restore
+  [35703242983](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35703242983)
+  are green.
 
 ## Current work
 

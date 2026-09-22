@@ -1,6 +1,44 @@
 # Build and validation receipt
 
-Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+
+## Verified MasterBrain working read slice
+
+Runtime/test revision **a06bcad12facb084cf7d5ef4c031e1919cfd0e71** implements
+the additive DataCore persistence/index, verified FileOS text extraction and the
+progressive Brain API read slice. It passed
+[CI 35703242987](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35703242987)
+and [restore 35703242983](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35703242983),
+observed 2026-09-22 Pacific. Later receipt-only changes do not alter this runtime.
+
+- The complete hosted suite passed **2,364 Python tests** including real PostgreSQL
+  cases, with no skips and two existing dependency warnings. The deployment gate
+  repeated the same suite successfully; repeated runs are not additional unique tests.
+- Ruff, strict mypy over **59 source files**, **134 Node contracts**, both container
+  builds, CLI/runtime-image checks, five actual MIME-container cases and 15 actual
+  PDF-container cases passed.
+- Documentation verification passed **114 Markdown files / 755 local paths and
+  fragments**. Local full suite passed **2,015 tests / 349 explicit PostgreSQL skips**;
+  skipped local SQL cases are not passes.
+- The live donor harness matched unchanged FOS-Master commit
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15** for hash/name/both dedupe, pair
+  comparison, SHA-256/MD5, UTF/HTML/CSV extraction and a **3,000-file stress corpus**.
+- PostgreSQL 17 restore verified **41 tables / 185 rows / two tenants / four encrypted
+  objects / two identity bindings** with equal content hashes, forced RLS, identity
+  revocation and database-only-restore refusal. The 29 restore safety tests passed;
+  14.43 seconds includes disposable startup and is not a production RTO claim.
+- The working vertical path is: read-only FileOS snapshot → idempotent tenant-isolated
+  import → source re-hash → bounded text/Markdown/HTML/CSV extraction → immutable
+  provenance/chunks → lexical index → scoped Brain search/evidence/content/changes.
+- The first hosted run found and preserved two security boundaries: Brain scopes must
+  not leak into legacy Email credentials, and immutable version rows must not receive
+  update privilege merely to lock publication. The corrected advisory lock and local
+  test contexts passed the full rerun; no permission was widened.
+- FOS-Master is unchanged and remains the rollback/reference implementation. PDF,
+  Office, archives, images/OCR, KnowledgeCore claims/entities, unified Email+FileOS
+  search, live root enrollment, hosted identity enrollment and production shadow
+  acceptance remain open. No file/mail effects, real source, model call, paid service,
+  rename, retirement or cutover was enabled.
 
 ## Verified MasterBrain foundation
 
