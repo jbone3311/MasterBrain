@@ -1,6 +1,6 @@
 # ADR-068 — Current-only Email-family search
 
-Status: accepted for implementation; hosted verification pending.
+Status: accepted and verified in revision `9b427e1`.
 
 ## Context
 
@@ -39,3 +39,10 @@ immediate disappearance after parent update, deletion or quarantine while retain
 history remains queryable. API tests must prove scope, closed bounds and response labels.
 All existing suites and populated restore must remain green. Rollback removes only the
 new endpoint/method; immutable evidence and existing reads are unchanged.
+
+This gate passed hosted
+[CI 35749176559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176559)
+and [restore 35749176556](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176556)
+on 2026-09-22 Pacific. CI and deployment each passed 2,440 Python tests; PostgreSQL
+17 restore verified 65 tables and 232 rows. See `docs/BUILD_RECEIPT.md` for complete
+measured totals.

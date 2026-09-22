@@ -12,8 +12,8 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-068](adr/068_current_email_family_search.md) defines a separate, layered current-
 only read for bridged Email messages, attachment text and approved PDF derivatives.
-Existing message-only and retained-history reads remain unchanged; implementation and
-hosted verification are pending.
+Existing message-only and retained-history reads remain unchanged; hosted PostgreSQL
+and restore verification are green.
 
 [ADR-067](adr/067_email_part_bridge_operator.md) defines explicit private commands
 for one Email attachment occurrence or one approved PDF derivative, reusing the exact

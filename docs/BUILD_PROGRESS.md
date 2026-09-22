@@ -2,11 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4G — current Email-family retrieval.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Design an explicit current-only read that can
-return bridged message text, attachment text and approved PDF derivatives while
-rechecking the legacy parent and shared current pointers. Preserve the existing
-message-only endpoint and retained-history search until the broader contract is proven.
+**Checkpoint 4H — grouped current-source retrieval.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Design one compact Brain API read that groups
+active FileOS evidence, current Email message/attachment/document evidence and reviewed
+KnowledgeCore assertions with separate limits and ranks. Preserve existing endpoints,
+make partial source coverage explicit and do not imply cross-layer score comparability.
 
 ## Completed gates
 
@@ -86,13 +86,16 @@ message-only endpoint and retained-history search until the broader contract is 
   passed hosted
   [CI 35745615962](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615962)
   and [restore 35745615958](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615958).
+- Checkpoint 4G layered current Email-family search revision `9b427e1` passed hosted
+  [CI 35749176559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176559)
+  and [restore 35749176556](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176556).
 
 ## Current work
 
-- Specify result kinds, independent bounds/ranks and current-parent joins for Email
-  message, attachment and approved-document results.
-- Add synthetic update/delete/quarantine cases before exposing the broader read in the
-  Brain API.
+- Define grouped response/freshness semantics and independent source/knowledge limits
+  before changing the existing unified route.
+- Add mixed-source synthetic cases proving source absence, current-state fencing and
+  non-comparable ranks before exposing the new view.
 
 ## Deferred by design
 

@@ -61,8 +61,8 @@ mean hosted, live-source accepted, or production ready.
   reauthentication and content-free output; hosted PostgreSQL/restore gates green.
 - Explicit `/v1/brain/email-family-search` read with independently bounded/ranked
   message, attachment-text and approved-document layers, each fenced by current legacy
-  parent and shared pointers. Existing reads remain unchanged; hosted verification is
-  pending.
+  parent and shared pointers. Existing reads remain unchanged; hosted PostgreSQL/
+  restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

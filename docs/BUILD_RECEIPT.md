@@ -2,6 +2,36 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified current-only layered Email-family search
+
+Revision **9b427e1** passed
+[CI 35749176559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176559)
+and [restore 35749176556](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176556),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.search_current_email_family` and
+  `POST /v1/brain/email-family-search` return three independently bounded/ranked
+  layers: current bridged message text, attachment-receipt text and approved PDF
+  derivatives. Results remain compact, untrusted and linked by opaque evidence IDs.
+- Every SQL branch rejoins the legacy parent raw/parser version, deletion/quarantine
+  state and shared parent/child current pointers. Attachment and approved-document
+  receipt identities are cross-checked; same-hash attachment occurrences remain
+  distinct. Existing message-only and retained-history searches are unchanged.
+- PostgreSQL proved all three layers, independent limits, duplicate occurrences,
+  update/delete/quarantine disappearance and retained-history availability. API
+  contracts proved `brain.search`, closed request bounds and within-layer-only ranking.
+- CI and deployment each passed **2,440 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **134 Markdown files / 798
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 16.17
+  seconds.
+- The route is incomplete by definition because only explicitly bridged Email appears.
+  It does not batch/backfill, change legacy Email search, compare ranks across layers or
+  access a mailbox. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified private Email attachment/document bridge commands
 
 Revision **6156b70** passed
