@@ -186,7 +186,23 @@ def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(database, te
         assert saved["legacy_approval_job_id"] == completed["id"]
         assert saved["extraction_status"] == "extracted"
         assert len(saved["result_sha256"]) == 64 and saved["chunk_count"] == 1
-    other = replace(bridge_ctx, tenant_id=uuid4(), actor_id=uuid4(), request_id=uuid4())
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Document bridge other')",
+            (other_tenant,),
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(
+        bridge_ctx,
+        tenant_id=other_tenant,
+        actor_id=other_actor,
+        request_id=uuid4(),
+        identity=None,
+    )
     with store.transaction(other) as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_email_document_bridge_receipts"
