@@ -1480,6 +1480,44 @@ class DataCoreStore:
             )
             return [SearchHit(**row) for row in rows]
 
+    def search_current_email(
+        self, ctx: TenantContext, query: str, *, limit: int = 10
+    ) -> list[SearchHit]:
+        """Search explicitly bridged Email evidence still current in both layers."""
+        self.store.require(ctx, "brain.search")
+        if not query.strip() or len(query) > 500 or "\x00" in query or not 1 <= limit <= 50:
+            raise ValueError("invalid current Email search")
+        with self.store.transaction(ctx) as conn:
+            rows = conn.execute(
+                "SELECT c.id AS chunk_id,c.document_id,e.id AS evidence_id,v.source_id,"
+                "i.locator,ts_headline('simple',c.text,plainto_tsquery('simple',%s),"
+                "'MaxWords=35,MinWords=10') AS excerpt,"
+                "ts_rank_cd(c.search_vector,plainto_tsquery('simple',%s)) AS rank "
+                "FROM brain_chunks c JOIN brain_normalized_documents d "
+                "ON d.tenant_id=c.tenant_id AND d.id=c.document_id "
+                "JOIN brain_evidence e ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id JOIN brain_source_items i "
+                "ON i.tenant_id=v.tenant_id AND i.id=v.item_id "
+                "AND i.current_version_id=v.id JOIN brain_sources s "
+                "ON s.tenant_id=v.tenant_id AND s.id=v.source_id AND s.kind='email' "
+                "JOIN brain_email_bridge_receipts b ON b.tenant_id=v.tenant_id "
+                "AND b.version_id=v.id AND b.evidence_id=e.id AND b.document_id=d.id "
+                "JOIN message_versions mv ON mv.tenant_id=b.tenant_id "
+                "AND mv.account_id=b.account_id AND mv.id=b.legacy_version_id "
+                "JOIN messages m ON m.tenant_id=mv.tenant_id AND m.account_id=mv.account_id "
+                "AND m.id=mv.message_id AND m.raw_sha256=mv.raw_sha256 "
+                "AND m.parser_version=mv.parser_version "
+                "WHERE NOT m.deleted AND NOT m.quarantined "
+                "AND c.search_vector @@ plainto_tsquery('simple',%s) "
+                "ORDER BY rank DESC,c.id LIMIT %s",
+                (query, query, query, limit),
+            ).fetchall()
+            self.store.audit(
+                conn, ctx, "brain.current_email_search", "brain_index", "email_bridged"
+            )
+            return [SearchHit(**row) for row in rows]
+
     def publish_text(
         self,
         ctx: TenantContext,

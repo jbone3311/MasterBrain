@@ -10,10 +10,15 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-064](adr/064_current_bridged_email_search.md) defines an additive Brain read for
+explicitly bridged Email evidence that is still current and visible in both shared and
+legacy state. Existing Email and retained searches remain unchanged. Hosted
+verification is pending.
+
 [ADR-063](adr/063_email_bridge_operator.md) defines a private one-version Email bridge
 command with exact shared worker scopes, non-consuming preflight and content-free
 output. It adds no scan, scheduler, provider access or search cutover. Hosted
-verification is pending.
+PostgreSQL and restore verification are green.
 
 [ADR-062](adr/062_email_evidence_bridge.md) defines an additive, replayable bridge
 from one current immutable Email version into shared DataCore identities, chunks and

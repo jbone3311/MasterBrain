@@ -459,6 +459,49 @@ def test_email_bridge_private_operator_publishes_without_legacy_mutation(
     assert store.evidence(ctx, legacy) == before
 
 
+def test_current_email_search_tracks_legacy_update_and_delete(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    store, _ = database
+    ctx, account = tenant
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    store.ingest_page(ctx, account, None, "current-email-1", [item(body="Amber current term")])
+    first = store.search(ctx, SearchRequest(query="Amber current"))[0]["evidence_id"]
+    first_bridge = core.bridge_current_email_version(
+        bridge_ctx, first, uuid4(), code_revision="current-email-search-v1"
+    )
+    first_hits = core.search_current_email(bridge_ctx, "Amber current")
+    assert [hit.evidence_id for hit in first_hits] == [first_bridge.evidence_id]
+
+    store.ingest_page(
+        ctx,
+        account,
+        "current-email-1",
+        "current-email-2",
+        [item("current-email-update", body="Violet replacement term")],
+    )
+    assert core.search_current_email(bridge_ctx, "Amber current") == []
+    assert core.search_current_email(bridge_ctx, "Violet replacement") == []
+    second = store.search(ctx, SearchRequest(query="Violet replacement"))[0]["evidence_id"]
+    second_bridge = core.bridge_current_email_version(
+        bridge_ctx, second, uuid4(), code_revision="current-email-search-v1"
+    )
+    second_hits = core.search_current_email(bridge_ctx, "Violet replacement")
+    assert [hit.evidence_id for hit in second_hits] == [second_bridge.evidence_id]
+    assert core.search_current_email(bridge_ctx, "Violet replacement", limit=1) == second_hits
+
+    store.ingest_page(
+        ctx,
+        account,
+        "current-email-2",
+        "current-email-deleted",
+        [replace(item("current-email-delete"), raw=None)],
+    )
+    assert core.search_current_email(bridge_ctx, "Violet replacement") == []
+    assert core.search(bridge_ctx, "Violet replacement")
+
+
 def test_datacore_invalid_manifest_is_atomic(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:

@@ -35,6 +35,9 @@ objects, general SQL, or an unbounded corpus dump.
   against only that source's active generation; requires `brain.search`.
 - `POST /v1/brain/fileos-search` — implemented current FileOS search across the newest
   activated generation of every authorized source; requires `brain.search`.
+- `POST /v1/brain/email-search` — implemented current-only search across explicitly
+  bridged Email versions that remain current and visible in the legacy Email state;
+  requires `brain.search`.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes, keeps ranks separate,
   and accepts explicit `retained` or `current_fileos` evidence visibility.
@@ -89,7 +92,8 @@ decisions.
 - Deterministic filters and lexical search work without an LLM.
 - Cross-layer results remain grouped because ranks from separate indexes are not
   calibrated as one global score.
-- Current FileOS search is explicit. Compatibility DataCore and unified search may
+- Current FileOS and bridged-Email searches are explicit. Compatibility DataCore
+  search retains historical evidence unless the client selects a current-only route.
 - Grouped search defaults to retained-history compatibility. Clients may explicitly
   select current FileOS generations without changing the KnowledgeCore layer.
 - Semantic/vector ranking is optional and cannot suppress exact evidence lookup.

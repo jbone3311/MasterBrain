@@ -217,6 +217,51 @@ def test_brain_api_progressive_scopes_and_bounds() -> None:
     assert changes_client.get("/v1/brain/changes?limit=25", headers=headers).status_code == 200
 
 
+def test_current_email_search_is_explicit_bounded_and_scoped() -> None:
+    store = MagicMock(spec=Store)
+    brain = MagicMock(spec=DataCoreStore)
+    brain.search_current_email.return_value = [
+        SearchHit(
+            "chunk_" + "1" * 32,
+            "document_" + "2" * 32,
+            "evidence_" + "3" * 32,
+            "email_" + "4" * 32,
+            "message/00000000-0000-0000-0000-000000000001",
+            "bounded Email excerpt",
+            0.5,
+        )
+    ]
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    denied = TestClient(create_app(store, registry({"brain.evidence.read"}), brain_store=brain))
+    assert (
+        denied.post(
+            "/v1/brain/email-search", json={"query": "renewal"}, headers=headers
+        ).status_code
+        == 403
+    )
+    client = TestClient(create_app(store, registry({"brain.search"}), brain_store=brain))
+    response = client.post(
+        "/v1/brain/email-search",
+        json={"query": "renewal", "limit": 7},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["visibility"] == "current_bridged_email"
+    assert body["untrusted_content"] is True
+    assert body["results"][0]["source_id"].startswith("email_")
+    brain.search_current_email.assert_called_once()
+    assert brain.search_current_email.call_args.kwargs == {"limit": 7}
+    assert (
+        client.post(
+            "/v1/brain/email-search",
+            json={"query": "renewal", "limit": 51},
+            headers=headers,
+        ).status_code
+        == 422
+    )
+
+
 def test_brain_write_scopes_are_worker_only() -> None:
     for scope in ("brain.source.ingest", "brain.document.publish", "brain.index.activate"):
         with pytest.raises(ValueError, match="worker-only"):

@@ -1,6 +1,9 @@
 # ADR-063 — Private one-version Email bridge operator
 
-Status: accepted for implementation; hosted verification pending.
+Status: accepted and verified for the private prototype tranche on 2026-09-22.
+Revision `f600508` passed hosted
+[CI 35736010764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010764)
+and [restore 35736010659](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010659).
 
 ## Decision
 

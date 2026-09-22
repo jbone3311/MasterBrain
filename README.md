@@ -56,6 +56,7 @@ FileOS sources ┘       │              │                │
 | Cross-source current FileOS search | Implemented; hosted PostgreSQL and restore gates green |
 | Current FileOS + KnowledgeCore grouped retrieval | Implemented; hosted PostgreSQL and restore gates green |
 | Current Email evidence bridge into DataCore | Implemented additive library path; hosted PostgreSQL and restore gates green |
+| Private one-version Email bridge command | Implemented; hosted PostgreSQL and restore gates green |
 | Archives, images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |

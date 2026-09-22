@@ -2,11 +2,10 @@
 
 ## Active checkpoint
 
-**Checkpoint 4B — private Email bridge operator.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Add a bounded, explicit command that maps
-selected current Email evidence through the verified DataCore bridge, with private
-configuration, exact worker scopes, non-consuming preflight and safe replay. It must
-not scan implicitly, redirect Email search or gain mailbox/provider authority.
+**Checkpoint 4C — current bridged Email retrieval.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define a shared read that returns only
+explicitly bridged Email evidence whose legacy message remains current, visible and
+tenant-authorized at query time. Existing Email search stays authoritative.
 
 ## Completed gates
 
@@ -68,12 +67,16 @@ not scan implicitly, redirect Email search or gain mailbox/provider authority.
   correction `bb4b45d` passed hosted
   [CI 35734147533](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147533)
   and [restore 35734147551](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147551).
+- Checkpoint 4B private Email bridge operator revision `f600508` passed hosted
+  [CI 35736010764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010764)
+  and [restore 35736010659](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010659).
 
 ## Current work
 
-- Define the closed private operator input and exact current-version selection.
-- Prove check mode, replay, authorization revocation, bounded batches and partial-run
-  visibility without changing existing Email ingestion or search behavior.
+- Define current-only bridged Email visibility against both shared and legacy current
+  pointers, including later update/delete/quarantine behavior.
+- Expose a bounded read route only after SQL identity parity, scope, RLS and regression
+  tests pass; do not redirect the existing Email endpoint.
 
 ## Deferred by design
 

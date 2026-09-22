@@ -74,6 +74,12 @@ Grouped retrieval exposes the same choice: retained-history evidence is the back
 compatible default, while `current_fileos` composes active FileOS evidence with
 reviewed KnowledgeCore results. Ranks and limits remain separate by layer.
 
+Bridged Email retrieval checks current state in both layers at query time: the shared
+item must point to the indexed version, and the immutable bridge receipt must still
+identify the legacy Email message's current visible raw/parser version. Updates hide
+old shared hits until explicitly re-bridged; delete/quarantine hides them without
+erasing retained evidence. Legacy Email search remains authoritative.
+
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.

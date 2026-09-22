@@ -95,6 +95,10 @@ legacy evidence UUID, reauthenticates around the transaction and returns only op
 identities/counts. It has no Email ingest, provider, original-content, mailbox-write,
 scan, scheduler or batch authority. The bridge transaction shares the Email account
 advisory lock so a current version cannot become historical during publication.
+Current bridged-Email search independently rejoins the receipt to the legacy current
+message on every query and excludes deleted/quarantined state. It returns bounded
+untrusted excerpts and opaque identities only; it does not expose raw MIME or grant
+Email/source authority.
 
 ## Dedupe and file safety
 

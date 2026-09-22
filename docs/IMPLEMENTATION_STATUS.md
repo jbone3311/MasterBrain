@@ -43,6 +43,9 @@ mean hosted, live-source accepted, or production ready.
   document/chunk identities with opaque locators, exact replay, immutable provenance,
   forced RLS and account-race fencing; hosted PostgreSQL/restore green. Existing Email
   ingestion and search remain authoritative.
+- Private `masterbrain email bridge` command for one explicit evidence UUID with exact
+  shared worker scopes, non-consuming check mode, safe replay, reauthentication and
+  content-free output; hosted PostgreSQL/restore green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -51,8 +54,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Private Email bridge operator/backfill, attachment bridging, current-Email shared
-  projection and any redirect of legacy Email search.
+- Email bridge batch/backfill, attachment bridging, current-Email shared projection
+  and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,

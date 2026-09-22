@@ -2,6 +2,30 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified private one-version Email bridge operator
+
+Revision **f600508** passed
+[CI 35736010764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010764)
+and [restore 35736010659](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010659),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge` accepts one explicit legacy evidence UUID, private closed
+  config and idempotency UUID. It requires an exact two-scope worker, verifies the
+  least-privileged database role, reauthenticates around execution and returns only
+  opaque identities, counts and replay state.
+- `--check` is non-consuming and does not inspect the target. Unit and PostgreSQL
+  tests prove closed/private configuration, exact scopes, revocation, scrubbed
+  errors/output, real command publication, shared search and unchanged legacy evidence.
+- Hosted CI and deployment each passed **2,428 Python tests** with PostgreSQL and no
+  skips; **134 Node contracts**, five MIME-container, 15 Email PDF-container and five
+  FileOS document-container cases passed. Documentation covered **129 Markdown files /
+  790 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **62 tables / 230
+  rows / two tenants / four encrypted objects / two identity bindings** in 23.74 seconds.
+- There is no automatic scan, batch, attachment migration, provider call, mailbox
+  effect or Email search cutover. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified additive Email evidence bridge into DataCore
 
 Runtime revision **0eae4c4** and least-privilege correction **bb4b45d** passed
