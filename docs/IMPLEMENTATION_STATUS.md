@@ -49,6 +49,10 @@ mean hosted, live-source accepted, or production ready.
 - Explicit `/v1/brain/email-search` read over bridged Email evidence that remains
   current and visible in both shared and legacy state; retained history and legacy
   Email search remain unchanged; hosted PostgreSQL/restore green.
+- Additive Email attachment-occurrence bridge with distinct child evidence/parts,
+  duplicate occurrence preservation, bounded legacy-text publication and explicit
+  zero-document outcomes. Existing Email attachment/document behavior is unchanged;
+  hosted verification is pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -57,8 +61,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Email bridge batch/backfill, attachment bridging, grouped all-current retrieval and
-  any redirect of legacy Email search.
+- Email bridge batch/backfill, approved document-extraction attachment bridge, grouped
+  all-current retrieval and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,

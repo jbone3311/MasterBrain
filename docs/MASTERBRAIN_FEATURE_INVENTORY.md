@@ -35,7 +35,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Hashing | Streaming content digests with algorithm/version | Implemented first tranche |
 | Dedupe | Exact-content groups; signals distinct from deletion authority | Implemented read-only first tranche |
 | Evidence | Immutable original bytes or provider-bound immutable reference | FileOS evidence plus additive current-Email shared bridge implemented |
-| File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | Text + isolated PDF/DOCX/XLSX implemented; archives planned |
+| File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | File text/PDF/Office plus additive Email attachment occurrence/text bridge implemented; document-revision bridge and archives planned |
 | OCR | Explicitly approved, isolated, page/image outputs with confidence | Planned |
 | Normalization | Source-neutral document/message representation | FileOS text and current Email message bridge implemented; attachments planned |
 | Metadata | Source and extracted metadata, versioned independently | Partial |

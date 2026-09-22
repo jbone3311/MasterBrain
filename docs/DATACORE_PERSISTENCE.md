@@ -18,6 +18,8 @@ EmailBrain table and does not alter FOS-Master.
 | `brain_jobs` | Bounded extraction/OCR/normalization/index work | Controlled state transitions |
 | `brain_import_receipts` | Actor-scoped idempotency result | Append-only |
 | `brain_email_bridge_receipts` | Legacy Email evidence to shared identity/provenance closure | Append-only |
+| `brain_parts` | Parent/child evidence link and immutable attachment occurrence outcome | Append-only |
+| `brain_email_attachment_bridge_receipts` | Legacy attachment occurrence to shared part/evidence closure | Append-only |
 | `brain_fileos_run_receipts` | Fully accounted run, outcomes and provenance | Append-only |
 | `brain_fileos_run_items` | Exact item/outcome membership of a completed run | Append-only |
 | `brain_fileos_absence_events` | Item absent between consecutive completed inventories | Append-only |
@@ -39,6 +41,13 @@ opaque shared locators, publishes the legacy lexical fields with the determinist
 `email-message-v1` normalizer and records the complete mapping in migration 0020.
 Historical, deleted, quarantined or inconsistent projections fail closed. Existing
 Email ingestion and search are not redirected.
+
+`bridge_email_attachment` maps one explicit immutable attachment receipt only after
+its parent message is bridged and still current/visible. Each occurrence gets a
+distinct opaque item/version/evidence/part even when hashes match. Existing non-empty
+bounded extracted text is normalized and chunked; deferred, skipped, failed, pending
+and empty outcomes create no document. Bytes remain inside the retained parent MIME
+and are never read or copied by the bridge.
 
 ## Snapshot import
 

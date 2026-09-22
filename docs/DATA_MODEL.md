@@ -1,7 +1,7 @@
 # MasterBrain Data Model
 
 This document combines implemented source-neutral tables with the remaining target
-model. Migrations `0015` through `0020` implement the first DataCore,
+model. Migrations `0015` through `0021` implement the first DataCore,
 KnowledgeCore and FileOS completion/freshness slices; names not identified as
 implemented remain logical targets.
 
@@ -84,6 +84,13 @@ Migration `0020_email_datacore_bridge.sql` adds an append-only mapping receipt f
 one legacy Email message-version UUID to shared source, item, version, evidence and
 normalized-document identities. The original MIME remains in `raw_objects`; the
 receipt and shared derivatives are forced-RLS and immutable.
+
+Migration `0021_email_attachment_bridge.sql` adds shared `brain_parts` plus an
+append-only mapping from each legacy Email attachment occurrence to a distinct child
+source item/version/evidence. Same-hash occurrences remain distinct. Bounded legacy
+text may produce a normalized document; other outcomes retain explicit zero-document
+accounting. Attachment evidence is source-bound to the retained parent MIME rather
+than falsely claiming separately retained bytes.
 
 - **job**, **lease**, **checkpoint**, **inbox**, **outbox**, **idempotency_record**
 - **audit_event**, **policy_decision**, **change_feed**, **retention_action**

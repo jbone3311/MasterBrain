@@ -120,6 +120,37 @@ def item(key: str = "e1", body: str = "Melron investment briefing") -> IngestIte
     )
 
 
+def attachment_item(key: str = "attachment-event") -> IngestItem:
+    message = EmailMessage()
+    message["From"] = "alex@example.invalid"
+    message["To"] = "owner@example.invalid"
+    message["Subject"] = "Synthetic attachment accounting"
+    message.set_content("Parent body without the attachment marker.")
+    message.add_attachment(
+        "Cobalt attachment covenant",
+        subtype="plain",
+        filename="first-note.txt",
+    )
+    message.add_attachment(
+        "Cobalt attachment covenant",
+        subtype="plain",
+        filename="second-note.txt",
+    )
+    message.add_attachment(
+        b"MZ\x00synthetic executable",
+        maintype="application",
+        subtype="octet-stream",
+        filename="dangerous.exe",
+    )
+    return IngestItem(
+        key,
+        "provider-attachment-message",
+        key,
+        datetime(2026, 9, 19, 2, tzinfo=UTC),
+        message.as_bytes(),
+    )
+
+
 def test_ingest_search_evidence_replay(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
 ) -> None:
@@ -500,6 +531,107 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     )
     assert core.search_current_email(bridge_ctx, "Violet replacement") == []
     assert core.search(bridge_ctx, "Violet replacement")
+
+
+def test_email_attachment_bridge_preserves_occurrences_and_outcomes(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    store, admin = database
+    ctx, account = tenant
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    store.ingest_page(ctx, account, None, "attachment-page", [attachment_item()])
+    legacy_parent = store.search(
+        ctx, SearchRequest(query="Synthetic attachment accounting")
+    )[0]["evidence_id"]
+    parent = core.bridge_current_email_version(
+        bridge_ctx, legacy_parent, uuid4(), code_revision="attachment-bridge-test-v1"
+    )
+    attachment_rows = store.evidence(ctx, legacy_parent)["attachments"]
+    assert len(attachment_rows) == 3
+    results = [
+        core.bridge_email_attachment(
+            bridge_ctx,
+            row["id"],
+            uuid4(),
+            code_revision="attachment-bridge-test-v1",
+        )
+        for row in attachment_rows
+    ]
+    extracted = [result for result in results if result.outcome == "extracted"]
+    deferred = [result for result in results if result.outcome == "deferred"]
+    assert len(extracted) == 2
+    assert len(deferred) == 1
+    assert all(result.document_id is not None and result.chunks == 1 for result in extracted)
+    assert deferred[0].document_id is None and deferred[0].chunks == 0
+    assert len({result.evidence_id for result in extracted}) == 2
+    hits = core.search(bridge_ctx, "Cobalt attachment covenant")
+    assert {hit.evidence_id for hit in hits} == {
+        result.evidence_id for result in extracted
+    }
+
+    replay = core.bridge_email_attachment(
+        bridge_ctx,
+        attachment_rows[0]["id"],
+        uuid4(),
+        code_revision="attachment-bridge-test-v1",
+    )
+    assert replay.changed is False
+    with store.transaction(bridge_ctx) as conn:
+        parts = conn.execute(
+            "SELECT parent_evidence_id,evidence_id,sha256,status FROM brain_parts "
+            "ORDER BY part_path"
+        ).fetchall()
+        assert len(parts) == 3
+        assert all(row["parent_evidence_id"] == parent.evidence_id for row in parts)
+        assert parts[0]["sha256"] == parts[1]["sha256"]
+        assert parts[0]["evidence_id"] != parts[1]["evidence_id"]
+        receipts = conn.execute(
+            "SELECT outcome,document_id,chunk_count FROM "
+            "brain_email_attachment_bridge_receipts ORDER BY outcome,legacy_attachment_id"
+        ).fetchall()
+        assert sum(row["outcome"] == "extracted" for row in receipts) == 2
+        assert sum(row["outcome"] == "deferred" for row in receipts) == 1
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE brain_parts SET reason='rewritten' WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        )
+
+
+def test_email_attachment_bridge_rejects_historical_parent(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    store, _ = database
+    ctx, account = tenant
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    store.ingest_page(ctx, account, None, "attachment-old", [attachment_item("attachment-old")])
+    legacy_parent = store.search(
+        ctx, SearchRequest(query="Synthetic attachment accounting")
+    )[0]["evidence_id"]
+    attachment_id = store.evidence(ctx, legacy_parent)["attachments"][0]["id"]
+    core.bridge_current_email_version(
+        bridge_ctx, legacy_parent, uuid4(), code_revision="attachment-bridge-test-v1"
+    )
+    store.ingest_page(
+        ctx,
+        account,
+        "attachment-old",
+        "attachment-new",
+        [item("attachment-replacement", body="Replacement without attachments")],
+    )
+    with pytest.raises(Conflict, match="historical"):
+        core.bridge_email_attachment(
+            bridge_ctx,
+            attachment_id,
+            uuid4(),
+            code_revision="attachment-bridge-test-v1",
+        )
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
+        ).fetchone()["n"] == 0
 
 
 def test_datacore_invalid_manifest_is_atomic(

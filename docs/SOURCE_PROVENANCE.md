@@ -51,3 +51,6 @@ state. They add no source permissions or external effects. Existing Email eviden
 tables remain authoritative for the Email capability. The additive bridge maps only
 explicit current Email versions into DataCore with an immutable legacy-to-shared
 receipt; it does not redirect ingestion, search or original-byte access.
+Attachment bridge receipts preserve each MIME occurrence separately and link child
+source-bound evidence to the shared parent message evidence. They reuse only existing
+receipt text and never claim that embedded part bytes were separately retained.

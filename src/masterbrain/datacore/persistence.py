@@ -29,6 +29,7 @@ MAX_NORMALIZED_BYTES = 1_048_576
 CHUNK_CHARACTERS = 1_000
 NORMALIZER_VERSION = "plain-text-v1"
 EMAIL_NORMALIZER_VERSION = "email-message-v1"
+EMAIL_ATTACHMENT_NORMALIZER_VERSION = "email-attachment-text-v1"
 FILEOS_TEXT_EXTRACTOR_VERSION = "fileos-text-v1"
 INDEX_CHUNKER_VERSION = "deterministic-chunks-v1"
 MAX_GENERATION_TEXT_BYTES = 64 * 1_048_576
@@ -60,6 +61,19 @@ class EmailBridgeResult:
     evidence_id: str
     document_id: str
     chunks: int
+    changed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class EmailAttachmentBridgeResult:
+    source_id: str
+    item_id: str
+    version_id: str
+    evidence_id: str
+    part_id: str
+    document_id: str | None
+    chunks: int
+    outcome: str
     changed: bool
 
 
@@ -536,6 +550,357 @@ class DataCoreStore:
                 evidence_id,
                 document_id,
                 len(chunks),
+                True,
+            )
+
+    @staticmethod
+    def _email_attachment_bridge_result(
+        row: Mapping[str, Any], *, changed: bool
+    ) -> EmailAttachmentBridgeResult:
+        return EmailAttachmentBridgeResult(
+            source_id=row["source_id"],
+            item_id=row["item_id"],
+            version_id=row["version_id"],
+            evidence_id=row["evidence_id"],
+            part_id=row["part_id"],
+            document_id=row["document_id"],
+            chunks=row["chunk_count"],
+            outcome=row["outcome"],
+            changed=changed,
+        )
+
+    def bridge_email_attachment(
+        self,
+        ctx: TenantContext,
+        legacy_attachment_id: UUID,
+        idempotency_key: UUID,
+        *,
+        code_revision: str,
+    ) -> EmailAttachmentBridgeResult:
+        """Map one immutable Email attachment occurrence without reading its bytes."""
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.document.publish")
+        if not code_revision or len(code_revision) > 200 or "\x00" in code_revision:
+            raise ValueError("invalid attachment bridge code revision")
+        request_hash = _canonical_digest(
+            {
+                "legacy_attachment_id": str(legacy_attachment_id),
+                "normalizer": EMAIL_ATTACHMENT_NORMALIZER_VERSION,
+                "code_revision": code_revision,
+            }
+        )
+        receipt_columns = (
+            "source_id,item_id,version_id,evidence_id,part_id,document_id,chunk_count,"
+            "outcome,request_hash"
+        )
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:email-attachment-bridge:{legacy_attachment_id}",),
+            )
+            receipt = conn.execute(
+                f"SELECT {receipt_columns} FROM brain_email_attachment_bridge_receipts "
+                "WHERE actor_id=%s AND idempotency_key=%s",
+                (ctx.actor_id, idempotency_key),
+            ).fetchone()
+            if receipt:
+                if receipt["request_hash"] != request_hash:
+                    raise Conflict("idempotency key reused for a different attachment bridge")
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.email_attachment_bridge_replayed",
+                    "attachment_receipt",
+                    str(legacy_attachment_id),
+                )
+                return self._email_attachment_bridge_result(receipt, changed=False)
+            prior = conn.execute(
+                f"SELECT {receipt_columns} FROM brain_email_attachment_bridge_receipts "
+                "WHERE legacy_attachment_id=%s",
+                (legacy_attachment_id,),
+            ).fetchone()
+            if prior:
+                if prior["request_hash"] != request_hash:
+                    raise Conflict("Email attachment was bridged with different provenance")
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.email_attachment_bridge_replayed",
+                    "attachment_receipt",
+                    str(legacy_attachment_id),
+                )
+                return self._email_attachment_bridge_result(prior, changed=False)
+
+            identity = conn.execute(
+                "SELECT account_id FROM attachment_receipts WHERE id=%s",
+                (legacy_attachment_id,),
+            ).fetchone()
+            if not identity:
+                raise NotFound()
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:{identity['account_id']}",),
+            )
+            row = conn.execute(
+                "SELECT a.id AS legacy_attachment_id,a.account_id,a.evidence_id AS "
+                "legacy_parent_version_id,a.part_id AS legacy_part_path,a.safe_filename,"
+                "a.media_type,a.sha256,a.byte_size,a.status,a.reason,a.extracted_text,"
+                "mv.message_id,mv.raw_sha256,mv.parser_version,m.received_at,m.deleted,"
+                "m.quarantined,m.raw_sha256 AS current_raw_sha256,"
+                "m.parser_version AS current_parser_version,b.source_id,b.item_id AS "
+                "parent_item_id,b.version_id AS parent_version_id,b.evidence_id AS "
+                "parent_evidence_id FROM attachment_receipts a JOIN message_versions mv "
+                "ON mv.tenant_id=a.tenant_id AND mv.account_id=a.account_id "
+                "AND mv.id=a.evidence_id JOIN messages m ON m.tenant_id=mv.tenant_id "
+                "AND m.account_id=mv.account_id AND m.id=mv.message_id "
+                "JOIN brain_email_bridge_receipts b ON b.tenant_id=mv.tenant_id "
+                "AND b.account_id=mv.account_id AND b.legacy_version_id=mv.id "
+                "JOIN brain_evidence pe ON pe.tenant_id=b.tenant_id "
+                "AND pe.id=b.evidence_id JOIN brain_source_versions pv "
+                "ON pv.tenant_id=pe.tenant_id AND pv.id=pe.source_version_id "
+                "JOIN brain_source_items pi ON pi.tenant_id=pv.tenant_id "
+                "AND pi.id=pv.item_id AND pi.current_version_id=pv.id WHERE a.id=%s",
+                (legacy_attachment_id,),
+            ).fetchone()
+            if not row:
+                raise Conflict("attachment parent is not bridged and current")
+            if row["deleted"] or row["quarantined"]:
+                raise Conflict("attachment parent is not currently visible")
+            if (
+                row["raw_sha256"] != row["current_raw_sha256"]
+                or row["parser_version"] != row["current_parser_version"]
+            ):
+                raise Conflict("attachment parent evidence is historical")
+            if (
+                not isinstance(row["legacy_part_path"], str)
+                or not 1 <= len(row["legacy_part_path"]) <= 200
+                or "\x00" in row["legacy_part_path"]
+                or not isinstance(row["safe_filename"], str)
+                or len(row["safe_filename"]) > 120
+                or "\x00" in row["safe_filename"]
+            ):
+                raise Conflict("attachment metadata is outside the shared contract")
+            extracted_text = row["extracted_text"]
+            if not isinstance(extracted_text, str) or "\x00" in extracted_text:
+                raise Conflict("attachment extraction is invalid")
+            if row["status"] != "extracted" and extracted_text:
+                raise Conflict("attachment extraction status is inconsistent")
+            if len(extracted_text.encode()) > MAX_NORMALIZED_BYTES:
+                raise ValueError("attachment extraction exceeds its safe bound")
+
+            account_id = UUID(str(row["account_id"]))
+            source_id = row["source_id"]
+            item_id = stable_id("attachmentitem", str(legacy_attachment_id))
+            version_id = stable_id(
+                "attachmentversion",
+                str(legacy_attachment_id),
+                row["sha256"],
+                str(row["byte_size"]),
+            )
+            evidence_id = stable_id("evidence", version_id)
+            part_id = stable_id("part", row["parent_evidence_id"], str(legacy_attachment_id))
+            locator = f"attachment/{legacy_attachment_id}"
+            metadata = {
+                "legacy_attachment_id": str(legacy_attachment_id),
+                "legacy_parent_version_id": str(row["legacy_parent_version_id"]),
+                "part_path": row["legacy_part_path"],
+                "safe_filename": row["safe_filename"],
+                "status": row["status"],
+                "reason": row["reason"],
+            }
+            conn.execute(
+                "INSERT INTO brain_source_items(tenant_id,source_id,id,locator,"
+                "current_version_id,first_seen_at,last_seen_at) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (tenant_id,id) DO NOTHING",
+                (
+                    ctx.tenant_id,
+                    source_id,
+                    item_id,
+                    locator,
+                    version_id,
+                    row["received_at"],
+                    row["received_at"],
+                ),
+            )
+            saved_item = conn.execute(
+                "SELECT source_id,locator FROM brain_source_items WHERE id=%s FOR UPDATE",
+                (item_id,),
+            ).fetchone()
+            if not saved_item or (saved_item["source_id"], saved_item["locator"]) != (
+                source_id,
+                locator,
+            ):
+                raise Conflict("attachment item identity changed")
+            conn.execute(
+                "INSERT INTO brain_source_versions(tenant_id,source_id,item_id,id,observed_at,"
+                "sha256,size_bytes,media_type,metadata) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                "ON CONFLICT (tenant_id,id) DO NOTHING",
+                (
+                    ctx.tenant_id,
+                    source_id,
+                    item_id,
+                    version_id,
+                    row["received_at"],
+                    row["sha256"],
+                    row["byte_size"],
+                    row["media_type"],
+                    Jsonb(metadata),
+                ),
+            )
+            saved_version = conn.execute(
+                "SELECT source_id,item_id,sha256,size_bytes,media_type,metadata "
+                "FROM brain_source_versions WHERE id=%s",
+                (version_id,),
+            ).fetchone()
+            if saved_version != {
+                "source_id": source_id,
+                "item_id": item_id,
+                "sha256": row["sha256"],
+                "size_bytes": row["byte_size"],
+                "media_type": row["media_type"],
+                "metadata": metadata,
+            }:
+                raise Conflict("attachment version identity changed")
+            conn.execute(
+                "INSERT INTO brain_evidence(tenant_id,id,source_version_id,sha256,storage,"
+                "retained) VALUES (%s,%s,%s,%s,'source_bound',false) ON CONFLICT DO NOTHING",
+                (ctx.tenant_id, evidence_id, version_id, row["sha256"]),
+            )
+            saved_evidence = conn.execute(
+                "SELECT source_version_id,sha256,storage,retained FROM brain_evidence WHERE id=%s",
+                (evidence_id,),
+            ).fetchone()
+            if saved_evidence != {
+                "source_version_id": version_id,
+                "sha256": row["sha256"],
+                "storage": "source_bound",
+                "retained": False,
+            }:
+                raise Conflict("attachment evidence identity changed")
+            conn.execute(
+                "INSERT INTO brain_parts(tenant_id,id,parent_evidence_id,evidence_id,part_path,"
+                "media_type,sha256,size_bytes,status,reason) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id,
+                    part_id,
+                    row["parent_evidence_id"],
+                    evidence_id,
+                    row["legacy_part_path"],
+                    row["media_type"],
+                    row["sha256"],
+                    row["byte_size"],
+                    row["status"],
+                    row["reason"],
+                ),
+            )
+
+            document_id: str | None = None
+            chunks: list[tuple[int, int, str]] = []
+            normalizer: str | None = None
+            if row["status"] == "extracted" and extracted_text:
+                normalizer = EMAIL_ATTACHMENT_NORMALIZER_VERSION
+                body_sha = hashlib.sha256(extracted_text.encode()).hexdigest()
+                document_id = stable_id("document", version_id, normalizer, body_sha)
+                conn.execute(
+                    "INSERT INTO brain_normalized_documents(tenant_id,id,evidence_id,normalizer,"
+                    "body_sha256,body) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (ctx.tenant_id, document_id, evidence_id, normalizer, body_sha, extracted_text),
+                )
+                chunks = list(deterministic_chunks(extracted_text))
+                for ordinal, (start, end, chunk) in enumerate(chunks):
+                    chunk_sha = hashlib.sha256(chunk.encode()).hexdigest()
+                    chunk_id = stable_id("chunk", document_id, str(ordinal), chunk_sha)
+                    conn.execute(
+                        "INSERT INTO brain_chunks(tenant_id,id,document_id,ordinal,start_offset,"
+                        "end_offset,text,sha256) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                        (
+                            ctx.tenant_id,
+                            chunk_id,
+                            document_id,
+                            ordinal,
+                            start,
+                            end,
+                            chunk,
+                            chunk_sha,
+                        ),
+                    )
+                config_sha = _canonical_digest(
+                    {"chunk_characters": CHUNK_CHARACTERS, "source": "attachment_receipt"}
+                )
+                provenance_id = stable_id("provenance", document_id, code_revision, config_sha)
+                conn.execute(
+                    "INSERT INTO brain_provenance(tenant_id,id,output_id,transform,"
+                    "transform_version,code_revision,configuration_sha256,created_at) "
+                    "VALUES (%s,%s,%s,'bridge_email_attachment_text',%s,%s,%s,"
+                    "clock_timestamp())",
+                    (
+                        ctx.tenant_id,
+                        provenance_id,
+                        document_id,
+                        normalizer,
+                        code_revision,
+                        config_sha,
+                    ),
+                )
+                conn.execute(
+                    "INSERT INTO brain_provenance_inputs(tenant_id,provenance_id,input_id,"
+                    "ordinal) VALUES (%s,%s,%s,0)",
+                    (ctx.tenant_id, provenance_id, evidence_id),
+                )
+            changes = [("source_version_added", version_id)]
+            if document_id is not None:
+                changes.append(("document_published", document_id))
+            for kind, changed_id in changes:
+                change_id = stable_id("change", kind, changed_id)
+                conn.execute(
+                    "INSERT INTO brain_change_events(tenant_id,id,source_id,item_id,version_id,"
+                    "kind) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (ctx.tenant_id, change_id, source_id, item_id, version_id, kind),
+                )
+            conn.execute(
+                "INSERT INTO brain_email_attachment_bridge_receipts(tenant_id,actor_id,"
+                "idempotency_key,account_id,legacy_parent_version_id,legacy_attachment_id,"
+                "parent_evidence_id,source_id,item_id,version_id,evidence_id,part_id,document_id,"
+                "chunk_count,outcome,normalizer,code_revision,request_hash) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id,
+                    ctx.actor_id,
+                    idempotency_key,
+                    account_id,
+                    row["legacy_parent_version_id"],
+                    legacy_attachment_id,
+                    row["parent_evidence_id"],
+                    source_id,
+                    item_id,
+                    version_id,
+                    evidence_id,
+                    part_id,
+                    document_id,
+                    len(chunks),
+                    row["status"],
+                    normalizer,
+                    code_revision,
+                    request_hash,
+                ),
+            )
+            self.store.audit(
+                conn,
+                ctx,
+                "brain.email_attachment_bridge_recorded",
+                "attachment_receipt",
+                str(legacy_attachment_id),
+            )
+            return EmailAttachmentBridgeResult(
+                source_id,
+                item_id,
+                version_id,
+                evidence_id,
+                part_id,
+                document_id,
+                len(chunks),
+                row["status"],
                 True,
             )
 

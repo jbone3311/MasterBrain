@@ -100,6 +100,13 @@ message on every query and excludes deleted/quarantined state. It returns bounde
 untrusted excerpts and opaque identities only; it does not expose raw MIME or grant
 Email/source authority.
 
+The attachment bridge requires a current visible bridged parent, shares its account
+lock and never reads MIME bytes. Each occurrence remains distinct even when its digest
+matches another attachment. Only already-bounded legacy extracted text is published;
+all other statuses remain explicit evidence/accounting with no document or chunk.
+Embedded bytes are source-bound to the retained parent MIME, not mislabeled as a
+separately retained object.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize
