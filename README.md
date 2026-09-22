@@ -16,6 +16,10 @@ passed; documentation updates do not certify new functionality.
 
 ## The game plan in one minute
 
+Research: [tools discussion and evaluation plan](docs/TOOLS_DISCUSSION.md) compares
+travel/document extraction, OCR, mail testing and search packages. These are
+proposed trials, not newly installed dependencies.
+
 New: [reviewed travel and bill memory](docs/STRUCTURED_MEMORY.md) stores typed
 trips/reservations/bills, evidence-backed revisions and independent change cursors.
 The `/memory` developer screen requires the database-backed service and migration

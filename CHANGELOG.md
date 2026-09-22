@@ -6,6 +6,14 @@ The package remains version 0.1.0, a synthetic-data prototype. These entries do
 not announce a production release. [Build receipts](docs/BUILD_RECEIPT.md) retain
 exact tested commits and results.
 
+### Tools discussion (documentation only)
+
+- Added the [ranked tools discussion](docs/TOOLS_DISCUSSION.md), including
+  KItinerary, Docling, Tika, OCRmyPDF, MimeKit, Mailpit and pgvector; source links,
+  dated repository metadata, license caveats, trial gates and open questions.
+- Linked it from both reading guides and the OSS evaluation. No dependency,
+  fixture import, runtime change or integration approval is included.
+
 ### Owner email reader (ADR-045)
 
 Latest addition: [ADR-046 structured memory](docs/STRUCTURED_MEMORY.md) implements

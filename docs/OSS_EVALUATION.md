@@ -1,5 +1,10 @@
 # Open-Source Evaluation
 
+New research discussion (2026-09-21): [tools shortlist and trial plan](TOOLS_DISCUSSION.md)
+covers KItinerary, Docling, Tika, OCRmyPDF, MimeKit, Mailpit and pgvector, with
+focused maintenance observations and reuse-versus-reference recommendations.
+It is not dependency approval and does not replace historical measurements below.
+
 ## Access-token verification adoption (2026-09-21)
 
 Reuse **PyJWT 2.14.0**, MIT, directly for signature/standard claim verification,
