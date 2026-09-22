@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-081](adr/081_private_archive_member_preview.md) requires a private, read-only,
+ordinal-cursor preview of eligible members in one current archive inventory before any
+sealed batch format or executor is considered.
+
 [ADR-080](adr/080_current_archive_derivative_search.md) keeps explicitly published,
 still-current archive-member text in a separate bounded search layer. Currency is
 proved through the parent archive and sealed inventory/member identities; active
