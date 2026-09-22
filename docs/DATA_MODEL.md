@@ -92,6 +92,12 @@ text may produce a normalized document; other outcomes retain explicit zero-docu
 accounting. Attachment evidence is source-bound to the retained parent MIME rather
 than falsely claiming separately retained bytes.
 
+Migration `0022_email_document_extraction_bridge.sql` adds an append-only receipt
+from one immutable, completed approved-PDF extraction to a second normalized document
+on its existing attachment evidence. It records the completed approval job, processor,
+policy, extraction revision, result digest, shared identities and bridge provenance;
+it does not read or copy source bytes.
+
 - **job**, **lease**, **checkpoint**, **inbox**, **outbox**, **idempotency_record**
 - **audit_event**, **policy_decision**, **change_feed**, **retention_action**
 - **schema_version**, **extractor_version**, **model_version**, **restore_receipt**

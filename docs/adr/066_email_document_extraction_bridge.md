@@ -1,6 +1,7 @@
 # ADR-066 — Approved Email document-extraction derivative bridge
 
-Status: accepted for implementation; hosted verification pending.
+Status: accepted and verified in runtime revision `cd425d0` with tenant-isolation
+fixture correction `c183a07`.
 
 ## Context
 
@@ -52,3 +53,10 @@ transaction rollback, tenant isolation and immutability. Existing Email/FileOS s
 restricted containers and populated restore must remain green. Rollback stops derivative
 bridge invocation; immutable shared documents and receipts remain auditable, while all
 legacy behavior is unchanged.
+
+This gate passed hosted
+[CI 35743436225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436225)
+and [restore 35743436167](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436167)
+on 2026-09-22 Pacific. CI and deployment each passed 2,434 Python tests; the
+PostgreSQL 17 restore verified 65 tables and 232 rows. See `docs/BUILD_RECEIPT.md`
+for complete measured totals and the test-fixture correction.

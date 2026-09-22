@@ -107,6 +107,11 @@ all other statuses remain explicit evidence/accounting with no document or chunk
 Embedded bytes are source-bound to the retained parent MIME, not mislabeled as a
 separately retained object.
 
+The approved-PDF derivative bridge additionally requires an immutable extraction with
+a completed approval job and the existing current attachment bridge. It publishes
+only bounded legacy page text, records the exact result digest and processor/policy,
+and never opens attachment bytes or grants document-approval authority.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

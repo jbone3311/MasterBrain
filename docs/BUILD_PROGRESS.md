@@ -2,12 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4E — approved Email document-extraction derivative bridge.** Work occurs
-on `codex/masterbrain-foundation` in PR #4. Map one immutable, approved legacy
-document-extraction revision onto the already-bridged attachment occurrence using a
-separate append-only receipt, bounded derivative document/chunk publication and exact
-extractor provenance. Do not rewrite the occurrence bridge, copy attachment bytes,
-broaden format approval or redirect existing attachment/document search before parity.
+**Checkpoint 4F — private Email attachment/document bridge operator.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Add explicit one-occurrence and one-extraction
+commands using private closed configuration, exact existing shared worker scopes,
+non-consuming checks, reauthentication and content-free output. Do not enumerate a
+mailbox, approve documents, read bytes or redirect existing Email search.
 
 ## Completed gates
 
@@ -79,13 +78,17 @@ broaden format approval or redirect existing attachment/document search before p
   historical-parent fixture correction `aaf8df0` passed hosted
   [CI 35740735789](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740735789)
   and [restore 35740736075](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740736075).
+- Checkpoint 4E approved Email PDF derivative bridge runtime `cd425d0` plus
+  tenant-isolation fixture correction `c183a07` passed hosted
+  [CI 35743436225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436225)
+  and [restore 35743436167](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436167).
 
 ## Current work
 
-- Inventory the immutable approved-PDF extraction revision, approval linkage, extractor
-  identity/version, content digest and source attachment occurrence.
-- Write the derivative-bridge ADR and synthetic PostgreSQL cases before schema or
-  runtime changes. Preserve the occurrence bridge and make exact replay auditable.
+- Reuse the existing private Email bridge controller/config boundary for explicit
+  attachment and approved-document identifiers.
+- Add denial, preflight, scrubbed-output and real PostgreSQL command cases before
+  claiming an operable bridge path.
 
 ## Deferred by design
 

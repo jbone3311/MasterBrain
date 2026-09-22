@@ -2,6 +2,40 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified approved Email PDF derivative bridge
+
+Runtime revision **cd425d0** and tenant-isolation fixture correction **c183a07**
+passed [CI 35743436225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436225)
+and [restore 35743436167](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436167),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.bridge_email_document_extraction` publishes one explicitly selected,
+  immutable approved-PDF extraction only after its completed approval and ADR-065
+  occurrence bridge are proven current. Extracted or partial bounded text becomes a
+  deterministic document/chunks on the existing attachment evidence.
+- Migration 0022 adds a forced-RLS, append-only receipt binding the legacy extraction,
+  completed approval job, attachment and shared identities to processor, policy,
+  revision, result digest and exact bridge provenance. The bridge never loads, parses,
+  scans, executes or copies attachment bytes.
+- PostgreSQL cases prove prerequisite occurrence fencing, approved publication,
+  shared search, exact replay, tenant isolation, immutability and rejection of an
+  otherwise valid extraction inserted without a completed approval.
+- CI and deployment each passed **2,434 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **132 Markdown files / 794
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 16.21
+  seconds.
+- The first hosted application run exposed only a test-fixture error: the new RLS
+  assertion used a nonexistent tenant/member, so bootstrap correctly denied it before
+  RLS. Correction `c183a07` created a real second tenant/member; the unchanged product
+  path then passed the full gate and restore.
+- Existing Email approved-PDF search, citations, approvals and attachment state remain
+  authoritative. There is no bridge operator, batch/backfill, new format, byte access,
+  global search cutover or mailbox effect. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified additive Email attachment occurrence/text bridge
 
 Runtime revision **02eefb5** and historical-parent fixture correction **aaf8df0**

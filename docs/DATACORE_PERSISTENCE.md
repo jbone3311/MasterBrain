@@ -20,6 +20,7 @@ EmailBrain table and does not alter FOS-Master.
 | `brain_email_bridge_receipts` | Legacy Email evidence to shared identity/provenance closure | Append-only |
 | `brain_parts` | Parent/child evidence link and immutable attachment occurrence outcome | Append-only |
 | `brain_email_attachment_bridge_receipts` | Legacy attachment occurrence to shared part/evidence closure | Append-only |
+| `brain_email_document_bridge_receipts` | Approved legacy PDF derivative to shared document/provenance closure | Append-only |
 | `brain_fileos_run_receipts` | Fully accounted run, outcomes and provenance | Append-only |
 | `brain_fileos_run_items` | Exact item/outcome membership of a completed run | Append-only |
 | `brain_fileos_absence_events` | Item absent between consecutive completed inventories | Append-only |
@@ -48,6 +49,11 @@ distinct opaque item/version/evidence/part even when hashes match. Existing non-
 bounded extracted text is normalized and chunked; deferred, skipped, failed, pending
 and empty outcomes create no document. Bytes remain inside the retained parent MIME
 and are never read or copied by the bridge.
+
+`bridge_email_document_extraction` requires an immutable extraction with a completed
+approval job plus its already-bridged, current attachment occurrence. It publishes
+bounded extracted or partial PDF text as another document on the same evidence,
+records processor/policy/revision/result provenance and never loads attachment bytes.
 
 ## Snapshot import
 

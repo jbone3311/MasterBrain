@@ -54,3 +54,6 @@ receipt; it does not redirect ingestion, search or original-byte access.
 Attachment bridge receipts preserve each MIME occurrence separately and link child
 source-bound evidence to the shared parent message evidence. They reuse only existing
 receipt text and never claim that embedded part bytes were separately retained.
+Approved-PDF derivative receipts reuse the same child evidence, require a completed
+legacy approval job and record the immutable extraction/result/processor/policy
+identity. Publication reads only already-bounded text, never attachment bytes.

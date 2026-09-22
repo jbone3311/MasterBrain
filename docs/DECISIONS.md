@@ -13,7 +13,7 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 [ADR-066](adr/066_email_document_extraction_bridge.md) defines a separate additive
 bridge for an immutable approved Email PDF extraction onto its existing shared
 attachment evidence. It reuses bounded legacy text and never reads attachment bytes;
-implementation and hosted verification are pending.
+hosted PostgreSQL and restore verification are green.
 
 [ADR-065](adr/065_email_attachment_bridge.md) defines an additive bridge preserving
 each Email attachment occurrence as a shared child evidence/part. Existing bounded
