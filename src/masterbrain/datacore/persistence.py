@@ -288,6 +288,18 @@ class DataCoreStore:
                 )
                 return self._email_bridge_result(prior, changed=False)
 
+            legacy_identity = conn.execute(
+                "SELECT account_id FROM message_versions WHERE id=%s",
+                (legacy_version_id,),
+            ).fetchone()
+            if not legacy_identity:
+                raise NotFound()
+            # Serialize against Email ingestion's account lock so a version cannot
+            # become historical between the visibility check and bridge commit.
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:{legacy_identity['account_id']}",),
+            )
             row = conn.execute(
                 "SELECT v.id AS legacy_version_id,v.account_id,v.message_id,v.raw_sha256,"
                 "v.provider_version,v.snapshot,v.parser_version,v.recorded_at,"
@@ -298,7 +310,7 @@ class DataCoreStore:
                 "AND m.account_id=v.account_id AND m.id=v.message_id "
                 "JOIN mail_accounts a ON a.tenant_id=v.tenant_id AND a.id=v.account_id "
                 "JOIN raw_objects r ON r.tenant_id=v.tenant_id AND r.account_id=v.account_id "
-                "AND r.sha256=v.raw_sha256 WHERE v.id=%s FOR SHARE OF v,m,a,r",
+                "AND r.sha256=v.raw_sha256 WHERE v.id=%s",
                 (legacy_version_id,),
             ).fetchone()
             if not row:
