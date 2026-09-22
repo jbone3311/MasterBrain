@@ -27,7 +27,7 @@ mean hosted, live-source accepted, or production ready.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
   hosted PostgreSQL and populated-restore gates green.
 - Exact completed-run item ledger, stale-completion refusal, immutable absence events
-  and bounded inventory counts; hosted PostgreSQL/restore acceptance pending.
+  and bounded inventory counts; hosted PostgreSQL and populated-restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

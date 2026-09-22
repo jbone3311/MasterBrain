@@ -2,9 +2,9 @@
 
 ## Active checkpoint
 
-**Checkpoint 3E / DC-005C — explicit rebuild and reconciliation.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Begin with a closed failure/rebuild contract
-and synthetic source-drift corpus; do not infer deletion from a partial inventory.
+**Checkpoint 3F — deterministic rebuild preview.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define a read-only plan over the latest
+completed inventory before any rebuild execution or search-visibility policy.
 
 ## Completed gates
 
@@ -42,13 +42,17 @@ and synthetic source-drift corpus; do not infer deletion from a partial inventor
   test correction `c12800f` passed hosted
   [CI 35716362139](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35716362139)
   and [restore 35716362094](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35716362094).
+- Checkpoint 3E completed-inventory/absence reconciliation revision `77ccc81` passed
+  hosted [CI 35718606046](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606046)
+  and [restore 35718606093](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606093).
 
 ## Current work
 
-- Specify complete-inventory certification, rebuild identity and deletion/drift states.
-- Inventory donor reconciliation behavior and construct a source-mutation/restart corpus.
-- Implement the smallest read-side rebuild/reconciliation slice only after those
-  contracts prove that incomplete observations cannot hide evidence.
+- Specify a deterministic rebuild plan derived only from the latest completed ledger.
+- Classify current versions as already indexed, rebuildable or non-rebuildable without
+  changing documents, chunks, search visibility or source bytes.
+- Prove plan replay, stale-ledger fencing, tenant isolation and bounded output before
+  adding any execution mode.
 
 ## Deferred by design
 

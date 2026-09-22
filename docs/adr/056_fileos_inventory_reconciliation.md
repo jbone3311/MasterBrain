@@ -1,7 +1,9 @@
 # ADR-056 — Completed-inventory reconciliation evidence
 
-Status: accepted for an additive prototype tranche on 2026-09-22, pending hosted
-PostgreSQL and populated-restore gates.
+Status: accepted and verified for the additive prototype tranche on 2026-09-22.
+Revision `77ccc81` passed hosted
+[CI 35718606046](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606046)
+and [restore 35718606093](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606093).
 
 ## Decision
 

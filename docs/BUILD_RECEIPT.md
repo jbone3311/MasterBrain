@@ -2,6 +2,37 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified FileOS completed-inventory reconciliation evidence
+
+Revision **77ccc81f0659727e2c26fe0c952421e9ac98f14d** passed
+[CI 35718606046](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606046)
+and [restore 35718606093](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606093),
+observed 2026-09-22 Pacific.
+
+- Migration 0018 adds immutable, forced-RLS completed-run item ledgers and absence
+  events. Deferred PostgreSQL constraints require exact item and grouped-outcome
+  agreement with the completion receipt; source/run/time foreign keys prevent a ledger
+  from being rebound.
+- Completion is serialized per tenant/source and refuses an older or equal observation.
+  Absence is derived only between consecutive completed ledgers, never from a partial
+  import or crashed publication prefix. Evidence remains retained and searchable.
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **122 Markdown files / 778 local paths and
+  fragments**.
+- PostgreSQL integration proved two completed snapshots, one absence, stale-run
+  refusal, exact replay, RLS/immutability and bounded API counts. PostgreSQL 17 restore
+  verified **56 tables / 218 rows / two tenants / four encrypted objects / two identity
+  bindings**, including the inventory ledger, in 19.06 seconds.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. Local SQL skips
+  are not passes; the hosted run is the authoritative database result.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. This tranche adds no automatic
+  rebuild, current/historical search policy, scheduler, file effect, cutover, rename or
+  retirement.
+
 ## Verified FileOS completion receipts and source freshness
 
 Runtime revision **1e0f87ed8ac5fe9fa29d186b2c242c7584d9a24a** and the

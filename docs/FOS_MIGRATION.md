@@ -60,7 +60,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
 | DC-005A explicit operation | Existing DataCore contracts; donor remains reference | `fileos_controller.py`, `masterbrain fileos publish` | closed config/auth/replay/source-integrity/SQL corpus | Complete; hosted PostgreSQL and restore gates green |
 | DC-005B completion/freshness | Shared intake/publication contracts | migration 0017 + DataCore/Brain freshness | exact binding/counts/replay/immutability/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
-| DC-005C inventory reconciliation evidence | FOS-Master `218d5cae`, `corpus_reconcile.py` lessons | migration 0018 + completed-run item/absence ledgers | exact ledger balance/stale-run refusal/absence/RLS/restore | Implemented; hosted gate pending |
+| DC-005C inventory reconciliation evidence | FOS-Master `218d5cae`, `corpus_reconcile.py` lessons | migration 0018 + completed-run item/absence ledgers | exact ledger balance/stale-run refusal/absence/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
 
 DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
 and all delete/move operations. Those omissions do not change the returned scan and
