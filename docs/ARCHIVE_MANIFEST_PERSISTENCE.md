@@ -1,5 +1,7 @@
 # Archive manifest persistence plan
 
+Status: implemented and accepted in runtime `03dbb98` with correction `08ccb68`.
+
 ## Purpose
 
 Persist an accepted hash-only archive inventory without turning archive members into
@@ -55,6 +57,9 @@ child evidence.
 4. all four tables reject update/delete and restore with their rows and relationships;
 5. searches and change feeds are byte-for-byte unchanged by persistence;
 6. the isolated worker, live donor baseline and FOS-Master clean pin remain green.
+
+All gates passed in CI 35783950712 and restore 35783950915. The accepted implementation
+creates no archive-derived evidence or search visibility.
 
 Rollback is additive: stop calling the write method and remove the new migration only
 before deployment. Existing FileOS, Email, DataCore search and FOS-Master are unchanged.

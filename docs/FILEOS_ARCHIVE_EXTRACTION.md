@@ -92,8 +92,8 @@ Acceptance status:
 3. **Passed:** corruption/short-read, output-limit and worker-failure tests.
 4. **Passed:** dedicated immutable image and actual no-network/read-only/no-mount
    inspection/invocation in hosted CI 35780244211.
-5. **Next gate:** PostgreSQL append-only/RLS/replay tests before any member manifest is
-   persisted.
+5. **Passed:** PostgreSQL append-only/RLS/replay/concurrency/search-non-effect tests and
+   populated restore for the hash-only manifest ledger.
 6. **Passed:** source bytes remained immutable and FOS-Master stayed clean at the pinned
    commit.
 

@@ -1,6 +1,6 @@
 # ADR-076 — Persist archive inventory before child evidence
 
-Status: accepted design; implementation pending.
+Status: implemented and accepted in runtime `03dbb98` with correction `08ccb68`.
 
 ## Context
 
@@ -33,3 +33,5 @@ The SQL and store method require real PostgreSQL replay/concurrency/RLS/immutabi
 atomicity tests and populated restore proof. Existing searches must remain unchanged.
 Rollback stops use of the additive ledger; FOS-Master and current shared paths remain
 untouched.
+
+The gates passed in hosted CI 35783950712 and populated restore 35783950915.

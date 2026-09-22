@@ -2,12 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4O — append-only archive manifest persistence design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define tenant-isolated immutable archive run,
-member and skip records bound to an existing FileOS source version and exact processor
-identity. No member bytes or search publication may enter this step; replay, RLS,
-append-only enforcement, bomb/duplicate non-publication and populated restore must be
-proved before implementation is accepted.
+**Checkpoint 4P — hash-bound one-member archive read design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define an isolated request that selects one
+persisted member from one exact current archive version by inventory, safe locator,
+expected hash and size. The response must be bounded to that one member and verified
+by the parent. No automatic fan-out, normalization, persistence or search publication
+enters this design.
 
 ## Completed gates
 
@@ -120,13 +120,17 @@ proved before implementation is accepted.
   passed the pinned donor suite/live golden and hosted
   [CI 35780244211](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35780244211)
   plus [restore 35780244282](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35780244282).
+- Checkpoint 4O archive persistence design `2d30728`, runtime `03dbb98` and explicit
+  upgrade-list correction `08ccb68` passed hosted
+  [CI 35783950712](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35783950712)
+  plus [restore 35783950915](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35783950915).
 
 ## Current work
 
-- Inventory existing DataCore source-version, receipt, replay, RLS, append-only and
-  restore primitives for reuse by archive manifests; the audit is complete.
-- Implement ADR-076's four-table sealed ledger and store method, then prove replay,
-  conflict, stale-current, concurrency, RLS, append-only, search non-effect and restore.
+- Audit how a second isolated pass can select exactly one nested member without paths,
+  ambient state or returning unrelated bytes.
+- Define compressed-input/member-output bounds, persisted identity checks, nested
+  traversal semantics and parent revalidation before implementation.
 
 ## Deferred by design
 

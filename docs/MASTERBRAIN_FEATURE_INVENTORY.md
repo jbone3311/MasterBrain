@@ -23,7 +23,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Held-out-test and cross-domain dedupe protections | Donor only; required invariant | DataCore policy + effect broker |
 | FileOS | Intake classification/routing/preflight | Donor only | FileOS adapter + DataCore |
 | FileOS | PDF/DOCX/XLSX text/metadata extraction and indexing | Isolated shared tranche; hosted container/SQL gate green | DataCore |
-| FileOS | ZIP/TAR recursive inventory | Isolated hash-only tranche; live donor and hosted container green; no persistence/search | DataCore |
+| FileOS | ZIP/TAR recursive inventory | Isolated hash-only worker plus append-only manifest ledger; live donor/hosted SQL/restore green; no member reads/search | DataCore |
 | FileOS | Authenticated idempotent snapshot publication | Explicit one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Explicit index generation and rollback | Private one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
@@ -39,7 +39,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | File text/PDF/Office, Email attachment occurrence/text and approved PDF derivative bridges implemented; ZIP/TAR hash-only inventory implemented, member reads/search planned |
 | OCR | Explicitly approved, isolated, page/image outputs with confidence | Planned |
 | Normalization | Source-neutral document/message representation | FileOS text plus current Email message, attachment text and approved PDF derivative slices implemented |
-| Metadata | Source and extracted metadata, versioned independently | Partial |
+| Metadata | Source and extracted metadata, versioned independently | FileOS/Email partial; archive member hash manifests now durable |
 | Provenance | Every derivative links source, transform, version, code and time | Implemented FileOS and current Email message/attachment/PDF bridge slices |
 | Chunking | Deterministic, versioned chunks retaining evidence offsets | Implemented bounded text slice |
 | Indexing | Lexical first, optional vector, rebuildable and freshness-aware | Immutable FileOS generation/activation path implemented; hosted gates green |

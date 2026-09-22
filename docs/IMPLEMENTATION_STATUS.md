@@ -26,6 +26,10 @@ mean hosted, live-source accepted, or production ready.
   restricted worker image with donor-equivalent cumulative bounds, safe hash-only
   manifests and explicit bomb/duplicate non-publication; live donor, hostile/fault,
   hosted container and restore gates green. It has no persistence or search path.
+- Append-only, forced-RLS archive hash-manifest persistence bound to current FileOS
+  source and immutable processor versions, with sealed child ledgers and exact replay;
+  hosted PostgreSQL/restore gates green. It stores no member bytes and publishes no
+  evidence, documents, chunks or search entries.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -99,9 +103,8 @@ mean hosted, live-source accepted, or production ready.
   source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
-  scheduling/global-search cutover and legacy image/OCR extraction. Archive manifest
-  persistence, member-byte retrieval and archive-derived extraction/search remain
-  designed follow-on gates.
+  scheduling/global-search cutover and legacy image/OCR extraction. Archive member-byte
+  retrieval and archive-derived extraction/search remain designed follow-on gates.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

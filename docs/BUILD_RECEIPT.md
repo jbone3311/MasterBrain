@@ -2,6 +2,35 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified append-only archive manifest persistence
+
+Design revision **2d30728**, runtime revision **03dbb98** and upgrade-expectation
+correction **08ccb68** passed
+[CI 35783950712](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35783950712)
+and [restore 35783950915](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35783950915),
+observed 2026-09-22 Pacific.
+
+- Migration `0023_archive_manifests.sql` adds forced-RLS, append-only inventory,
+  ordered-member, ordered-skip and actor-scoped replay tables. A deferred database
+  trigger seals row counts and aggregate observed bytes to the parent inventory.
+- The store accepts only validated complete/partial hash manifests for the exact
+  current FileOS source version and immutable archive image. Bomb, duplicate,
+  unsupported and invalid results create no rows. Deterministic result drift, stale
+  parents and key reuse fail closed.
+- Real PostgreSQL proved exact replay, concurrent replay, RLS isolation, runtime
+  mutation denial, stale-parent and drift conflicts, and unchanged search/change-feed
+  state. No evidence, document, chunk, change-event or index row is created.
+- The first hosted run passed 2,507 tests and found one explicit populated-upgrade
+  migration list still ending at `0022`; `08ccb68` added `0023` to that expectation.
+  The corrected run passed **2,508 Python tests** with PostgreSQL and no skips, **134
+  Node contracts**, documentation, deployment and every restricted worker.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **69 tables / 233
+  rows / two tenants / four encrypted objects / two identity bindings** in 17.14
+  seconds. FOS-Master remains clean and unchanged at the pinned commit.
+
+No member bytes or archive-derived search visibility exist yet. The next gate is a
+separate, one-member, persisted-hash-bound read contract.
+
 ## Verified isolated FileOS archive inventory
 
 Design revision **2aaeb26** and runtime revision **26473de** passed
