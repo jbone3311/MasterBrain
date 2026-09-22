@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-079](adr/079_private_archive_member_text_operator.md) requires a private,
+reauthenticated, content-free one-member command before archive text publication.
+Implementation is pending.
+
 [ADR-078](adr/078_archive_member_text_derivative.md) gives one explicitly selected
 archive member its own derived evidence identity before bounded text publication.
 Implemented in `97aeab1`.

@@ -100,6 +100,7 @@ roadmap item is not an implementation claim.
 - [Archive manifest persistence plan](docs/ARCHIVE_MANIFEST_PERSISTENCE.md)
 - [Hash-bound archive member read contract](docs/ARCHIVE_MEMBER_READ.md)
 - [Archive member text derivative contract](docs/ARCHIVE_MEMBER_TEXT.md)
+- [Private archive-member text operator plan](docs/ARCHIVE_MEMBER_OPERATOR.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
