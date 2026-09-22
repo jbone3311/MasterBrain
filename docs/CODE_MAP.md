@@ -7,10 +7,11 @@ The retained `email_brain` tree is the Email capability. New shared code begins 
 
 | Responsibility | Actual files |
 |---|---|
-| MasterBrain command surface | [cli.py](../src/masterbrain/cli.py); read-only hash/compare/duplicates/FileOS snapshot |
+| MasterBrain command surface | [cli.py](../src/masterbrain/cli.py); read-only hash/compare/duplicates/FileOS snapshot and explicit publication |
 | DataCore contracts | [contracts.py](../src/masterbrain/datacore/contracts.py); immutable source/version/evidence/provenance types |
 | Read-only FileOS inventory | [fileos.py](../src/masterbrain/datacore/fileos.py); deterministic bounded snapshot, no source effects |
 | Isolated FileOS documents | [document contract](../src/masterbrain/datacore/document_contract.py), [worker](../src/masterbrain/datacore/document_worker.py), [parent](../src/masterbrain/datacore/document_processor.py), [image](../Dockerfile.documents), [guide](FILEOS_DOCUMENT_EXTRACTION.md) |
+| Authenticated FileOS operator | [fileos_controller.py](../src/masterbrain/fileos_controller.py), [ADR-054](adr/054_fileos_operator_publication.md) |
 | FOS live-donor parity | [parity harness](../scripts/datacore_parity.py), [synthetic corpus](../tests/fixtures/datacore_parity/corpus/), [unit contract](../tests/test_datacore_dedup.py), [stress tests](../tests/test_datacore_stress.py) |
 | Structured travel/bill memory | [memory.py](../src/email_brain/memory.py), [memory_schema.py](../src/email_brain/memory_schema.py), [memory_extract.py](../src/email_brain/memory_extract.py), [memory.js](../src/email_brain/web/memory.js), [migration 0014](../migrations/0014_structured_memory.sql) |
 | Shared DataCore persistence | [persistence.py](../src/masterbrain/datacore/persistence.py), [migration 0015](../migrations/0015_datacore_persistence.sql), [contract](DATACORE_PERSISTENCE.md) |

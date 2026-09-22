@@ -7,7 +7,7 @@ import csv
 import hashlib
 import io
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from html.parser import HTMLParser
@@ -30,7 +30,8 @@ DOCUMENT_SUFFIXES = frozenset({".pdf", ".docx", ".xlsx"})
 
 
 class DocumentProcessor(Protocol):
-    processor_version: str
+    @property
+    def processor_version(self) -> str: ...
 
     def extract(
         self,
@@ -353,8 +354,11 @@ class FileOSAdapter:
         idempotency_key: UUID,
         *,
         code_revision: str,
+        authorize: Callable[[], None] | None = None,
     ) -> SnapshotPublication:
         """Import, independently extract each item, and publish successful text."""
+        if authorize is not None:
+            authorize()
         imported = self.store.import_fileos_snapshot(ctx, manifest, idempotency_key)
         raw_items = manifest.get("items")
         if not isinstance(raw_items, list):
@@ -362,6 +366,8 @@ class FileOSAdapter:
         results: list[PublishedExtraction] = []
         counts: Counter[str] = Counter()
         for raw_item in raw_items:
+            if authorize is not None:
+                authorize()
             if not isinstance(raw_item, Mapping):
                 raise ValueError("invalid snapshot item")
             locator = raw_item.get("locator")
@@ -371,6 +377,8 @@ class FileOSAdapter:
                 if self.document_processor is not None and suffix in DOCUMENT_SUFFIXES
                 else extract_source_version(root, raw_item)
             )
+            if authorize is not None:
+                authorize()
             publication = None
             if extraction.status is ExtractionStatus.EXTRACTED:
                 publication = self.store.publish_text(

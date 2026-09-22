@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-054 authenticated FileOS publication](adr/054_fileos_operator_publication.md)
+adds a closed private operator configuration, exact worker scopes, idempotent snapshot
+publication and repeated authorization checks without source effects.
+
 [ADR-053 isolated FileOS documents](adr/053_isolated_fileos_documents.md) adds
 source-revalidated PDF/DOCX/XLSX extraction through a dedicated networkless,
 read-only container; it grants no source effects or OCR authority.

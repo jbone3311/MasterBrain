@@ -58,6 +58,31 @@ For reproducible acceptance tests, `--observed-at` accepts an explicit timezone-
 ISO timestamp. Normal operation records current UTC. Source IDs are lowercase stable
 identifiers such as `files_primary`, not display paths or secrets.
 
+## Publish an authorized snapshot
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain fileos publish \
+  --config /private/operator/fileos-primary.json \
+  --idempotency-key 93c5a004-81ab-45b6-8652-e8ced2b40e47 \
+  --check
+```
+
+Remove `--check` only after preflight succeeds. The private closed configuration binds
+`source_id`, absolute `root`, `manifest_file`, `credentials_file`, `token_file` and
+`code_revision`. It may additionally bind both `document_image_id` and
+`docker_binary` to enable the isolated PDF/DOCX/XLSX worker. Configuration, credential,
+token and manifest files must be owner-private, outside the source checkout, and must
+not be passed through command arguments as secrets. The DSN is read only from
+`MASTERBRAIN_DSN`.
+
+The expiring credential must be a worker with exactly `brain.source.ingest` and
+`brain.document.publish`. The UUID and exact manifest are reused for an uncertain
+retry; never reuse the key for a different snapshot. Output is compact counts only,
+including extraction outcomes, new/unchanged versions, published/changed documents,
+and the invariant `source_effects: false`. This is explicit one-snapshot operation,
+not a watcher or automatic live-root enrollment.
+
 ## Donor parity
 
 ```sh

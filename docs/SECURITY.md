@@ -56,6 +56,13 @@ text limits are enforced. Rejected or incomplete documents remain accounted as
 unsupported, deferred or failed; they do not silently publish partial text. See
 [FileOS document extraction](FILEOS_DOCUMENT_EXTRACTION.md).
 
+The FileOS publication command accepts secrets only from owner-private files and a
+runtime environment DSN. Its credential is an expiring worker identity with exactly
+the two DataCore write scopes. Check mode performs no intake or extraction; execution
+revalidates the local identity around each item. PostgreSQL independently rejects
+privileged/owning roles and rechecks owner membership under forced RLS. Results omit
+paths, filenames, content, credentials and diagnostics.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

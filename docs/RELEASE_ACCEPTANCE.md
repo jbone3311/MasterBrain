@@ -10,6 +10,8 @@ operator, date, result, exceptions and rollback receipt.
   product identities.
 - Each authorized source can initial-sync, resume, replay, reconcile, pause and revoke
   without omission or unintended duplication.
+- FileOS operator preflight is non-mutating; exact retries converge, credential
+  revocation fails closed, and output/logs do not disclose paths, content or secrets.
 - Unsupported/partial/quarantined items are counted and inspectable.
 - FOS-Master stays available and unchanged until FileOS cutover is separately accepted.
 

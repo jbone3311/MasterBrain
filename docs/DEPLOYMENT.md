@@ -65,5 +65,11 @@ Before promoting a document-worker image, run the malicious-container corpus and
 PostgreSQL publication check. Image identity, dependency lock, sandbox inspection,
 corpus result and database result belong in the release receipt.
 
+The prototype FileOS publisher is an explicit one-shot operator process, not an API
+route or daemon. Mount its configuration/credential/token/manifest read-only, inject
+the least-privileged runtime DSN at process launch, run `--check`, then invoke once
+with a recorded UUID. Do not place Docker authority in the Brain API service. A future
+scheduler must add fenced leases and durable whole-run completion receipts first.
+
 The current `compose.yaml` remains a local Email-capability PostgreSQL setup, not a
 production MasterBrain deployment.

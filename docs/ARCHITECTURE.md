@@ -45,6 +45,12 @@ worker. That worker has no filesystem/source authority and returns a closed resu
 DataCore independently validates identity, limits and outcome before transactionally
 publishing text and chunks. Parser dependencies do not ship in the Brain API image.
 
+The first operator boundary is a one-shot authenticated publisher, separate from the
+Brain API. It binds a private config to one root/source/snapshot, requires exact worker
+scopes and a request UUID, then repeatedly revalidates authority while invoking the
+same adapter. It emits only counts. Scheduling, effects and Docker authority are not
+part of the public API process.
+
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.

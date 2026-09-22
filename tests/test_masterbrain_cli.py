@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from masterbrain import cli
 from masterbrain.cli import main
 
 
@@ -60,3 +61,45 @@ def test_cli_errors_do_not_echo_sensitive_path(capsys: pytest.CaptureFixture[str
     with pytest.raises(SystemExit):
         main(["datacore", "hash", secret])
     assert secret not in capsys.readouterr().err
+
+
+def test_cli_publish_uses_masterbrain_dsn_and_scrubs_it(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    key = "93c5a004-81ab-45b6-8652-e8ced2b40e47"
+    config = tmp_path / "controller.json"
+    config.write_text("not opened by this dispatch test")
+    dsn = "postgresql://secret:secret@example.invalid/private"
+    monkeypatch.setenv("MASTERBRAIN_DSN", dsn)
+    run = monkeypatch.setattr(
+        cli,
+        "run_fileos_controller",
+        lambda path, received_dsn, received_key, check: {
+            "config": path == config,
+            "dsn": received_dsn == dsn,
+            "key": str(received_key) == key,
+            "check": check,
+            "source_effects": False,
+        },
+    )
+    assert run is None
+    main(
+        [
+            "fileos",
+            "publish",
+            "--config",
+            str(config),
+            "--idempotency-key",
+            key,
+            "--check",
+        ]
+    )
+    output = capsys.readouterr().out
+    assert json.loads(output) == {
+        "check": True,
+        "config": True,
+        "dsn": True,
+        "key": True,
+        "source_effects": False,
+    }
+    assert dsn not in output

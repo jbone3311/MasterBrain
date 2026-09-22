@@ -110,9 +110,11 @@ def _constant(_: str) -> None:
     raise ControllerError()
 
 
-def _json(path: Path) -> Any:
+def _json(path: Path, limit: int = 65536) -> Any:
     return json.loads(
-        private_bytes(path).decode("utf-8"), object_pairs_hook=_pairs, parse_constant=_constant
+        private_bytes(path, limit).decode("utf-8"),
+        object_pairs_hook=_pairs,
+        parse_constant=_constant,
     )
 
 
@@ -169,12 +171,18 @@ class WorkerIdentity:
         self,
         config: CredentialFiles,
         *,
-        scope: Literal["email.process", "email.document.process", "email.ingest"] = "email.process",
+        scope: str | frozenset[str] = "email.process",
     ) -> None:
-        if scope not in {"email.process", "email.document.process", "email.ingest"}:
+        scopes = frozenset({scope}) if isinstance(scope, str) else scope
+        if scopes not in {
+            frozenset({"email.process"}),
+            frozenset({"email.document.process"}),
+            frozenset({"email.ingest"}),
+            frozenset({"brain.source.ingest", "brain.document.publish"}),
+        }:
             raise ControllerError()
         self.config = config
-        self.scope = scope
+        self.scopes = scopes
         self.initial: Principal | None = None
 
     def authenticate(self) -> Principal:
@@ -191,7 +199,7 @@ class WorkerIdentity:
         if (
             principal is None
             or principal.client_kind != "worker"
-            or principal.context.scopes != frozenset({self.scope})
+            or principal.context.scopes != self.scopes
         ):
             raise ControllerError()
         if self.initial is not None and (

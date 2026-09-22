@@ -22,6 +22,8 @@ mean hosted, live-source accepted, or production ready.
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted
   worker image with archive/active-content bounds; hosted container and restore gates green.
+- Explicit private-config FileOS snapshot publication command with exact worker scopes,
+  idempotent replay and repeated authorization; hosted PostgreSQL acceptance pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -30,7 +32,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Incremental/enrolled FileOS scanning and legacy Office/archive/image/OCR extraction.
+- Scheduled/incremental FileOS scanning, durable whole-run receipts and legacy
+  Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

@@ -36,10 +36,12 @@
 
 ## Current work
 
-- Add a narrow operator command that enrolls an explicit root and performs
-  snapshot/import/extract publication without granting source-write authority.
-- Preserve monotonic run receipts and make retry/replay/source drift observable.
-- Exercise text and isolated document paths together against PostgreSQL.
+- Narrow private-config operator command now validates and publishes an exact snapshot
+  without granting source-write authority; hosted PostgreSQL gate is pending.
+- Exact request replay and source drift are visible; durable whole-run completion
+  receipts and automated scheduling remain the next operational step.
+- Exercise text and isolated document paths together through the controller in hosted
+  PostgreSQL/container gates.
 
 ## Deferred by design
 

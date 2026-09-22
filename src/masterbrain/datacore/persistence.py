@@ -129,6 +129,12 @@ def _manifest_items(
     return source, observed_at, items
 
 
+def validate_fileos_manifest(manifest: Mapping[str, Any]) -> tuple[str, int]:
+    """Validate a complete snapshot without persisting it or exposing its locators."""
+    source, _, items = _manifest_items(manifest)
+    return source.source_id, len(items)
+
+
 def deterministic_chunks(
     text: str, limit: int = CHUNK_CHARACTERS
 ) -> Iterator[tuple[int, int, str]]:

@@ -47,6 +47,7 @@ FileOS sources ┘       │              │                │
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
 | File text/Markdown/HTML/CSV extraction | Working shared prototype |
 | Isolated FileOS PDF/DOCX/XLSX extraction | Implemented; hosted container and restore gates green |
+| Authenticated one-snapshot FileOS publication command | Implemented; hosted PostgreSQL gate pending |
 | Archives, images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped DataCore/KnowledgeCore search | Working shared prototype |

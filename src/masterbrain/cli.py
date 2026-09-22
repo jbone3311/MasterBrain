@@ -10,9 +10,11 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from masterbrain.datacore.dedup import DEFAULT_CONFIG, compare_files, file_hash, find_duplicates
 from masterbrain.datacore.fileos import snapshot_tree
+from masterbrain.fileos_controller import run_fileos_controller
 
 
 def _json(value: Any) -> str:
@@ -93,6 +95,10 @@ def build_parser() -> argparse.ArgumentParser:
     snapshot.add_argument("--output", type=Path)
     snapshot.add_argument("--force", action="store_true")
     _bounds(snapshot)
+    publish = file_commands.add_parser("publish", help="Publish an authorized snapshot")
+    publish.add_argument("--config", type=Path, required=True)
+    publish.add_argument("--idempotency-key", type=UUID, required=True)
+    publish.add_argument("--check", action="store_true")
     return parser
 
 
@@ -104,9 +110,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             print("masterbrain-manifest-v1")
         elif args.command == "datacore" and args.data_command == "hash":
             print(
-                _json(
-                    {"algorithm": args.algorithm, "digest": file_hash(args.path, args.algorithm)}
-                )
+                _json({"algorithm": args.algorithm, "digest": file_hash(args.path, args.algorithm)})
             )
         elif args.command == "datacore" and args.data_command == "compare":
             print(_json(compare_files(args.file1, args.file2, DEFAULT_CONFIG.copy())))
@@ -114,9 +118,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(_json(find_duplicates(args.directory, _config(args), args.method)))
         elif args.command == "fileos" and args.file_command == "snapshot":
             observed = (
-                datetime.fromisoformat(args.observed_at)
-                if args.observed_at
-                else datetime.now(UTC)
+                datetime.fromisoformat(args.observed_at) if args.observed_at else datetime.now(UTC)
             )
             manifest = snapshot_tree(
                 args.root,
@@ -126,6 +128,15 @@ def main(argv: Sequence[str] | None = None) -> None:
                 follow_file_symlinks=args.follow_file_symlinks,
             )
             _write_output(args.output, _json(manifest), force=args.force)
+        elif args.command == "fileos" and args.file_command == "publish":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_fileos_controller(args.config, dsn, args.idempotency_key, check=args.check)
+                )
+            )
     except (OSError, ValueError):
         parser.exit(1, "Operation failed. Check paths, bounds and permissions.\n")
 

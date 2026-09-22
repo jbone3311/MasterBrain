@@ -58,6 +58,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
+| DC-005A explicit operation | Existing DataCore contracts; donor remains reference | `fileos_controller.py`, `masterbrain fileos publish` | closed config/auth/replay/source-integrity/SQL corpus | Implemented; hosted PostgreSQL gate pending |
 
 DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
 and all delete/move operations. Those omissions do not change the returned scan and
@@ -67,7 +68,7 @@ comparison contracts being adopted; the live-donor harness compares those output
 
 1. **DC-004C archives/images/OCR:** separate opt-in workers with format-specific
    corpora, expansion/page budgets and containment.
-2. **DC-005 rebuild/freshness:** add explicit rebuild and source-drift receipts around
+2. **DC-005B rebuild/freshness:** add explicit rebuild and source-drift receipts around
    the existing deterministic chunk/lexical publication path.
 3. **KC-001 claim/entity projection:** import donor lessons without treating model
    output as truth.
