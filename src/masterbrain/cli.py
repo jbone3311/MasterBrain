@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+from masterbrain.archive_member_controller import run_archive_member_controller
 from masterbrain.datacore.dedup import DEFAULT_CONFIG, compare_files, file_hash, find_duplicates
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.email_bridge_controller import (
@@ -116,6 +117,14 @@ def build_parser() -> argparse.ArgumentParser:
     target.add_argument("--generation-id")
     index.add_argument("--idempotency-key", type=UUID, required=True)
     index.add_argument("--check", action="store_true")
+    archive_text = file_commands.add_parser(
+        "archive-text", help="Publish one selected archive text member"
+    )
+    archive_text.add_argument("--config", type=Path, required=True)
+    archive_text.add_argument("--inventory-id", required=True)
+    archive_text.add_argument("--member-locator", required=True)
+    archive_text.add_argument("--idempotency-key", type=UUID, required=True)
+    archive_text.add_argument("--check", action="store_true")
 
     email = commands.add_parser("email", help="Explicit Email source migration commands")
     email_commands = email.add_subparsers(dest="email_command", required=True)
@@ -217,6 +226,22 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.idempotency_key,
                         run_id=args.run_id,
                         generation_id=args.generation_id,
+                        check=args.check,
+                    )
+                )
+            )
+        elif args.command == "fileos" and args.file_command == "archive-text":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_archive_member_controller(
+                        args.config,
+                        dsn,
+                        args.inventory_id,
+                        args.member_locator,
+                        args.idempotency_key,
                         check=args.check,
                     )
                 )
