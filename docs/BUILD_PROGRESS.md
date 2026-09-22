@@ -2,7 +2,7 @@
 
 ## Active checkpoint
 
-**Checkpoint 4L — Email attachment/document batch preview design.** Work occurs on
+**Checkpoint 4L — Email attachment/document batch preview implementation.** Work occurs on
 `codex/masterbrain-foundation` in PR #4. Define a bounded, read-only preview that
 exposes only opaque attachment occurrences and already-approved document derivatives
 whose current parent messages have been bridged. Preserve message → attachment →
@@ -106,13 +106,16 @@ until the preview contract and PostgreSQL state transitions are accepted.
   idempotency-ordering compatibility correction `7ca0568` passed hosted
   [CI 35759175176](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175176)
   and [restore 35759175355](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175355).
+- Checkpoint 4L preview design revision `5b26329` passed hosted
+  [CI 35761452118](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35761452118)
+  and [restore 35761451949](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35761451949).
 
 ## Current work
 
-- Inventory the exact legacy attachment, approved-extraction and shared bridge states
-  needed for a content-free attachment/document preview.
-- Specify stable ordering, cursor semantics and dependency/readiness labels before
-  adding any multi-item attachment or document writer.
+- Verify runtime revision `e3c0ee5` against real PostgreSQL dependency filtering,
+  already-bridged labels, approval deduplication and quarantine transitions.
+- Keep attachment/document batch writes prohibited until the preview runtime and
+  populated restore gates are green and their evidence is recorded.
 
 ## Deferred by design
 
