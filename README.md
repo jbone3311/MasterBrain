@@ -71,6 +71,7 @@ roadmap item is not an implementation claim.
 - [Current build progress](docs/BUILD_PROGRESS.md)
 - [Shared DataCore/FileOS commands](docs/DATACORE_COMMANDS.md)
 - [Source and provenance contract](docs/SOURCE_PROVENANCE.md)
+- [DataCore persistence and lexical retrieval](docs/DATACORE_PERSISTENCE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
 - [Code map](docs/CODE_MAP.md)

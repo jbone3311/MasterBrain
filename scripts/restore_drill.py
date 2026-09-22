@@ -51,6 +51,9 @@ from email_brain.schemas import (
 )
 from email_brain.store import AccessDenied, IngestItem, NotFound, Store
 from email_brain.synthetic_formats import pdf_bytes
+from masterbrain.datacore.contracts import stable_id
+from masterbrain.datacore.fileos import SNAPSHOT_VERSION
+from masterbrain.datacore.persistence import DataCoreStore
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 LABEL = "com.cw-email-brain.synthetic-restore"
@@ -217,6 +220,8 @@ class SeededTenant:
     document_id: UUID
     document_digest: str
     identity_id: UUID
+    brain_document_id: str
+    brain_evidence_id: str
 
 
 class SyntheticDocumentProcessor:
@@ -319,11 +324,52 @@ def seed(
                     "email.proposal.create",
                     "email.proposal.read",
                     "email.review",
+                    "brain.source.ingest",
+                    "brain.document.publish",
+                    "brain.search",
                 }
             ),
             uuid4(),
         )
         now = datetime(2026, 9, 20, tzinfo=UTC)
+        source_id = "files_" + keyword
+        locator = "restore-proof.txt"
+        body = f"masterbrainrestore {keyword} source evidence"
+        body_bytes = body.encode()
+        body_sha = hashlib.sha256(body_bytes).hexdigest()
+        brain_item_id = stable_id("item", source_id, locator)
+        brain_version_id = stable_id("version", brain_item_id, body_sha, str(len(body_bytes)))
+        brain_manifest = {
+            "manifest_version": SNAPSHOT_VERSION,
+            "source": {"source_id": source_id, "kind": "fileos"},
+            "observed_at": now.isoformat(),
+            "policy": {"hash_algorithm": "sha256"},
+            "counts": {"items": 1, "excluded": 0, "errors": 0},
+            "items": [
+                {
+                    "item_id": brain_item_id,
+                    "version_id": brain_version_id,
+                    "locator": locator,
+                    "observed_at": now.isoformat(),
+                    "digest": {"algorithm": "sha256", "value": body_sha},
+                    "size_bytes": len(body_bytes),
+                    "media_type": "text/plain",
+                    "metadata": {"synthetic": True},
+                    "is_symlink": False,
+                }
+            ],
+            "errors": [],
+        }
+        datacore = DataCoreStore(store)
+        imported = datacore.import_fileos_snapshot(context, brain_manifest, uuid4())
+        require(imported.new_versions == 1, "DataCore restore seed import failed")
+        brain_document = datacore.publish_text(
+            context,
+            brain_version_id,
+            body,
+            code_revision="synthetic-restore-v1",
+        )
+        require(brain_document.changed, "DataCore restore seed publication failed")
         items = [
             IngestItem("good-event", "good-message", "v1", now, synthetic_mime(keyword)),
             IngestItem("poison-event", "poison-message", "v1", now, b""),
@@ -491,6 +537,8 @@ def seed(
                 document_id,
                 stable_digest(store.document_evidence(context, document_id)),
                 identity_id,
+                brain_document.document_id,
+                brain_document.evidence_id,
             )
         )
     return tenants
@@ -628,6 +676,17 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         require(
             len(document_hits) == 1 and document_hits[0]["document_id"] == current.document_id,
             "restored document search failed",
+        )
+        brain_hits = DataCoreStore(store).search(ctx, f"masterbrainrestore {current.keyword}")
+        require(
+            len(brain_hits) == 1
+            and brain_hits[0].document_id == current.brain_document_id
+            and brain_hits[0].evidence_id == current.brain_evidence_id,
+            "restored DataCore lexical evidence changed",
+        )
+        require(
+            not DataCoreStore(store).search(ctx, foreign.keyword),
+            "foreign restored DataCore evidence accessible",
         )
         try:
             store.document_evidence(ctx, foreign.document_id)

@@ -33,6 +33,8 @@ from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError
 from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
+from masterbrain.datacore.fileos import snapshot_tree
+from masterbrain.datacore.persistence import DataCoreStore
 
 pytestmark = pytest.mark.postgres
 
@@ -89,6 +91,9 @@ def tenant(database: tuple[Store, str]) -> tuple[TenantContext, UUID]:
                 "email.proposal.create",
                 "email.proposal.read",
                 "email.review",
+                "brain.source.ingest",
+                "brain.document.publish",
+                "brain.search",
             }
         ),
         uuid4(),
@@ -178,6 +183,144 @@ def test_owner_database_role_is_rejected(
     ctx, _ = tenant
     with pytest.raises(AccessDenied, match="unsafe runtime"):
         Store(admin).search(ctx, SearchRequest(query="Melron"))
+
+
+def fileos_manifest(root: Path, *, source_id: str = "files_test", hour: int = 1) -> dict[str, Any]:
+    return snapshot_tree(
+        root,
+        source_id=source_id,
+        observed_at=datetime(2026, 9, 22, hour, tzinfo=UTC),
+    )
+
+
+def test_datacore_import_replay_drift_publish_and_search(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    core = DataCoreStore(store)
+    document = tmp_path / "contract.txt"
+    document.write_text(
+        "Alpha agreement includes a September renewal commitment.", encoding="utf-8"
+    )
+    first = fileos_manifest(tmp_path)
+    key = uuid4()
+    imported = core.import_fileos_snapshot(ctx, first, key)
+    assert (imported.new_versions, imported.unchanged_versions) == (1, 0)
+    assert core.import_fileos_snapshot(ctx, first, key) == imported
+    with pytest.raises(Conflict):
+        core.import_fileos_snapshot(ctx, {**first, "policy": {"changed": True}}, key)
+
+    version_id = first["items"][0]["version_id"]
+    published = core.publish_text(
+        ctx,
+        version_id,
+        "Alpha agreement includes a September renewal commitment.",
+        code_revision="test-revision",
+    )
+    assert published.changed is True
+    assert (
+        core.publish_text(
+            ctx,
+            version_id,
+            "Alpha agreement includes a September renewal commitment.",
+            code_revision="test-revision",
+        ).changed
+        is False
+    )
+    hits = core.search(ctx, "renewal commitment")
+    assert len(hits) == 1
+    assert hits[0].evidence_id == published.evidence_id
+    assert hits[0].locator == "contract.txt"
+
+    document.write_text("Alpha agreement now has an October renewal commitment.", encoding="utf-8")
+    second = fileos_manifest(tmp_path, hour=2)
+    drift = core.import_fileos_snapshot(ctx, second, uuid4())
+    assert (drift.new_versions, drift.unchanged_versions) == (1, 0)
+    with store.transaction(ctx) as conn:
+        item = conn.execute(
+            "SELECT current_version_id FROM brain_source_items WHERE source_id='files_test'"
+        ).fetchone()
+        assert item["current_version_id"] == second["items"][0]["version_id"]
+        assert conn.execute("SELECT count(*) AS n FROM brain_source_versions").fetchone()["n"] == 2
+
+
+def test_datacore_invalid_manifest_is_atomic(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    core = DataCoreStore(store)
+    (tmp_path / "one.txt").write_text("one", encoding="utf-8")
+    (tmp_path / "two.txt").write_text("two", encoding="utf-8")
+    manifest = fileos_manifest(tmp_path, source_id="files_atomic")
+    manifest["items"][1]["version_id"] = "version_" + "0" * 32
+    with pytest.raises(ValueError, match="identity"):
+        core.import_fileos_snapshot(ctx, manifest, uuid4())
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_sources WHERE id='files_atomic'"
+            ).fetchone()["n"]
+            == 0
+        )
+
+
+def test_datacore_concurrent_replay_creates_one_version(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    core = DataCoreStore(store)
+    (tmp_path / "one.txt").write_text("same", encoding="utf-8")
+    manifest = fileos_manifest(tmp_path, source_id="files_concurrent")
+    key = uuid4()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(
+            pool.map(lambda _: core.import_fileos_snapshot(ctx, manifest, key), range(2))
+        )
+    assert results[0] == results[1]
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_source_versions WHERE source_id='files_concurrent'"
+            ).fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_change_events WHERE source_id='files_concurrent'"
+            ).fetchone()["n"]
+            == 1
+        )
+
+
+def test_datacore_rls_and_immutability(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    core = DataCoreStore(store)
+    (tmp_path / "private.txt").write_text("Tenant one private evidence", encoding="utf-8")
+    manifest = fileos_manifest(tmp_path, source_id="files_private")
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    version_id = manifest["items"][0]["version_id"]
+    with pytest.raises(psycopg.errors.RaiseException), store.transaction(ctx) as conn:
+        conn.execute(
+            "UPDATE brain_source_versions SET media_type='text/html' WHERE id=%s", (version_id,)
+        )
+
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Other synthetic')", (other_tenant,))
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
+    with store.transaction(other) as conn:
+        assert conn.execute("SELECT count(*) AS n FROM brain_source_versions").fetchone()["n"] == 0
+    assert core.search(other, "private evidence") == []
 
 
 def test_foreign_tenant_cannot_see_evidence(

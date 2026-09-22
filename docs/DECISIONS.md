@@ -380,6 +380,11 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-048 DataCore persistence](adr/048_datacore_persistence.md) adds bounded,
+idempotent FileOS snapshot import, immutable source/evidence/provenance records,
+deterministic chunks and tenant-isolated lexical retrieval without changing Email
+tables or authorizing source writes.
+
 [ADR-047 MasterBrain foundation](adr/047_masterbrain_foundation.md) establishes the
 final product identity, shared core boundaries, non-destructive FOS-Master migration
 protocol and first read-only DataCore hash/dedupe extraction.

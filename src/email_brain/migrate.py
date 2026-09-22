@@ -9,6 +9,17 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "brain_sources",
+    "brain_source_items",
+    "brain_source_versions",
+    "brain_evidence",
+    "brain_normalized_documents",
+    "brain_chunks",
+    "brain_provenance",
+    "brain_provenance_inputs",
+    "brain_change_events",
+    "brain_jobs",
+    "brain_import_receipts",
     "memory_records",
     "memory_revisions",
     "memory_receipts",
@@ -39,6 +50,17 @@ RUNTIME_SELECT = (
     "proposal_evidence",
 )
 RUNTIME_INSERT = (
+    "brain_sources",
+    "brain_source_items",
+    "brain_source_versions",
+    "brain_evidence",
+    "brain_normalized_documents",
+    "brain_chunks",
+    "brain_provenance",
+    "brain_provenance_inputs",
+    "brain_change_events",
+    "brain_jobs",
+    "brain_import_receipts",
     "memory_records",
     "memory_revisions",
     "memory_receipts",
@@ -129,6 +151,9 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
                 "message_sync_state",
                 "recovery_jobs",
                 "document_jobs",
+                "brain_sources",
+                "brain_source_items",
+                "brain_jobs",
             ),
         ),
     ):

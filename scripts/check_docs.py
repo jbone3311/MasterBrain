@@ -44,6 +44,7 @@ REQUIRED = (
     "docs/BUILD_PROGRESS.md",
     "docs/DATACORE_COMMANDS.md",
     "docs/SOURCE_PROVENANCE.md",
+    "docs/DATACORE_PERSISTENCE.md",
     "docs/PRODUCT_WALKTHROUGH.md",
     "docs/METHODS_GUIDE.md",
     "docs/DOCUMENTATION_STANDARD.md",
