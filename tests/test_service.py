@@ -16,6 +16,7 @@ from email_brain.inference import Route, RoutingPolicy, route, validate_classifi
 from email_brain.normalize import normalize
 from email_brain.store import Store
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
+from masterbrain.knowledge import KnowledgeCore, KnowledgeHit
 
 TOKEN = "synthetic-test-token-not-a-real-credential-000000"
 
@@ -222,14 +223,93 @@ def test_brain_write_scopes_are_worker_only() -> None:
             registry({scope}, "human")
 
 
+def test_unified_search_is_grouped_bounded_and_requires_both_scopes() -> None:
+    store = MagicMock(spec=Store)
+    brain = MagicMock(spec=DataCoreStore)
+    knowledge = MagicMock(spec=KnowledgeCore)
+    brain.search.return_value = [
+        SearchHit(
+            "chunk_" + "1" * 32,
+            "document_" + "2" * 32,
+            "evidence_" + "3" * 32,
+            "files_test",
+            "report.txt",
+            "Project Atlas evidence",
+            0.8,
+        )
+    ]
+    knowledge.search.return_value = [
+        KnowledgeHit(
+            "project",
+            "project_" + "4" * 32,
+            "Project Atlas",
+            "active renewal project",
+            0.7,
+            ("evidence_" + "3" * 32,),
+        )
+    ]
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    denied = TestClient(
+        create_app(
+            store,
+            registry({"brain.search"}),
+            brain_store=brain,
+            knowledge_store=knowledge,
+        )
+    )
+    assert (
+        denied.post(
+            "/v1/brain/unified-search", json={"query": "Atlas"}, headers=headers
+        ).status_code
+        == 403
+    )
+
+    client = TestClient(
+        create_app(
+            store,
+            registry({"brain.search", "knowledge.search"}),
+            brain_store=brain,
+            knowledge_store=knowledge,
+        )
+    )
+    response = client.post(
+        "/v1/brain/unified-search",
+        json={
+            "query": "Atlas",
+            "evidence_limit": 3,
+            "knowledge_limit": 4,
+            "knowledge_kinds": ["project"],
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ranking"] == "within_layer_only"
+    assert body["layers"]["evidence"][0]["evidence_id"] == "evidence_" + "3" * 32
+    assert body["layers"]["knowledge"][0]["object_kind"] == "project"
+    brain.search.assert_called_once()
+    knowledge.search.assert_called_once()
+    assert knowledge.search.call_args.kwargs["kinds"] == ["project"]
+    for invalid in (
+        {"query": "Atlas", "evidence_limit": 26},
+        {"query": "Atlas", "knowledge_limit": 0},
+        {"query": "Atlas", "knowledge_kinds": ["project", "project"]},
+    ):
+        assert (
+            client.post("/v1/brain/unified-search", json=invalid, headers=headers).status_code
+            == 422
+        )
+
+
 def test_expiry_and_bad_token() -> None:
     assert registry(expired=True).authenticate(TOKEN) is None
     assert registry().authenticate("wrong-token" * 5) is None
 
 
 def test_assistants_cannot_be_reviewers() -> None:
-    with pytest.raises(ValueError, match="human-only"):
-        registry({"email.review"}, "assistant")
+    for scope in ("email.review", "knowledge.review"):
+        with pytest.raises(ValueError, match="human-only"):
+            registry({scope}, "assistant")
 
 
 def test_plain_mime_and_raw_hash() -> None:

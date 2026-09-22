@@ -42,7 +42,7 @@ from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import KnowledgePublishRequest, KnowledgeSearchRequest
-from masterbrain.schemas import BrainSearchRequest, EvidenceContentRequest
+from masterbrain.schemas import BrainSearchRequest, EvidenceContentRequest, UnifiedSearchRequest
 
 log = logging.getLogger("email_brain.requests")
 WEB = Path(__file__).parent / "web"
@@ -91,6 +91,7 @@ def create_app(
     registry: Authenticator,
     *,
     brain_store: DataCoreStore | None = None,
+    knowledge_store: KnowledgeCore | None = None,
     recovery_parser_version: str | None = None,
     document_processor_version: str | None = None,
     browser_auth: BrowserAuth | None = None,
@@ -109,7 +110,7 @@ def create_app(
     message_reader = MessageReader(store)
     memory = Memory(store)
     brain = brain_store or DataCoreStore(store)
-    knowledge = KnowledgeCore(store)
+    knowledge = knowledge_store or KnowledgeCore(store)
     if browser_auth is not None:
         if browser_auth.authenticator.store is not store:
             raise ValueError("browser and API must share the same Store")
@@ -385,6 +386,56 @@ def create_app(
             ],
             "page": {"next_cursor": None, "truncated": False},
             "policy": {"scope": "brain.search", "redactions": []},
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/unified-search")
+    def unified_search(
+        body: UnifiedSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        if "knowledge.search" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        evidence_hits = brain.search(principal.context, body.query, limit=body.evidence_limit)
+        knowledge_hits = knowledge.search(
+            principal.context,
+            body.query,
+            limit=body.knowledge_limit,
+            kinds=list(body.knowledge_kinds),
+        )
+        return {
+            "mode": "grouped_lexical",
+            "ranking": "within_layer_only",
+            "layers": {
+                "evidence": [
+                    {
+                        "chunk_id": hit.chunk_id,
+                        "document_id": hit.document_id,
+                        "evidence_id": hit.evidence_id,
+                        "source_id": hit.source_id,
+                        "locator": hit.locator,
+                        "excerpt": hit.excerpt,
+                        "rank": hit.rank,
+                    }
+                    for hit in evidence_hits
+                ],
+                "knowledge": [
+                    {
+                        "object_kind": hit.object_kind,
+                        "object_id": hit.object_id,
+                        "title": hit.title,
+                        "excerpt": hit.excerpt,
+                        "rank": hit.rank,
+                        "evidence_ids": hit.evidence_ids,
+                    }
+                    for hit in knowledge_hits
+                ],
+            },
+            "limits": {
+                "evidence": body.evidence_limit,
+                "knowledge": body.knowledge_limit,
+            },
+            "policy": {"scopes": ["brain.search", "knowledge.search"], "redactions": []},
             "untrusted_content": True,
         }
 

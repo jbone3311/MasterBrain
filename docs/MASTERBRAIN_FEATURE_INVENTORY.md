@@ -59,7 +59,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 
 | Capability | Required behavior | State |
 |---|---|---|
-| Search | Compact ranked hits across Email and files | DataCore and KnowledgeCore lexical APIs implemented; unified ranking planned |
+| Search | Compact ranked hits across Email and files | Grouped DataCore/KnowledgeCore API implemented; Email migration/global ranking planned |
 | Answer | Evidence-backed synthesis with uncertainty and coverage | Designed |
 | Expand | Fetch selected entity/project/claim/timeline/chunk | Exact DataCore/KnowledgeCore expansion implemented |
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |

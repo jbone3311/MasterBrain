@@ -47,7 +47,7 @@ FileOS sources ┘       │              │                │
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
 | General file intake/extraction/OCR/chunking | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
-| Progressive Brain API read surfaces | Working DataCore and KnowledgeCore prototype |
+| Progressive Brain API and grouped DataCore/KnowledgeCore search | Working shared prototype |
 | Hosted identity, operations, live sources | Not accepted |
 | FOS-Master cutover or retirement | Explicitly prohibited before parity |
 

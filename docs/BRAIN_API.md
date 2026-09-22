@@ -23,6 +23,8 @@ objects, general SQL, or an unbounded corpus dump.
 - `GET /v1/brain/evidence/{id}` — implemented metadata/citation expansion.
 - `POST /v1/brain/evidence/{id}/content` — implemented separately scoped bounded text.
 - `GET /v1/brain/changes` — implemented cursor-bounded DataCore change feed.
+- `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
+  KnowledgeCore assertion search; requires both search scopes and keeps ranks separate.
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required
   append with a UUID idempotency key.
 - `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
@@ -72,6 +74,8 @@ decisions.
 ## Retrieval contract
 
 - Deterministic filters and lexical search work without an LLM.
+- Cross-layer results remain grouped because ranks from separate indexes are not
+  calibrated as one global score.
 - Semantic/vector ranking is optional and cannot suppress exact evidence lookup.
 - Answers distinguish source statements from inferred conclusions.
 - Conflicting claims are returned as conflicts, not silently collapsed.

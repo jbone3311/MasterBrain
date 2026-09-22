@@ -23,6 +23,8 @@ mean hosted, live-source accepted, or production ready.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
+- Grouped dual-scope search across DataCore evidence and KnowledgeCore assertions,
+  with independent limits/ranks and evidence IDs for progressive drill-down.
 
 ## Designed, not implemented
 

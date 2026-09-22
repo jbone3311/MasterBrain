@@ -2,7 +2,7 @@
 
 ## Active checkpoint
 
-**Checkpoint 4 — reviewed KnowledgeCore foundation.** Work occurs on
+**Checkpoint 5 — grouped Brain retrieval.** Work occurs on
 `codex/masterbrain-foundation` in PR #4.
 
 ## Completed gates
@@ -30,11 +30,10 @@
 
 ## Current work
 
-- Reviewed, evidence-required entities, aliases, relationships, claims, projects,
-  events, commitments and corrections.
-- Append-only temporal history, conflict preservation, lexical retrieval, exact
-  expansion and bounded changes through `/v1/knowledge`.
-- PostgreSQL/RLS/concurrency/API coverage plus populated logical restore verification.
+- One bounded request over DataCore evidence and KnowledgeCore assertions.
+- Separate within-layer ranking, per-layer caps, optional knowledge-kind filters and
+  evidence IDs for progressive verification.
+- Dual-scope authorization and PostgreSQL end-to-end coverage.
 
 ## Deferred by design
 

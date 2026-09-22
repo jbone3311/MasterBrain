@@ -626,6 +626,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
                         tenant_id=ctx.tenant_id,
                         actor_id=ctx.actor_id,
                         scopes={
+                            "brain.search",
                             "knowledge.search",
                             "knowledge.read",
                             "knowledge.changes.read",
@@ -645,6 +646,20 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         headers=headers,
     )
     assert searched.status_code == 200 and searched.json()["results"]
+    unified = api.post(
+        "/v1/brain/unified-search",
+        json={
+            "query": "Project Atlas",
+            "evidence_limit": 5,
+            "knowledge_limit": 5,
+            "knowledge_kinds": ["project"],
+        },
+        headers=headers,
+    )
+    assert unified.status_code == 200
+    assert unified.json()["ranking"] == "within_layer_only"
+    assert unified.json()["layers"]["evidence"][0]["evidence_id"] == evidence_id
+    assert unified.json()["layers"]["knowledge"][0]["object_id"] == project.object_id
     fetched = api.get(f"/v1/knowledge/project/{project.object_id}", headers=headers)
     assert fetched.status_code == 200 and fetched.json()["title"] == "Project Atlas"
     created = api.post(

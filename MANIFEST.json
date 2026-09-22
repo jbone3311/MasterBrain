@@ -26,6 +26,7 @@
     "DataCore read-only hashing/dedupe and FileOS text extraction",
     "DataCore persistence, lexical retrieval and progressive Brain API",
     "reviewed KnowledgeCore assertions, retrieval and changes",
+    "grouped DataCore and KnowledgeCore search",
     "source and provenance contracts",
     "read-only FileOS snapshot",
     "shared MasterBrain CLI"

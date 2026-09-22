@@ -11,6 +11,9 @@ from email_brain.schemas import ClosedModel
 Identity = Annotated[str, Field(pattern=r"^[a-z]+_[a-f0-9]{32}$")]
 EvidenceIdentity = Annotated[str, Field(pattern=r"^evidence_[a-f0-9]{32}$")]
 Predicate = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,99}$")]
+KnowledgeKind = Literal[
+    "entity", "relationship", "claim", "event", "project", "commitment", "correction"
+]
 
 
 class AssertionBase(ClosedModel):
@@ -157,9 +160,7 @@ class KnowledgePublishRequest(ClosedModel):
 class KnowledgeSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     limit: int = Field(default=10, ge=1, le=50, strict=True)
-    kinds: list[
-        Literal["entity", "relationship", "claim", "event", "project", "commitment", "correction"]
-    ] = Field(default_factory=list, max_length=7)
+    kinds: list[KnowledgeKind] = Field(default_factory=list, max_length=7)
 
     @field_validator("kinds")
     @classmethod

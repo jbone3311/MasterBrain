@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-052 grouped unified search](adr/052_grouped_unified_search.md) composes DataCore
+evidence and KnowledgeCore assertions in separately ranked, independently bounded
+layers requiring both scopes; it does not imply Email migration or synthesis.
+
 [ADR-051 reviewed KnowledgeCore assertions](adr/051_knowledgecore_reviewed_assertions.md)
 adds evidence-required entities, relationships, claims, events, projects, commitments,
 corrections, bitemporal fields and lexical retrieval without automatic model writes.
