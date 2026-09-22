@@ -1,0 +1,66 @@
+# FOS-Master Common Tool and Test Inventory
+
+Baseline: `jbone3311/FOS-Master` commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` (inspected 2026-09-21). The donor has
+159 top-level Python tools and 24 top-level Python test modules under `_SYSTEM`.
+This inventory covers common intake/data/knowledge candidates; domain-specific
+report generators, governance utilities and UI helpers remain donor-local unless a
+later tranche identifies shared behavior.
+
+## DataCore candidates
+
+| Concern | Exact donor files | Existing donor tests | Migration order |
+|---|---|---|---|
+| Hash and duplicate discovery | `dedup_tool.py`, `dedup_engine.py` | `test_dedup_tool.py`, `test_dedup_engine.py` | DC-001 read-only core now; policy engine later |
+| Safe filesystem effects | `safe_fileops.py`, `safe_delete.py`, `folder_history.py` | `test_safe_fileops.py`; dedup/broker invariants embedded elsewhere | Effects phase only |
+| Source discovery | `scan_domains.py`, `index_tools.py`, `fos_tools.py`, `domain_paths.py`, `spoke_config.py` | `test_scan_domains.py`, `test_fos_tools.py`, `test_spoke_tools.py` | DC-003 read-only adapter |
+| Intake | `intake_preflight.py`, `intake_pipeline.py`, `intake_classifier.py`, `intake_router.py`, `intake_consolidate.py`, `intake_manager.py`, `ingest_folder.py` | five matching `test_intake_*.py` modules | DC-003/DC-004 |
+| Extraction | `doc_extract.py`, `extract_metadata.py`, `archive_unpack.py`, `image_triage.py`, `zip_index.py`, `statement_extract.py` | `test_doc_extract.py`, `test_extract_metadata.py`, `test_archive_unpack.py`, `test_image_triage.py` | DC-004 by format/risk |
+| Index/retrieval | `content_search.py`, `embed_documents.py`, `cross_db_search.py`, `corpus_reconcile.py` | `test_embed_documents.py`; parity corpus required for others | DC-005 |
+| Persistence | `db_connect.py`, `db_migrate.py`, `db_audit.py`, `schema_manager.py`; `spoke_state_schema.sql` | `test_db_audit.py` | Reimplement contract on shared PostgreSQL primitives |
+| Provenance/audit | `lineage_tracker.py`, `audit_history.py`, `change_scan.py`, `drift_report.py`, `content_integrity_check.py` | partial operational/self-tests; new golden faults required | DC-002 onward |
+| Validation/error visibility | `data_validator.py`, `_lib/verify.py`, `_lib/errlog.py`, `content_regression_check.py` | `test_data_validator.py`, `test_errlog.py` | Shared worker primitives after contract audit |
+
+## KnowledgeCore candidates
+
+| Concern | Exact donor files | Existing donor tests | Migration note |
+|---|---|---|---|
+| Entities/facts | `extract_facts.py`, `fact_db.py`, `fact_verify.py`, `extract_all_domains.py` | No complete known-answer suite found | Import as claims with evidence/confidence, not truth |
+| Cross-domain reports | `reporting.py`, `report_data_collector.py` | No complete semantic suite found | Use as query/evaluation reference |
+| Routing knowledge | `routing_engine.py`, `naming_classifier.py`, `spoke_config.py` | intake suites cover portions | Separate learned pattern from effect authority |
+| Freshness/lineage | `ssot_freshness.py`, `ssot_drift_check.py`, `source_registry`/`output_lineage` schema | Operational checks | Map to KnowledgeCore freshness and provenance |
+
+## Overlap requiring consolidation, not blind copy
+
+`email_core.py`, `email_ingest_adapter.py`, and `email_sanitizer.py` with
+`test_email_core.py`, `test_email_ingest_adapter.py`, and
+`test_email_sanitizer.py` overlap the retained Email capability. They are reference
+inputs for a behavior comparison, not a second Email stack.
+
+The donor's `unified_index`, FTS5 triggers, `file_history`, intake queue, routing
+patterns, entities/mentions, document facts and fact type registry inform the shared
+model. They are not copied wholesale because MasterBrain requires hosted tenancy/RLS,
+immutable evidence versions and source-neutral provenance.
+
+## Baseline content hashes
+
+The exact first-tranche source hash is:
+
+```text
+093f1800e8faff59b70502865f73e4aeaa56112edd43326fc8c7c548cdc5bff8  _SYSTEM/tools/dedup_tool.py
+```
+
+The migration ledger pins the Git commit as the primary provenance. Each later
+tranche must add source hashes for all transitive candidate files before adaptation.
+## Gaps found during inspection
+
+- Common-tool test coverage is uneven: intake/dedupe/extraction are comparatively
+  strong; knowledge/reporting and several audit/index tools rely on self-tests or
+  operations rather than isolated known-answer suites.
+- Some tools resolve live hub paths/configuration and cannot be imported safely into a
+  hosted multi-tenant service without an adapter boundary.
+- File effect safety is distributed across dedupe, safe-delete, domain resolution,
+  database audit/history and policy documents. Migrating one file alone would weaken
+  the safety case.
+- The SQLite schema includes domain-specific tables beside reusable primitives;
+  schema extraction must be selective and additive.

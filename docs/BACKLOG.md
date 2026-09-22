@@ -1,4 +1,8 @@
-# Implementation backlog
+# Implementation backlog — Email capability
+
+This is the retained Email capability backlog. MasterBrain sequencing and FileOS
+migration tranches are governed by [ROADMAP.md](ROADMAP.md) and
+[FOS_MIGRATION.md](FOS_MIGRATION.md); those take precedence for cross-source work.
 
 Ordered by dependency and risk, not calendar promises. The broad roadmap remains
 the product sequence; these are buildable handoff tickets.

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "product": {
+    "id": "masterbrain",
+    "name": "MasterBrain",
+    "status": "migration-foundation",
+    "repository": "jbone3311/CW-EmailBrain",
+    "repository_rename": "deferred"
+  },
+  "capabilities": {
+    "email": {
+      "legacy_names": ["EmailBrain", "Email Brain", "email_brain", "email-brain"],
+      "role": "internal source capability",
+      "status": "synthetic-prototype"
+    },
+    "fileos": {
+      "donor_repository": "jbone3311/FOS-Master",
+      "donor_commit": "218d5caec2f20b9047fd3eb8e027dc671acf0c15",
+      "role": "internal source capability",
+      "status": "migration-started",
+      "cutover": "prohibited-before-parity"
+    }
+  },
+  "shared_layers": ["DataCore", "KnowledgeCore", "Brain API"],
+  "implemented_shared_components": ["DataCore read-only hashing/dedupe"],
+  "prohibited_claims": [
+    "FOS-Master retired",
+    "FileOS cut over",
+    "hosted production ready",
+    "Brain API implemented"
+  ]
+}

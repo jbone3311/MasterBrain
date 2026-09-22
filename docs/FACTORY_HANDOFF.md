@@ -1,4 +1,8 @@
-# Factory Handoff
+# Factory Handoff — Email capability baseline
+
+This handoff predates the MasterBrain identity and remains useful for Email-specific
+work. New cross-source assignments must begin with [PRODUCT.md](../PRODUCT.md),
+[ROADMAP.md](ROADMAP.md), and [FOS_MIGRATION.md](FOS_MIGRATION.md).
 
 New ADR-046 increment: [structured travel/bill memory](STRUCTURED_MEMORY.md),
 migration 0014, reviewed REST publication and independent change cursors. Audit

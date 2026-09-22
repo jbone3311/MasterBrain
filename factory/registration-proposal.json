@@ -1,8 +1,8 @@
 {
-  "product_id": "emailbrain",
-  "display_name": "CW-EmailBrain",
-  "domain": "provider-neutral email intelligence, evidence, attachments and reviewed control",
-  "unit_noun": "mailbox",
+  "product_id": "masterbrain",
+  "display_name": "MasterBrain",
+  "domain": "evidence-first email and file knowledge with progressive assistant access",
+  "unit_noun": "source item",
   "repo": {
     "name": "CW-EmailBrain",
     "path": "../CW-EmailBrain",
@@ -20,8 +20,8 @@
       "Resolve requested Dropbox sibling source layout versus Factory code/content split. Do not copy Factory governance."
     ]
   },
-  "capabilities_enabled": [],
+  "capabilities_enabled": ["email-source", "datacore-dedup-readonly"],
   "capabilities_disabled": [],
-  "product_only_capabilities": [],
+  "product_only_capabilities": ["knowledgecore", "brain-api"],
   "hooks_provided": []
 }

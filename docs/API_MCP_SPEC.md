@@ -1,4 +1,8 @@
-# API and MCP Specification
+# Email Capability API and Legacy MCP Specification
+
+The source-neutral external contract is now [Brain API](BRAIN_API.md). This document
+retains Email capability endpoints and earlier MCP design details; it must not be read
+as permission to expose mailbox-wide or general database access.
 
 Updated 2026-09-21. Implemented REST sections below map to [api.py](../src/email_brain/api.py).
 MCP, entity/state and action examples are target contracts, not callable tools.

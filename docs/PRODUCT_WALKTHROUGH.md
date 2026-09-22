@@ -1,4 +1,4 @@
-# Email Brain, from incoming mail to useful action
+# MasterBrain Email capability, from incoming mail to useful action
 
 Updated 2026-09-21. This is a worked product explanation, not a claim that every
 step is available. **Implemented** means synthetic local/CI behavior; **groundwork**
@@ -7,7 +7,8 @@ finished executable path. Production/live acceptance is a separate gate througho
 
 ## The product in one minute
 
-Email Brain is the private service underneath your email assistants. It preserves
+The MasterBrain Email capability is the private service underneath your email
+assistants. It preserves
 authorized mail, indexes supported content, and will maintain a current view of
 people, projects and unfinished commitments. Grok, ChatGPT or Claude will ask the
 service for a small, cited evidence bundle rather than repeatedly reading an inbox.

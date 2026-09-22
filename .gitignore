@@ -16,6 +16,9 @@ coverage.xml
 htmlcov/
 *.db
 *.sqlite*
+!tests/fixtures/datacore_parity/corpus/metadata.db
+!tests/fixtures/datacore_parity/corpus/__pycache__/
+!tests/fixtures/datacore_parity/corpus/__pycache__/ignored.txt
 *.eml
 *.mbox
 *.pst

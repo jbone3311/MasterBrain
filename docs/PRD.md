@@ -1,19 +1,27 @@
-# Product Requirements Document
+# MasterBrain Product Requirements Document
 
 Updated 2026-09-21. This is the ultimate product contract, not an implemented
 feature list. [Features/methods](FEATURES_AND_METHODS.md) maps each requirement to
 current behavior; [status](IMPLEMENTATION_STATUS.md) identifies remaining gates.
 
+MasterBrain is the product. The requirements below originally described the Email
+capability and remain binding for that source. The source-neutral product contract,
+FileOS migration, KnowledgeCore and Brain API requirements are defined in
+[PRODUCT.md](../PRODUCT.md), [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md),
+[FOS migration](FOS_MIGRATION.md), and [Brain API](BRAIN_API.md).
+
 ## Release boundaries
 
-- **Current prototype:** synthetic read/search/evidence/review, bounded read-worker
+- **Current prototype:** synthetic Email read/search/evidence/review, bounded read-worker
   operator command, narrow virtual sender rules, bounded attachment handling,
   durable recovery API/UI/libraries and
   separate synthetic PDF approval/result/search API/library and operator command
   with a separate document owner review/search/evidence screen.
-- **First live release:** one explicitly enrolled read-only provider, hosted
-  identity/storage/supervision, safe processing policy, recovery and operator acceptance.
-- **Later capabilities:** evaluated state/inference, team grants/MCP and separately
+- **First MasterBrain live release:** one explicitly enrolled read-only Email provider
+  and one bounded FileOS root, shared DataCore, hosted identity/storage/supervision,
+  safe processing policy, recovery and operator acceptance.
+- **Later capabilities:** KnowledgeCore, Brain API clients, evaluated state/inference,
+  team grants and separately
   approved mailbox effects. No automatic send or permanent delete in the initial release.
 
 Use [GAME_PLAN.md](GAME_PLAN.md) for owner intent and [ROADMAP.md](ROADMAP.md)
@@ -25,7 +33,9 @@ destination; it does not override missing features recorded in implementation st
 
 ## Product statement
 
-Email Brain turns multiple mailboxes into a secure, searchable, current operating memory while keeping repetitive work in deterministic code. It is a service beneath assistants, not another assistant that rereads mail.
+MasterBrain turns authorized mailboxes and files into secure, searchable, current
+operating memory while keeping repetitive work in deterministic code. It is a service
+beneath assistants, not another assistant that rereads private sources.
 
 ## Users and tenancy
 

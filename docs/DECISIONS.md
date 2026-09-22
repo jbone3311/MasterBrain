@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-047 MasterBrain foundation](adr/047_masterbrain_foundation.md) establishes the
+final product identity, shared core boundaries, non-destructive FOS-Master migration
+protocol and first read-only DataCore hash/dedupe extraction.
+
 [ADR-026 calendar attachments and format fixtures](adr/026_calendar_attachments_and_format_fixtures.md)
 adds bounded searchable calendar source evidence and synthetic attachment/provider
 format tests. It grants no calendar action or public-corpus import authority.

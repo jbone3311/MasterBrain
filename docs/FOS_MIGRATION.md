@@ -1,0 +1,82 @@
+# FOS-Master Migration and Parity Plan
+
+## Safety contract
+
+FOS-Master is the battle-tested donor and remains the operational FileOS reference.
+Do not destructively rewrite, retire, rename, or point production FileOS at
+MasterBrain until the relevant tranche passes unit, golden-corpus, integration,
+shadow-production, rollback, and owner-acceptance gates. Its Git history and runtime
+data stay intact.
+
+Every extracted component records donor repository, path, commit, tests, adaptations,
+and later fixes. Prefer history-preserving subtree/filter extraction when moving a
+whole coherent module; for small extractions, record provenance in source and the
+migration ledger below.
+
+## Donor inventory
+
+The detailed file/test catalog is [FOS_TOOL_INVENTORY.md](FOS_TOOL_INVENTORY.md).
+
+| Candidate group | Representative donor files | Tests | Destination | Risk / decision |
+|---|---|---|---|---|
+| Hash/read-only dedupe | `dedup_tool.py`, `dedup_engine.py` | `test_dedup_tool.py`, `test_dedup_engine.py` | DataCore digest/dedupe | First tranche copies only read-only generic core; delete engine deferred |
+| Safe file effects | `safe_fileops.py`, `safe_delete.py`, `folder_history.py` | `test_safe_fileops.py`, broker tests/invariants | Effect broker, not base DataCore | High risk; requires quarantine, re-hash, litigation hold, audit, rollback |
+| Domain scan/index | `scan_domains.py`, `index_tools.py`, `fos_tools.py` | `test_scan_domains.py`, `test_fos_tools.py` | FileOS adapter + DataCore index | Remove hard-coded roots only after baseline capture |
+| Intake | `intake_preflight.py`, `intake_pipeline.py`, `intake_classifier.py`, `intake_router.py`, `intake_consolidate.py` | matching intake tests | FileOS adapter + DataCore intake | Preserve dry-run, isolation, naming and routing behavior |
+| Extraction | `doc_extract.py`, `extract_metadata.py`, `archive_unpack.py`, `image_triage.py` | matching extractor tests | DataCore extraction workers | Sandbox, dependency, format, size and error-contract review |
+| Embedding/search | `embed_documents.py`, `content_search.py`, `cross_db_search.py` | `test_embed_documents.py` plus golden queries | DataCore indexing/retrieval | Separate deterministic FTS from optional embeddings |
+| Database primitives | `db_connect.py`, `db_migrate.py`, schema tables, `db_audit.py` | `test_db_audit.py` | DataCore persistence | Reconcile SQLite donor behavior with PostgreSQL tenancy/RLS |
+| Provenance/audit | `lineage_tracker.py`, `audit_history.py`, `file_history` schema | audit/invariant tests | DataCore provenance | Preserve append-only receipts and source hashes |
+| Knowledge extraction | `extract_facts.py`, `fact_db.py`, `fact_verify.py`, `reporting.py` | operational corpus tests needed | KnowledgeCore | Convert extracted values into claims, never unquestioned facts |
+| Email utilities in FOS | `email_core.py`, `email_ingest_adapter.py`, `email_sanitizer.py` | three email suites | Compare with Email capability | Inventory for lessons; do not create competing Email stack |
+
+This inventory is code-level but not yet a complete semantic audit of every helper.
+Each tranche must enumerate transitive imports, configuration, schema dependencies,
+side effects, platform assumptions, and uncovered behavior before extraction.
+
+## Parity method
+
+1. Pin a donor commit and record file hashes.
+2. Build a synthetic golden corpus covering happy paths, boundaries, failures, junk,
+   held-out tests, cross-domain duplicates, collisions, partial files, and restarts.
+3. Capture normalized donor results and audit/error behavior.
+4. Run the same corpus through MasterBrain and fail on unexplained differences.
+5. Add property/fault tests and performance budgets; never normalize away semantics.
+6. Run both implementations in read-only shadow mode on authorized production-like
+   inventory; compare counts, identities, hashes, metadata, errors, and timing.
+7. Document intentional differences through an ADR and owner approval.
+8. Switch one bounded cohort with rollback; observe; expand gradually.
+
+Golden fixtures are synthetic and contain no private FileOS data.
+
+## Migration ledger
+
+| Tranche | Donor baseline | MasterBrain location | Parity | Status |
+|---|---|---|---|---|
+| DC-001 read-only hashing/dedupe | FOS-Master `218d5cae`, `_SYSTEM/tools/dedup_tool.py` | `src/masterbrain/datacore/dedup.py` | `scripts/datacore_parity.py`; hash/name/both synthetic corpus | Extracted; local parity required before merge |
+
+DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
+and all delete/move operations. Those omissions do not change the returned scan and
+comparison contracts being adopted; the live-donor harness compares those outputs.
+
+## Proposed next tranches
+
+1. **DC-002 source item and provenance envelope:** unify Email evidence identifiers
+   and FileOS paths/hashes without moving files.
+2. **DC-003 read-only file scanner/index adapter:** inventory authorized roots in
+   shadow mode; no writes, moves, or deletions.
+3. **DC-004 extraction contract:** port text/CSV/HTML/document metadata first, then
+   archives/images/PDF through isolated workers.
+4. **DC-005 deterministic chunk/index publication:** versioned chunks and lexical
+   index with rebuild and freshness receipts.
+5. **KC-001 claim/entity projection:** import donor lessons without treating model
+   output as truth.
+6. **FileOS effect broker:** last, after read-side parity and explicit safety ADRs.
+
+## Cutover and rollback
+
+Cutover requires zero unexplained golden differences, agreed production-shadow
+tolerances, equivalent or better failure visibility, backup/restore proof, a versioned
+rollback procedure, and owner sign-off. Rollback returns reads/writes to FOS-Master
+without discarding new evidence; queued MasterBrain work is fenced and reconciled.
+FOS-Master retirement is a separate decision after sustained accepted operation.

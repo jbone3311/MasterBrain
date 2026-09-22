@@ -1,165 +1,98 @@
-# CW-EmailBrain
+# MasterBrain
 
-An independent, code-first intelligence layer over email. Preserve messages once,
-make them searchable with evidence, and let assistants propose useful changes
-without handing them the keys to the mailbox.
+MasterBrain is an evidence-first personal and organizational knowledge system. It
+combines Email and FileOS source capabilities behind shared ingestion and knowledge
+layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compact,
+progressive access with drill-down to original evidence.
 
-**Status: working synthetic-data prototype, not a hosted or live-mail product.**
-The repository contains executable ingestion, PostgreSQL search, review and
-recovery code, plus a separately approved synthetic PDF-to-search pipeline.
-Live enrollment, production identity, production document-processing policy,
-supervision and acceptance testing remain launch requirements. No real mailbox,
-paid cloud resource or remote model is enabled by this repository.
+**Status:** migration foundation and working synthetic-data prototype. The existing
+Email capability has executable read-only ingestion, evidence storage, search,
+review, recovery, and narrow structured-memory functions. The first FileOS donor
+primitive—read-only hashing and duplicate discovery—now lives in DataCore with a
+golden parity harness. MasterBrain is not yet a hosted product, and FOS-Master has
+not been replaced, renamed, or modified.
 
-Documentation updated September 21, 2026. [Verification receipts](docs/BUILD_RECEIPT.md) identify exactly what
-passed; documentation updates do not certify new functionality.
+The repository name and the internal `email_brain` package remain temporarily for
+Git history and compatibility. They identify the original Email capability, not the
+final product. New source-neutral code enters through `masterbrain.datacore`,
+`masterbrain.knowledgecore`, and the future Brain API boundaries.
 
-## The game plan in one minute
-
-Research: [tools discussion and evaluation plan](docs/TOOLS_DISCUSSION.md) compares
-travel/document extraction, OCR, mail testing and search packages. These are
-proposed trials, not newly installed dependencies.
-
-New: [reviewed travel and bill memory](docs/STRUCTURED_MEMORY.md) stores typed
-trips/reservations/bills, evidence-backed revisions and independent change cursors.
-The `/memory` developer screen requires the database-backed service and migration
-0014; it is not automatic airline-email interpretation or a connected Grok tool.
-
-**Build a dependable read-only service first, then add understanding, then actions.**
-The destination is a hosted product that keeps working without Jim's computer,
-Factory or an available AI model. The current implementation runs locally or in
-test environments; it is not that hosted service yet.
-
-| Stage | What the owner gets | Where we stand |
-|---|---|---|
-| Preserve and find | Search mail and supported attachments with traceable sources | Synthetic prototype implemented and tested |
-| Run independently | Secure remote access, supervised sync, backups and failure alerts | API token/mapping foundation exists; browser identity lifecycle and hosted operation remain |
-| Understand and learn | Current projects, people, commitments and reviewed preferences | Narrow sender rules exist; richer state and evaluated inference remain planned |
-| Connect and act | Scoped assistant/team access, then previewed filing and drafts | Planned; no assistant integration or mailbox-write path enabled |
-
-For each feature, the [feature guide](docs/FEATURES_AND_METHODS.md) explains its
-benefit, method and limitations. The [roadmap](docs/ROADMAP.md#next-build-packages)
-identifies the next work; the [release gates](docs/RELEASE_ACCEPTANCE.md) explain
-what must be proved before it can be used on real mail.
-
-## Understand the product
-
-- [Game plan](docs/GAME_PLAN.md): the finished product and how we get there.
-- [Worked product walkthrough](docs/PRODUCT_WALKTHROUGH.md): follow a fictional
-  project through incoming mail, attachments, search, corrections and future actions.
-- [Features and methods](docs/FEATURES_AND_METHODS.md): workflows, implementation and limits.
-- [How it works](docs/METHODS_GUIDE.md): plain-language methods, examples and the reasons behind the boundaries.
-- [Implementation status](docs/IMPLEMENTATION_STATUS.md): working capabilities versus launch gates.
-- [Roadmap](docs/ROADMAP.md): dependency-ordered milestones and measurable exits.
-- [Test mailbox guide](docs/TEST_MAILBOX_PLAN.md): generate/export believable conversations, real attachments and answer keys; replay through bounded synthetic ingestion.
-- [Documentation directory](docs/README.md): complete product, engineering and operations pack.
-
-## What works now
-
-| Area | Executable prototype |
-|---|---|
-| Ingest | Fastmail worker and explicit bounded operator CLI; synthetic HTTP-to-Postgres tests; atomic checkpoints, fenced leases, quarantine and inventory reconciliation |
-| Preserve | Immutable raw/evidence versions; bounded inline MIME; opt-in encrypted local objects up to 16 MiB |
-| Search | PostgreSQL FTS over messages and supported text/calendar attachments, with stable evidence references |
-| Read email | Complete selected body for original MIME up to 1 MiB, inert HTML-to-text, headers and explicit hash-verified downloads; larger messages clearly show stored projections |
-| Read PDFs | Separate synthetic approval API/library/operator, owner selection/approval/history/cancel UI, restricted worker, immutable page evidence and opt-in document FTS |
-| Review | Owner-only local UI: search, proposals, virtual sender rules, held mail, processing history/approval/cancellation |
-| Recover | Human-authorized retries and separate restricted MIME worker; bounded jobs, expiry, cancellation and atomic results |
-| Isolate | Tenant RLS, ownership constraints, bootstrap or explicit verified access tokens, administrator-owned identity bindings and current authorization checks |
-| Test | Fictional inbox seeding, actual synthetic attachment bytes, mocked provider contracts, real PostgreSQL CI and disposable SQL/object restore drills |
-
-The known-answer mailbox creates connected conversations and corrections with
-PDF, Excel, CSV, Word, calendar, image, forwarded-message and archive attachments.
-The files are real formats with fictional contents; this does **not** mean the
-production parser extracts every format. Follow the
-[export/replay guide](docs/TEST_MAILBOX_PLAN.md) to reproduce them without a mail
-account, subscription or remote model.
-
-Gmail and Graph have offline-tested read libraries; IMAP has an injected-session
-contract. They are **not yet durable live connectors**. The optional Ollama library
-is candidate-only, tested with fake responses and not wired into ingestion.
-Vectors, people/project/obligation projections, MCP, provider drafts, moves,
-sending and deletion are not implemented.
-
-`_GrokBot/Review Delete` is a virtual search label—not a provider folder or deletion
-queue. Processing completion does not mean PDF/Office extraction succeeded;
-every attachment has its own outcome.
-
-A separate [restricted PDF worker](docs/PDF_WORKER.md) now provides source-bound,
-page-level extraction groundwork with explicit partial/deferred outcomes. It is
-now connected to a separate [synthetic document approval API/library](docs/DOCUMENT_PROCESSING.md),
-immutable results and opt-in document search. Ordinary ingestion still defers PDFs;
-the [PDF operator command](docs/DOCUMENT_CONTROLLER.md) is explicit and separate;
-the [owner PDF screen](docs/DOCUMENT_REVIEW_SCREEN.md) now provides explicit approval,
-history/cancellation and cited results. The default image has no PDF reader and no malware-safety
-claim is made.
-
-## What comes next
-
-1. Complete browser sign-in integration: the [session backend](docs/BROWSER_AUTH.md)
-   now implements code/PKCE, cookies/CSRF and current authorization. Private CLI/TLS
-   startup is explicit and preflightable; owner UI and actual browser acceptance
-   remain next. Default `serve` is unchanged; this is not yet a complete login experience.
-2. Complete managed storage/key recovery, worker supervision, operator alerts and
-   browser/document-policy acceptance; then accept one authorized disposable provider.
-3. Build evaluated project/reply state and assistant access; add separately
-   approved mailbox actions only after those foundations.
-
-See [roadmap acceptance gates](docs/ROADMAP.md) and the
-[Factory next assignment](docs/FACTORY_HANDOFF.md#suggested-next-issue).
-The [bounded read command](docs/READ_CONTROLLER.md) and synthetic PDF owner
-workflow already exist; the next assignment must build on them, not rebuild them.
-
-The new identity mode accepts only explicitly configured RFC access tokens or
-Entra v2 tokens and existing database mappings. It remains loopback-only; no real
-issuer, identity enrollment or hosted login has been accepted.
-
-## What the finished product adds
-
-Project/person/thread memory and open commitments; evaluated local classification;
-Grok/ChatGPT/Claude query and feedback tools; explicit team permissions; and
-previewed mailbox filing/drafts through a separately approved executor. These are
-delivery targets, not enabled features. Cloud inference and vector search are
-optional enhancements, not prerequisites for keeping mail searchable.
-
-## How the design works
+## Product shape
 
 ```text
-Provider changes -> preserve evidence -> parse/account for every part -> search
-                                              |
-                               rules first; optional model candidates later
-                                              |
-Assistant/user request -> typed proposal -> policy + human review -> versioned change
+Email sources ─┐
+               ├─> DataCore ─> KnowledgeCore ─> Brain API ─> authorized LLM clients
+FileOS sources ┘       │              │                │
+                      └──── immutable evidence <───────┘
 ```
 
-Future mailbox effects use a separate approved executor. Email and model output
-cannot authorize tools or account access. Factory governs development; the deployed
-product must not depend on Factory or Jim's computer running.
+- **Email capability:** provider change capture, MIME/attachment preservation,
+  read-only sync, mailbox search, review, and future reviewed actions.
+- **FileOS capability:** in-place file inventory, audited organization, extraction,
+  dedupe, metadata, and file search, migrated from FOS-Master only after parity.
+- **DataCore:** source-neutral intake, content hashing/dedupe, file and attachment
+  extraction, OCR orchestration, normalization, metadata, provenance, chunking,
+  indexing, and common database primitives.
+- **KnowledgeCore:** evidence-backed entities, relationships, facts/claims, events,
+  timelines, projects, commitments, corrections, and unified retrieval.
+- **Brain API:** compact summaries first, explicit expansion second, original
+  evidence last; every result carries source/provenance references and authorization.
 
-## Hosting direction
+## Current truth
 
-Prefer the same Azure billing home as RealEstateOS, with **separate Email Brain
-resources and permissions**: API/workers, private managed PostgreSQL, private Blob
-storage, managed identities and Key Vault. This is not a deployment or a requirement
-to use Microsoft mail/SharePoint. Keep live databases, secrets, objects and model
-caches outside Dropbox. See [hosting](docs/HOSTING_DECISION.md).
+| Capability | State |
+|---|---|
+| Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
+| Typed reviewed travel/bill memory | Working narrow prototype |
+| File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
+| General file intake/extraction/OCR/chunking | Planned migration |
+| Unified KnowledgeCore graph and retrieval | Designed, not implemented |
+| Brain API for external assistants | Contract designed, not implemented |
+| Hosted identity, operations, live sources | Not accepted |
+| FOS-Master cutover or retirement | Explicitly prohibited before parity |
 
-## Run and verify
+Documentation is authoritative about status only where it distinguishes
+**implemented**, **parity-proven**, **integrated**, and **accepted**. A design or
+roadmap item is not an implementation claim.
 
-**Ready to try the reader?** Follow [the user test guide](docs/USER_TESTING.md).
-It includes a no-database fictional browser preview and a separate database-backed
-synthetic test. See [reader capabilities and limits](docs/MESSAGE_READER.md).
+## Documentation map
 
-The [read operator](docs/READ_CONTROLLER.md) adds `sync-read --check` and separately
-flagged bounded execution for an already configured Fastmail account. It does not
-enroll accounts or reset paused workers; no live mailbox has been accepted.
+- [Product contract](PRODUCT.md)
+- [Complete feature inventory](docs/MASTERBRAIN_FEATURE_INVENTORY.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Data model](docs/DATA_MODEL.md)
+- [Brain API](docs/BRAIN_API.md)
+- [Security and privacy](docs/SECURITY.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [Roadmap](docs/ROADMAP.md)
+- [FOS-Master migration and parity plan](docs/FOS_MIGRATION.md)
+- [FOS-Master common tool/test inventory](docs/FOS_TOOL_INVENTORY.md)
+- [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
+- [Implementation status](docs/IMPLEMENTATION_STATUS.md)
+- [Code map](docs/CODE_MAP.md)
+- [Email capability documentation](docs/README.md)
 
-The separate [approved-processing command](docs/PROCESSING_CONTROLLER.md) runs
-bounded recovery jobs with explicit private configuration. It does not enroll an
-account, install a service or give the API Docker access.
+## Migration rule
 
-[Local development](docs/LOCAL_DEVELOPMENT.md) explains disposable PostgreSQL,
-private credentials, synthetic seeding and loopback-only serving.
+FOS-Master remains the battle-tested donor and operational reference. Migration is
+incremental: inventory a candidate and its tests, preserve provenance, extract it
+without intentional behavior change, compare both implementations on a golden
+corpus, integrate behind DataCore, then prove operational parity. Only after those
+gates may FileOS switch to shared DataCore; folding or renaming FOS-Master is a later,
+separately approved decision.
+
+The first tranche is intentionally read-only:
+
+```sh
+uv run python scripts/datacore_parity.py --fos-repo ../FOS-Master
+uv run pytest -q tests/test_datacore_dedup.py
+```
+
+It compares hash, name, and combined duplicate scans against FOS-Master commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`. No deletion or file movement code was
+copied.
+
+## Develop and verify
 
 ```sh
 uv sync --locked --extra dev
@@ -167,34 +100,15 @@ uv run ruff check .
 uv run mypy src
 uv run pytest -q
 node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
-node --test tests/web_reader.test.cjs
+node --test tests/web_reader.test.cjs tests/web_memory.test.cjs
 uv run python scripts/deployment_gate.py
 uv run python scripts/check_docs.py
-uv run email-brain --help
+uv run masterbrain --help
 ```
 
-PostgreSQL tests need a disposable `email_brain_test*` database and
-`EMAIL_BRAIN_TEST_ADMIN_DSN`; CI supplies it. Local skips are not passes.
-See the [build receipt](docs/BUILD_RECEIPT.md) for exact tested commits and limits.
+PostgreSQL tests require a disposable `email_brain_test*` database because the
+Email capability retains its existing compatibility identifiers. CI supplies it;
+local skips are not passes. Never commit real messages, files, credentials, dumps,
+private embeddings, or content-bearing logs. Test fixtures must be synthetic.
 
-## For the implementation team
-
-[Code map](docs/CODE_MAP.md) · [Factory handoff](docs/FACTORY_HANDOFF.md) ·
-[Backlog](docs/BACKLOG.md) · [Open decisions](docs/OPEN_QUESTIONS.md) ·
-[Contributing](CONTRIBUTING.md) · [Release acceptance](docs/RELEASE_ACCEPTANCE.md)
-
-[Documentation maintenance](docs/DOCUMENTATION_STANDARD.md) defines status terms,
-authoritative records and the updates required alongside each feature. A tested
-component, integrated workflow and live-accepted service are different milestones.
-The offline documentation gate checks required guides/templates, local destinations
-and supported heading links across root docs, `docs/` and `.github/`. It does not
-certify external sources, factual freshness or rendered accessibility.
-
-Read [PRODUCT.md](PRODUCT.md), [AGENTS.md](AGENTS.md), security, architecture and
-accepted [ADRs](docs/DECISIONS.md) before changing behavior. Security invariants and
-explicit accepted ADRs govern conflicts. Update implementation, tests, migrations,
-rollback notes and documentation together.
-
-Private proprietary product; dependency licenses remain separate. Never commit
-real messages/attachments, credentials, dumps or private embeddings. Committed/CI
-mail fixtures are synthetic only. Public samples require the [adoption gate](docs/PUBLIC_EMAIL_TEST_DATA.md).
+Private proprietary product; dependency licenses remain separate.

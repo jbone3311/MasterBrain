@@ -1,10 +1,14 @@
-# Current code map
+# Current MasterBrain code map
 
 Updated 2026-09-21. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
+The retained `email_brain` tree is the Email capability. New shared code begins under
+`masterbrain` and is not yet wired into Email ingestion.
 
 | Responsibility | Actual files |
 |---|---|
+| MasterBrain/DataCore boundary | [masterbrain package](../src/masterbrain/), currently read-only hashing and dedupe only |
+| FOS live-donor parity | [parity harness](../scripts/datacore_parity.py), [synthetic corpus](../tests/fixtures/datacore_parity/corpus/), [unit contract](../tests/test_datacore_dedup.py) |
 | Structured travel/bill memory | [memory.py](../src/email_brain/memory.py), [memory_schema.py](../src/email_brain/memory_schema.py), [memory_extract.py](../src/email_brain/memory_extract.py), [memory.js](../src/email_brain/web/memory.js), [migration 0014](../migrations/0014_structured_memory.sql) |
 | Demo/migrate/serve | [cli.py](../src/email_brain/cli.py) |
 | REST/request boundary | [api.py](../src/email_brain/api.py), [schemas.py](../src/email_brain/schemas.py) |

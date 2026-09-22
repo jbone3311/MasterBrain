@@ -93,7 +93,7 @@ def create_app(
     if browser_auth is not None and browser_auth.authenticator is not registry:
         raise ValueError("browser and API must share the same authenticator")
     app = FastAPI(
-        title="Email Brain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
+        title="MasterBrain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
     )
     app.add_middleware(BodyLimit)
     bearer = HTTPBearer(auto_error=False)

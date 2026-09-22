@@ -6,6 +6,17 @@ The package remains version 0.1.0, a synthetic-data prototype. These entries do
 not announce a production release. [Build receipts](docs/BUILD_RECEIPT.md) retain
 exact tested commits and results.
 
+### MasterBrain foundation (ADR-047)
+
+- Established MasterBrain as the final product, retaining EmailBrain as the internal
+  Email capability and FOS-Master as an unchanged donor/reference.
+- Defined DataCore, KnowledgeCore and Brain API ownership; added product identity,
+  manifest, feature inventory, architecture, data model, security, deployment,
+  roadmap, migration and acceptance documentation.
+- Extracted FOS-Master's dependency-free read-only hash/dedupe behavior into
+  `masterbrain.datacore` with pinned provenance, synthetic tests and a live-donor
+  parity harness. No file move/delete behavior or FileOS cutover was added.
+
 ### Tools discussion (documentation only)
 
 - Added the [ranked tools discussion](docs/TOOLS_DISCUSSION.md), including

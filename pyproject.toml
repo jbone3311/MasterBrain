@@ -3,9 +3,9 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cw-email-brain"
+name = "masterbrain"
 version = "0.1.0"
-description = "Evidence-first, multi-user email intelligence infrastructure"
+description = "Evidence-first intelligence across email and files"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
@@ -32,6 +32,7 @@ dev = [
 ]
 
 [project.scripts]
+masterbrain = "email_brain.cli:main"
 email-brain = "email_brain.cli:main"
 
 [tool.pytest.ini_options]
@@ -54,4 +55,4 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-packages = ["email_brain"]
+packages = ["email_brain", "masterbrain"]
