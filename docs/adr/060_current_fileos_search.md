@@ -1,6 +1,9 @@
 # ADR-060 — Explicit current FileOS search across active generations
 
-Status: accepted for implementation; hosted verification pending.
+Status: accepted and verified for the additive prototype tranche on 2026-09-22.
+Runtime revision `42606da` plus two-source stress revision `83f5747` passed hosted
+[CI 35729843020](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843020)
+and [restore 35729843019](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843019).
 
 ## Decision
 

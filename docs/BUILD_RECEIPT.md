@@ -2,6 +2,34 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified cross-source current FileOS search
+
+Runtime revision **42606da** and two-source stress revision **83f5747** passed
+[CI 35729843020](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843020)
+and [restore 35729843019](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843019),
+observed 2026-09-22 Pacific.
+
+- `POST /v1/brain/fileos-search` searches only the newest activated immutable
+  generation for every tenant-visible FileOS source. Existing retained-history
+  DataCore and grouped unified search keep their compatibility behavior.
+- Hosted PostgreSQL proved two simultaneously active sources, multi-query identity
+  parity, result bounds, changed content, zero hits, rollback disappearance,
+  reactivation, API labeling and forced-RLS execution.
+- The hosted suite passed **2,411 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **126 Markdown files / 784 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **61 tables / 229 rows / two tenants / four encrypted
+  objects / two identity bindings**, including current FileOS retrieval, in 14.75
+  seconds. The 29 restore safety tests passed.
+- Local gates passed **2,057 tests / 354 explicit PostgreSQL skips**, lint, strict
+  types, 134 Node contracts, documentation, deployment and the pinned live-donor
+  2,000-file-plus-edge stress corpus. Local SQL skips are not passes.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. No historical route was redirected;
+  no scheduler, source effect, cutover, rename or retirement exists.
+
 ## Verified private FileOS index operator
 
 Runtime revision **8a50eab** and test-authorization correction **4716c88** passed

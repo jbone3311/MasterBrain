@@ -2,10 +2,10 @@
 
 ## Active checkpoint
 
-**Checkpoint 3I — current/historical retrieval contract.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Expand active-generation query parity and
-define an explicit policy for current versus retained historical FileOS evidence before
-any existing global DataCore or unified-search route is redirected.
+**Checkpoint 3J — current-aware unified retrieval contract.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Design an explicit grouped composition of
+current FileOS generations with reviewed KnowledgeCore results without changing the
+historical compatibility route or pretending ranks are globally calibrated.
 
 ## Completed gates
 
@@ -56,13 +56,17 @@ any existing global DataCore or unified-search route is redirected.
   correction `4716c88` passed hosted
   [CI 35727909717](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35727909717)
   and [restore 35727909764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35727909764).
+- Checkpoint 3I current FileOS search runtime `42606da` plus two-source stress revision
+  `83f5747` passed hosted
+  [CI 35729843020](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843020)
+  and [restore 35729843019](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843019).
 
 ## Current work
 
-- Specify current-only, historical and absent-item retrieval semantics without hiding
-  immutable evidence or changing compatibility search by accident.
-- Expand deterministic query parity across multi-document, zero-hit, changed and
-  rolled-back generations before considering an explicit global-search switch.
+- Specify an additive grouped route for current FileOS plus reviewed KnowledgeCore,
+  preserving separate ranks, scopes, evidence links and explicit visibility labels.
+- Keep Email migration, synthesis and any compatibility-route switch behind their own
+  evaluation and acceptance gates.
 
 ## Deferred by design
 

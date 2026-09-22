@@ -36,7 +36,7 @@ mean hosted, live-source accepted, or production ready.
 - Explicit private generation build/activation and activation-only rollback command
   with exact scopes, check mode and reauthentication; hosted PostgreSQL/restore green.
 - Explicit cross-source current FileOS search over newest activations while historical
-  compatibility search remains unchanged; hosted verification pending.
+  compatibility search remains unchanged; hosted PostgreSQL/restore green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
