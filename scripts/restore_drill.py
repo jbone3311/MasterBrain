@@ -802,6 +802,14 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             and generation_hits[0].document_id == current.brain_document_id,
             "restored DataCore active-generation search changed",
         )
+        current_fileos_hits = DataCoreStore(store).search_current_fileos(
+            ctx, f"masterbrainrestore {current.keyword}"
+        )
+        require(
+            len(current_fileos_hits) == 1
+            and current_fileos_hits[0].document_id == current.brain_document_id,
+            "restored DataCore current FileOS search changed",
+        )
         knowledge = KnowledgeCore(store)
         knowledge_hits = knowledge.search(ctx, f"knowledgecoreproof {current.keyword}")
         require(

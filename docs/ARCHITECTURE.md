@@ -66,6 +66,10 @@ an exact two-scope worker; activation-only rollback uses only the activation sco
 Check mode validates configuration, identity and database role without building or
 activating. No scheduler or public mutation route owns this authority.
 
+Current FileOS retrieval is an explicit cross-source read over each source's newest
+activation. Existing compatibility and unified search remain unchanged and may expose
+retained historical derivatives; clients choose the current-only route deliberately.
+
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.

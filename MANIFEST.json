@@ -31,6 +31,7 @@
     "read-only deterministic FileOS rebuild preview",
     "immutable FileOS index generations, activation receipts and rollback",
     "explicit private FileOS generation and rollback operator",
+    "current FileOS search across active generations",
     "DataCore persistence, lexical retrieval and progressive Brain API",
     "reviewed KnowledgeCore assertions, retrieval and changes",
     "grouped DataCore and KnowledgeCore search",

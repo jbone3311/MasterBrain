@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-060 current FileOS search](adr/060_current_fileos_search.md) adds a cross-source
+read over latest activated generations without silently redirecting compatibility or
+unified search.
+
 [ADR-059 private FileOS index operator](adr/059_fileos_index_operator.md) adds an
 explicit authenticated build/activate and activation-only rollback command with exact
 worker scopes. It does not schedule work or switch global search.

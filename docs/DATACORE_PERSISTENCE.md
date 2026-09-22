@@ -94,3 +94,8 @@ search reads only the newest append-only activation for one FileOS source. React
 an older ready generation is rollback; no evidence or index generation is mutated.
 Generation build/activation are library operations in this tranche, not public API
 mutations or automatic scheduling.
+
+`search_current_fileos` selects the newest activation independently for every
+tenant-visible source and searches only those immutable generation chunks. The Brain
+API exposes this as `/v1/brain/fileos-search`. Existing `search` remains a retained-
+history compatibility path rather than being silently redefined.

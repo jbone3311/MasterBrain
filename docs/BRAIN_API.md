@@ -33,6 +33,8 @@ objects, general SQL, or an unbounded corpus dump.
   generation status; requires `brain.changes.read`.
 - `POST /v1/brain/sources/{source_id}/search` — implemented bounded lexical search
   against only that source's active generation; requires `brain.search`.
+- `POST /v1/brain/fileos-search` — implemented current FileOS search across the newest
+  activated generation of every authorized source; requires `brain.search`.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes and keeps ranks separate.
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required
@@ -86,6 +88,8 @@ decisions.
 - Deterministic filters and lexical search work without an LLM.
 - Cross-layer results remain grouped because ranks from separate indexes are not
   calibrated as one global score.
+- Current FileOS search is explicit. Compatibility DataCore and unified search may
+  still include retained historical derivatives until a later deliberate migration.
 - Semantic/vector ranking is optional and cannot suppress exact evidence lookup.
 - Answers distinguish source statements from inferred conclusions.
 - Conflicting claims are returned as conflicts, not silently collapsed.

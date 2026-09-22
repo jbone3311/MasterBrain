@@ -592,6 +592,10 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
             if hit.source_id == "files_adapter"
         ]
         assert active_identity == existing_identity
+        assert active_identity == [
+            (hit.chunk_id, hit.document_id, hit.evidence_id, hit.source_id, hit.locator)
+            for hit in core.search_current_fileos(ctx, query)
+        ]
     after_hits = core.search_fileos_active(ctx, "files_adapter", "after")
     assert len(after_hits) == 1 and after_hits[0].locator == "changed.txt"
     rollback = core.activate_fileos_index_generation(
@@ -602,6 +606,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     )
     assert rollback.previous_generation_id == second_generation.generation_id
     assert core.search_fileos_active(ctx, "files_adapter", "after") == []
+    assert core.search_current_fileos(ctx, "after") == []
     reactivate = core.activate_fileos_index_generation(
         ctx,
         "files_adapter",
@@ -711,6 +716,14 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert active_search.status_code == 200
     assert active_search.json()["active_generation_only"] is True
     assert active_search.json()["results"][0]["locator"] == "changed.txt"
+    current_search = api.post(
+        "/v1/brain/fileos-search",
+        json={"query": "after", "limit": 5},
+        headers=headers,
+    )
+    assert current_search.status_code == 200
+    assert current_search.json()["visibility"] == "current_fileos_active_generations"
+    assert current_search.json()["results"][0]["locator"] == "changed.txt"
     with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
         conn.execute(
             "UPDATE brain_fileos_run_receipts SET outcomes='{}' WHERE tenant_id=%s",

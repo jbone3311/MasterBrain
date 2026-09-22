@@ -1100,7 +1100,8 @@ class DataCoreStore:
                 "FROM brain_index_generation_chunks c "
                 "JOIN brain_index_generation_items i ON i.tenant_id=c.tenant_id "
                 "AND i.generation_id=c.generation_id AND i.document_id=c.document_id "
-                "JOIN brain_source_items si ON si.tenant_id=i.tenant_id AND si.id=i.item_id "
+                "JOIN brain_source_items si ON si.tenant_id=i.tenant_id "
+                "AND si.source_id=i.source_id AND si.id=i.item_id "
                 "WHERE c.generation_id=%s "
                 "AND c.search_vector @@ plainto_tsquery('simple',%s) "
                 "ORDER BY rank DESC,c.id LIMIT %s",
@@ -1108,6 +1109,37 @@ class DataCoreStore:
             ).fetchall()
             self.store.audit(
                 conn, ctx, "brain.fileos_active_search", "brain_source", source_id
+            )
+            return [SearchHit(**row) for row in rows]
+
+    def search_current_fileos(
+        self, ctx: TenantContext, query: str, *, limit: int = 10
+    ) -> list[SearchHit]:
+        """Search the newest activated generation of every authorized FileOS source."""
+        self.store.require(ctx, "brain.search")
+        if not query.strip() or len(query) > 500 or "\x00" in query or not 1 <= limit <= 50:
+            raise ValueError("invalid current FileOS search")
+        with self.store.transaction(ctx) as conn:
+            rows = conn.execute(
+                "WITH active AS (SELECT DISTINCT ON (source_id) source_id,generation_id "
+                "FROM brain_index_activations ORDER BY source_id,activated_at DESC,"
+                "idempotency_key DESC) "
+                "SELECT c.id AS chunk_id,c.document_id,i.evidence_id,i.source_id,si.locator,"
+                "ts_headline('simple',c.text,plainto_tsquery('simple',%s),"
+                "'MaxWords=35,MinWords=10') AS excerpt,"
+                "ts_rank_cd(c.search_vector,plainto_tsquery('simple',%s)) AS rank "
+                "FROM active a JOIN brain_index_generation_chunks c "
+                "ON c.source_id=a.source_id AND c.generation_id=a.generation_id "
+                "JOIN brain_index_generation_items i ON i.tenant_id=c.tenant_id "
+                "AND i.generation_id=c.generation_id AND i.document_id=c.document_id "
+                "JOIN brain_source_items si ON si.tenant_id=i.tenant_id "
+                "AND si.source_id=i.source_id AND si.id=i.item_id "
+                "WHERE c.search_vector @@ plainto_tsquery('simple',%s) "
+                "ORDER BY rank DESC,c.id LIMIT %s",
+                (query, query, query, limit),
+            ).fetchall()
+            self.store.audit(
+                conn, ctx, "brain.current_fileos_search", "brain_index", "fileos_active"
             )
             return [SearchHit(**row) for row in rows]
 

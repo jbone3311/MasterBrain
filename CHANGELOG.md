@@ -26,6 +26,8 @@ exact tested commits and results.
 - Added an explicit private FileOS index command for build-and-activate or activation-
   only rollback, with exact per-operation worker scopes, non-consuming check mode,
   reauthentication and scrubbed receipts (ADR-059). It is not a scheduler or cutover.
+- Added an explicitly current FileOS search across each source's latest activated
+  generation while preserving existing historical compatibility search (ADR-060).
 
 ### Tools discussion (documentation only)
 

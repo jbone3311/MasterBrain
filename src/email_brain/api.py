@@ -520,6 +520,29 @@ def create_app(
             "untrusted_content": True,
         }
 
+    @app.post("/v1/brain/fileos-search")
+    def brain_current_fileos_search(
+        body: BrainSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        hits = brain.search_current_fileos(principal.context, body.query, limit=body.limit)
+        return {
+            "results": [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ],
+            "visibility": "current_fileos_active_generations",
+            "untrusted_content": True,
+        }
+
     @app.post("/v1/knowledge/assertions", status_code=201)
     def publish_knowledge(
         body: KnowledgePublishRequest,
