@@ -2,12 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4L — Email attachment/document batch preview implementation.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define a bounded, read-only preview that
-exposes only opaque attachment occurrences and already-approved document derivatives
-whose current parent messages have been bridged. Preserve message → attachment →
-document dependency order, make incomplete coverage explicit, and add no batch writes
-until the preview contract and PostgreSQL state transitions are accepted.
+**Checkpoint 4M — sealed Email attachment/document batch design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define separate immutable attachment and
+document plans assembled from reviewed 4L pages. Preserve dependency order, fixed
+per-item keys, fail-stop execution and exact-plan retry; prohibit mixed-kind plans,
+implicit discovery and best-effort continuation before any writer is implemented.
 
 ## Completed gates
 
@@ -109,13 +108,17 @@ until the preview contract and PostgreSQL state transitions are accepted.
 - Checkpoint 4L preview design revision `5b26329` passed hosted
   [CI 35761452118](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35761452118)
   and [restore 35761451949](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35761451949).
+- Checkpoint 4L attachment/document preview runtime `e3c0ee5` plus checkpoint-tracking
+  revision `0c687e8` passed hosted
+  [CI 35763636718](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636718)
+  and [restore 35763636696](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636696).
 
 ## Current work
 
-- Verify runtime revision `e3c0ee5` against real PostgreSQL dependency filtering,
-  already-bridged labels, approval deduplication and quarantine transitions.
-- Keep attachment/document batch writes prohibited until the preview runtime and
-  populated restore gates are green and their evidence is recorded.
+- Specify separate kind-bound plan schemas and canonical digests for attachments and
+  approved documents; never infer one plan from the other at execution time.
+- Reuse the accepted one-item transactions and require fail-stop/replay tests before
+  authorizing any multi-item attachment or document command.
 
 ## Deferred by design
 

@@ -78,7 +78,7 @@ mean hosted, live-source accepted, or production ready.
   execution and exact-plan retry; hosted PostgreSQL/restore gates green.
 - Private, read-only `masterbrain email bridge-parts-plan` command with separate stable
   attachment and approved-document queues, current parent/dependency fencing and
-  content-free output; hosted verification is pending.
+  content-free output; hosted PostgreSQL/restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

@@ -2,6 +2,32 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified Email attachment/document bridge preview
+
+Runtime revision **e3c0ee5** plus checkpoint-tracking revision **0c687e8** passed
+[CI 35763636718](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636718)
+and [restore 35763636696](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636696),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-parts-plan` exposes separate 1–100 item attachment and
+  approved-document pages for one explicit account. It returns only opaque legacy
+  identities, stable timestamps, state, bridge labels and a kind-specific cursor.
+- Real PostgreSQL proves the full dependency chain: no attachment before its current
+  message bridge, no document before its attachment bridge, completed approval
+  required, duplicate completed approvals collapse to one extraction, one-item bridge
+  results update labels, and quarantine removes both queues.
+- Check mode authenticates and validates the safe database role without reading a
+  target account. The normal read is tenant-scoped and performs no source/provider
+  access, byte read, approval, reservation or bridge write.
+- CI and deployment each passed **2,458 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **139 Markdown files / 803
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 15.74
+  seconds. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified sealed Email message bridge batches
 
 Runtime revision **0fd8c35** and legacy one-item idempotency compatibility correction
