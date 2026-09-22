@@ -46,6 +46,10 @@ not inspect the account. The command is a read-only operator preview, not execut
 authority; it creates no bridge, contacts no provider and authorizes no batch executor
 or automatic backfill.
 
+ADR-072 defines, but does not yet implement, a separate `bridge-batch` command that
+will accept only an owner-private, digest-bound list of 1–100 reviewed version UUIDs
+and fixed idempotency keys. It will never discover or continue preview pages itself.
+
 ## Bridge one Email attachment or approved PDF derivative
 
 After the parent message bridge succeeds, the same private config can bridge one

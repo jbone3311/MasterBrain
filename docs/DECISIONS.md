@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-072](adr/072_sealed_email_bridge_batch.md) defines a digest-bound, explicit
+1–100 item Email bridge plan with fixed per-item idempotency keys, fail-stop execution
+and exact-plan retry. It authorizes no discovery, implicit pagination or best-effort
+continuation; implementation is pending.
+
 [ADR-071](adr/071_email_bridge_backfill_preview.md) defines a private, bounded and
 non-consuming current-Email bridge plan for one explicit account. It establishes safe
 selection and paging without adding batch writes, provider access or a Brain API

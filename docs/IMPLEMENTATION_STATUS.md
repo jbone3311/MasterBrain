@@ -81,6 +81,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
+- Digest-bound explicit Email message bridge batches with fixed per-item keys,
+  fail-stop execution and exact-plan retry (ADR-072).
 - Email bridge batch/backfill, atomic cross-layer snapshots, automated source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
