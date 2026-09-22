@@ -71,3 +71,7 @@ evidence, document, chunks and two-input provenance only after transaction-time 
 and member revalidation. Exact replay and concurrent identities converge; drift and
 idempotency-key reuse fail closed. The derivative appears only in retained-history
 search, not current-generation search. No raw member bytes are stored.
+
+The separately gated current-search contract is specified in
+[current archive-derivative search](ARCHIVE_DERIVATIVE_SEARCH.md); this checkpoint does
+not itself make that runtime claim.

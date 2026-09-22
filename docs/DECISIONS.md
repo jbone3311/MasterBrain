@@ -10,9 +10,14 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-080](adr/080_current_archive_derivative_search.md) keeps explicitly published,
+still-current archive-member text in a separate bounded search layer. Currency is
+proved through the parent archive and sealed inventory/member identities; active
+FileOS generations remain immutable.
+
 [ADR-079](adr/079_private_archive_member_text_operator.md) requires a private,
 reauthenticated, content-free one-member command before archive text publication.
-Implementation is pending.
+Implemented in `257ab30`, with hardened acceptance in `d66de6e`.
 
 [ADR-078](adr/078_archive_member_text_derivative.md) gives one explicitly selected
 archive member its own derived evidence identity before bounded text publication.
