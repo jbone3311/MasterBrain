@@ -24,6 +24,9 @@
   are green.
 - Final receipt revision `ee6b662` passed hosted CI and restore; it changes only
   measured documentation after the `a06bcad` runtime.
+- Checkpoint 4 foundation revision `7d2afbf` passed hosted
+  [CI 35706332421](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35706332421)
+  and [restore 35706332264](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35706332264).
 
 ## Current work
 

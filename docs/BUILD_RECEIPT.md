@@ -2,6 +2,37 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified reviewed KnowledgeCore foundation
+
+Runtime/test revision **7d2afbf** adds the reviewed, evidence-linked KnowledgeCore
+foundation and its `/v1/knowledge` API. It passed
+[CI 35706332421](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35706332421)
+and [restore 35706332264](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35706332264),
+observed 2026-09-22 Pacific.
+
+- The hosted suite passed **2,368 Python tests** with no skips and two dependency
+  warnings. The deployment gate repeated the suite successfully; repeated runs are
+  not additional unique tests.
+- Ruff, strict mypy over **61 source files**, **134 Node contracts**, both restricted
+  processor image builds, five actual MIME-container cases and 15 actual PDF-container
+  cases passed. Documentation verification passed **116 Markdown files / 761 local
+  paths and fragments**.
+- PostgreSQL integration covers all seven knowledge assertion kinds, concurrent
+  idempotent publication, conflicting and superseded claims, corrections, temporal
+  fields, evidence links, API access, immutable rows and tenant isolation.
+- PostgreSQL 17 restore verified **53 tables / 212 rows / two tenants / four encrypted
+  objects / two identity bindings** with equal table hashes, including restored
+  KnowledgeCore entity/claim retrieval and cross-tenant denial. The real drill took
+  22.65 seconds; the 29 restore safety tests also passed. This is not a production RTO.
+- Local gates passed **2,018 tests / 350 explicit PostgreSQL skips**, 134 Node
+  contracts, strict types, lint and documentation checks. Local SQL skips are not
+  passes; the hosted count above exercised PostgreSQL.
+- FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. This tranche adds no source writes,
+  automatic model publishing, FileOS cutover, rename or retirement. Known-answer
+  extraction evaluation, Email memory migration, FOS fact parity, graph traversal,
+  unified synthesis and broader document/OCR ingestion remain open.
+
 ## Verified MasterBrain working read slice
 
 Runtime/test revision **a06bcad12facb084cf7d5ef4c031e1919cfd0e71** implements
