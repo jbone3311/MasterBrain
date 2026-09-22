@@ -226,6 +226,78 @@ def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(
         )
 
 
+def test_email_part_bridge_preview_preserves_dependencies_and_current_state(
+    database, tenant
+):
+    store, _ = database
+    ctx, account = tenant
+    jobs, human, worker, receipt, _ = setup(database, tenant)
+    completed = jobs.run_once(worker, account, FakePdf())
+    extraction_id = completed["extraction_id"]
+    assert extraction_id is not None
+    bridge_ctx = pg.datacore_context(ctx)
+    core = DataCoreStore(store)
+    with store.transaction(ctx) as conn:
+        parent_id = conn.execute(
+            "SELECT evidence_id FROM attachment_receipts WHERE id=%s", (receipt,)
+        ).fetchone()["evidence_id"]
+
+    assert core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"] == []
+    assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"] == []
+    core.bridge_current_email_version(
+        bridge_ctx, parent_id, uuid4(), code_revision="part-preview-test-v1"
+    )
+    attachment_plan = core.email_part_bridge_plan(
+        bridge_ctx, account, "attachment", limit=1
+    )
+    assert attachment_plan["next_cursor"] is None
+    assert attachment_plan["results"] == [
+        {
+            "legacy_attachment_id": str(receipt),
+            "legacy_parent_version_id": str(parent_id),
+            "created_at": attachment_plan["results"][0]["created_at"],
+            "state": "deferred",
+            "already_bridged": False,
+        }
+    ]
+    assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"] == []
+
+    core.bridge_email_attachment(
+        bridge_ctx, receipt, uuid4(), code_revision="part-preview-test-v1"
+    )
+    approved = core.email_part_bridge_plan(bridge_ctx, account, "document")
+    assert approved["results"] == [
+        {
+            "legacy_document_id": str(extraction_id),
+            "legacy_parent_version_id": str(parent_id),
+            "created_at": approved["results"][0]["created_at"],
+            "state": "extracted",
+            "already_bridged": False,
+            "legacy_attachment_id": str(receipt),
+        }
+    ]
+    second = jobs.enqueue(human, account, receipt, VERSION, POLICY, uuid4())
+    assert jobs.run_once(worker, account, FakePdf())["extraction_id"] == extraction_id
+    assert jobs.get(ctx, account, second["id"])["status"] == "completed"
+    assert len(core.email_part_bridge_plan(bridge_ctx, account, "document")["results"]) == 1
+
+    core.bridge_email_document_extraction(
+        bridge_ctx, extraction_id, uuid4(), code_revision="part-preview-test-v1"
+    )
+    assert core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"][0][
+        "already_bridged"
+    ] is True
+    assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"][0][
+        "already_bridged"
+    ] is True
+    with store.transaction(ctx) as conn:
+        conn.execute(
+            "UPDATE messages SET quarantined=true WHERE account_id=%s", (account,)
+        )
+    assert core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"] == []
+    assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"] == []
+
+
 def test_unapproved_pdf_extraction_cannot_bridge(database, tenant):
     store, admin = database
     ctx, account = tenant

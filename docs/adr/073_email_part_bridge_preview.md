@@ -1,6 +1,6 @@
 # ADR-073 — Current Email attachment and document bridge preview
 
-Status: accepted design; implementation pending.
+Status: implemented; hosted verification pending.
 
 ## Context
 

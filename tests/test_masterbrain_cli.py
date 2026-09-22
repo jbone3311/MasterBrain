@@ -251,6 +251,62 @@ def test_cli_email_bridge_plan_uses_explicit_account_and_bounds(
     assert dsn not in output
 
 
+def test_cli_email_part_bridge_plan_uses_explicit_kind_and_bounds(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    account = "b22f0f5c-a784-46a1-95a7-b2b96e1f8396"
+    cursor = "93c5a004-81ab-45b6-8652-e8ced2b40e47"
+    config = tmp_path / "email-bridge.json"
+    config.write_text("not opened by this dispatch test")
+    dsn = "postgresql://secret:secret@example.invalid/private"
+    monkeypatch.setenv("MASTERBRAIN_DSN", dsn)
+    monkeypatch.setattr(
+        cli,
+        "run_email_part_bridge_plan_controller",
+        lambda path, received_dsn, received_account, kind, after, limit, check: {
+            "config": path == config,
+            "dsn": received_dsn == dsn,
+            "account": str(received_account) == account,
+            "kind": kind,
+            "after": str(after) == cursor,
+            "limit": limit,
+            "check": check,
+            "source_effects": False,
+            "data_effects": False,
+        },
+    )
+    main(
+        [
+            "email",
+            "bridge-parts-plan",
+            "--config",
+            str(config),
+            "--account-id",
+            account,
+            "--kind",
+            "document",
+            "--after",
+            cursor,
+            "--limit",
+            "11",
+            "--check",
+        ]
+    )
+    output = capsys.readouterr().out
+    assert json.loads(output) == {
+        "account": True,
+        "after": True,
+        "check": True,
+        "config": True,
+        "data_effects": False,
+        "dsn": True,
+        "kind": "document",
+        "limit": 11,
+        "source_effects": False,
+    }
+    assert dsn not in output
+
+
 def test_cli_email_bridge_batch_uses_explicit_private_plan(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

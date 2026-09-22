@@ -146,6 +146,49 @@ def test_bridge_plan_check_is_non_consuming_and_normal_run_is_content_free(
     core.email_bridge_plan.assert_called_once_with(ANY, account, after=cursor, limit=7)
 
 
+@pytest.mark.parametrize("kind", ["attachment", "document"])
+def test_part_bridge_plan_check_and_exact_dispatch(
+    kind: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    store = MagicMock()
+    monkeypatch.setattr(control, "Store", Mock(return_value=store))
+    core = MagicMock()
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    account, cursor = uuid4(), uuid4()
+    checked = control.run_email_part_bridge_plan_controller(
+        path, "runtime-dsn", account, kind, after=cursor, limit=9, check=True
+    )
+    assert checked == {
+        "configuration_valid": True,
+        "execution_verified": False,
+        "operation": "email_part_bridge_plan",
+        "kind": kind,
+        "source_effects": False,
+        "data_effects": False,
+    }
+    core.email_part_bridge_plan.assert_not_called()
+    core.email_part_bridge_plan.return_value = {
+        "account_id": str(account),
+        "kind": kind,
+        "results": [],
+        "next_cursor": None,
+        "limit": 9,
+        "source_effects": False,
+        "data_effects": False,
+    }
+    result = control.run_email_part_bridge_plan_controller(
+        path, "runtime-dsn", account, kind, after=cursor, limit=9
+    )
+    assert result["results"] == [] and result["data_effects"] is False
+    assert not {"filename", "content", "provider", "locator"} & result.keys()
+    core.email_part_bridge_plan.assert_called_once_with(
+        ANY, account, kind, after=cursor, limit=9
+    )
+
+
 def test_batch_check_validates_seal_without_target_access(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -46,6 +46,24 @@ not inspect the account. The command is a read-only operator preview, not execut
 authority; it creates no bridge, contacts no provider and authorizes no batch executor
 or automatic backfill.
 
+Preview the next dependency-safe attachment or approved-document page separately:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain email bridge-parts-plan \
+  --config /private/operator/email-bridge.json \
+  --account-id 392ef97f-305d-494a-aa2f-7cf29a7f16a3 \
+  --kind attachment \
+  --limit 25 \
+  --check
+```
+
+Use `--kind document` for approved extractions whose current parent message and
+attachment are already bridged. Normal output contains opaque legacy IDs, stable
+timestamps, state and already-bridged labels only. `--after` continues only the
+selected kind; `--check` does not inspect the account. This preview creates no batch
+authority, bridge receipt, approval or provider/mailbox effect.
+
 Execute one reviewed, sealed plan only after checking it:
 
 ```sh

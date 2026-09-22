@@ -8,7 +8,7 @@ import re
 from collections.abc import Iterator, Mapping
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import Any, Literal, cast
 from uuid import UUID
 
 from psycopg.types.json import Jsonb
@@ -313,6 +313,134 @@ class DataCoreStore:
             "next_cursor": (
                 str(page[-1]["legacy_version_id"]) if len(rows) > limit and page else None
             ),
+            "limit": limit,
+            "source_effects": False,
+            "data_effects": False,
+        }
+
+    def email_part_bridge_plan(
+        self,
+        ctx: TenantContext,
+        account_id: UUID,
+        kind: Literal["attachment", "document"],
+        *,
+        after: UUID | None = None,
+        limit: int = 25,
+    ) -> dict[str, Any]:
+        """Preview bounded current Email attachment or approved-document bridges."""
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.document.publish")
+        if (
+            not isinstance(account_id, UUID)
+            or kind not in {"attachment", "document"}
+            or (after is not None and not isinstance(after, UUID))
+        ):
+            raise ValueError("invalid Email part bridge plan identity")
+        if not 1 <= limit <= 100:
+            raise ValueError("invalid Email part bridge plan limit")
+        with self.store.transaction(ctx) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM mail_accounts WHERE id=%s", (account_id,)
+            ).fetchone():
+                raise NotFound()
+            anchor = None
+            if after is not None:
+                table = "attachment_receipts" if kind == "attachment" else "document_extractions"
+                anchor = conn.execute(
+                    f"SELECT {'received_at' if kind == 'attachment' else 'created_at'} "
+                    f"AS created_at,id FROM {table} WHERE account_id=%s AND id=%s",
+                    (account_id, after),
+                ).fetchone()
+                if not anchor:
+                    raise NotFound()
+            if kind == "attachment":
+                rows = conn.execute(
+                    "SELECT a.id AS legacy_id,a.evidence_id AS legacy_parent_version_id,"
+                    "a.received_at AS created_at,a.status AS state,"
+                    "(ab.legacy_attachment_id IS NOT NULL) AS already_bridged "
+                    "FROM attachment_receipts a JOIN message_versions mv ON "
+                    "mv.tenant_id=a.tenant_id AND mv.account_id=a.account_id "
+                    "AND mv.id=a.evidence_id JOIN messages m ON m.tenant_id=mv.tenant_id "
+                    "AND m.account_id=mv.account_id AND m.id=mv.message_id "
+                    "AND m.raw_sha256=mv.raw_sha256 AND m.parser_version=mv.parser_version "
+                    "JOIN brain_email_bridge_receipts eb ON eb.tenant_id=mv.tenant_id "
+                    "AND eb.account_id=mv.account_id AND eb.legacy_version_id=mv.id "
+                    "JOIN brain_source_items pi ON pi.tenant_id=eb.tenant_id "
+                    "AND pi.id=eb.item_id AND pi.current_version_id=eb.version_id "
+                    "LEFT JOIN brain_email_attachment_bridge_receipts ab ON "
+                    "ab.tenant_id=a.tenant_id AND ab.account_id=a.account_id "
+                    "AND ab.legacy_attachment_id=a.id WHERE a.account_id=%s "
+                    "AND NOT m.deleted AND NOT m.quarantined "
+                    "AND (%s::timestamptz IS NULL OR (a.received_at,a.id)>(%s,%s)) "
+                    "ORDER BY a.received_at,a.id LIMIT %s",
+                    (
+                        account_id,
+                        anchor["created_at"] if anchor else None,
+                        anchor["created_at"] if anchor else None,
+                        after,
+                        limit + 1,
+                    ),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT d.id AS legacy_id,a.evidence_id AS legacy_parent_version_id,"
+                    "d.receipt_id AS legacy_attachment_id,d.created_at,d.status AS state,"
+                    "(db.legacy_extraction_id IS NOT NULL) AS already_bridged "
+                    "FROM document_extractions d JOIN attachment_receipts a ON "
+                    "a.tenant_id=d.tenant_id AND a.account_id=d.account_id "
+                    "AND a.id=d.receipt_id JOIN message_versions mv ON "
+                    "mv.tenant_id=a.tenant_id AND mv.account_id=a.account_id "
+                    "AND mv.id=a.evidence_id JOIN messages m ON m.tenant_id=mv.tenant_id "
+                    "AND m.account_id=mv.account_id AND m.id=mv.message_id "
+                    "AND m.raw_sha256=mv.raw_sha256 AND m.parser_version=mv.parser_version "
+                    "JOIN brain_email_bridge_receipts eb ON eb.tenant_id=mv.tenant_id "
+                    "AND eb.account_id=mv.account_id AND eb.legacy_version_id=mv.id "
+                    "JOIN brain_source_items pi ON pi.tenant_id=eb.tenant_id "
+                    "AND pi.id=eb.item_id AND pi.current_version_id=eb.version_id "
+                    "JOIN brain_email_attachment_bridge_receipts ab ON "
+                    "ab.tenant_id=d.tenant_id AND ab.account_id=d.account_id "
+                    "AND ab.legacy_attachment_id=d.receipt_id "
+                    "JOIN brain_source_items ai ON ai.tenant_id=ab.tenant_id "
+                    "AND ai.id=ab.item_id AND ai.current_version_id=ab.version_id "
+                    "LEFT JOIN brain_email_document_bridge_receipts db ON "
+                    "db.tenant_id=d.tenant_id AND db.legacy_extraction_id=d.id "
+                    "WHERE d.account_id=%s AND NOT m.deleted AND NOT m.quarantined "
+                    "AND d.status IN ('extracted','partial') AND EXISTS (SELECT 1 "
+                    "FROM document_jobs j WHERE j.tenant_id=d.tenant_id "
+                    "AND j.account_id=d.account_id AND j.receipt_id=d.receipt_id "
+                    "AND j.extraction_id=d.id AND j.processor_version=d.processor_version "
+                    "AND j.policy_version=d.policy_version AND j.status='completed' "
+                    "AND j.outcome='result_saved') AND (%s::timestamptz IS NULL "
+                    "OR (d.created_at,d.id)>(%s,%s)) ORDER BY d.created_at,d.id LIMIT %s",
+                    (
+                        account_id,
+                        anchor["created_at"] if anchor else None,
+                        anchor["created_at"] if anchor else None,
+                        after,
+                        limit + 1,
+                    ),
+                ).fetchall()
+            self.store.audit(
+                conn, ctx, "brain.email_part_bridge_plan", "mail_account", str(account_id)
+            )
+        page = rows[:limit]
+        results = []
+        for row in page:
+            result = {
+                f"legacy_{kind}_id": str(row["legacy_id"]),
+                "legacy_parent_version_id": str(row["legacy_parent_version_id"]),
+                "created_at": row["created_at"].isoformat(),
+                "state": row["state"],
+                "already_bridged": row["already_bridged"],
+            }
+            if kind == "document":
+                result["legacy_attachment_id"] = str(row["legacy_attachment_id"])
+            results.append(result)
+        return {
+            "account_id": str(account_id),
+            "kind": kind,
+            "results": results,
+            "next_cursor": str(page[-1]["legacy_id"]) if len(rows) > limit and page else None,
             "limit": limit,
             "source_effects": False,
             "data_effects": False,

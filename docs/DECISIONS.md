@@ -13,7 +13,7 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 [ADR-073](adr/073_email_part_bridge_preview.md) defines separate bounded, private and
 non-consuming previews for current bridged-message attachments and already-approved
 document derivatives. It preserves dependency order and exposes no content or batch
-execution authority; implementation is pending.
+execution authority; implementation is complete and hosted verification is pending.
 
 [ADR-072](adr/072_sealed_email_bridge_batch.md) defines a digest-bound, explicit
 1–100 item Email bridge plan with fixed per-item idempotency keys, fail-stop execution
