@@ -39,6 +39,12 @@ interpretation, accounts for every input/part, publishes versioned derivatives, 
 can rebuild projections. Exact-content matching is a signal; deletion authority is a
 separate policy/effect concern.
 
+High-risk formats cross a process/container boundary. The FileOS adapter verifies the
+source version and sends only bounded bytes plus identity metadata to a format-specific
+worker. That worker has no filesystem/source authority and returns a closed result;
+DataCore independently validates identity, limits and outcome before transactionally
+publishing text and chunks. Parser dependencies do not ship in the Brain API image.
+
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.
@@ -91,7 +97,7 @@ reported as complete processing.
 
 ## Migration architecture
 
-FOS-Master stays outside the runtime boundary during extraction. MasterBrain runs
+FOS-Master stays outside the runtime boundary during migration. MasterBrain runs
 candidate DataCore functions against synthetic golden and read-only shadow inputs.
 Only parity-proven components enter integrated paths. File effects migrate last and
 retain FOS safeguards. See [FOS migration](FOS_MIGRATION.md).

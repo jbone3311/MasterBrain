@@ -2,7 +2,7 @@
 
 ## Active checkpoint
 
-**Checkpoint 5 — grouped Brain retrieval.** Work occurs on
+**Checkpoint 3B — isolated FileOS documents.** Work occurs on
 `codex/masterbrain-foundation` in PR #4.
 
 ## Completed gates
@@ -33,15 +33,14 @@
 
 ## Current work
 
-- One bounded request over DataCore evidence and KnowledgeCore assertions.
-- Separate within-layer ranking, per-layer caps, optional knowledge-kind filters and
-  evidence IDs for progressive verification.
-- Dual-scope authorization and PostgreSQL end-to-end coverage.
+- Source-bound, isolated PDF/DOCX/XLSX extraction with a dedicated runtime image.
+- Real-format fault corpus, exact source re-hashing, sibling isolation and shared
+  DataCore publication/search.
+- Expanded pinned-donor DOCX/XLSX parity and mandatory hosted container checks.
 
 ## Deferred by design
 
-- Office, PDF, archive, image and OCR migration until isolated DataCore workers have
-  format/fault parity.
+- Legacy Office, archives, images and OCR until separate format/fault gates exist.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.

@@ -20,6 +20,8 @@ mean hosted, live-source accepted, or production ready.
   commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
+- Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted
+  worker image with archive/active-content bounds; hosted container acceptance pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -28,7 +30,7 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Incremental/enrolled FileOS scanning and Office/PDF/archive/image/OCR extraction.
+- Incremental/enrolled FileOS scanning and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

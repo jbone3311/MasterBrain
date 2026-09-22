@@ -18,6 +18,8 @@ operator, date, result, exceptions and rollback receipt.
 - Stable source/version/evidence IDs and SHA-256 are reproducible.
 - Original evidence is immutable/verified; all derivatives have complete provenance.
 - Extraction/OCR limits, format outcomes and malicious corpus tests pass.
+- Document workers prove network isolation, read-only root, dropped capabilities,
+  process/resource/output limits, dependency separation and closed-result validation.
 - Chunk/index rebuild produces equivalent identities and query results.
 - Dedupe never implies deletion; held-out/cross-domain protections pass.
 - Every migrated FOS tranche has zero unexplained golden differences and documented

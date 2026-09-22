@@ -39,6 +39,23 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
 - Backups encrypted separately and restore-tested; retention applies to derivatives,
   indexes, caches, exports, and backups.
 
+## FileOS document parser controls
+
+PDF, DOCX and XLSX are accepted only when suffix and declared media type agree. The
+adapter reopens and hashes the source immediately before processing. A dedicated image
+with pinned reader dependencies runs with no network, read-only root, dropped Linux
+capabilities, bounded CPU/memory/processes/output and no source mount. Returned data is
+validated against a closed contract and rebound to the expected source version,
+locator, digest, size and media type before publication.
+
+The worker rejects encrypted PDFs, PDF actions/attachments/forms/annotations beyond
+the supported subset, encrypted or macro-enabled Office packages, unsafe or duplicate
+ZIP paths, excessive members/expansion/compression ratios, DTD/entity declarations and
+external Office relationships. Page, sheet, row, column, cell, stream and extracted
+text limits are enforced. Rejected or incomplete documents remain accounted as
+unsupported, deferred or failed; they do not silently publish partial text. See
+[FileOS document extraction](FILEOS_DOCUMENT_EXTRACTION.md).
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

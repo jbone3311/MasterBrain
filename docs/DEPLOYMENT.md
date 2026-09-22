@@ -35,6 +35,12 @@ effects. Knowledge workers read DataCore publications and write projections. Bra
 has scoped retrieval, not provider/filesystem credentials. Effect executors are
 separate, disabled initially, and restricted to approved commands.
 
+PDF, DOCX and XLSX use the dedicated `Dockerfile.documents` worker image. The ordinary
+API image intentionally excludes document-reader dependencies. The document worker is
+invoked through the existing networkless, read-only, capability-free sandbox with CPU,
+memory, process and output limits; it receives one bounded request on stdin and returns
+one schema-validated result. Production must preserve or strengthen that boundary.
+
 ## Release and rollback
 
 Build immutable artifacts with dependency locks, SBOM/provenance, schema compatibility
@@ -54,6 +60,10 @@ knowledge lag, authorization denials, unusual evidence reads, effect proposals,
 storage/key health, backup age and restore tests. Alerts contain no source content.
 Capacity limits cover item size, archive depth, OCR pages, chunk count, query budget,
 concurrency and retry storms.
+
+Before promoting a document-worker image, run the malicious-container corpus and a
+PostgreSQL publication check. Image identity, dependency lock, sandbox inspection,
+corpus result and database result belong in the release receipt.
 
 The current `compose.yaml` remains a local Email-capability PostgreSQL setup, not a
 production MasterBrain deployment.

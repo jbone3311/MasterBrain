@@ -8,19 +8,39 @@ import hashlib
 import io
 from collections import Counter
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID
 
 from email_brain.domain.models import TenantContext
+from masterbrain.datacore.document_contract import (
+    MAX_DOCUMENT_BYTES,
+    DocumentResult,
+    DocumentUnavailable,
+)
 from masterbrain.datacore.persistence import DataCoreStore, ImportResult, PublishedDocument
 
 EXTRACTOR_VERSION = "fileos-text-v1"
 MAX_SOURCE_BYTES = 1_048_576
 SUPPORTED_SUFFIXES = frozenset({".txt", ".md", ".html", ".htm", ".csv"})
+DOCUMENT_SUFFIXES = frozenset({".pdf", ".docx", ".xlsx"})
+
+
+class DocumentProcessor(Protocol):
+    processor_version: str
+
+    def extract(
+        self,
+        raw: bytes,
+        *,
+        version_id: str,
+        locator: str,
+        sha256: str,
+        media_type: str,
+    ) -> DocumentResult: ...
 
 
 class ExtractionStatus(StrEnum):
@@ -209,9 +229,121 @@ def extract_source_version(
     return ExtractionResult(version_id, locator, status, text, error, metadata)
 
 
+def extract_document_source_version(
+    root: Path,
+    item: Mapping[str, Any],
+    processor: DocumentProcessor,
+) -> ExtractionResult:
+    """Revalidate a bounded document before passing bytes into the isolated processor."""
+    locator = item.get("locator")
+    version_id = item.get("version_id")
+    digest = item.get("digest")
+    declared_size = item.get("size_bytes")
+    media_type = item.get("media_type")
+    if (
+        not isinstance(locator, str)
+        or not isinstance(version_id, str)
+        or not isinstance(digest, Mapping)
+        or not isinstance(declared_size, int)
+        or isinstance(declared_size, bool)
+        or not isinstance(media_type, str)
+        or digest.get("algorithm") != "sha256"
+        or not isinstance(digest.get("value"), str)
+    ):
+        raise ValueError("invalid document source-version item")
+    relative = PurePosixPath(locator)
+    if (
+        not locator
+        or relative.is_absolute()
+        or ".." in relative.parts
+        or "\\" in locator
+        or relative.suffix.lower() not in DOCUMENT_SUFFIXES
+    ):
+        raise ValueError("unsafe or unsupported document locator")
+    if declared_size > MAX_DOCUMENT_BYTES:
+        return ExtractionResult(
+            version_id,
+            locator,
+            ExtractionStatus.DEFERRED,
+            error_code="document_byte_limit",
+            metadata={"size_bytes": declared_size},
+        )
+
+    authorized_root = root.resolve(strict=True)
+    if not authorized_root.is_dir():
+        raise ValueError("FileOS root must be a directory")
+    path = authorized_root.joinpath(*relative.parts)
+    try:
+        if path.is_symlink():
+            return ExtractionResult(
+                version_id, locator, ExtractionStatus.FAILED, error_code="symlink_refused"
+            )
+        resolved = path.resolve(strict=True)
+        resolved.relative_to(authorized_root)
+        before = resolved.stat()
+        if not resolved.is_file():
+            raise OSError
+        with resolved.open("rb") as handle:
+            raw = handle.read(MAX_DOCUMENT_BYTES + 1)
+        after = resolved.stat()
+    except (OSError, RuntimeError, ValueError):
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.FAILED, error_code="source_unavailable"
+        )
+    if len(raw) > MAX_DOCUMENT_BYTES:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.DEFERRED, error_code="document_byte_limit"
+        )
+    if (
+        before.st_size != after.st_size
+        or before.st_mtime_ns != after.st_mtime_ns
+        or len(raw) != declared_size
+    ):
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
+        )
+    actual = hashlib.sha256(raw).hexdigest()
+    if actual != digest["value"]:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="digest_mismatch"
+        )
+    try:
+        result = processor.extract(
+            raw,
+            version_id=version_id,
+            locator=locator,
+            sha256=actual,
+            media_type=media_type,
+        )
+    except DocumentUnavailable:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.FAILED, error_code="processor_unavailable"
+        )
+    status = {
+        "extracted": ExtractionStatus.EXTRACTED,
+        "deferred": ExtractionStatus.DEFERRED,
+        "failed": ExtractionStatus.FAILED,
+    }[result.status]
+    metadata = {key: value for key, value in asdict(result.metadata).items() if value is not None}
+    metadata.update(
+        {"extractor_version": processor.processor_version, "format": result.source.format}
+    )
+    return ExtractionResult(
+        version_id,
+        locator,
+        status,
+        result.text,
+        None if status is ExtractionStatus.EXTRACTED else result.reason,
+        metadata,
+    )
+
+
 class FileOSAdapter:
-    def __init__(self, store: DataCoreStore) -> None:
+    def __init__(
+        self, store: DataCoreStore, document_processor: DocumentProcessor | None = None
+    ) -> None:
         self.store = store
+        self.document_processor = document_processor
 
     def publish_snapshot(
         self,
@@ -232,7 +364,13 @@ class FileOSAdapter:
         for raw_item in raw_items:
             if not isinstance(raw_item, Mapping):
                 raise ValueError("invalid snapshot item")
-            extraction = extract_source_version(root, raw_item)
+            locator = raw_item.get("locator")
+            suffix = PurePosixPath(locator).suffix.lower() if isinstance(locator, str) else ""
+            extraction = (
+                extract_document_source_version(root, raw_item, self.document_processor)
+                if self.document_processor is not None and suffix in DOCUMENT_SUFFIXES
+                else extract_source_version(root, raw_item)
+            )
             publication = None
             if extraction.status is ExtractionStatus.EXTRACTED:
                 publication = self.store.publish_text(
@@ -240,7 +378,11 @@ class FileOSAdapter:
                     extraction.version_id,
                     extraction.text,
                     code_revision=code_revision,
-                    normalizer=EXTRACTOR_VERSION,
+                    normalizer=(
+                        self.document_processor.processor_version
+                        if suffix in DOCUMENT_SUFFIXES and self.document_processor is not None
+                        else EXTRACTOR_VERSION
+                    ),
                 )
             counts[extraction.status.value] += 1
             results.append(PublishedExtraction(extraction, publication))

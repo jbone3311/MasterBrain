@@ -21,7 +21,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Audited safe move/rename, collision diversion, quarantine | Donor only | Later effect broker |
 | FileOS | Held-out-test and cross-domain dedupe protections | Donor only; required invariant | DataCore policy + effect broker |
 | FileOS | Intake classification/routing/preflight | Donor only | FileOS adapter + DataCore |
-| FileOS | Document/metadata extraction and indexing | Donor only plus Email PDF prototype | DataCore |
+| FileOS | PDF/DOCX/XLSX text/metadata extraction and indexing | Isolated shared tranche implemented; hosted gate pending | DataCore |
 | FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
 
 ## DataCore
@@ -32,7 +32,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Hashing | Streaming content digests with algorithm/version | Implemented first tranche |
 | Dedupe | Exact-content groups; signals distinct from deletion authority | Implemented read-only first tranche |
 | Evidence | Immutable original bytes or provider-bound immutable reference | Shared FileOS metadata/evidence plus Email originals implemented |
-| File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | Partial Email implementation; donor inventory complete |
+| File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | Text + isolated PDF/DOCX/XLSX implemented; archives planned |
 | OCR | Explicitly approved, isolated, page/image outputs with confidence | Planned |
 | Normalization | Source-neutral document/message representation | Email-specific implementation exists; generalization planned |
 | Metadata | Source and extracted metadata, versioned independently | Partial |

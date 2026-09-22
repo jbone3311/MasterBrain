@@ -24,6 +24,7 @@
   "shared_layers": ["DataCore", "KnowledgeCore", "Brain API"],
   "implemented_shared_components": [
     "DataCore read-only hashing/dedupe and FileOS text extraction",
+    "source-bound isolated FileOS PDF, DOCX and XLSX extraction",
     "DataCore persistence, lexical retrieval and progressive Brain API",
     "reviewed KnowledgeCore assertions, retrieval and changes",
     "grouped DataCore and KnowledgeCore search",

@@ -22,6 +22,11 @@ dependencies = [
 
 [project.optional-dependencies]
 pdf-worker = ["pypdf==6.19.0"]
+document-worker = [
+  "pypdf==6.19.0",
+  "openpyxl==3.1.5",
+  "python-docx==1.2.0",
+]
 dev = [
   "mypy>=1.11",
   "ruff>=0.6",

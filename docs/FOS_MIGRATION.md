@@ -56,7 +56,8 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-001 read-only hashing/dedupe | FOS-Master `218d5cae`, `_SYSTEM/tools/dedup_tool.py` | `src/masterbrain/datacore/dedup.py` | `scripts/datacore_parity.py`; hash/name/both synthetic corpus | Complete; 3,000-file parity and hosted gate green |
 | DC-002 contracts/snapshot foundation | FOS inventory/index behavior reviewed; new source-neutral contract | `contracts.py`, `fileos.py`, `masterbrain` CLI | contract/fault/symlink/no-mutation tests; donor exclusion/hash behavior | Complete; hosted gate green |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
-| DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Implemented; hosted gate pending |
+| DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
+| DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Implemented; first hosted container gate pending |
 
 DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
 and all delete/move operations. Those omissions do not change the returned scan and
@@ -64,8 +65,8 @@ comparison contracts being adopted; the live-donor harness compares those output
 
 ## Proposed next tranches
 
-1. **DC-004B isolated document workers:** add PDF/Office metadata and text, then
-   archives/images/OCR with format-specific corpora and containment.
+1. **DC-004C archives/images/OCR:** separate opt-in workers with format-specific
+   corpora, expansion/page budgets and containment.
 2. **DC-005 rebuild/freshness:** add explicit rebuild and source-drift receipts around
    the existing deterministic chunk/lexical publication path.
 3. **KC-001 claim/entity projection:** import donor lessons without treating model

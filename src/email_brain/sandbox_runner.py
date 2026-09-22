@@ -28,6 +28,8 @@ from email_brain.mime_sandbox import (
 from email_brain.normalize import NormalizedMessage
 from email_brain.pdf_contract import MAX_OUTPUT_BYTES as PDF_OUTPUT_BYTES
 from email_brain.pdf_contract import MAX_REQUEST_BYTES as PDF_REQUEST_BYTES
+from masterbrain.datacore.document_contract import MAX_OUTPUT_BYTES as DOCUMENT_OUTPUT_BYTES
+from masterbrain.datacore.document_contract import MAX_REQUEST_BYTES as DOCUMENT_REQUEST_BYTES
 
 _IMAGE = re.compile(r"sha256:[a-f0-9]{64}\Z", re.ASCII)
 _CONTAINER = re.compile(r"[a-f0-9]{64}\Z", re.ASCII)
@@ -56,6 +58,12 @@ class _Profile:
 _MIME_PROFILE = _Profile("mime", tuple(_COMMAND), MAX_INPUT_BYTES, MAX_OUTPUT_BYTES)
 _PDF_PROFILE = _Profile(
     "pdf", ("-I", "-B", "-m", "email_brain.pdf_worker"), PDF_REQUEST_BYTES, PDF_OUTPUT_BYTES
+)
+_DOCUMENT_PROFILE = _Profile(
+    "document",
+    ("-I", "-B", "-m", "masterbrain.datacore.document_worker"),
+    DOCUMENT_REQUEST_BYTES,
+    DOCUMENT_OUTPUT_BYTES,
 )
 
 
@@ -149,7 +157,7 @@ def _environment(value: Any) -> dict[str, str]:
 class _DockerPipe:
     def __init__(self, image_id: str, *, docker_binary: Path, profile: _Profile) -> None:
         if (
-            profile not in (_MIME_PROFILE, _PDF_PROFILE)
+            profile not in (_MIME_PROFILE, _PDF_PROFILE, _DOCUMENT_PROFILE)
             or not isinstance(image_id, str)
             or not _IMAGE.fullmatch(image_id)
             or not isinstance(docker_binary, Path)

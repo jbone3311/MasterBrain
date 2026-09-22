@@ -4,7 +4,7 @@ The first working FileOS adapter path is:
 
 `snapshot → transactional import → re-hash source bytes → extract → normalize → chunk → index → search`
 
-It supports plain text, Markdown, HTML and CSV. The adapter reads each file at most
+The in-process extractor supports plain text, Markdown, HTML and CSV. The adapter reads each file at most
 once per attempt, caps input at 1 MiB, refuses symlinks and path escapes, compares
 size/mtime before and after the read, and verifies the immutable snapshot SHA-256.
 Only then can text enter DataCore. Files remain untouched.
@@ -20,5 +20,8 @@ Latin-1 uncertainty, HTML structural/table text and quoted CSV newlines against 
 checkout. MasterBrain intentionally adds strict byte limits, source-root confinement,
 source-version hashing and explicit outcome states around the donor behavior.
 
-PDF, Office, legacy XLS, archives, images and OCR remain deferred to isolated workers.
-FOS-Master stays operational and unchanged while this adapter runs in shadow mode.
+PDF, DOCX and XLSX now have a separate, opt-in isolated-worker tranche described in
+[FileOS document extraction](FILEOS_DOCUMENT_EXTRACTION.md). They remain deferred when
+that processor is not configured; legacy XLS, general archives, images and OCR remain
+deferred in all cases. FOS-Master stays operational and unchanged while these adapters
+run in shadow mode.

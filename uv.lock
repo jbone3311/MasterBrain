@@ -633,6 +633,11 @@ dev = [
     { name = "python-docx" },
     { name = "ruff" },
 ]
+document-worker = [
+    { name = "openpyxl" },
+    { name = "pypdf" },
+    { name = "python-docx" },
+]
 pdf-worker = [
     { name = "pypdf" },
 ]
@@ -644,17 +649,20 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27,<1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11" },
     { name = "openpyxl", marker = "extra == 'dev'", specifier = ">=3.1.5,<4" },
+    { name = "openpyxl", marker = "extra == 'document-worker'", specifier = "==3.1.5" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
     { name = "pydantic", specifier = ">=2.9,<3" },
     { name = "pyjwt", specifier = "==2.14.0" },
     { name = "pypdf", marker = "extra == 'dev'", specifier = ">=6.19,<7" },
+    { name = "pypdf", marker = "extra == 'document-worker'", specifier = "==6.19.0" },
     { name = "pypdf", marker = "extra == 'pdf-worker'", specifier = "==6.19.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8,<10" },
     { name = "python-docx", marker = "extra == 'dev'", specifier = ">=1.2,<2" },
+    { name = "python-docx", marker = "extra == 'document-worker'", specifier = "==1.2.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "uvicorn", specifier = ">=0.30,<1" },
 ]
-provides-extras = ["pdf-worker", "dev"]
+provides-extras = ["pdf-worker", "document-worker", "dev"]
 
 [[package]]
 name = "mypy"

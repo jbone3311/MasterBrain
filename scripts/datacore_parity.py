@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -14,8 +15,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+from email_brain.synthetic_formats import SHEET_TYPE, WORD_TYPE, docx_bytes, xlsx_bytes
 from masterbrain.datacore import dedup as masterbrain
 from masterbrain.datacore.contracts import stable_id
+from masterbrain.datacore.document_contract import source_for
+from masterbrain.datacore.document_worker import extract_document
 from masterbrain.datacore.extraction import extract_source_version
 
 PINNED_FOS_COMMIT = "218d5caec2f20b9047fd3eb8e027dc671acf0c15"
@@ -164,6 +168,38 @@ def extraction_checks(donor: ModuleType, root: Path) -> dict[str, tuple[Any, Any
     return checks
 
 
+def document_extraction_checks(donor: ModuleType, root: Path) -> dict[str, tuple[Any, Any]]:
+    fixtures = {
+        "memo.docx": (WORD_TYPE, docx_bytes("donor office parity proof")),
+        "ledger.xlsx": (
+            SHEET_TYPE,
+            xlsx_bytes("Parity Atlas", 5100, 11, "donorsheetparityproof"),
+        ),
+    }
+    checks: dict[str, tuple[Any, Any]] = {}
+    config = donor.DEFAULT_CONFIG.copy()
+    for name, (media_type, raw) in fixtures.items():
+        path = root / name
+        path.write_bytes(raw)
+        expected_raw = donor.extract_file(path, config)
+        digest = hashlib.sha256(raw).hexdigest()
+        item_id = stable_id("item", "files_document_parity", name)
+        version_id = stable_id("version", item_id, digest, str(len(raw)))
+        actual_raw = extract_document(raw, source_for(raw, version_id, name, digest, media_type))
+        expected = {
+            "tokens": expected_raw.get("full_text", "").split(),
+            "sheet_count": expected_raw.get("metadata", {}).get("sheet_count"),
+            "error": "error" in expected_raw,
+        }
+        actual = {
+            "tokens": actual_raw.text.split(),
+            "sheet_count": actual_raw.metadata.sheet_count,
+            "error": actual_raw.status == "failed",
+        }
+        checks[f"extract-{name}"] = (expected, actual)
+    return checks
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fos-repo", type=Path, required=True)
@@ -190,6 +226,7 @@ def main() -> int:
         extraction = Path(directory) / "extraction"
         extraction.mkdir()
         checks.update(extraction_checks(donor_extractor, extraction))
+        checks.update(document_extraction_checks(donor_extractor, extraction))
         if not args.skip_stress:
             stress = Path(directory) / "stress"
             stress.mkdir()
@@ -208,7 +245,8 @@ def main() -> int:
     stress = "disabled" if args.skip_stress else f"{args.stress_files} base files plus edges"
     print(
         f"PASS: DataCore matches FOS-Master {commit}; "
-        f"fixture scans, pair comparisons, hashes, text/HTML/CSV extraction, stress={stress}"
+        f"fixture scans, pair comparisons, hashes, text/HTML/CSV/DOCX/XLSX extraction, "
+        f"stress={stress}"
     )
     return 0
 

@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-053 isolated FileOS documents](adr/053_isolated_fileos_documents.md) adds
+source-revalidated PDF/DOCX/XLSX extraction through a dedicated networkless,
+read-only container; it grants no source effects or OCR authority.
+
 [ADR-052 grouped unified search](adr/052_grouped_unified_search.md) composes DataCore
 evidence and KnowledgeCore assertions in separately ranked, independently bounded
 layers requiring both scopes; it does not imply Email migration or synthesis.

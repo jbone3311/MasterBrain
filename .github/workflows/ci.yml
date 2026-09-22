@@ -57,3 +57,9 @@ jobs:
         run: |
           pdf_image_id="$(docker image inspect email-brain-pdf-ci --format '{{.Id}}')"
           EMAIL_BRAIN_PDF_IMAGE_ID="$pdf_image_id" uv run pytest -q tests/container_pdf_checks.py
+      - name: Build dedicated FileOS document worker (not the API image)
+        run: docker build -f Dockerfile.documents -t masterbrain-documents-ci .
+      - name: Actual source-bound FileOS PDF and Office extraction
+        run: |
+          document_image_id="$(docker image inspect masterbrain-documents-ci --format '{{.Id}}')"
+          MASTERBRAIN_DOCUMENT_IMAGE_ID="$document_image_id" uv run pytest -q tests/container_document_checks.py

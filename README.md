@@ -45,7 +45,9 @@ FileOS sources ┘       │              │                │
 | Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
 | Typed reviewed travel/bill memory | Working narrow prototype |
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
-| General file intake/extraction/OCR/chunking | Planned migration |
+| File text/Markdown/HTML/CSV extraction | Working shared prototype |
+| Isolated FileOS PDF/DOCX/XLSX extraction | Implemented; hosted container gate pending |
+| Archives, images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped DataCore/KnowledgeCore search | Working shared prototype |
 | Hosted identity, operations, live sources | Not accepted |
@@ -73,6 +75,7 @@ roadmap item is not an implementation claim.
 - [Source and provenance contract](docs/SOURCE_PROVENANCE.md)
 - [DataCore persistence and lexical retrieval](docs/DATACORE_PERSISTENCE.md)
 - [FileOS read-only extraction](docs/FILEOS_EXTRACTION.md)
+- [FileOS PDF and Office extraction](docs/FILEOS_DOCUMENT_EXTRACTION.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
