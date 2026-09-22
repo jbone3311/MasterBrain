@@ -17,6 +17,7 @@ EmailBrain table and does not alter FOS-Master.
 | `brain_change_events` | Source-version and publication notifications | Append-only |
 | `brain_jobs` | Bounded extraction/OCR/normalization/index work | Controlled state transitions |
 | `brain_import_receipts` | Actor-scoped idempotency result | Append-only |
+| `brain_fileos_run_receipts` | Fully accounted run, outcomes and provenance | Append-only |
 
 Every table carries `tenant_id`, has forced PostgreSQL row-level security and is
 available only through explicit runtime-role grants. FileOS evidence is
@@ -55,3 +56,9 @@ tables. The synthetic restore drill hashes every public table before and after
 restore, so DataCore records participate automatically once seeded. Destructive
 down-migration is not a rollback mechanism: stop this path and restore through the
 tested recovery procedure if required.
+
+Migration `0017_fileos_run_receipts.sql` separates whole-run completion from intake.
+A receipt is inserted only after every snapshot item is accounted and is bound to the
+same actor, UUID and canonical manifest digest as its intake. Closed outcome counts
+and published-document totals are checked in Python and PostgreSQL. The latest
+complete receipt drives source freshness; partial work never advances it.

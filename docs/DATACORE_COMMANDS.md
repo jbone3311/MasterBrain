@@ -80,8 +80,10 @@ The expiring credential must be a worker with exactly `brain.source.ingest` and
 `brain.document.publish`. The UUID and exact manifest are reused for an uncertain
 retry; never reuse the key for a different snapshot. Output is compact counts only,
 including extraction outcomes, new/unchanged versions, published/changed documents,
-and the invariant `source_effects: false`. This is explicit one-snapshot operation,
-not a watcher or automatic live-root enrollment.
+an immutable completion ID/time/recorded flag, and the invariant
+`source_effects: false`. Completion is recorded only after all items are accounted.
+This is explicit one-snapshot operation, not a watcher or automatic live-root
+enrollment.
 
 ## Donor parity
 

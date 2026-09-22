@@ -28,6 +28,7 @@ MAX_MANIFEST_ITEMS = 10_000
 MAX_NORMALIZED_BYTES = 1_048_576
 CHUNK_CHARACTERS = 1_000
 NORMALIZER_VERSION = "plain-text-v1"
+FILEOS_TEXT_EXTRACTOR_VERSION = "fileos-text-v1"
 _IDENTITY = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 
 
@@ -58,9 +59,27 @@ class SearchHit:
     rank: float
 
 
+@dataclass(frozen=True, slots=True)
+class FileOSRunReceipt:
+    run_id: UUID
+    source_id: str
+    observed_at: datetime
+    completed_at: datetime
+    item_count: int
+    outcomes: dict[str, int]
+    published_documents: int
+    recorded: bool
+
+
 def _canonical_digest(value: object) -> str:
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     return hashlib.sha256(encoded).hexdigest()
+
+
+def fileos_manifest_sha256(manifest: Mapping[str, Any]) -> str:
+    """Canonical digest shared by intake and whole-run receipts."""
+    _manifest_items(manifest)
+    return _canonical_digest(manifest)
 
 
 def _parse_time(value: object) -> datetime:
@@ -288,6 +307,149 @@ class DataCoreStore:
                 (ctx.tenant_id, ctx.actor_id, idempotency_key, request_hash, Jsonb(asdict(result))),
             )
             return result
+
+    def complete_fileos_run(
+        self,
+        ctx: TenantContext,
+        manifest: Mapping[str, Any],
+        run_id: UUID,
+        *,
+        outcomes: Mapping[str, int],
+        published_documents: int,
+        code_revision: str,
+        document_processor_version: str | None,
+    ) -> FileOSRunReceipt:
+        """Append a completion receipt only after every snapshot item is accounted."""
+        self.store.require(ctx, "brain.document.publish")
+        source, observed_at, items = _manifest_items(manifest)
+        allowed = {"extracted", "empty", "unsupported", "deferred", "changed", "failed"}
+        counts = dict(sorted(outcomes.items()))
+        if (
+            not isinstance(run_id, UUID)
+            or (not counts and bool(items))
+            or not set(counts) <= allowed
+            or any(type(value) is not int or value <= 0 for value in counts.values())
+            or sum(counts.values()) != len(items)
+            or type(published_documents) is not int
+            or not 0 <= published_documents <= len(items)
+            or published_documents != counts.get("extracted", 0)
+        ):
+            raise ValueError("invalid FileOS completion counts")
+        for descriptor in (code_revision, FILEOS_TEXT_EXTRACTOR_VERSION):
+            if not descriptor or len(descriptor) > 200 or "\x00" in descriptor:
+                raise ValueError("invalid FileOS completion provenance")
+        if document_processor_version is not None and (
+            not document_processor_version
+            or len(document_processor_version) > 200
+            or "\x00" in document_processor_version
+        ):
+            raise ValueError("invalid document processor provenance")
+        manifest_hash = _canonical_digest(manifest)
+        expected = {
+            "source_id": source.source_id,
+            "observed_at": observed_at,
+            "manifest_sha256": manifest_hash,
+            "code_revision": code_revision,
+            "text_extractor_version": FILEOS_TEXT_EXTRACTOR_VERSION,
+            "document_processor_version": document_processor_version,
+            "item_count": len(items),
+            "outcomes": counts,
+            "published_documents": published_documents,
+        }
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:fileos-run:{ctx.actor_id}:{run_id}",),
+            )
+            imported = conn.execute(
+                "SELECT request_hash,result FROM brain_import_receipts "
+                "WHERE actor_id=%s AND idempotency_key=%s",
+                (ctx.actor_id, run_id),
+            ).fetchone()
+            if (
+                not imported
+                or imported["request_hash"] != manifest_hash
+                or imported["result"].get("source_id") != source.source_id
+                or imported["result"].get("observed_items") != len(items)
+            ):
+                raise Conflict("FileOS completion is not bound to its intake")
+            existing = conn.execute(
+                "SELECT source_id,observed_at,manifest_sha256,code_revision,"
+                "text_extractor_version,document_processor_version,item_count,outcomes,"
+                "published_documents,completed_at "
+                "FROM brain_fileos_run_receipts WHERE actor_id=%s AND run_id=%s",
+                (ctx.actor_id, run_id),
+            ).fetchone()
+            if existing:
+                completed_at = existing.pop("completed_at")
+                if existing != expected:
+                    raise Conflict("FileOS completion receipt changed")
+                return FileOSRunReceipt(
+                    run_id,
+                    source.source_id,
+                    observed_at,
+                    completed_at,
+                    len(items),
+                    counts,
+                    published_documents,
+                    False,
+                )
+            row = conn.execute(
+                "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+                "observed_at,manifest_sha256,code_revision,text_extractor_version,"
+                "document_processor_version,item_count,outcomes,published_documents) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                "RETURNING completed_at",
+                (
+                    ctx.tenant_id,
+                    ctx.actor_id,
+                    run_id,
+                    source.source_id,
+                    observed_at,
+                    manifest_hash,
+                    code_revision,
+                    FILEOS_TEXT_EXTRACTOR_VERSION,
+                    document_processor_version,
+                    len(items),
+                    Jsonb(counts),
+                    published_documents,
+                ),
+            ).fetchone()
+            assert row is not None
+            return FileOSRunReceipt(
+                run_id,
+                source.source_id,
+                observed_at,
+                row["completed_at"],
+                len(items),
+                counts,
+                published_documents,
+                True,
+            )
+
+    def fileos_freshness(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
+        """Return the latest complete run, never an in-progress or partial prefix."""
+        self.store.require(ctx, "brain.changes.read")
+        if not _IDENTITY.fullmatch(source_id):
+            raise NotFound()
+        with self.store.transaction(ctx) as conn:
+            if not conn.execute("SELECT 1 FROM brain_sources WHERE id=%s", (source_id,)).fetchone():
+                raise NotFound()
+            row = conn.execute(
+                "SELECT run_id,observed_at,completed_at,item_count,outcomes,"
+                "published_documents,code_revision,"
+                "text_extractor_version,document_processor_version "
+                "FROM brain_fileos_run_receipts WHERE source_id=%s "
+                "ORDER BY completed_at DESC,run_id DESC LIMIT 1",
+                (source_id,),
+            ).fetchone()
+            self.store.audit(conn, ctx, "brain.fileos_freshness_read", "brain_source", source_id)
+        return {
+            "source_id": source_id,
+            "status": "complete" if row else "no_completed_run",
+            "latest_complete_run": row,
+            "partial_runs_included": False,
+        }
 
     def publish_text(
         self,

@@ -79,7 +79,7 @@ def test_check_publish_replay_and_no_source_mutation(
     key = uuid4()
     assert run_fileos_controller(path, store.dsn, key, check=True)["execution_verified"] is False
     first = run_fileos_controller(path, store.dsn, key)
-    assert first == {
+    assert first | {"completion": None} == {
         "source_id": "files_operational",
         "observed_items": 1,
         "new_versions": 1,
@@ -87,11 +87,18 @@ def test_check_publish_replay_and_no_source_mutation(
         "outcomes": {"extracted": 1},
         "published": 1,
         "changed_publications": 1,
+        "completion": None,
         "source_effects": False,
     }
+    assert first["completion"]["run_id"] == str(key)
+    assert first["completion"]["recorded"] is True
     replay = run_fileos_controller(path, store.dsn, key)
     assert replay["new_versions"] == 1
     assert replay["changed_publications"] == 0
+    assert replay["completion"] == {
+        **first["completion"],
+        "recorded": False,
+    }
     after = source.joinpath("brief.txt").stat()
     assert source.joinpath("brief.txt").read_bytes() == before[0]
     assert after.st_mtime_ns == before[1].st_mtime_ns
@@ -113,8 +120,7 @@ def test_admin_dsn_and_revoked_local_worker_are_refused(
     with psycopg.connect(admin) as conn:
         assert (
             conn.execute(
-                "SELECT count(*) FROM brain_sources "
-                "WHERE tenant_id=%s AND id='files_operational'",
+                "SELECT count(*) FROM brain_sources WHERE tenant_id=%s AND id='files_operational'",
                 (ctx.tenant_id,),
             ).fetchone()[0]
             == 0

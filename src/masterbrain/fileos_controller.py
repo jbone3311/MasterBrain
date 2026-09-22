@@ -124,13 +124,28 @@ def run_fileos_controller(
         def authorize() -> None:
             _current(identity, initial)
 
-        result = FileOSAdapter(DataCoreStore(store), processor).publish_snapshot(
+        core = DataCoreStore(store)
+        result = FileOSAdapter(core, processor).publish_snapshot(
             initial.context,
             root,
             manifest,
             idempotency_key,
             code_revision=config.code_revision,
             authorize=authorize,
+        )
+        published = sum(item.publication is not None for item in result.results)
+        changed = sum(
+            item.publication is not None and item.publication.changed for item in result.results
+        )
+        authorize()
+        receipt = core.complete_fileos_run(
+            initial.context,
+            manifest,
+            idempotency_key,
+            outcomes=result.counts,
+            published_documents=published,
+            code_revision=config.code_revision,
+            document_processor_version=(processor.processor_version if processor else None),
         )
         _current(identity, initial)
         return {
@@ -139,10 +154,13 @@ def run_fileos_controller(
             "new_versions": result.imported.new_versions,
             "unchanged_versions": result.imported.unchanged_versions,
             "outcomes": result.counts,
-            "published": sum(item.publication is not None for item in result.results),
-            "changed_publications": sum(
-                item.publication is not None and item.publication.changed for item in result.results
-            ),
+            "published": published,
+            "changed_publications": changed,
+            "completion": {
+                "run_id": str(receipt.run_id),
+                "completed_at": receipt.completed_at.isoformat(),
+                "recorded": receipt.recorded,
+            },
             "source_effects": False,
         }
     except Exception:

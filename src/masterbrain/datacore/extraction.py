@@ -21,9 +21,14 @@ from masterbrain.datacore.document_contract import (
     DocumentResult,
     DocumentUnavailable,
 )
-from masterbrain.datacore.persistence import DataCoreStore, ImportResult, PublishedDocument
+from masterbrain.datacore.persistence import (
+    FILEOS_TEXT_EXTRACTOR_VERSION,
+    DataCoreStore,
+    ImportResult,
+    PublishedDocument,
+)
 
-EXTRACTOR_VERSION = "fileos-text-v1"
+EXTRACTOR_VERSION = FILEOS_TEXT_EXTRACTOR_VERSION
 MAX_SOURCE_BYTES = 1_048_576
 SUPPORTED_SUFFIXES = frozenset({".txt", ".md", ".html", ".htm", ".csv"})
 DOCUMENT_SUFFIXES = frozenset({".pdf", ".docx", ".xlsx"})

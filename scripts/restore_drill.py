@@ -224,6 +224,7 @@ class SeededTenant:
     identity_id: UUID
     brain_document_id: str
     brain_evidence_id: str
+    brain_run_id: UUID
     knowledge_entity_id: str
     knowledge_claim_id: str
 
@@ -331,6 +332,7 @@ def seed(
                     "brain.source.ingest",
                     "brain.document.publish",
                     "brain.search",
+                    "brain.changes.read",
                     "knowledge.review",
                     "knowledge.read",
                     "knowledge.search",
@@ -369,7 +371,8 @@ def seed(
             "errors": [],
         }
         datacore = DataCoreStore(store)
-        imported = datacore.import_fileos_snapshot(context, brain_manifest, uuid4())
+        brain_run_id = uuid4()
+        imported = datacore.import_fileos_snapshot(context, brain_manifest, brain_run_id)
         require(imported.new_versions == 1, "DataCore restore seed import failed")
         brain_document = datacore.publish_text(
             context,
@@ -378,6 +381,16 @@ def seed(
             code_revision="synthetic-restore-v1",
         )
         require(brain_document.changed, "DataCore restore seed publication failed")
+        run_receipt = datacore.complete_fileos_run(
+            context,
+            brain_manifest,
+            brain_run_id,
+            outcomes={"extracted": 1},
+            published_documents=1,
+            code_revision="synthetic-restore-v1",
+            document_processor_version=None,
+        )
+        require(run_receipt.recorded, "DataCore run receipt seed failed")
         knowledge = KnowledgeCore(store)
         entity = knowledge.publish(
             context,
@@ -578,6 +591,7 @@ def seed(
                 identity_id,
                 brain_document.document_id,
                 brain_document.evidence_id,
+                brain_run_id,
                 entity.object_id,
                 claim.object_id,
             )
@@ -728,6 +742,12 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         require(
             not DataCoreStore(store).search(ctx, foreign.keyword),
             "foreign restored DataCore evidence accessible",
+        )
+        freshness = DataCoreStore(store).fileos_freshness(ctx, f"files_{current.keyword}")
+        require(
+            freshness["status"] == "complete"
+            and freshness["latest_complete_run"]["run_id"] == current.brain_run_id,
+            "restored DataCore FileOS completion receipt changed",
         )
         knowledge = KnowledgeCore(store)
         knowledge_hits = knowledge.search(ctx, f"knowledgecoreproof {current.keyword}")

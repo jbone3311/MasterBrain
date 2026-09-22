@@ -63,6 +63,11 @@ revalidates the local identity around each item. PostgreSQL independently reject
 privileged/owning roles and rechecks owner membership under forced RLS. Results omit
 paths, filenames, content, credentials and diagnostics.
 
+FileOS completion receipts are append-only, forced-RLS records bound to the intake
+actor/request/manifest digest. Closed outcome counts must cover every item and match
+published documents. Freshness reads expose only the latest complete run and never a
+partial prefix, root or locator.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

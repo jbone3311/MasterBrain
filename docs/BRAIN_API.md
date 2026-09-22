@@ -23,6 +23,8 @@ objects, general SQL, or an unbounded corpus dump.
 - `GET /v1/brain/evidence/{id}` — implemented metadata/citation expansion.
 - `POST /v1/brain/evidence/{id}/content` — implemented separately scoped bounded text.
 - `GET /v1/brain/changes` — implemented cursor-bounded DataCore change feed.
+- `GET /v1/brain/sources/{source_id}/freshness` — implemented latest fully accounted
+  FileOS run or explicit `no_completed_run`; requires `brain.changes.read`.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes and keeps ranks separate.
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required

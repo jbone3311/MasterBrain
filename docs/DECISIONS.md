@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-055 FileOS completion and freshness](adr/055_fileos_completion_freshness.md)
+separates imported/partial work from an immutable fully accounted run and exposes only
+latest-complete source status.
+
 [ADR-054 authenticated FileOS publication](adr/054_fileos_operator_publication.md)
 adds a closed private operator configuration, exact worker scopes, idempotent snapshot
 publication and repeated authorization checks without source effects.

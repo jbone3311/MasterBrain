@@ -26,6 +26,7 @@
     "DataCore read-only hashing/dedupe and FileOS text extraction",
     "source-bound isolated FileOS PDF, DOCX and XLSX extraction",
     "explicit authenticated idempotent FileOS snapshot publication",
+    "append-only FileOS completion receipts and latest-complete freshness",
     "DataCore persistence, lexical retrieval and progressive Brain API",
     "reviewed KnowledgeCore assertions, retrieval and changes",
     "grouped DataCore and KnowledgeCore search",

@@ -69,7 +69,12 @@ The prototype FileOS publisher is an explicit one-shot operator process, not an 
 route or daemon. Mount its configuration/credential/token/manifest read-only, inject
 the least-privileged runtime DSN at process launch, run `--check`, then invoke once
 with a recorded UUID. Do not place Docker authority in the Brain API service. A future
-scheduler must add fenced leases and durable whole-run completion receipts first.
+scheduler must add fenced leases, source cursors and reconciliation first.
+
+Migration `0017_fileos_run_receipts.sql` and refreshed runtime grants must be applied
+before using completion/freshness. A rollout may continue older one-shot publication
+without the new controller revision, but must not advertise source freshness until
+the receipt table, constraints, RLS and restore verification are active.
 
 The current `compose.yaml` remains a local Email-capability PostgreSQL setup, not a
 production MasterBrain deployment.

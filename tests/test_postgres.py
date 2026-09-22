@@ -205,7 +205,14 @@ def datacore_context(ctx: TenantContext) -> TenantContext:
     return replace(
         ctx,
         scopes=ctx.scopes
-        | frozenset({"brain.source.ingest", "brain.document.publish", "brain.search"}),
+        | frozenset(
+            {
+                "brain.source.ingest",
+                "brain.document.publish",
+                "brain.search",
+                "brain.changes.read",
+            }
+        ),
     )
 
 
@@ -346,7 +353,7 @@ def test_datacore_rls_and_immutability(
 def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:
-    store, _ = database
+    store, admin = database
     ctx, _ = tenant
     ctx = datacore_context(ctx)
     good = tmp_path / "good.txt"
@@ -358,11 +365,13 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     manifest = fileos_manifest(tmp_path, source_id="files_adapter")
     changed.write_text("after", encoding="utf-8")
 
-    result = FileOSAdapter(DataCoreStore(store)).publish_snapshot(
+    core = DataCoreStore(store)
+    run_id = uuid4()
+    result = FileOSAdapter(core).publish_snapshot(
         ctx,
         tmp_path,
         manifest,
-        uuid4(),
+        run_id,
         code_revision="test-adapter-v1",
     )
     assert result.counts == {"changed": 1, "extracted": 1, "unsupported": 1}
@@ -370,7 +379,45 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert by_name["good.txt"].publication is not None
     assert by_name["changed.txt"].extraction.status is ExtractionStatus.CHANGED
     assert by_name["image.bin"].extraction.status is ExtractionStatus.UNSUPPORTED
-    hits = DataCoreStore(store).search(ctx, "searchable source")
+    assert core.fileos_freshness(ctx, "files_adapter") == {
+        "source_id": "files_adapter",
+        "status": "no_completed_run",
+        "latest_complete_run": None,
+        "partial_runs_included": False,
+    }
+    receipt = core.complete_fileos_run(
+        ctx,
+        manifest,
+        run_id,
+        outcomes=result.counts,
+        published_documents=1,
+        code_revision="test-adapter-v1",
+        document_processor_version=None,
+    )
+    assert receipt.recorded is True
+    assert (
+        core.complete_fileos_run(
+            ctx,
+            manifest,
+            run_id,
+            outcomes=result.counts,
+            published_documents=1,
+            code_revision="test-adapter-v1",
+            document_processor_version=None,
+        ).recorded
+        is False
+    )
+    with pytest.raises(Conflict):
+        core.complete_fileos_run(
+            ctx,
+            manifest,
+            run_id,
+            outcomes=result.counts,
+            published_documents=0,
+            code_revision="test-adapter-v1",
+            document_processor_version=None,
+        )
+    hits = core.search(ctx, "searchable source")
     assert len(hits) == 1 and hits[0].locator == "good.txt"
     token = secrets.token_urlsafe(40)
     api = TestClient(
@@ -416,6 +463,24 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert changes.status_code == 200
     assert len(changes.json()["results"]) == 1
     assert changes.json()["next_cursor"] is not None
+    freshness = api.get("/v1/brain/sources/files_adapter/freshness", headers=headers)
+    assert freshness.status_code == 200
+    assert freshness.json()["status"] == "complete"
+    assert freshness.json()["latest_complete_run"]["run_id"] == str(run_id)
+    assert freshness.json()["latest_complete_run"]["outcomes"] == result.counts
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE brain_fileos_run_receipts SET outcomes='{}' WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        )
+    with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+            "observed_at,manifest_sha256,code_revision,text_extractor_version,item_count,"
+            "outcomes,published_documents) VALUES (%s,%s,%s,'files_adapter',now(),%s,"
+            "'invalid-test','fileos-text-v1',3,'{\"extracted\":2}'::jsonb,1)",
+            (ctx.tenant_id, ctx.actor_id, uuid4(), "a" * 64),
+        )
 
 
 def knowledge_context(ctx: TenantContext) -> TenantContext:

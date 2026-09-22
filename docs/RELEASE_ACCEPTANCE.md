@@ -23,6 +23,8 @@ operator, date, result, exceptions and rollback receipt.
 - Document workers prove network isolation, read-only root, dropped capabilities,
   process/resource/output limits, dependency separation and closed-result validation.
 - Chunk/index rebuild produces equivalent identities and query results.
+- Source freshness advances only on an immutable receipt whose terminal counts cover
+  the exact intake manifest; crash prefixes and conflicts never report complete.
 - Dedupe never implies deletion; held-out/cross-domain protections pass.
 - Every migrated FOS tranche has zero unexplained golden differences and documented
   shadow tolerances.

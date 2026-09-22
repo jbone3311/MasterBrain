@@ -51,6 +51,11 @@ scopes and a request UUID, then repeatedly revalidates authority while invoking 
 same adapter. It emits only counts. Scheduling, effects and Docker authority are not
 part of the public API process.
 
+Whole-run completion is separate from intake and per-document publication. Only an
+append-only receipt whose terminal outcome counts cover the exact manifest advances a
+source's latest-complete freshness. A crash prefix stays replayable and visible as not
+complete; it cannot masquerade as a fresh source.
+
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.
