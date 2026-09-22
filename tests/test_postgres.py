@@ -621,6 +621,49 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
             second_generation.generation_id,
             first_activation_key,
         )
+    other_root = tmp_path / "other-source"
+    other_root.mkdir()
+    (other_root / "other.txt").write_text(
+        "MasterBrain searchable constellation", encoding="utf-8"
+    )
+    other_manifest = fileos_manifest(other_root, source_id="files_other", hour=3)
+    other_run_id = uuid4()
+    other_result = FileOSAdapter(core).publish_snapshot(
+        ctx,
+        other_root,
+        other_manifest,
+        other_run_id,
+        code_revision="test-adapter-v1",
+    )
+    other_by_version = {
+        item.extraction.version_id: item.extraction.status.value
+        for item in other_result.results
+    }
+    core.complete_fileos_run(
+        ctx,
+        other_manifest,
+        other_run_id,
+        outcomes=other_result.counts,
+        item_outcomes={
+            item["item_id"]: other_by_version[item["version_id"]]
+            for item in other_manifest["items"]
+        },
+        published_documents=1,
+        code_revision="test-adapter-v1",
+        document_processor_version=None,
+    )
+    other_generation = core.build_fileos_index_generation(
+        ctx,
+        "files_other",
+        other_run_id,
+        code_revision="test-index-v1",
+    )
+    core.activate_fileos_index_generation(
+        ctx, "files_other", other_generation.generation_id, uuid4()
+    )
+    cross_source_hits = core.search_current_fileos(ctx, "MasterBrain searchable")
+    assert {hit.source_id for hit in cross_source_hits} == {"files_adapter", "files_other"}
+    assert len(core.search_current_fileos(ctx, "MasterBrain searchable", limit=1)) == 1
     stale_run_id = uuid4()
     core.import_fileos_snapshot(ctx, manifest, stale_run_id)
     with pytest.raises(Conflict, match="not newer"):
