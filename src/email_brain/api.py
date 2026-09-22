@@ -44,6 +44,7 @@ from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import KnowledgePublishRequest, KnowledgeSearchRequest
 from masterbrain.schemas import (
     BrainSearchRequest,
+    CurrentGroupedSearchRequest,
     EmailFamilySearchRequest,
     EvidenceContentRequest,
     UnifiedSearchRequest,
@@ -449,6 +450,82 @@ def create_app(
             },
             "limits": {
                 "evidence": body.evidence_limit,
+                "knowledge": body.knowledge_limit,
+            },
+            "policy": {"scopes": ["brain.search", "knowledge.search"], "redactions": []},
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/current-search")
+    def current_grouped_search(
+        body: CurrentGroupedSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        if "knowledge.search" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        fileos_hits = brain.search_current_fileos(
+            principal.context, body.query, limit=body.fileos_limit
+        )
+        email_hits = brain.search_current_email_family(
+            principal.context,
+            body.query,
+            message_limit=body.email_message_limit,
+            attachment_limit=body.email_attachment_limit,
+            document_limit=body.email_document_limit,
+        )
+        knowledge_hits = knowledge.search(
+            principal.context,
+            body.query,
+            limit=body.knowledge_limit,
+            kinds=list(body.knowledge_kinds),
+        )
+
+        def evidence(hits: tuple[SearchHit, ...] | list[SearchHit]) -> list[dict[str, Any]]:
+            return [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ]
+
+        return {
+            "mode": "grouped_current_sources",
+            "ranking": "within_group_only",
+            "consistency": "independent_layer_reads",
+            "coverage": {
+                "fileos": "sources_with_active_generation_only",
+                "email": "explicitly_bridged_current_only",
+                "knowledge": "reviewed_retained_assertions",
+                "complete": False,
+            },
+            "layers": {
+                "fileos": evidence(fileos_hits),
+                "email_messages": evidence(email_hits.messages),
+                "email_attachments": evidence(email_hits.attachments),
+                "email_documents": evidence(email_hits.documents),
+                "knowledge": [
+                    {
+                        "object_kind": hit.object_kind,
+                        "object_id": hit.object_id,
+                        "title": hit.title,
+                        "excerpt": hit.excerpt,
+                        "rank": hit.rank,
+                        "evidence_ids": hit.evidence_ids,
+                    }
+                    for hit in knowledge_hits
+                ],
+            },
+            "limits": {
+                "fileos": body.fileos_limit,
+                "email_messages": body.email_message_limit,
+                "email_attachments": body.email_attachment_limit,
+                "email_documents": body.email_document_limit,
                 "knowledge": body.knowledge_limit,
             },
             "policy": {"scopes": ["brain.search", "knowledge.search"], "redactions": []},

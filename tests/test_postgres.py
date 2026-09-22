@@ -1219,7 +1219,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:
     store, admin = database
-    ctx, _ = tenant
+    ctx, account = tenant
     ctx = knowledge_context(ctx)
     source = tmp_path / "knowledge.txt"
     source.write_text("Alex at Acme committed to renew Project Atlas in October.", encoding="utf-8")
@@ -1254,6 +1254,19 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     )
     core.activate_fileos_index_generation(
         ctx, "files_knowledge", generation.generation_id, uuid4()
+    )
+    store.ingest_page(
+        ctx,
+        account,
+        None,
+        "knowledge-email-page",
+        [item("knowledge-email", body="Project Atlas current Email evidence")],
+    )
+    legacy_email = store.search(
+        ctx, SearchRequest(query="Project Atlas current Email evidence")
+    )[0]["evidence_id"]
+    current_email = core.bridge_current_email_version(
+        ctx, legacy_email, uuid4(), code_revision="knowledge-current-email-v1"
     )
     common = {
         "evidence_ids": [evidence_id],
@@ -1485,6 +1498,29 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     )
     assert current_unified.json()["layers"]["evidence"][0]["evidence_id"] == evidence_id
     assert current_unified.json()["layers"]["knowledge"][0]["object_id"] == project.object_id
+    grouped_current = api.post(
+        "/v1/brain/current-search",
+        json={
+            "query": "Project Atlas",
+            "fileos_limit": 5,
+            "email_message_limit": 5,
+            "email_attachment_limit": 5,
+            "email_document_limit": 5,
+            "knowledge_limit": 5,
+            "knowledge_kinds": ["project"],
+        },
+        headers=headers,
+    )
+    assert grouped_current.status_code == 200
+    grouped = grouped_current.json()
+    assert grouped["ranking"] == "within_group_only"
+    assert grouped["consistency"] == "independent_layer_reads"
+    assert grouped["coverage"]["complete"] is False
+    assert grouped["layers"]["fileos"][0]["evidence_id"] == evidence_id
+    assert grouped["layers"]["email_messages"][0]["evidence_id"] == current_email.evidence_id
+    assert grouped["layers"]["email_attachments"] == []
+    assert grouped["layers"]["email_documents"] == []
+    assert grouped["layers"]["knowledge"][0]["object_id"] == project.object_id
     fetched = api.get(f"/v1/knowledge/project/{project.object_id}", headers=headers)
     assert fetched.status_code == 200 and fetched.json()["title"] == "Project Atlas"
     created = api.post(

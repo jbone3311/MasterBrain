@@ -427,6 +427,113 @@ def test_unified_search_is_grouped_bounded_and_requires_both_scopes() -> None:
         )
 
 
+def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() -> None:
+    store = MagicMock(spec=Store)
+    brain = MagicMock(spec=DataCoreStore)
+    knowledge = MagicMock(spec=KnowledgeCore)
+    file_hit = SearchHit(
+        "chunk_" + "1" * 32,
+        "document_" + "1" * 32,
+        "evidence_" + "1" * 32,
+        "files_current",
+        "atlas.txt",
+        "Project Atlas file",
+        0.8,
+    )
+    email_hit = SearchHit(
+        "chunk_" + "2" * 32,
+        "document_" + "2" * 32,
+        "evidence_" + "2" * 32,
+        "email_current",
+        "message/00000000-0000-0000-0000-000000000002",
+        "Project Atlas email",
+        0.7,
+    )
+    brain.search_current_fileos.return_value = [file_hit]
+    brain.search_current_email_family.return_value = EmailFamilySearch(
+        (email_hit,), (), ()
+    )
+    knowledge.search.return_value = [
+        KnowledgeHit(
+            "project",
+            "project_" + "3" * 32,
+            "Project Atlas",
+            "reviewed project",
+            0.6,
+            (email_hit.evidence_id,),
+        )
+    ]
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    denied = TestClient(
+        create_app(
+            store,
+            registry({"brain.search"}),
+            brain_store=brain,
+            knowledge_store=knowledge,
+        )
+    )
+    assert (
+        denied.post("/v1/brain/current-search", json={"query": "Atlas"}, headers=headers)
+        .status_code
+        == 403
+    )
+    client = TestClient(
+        create_app(
+            store,
+            registry({"brain.search", "knowledge.search"}),
+            brain_store=brain,
+            knowledge_store=knowledge,
+        )
+    )
+    response = client.post(
+        "/v1/brain/current-search",
+        json={
+            "query": "Atlas",
+            "fileos_limit": 2,
+            "email_message_limit": 3,
+            "email_attachment_limit": 4,
+            "email_document_limit": 5,
+            "knowledge_limit": 6,
+            "knowledge_kinds": ["project"],
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "grouped_current_sources"
+    assert body["ranking"] == "within_group_only"
+    assert body["consistency"] == "independent_layer_reads"
+    assert body["coverage"]["complete"] is False
+    assert set(body["layers"]) == {
+        "fileos",
+        "email_messages",
+        "email_attachments",
+        "email_documents",
+        "knowledge",
+    }
+    assert body["layers"]["fileos"][0]["evidence_id"] == file_hit.evidence_id
+    assert body["layers"]["email_messages"][0]["evidence_id"] == email_hit.evidence_id
+    assert body["layers"]["email_attachments"] == []
+    assert body["layers"]["knowledge"][0]["object_kind"] == "project"
+    assert brain.search_current_fileos.call_args.kwargs == {"limit": 2}
+    assert brain.search_current_email_family.call_args.kwargs == {
+        "message_limit": 3,
+        "attachment_limit": 4,
+        "document_limit": 5,
+    }
+    assert knowledge.search.call_args.kwargs == {"limit": 6, "kinds": ["project"]}
+    for invalid in (
+        {"query": "Atlas", "fileos_limit": 21},
+        {"query": "Atlas", "email_message_limit": 0},
+        {"query": "Atlas", "knowledge_kinds": ["project", "project"]},
+        {"query": "Atlas", "unknown": True},
+    ):
+        assert (
+            client.post("/v1/brain/current-search", json=invalid, headers=headers).status_code
+            == 422
+        )
+
+
 def test_expiry_and_bad_token() -> None:
     assert registry(expired=True).authenticate(TOKEN) is None
     assert registry().authenticate("wrong-token" * 5) is None

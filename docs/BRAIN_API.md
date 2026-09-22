@@ -41,6 +41,10 @@ objects, general SQL, or an unbounded corpus dump.
 - `POST /v1/brain/email-family-search` — implemented current-only, independently
   bounded message/attachment/approved-document layers with within-layer ranks;
   requires `brain.search`.
+- `POST /v1/brain/current-search` — implemented grouped active-FileOS, current-Email-
+  family and reviewed-KnowledgeCore lexical read with independent limits/ranks,
+  explicit partial coverage and independent-layer consistency; requires both search
+  scopes.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes, keeps ranks separate,
   and accepts explicit `retained` or `current_fileos` evidence visibility.

@@ -63,6 +63,10 @@ mean hosted, live-source accepted, or production ready.
   message, attachment-text and approved-document layers, each fenced by current legacy
   parent and shared pointers. Existing reads remain unchanged; hosted PostgreSQL/
   restore gates green.
+- Explicit `/v1/brain/current-search` grouped read across active FileOS, current Email
+  family and reviewed KnowledgeCore results with independent bounds/ranks, partial-
+  coverage labels and declared independent-layer consistency; hosted verification is
+  pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -71,8 +75,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Email bridge batch/backfill, KnowledgeCore grouping of current Email-family evidence
-  and any redirect of legacy Email search.
+- Email bridge batch/backfill, atomic cross-layer snapshots, automated source coverage
+  accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
