@@ -64,6 +64,23 @@ timestamps, state and already-bridged labels only. `--after` continues only the
 selected kind; `--check` does not inspect the account. This preview creates no batch
 authority, bridge receipt, approval or provider/mailbox effect.
 
+Execute one reviewed attachment or document plan only after checking it:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain email bridge-parts-batch \
+  --config /private/operator/email-bridge.json \
+  --plan /private/operator/email-attachment-batch.json \
+  --check
+```
+
+The owner-private plan contains one account, one exact `attachment` or `document`
+kind, the configured revision, 1–100 unique ordered target/key pairs and a canonical
+digest covering all of them. Remove `--check` only after validation. Execution stops
+at the first refused dependency; retry the exact unchanged plan so completed items
+replay. It never mixes kinds, follows preview cursors, bridges missing dependencies,
+contacts providers or changes a mailbox.
+
 Execute one reviewed, sealed plan only after checking it:
 
 ```sh

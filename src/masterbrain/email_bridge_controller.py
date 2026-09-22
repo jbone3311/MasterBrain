@@ -104,6 +104,68 @@ class EmailBridgeBatchPlan(ClosedModel):
             raise ValueError("invalid batch digest")
         return self
 
+
+class EmailPartBridgeBatchItem(ClosedModel):
+    legacy_id: UUID
+    idempotency_key: UUID
+
+
+def email_part_bridge_batch_sha256(
+    version: int,
+    account_id: UUID,
+    kind: Literal["attachment", "document"],
+    code_revision: str,
+    items: list[EmailPartBridgeBatchItem],
+) -> str:
+    payload = {
+        "version": version,
+        "account_id": str(account_id),
+        "kind": kind,
+        "code_revision": code_revision,
+        "items": [
+            {
+                "legacy_id": str(item.legacy_id),
+                "idempotency_key": str(item.idempotency_key),
+            }
+            for item in items
+        ],
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+class EmailPartBridgeBatchPlan(ClosedModel):
+    version: Literal[1]
+    account_id: UUID
+    kind: Literal["attachment", "document"]
+    code_revision: str = Field(min_length=1, max_length=200)
+    items: list[EmailPartBridgeBatchItem] = Field(min_length=1, max_length=100)
+    plan_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+    @field_validator("code_revision")
+    @classmethod
+    def safe_revision(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("invalid code revision")
+        return value
+
+    @model_validator(mode="after")
+    def sealed_and_unique(self) -> EmailPartBridgeBatchPlan:
+        legacy_ids = [item.legacy_id for item in self.items]
+        keys = [item.idempotency_key for item in self.items]
+        if len(set(legacy_ids)) != len(legacy_ids) or len(set(keys)) != len(keys):
+            raise ValueError("duplicate part batch identity")
+        expected = email_part_bridge_batch_sha256(
+            self.version,
+            self.account_id,
+            self.kind,
+            self.code_revision,
+            self.items,
+        )
+        if self.plan_sha256 != expected:
+            raise ValueError("invalid part batch digest")
+        return self
+
 def _current(identity: WorkerIdentity, initial: Principal) -> Principal:
     principal = identity.authenticate()
     if (
@@ -306,6 +368,97 @@ def run_email_bridge_batch_controller(
             "results": results,
             "complete": True,
             "failed_version_id": None,
+            "error_code": None,
+            "source_effects": False,
+        }
+    except Exception:
+        raise EmailBridgeControllerError() from None
+
+
+def run_email_part_bridge_batch_controller(
+    path: Path,
+    plan_path: Path,
+    dsn: str,
+    *,
+    check: bool = False,
+) -> dict[str, Any]:
+    """Validate or execute one sealed attachment or approved-document batch."""
+    try:
+        if not dsn:
+            raise EmailBridgeControllerError()
+        config = EmailBridgeControllerConfig.model_validate(_json(path))
+        plan = EmailPartBridgeBatchPlan.model_validate(_json(plan_path))
+        if plan.code_revision != config.code_revision:
+            raise EmailBridgeControllerError()
+        identity = WorkerIdentity(
+            config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
+        )
+        initial = identity.authenticate()
+        store = Store(dsn)
+        with store.transaction(initial.context):
+            pass
+        _current(identity, initial)
+        if check:
+            return {
+                "configuration_valid": True,
+                "execution_verified": False,
+                "operation": "email_part_bridge_batch",
+                "kind": plan.kind,
+                "plan_sha256": plan.plan_sha256,
+                "requested": len(plan.items),
+                "source_effects": False,
+                "data_effects": False,
+            }
+        core = DataCoreStore(store)
+        operation = (
+            "bridge_email_attachment"
+            if plan.kind == "attachment"
+            else "bridge_email_document_extraction"
+        )
+        bridge = getattr(core, operation)
+        results: list[dict[str, Any]] = []
+        recorded = 0
+        replayed = 0
+        for item in plan.items:
+            _current(identity, initial)
+            try:
+                result = bridge(
+                    initial.context,
+                    item.legacy_id,
+                    item.idempotency_key,
+                    code_revision=config.code_revision,
+                    expected_account_id=plan.account_id,
+                )
+            except (Conflict, NotFound, ValueError):
+                return {
+                    "operation": "email_part_bridge_batch",
+                    "kind": plan.kind,
+                    "plan_sha256": plan.plan_sha256,
+                    "requested": len(plan.items),
+                    "completed": len(results),
+                    "recorded": recorded,
+                    "replayed": replayed,
+                    "results": results,
+                    "complete": False,
+                    "failed_legacy_id": str(item.legacy_id),
+                    "error_code": "bridge_refused",
+                    "source_effects": False,
+                }
+            _current(identity, initial)
+            recorded += int(result.changed)
+            replayed += int(not result.changed)
+            results.append({"legacy_id": str(item.legacy_id), "recorded": result.changed})
+        return {
+            "operation": "email_part_bridge_batch",
+            "kind": plan.kind,
+            "plan_sha256": plan.plan_sha256,
+            "requested": len(plan.items),
+            "completed": len(results),
+            "recorded": recorded,
+            "replayed": replayed,
+            "results": results,
+            "complete": True,
+            "failed_legacy_id": None,
             "error_code": None,
             "source_effects": False,
         }

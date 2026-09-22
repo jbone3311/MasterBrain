@@ -1,6 +1,6 @@
 # ADR-074 — Sealed Email attachment and document bridge batches
 
-Status: accepted design; implementation pending.
+Status: implemented; hosted verification pending.
 
 ## Context
 

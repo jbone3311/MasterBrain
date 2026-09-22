@@ -806,11 +806,17 @@ class DataCoreStore:
         idempotency_key: UUID,
         *,
         code_revision: str,
+        expected_account_id: UUID | None = None,
     ) -> EmailAttachmentBridgeResult:
         """Map one immutable Email attachment occurrence without reading its bytes."""
         self.store.require(ctx, "brain.source.ingest")
         self.store.require(ctx, "brain.document.publish")
-        if not code_revision or len(code_revision) > 200 or "\x00" in code_revision:
+        if (
+            not code_revision
+            or len(code_revision) > 200
+            or "\x00" in code_revision
+            or (expected_account_id is not None and not isinstance(expected_account_id, UUID))
+        ):
             raise ValueError("invalid attachment bridge code revision")
         request_hash = _canonical_digest(
             {
@@ -828,6 +834,15 @@ class DataCoreStore:
                 "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
                 (f"{ctx.tenant_id}:email-attachment-bridge:{legacy_attachment_id}",),
             )
+            if expected_account_id is not None:
+                sealed_identity = conn.execute(
+                    "SELECT account_id FROM attachment_receipts WHERE id=%s",
+                    (legacy_attachment_id,),
+                ).fetchone()
+                if not sealed_identity:
+                    raise NotFound()
+                if sealed_identity["account_id"] != expected_account_id:
+                    raise Conflict("attachment is outside the sealed batch account")
             receipt = conn.execute(
                 f"SELECT {receipt_columns} FROM brain_email_attachment_bridge_receipts "
                 "WHERE actor_id=%s AND idempotency_key=%s",
@@ -1156,11 +1171,17 @@ class DataCoreStore:
         idempotency_key: UUID,
         *,
         code_revision: str,
+        expected_account_id: UUID | None = None,
     ) -> EmailDocumentBridgeResult:
         """Publish one approved legacy PDF derivative on existing attachment evidence."""
         self.store.require(ctx, "brain.source.ingest")
         self.store.require(ctx, "brain.document.publish")
-        if not code_revision or len(code_revision) > 200 or "\x00" in code_revision:
+        if (
+            not code_revision
+            or len(code_revision) > 200
+            or "\x00" in code_revision
+            or (expected_account_id is not None and not isinstance(expected_account_id, UUID))
+        ):
             raise ValueError("invalid document bridge code revision")
         request_hash = _canonical_digest(
             {
@@ -1178,6 +1199,15 @@ class DataCoreStore:
                 "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
                 (f"{ctx.tenant_id}:email-document-bridge:{legacy_extraction_id}",),
             )
+            if expected_account_id is not None:
+                sealed_identity = conn.execute(
+                    "SELECT account_id FROM document_extractions WHERE id=%s",
+                    (legacy_extraction_id,),
+                ).fetchone()
+                if not sealed_identity:
+                    raise NotFound()
+                if sealed_identity["account_id"] != expected_account_id:
+                    raise Conflict("document is outside the sealed batch account")
             receipt = conn.execute(
                 f"SELECT {receipt_columns} FROM brain_email_document_bridge_receipts "
                 "WHERE actor_id=%s AND idempotency_key=%s",

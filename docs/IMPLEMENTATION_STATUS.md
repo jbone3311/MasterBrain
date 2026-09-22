@@ -79,6 +79,9 @@ mean hosted, live-source accepted, or production ready.
 - Private, read-only `masterbrain email bridge-parts-plan` command with separate stable
   attachment and approved-document queues, current parent/dependency fencing and
   content-free output; hosted PostgreSQL/restore gates green.
+- Private `masterbrain email bridge-parts-batch` command for one owner-private,
+  digest-bound attachment or approved-document plan with fixed keys, batch account
+  fencing, fail-stop execution and exact-plan replay; hosted verification is pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -87,8 +90,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Email attachment/document sealed batch execution, atomic cross-layer snapshots,
-  automated source coverage
+- Automatic Email backfill scheduling, atomic cross-layer snapshots and automated
+  source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.

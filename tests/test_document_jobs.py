@@ -1,6 +1,7 @@
 """Real SQL source-to-search and adversarial document approval tests; synthetic only."""
 
 import hashlib
+import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
@@ -25,8 +26,11 @@ from email_brain.schemas import SearchRequest
 from email_brain.store import AccessDenied, Conflict, NotFound
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.email_bridge_controller import (
+    EmailPartBridgeBatchItem,
+    email_part_bridge_batch_sha256,
     run_email_attachment_bridge_controller,
     run_email_document_bridge_controller,
+    run_email_part_bridge_batch_controller,
 )
 
 database, tenant = pg.database, pg.tenant
@@ -296,6 +300,61 @@ def test_email_part_bridge_preview_preserves_dependencies_and_current_state(
         )
     assert core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"] == []
     assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"] == []
+
+
+def test_email_document_batch_executes_and_replays_without_legacy_mutation(
+    database, tenant, tmp_path
+):
+    store, _ = database
+    ctx, account = tenant
+    jobs, _, worker, receipt, _ = setup(database, tenant)
+    completed_job = jobs.run_once(worker, account, FakePdf())
+    extraction_id = completed_job["extraction_id"]
+    assert extraction_id is not None
+    bridge_ctx = pg.datacore_context(ctx)
+    core = DataCoreStore(store)
+    with store.transaction(ctx) as conn:
+        parent_id = conn.execute(
+            "SELECT evidence_id FROM attachment_receipts WHERE id=%s", (receipt,)
+        ).fetchone()["evidence_id"]
+    code_revision = "email-document-batch-test-v1"
+    core.bridge_current_email_version(
+        bridge_ctx, parent_id, uuid4(), code_revision=code_revision
+    )
+    core.bridge_email_attachment(
+        bridge_ctx, receipt, uuid4(), code_revision=code_revision
+    )
+    before = store.evidence(ctx, parent_id)
+    config = pg.email_bridge_config(tmp_path, ctx, code_revision)
+    item = EmailPartBridgeBatchItem(
+        legacy_id=extraction_id, idempotency_key=uuid4()
+    )
+    digest = email_part_bridge_batch_sha256(
+        1, account, "document", code_revision, [item]
+    )
+    plan = tmp_path / "document-batch.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "account_id": str(account),
+                "kind": "document",
+                "code_revision": code_revision,
+                "items": [item.model_dump(mode="json")],
+                "plan_sha256": digest,
+            }
+        )
+    )
+    plan.chmod(0o600)
+    checked = run_email_part_bridge_batch_controller(
+        config, plan, store.dsn, check=True
+    )
+    assert checked["data_effects"] is False and checked["kind"] == "document"
+    recorded = run_email_part_bridge_batch_controller(config, plan, store.dsn)
+    assert recorded["complete"] is True and recorded["recorded"] == 1
+    replayed = run_email_part_bridge_batch_controller(config, plan, store.dsn)
+    assert replayed["complete"] is True and replayed["replayed"] == 1
+    assert store.evidence(ctx, parent_id) == before
 
 
 def test_unapproved_pdf_extraction_cannot_bridge(database, tenant):

@@ -39,9 +39,12 @@ from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.email_bridge_controller import (
     EmailBridgeBatchItem,
+    EmailPartBridgeBatchItem,
     email_bridge_batch_sha256,
+    email_part_bridge_batch_sha256,
     run_email_bridge_batch_controller,
     run_email_bridge_controller,
+    run_email_part_bridge_batch_controller,
 )
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
@@ -628,6 +631,88 @@ def test_email_bridge_batch_fail_stop_and_exact_retry(
     with store.transaction(bridge_ctx) as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_email_bridge_receipts"
+        ).fetchone()["n"] == 3
+
+
+def test_email_attachment_batch_fail_stop_account_fence_and_exact_retry(
+    database: tuple[Store, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    ctx, account = tenant
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    code_revision = "email-attachment-batch-test-v1"
+    config = email_bridge_config(tmp_path, ctx, code_revision)
+    store.ingest_page(ctx, account, None, "attachment-batch-page", [attachment_item()])
+    parent_id = store.search(
+        ctx, SearchRequest(query="Synthetic attachment accounting")
+    )[0]["evidence_id"]
+    core.bridge_current_email_version(
+        bridge_ctx, parent_id, uuid4(), code_revision=code_revision
+    )
+    preview = core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"]
+    assert len(preview) == 3
+    items = [
+        EmailPartBridgeBatchItem(
+            legacy_id=UUID(row["legacy_attachment_id"]), idempotency_key=uuid4()
+        )
+        for row in preview
+    ]
+    with pytest.raises(Conflict, match="sealed batch account"):
+        core.bridge_email_attachment(
+            bridge_ctx,
+            items[0].legacy_id,
+            uuid4(),
+            code_revision=code_revision,
+            expected_account_id=uuid4(),
+        )
+    digest = email_part_bridge_batch_sha256(
+        1, account, "attachment", code_revision, items
+    )
+    plan = tmp_path / "attachment-batch.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "account_id": str(account),
+                "kind": "attachment",
+                "code_revision": code_revision,
+                "items": [item.model_dump(mode="json") for item in items],
+                "plan_sha256": digest,
+            }
+        )
+    )
+    plan.chmod(0o600)
+    assert run_email_part_bridge_batch_controller(
+        config, plan, store.dsn, check=True
+    )["data_effects"] is False
+    original = DataCoreStore.bridge_email_attachment
+    calls = 0
+
+    def fail_second(self: DataCoreStore, *args: Any, **kwargs: Any) -> Any:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise Conflict("synthetic mid-batch refusal")
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(DataCoreStore, "bridge_email_attachment", fail_second)
+    stopped = run_email_part_bridge_batch_controller(config, plan, store.dsn)
+    assert stopped["complete"] is False and stopped["completed"] == 1
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
+        ).fetchone()["n"] == 1
+    monkeypatch.setattr(DataCoreStore, "bridge_email_attachment", original)
+    completed = run_email_part_bridge_batch_controller(config, plan, store.dsn)
+    assert completed["complete"] is True
+    assert completed["recorded"] == 2 and completed["replayed"] == 1
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_attachment_bridge_receipts"
         ).fetchone()["n"] == 3
 
 

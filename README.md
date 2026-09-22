@@ -60,6 +60,7 @@ FileOS sources ┘       │              │                │
 | Private Email bridge backfill preview | Implemented; hosted PostgreSQL and restore gates green |
 | Sealed Email message bridge batches | Implemented; hosted PostgreSQL and restore gates green |
 | Email attachment/document bridge preview | Implemented; hosted PostgreSQL and restore gates green |
+| Sealed Email attachment/document batches | Implemented; hosted verification pending |
 | Current-only bridged Email Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Email attachment occurrence/text bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Approved Email PDF derivative bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
