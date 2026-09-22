@@ -45,6 +45,9 @@ objects, general SQL, or an unbounded corpus dump.
   family and reviewed-KnowledgeCore lexical read with independent limits/ranks,
   explicit partial coverage and independent-layer consistency; requires both search
   scopes.
+- `GET /v1/brain/current-coverage` — ADR-070 planned bounded status for registered
+  FileOS generation readiness and explicitly bridged current Email family coverage;
+  will require `brain.changes.read` and will not enumerate providers or paths.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes, keeps ranks separate,
   and accepts explicit `retained` or `current_fileos` evidence visibility.

@@ -97,10 +97,10 @@ existing independent-read consistency contract.
 
 ## Current work
 
-- Inventory the exact currentness and timestamp facts already present for FileOS and
-  bridged Email without adding a scheduler or source-enumeration side channel.
-- Define bounded status semantics, authorization, caps and missing/stale states before
-  adding a route or persistence query.
+- Implement ADR-070's single-transaction, cursor-bounded registered-source status read
+  without adding a scheduler or provider/filesystem enumeration side channel.
+- Prove FileOS readiness/completion comparison, Email current-family counts,
+  pagination, scope denial and tenant isolation before exposing the route as accepted.
 
 ## Deferred by design
 

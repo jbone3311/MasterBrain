@@ -75,6 +75,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
+- Bounded current-source coverage status for active FileOS generation readiness and
+  explicitly bridged current Email family counts/timestamps (ADR-070).
 - Email bridge batch/backfill, atomic cross-layer snapshots, automated source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation

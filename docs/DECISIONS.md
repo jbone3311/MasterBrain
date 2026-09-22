@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-070](adr/070_current_source_coverage.md) defines a bounded, separately authorized
+status view for active FileOS generation readiness and explicitly bridged current Email
+coverage. It exposes only registered opaque sources and existing facts; implementation
+is pending.
+
 [ADR-069](adr/069_grouped_current_source_search.md) defines a compact grouped read
 across active FileOS, current Email-family evidence and reviewed KnowledgeCore with
 independent limits/ranks and explicit partial coverage. Hosted PostgreSQL and restore
