@@ -29,6 +29,10 @@ version or code revision. Output contains opaque identities, chunk count and rep
 state, never Email content, addresses or provider identifiers. The command does not
 scan an account, contact a provider, modify a mailbox or redirect legacy Email search.
 
+ADR-071 reserves `masterbrain email bridge-plan` for a future private, read-only and
+cursor-bounded preview of eligible current versions in one explicit account. It is not
+implemented yet; no batch bridge executor or automatic backfill is authorized.
+
 ## Bridge one Email attachment or approved PDF derivative
 
 After the parent message bridge succeeds, the same private config can bridge one
