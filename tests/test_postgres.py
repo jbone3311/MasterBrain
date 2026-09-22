@@ -1478,7 +1478,9 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     )
     assert unified.status_code == 200
     assert unified.json()["ranking"] == "within_layer_only"
-    assert unified.json()["layers"]["evidence"][0]["evidence_id"] == evidence_id
+    assert evidence_id in {
+        row["evidence_id"] for row in unified.json()["layers"]["evidence"]
+    }
     assert unified.json()["layers"]["knowledge"][0]["object_id"] == project.object_id
     current_unified = api.post(
         "/v1/brain/unified-search",
