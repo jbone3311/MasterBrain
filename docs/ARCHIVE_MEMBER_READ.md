@@ -1,4 +1,6 @@
-# Hash-bound archive member read plan
+# Hash-bound archive member read contract
+
+Implemented in `c7d2d27`. Hosted CI 35789652225 and restore 35789652166 are green.
 
 ## Purpose
 
@@ -55,3 +57,9 @@ normalization, document extraction, search, API, scheduler or FileOS effect is a
    failures collapse to one content-free unavailable error;
 6. a real immutable container invocation, live donor baseline, full PostgreSQL suite
    and populated restore remain green.
+
+All six gates passed. The hosted suite ran 2,525 Python tests; the dedicated immutable
+archive image passed both inventory checks and two real member-read checks. The pinned
+FOS-Master archive suite remained 47/47 and the six-case live golden comparison passed.
+The member result remains transient and `unscanned`; no evidence, document, chunk,
+search row, public API, scheduler or FileOS effect was added.

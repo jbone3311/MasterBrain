@@ -98,7 +98,7 @@ roadmap item is not an implementation claim.
 - [FileOS PDF and Office extraction](docs/FILEOS_DOCUMENT_EXTRACTION.md)
 - [FileOS archive donor audit and extraction plan](docs/FILEOS_ARCHIVE_EXTRACTION.md)
 - [Archive manifest persistence plan](docs/ARCHIVE_MANIFEST_PERSISTENCE.md)
-- [Hash-bound archive member read plan](docs/ARCHIVE_MEMBER_READ.md)
+- [Hash-bound archive member read contract](docs/ARCHIVE_MEMBER_READ.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)

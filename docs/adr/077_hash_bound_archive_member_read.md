@@ -1,6 +1,6 @@
 # ADR-077 — Read one persisted archive member by hash
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `c7d2d27`; hosted CI/restore green.
 
 ## Context
 

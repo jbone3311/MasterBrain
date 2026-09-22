@@ -2,12 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4P — hash-bound one-member archive read design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define an isolated request that selects one
-persisted member from one exact current archive version by inventory, safe locator,
-expected hash and size. The response must be bounded to that one member and verified
-by the parent. No automatic fan-out, normalization, persistence or search publication
-enters this design.
+**Checkpoint 4Q — archive-derived text extraction design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define how one explicit, hash-bound member
+read can enter the existing bounded text normalization path with immutable parent/
+member provenance and no automatic archive fan-out. Design persistence, replay and
+current-source fences before adding a command or search publication.
 
 ## Completed gates
 
@@ -124,18 +123,21 @@ enters this design.
   upgrade-list correction `08ccb68` passed hosted
   [CI 35783950712](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35783950712)
   plus [restore 35783950915](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35783950915).
+- Checkpoint 4P archive-member design `0195a53` and runtime `c7d2d27` passed the
+  pinned donor 47-test suite/live golden, 2,525 hosted Python tests, real restricted
+  archive-member invocation and
+  [CI 35789652225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35789652225)
+  plus [restore 35789652166](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35789652166).
 
 ## Current work
 
-- Implement ADR-077's closed one-member contract, fixed child command and parent
-  verifier with an independent 8 MiB output cap.
-- Add forced-RLS current-inventory resolution, source revalidation, nested ZIP/TAR
-  identity tests, hostile/fault corpus and actual restricted-container invocation.
+- Specify one-member plain-text normalization and append-only derived evidence without
+  expanding an archive automatically or weakening current-version/replay fences.
 
 ## Deferred by design
 
-- Archive member-byte reads, archive-derived extraction/search, images and OCR until
-  separate format/fault/persistence gates exist.
+- Archive-derived extraction/search, images and OCR until separate format/fault/
+  persistence gates exist.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.

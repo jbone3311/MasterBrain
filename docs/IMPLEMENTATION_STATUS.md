@@ -30,6 +30,12 @@ mean hosted, live-source accepted, or production ready.
   source and immutable processor versions, with sealed child ledgers and exact replay;
   hosted PostgreSQL/restore gates green. It stores no member bytes and publishes no
   evidence, documents, chunks or search entries.
+- Hash-bound read of exactly one persisted non-container archive member through a
+  separate fixed restricted-image command. Forced-RLS selection requires the current
+  FileOS source version; the parent reopens it through no-follow descriptors, verifies
+  file identity before/after, and independently verifies the returned member hash and
+  size. Output is capped at 8 MiB, remains unscanned and is not persisted or searched;
+  hosted PostgreSQL/container/restore gates are green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -103,8 +109,8 @@ mean hosted, live-source accepted, or production ready.
   source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
-  scheduling/global-search cutover and legacy image/OCR extraction. Archive member-byte
-  retrieval and archive-derived extraction/search remain designed follow-on gates.
+  scheduling/global-search cutover and legacy image/OCR extraction. Archive-derived
+  normalization, evidence publication and search remain designed follow-on gates.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

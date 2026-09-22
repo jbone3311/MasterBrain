@@ -65,10 +65,11 @@ manifest only:
 - explicit extracted/deferred/refused/failed status with a closed reason code;
 - total member/byte counts, bomb state and complete/partial state.
 
-It returns neither member bytes nor extracted text. This keeps the response bounded
-and lets DataCore record immutable child identities/provenance without trusting paths.
-A later explicit member-read contract can return one hash-bound bounded member to the
-existing text/document workers. No archive is silently expanded into search.
+The inventory response returns neither member bytes nor extracted text. This keeps it
+bounded and lets DataCore record immutable child identities/provenance without trusting
+paths. ADR-077 now implements a separate explicit read of one persisted, non-container
+member with an 8 MiB response cap, independent parent hash verification and no
+persistence. No archive is silently expanded into search.
 
 The worker preserves donor limits and adds a 32 MiB compressed-input bound required by
 the 512 MiB pipe/container memory budget. ZIP/TAR parsing uses `BytesIO`; nested member
@@ -96,6 +97,9 @@ Acceptance status:
    populated restore for the hash-only manifest ledger.
 6. **Passed:** source bytes remained immutable and FOS-Master stayed clean at the pinned
    commit.
+7. **Passed:** one-member forced-RLS/current-version resolution, no-follow source
+   revalidation, nested identity, true output-cap, hostile/fault and real restricted-
+   container checks in CI 35789652225 and restore 35789652166.
 
 No archive child becomes searchable and no FileOS cutover is authorized by this
 inventory tranche.
