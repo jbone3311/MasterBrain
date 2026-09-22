@@ -27,6 +27,9 @@
 - Checkpoint 4 foundation revision `7d2afbf` passed hosted
   [CI 35706332421](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35706332421)
   and [restore 35706332264](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35706332264).
+- Checkpoint 5 grouped retrieval revision `b60acd2` passed hosted
+  [CI 35707895947](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35707895947)
+  and [restore 35707895954](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35707895954).
 
 ## Current work
 

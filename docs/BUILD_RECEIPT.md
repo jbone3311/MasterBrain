@@ -2,6 +2,29 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified grouped MasterBrain retrieval
+
+Runtime/test revision **b60acd2** adds a dual-scope, grouped search over DataCore
+evidence and KnowledgeCore assertions. It passed
+[CI 35707895947](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35707895947)
+and [restore 35707895954](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35707895954),
+observed 2026-09-22 Pacific.
+
+- The hosted suite passed **2,369 Python tests** with no skips and two dependency
+  warnings; Ruff and strict mypy over **61 source files** passed.
+- **134 Node contracts**, five actual MIME-container cases and 15 actual PDF-container
+  cases passed. Documentation verification passed **117 Markdown files / 762 local
+  paths and fragments**.
+- The real PostgreSQL test publishes source text and a reviewed project, then verifies
+  one `/v1/brain/unified-search` request returns both evidence and knowledge layers.
+  Unit contracts prove dual-scope enforcement, independent 25-result caps, strict
+  kind filters and explicit `within_layer_only` ranking.
+- The populated PostgreSQL 17 restore remained green. This additive endpoint does not
+  change stored data, migrate legacy Email evidence, calibrate cross-layer ranks,
+  synthesize answers or authorize source effects.
+- Local gates passed **2,019 tests / 350 explicit PostgreSQL skips**. Local SQL skips
+  are not passes; the hosted suite exercised the PostgreSQL endpoint.
+
 ## Verified reviewed KnowledgeCore foundation
 
 Runtime/test revision **7d2afbf** adds the reviewed, evidence-linked KnowledgeCore
