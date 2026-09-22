@@ -113,7 +113,9 @@ def test_admin_dsn_and_revoked_local_worker_are_refused(
     with psycopg.connect(admin) as conn:
         assert (
             conn.execute(
-                "SELECT count(*) FROM brain_sources WHERE id='files_operational'"
+                "SELECT count(*) FROM brain_sources "
+                "WHERE tenant_id=%s AND id='files_operational'",
+                (ctx.tenant_id,),
             ).fetchone()[0]
             == 0
         )
