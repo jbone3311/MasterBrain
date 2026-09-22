@@ -2,6 +2,34 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified isolated FileOS PDF and Office extraction
+
+Runtime/test revision **a6488c66ff5027789be093374b9b269f2c945fa2** adds the
+source-bound, isolated DataCore PDF/DOCX/XLSX path. It passed
+[CI 35711403192](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403192)
+and [restore 35711403138](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403138),
+observed 2026-09-22 Pacific.
+
+- The hosted suite passed **2,379 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated the same suite successfully. Ruff, strict mypy over
+  **64 source files**, **134 Node contracts**, and documentation verification over
+  **119 Markdown files / 771 local paths and fragments** passed.
+- The dedicated locked worker image built from the dependency lock. Five real-container
+  cases passed: bounded PDF, DOCX and XLSX reads; source substitution/external-link
+  refusal; and PostgreSQL publication/search of all three formats without source writes.
+- The ordinary runtime image still excludes `pypdf`, `openpyxl`, `python-docx` and
+  `lxml`. The existing five MIME-container and 15 PDF-container cases also remained
+  green. The populated PostgreSQL 17 logical restore passed in 29 seconds.
+- The live donor harness matched unchanged FOS-Master commit
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15** for DOCX/XLSX extracted tokens and
+  sheet counts plus the prior text/HTML/CSV/hash/dedupe and **3,000-file** stress corpus.
+- Local gates passed **2,029 tests / 350 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, docs and deployment checks. Local SQL skips are not
+  passes; the hosted suite and container publication case exercised PostgreSQL.
+- This is a read-only additive tranche, not antivirus or production acceptance.
+  Legacy Office, archives, images/OCR, root enrollment, incremental operation,
+  live-source shadowing, effects, cutover, FOS rename and retirement remain open.
+
 ## Verified grouped MasterBrain retrieval
 
 Runtime/test revision **b60acd2** adds a dual-scope, grouped search over DataCore

@@ -2,7 +2,7 @@
 
 ## Active checkpoint
 
-**Checkpoint 3B — isolated FileOS documents.** Work occurs on
+**Checkpoint 3C — enrolled incremental FileOS operation.** Work occurs on
 `codex/masterbrain-foundation` in PR #4.
 
 ## Completed gates
@@ -30,13 +30,16 @@
 - Checkpoint 5 grouped retrieval revision `b60acd2` passed hosted
   [CI 35707895947](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35707895947)
   and [restore 35707895954](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35707895954).
+- Checkpoint 3B isolated PDF/DOCX/XLSX revision `a6488c6` passed hosted
+  [CI 35711403192](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403192)
+  and [restore 35711403138](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403138).
 
 ## Current work
 
-- Source-bound, isolated PDF/DOCX/XLSX extraction with a dedicated runtime image.
-- Real-format fault corpus, exact source re-hashing, sibling isolation and shared
-  DataCore publication/search.
-- Expanded pinned-donor DOCX/XLSX parity and mandatory hosted container checks.
+- Add a narrow operator command that enrolls an explicit root and performs
+  snapshot/import/extract publication without granting source-write authority.
+- Preserve monotonic run receipts and make retry/replay/source drift observable.
+- Exercise text and isolated document paths together against PostgreSQL.
 
 ## Deferred by design
 

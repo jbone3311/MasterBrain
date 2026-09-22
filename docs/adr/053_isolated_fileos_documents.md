@@ -1,7 +1,6 @@
 # ADR-053 — Isolated, source-bound FileOS PDF and Office extraction
 
-Status: accepted for the additive prototype tranche on 2026-09-22, pending the first
-hosted container gate.
+Status: accepted and verified for the additive prototype tranche on 2026-09-22.
 
 ## Decision
 
@@ -48,6 +47,12 @@ bytes are withheld until container isolation is inspected, source substitution i
 rejected, and owned cleanup is mandatory. Hosted CI must build the dedicated image,
 run all formats through the real container and publish them through PostgreSQL to
 shared search without modifying their source files.
+
+Revision `a6488c6` passed that gate in
+[CI 35711403192](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403192):
+five real-container cases covered all three formats, hostile/source-binding behavior
+and PostgreSQL publication. The populated restore passed separately in
+[run 35711403138](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403138).
 
 Rollback removes the processor image/configuration and constructs `FileOSAdapter`
 without a document processor. PDF/DOCX/XLSX then return the earlier unsupported

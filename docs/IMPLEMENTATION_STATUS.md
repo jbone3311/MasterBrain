@@ -21,7 +21,7 @@ mean hosted, live-source accepted, or production ready.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted
-  worker image with archive/active-content bounds; hosted container acceptance pending.
+  worker image with archive/active-content bounds; hosted container and restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

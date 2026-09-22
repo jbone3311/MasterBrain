@@ -21,7 +21,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Audited safe move/rename, collision diversion, quarantine | Donor only | Later effect broker |
 | FileOS | Held-out-test and cross-domain dedupe protections | Donor only; required invariant | DataCore policy + effect broker |
 | FileOS | Intake classification/routing/preflight | Donor only | FileOS adapter + DataCore |
-| FileOS | PDF/DOCX/XLSX text/metadata extraction and indexing | Isolated shared tranche implemented; hosted gate pending | DataCore |
+| FileOS | PDF/DOCX/XLSX text/metadata extraction and indexing | Isolated shared tranche; hosted container/SQL gate green | DataCore |
 | FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
 
 ## DataCore

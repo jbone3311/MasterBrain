@@ -70,3 +70,5 @@ MASTERBRAIN_DOCUMENT_IMAGE_ID="$(docker image inspect masterbrain-documents-ci -
 ```
 
 CI is the authoritative container gate when the local host has no Docker executable.
+The first full gate passed at revision `a6488c6`: **2,379 Python tests**, five real
+document-container cases and a populated PostgreSQL restore.
