@@ -412,7 +412,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
             ctx,
             manifest,
             run_id,
-            outcomes=result.counts,
+            outcomes={"changed": 1, "empty": 1, "unsupported": 1},
             published_documents=0,
             code_revision="test-adapter-v1",
             document_processor_version=None,
