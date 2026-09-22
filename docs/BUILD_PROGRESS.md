@@ -2,8 +2,9 @@
 
 ## Active checkpoint
 
-**Checkpoint 3D — durable FileOS run receipt and freshness.** Work occurs on
-`codex/masterbrain-foundation` in PR #4.
+**Checkpoint 3E / DC-005C — explicit rebuild and reconciliation.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Begin with a closed failure/rebuild contract
+and synthetic source-drift corpus; do not infer deletion from a partial inventory.
 
 ## Completed gates
 
@@ -37,13 +38,17 @@
   correction `aaaf156` passed hosted
   [CI 35713893737](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893737)
   and [restore 35713893769](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893769).
+- Checkpoint 3D whole-run completion/freshness runtime `1e0f87e` plus valid-conflict
+  test correction `c12800f` passed hosted
+  [CI 35716362139](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35716362139)
+  and [restore 35716362094](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35716362094).
 
 ## Current work
 
-- Add an append-only completion receipt only after every manifest item is accounted,
-  with exact run identity, outcome counts and processor/code provenance.
-- Expose bounded source freshness/latest-run state without paths or content.
-- Prove crash-prefix retry, receipt replay/conflict, immutability, RLS and restore.
+- Specify complete-inventory certification, rebuild identity and deletion/drift states.
+- Inventory donor reconciliation behavior and construct a source-mutation/restart corpus.
+- Implement the smallest read-side rebuild/reconciliation slice only after those
+  contracts prove that incomplete observations cannot hide evidence.
 
 ## Deferred by design
 

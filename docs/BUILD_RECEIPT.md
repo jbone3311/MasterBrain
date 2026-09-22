@@ -2,6 +2,41 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified FileOS completion receipts and source freshness
+
+Runtime revision **1e0f87ed8ac5fe9fa29d186b2c242c7584d9a24a** and the
+valid-conflict test correction **c12800fee682c4f0e922698a8adbc342096f07b7** passed
+[CI 35716362139](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35716362139)
+and [restore 35716362094](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35716362094),
+observed 2026-09-22 Pacific.
+
+- Migration 0017 adds forced-RLS, append-only whole-run receipts. Completion is bound
+  to the exact actor, request UUID, source, canonical manifest digest, item/outcome
+  counts and extractor/code provenance. Replay preserves the original completion time;
+  changed receipts conflict.
+- `GET /v1/brain/sources/{source_id}/freshness` reports only the latest completed run.
+  A partial/crashed prefix remains explicitly `no_completed_run` and cannot be
+  presented as fresh.
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **121 Markdown files / 776 local paths and
+  fragments**.
+- PostgreSQL integration proved exact intake binding, valid replay/conflict,
+  immutability, RLS, API access and invalid direct-write rejection. PostgreSQL 17
+  restore verified **54 tables / 215 rows / two tenants / four encrypted objects /
+  two identity bindings**, including the same latest-complete run, in 18.37 seconds.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. Local SQL skips
+  are not passes; the hosted run is the authoritative database result.
+- The first hosted gate exposed a malformed conflict-test input: its internally
+  inconsistent published count was correctly rejected by validation before replay
+  conflict detection. The fixture now submits a different but internally valid closed
+  outcome set; runtime validation was unchanged, and the complete rerun passed.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. This tranche adds no scheduler,
+  deletion inference, source cursor, file effect, cutover, rename or retirement.
+
 ## Verified authenticated FileOS publication command
 
 Runtime revision **e7f319cae5a68e4a2072a326fba9ab853cb15643** and the
