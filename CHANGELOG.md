@@ -16,6 +16,9 @@ exact tested commits and results.
 - Extracted FOS-Master's dependency-free read-only hash/dedupe behavior into
   `masterbrain.datacore` with pinned provenance, synthetic tests and a live-donor
   parity harness. No file move/delete behavior or FileOS cutover was added.
+- Added shared `masterbrain` hash/compare/duplicates/snapshot commands, immutable
+  source/evidence/provenance contracts, safe read-only FileOS manifests and expanded
+  3,000-file donor parity plus fault/symlink/no-mutation stress coverage.
 
 ### Tools discussion (documentation only)
 

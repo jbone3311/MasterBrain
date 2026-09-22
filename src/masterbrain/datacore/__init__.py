@@ -5,6 +5,7 @@ from masterbrain.datacore.dedup import (
     compare_files,
     file_hash,
     find_duplicates,
+    is_excluded_path,
     should_include,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "compare_files",
     "file_hash",
     "find_duplicates",
+    "is_excluded_path",
     "should_include",
 ]

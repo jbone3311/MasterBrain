@@ -1,0 +1,151 @@
+"""Read-only FileOS source inventory built on shared DataCore contracts."""
+
+from __future__ import annotations
+
+import mimetypes
+import os
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+from masterbrain.datacore.contracts import (
+    Digest,
+    SourceItemVersion,
+    SourceKind,
+    SourceRef,
+    stable_id,
+)
+from masterbrain.datacore.dedup import DEFAULT_CONFIG, file_hash, is_excluded_path, should_include
+
+SNAPSHOT_VERSION = "masterbrain-fileos-snapshot-v1"
+
+
+@dataclass(frozen=True, slots=True)
+class SnapshotError:
+    locator: str
+    code: str
+
+
+def _relative(path: Path, root: Path) -> str:
+    return path.relative_to(root).as_posix()
+
+
+def _item_dict(item: SourceItemVersion, *, is_symlink: bool) -> dict[str, Any]:
+    return {
+        "item_id": item.item_id,
+        "version_id": item.version_id,
+        "locator": item.locator,
+        "observed_at": item.observed_at.isoformat(),
+        "digest": {"algorithm": item.content.algorithm, "value": item.content.value},
+        "size_bytes": item.size_bytes,
+        "media_type": item.media_type,
+        "metadata": dict(item.metadata),
+        "is_symlink": is_symlink,
+    }
+
+
+def snapshot_tree(
+    root: Path,
+    *,
+    source_id: str,
+    observed_at: datetime,
+    config: dict[str, Any] | None = None,
+    follow_file_symlinks: bool = False,
+) -> dict[str, Any]:
+    """Hash an authorized root without modifying it and return a portable manifest."""
+    root = root.resolve(strict=True)
+    if not root.is_dir():
+        raise ValueError("FileOS root must be a directory")
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise ValueError("observed_at must be timezone-aware")
+    policy = dict(DEFAULT_CONFIG if config is None else config)
+    source = SourceRef(source_id, SourceKind.FILEOS, source_id)
+    observed_at = observed_at.astimezone(UTC)
+    items: list[dict[str, Any]] = []
+    errors: list[SnapshotError] = []
+    excluded = 0
+
+    def onerror(exc: OSError) -> None:
+        filename = Path(exc.filename) if exc.filename else root
+        try:
+            locator = _relative(filename, root)
+        except ValueError:
+            locator = "."
+        errors.append(SnapshotError(locator, "directory_unreadable"))
+
+    for directory, dirnames, filenames in os.walk(root, topdown=True, onerror=onerror):
+        current = Path(directory)
+        kept_dirs = []
+        for name in sorted(dirnames):
+            candidate = current / name
+            if candidate.is_symlink() or is_excluded_path(candidate, policy):
+                excluded += 1
+            else:
+                kept_dirs.append(name)
+        dirnames[:] = kept_dirs
+
+        for name in sorted(filenames):
+            path = current / name
+            locator = _relative(path, root)
+            is_symlink = path.is_symlink()
+            if is_excluded_path(path, policy):
+                excluded += 1
+                continue
+            if is_symlink:
+                if not follow_file_symlinks:
+                    errors.append(SnapshotError(locator, "symlink_skipped"))
+                    continue
+                try:
+                    path.resolve(strict=True).relative_to(root)
+                except (FileNotFoundError, RuntimeError, ValueError):
+                    errors.append(SnapshotError(locator, "symlink_outside_root"))
+                    continue
+            try:
+                if not path.is_file() or not should_include(path, policy):
+                    excluded += 1
+                    continue
+                before = path.stat()
+                digest_value = file_hash(path)
+                after = path.stat()
+            except OSError:
+                errors.append(SnapshotError(locator, "file_unreadable"))
+                continue
+            if before.st_size != after.st_size or before.st_mtime_ns != after.st_mtime_ns:
+                errors.append(SnapshotError(locator, "changed_during_scan"))
+                continue
+            digest = Digest("sha256", digest_value)
+            item_id = stable_id("item", source_id, locator)
+            version_id = stable_id("version", item_id, digest_value, str(after.st_size))
+            media_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
+            item = SourceItemVersion(
+                item_id,
+                version_id,
+                source,
+                locator,
+                observed_at,
+                digest,
+                after.st_size,
+                media_type,
+                {"mtime_ns": after.st_mtime_ns},
+            )
+            items.append(_item_dict(item, is_symlink=is_symlink))
+
+    items.sort(key=lambda item: item["locator"])
+    errors.sort(key=lambda item: (item.locator, item.code))
+    return {
+        "manifest_version": SNAPSHOT_VERSION,
+        "source": {"source_id": source.source_id, "kind": source.kind.value},
+        "observed_at": observed_at.isoformat(),
+        "policy": {
+            "hash_algorithm": "sha256",
+            "follow_file_symlinks": follow_file_symlinks,
+            "min_file_size": policy.get("min_file_size", 0),
+            "max_file_size_mb": policy.get("max_file_size_mb", 100),
+            "include_extensions": policy.get("include_extensions"),
+            "exclude_patterns": policy.get("exclude_patterns", []),
+        },
+        "counts": {"items": len(items), "excluded": excluded, "errors": len(errors)},
+        "items": items,
+        "errors": [asdict(item) for item in errors],
+    }

@@ -67,6 +67,10 @@ roadmap item is not an implementation claim.
 - [Roadmap](docs/ROADMAP.md)
 - [FOS-Master migration and parity plan](docs/FOS_MIGRATION.md)
 - [FOS-Master common tool/test inventory](docs/FOS_TOOL_INVENTORY.md)
+- [Incremental execution plan](docs/EXECUTION_PLAN.md)
+- [Current build progress](docs/BUILD_PROGRESS.md)
+- [Shared DataCore/FileOS commands](docs/DATACORE_COMMANDS.md)
+- [Source and provenance contract](docs/SOURCE_PROVENANCE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
 - [Code map](docs/CODE_MAP.md)
@@ -81,14 +85,17 @@ corpus, integrate behind DataCore, then prove operational parity. Only after tho
 gates may FileOS switch to shared DataCore; folding or renaming FOS-Master is a later,
 separately approved decision.
 
-The first tranche is intentionally read-only:
+The first tranches are intentionally read-only:
 
 ```sh
 uv run python scripts/datacore_parity.py --fos-repo ../FOS-Master
-uv run pytest -q tests/test_datacore_dedup.py
+uv run pytest -q tests/test_datacore_dedup.py tests/test_datacore_contracts.py \
+  tests/test_fileos_snapshot.py tests/test_masterbrain_cli.py tests/test_datacore_stress.py
+uv run masterbrain fileos snapshot /authorized/root --source-id files_primary
 ```
 
-It compares hash, name, and combined duplicate scans against FOS-Master commit
+The parity harness compares hash, name, and combined duplicate scans, hashes and pair
+comparisons against FOS-Master commit
 `218d5caec2f20b9047fd3eb8e027dc671acf0c15`. No deletion or file movement code was
 copied.
 

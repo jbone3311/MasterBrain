@@ -58,12 +58,20 @@ def _pattern_matches_component(pattern: str, component: str) -> bool:
     return component == pattern or Path(component).stem == pattern
 
 
+def is_excluded_path(filepath: str | Path, config: dict[str, Any]) -> bool:
+    """Return whether any path component matches the donor exclusion policy."""
+    components = Path(filepath).parts
+    return any(
+        _pattern_matches_component(pattern, part)
+        for pattern in config.get("exclude_patterns", [])
+        for part in components
+    )
+
+
 def should_include(filepath: Path, config: dict[str, Any]) -> bool:
     """Apply the donor's component-aware exclusions and size/type bounds."""
-    components = Path(filepath).parts
-    for pattern in config.get("exclude_patterns", []):
-        if any(_pattern_matches_component(pattern, part) for part in components):
-            return False
+    if is_excluded_path(filepath, config):
+        return False
 
     size = filepath.stat().st_size
     if size < config.get("min_file_size", 0):

@@ -54,6 +54,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | Tranche | Donor baseline | MasterBrain location | Parity | Status |
 |---|---|---|---|---|
 | DC-001 read-only hashing/dedupe | FOS-Master `218d5cae`, `_SYSTEM/tools/dedup_tool.py` | `src/masterbrain/datacore/dedup.py` | `scripts/datacore_parity.py`; hash/name/both synthetic corpus | Extracted; local parity required before merge |
+| DC-002 contracts/snapshot foundation | FOS inventory/index behavior reviewed; new source-neutral contract | `contracts.py`, `fileos.py`, `masterbrain` CLI | contract/fault/symlink/no-mutation tests; donor exclusion/hash behavior | Implemented locally; hosted gate pending |
 
 DC-001 deliberately excludes local config discovery, donor logging, CLI presentation,
 and all delete/move operations. Those omissions do not change the returned scan and

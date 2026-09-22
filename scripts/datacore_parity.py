@@ -53,10 +53,74 @@ def git_commit(repo: Path) -> str:
     ).strip()
 
 
+def build_stress_corpus(root: Path, total_files: int) -> None:
+    """Create deterministic scale, name, binary, empty and exclusion cases."""
+    if total_files < 200 or total_files > 10000:
+        raise ValueError("stress-files must be 200..10000")
+    duplicate_pairs = min(100, total_files // 20)
+    for index in range(duplicate_pairs):
+        payload = f"DUPLICATE-{index}-".encode() + bytes([index % 251]) * 257
+        for offset, label in ((0, "original"), (7, "copy")):
+            folder = root / f"batch_{(index + offset) % 20}"
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / f"{label}_{index}.bin").write_bytes(payload)
+    unique_count = total_files - (duplicate_pairs * 2)
+    for index in range(unique_count):
+        folder = root / f"batch_{index % 20}"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"unique_{index}.txt").write_text(
+            f"unique payload {index} {index * 7919}\n", encoding="utf-8"
+        )
+    (root / "empty-a.txt").write_bytes(b"")
+    (root / "empty-b.txt").write_bytes(b"")
+    (root / "résumé.txt").write_text("unicode duplicate", encoding="utf-8")
+    (root / "résumé_copy.txt").write_text("unicode duplicate", encoding="utf-8")
+    ignored = root / "__pycache__"
+    ignored.mkdir()
+    (ignored / "ignored.txt").write_text("ignored", encoding="utf-8")
+    (root / "metadata.db").write_text("ignored", encoding="utf-8")
+
+
+def comparison_checks(donor: ModuleType, root: Path) -> dict[str, tuple[Any, Any]]:
+    text_a = root / "comparison-a.txt"
+    text_b = root / "comparison-b.txt"
+    binary_a = root / "comparison-a.bin"
+    binary_b = root / "comparison-b.bin"
+    text_a.write_text("same\ntext\n", encoding="utf-8")
+    text_b.write_text("same\ntext\n", encoding="utf-8")
+    binary_a.write_bytes(b"\x00\x01\x02")
+    binary_b.write_bytes(b"\x00\x01\x03")
+    config = donor.DEFAULT_CONFIG.copy()
+    return {
+        "compare-identical-text": (
+            donor.compare_files(text_a, text_b, config),
+            masterbrain.compare_files(text_a, text_b, config),
+        ),
+        "compare-different-binary": (
+            donor.compare_files(binary_a, binary_b, config),
+            masterbrain.compare_files(binary_a, binary_b, config),
+        ),
+        "hash-sha256": (donor.file_hash(text_a), masterbrain.file_hash(text_a)),
+        "hash-md5": (donor.file_hash(text_a, "md5"), masterbrain.file_hash(text_a, "md5")),
+    }
+
+
+def scan_checks(donor: ModuleType, root: Path, prefix: str) -> dict[str, tuple[Any, Any]]:
+    checks = {}
+    for method in ("hash", "name", "both"):
+        checks[f"{prefix}-{method}"] = (
+            donor.find_duplicates(root, donor.DEFAULT_CONFIG.copy(), method=method),
+            masterbrain.find_duplicates(root, masterbrain.DEFAULT_CONFIG.copy(), method=method),
+        )
+    return checks
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fos-repo", type=Path, required=True)
     parser.add_argument("--allow-unpinned", action="store_true")
+    parser.add_argument("--stress-files", type=int, default=2000)
+    parser.add_argument("--skip-stress", action="store_true")
     args = parser.parse_args()
 
     commit = git_commit(args.fos_repo)
@@ -71,37 +135,28 @@ def main() -> int:
             if path.is_file():
                 os.utime(path, (1_700_000_000, 1_700_000_000))
 
-        checks = {
-            "hash": (
-                donor.find_duplicates(corpus, donor.DEFAULT_CONFIG.copy(), method="hash"),
-                masterbrain.find_duplicates(
-                    corpus, masterbrain.DEFAULT_CONFIG.copy(), method="hash"
-                ),
-            ),
-            "name": (
-                donor.find_duplicates(corpus, donor.DEFAULT_CONFIG.copy(), method="name"),
-                masterbrain.find_duplicates(
-                    corpus, masterbrain.DEFAULT_CONFIG.copy(), method="name"
-                ),
-            ),
-            "both": (
-                donor.find_duplicates(corpus, donor.DEFAULT_CONFIG.copy(), method="both"),
-                masterbrain.find_duplicates(
-                    corpus, masterbrain.DEFAULT_CONFIG.copy(), method="both"
-                ),
-            ),
-        }
+        checks = scan_checks(donor, corpus, "fixture")
+        checks.update(comparison_checks(donor, corpus))
+        if not args.skip_stress:
+            stress = Path(directory) / "stress"
+            stress.mkdir()
+            build_stress_corpus(stress, args.stress_files)
+            checks.update(scan_checks(donor, stress, "stress"))
         failures = {}
         for name, (donor_result, masterbrain_result) in checks.items():
-            expected = normalize(donor_result, corpus)
-            actual = normalize(masterbrain_result, corpus)
+            expected = normalize(donor_result, Path(directory))
+            actual = normalize(masterbrain_result, Path(directory))
             if expected != actual:
                 failures[name] = {"fos_master": expected, "masterbrain": actual}
 
     if failures:
         print(json.dumps(failures, indent=2, sort_keys=True))
         return 1
-    print(f"PASS: DataCore dedup matches FOS-Master {commit} for hash/name/both corpus scans")
+    stress = "disabled" if args.skip_stress else f"{args.stress_files} base files plus edges"
+    print(
+        f"PASS: DataCore matches FOS-Master {commit}; "
+        f"fixture scans, pair comparisons, hashes, stress={stress}"
+    )
     return 0
 
 

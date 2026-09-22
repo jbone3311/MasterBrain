@@ -12,13 +12,17 @@ mean hosted, live-source accepted, or production ready.
 - Offline-tested Gmail/Graph libraries and an injected-session IMAP contract.
 - MasterBrain package boundary with DataCore read-only file hash, filter, duplicate
   grouping, name grouping and file comparison extracted from FOS-Master.
+- Dedicated `masterbrain` CLI for shared hash/compare/duplicate commands and
+  deterministic read-only FileOS snapshots; source files are never changed.
+- Immutable source/item/version/evidence/provenance contracts with stable opaque IDs,
+  safe relative locators, bounded metadata and explicit source-bound evidence.
 - Synthetic DataCore unit corpus and live-donor parity harness pinned to FOS-Master
   commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
 
 ## Designed, not implemented
 
-- General source/evidence/provenance schema and unified DataCore pipeline.
-- FileOS scanner integration, generalized extraction/OCR/chunking/indexing.
+- Persistent source/evidence/provenance schema and unified DataCore pipeline.
+- Incremental/enrolled FileOS scanner integration, extraction/OCR/chunking/indexing.
 - KnowledgeCore entities, relationships, claims, events, projects and commitments.
 - Unified Brain API and external LLM client integrations.
 - Hosted operation and production identity/source enrollment.
@@ -29,5 +33,6 @@ mean hosted, live-source accepted, or production ready.
 Most Email tests use synthetic data; PostgreSQL suites require an explicitly disposable
 database and local skips do not count. The parity script requires a clean checkout of
 the pinned FOS-Master commit. It compares normalized observable scan results and does
-not yet cover donor CLI text, configuration discovery, logging, performance, or file
-effects. See [migration](FOS_MIGRATION.md) for the next gates.
+  now covers fixture and scale hash/name/both scans, pair comparisons and hashes. It
+  does not cover donor CLI text, configuration discovery, logging or file effects.
+  See [migration](FOS_MIGRATION.md) for the next gates.

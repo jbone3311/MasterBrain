@@ -22,7 +22,12 @@
     }
   },
   "shared_layers": ["DataCore", "KnowledgeCore", "Brain API"],
-  "implemented_shared_components": ["DataCore read-only hashing/dedupe"],
+  "implemented_shared_components": [
+    "DataCore read-only hashing/dedupe",
+    "source and provenance contracts",
+    "read-only FileOS snapshot",
+    "shared MasterBrain CLI"
+  ],
   "prohibited_claims": [
     "FOS-Master retired",
     "FileOS cut over",
