@@ -2,6 +2,40 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified isolated FileOS archive inventory
+
+Design revision **2aaeb26** and runtime revision **26473de** passed
+[CI 35780244211](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35780244211)
+and [restore 35780244282](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35780244282),
+observed 2026-09-22 Pacific.
+
+- A closed source-bound contract and dedicated in-memory ZIP/TAR worker return only
+  ordered safe locators, hashes, declared/observed sizes, media hints, nesting
+  provenance, skips and bounded accounting. They return no member bytes or text and
+  publish nothing to the database or search.
+- The worker preserves the donor's 256 MiB cumulative, 64 MiB member, 2,000-file,
+  100x ratio and depth-three expansion limits, with a separate 32 MiB compressed-input
+  cap. Traversal, links, encryption, corruption, depth and unsupported formats are
+  explicit. Bombs and duplicate safe identities publish no child manifest.
+- The live harness passed flat ZIP/TAR, nested and filtered cases against unchanged
+  FOS-Master commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`, plus named assertions
+  for safer bomb and duplicate publication policies. The donor's 47-test archive suite
+  also passed and its checkout remained clean.
+- Local checks passed **2,137 Python tests**, with 368 database/container cases
+  intentionally skipped, **134 Node contracts**, lint, strict typing across 71 source
+  files, the documentation gate and the focused 90-test archive/isolation set.
+- CI passed **2,505 Python tests** with PostgreSQL and no skips, all 134 Node contracts,
+  prior restricted workers, the new immutable archive image build and two real
+  source-bound archive-container cases. Documentation covered 142 Markdown files / 810
+  local paths and fragments.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 23.97
+  seconds. No schema or source checkout changed in this tranche.
+
+Remaining archive work is deliberately separate: append-only tenant-isolated manifest
+persistence, then a hash-bound one-member read contract, then explicit extraction and
+search publication. No FileOS cutover is authorized.
+
 ## Verified sealed Email attachment/document batches
 
 Design revision **2825529** and runtime revision **c143e0c** passed

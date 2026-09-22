@@ -2,12 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4N — FileOS archive inventory worker.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Implement the accepted source-bound,
-in-memory ZIP/TAR inventory contract and dedicated restricted worker, then compare it
-with pinned FOS-Master `archive_unpack.py`. No member bytes, persistence or search
-publication enter the shared path until live-donor golden and malicious/fault corpora
-prove the bounded manifest contract.
+**Checkpoint 4O — append-only archive manifest persistence design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define tenant-isolated immutable archive run,
+member and skip records bound to an existing FileOS source version and exact processor
+identity. No member bytes or search publication may enter this step; replay, RLS,
+append-only enforcement, bomb/duplicate non-publication and populated restore must be
+proved before implementation is accepted.
 
 ## Completed gates
 
@@ -116,17 +116,22 @@ prove the bounded manifest contract.
 - Checkpoint 4M sealed Email part-batch design `2825529` and runtime `c143e0c` passed
   hosted [CI 35774641187](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641187)
   and [restore 35774641102](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641102).
+- Checkpoint 4N archive design `2aaeb26` and isolated inventory runtime `26473de`
+  passed the pinned donor suite/live golden and hosted
+  [CI 35780244211](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35780244211)
+  plus [restore 35780244282](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35780244282).
 
 ## Current work
 
-- Implement a closed request/result contract with donor-equivalent cumulative bounds,
-  safe relative member identities and explicit partial/bomb/refusal outcomes.
-- Add an in-memory worker, live-donor normalized parity harness and malicious/fault
-  corpus before adding persistence or a container image.
+- Inventory existing DataCore source-version, receipt, replay, RLS, append-only and
+  restore primitives for reuse by archive manifests.
+- Design the smallest persistence schema/API that records accepted inventory without
+  member bytes, normalized documents, chunks or search visibility.
 
 ## Deferred by design
 
-- Legacy Office, archives, images and OCR until separate format/fault gates exist.
+- Archive member-byte reads, archive-derived extraction/search, images and OCR until
+  separate format/fault/persistence gates exist.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.

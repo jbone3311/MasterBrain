@@ -22,6 +22,10 @@ mean hosted, live-source accepted, or production ready.
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted
   worker image with archive/active-content bounds; hosted container and restore gates green.
+- Source-bound, in-memory FileOS ZIP/TAR archive inventory contract and dedicated
+  restricted worker image with donor-equivalent cumulative bounds, safe hash-only
+  manifests and explicit bomb/duplicate non-publication; live donor, hostile/fault,
+  hosted container and restore gates green. It has no persistence or search path.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -95,9 +99,9 @@ mean hosted, live-source accepted, or production ready.
   source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
-  scheduling/global-search cutover and legacy Office/image/OCR extraction. A pinned
-  archive donor audit and isolated manifest-only worker contract are designed, not yet
-  implemented.
+  scheduling/global-search cutover and legacy image/OCR extraction. Archive manifest
+  persistence, member-byte retrieval and archive-derived extraction/search remain
+  designed follow-on gates.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

@@ -4,10 +4,11 @@ Roadmap entries are targets, not implementation claims. Gates are dependency-ord
 
 ## Next build packages
 
-The immediate package is DC-004C archive extraction: audit the pinned FOS-Master donor,
-define strict containment, then prove an isolated read-only worker against live-donor,
-malicious and fault corpora. Images/OCR, automatic KnowledgeCore projection and all
-source effects remain later packages.
+DC-004C now has an accepted isolated hash-only ZIP/TAR inventory worker. The immediate
+package is append-only tenant-isolated archive manifest persistence, followed by a
+separately approved hash-bound one-member read boundary. Images/OCR, automatic
+KnowledgeCore projection, archive search publication and all source effects remain
+later packages.
 
 ## Phase 0 — Identity and baseline (current)
 

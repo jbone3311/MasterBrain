@@ -1,6 +1,6 @@
 # ADR-075 — Isolated FileOS archive inventory before member extraction
 
-Status: accepted design; implementation pending.
+Status: implemented and accepted in runtime revision `26473de`.
 
 ## Context
 
@@ -54,3 +54,6 @@ explicitly excluded.
 The contract, in-memory implementation, donor harness, adversarial/property/fault
 tests and dedicated restricted-image inspection must pass before integration. Rollback
 removes the new isolated worker; existing FileOS and donor behavior remain unchanged.
+
+These gates passed in hosted CI 35780244211 after the pinned donor's 47 tests and live
+golden passed locally. Persistence is intentionally not authorized by this ADR.

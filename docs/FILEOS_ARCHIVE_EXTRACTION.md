@@ -51,9 +51,10 @@ extraction.
 
 These are deliberate hosted safety adaptations, not unexplained parity normalization.
 
-## Planned MasterBrain boundary
+## Implemented MasterBrain boundary
 
-The first implementation is an isolated, in-memory **archive inventory worker**. A
+The accepted first implementation is an isolated, in-memory **archive inventory
+worker**. A
 closed source-bound request carries one immutable archive version and its exact bytes.
 The worker has no network, mounts, credentials or source access and returns a bounded
 manifest only:
@@ -69,28 +70,32 @@ and lets DataCore record immutable child identities/provenance without trusting 
 A later explicit member-read contract can return one hash-bound bounded member to the
 existing text/document workers. No archive is silently expanded into search.
 
-The worker preserves donor limits initially and adds a closed compressed-input bound
-required by the pipe/container memory budget. ZIP/TAR parsing uses `BytesIO`; nested
-member bytes count against the same global budget. Duplicate safe locators, encrypted
-members, links, absolute/traversal paths and unsupported formats fail closed.
+The worker preserves donor limits and adds a 32 MiB compressed-input bound required by
+the 512 MiB pipe/container memory budget. ZIP/TAR parsing uses `BytesIO`; nested member
+bytes count against the same global budget. Duplicate safe locators, encrypted members,
+links, absolute/traversal paths and unsupported formats fail closed. The dedicated
+image is inspected before bytes enter it and runs with no network, mounts, writable
+root, credentials, added capabilities or logs.
 
 ## Parity and acceptance
 
-The golden harness will build each synthetic archive once, run the pinned donor into a
-temporary directory, hash its normalized leaves, and compare the MasterBrain manifest
+The golden harness builds each synthetic archive once, runs the pinned donor into a
+temporary directory, hashes its normalized leaves, and compares the MasterBrain manifest
 on ordering, safe locators, hashes, sizes, skips, bomb/depth state and accounting. It
 must retain explicit expected differences for duplicate-name refusal and bomb
 publication policy.
 
-Acceptance requires:
+Acceptance status:
 
-1. all adopted donor cases plus live-donor 47-test baseline remain green;
-2. property tests for path normalization and cumulative nested budgets;
-3. fault tests for truncation, short reads, output limit, timeout and worker death;
-4. a dedicated immutable container image and actual no-network/read-only/no-mount
-   inspection gate;
-5. PostgreSQL append-only/RLS/replay tests before any member manifest is published;
-6. source archive hash/mtime unchanged and FOS-Master clean at the pinned commit.
+1. **Passed:** adopted donor cases plus the live-donor 47-test baseline.
+2. **Passed:** hostile path normalization and cumulative nested-budget tests.
+3. **Passed:** corruption/short-read, output-limit and worker-failure tests.
+4. **Passed:** dedicated immutable image and actual no-network/read-only/no-mount
+   inspection/invocation in hosted CI 35780244211.
+5. **Next gate:** PostgreSQL append-only/RLS/replay tests before any member manifest is
+   persisted.
+6. **Passed:** source bytes remained immutable and FOS-Master stayed clean at the pinned
+   commit.
 
 No archive child becomes searchable and no FileOS cutover is authorized by this
 inventory tranche.
