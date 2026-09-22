@@ -1,6 +1,6 @@
 # ADR-074 — Sealed Email attachment and document bridge batches
 
-Status: implemented; hosted verification pending.
+Status: accepted; hosted PostgreSQL and restore verification green.
 
 ## Context
 
@@ -58,3 +58,7 @@ account fencing and content-free errors. Real PostgreSQL must inject a mid-attac
 batch refusal and prove exact retry, then execute and replay an approved-document plan
 without changing legacy evidence. Hosted CI and populated restore must remain green.
 Rollback removes only the plan model and batch controller/command.
+
+Design revision `2825529` and runtime revision `c143e0c` passed
+[CI 35774641187](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641187)
+and [restore 35774641102](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641102).

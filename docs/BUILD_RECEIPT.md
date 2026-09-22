@@ -2,6 +2,33 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified sealed Email attachment/document batches
+
+Design revision **2825529** and runtime revision **c143e0c** passed
+[CI 35774641187](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641187)
+and [restore 35774641102](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641102),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-parts-batch` accepts one owner-private, canonical-digest
+  plan containing one account, one attachment or approved-document kind, the exact
+  configured revision and 1–100 ordered unique target/key pairs. Kind is part of the
+  digest, so a plan cannot mix dependency levels.
+- Batch-only account fencing leaves existing one-item receipt/replay ordering intact.
+  Execution reauthenticates before each accepted one-item transaction, stops at the
+  first refusal and returns only opaque target identities and counts.
+- Real PostgreSQL injected an attachment refusal at item two, proved exactly one
+  immutable receipt existed, then retried the unchanged plan to replay one and record
+  two. A separately sealed approved-document plan recorded and replayed without
+  changing legacy evidence.
+- CI and deployment each passed **2,469 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **140 Markdown files / 804
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 23.58
+  seconds. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified Email attachment/document bridge preview
 
 Runtime revision **e3c0ee5** plus checkpoint-tracking revision **0c687e8** passed

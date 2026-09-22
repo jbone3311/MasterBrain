@@ -2,11 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4M — sealed Email attachment/document batch design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define separate immutable attachment and
-document plans assembled from reviewed 4L pages. Preserve dependency order, fixed
-per-item keys, fail-stop execution and exact-plan retry; prohibit mixed-kind plans,
-implicit discovery and best-effort continuation before any writer is implemented.
+**Checkpoint 4N — FileOS archive donor inventory and containment design.** Work occurs
+on `codex/masterbrain-foundation` in PR #4. Audit FOS-Master `archive_unpack.py`, its
+tests and transitive contracts at the pinned donor commit; define a read-only isolated
+archive worker with entry, byte, depth, ratio, path and format bounds before copying
+behavior. No archive extraction enters the shared path until a live-donor golden and
+malicious/fault corpus proves the accepted contract.
 
 ## Completed gates
 
@@ -112,13 +113,16 @@ implicit discovery and best-effort continuation before any writer is implemented
   revision `0c687e8` passed hosted
   [CI 35763636718](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636718)
   and [restore 35763636696](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636696).
+- Checkpoint 4M sealed Email part-batch design `2825529` and runtime `c143e0c` passed
+  hosted [CI 35774641187](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641187)
+  and [restore 35774641102](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641102).
 
 ## Current work
 
-- Specify separate kind-bound plan schemas and canonical digests for attachments and
-  approved documents; never infer one plan from the other at execution time.
-- Reuse the accepted one-item transactions and require fail-stop/replay tests before
-  authorizing any multi-item attachment or document command.
+- Record the donor archive surface, supported formats, dependencies, observable
+  outputs, error behavior and any unsafe or source-effectful paths.
+- Define containment and golden-parity gates before extracting the first archive
+  primitive into DataCore.
 
 ## Deferred by design
 

@@ -14,7 +14,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Email | IMAP injected-session reader | Contract-tested, not durable live connector | Email adapter |
 | Email | Raw MIME, headers, bodies, attachment receipts, calendar parts | Implemented | DataCore evidence/extraction |
 | Email | Owner search/read/review/recovery screens | Implemented prototype | Email UI + Brain API |
-| Email | Explicit current-evidence bridge command | Implemented; hosted SQL/restore green | DataCore operator |
+| Email | Explicit current-evidence/part bridges, previews and sealed batches | Implemented; hosted SQL/restore green | DataCore operator |
 | Email | Reviewed virtual sender rules | Implemented narrow prototype | Email capability |
 | Email | Provider drafts, moves, sends, permanent delete | Not implemented | Later reviewed action executor |
 | FileOS | In-place domain scanning and unified index | Implemented in FOS-Master donor | FileOS adapter + DataCore |

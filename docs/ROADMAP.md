@@ -4,10 +4,10 @@ Roadmap entries are targets, not implementation claims. Gates are dependency-ord
 
 ## Next build packages
 
-The immediate package is DC-005E/005F: prove immutable FileOS index generations and
-rollback in hosted PostgreSQL, then add a narrow private operator command and a
-query-parity corpus before considering global-search activation. Archives/images/OCR,
-automatic KnowledgeCore projection and all source effects remain later packages.
+The immediate package is DC-004C archive extraction: audit the pinned FOS-Master donor,
+define strict containment, then prove an isolated read-only worker against live-donor,
+malicious and fault corpora. Images/OCR, automatic KnowledgeCore projection and all
+source effects remain later packages.
 
 ## Phase 0 — Identity and baseline (current)
 

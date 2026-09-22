@@ -81,7 +81,8 @@ mean hosted, live-source accepted, or production ready.
   content-free output; hosted PostgreSQL/restore gates green.
 - Private `masterbrain email bridge-parts-batch` command for one owner-private,
   digest-bound attachment or approved-document plan with fixed keys, batch account
-  fencing, fail-stop execution and exact-plan replay; hosted verification is pending.
+  fencing, fail-stop execution and exact-plan replay; hosted PostgreSQL/restore gates
+  green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
