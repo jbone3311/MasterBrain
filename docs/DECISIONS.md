@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-074](adr/074_sealed_email_part_bridge_batch.md) defines a digest-bound,
+single-kind attachment or approved-document plan with fixed per-item keys, fail-stop
+execution and exact-plan replay. It authorizes no dependency discovery, mixed-kind
+execution or best-effort continuation; implementation is pending.
+
 [ADR-073](adr/073_email_part_bridge_preview.md) defines separate bounded, private and
 non-consuming previews for current bridged-message attachments and already-approved
 document derivatives. It preserves dependency order and exposes no content or batch
