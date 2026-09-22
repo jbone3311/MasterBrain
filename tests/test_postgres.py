@@ -9,6 +9,7 @@ import hashlib
 import io
 import json
 import os
+import random
 import secrets
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
@@ -1411,7 +1412,7 @@ def test_archive_member_text_plan_is_current_paged_eligible_and_replay_deduplica
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("a.txt", b"first preview member")
         archive.writestr("image.bin", b"\x00\x01")
-        archive.writestr("large.csv", b"x" * (1_048_576 + 1))
+        archive.writestr("large.csv", random.Random(42).randbytes(1_048_576 + 1))
         archive.writestr("nested/b.md", b"second preview member")
     raw = output.getvalue()
     path = tmp_path / "preview.zip"
