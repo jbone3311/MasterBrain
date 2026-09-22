@@ -124,9 +124,9 @@ proved before implementation is accepted.
 ## Current work
 
 - Inventory existing DataCore source-version, receipt, replay, RLS, append-only and
-  restore primitives for reuse by archive manifests.
-- Design the smallest persistence schema/API that records accepted inventory without
-  member bytes, normalized documents, chunks or search visibility.
+  restore primitives for reuse by archive manifests; the audit is complete.
+- Implement ADR-076's four-table sealed ledger and store method, then prove replay,
+  conflict, stale-current, concurrency, RLS, append-only, search non-effect and restore.
 
 ## Deferred by design
 

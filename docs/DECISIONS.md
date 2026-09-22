@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-076](adr/076_archive_manifest_persistence.md) defines an append-only forced-RLS
+hash-manifest ledger for accepted archive inventories. It creates no child evidence,
+member reads or search visibility; implementation is pending.
+
 [ADR-075](adr/075_fileos_archive_inventory_worker.md) defines an isolated in-memory
 ZIP/TAR inventory worker before any member-byte or search publication. It preserves
 the pinned donor's bounded recognition/accounting contract while explicitly refusing
