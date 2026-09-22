@@ -204,6 +204,55 @@ def test_cli_archive_text_uses_explicit_member_and_scrubs_dsn(
     assert dsn not in output
 
 
+def test_cli_archive_text_plan_uses_explicit_inventory_and_bounds(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    inventory = "archive_inventory_" + "b" * 32
+    config = tmp_path / "archive.json"
+    config.write_text("not opened by this dispatch test")
+    dsn = "postgresql://secret:secret@example.invalid/private"
+    monkeypatch.setenv("MASTERBRAIN_DSN", dsn)
+    monkeypatch.setattr(
+        cli,
+        "run_archive_member_plan_controller",
+        lambda path, received_dsn, received_inventory, after, limit, check: {
+            "config": path == config,
+            "dsn": received_dsn == dsn,
+            "inventory": received_inventory == inventory,
+            "after": after == 4,
+            "limit": limit == 9,
+            "check": check,
+            "source_effects": False,
+        },
+    )
+    main(
+        [
+            "fileos",
+            "archive-text-plan",
+            "--config",
+            str(config),
+            "--inventory-id",
+            inventory,
+            "--after",
+            "4",
+            "--limit",
+            "9",
+            "--check",
+        ]
+    )
+    output = capsys.readouterr().out
+    assert json.loads(output) == {
+        "after": True,
+        "check": True,
+        "config": True,
+        "dsn": True,
+        "inventory": True,
+        "limit": True,
+        "source_effects": False,
+    }
+    assert dsn not in output
+
+
 def test_cli_email_bridge_uses_explicit_evidence_and_scrubs_dsn(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

@@ -1400,6 +1400,80 @@ def test_archive_member_text_publication_rechecks_current_parent_and_target(
         )
 
 
+def test_archive_member_text_plan_is_current_paged_eligible_and_replay_deduplicated(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("a.txt", b"first preview member")
+        archive.writestr("image.bin", b"\x00\x01")
+        archive.writestr("large.csv", b"x" * (1_048_576 + 1))
+        archive.writestr("nested/b.md", b"second preview member")
+    raw = output.getvalue()
+    path = tmp_path / "preview.zip"
+    path.write_bytes(raw)
+    manifest = fileos_manifest(tmp_path, source_id="files_archive_preview")
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    item = manifest["items"][0]
+    source = source_for(
+        raw,
+        item["version_id"],
+        item["locator"],
+        item["digest"]["value"],
+        item["media_type"],
+    )
+    inventory = inventory_archive(raw, source)
+    recorded = core.record_archive_inventory(ctx, inventory, ARCHIVE_PROCESSOR, uuid4())
+
+    first = core.archive_member_text_plan(ctx, recorded.inventory_id, limit=1)
+    assert first["eligible_members"] == 2
+    assert first["next_cursor"] == first["results"][0]["ordinal"]
+    assert first["results"][0]["member_locator"] == "a.txt"
+    assert first["results"][0]["already_published"] is False
+    assert first["untrusted_metadata"] is True
+    assert first["source_effects"] is False and first["data_effects"] is False
+    second = core.archive_member_text_plan(
+        ctx, recorded.inventory_id, after=first["next_cursor"], limit=1
+    )
+    assert second["next_cursor"] is None
+    assert [row["member_locator"] for row in second["results"]] == ["nested/b.md"]
+    assert not {"image.bin", "large.csv"} & {
+        row["member_locator"] for row in first["results"] + second["results"]
+    }
+    with pytest.raises(NotFound):
+        core.archive_member_text_plan(ctx, recorded.inventory_id, after=1999)
+
+    target = core.archive_member_target(ctx, recorded.inventory_id, "a.txt")
+    extraction = ExtractionResult(
+        archive_member_version_id(target),
+        target.member_locator,
+        ExtractionStatus.EXTRACTED,
+        "first preview member",
+        metadata={"extractor_version": "fileos-text-v1"},
+    )
+    key = uuid4()
+    publish_extracted_archive_member_text(
+        core, ctx, target, extraction, code_revision="preview-v1", idempotency_key=key
+    )
+    publish_extracted_archive_member_text(
+        core, ctx, target, extraction, code_revision="preview-v1", idempotency_key=key
+    )
+    replayed = core.archive_member_text_plan(ctx, recorded.inventory_id, limit=2)
+    assert len(replayed["results"]) == 2
+    assert replayed["results"][0]["already_published"] is True
+
+    path.write_bytes(raw + b"changed")
+    core.import_fileos_snapshot(
+        ctx, fileos_manifest(tmp_path, source_id="files_archive_preview", hour=2), uuid4()
+    )
+    with pytest.raises(NotFound):
+        core.archive_member_text_plan(ctx, recorded.inventory_id)
+
+
 def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:

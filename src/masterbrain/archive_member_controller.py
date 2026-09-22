@@ -156,3 +156,52 @@ def run_archive_member_controller(
         }
     except Exception:
         raise ArchiveMemberControllerError() from None
+
+
+def run_archive_member_plan_controller(
+    path: Path,
+    dsn: str,
+    inventory_id: str,
+    *,
+    after: int | None = None,
+    limit: int = 25,
+    check: bool = False,
+) -> dict[str, Any]:
+    """Validate or preview eligible text members in one current archive inventory."""
+    try:
+        if (
+            not dsn
+            or not _INVENTORY.fullmatch(inventory_id)
+            or (after is not None and (type(after) is not int or not 0 <= after <= 1999))
+            or type(limit) is not int
+            or not 1 <= limit <= 100
+        ):
+            raise ArchiveMemberControllerError()
+        config = ArchiveMemberControllerConfig.model_validate(_json(path))
+        root = config.root.resolve(strict=True)
+        if not root.is_dir():
+            raise ArchiveMemberControllerError()
+        identity = WorkerIdentity(
+            config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
+        )
+        initial = identity.authenticate()
+        store = Store(dsn)
+        with store.transaction(initial.context):
+            pass
+        _current(identity, initial)
+        if check:
+            return {
+                "configuration_valid": True,
+                "execution_verified": False,
+                "operation": "archive_member_text_plan",
+                "source_effects": False,
+                "data_effects": False,
+            }
+        _current(identity, initial)
+        result = DataCoreStore(store).archive_member_text_plan(
+            initial.context, inventory_id, after=after, limit=limit
+        )
+        _current(identity, initial)
+        return {"operation": "archive_member_text_plan", **result}
+    except Exception:
+        raise ArchiveMemberControllerError() from None

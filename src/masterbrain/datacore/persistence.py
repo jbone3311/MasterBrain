@@ -368,6 +368,89 @@ class DataCoreStore:
             "data_effects": False,
         }
 
+    def archive_member_text_plan(
+        self,
+        ctx: TenantContext,
+        inventory_id: str,
+        *,
+        after: int | None = None,
+        limit: int = 25,
+    ) -> dict[str, Any]:
+        """Preview eligible members in one current, sealed archive inventory."""
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.document.publish")
+        if (
+            not isinstance(inventory_id, str)
+            or not re.fullmatch(r"archive_inventory_[a-f0-9]{32}", inventory_id)
+            or (after is not None and (type(after) is not int or not 0 <= after <= 1999))
+            or type(limit) is not int
+            or not 1 <= limit <= 100
+        ):
+            raise ValueError("invalid archive member text plan")
+        eligible = (
+            "NOT m.is_container AND m.observed_size<=%s AND ("
+            "lower(m.locator) LIKE '%%.txt' OR lower(m.locator) LIKE '%%.md' OR "
+            "lower(m.locator) LIKE '%%.html' OR lower(m.locator) LIKE '%%.htm' OR "
+            "lower(m.locator) LIKE '%%.csv')"
+        )
+        with self.store.transaction(ctx) as conn:
+            current = conn.execute(
+                "SELECT 1 FROM brain_archive_inventories a JOIN brain_source_items p ON "
+                "p.tenant_id=a.tenant_id AND p.source_id=a.source_id AND p.id=a.item_id "
+                "AND p.current_version_id=a.source_version_id WHERE a.id=%s",
+                (inventory_id,),
+            ).fetchone()
+            if not current:
+                raise NotFound()
+            if after is not None:
+                anchor = conn.execute(
+                    "SELECT 1 FROM brain_archive_members m WHERE m.inventory_id=%s "
+                    f"AND m.ordinal=%s AND {eligible}",
+                    (inventory_id, after, MAX_NORMALIZED_BYTES),
+                ).fetchone()
+                if not anchor:
+                    raise NotFound()
+            total = conn.execute(
+                "SELECT count(*) AS n FROM brain_archive_members m WHERE m.inventory_id=%s "
+                f"AND {eligible}",
+                (inventory_id, MAX_NORMALIZED_BYTES),
+            ).fetchone()
+            assert total is not None
+            rows = conn.execute(
+                "SELECT m.ordinal,m.locator AS member_locator,m.observed_size AS size_bytes,"
+                "m.media_hint AS media_type,m.depth,EXISTS (SELECT 1 FROM "
+                "brain_archive_member_text_receipts r WHERE r.inventory_id=m.inventory_id "
+                "AND r.member_locator=m.locator) AS already_published "
+                "FROM brain_archive_members m WHERE m.inventory_id=%s "
+                f"AND {eligible} AND (%s::integer IS NULL OR m.ordinal>%s) "
+                "ORDER BY m.ordinal LIMIT %s",
+                (
+                    inventory_id,
+                    MAX_NORMALIZED_BYTES,
+                    after,
+                    after,
+                    limit + 1,
+                ),
+            ).fetchall()
+            self.store.audit(
+                conn,
+                ctx,
+                "brain.archive_member_text_plan",
+                "archive_inventory",
+                inventory_id,
+            )
+        page = rows[:limit]
+        return {
+            "inventory_id": inventory_id,
+            "eligible_members": total["n"],
+            "results": [dict(row) for row in page],
+            "next_cursor": page[-1]["ordinal"] if len(rows) > limit and page else None,
+            "limit": limit,
+            "untrusted_metadata": True,
+            "source_effects": False,
+            "data_effects": False,
+        }
+
     def email_part_bridge_plan(
         self,
         ctx: TenantContext,

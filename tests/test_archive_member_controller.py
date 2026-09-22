@@ -7,7 +7,7 @@ import json
 import secrets
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import ANY, MagicMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -81,6 +81,58 @@ def test_check_preflights_without_target_query_or_worker_read(
     processor.assert_called_once()
     processor.return_value.read.assert_not_called()
     core.assert_not_called()
+
+
+def test_preview_check_is_non_consuming_and_normal_run_is_exact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, _ = controller_files(tmp_path)
+    store = MagicMock()
+    processor = Mock(side_effect=AssertionError("preview must not construct Docker worker"))
+    monkeypatch.setattr(control, "Store", Mock(return_value=store))
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", processor)
+    core = MagicMock()
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    inventory = "archive_inventory_" + "a" * 32
+    checked = control.run_archive_member_plan_controller(
+        path, "runtime-dsn", inventory, after=3, limit=7, check=True
+    )
+    assert checked == {
+        "configuration_valid": True,
+        "execution_verified": False,
+        "operation": "archive_member_text_plan",
+        "source_effects": False,
+        "data_effects": False,
+    }
+    core.archive_member_text_plan.assert_not_called()
+    processor.assert_not_called()
+    core.archive_member_text_plan.return_value = {
+        "inventory_id": inventory,
+        "eligible_members": 1,
+        "results": [
+            {
+                "ordinal": 4,
+                "member_locator": "folder/proof.md",
+                "size_bytes": 5,
+                "media_type": "text/markdown",
+                "depth": 0,
+                "already_published": False,
+            }
+        ],
+        "next_cursor": None,
+        "limit": 7,
+        "untrusted_metadata": True,
+        "source_effects": False,
+        "data_effects": False,
+    }
+    result = control.run_archive_member_plan_controller(
+        path, "runtime-dsn", inventory, after=3, limit=7
+    )
+    assert result["operation"] == "archive_member_text_plan"
+    assert result["untrusted_metadata"] is True
+    assert result["source_effects"] is False and result["data_effects"] is False
+    core.archive_member_text_plan.assert_called_once_with(ANY, inventory, after=3, limit=7)
+    processor.assert_not_called()
 
 
 @pytest.mark.parametrize(

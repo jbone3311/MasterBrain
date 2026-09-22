@@ -9,7 +9,7 @@ import secrets
 import zipfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 from uuid import UUID, uuid4
 
 import pytest
@@ -210,6 +210,42 @@ def test_processor_fault_is_generic_and_publishes_nothing(
     ) as caught:
         run_archive_member_controller(path, store.dsn, inventory_id, locator, uuid4())
     assert "processor fault" not in str(caught.value)
+    with store.transaction(pg.datacore_context(ctx)) as conn:
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_archive_member_text_receipts").fetchone()[
+                "n"
+            ]
+            == 0
+        )
+
+
+def test_preview_pages_without_docker_source_or_receipt_effects(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    path, root, inventory_id, _, raw = setup_operator(tmp_path, ctx, store)
+    processor = Mock(side_effect=AssertionError("preview must not construct Docker worker"))
+    monkeypatch.setattr(controller, "DockerArchiveMemberProcessor", processor)
+    before = root.joinpath("bundle.zip").stat()
+    first = controller.run_archive_member_plan_controller(path, store.dsn, inventory_id, limit=1)
+    assert first["operation"] == "archive_member_text_plan"
+    assert first["eligible_members"] == 2
+    assert first["next_cursor"] is not None
+    second = controller.run_archive_member_plan_controller(
+        path, store.dsn, inventory_id, after=first["next_cursor"], limit=1
+    )
+    assert second["next_cursor"] is None
+    assert {row["member_locator"] for row in first["results"] + second["results"]} == {
+        "folder/proof.md",
+        "sibling.txt",
+    }
+    assert root.joinpath("bundle.zip").read_bytes() == raw
+    assert root.joinpath("bundle.zip").stat().st_mtime_ns == before.st_mtime_ns
+    processor.assert_not_called()
     with store.transaction(pg.datacore_context(ctx)) as conn:
         assert (
             conn.execute("SELECT count(*) AS n FROM brain_archive_member_text_receipts").fetchone()[
