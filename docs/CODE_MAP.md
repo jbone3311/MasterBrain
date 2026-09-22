@@ -3,7 +3,8 @@
 Updated 2026-09-21. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
-`masterbrain` and is not yet wired into Email ingestion.
+`masterbrain`; an additive bridge can now map selected current Email evidence without
+redirecting Email ingestion or search.
 
 | Responsibility | Actual files |
 |---|---|
@@ -15,7 +16,7 @@ The retained `email_brain` tree is the Email capability. New shared code begins 
 | FileOS index generation operator | [fileos_index_controller.py](../src/masterbrain/fileos_index_controller.py), [ADR-059](adr/059_fileos_index_operator.md) |
 | FOS live-donor parity | [parity harness](../scripts/datacore_parity.py), [synthetic corpus](../tests/fixtures/datacore_parity/corpus/), [unit contract](../tests/test_datacore_dedup.py), [stress tests](../tests/test_datacore_stress.py) |
 | Structured travel/bill memory | [memory.py](../src/email_brain/memory.py), [memory_schema.py](../src/email_brain/memory_schema.py), [memory_extract.py](../src/email_brain/memory_extract.py), [memory.js](../src/email_brain/web/memory.js), [migration 0014](../migrations/0014_structured_memory.sql) |
-| Shared DataCore persistence | [persistence.py](../src/masterbrain/datacore/persistence.py), [migration 0015](../migrations/0015_datacore_persistence.sql), [run receipts 0017](../migrations/0017_fileos_run_receipts.sql), [inventory reconciliation 0018](../migrations/0018_fileos_inventory_reconciliation.sql), [index generations 0019](../migrations/0019_datacore_index_generations.sql), [contract](DATACORE_PERSISTENCE.md) |
+| Shared DataCore persistence | [persistence.py](../src/masterbrain/datacore/persistence.py), [migration 0015](../migrations/0015_datacore_persistence.sql), [run receipts 0017](../migrations/0017_fileos_run_receipts.sql), [inventory reconciliation 0018](../migrations/0018_fileos_inventory_reconciliation.sql), [index generations 0019](../migrations/0019_datacore_index_generations.sql), [Email bridge 0020](../migrations/0020_email_datacore_bridge.sql), [contract](DATACORE_PERSISTENCE.md) |
 | Reviewed KnowledgeCore | [knowledge.py](../src/masterbrain/knowledge.py), [knowledge_schema.py](../src/masterbrain/knowledge_schema.py), [migration 0016](../migrations/0016_knowledgecore.sql), [contract](KNOWLEDGECORE.md) |
 | Demo/migrate/serve | [cli.py](../src/email_brain/cli.py) |
 | REST/request boundary | [api.py](../src/email_brain/api.py), [schemas.py](../src/email_brain/schemas.py) |

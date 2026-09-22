@@ -2,10 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4A — Email evidence bridge into DataCore.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define an additive, replayable mapping from
-retained Email evidence into shared source/version/evidence/document/chunk identities
-without replacing the battle-tested Email ingestion tables or losing MIME provenance.
+**Checkpoint 4B — private Email bridge operator.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Add a bounded, explicit command that maps
+selected current Email evidence through the verified DataCore bridge, with private
+configuration, exact worker scopes, non-consuming preflight and safe replay. It must
+not scan implicitly, redirect Email search or gain mailbox/provider authority.
 
 ## Completed gates
 
@@ -63,13 +64,16 @@ without replacing the battle-tested Email ingestion tables or losing MIME proven
 - Checkpoint 3J current-aware grouped retrieval revision `8bada56` passed hosted
   [CI 35731669724](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35731669724)
   and [restore 35731669604](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35731669604).
+- Checkpoint 4A Email evidence bridge runtime `0eae4c4` plus least-privilege
+  correction `bb4b45d` passed hosted
+  [CI 35734147533](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147533)
+  and [restore 35734147551](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147551).
 
 ## Current work
 
-- Inventory Email message/evidence/attachment identities and define a non-destructive
-  bridge receipt with exact legacy-to-shared provenance and replay behavior.
-- Publish a bounded synthetic Email corpus through the bridge, then prove shared search
-  parity before any existing Email API or ingestion path is redirected.
+- Define the closed private operator input and exact current-version selection.
+- Prove check mode, replay, authorization revocation, bounded batches and partial-run
+  visibility without changing existing Email ingestion or search behavior.
 
 ## Deferred by design
 

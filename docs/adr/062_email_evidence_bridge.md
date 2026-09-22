@@ -1,6 +1,9 @@
 # ADR-062 — Additive Email evidence bridge into DataCore
 
-Status: accepted for implementation; hosted verification pending.
+Status: accepted and verified for the additive prototype tranche on 2026-09-22.
+Runtime revision `0eae4c4` plus least-privilege correction `bb4b45d` passed hosted
+[CI 35734147533](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147533)
+and [restore 35734147551](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147551).
 
 ## Context
 

@@ -33,12 +33,12 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Intake envelope | Stable source/item/version IDs, observed time, actor, policy | Implemented FileOS slice |
 | Hashing | Streaming content digests with algorithm/version | Implemented first tranche |
 | Dedupe | Exact-content groups; signals distinct from deletion authority | Implemented read-only first tranche |
-| Evidence | Immutable original bytes or provider-bound immutable reference | Shared FileOS metadata/evidence plus Email originals implemented |
+| Evidence | Immutable original bytes or provider-bound immutable reference | FileOS evidence plus additive current-Email shared bridge implemented |
 | File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | Text + isolated PDF/DOCX/XLSX implemented; archives planned |
 | OCR | Explicitly approved, isolated, page/image outputs with confidence | Planned |
-| Normalization | Source-neutral document/message representation | Email-specific implementation exists; generalization planned |
+| Normalization | Source-neutral document/message representation | FileOS text and current Email message bridge implemented; attachments planned |
 | Metadata | Source and extracted metadata, versioned independently | Partial |
-| Provenance | Every derivative links source, transform, version, code and time | Implemented FileOS text slice |
+| Provenance | Every derivative links source, transform, version, code and time | Implemented FileOS and current Email bridge slices |
 | Chunking | Deterministic, versioned chunks retaining evidence offsets | Implemented bounded text slice |
 | Indexing | Lexical first, optional vector, rebuildable and freshness-aware | Immutable FileOS generation/activation path implemented; hosted gates green |
 | Database primitives | tenancy, audit, jobs, leases, idempotency, outbox, retention | Strong Email foundation; extraction planned |
@@ -61,7 +61,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 
 | Capability | Required behavior | State |
 |---|---|---|
-| Search | Compact ranked hits across Email and files | Grouped DataCore/KnowledgeCore plus source and cross-source current FileOS generation APIs implemented; Email migration/global ranking planned |
+| Search | Compact ranked hits across Email and files | Shared retained search can find explicitly bridged Email plus FileOS; current Email/global ranking planned |
 | Answer | Evidence-backed synthesis with uncertainty and coverage | Designed |
 | Expand | Fetch selected entity/project/claim/timeline/chunk | Exact DataCore/KnowledgeCore expansion implemented |
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |

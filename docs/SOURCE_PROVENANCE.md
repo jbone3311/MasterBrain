@@ -48,5 +48,6 @@ KnowledgeCore claim will require a provenance path back to evidence.
 Contracts reject naive timestamps, unsafe locators, non-SHA-256 evidence digests,
 invalid identifiers, nested/unbounded metadata, NUL text and contradictory storage
 state. They add no source permissions or external effects. Existing Email evidence
-tables remain authoritative for the Email capability; the additive DataCore tables
-are authoritative only for sources imported through the new shared path.
+tables remain authoritative for the Email capability. The additive bridge maps only
+explicit current Email versions into DataCore with an immutable legacy-to-shared
+receipt; it does not redirect ingestion, search or original-byte access.

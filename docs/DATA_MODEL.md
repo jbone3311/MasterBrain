@@ -1,7 +1,7 @@
 # MasterBrain Data Model
 
 This document combines implemented source-neutral tables with the remaining target
-model. Migrations `0015` through `0019` implement the first DataCore,
+model. Migrations `0015` through `0020` implement the first DataCore,
 KnowledgeCore and FileOS completion/freshness slices; names not identified as
 implemented remain logical targets.
 
@@ -79,6 +79,11 @@ Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;
 rollback appends an activation of an older ready generation rather than rewriting it.
+
+Migration `0020_email_datacore_bridge.sql` adds an append-only mapping receipt from
+one legacy Email message-version UUID to shared source, item, version, evidence and
+normalized-document identities. The original MIME remains in `raw_objects`; the
+receipt and shared derivatives are forced-RLS and immutable.
 
 - **job**, **lease**, **checkpoint**, **inbox**, **outbox**, **idempotency_record**
 - **audit_event**, **policy_decision**, **change_feed**, **retention_action**

@@ -17,6 +17,7 @@ EmailBrain table and does not alter FOS-Master.
 | `brain_change_events` | Source-version and publication notifications | Append-only |
 | `brain_jobs` | Bounded extraction/OCR/normalization/index work | Controlled state transitions |
 | `brain_import_receipts` | Actor-scoped idempotency result | Append-only |
+| `brain_email_bridge_receipts` | Legacy Email evidence to shared identity/provenance closure | Append-only |
 | `brain_fileos_run_receipts` | Fully accounted run, outcomes and provenance | Append-only |
 | `brain_fileos_run_items` | Exact item/outcome membership of a completed run | Append-only |
 | `brain_fileos_absence_events` | Item absent between consecutive completed inventories | Append-only |
@@ -30,6 +31,14 @@ Every table carries `tenant_id`, has forced PostgreSQL row-level security and is
 available only through explicit runtime-role grants. FileOS evidence is
 `source_bound`: this tranche stores a relative locator and verified hash, not file
 bytes. The source remains authoritative and read-only.
+
+Current Email versions may be added through `bridge_current_email_version`. It
+requires both shared ingest and document-publication scopes, the exact legacy UUID,
+an idempotency UUID and a code revision. It preserves raw MIME in `raw_objects`, uses
+opaque shared locators, publishes the legacy lexical fields with the deterministic
+`email-message-v1` normalizer and records the complete mapping in migration 0020.
+Historical, deleted, quarantined or inconsistent projections fail closed. Existing
+Email ingestion and search are not redirected.
 
 ## Snapshot import
 

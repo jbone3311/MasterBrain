@@ -2,6 +2,36 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified additive Email evidence bridge into DataCore
+
+Runtime revision **0eae4c4** and least-privilege correction **bb4b45d** passed
+[CI 35734147533](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147533)
+and [restore 35734147551](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147551),
+observed 2026-09-22 Pacific.
+
+- One explicitly selected current, visible, immutable Email version can now publish
+  deterministic opaque source/item/version/evidence/document/chunk identities into
+  DataCore. Subject, sender and clean text preserve the legacy lexical fields;
+  retained raw MIME stays in its original immutable table and is not copied.
+- Migration 0020 adds a forced-RLS, append-only bridge receipt tying the legacy UUID
+  to every shared identity and exact transform/code provenance. Exact replay is a
+  no-op; changed requests, historical versions, deleted/quarantined messages and
+  inconsistent snapshots fail closed. The account lock prevents ingestion races.
+- The first hosted run correctly exposed that `SELECT ... FOR SHARE` would require
+  broader runtime privileges. Revision `bb4b45d` removed the unnecessary row lock,
+  retained advisory serialization and added migration-history coverage; no new
+  UPDATE/DELETE/table-owner authority was granted.
+- Hosted CI passed **2,414 Python tests** with PostgreSQL and no skips; deployment
+  repeated the suite. **134 Node contracts**, five MIME-container cases, 15 Email
+  PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed. Documentation
+  verification covered **128 Markdown files / 786 local paths and fragments**.
+- PostgreSQL 17 restore passed 29 safety tests and verified **62 tables / 230 rows /
+  two tenants / four encrypted objects / two identity bindings** in 22.5 seconds.
+- Existing Email ingestion/search remains authoritative. No automatic scan, bridge
+  operator, attachment migration, current-Email read projection, API cutover or
+  mailbox effect is implied. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified current-aware grouped FileOS and KnowledgeCore retrieval
 
 Revision **8bada56** passed

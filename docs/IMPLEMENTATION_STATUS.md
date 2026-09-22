@@ -39,6 +39,10 @@ mean hosted, live-source accepted, or production ready.
   compatibility search remains unchanged; hosted PostgreSQL/restore green.
 - Explicit current-FileOS evidence mode for grouped KnowledgeCore retrieval with
   retained-history default and separate ranks; hosted PostgreSQL/restore green.
+- Additive current-Email evidence bridge into shared DataCore source/version/evidence/
+  document/chunk identities with opaque locators, exact replay, immutable provenance,
+  forced RLS and account-race fencing; hosted PostgreSQL/restore green. Existing Email
+  ingestion and search remain authoritative.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -47,6 +51,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
+- Private Email bridge operator/backfill, attachment bridging, current-Email shared
+  projection and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
