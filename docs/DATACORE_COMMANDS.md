@@ -46,9 +46,22 @@ not inspect the account. The command is a read-only operator preview, not execut
 authority; it creates no bridge, contacts no provider and authorizes no batch executor
 or automatic backfill.
 
-ADR-072 defines, but does not yet implement, a separate `bridge-batch` command that
-will accept only an owner-private, digest-bound list of 1–100 reviewed version UUIDs
-and fixed idempotency keys. It will never discover or continue preview pages itself.
+Execute one reviewed, sealed plan only after checking it:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain email bridge-batch \
+  --config /private/operator/email-bridge.json \
+  --plan /private/operator/email-batch.json \
+  --check
+```
+
+The owner-private plan is closed and contains `version: 1`, one account UUID, the
+config's exact `code_revision`, 1–100 unique ordered version/key pairs, and their
+canonical `plan_sha256`. Remove `--check` only after validation. Execution stops on
+the first refused item; retry the exact unchanged plan so completed items replay and
+remaining items retain their original keys. The command never discovers or continues
+preview pages, bridges attachments/documents, contacts providers or changes mailboxes.
 
 ## Bridge one Email attachment or approved PDF derivative
 

@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import ANY, MagicMock, Mock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -49,6 +49,33 @@ def controller_files(
     path = state / "email-bridge.json"
     private_write(path, config)
     return path, config, credentials
+
+
+def batch_plan_file(
+    tmp_path: Path,
+    *,
+    count: int = 3,
+    code_revision: str = "unit-email-bridge-v1",
+) -> tuple[Path, UUID, list[control.EmailBridgeBatchItem]]:
+    account = uuid4()
+    items = [
+        control.EmailBridgeBatchItem(
+            legacy_version_id=uuid4(), idempotency_key=uuid4()
+        )
+        for _ in range(count)
+    ]
+    payload = {
+        "version": 1,
+        "account_id": str(account),
+        "code_revision": code_revision,
+        "items": [item.model_dump(mode="json") for item in items],
+        "plan_sha256": control.email_bridge_batch_sha256(
+            1, account, code_revision, items
+        ),
+    }
+    plan_path = tmp_path / "state" / "email-batch.json"
+    private_write(plan_path, payload)
+    return plan_path, account, items
 
 
 def test_check_authenticates_without_read_or_write(
@@ -117,6 +144,118 @@ def test_bridge_plan_check_is_non_consuming_and_normal_run_is_content_free(
     assert result["source_effects"] is False and result["data_effects"] is False
     assert not {"subject", "sender", "content", "provider", "locator"} & result.keys()
     core.email_bridge_plan.assert_called_once_with(ANY, account, after=cursor, limit=7)
+
+
+def test_batch_check_validates_seal_without_target_access(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    plan_path, _, items = batch_plan_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = Mock(side_effect=AssertionError("check must not inspect batch targets"))
+    monkeypatch.setattr(control, "DataCoreStore", core)
+    result = control.run_email_bridge_batch_controller(
+        config_path, plan_path, "runtime-dsn", check=True
+    )
+    assert result["requested"] == len(items)
+    assert result["execution_verified"] is False
+    assert result["data_effects"] is False
+    core.assert_not_called()
+
+
+def test_batch_is_fail_stop_and_exact_retry_replays_completed_items(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    plan_path, account, items = batch_plan_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = MagicMock()
+    core.bridge_current_email_version.side_effect = [
+        SimpleNamespace(changed=True),
+        control.Conflict("synthetic refusal"),
+    ]
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    stopped = control.run_email_bridge_batch_controller(
+        config_path, plan_path, "runtime-dsn"
+    )
+    assert stopped["complete"] is False
+    assert stopped["completed"] == 1 and stopped["recorded"] == 1
+    assert stopped["failed_version_id"] == str(items[1].legacy_version_id)
+    assert core.bridge_current_email_version.call_count == 2
+
+    core.bridge_current_email_version.reset_mock()
+    core.bridge_current_email_version.side_effect = [
+        SimpleNamespace(changed=False),
+        SimpleNamespace(changed=True),
+        SimpleNamespace(changed=True),
+    ]
+    completed = control.run_email_bridge_batch_controller(
+        config_path, plan_path, "runtime-dsn"
+    )
+    assert completed["complete"] is True
+    assert completed["completed"] == 3
+    assert completed["recorded"] == 2 and completed["replayed"] == 1
+    assert [call.args[1:3] for call in core.bridge_current_email_version.call_args_list] == [
+        (item.legacy_version_id, item.idempotency_key) for item in items
+    ]
+    assert all(
+        call.kwargs
+        == {
+            "code_revision": "unit-email-bridge-v1",
+            "expected_account_id": account,
+        }
+        for call in core.bridge_current_email_version.call_args_list
+    )
+    assert not {"subject", "sender", "content", "provider", "locator"} & completed.keys()
+
+
+@pytest.mark.parametrize("mutation", ["digest", "duplicate_version", "duplicate_key"])
+def test_batch_rejects_invalid_seal_before_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str
+) -> None:
+    config_path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    plan_path, _, _ = batch_plan_file(tmp_path)
+    payload = json.loads(plan_path.read_text())
+    if mutation == "digest":
+        payload["plan_sha256"] = "0" * 64
+    elif mutation == "duplicate_version":
+        payload["items"][1]["legacy_version_id"] = payload["items"][0][
+            "legacy_version_id"
+        ]
+    else:
+        payload["items"][1]["idempotency_key"] = payload["items"][0]["idempotency_key"]
+    private_write(plan_path, payload)
+    store = Mock()
+    monkeypatch.setattr(control, "Store", store)
+    with pytest.raises(control.EmailBridgeControllerError):
+        control.run_email_bridge_batch_controller(
+            config_path, plan_path, "runtime-dsn", check=True
+        )
+    store.assert_not_called()
+
+
+def test_batch_requires_private_plan_and_matching_revision(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    plan_path, _, _ = batch_plan_file(tmp_path, code_revision="other-revision")
+    store = Mock()
+    monkeypatch.setattr(control, "Store", store)
+    with pytest.raises(control.EmailBridgeControllerError):
+        control.run_email_bridge_batch_controller(config_path, plan_path, "runtime-dsn")
+    plan_path, _, _ = batch_plan_file(tmp_path)
+    plan_path.chmod(0o644)
+    with pytest.raises(control.EmailBridgeControllerError):
+        control.run_email_bridge_batch_controller(config_path, plan_path, "runtime-dsn")
+    store.assert_not_called()
 
 
 def test_bridge_returns_only_opaque_bounded_receipt(

@@ -37,7 +37,12 @@ from email_brain.synthetic import fake_email
 from masterbrain.datacore.extraction import ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
-from masterbrain.email_bridge_controller import run_email_bridge_controller
+from masterbrain.email_bridge_controller import (
+    EmailBridgeBatchItem,
+    email_bridge_batch_sha256,
+    run_email_bridge_batch_controller,
+    run_email_bridge_controller,
+)
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
     ClaimWrite,
@@ -533,6 +538,97 @@ def test_email_bridge_plan_is_stable_bounded_and_labels_existing_bridge(
         core.email_bridge_plan(bridge_ctx, account, after=uuid4())
     with pytest.raises(ValueError, match="limit"):
         core.email_bridge_plan(bridge_ctx, account, limit=101)
+
+
+def test_email_bridge_batch_fail_stop_and_exact_retry(
+    database: tuple[Store, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    ctx, account = tenant
+    bridge_ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    code_revision = "email-bridge-batch-test-v1"
+    config = email_bridge_config(tmp_path, ctx, code_revision)
+    messages = [
+        replace(
+            item(f"batch-{ordinal}", body=f"Sealed batch body {ordinal}"),
+            provider_id=f"provider-batch-{ordinal}",
+        )
+        for ordinal in range(3)
+    ]
+    store.ingest_page(ctx, account, None, "bridge-batch-page", messages)
+    preview = core.email_bridge_plan(bridge_ctx, account, limit=3)["results"]
+    items = [
+        EmailBridgeBatchItem(
+            legacy_version_id=UUID(row["legacy_version_id"]),
+            idempotency_key=uuid4(),
+        )
+        for row in preview
+    ]
+    with pytest.raises(Conflict, match="sealed batch account"):
+        core.bridge_current_email_version(
+            bridge_ctx,
+            items[0].legacy_version_id,
+            uuid4(),
+            code_revision=code_revision,
+            expected_account_id=uuid4(),
+        )
+    digest = email_bridge_batch_sha256(1, account, code_revision, items)
+    plan = tmp_path / "batch-plan.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "account_id": str(account),
+                "code_revision": code_revision,
+                "items": [item.model_dump(mode="json") for item in items],
+                "plan_sha256": digest,
+            }
+        )
+    )
+    plan.chmod(0o600)
+    checked = run_email_bridge_batch_controller(config, plan, store.dsn, check=True)
+    assert checked["execution_verified"] is False and checked["requested"] == 3
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_bridge_receipts"
+        ).fetchone()["n"] == 0
+
+    original = DataCoreStore.bridge_current_email_version
+    calls = 0
+
+    def fail_second(self: DataCoreStore, *args: Any, **kwargs: Any) -> Any:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise Conflict("synthetic mid-batch refusal")
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(DataCoreStore, "bridge_current_email_version", fail_second)
+    stopped = run_email_bridge_batch_controller(config, plan, store.dsn)
+    assert stopped["complete"] is False
+    assert stopped["completed"] == 1 and stopped["failed_version_id"] == str(
+        items[1].legacy_version_id
+    )
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_bridge_receipts"
+        ).fetchone()["n"] == 1
+
+    monkeypatch.setattr(DataCoreStore, "bridge_current_email_version", original)
+    completed = run_email_bridge_batch_controller(config, plan, store.dsn)
+    assert completed["complete"] is True
+    assert completed["recorded"] == 2 and completed["replayed"] == 1
+    assert [row["legacy_version_id"] for row in completed["results"]] == [
+        str(item.legacy_version_id) for item in items
+    ]
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_bridge_receipts"
+        ).fetchone()["n"] == 3
 
 
 def test_current_email_search_tracks_legacy_update_and_delete(

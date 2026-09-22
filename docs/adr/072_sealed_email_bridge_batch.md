@@ -1,6 +1,6 @@
 # ADR-072 — Sealed explicit Email bridge batch
 
-Status: accepted for implementation.
+Status: implemented; hosted verification pending.
 
 ## Context
 

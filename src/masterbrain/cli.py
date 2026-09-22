@@ -16,6 +16,7 @@ from masterbrain.datacore.dedup import DEFAULT_CONFIG, compare_files, file_hash,
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.email_bridge_controller import (
     run_email_attachment_bridge_controller,
+    run_email_bridge_batch_controller,
     run_email_bridge_controller,
     run_email_bridge_plan_controller,
     run_email_document_bridge_controller,
@@ -129,6 +130,12 @@ def build_parser() -> argparse.ArgumentParser:
     bridge_plan.add_argument("--after", type=UUID)
     bridge_plan.add_argument("--limit", type=int, default=25)
     bridge_plan.add_argument("--check", action="store_true")
+    bridge_batch = email_commands.add_parser(
+        "bridge-batch", help="Execute one sealed Email message bridge batch"
+    )
+    bridge_batch.add_argument("--config", type=Path, required=True)
+    bridge_batch.add_argument("--plan", type=Path, required=True)
+    bridge_batch.add_argument("--check", action="store_true")
     attachment_bridge = email_commands.add_parser(
         "bridge-attachment", help="Bridge one Email attachment occurrence"
     )
@@ -239,6 +246,20 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.account_id,
                         after=args.after,
                         limit=args.limit,
+                        check=args.check,
+                    )
+                )
+            )
+        elif args.command == "email" and args.email_command == "bridge-batch":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_email_bridge_batch_controller(
+                        args.config,
+                        args.plan,
+                        dsn,
                         check=args.check,
                     )
                 )

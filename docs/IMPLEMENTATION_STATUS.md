@@ -73,6 +73,9 @@ mean hosted, live-source accepted, or production ready.
 - Private, read-only `masterbrain email bridge-plan` command for a cursor-bounded page
   of current visible versions in one explicit account, with already-bridged labels and
   content-free output; hosted PostgreSQL/restore gates green.
+- Private `masterbrain email bridge-batch` command for one owner-private, digest-bound
+  list of 1–100 current message versions with fixed keys, account fencing, fail-stop
+  execution and exact-plan retry; hosted verification is pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -81,8 +84,6 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Digest-bound explicit Email message bridge batches with fixed per-item keys,
-  fail-stop execution and exact-plan retry (ADR-072).
 - Email bridge batch/backfill, atomic cross-layer snapshots, automated source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation

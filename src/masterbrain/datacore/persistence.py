@@ -337,6 +337,7 @@ class DataCoreStore:
         idempotency_key: UUID,
         *,
         code_revision: str,
+        expected_account_id: UUID | None = None,
     ) -> EmailBridgeResult:
         """Map one current immutable Email version into shared DataCore primitives."""
         self.store.require(ctx, "brain.source.ingest")
@@ -358,6 +359,17 @@ class DataCoreStore:
                 "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
                 (f"{ctx.tenant_id}:email-bridge:{legacy_version_id}",),
             )
+            legacy_identity = conn.execute(
+                "SELECT account_id FROM message_versions WHERE id=%s",
+                (legacy_version_id,),
+            ).fetchone()
+            if not legacy_identity:
+                raise NotFound()
+            if (
+                expected_account_id is not None
+                and legacy_identity["account_id"] != expected_account_id
+            ):
+                raise Conflict("Email evidence is outside the sealed batch account")
             receipt = conn.execute(
                 f"SELECT {receipt_columns} FROM brain_email_bridge_receipts "
                 "WHERE actor_id=%s AND idempotency_key=%s",
@@ -392,12 +404,6 @@ class DataCoreStore:
                 )
                 return self._email_bridge_result(prior, changed=False)
 
-            legacy_identity = conn.execute(
-                "SELECT account_id FROM message_versions WHERE id=%s",
-                (legacy_version_id,),
-            ).fetchone()
-            if not legacy_identity:
-                raise NotFound()
             # Serialize against Email ingestion's account lock so a version cannot
             # become historical between the visibility check and bridge commit.
             conn.execute(
