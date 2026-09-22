@@ -69,7 +69,7 @@ mean hosted, live-source accepted, or production ready.
   restore gates green.
 - Bounded `/v1/brain/current-coverage` status across registered FileOS and Email
   sources, including active-generation/completed-run comparison and current bridged
-  Email family counts/timestamps; hosted verification is pending.
+  Email family counts/timestamps; hosted PostgreSQL/restore gates green.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.

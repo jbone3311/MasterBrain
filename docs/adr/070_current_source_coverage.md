@@ -1,6 +1,7 @@
 # ADR-070 — Bounded current-source coverage status
 
-Status: implemented; hosted verification pending.
+Status: implemented and hosted-verified in runtime revision `82012e9`; state-transition
+stress coverage added in `c2c97da`.
 
 ## Context
 

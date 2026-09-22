@@ -2,6 +2,35 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified current-source coverage status
+
+Runtime revision **82012e9** and state-transition stress revision **c2c97da** passed
+[CI 35753479059](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35753479059)
+and [restore 35753479343](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35753479343),
+observed 2026-09-22 Pacific.
+
+- `GET /v1/brain/current-coverage` provides a cursor-bounded, single-transaction view
+  over registered opaque sources. FileOS rows report active immutable generation and
+  latest completed-run facts; Email rows report only current explicitly bridged
+  message/attachment/document counts and newest bridge timestamps.
+- The route requires `brain.changes.read`, declares incomplete coverage and never
+  enumerates filesystem paths, mailboxes, provider IDs or content. It performs no
+  scan, bridge, rebuild, activation or source access.
+- PostgreSQL proves no-generation and search-ready FileOS states, active/latest-run
+  comparison, pagination, tenant isolation and Email counts across update, bridge,
+  quarantine, recovery and deletion. Retained evidence remains available while current
+  counts disappear as required.
+- CI and deployment each passed **2,442 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **136 Markdown files / 800
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 17.91
+  seconds.
+- The endpoint does not claim a complete mailbox/filesystem inventory or calculate a
+  policy-dependent stale threshold. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
 ## Verified grouped current-source search
 
 Runtime revision **8da5b36** and mixed-source assertion correction **7939674** passed

@@ -2,12 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4I — current-source coverage and freshness design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define a bounded, authorization-safe status
-view that tells an LLM which FileOS and Email sources can contribute to current search,
-which coverage is missing or stale and what timestamps support that conclusion. Keep
-status separate from search, expose no provider/filesystem enumeration and preserve the
-existing independent-read consistency contract.
+**Checkpoint 4J — Email bridge backfill preview design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define a bounded, non-consuming plan over
+current visible Email versions that reports already bridged versus eligible work using
+opaque identities only. Establish stable cursor/replay semantics, exact authorization
+and race fencing before any multi-item bridge executor is allowed.
 
 ## Completed gates
 
@@ -94,13 +93,17 @@ existing independent-read consistency contract.
   assertion correction `7939674` passed hosted
   [CI 35751228402](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35751228402)
   and [restore 35751228447](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35751228447).
+- Checkpoint 4I current-source coverage runtime `82012e9` plus state-transition stress
+  revision `c2c97da` passed hosted
+  [CI 35753479059](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35753479059)
+  and [restore 35753479343](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35753479343).
 
 ## Current work
 
-- Implement ADR-070's single-transaction, cursor-bounded registered-source status read
-  without adding a scheduler or provider/filesystem enumeration side channel.
-- Prove FileOS readiness/completion comparison, Email current-family counts,
-  pagination, scope denial and tenant isolation before exposing the route as accepted.
+- Inventory current Email-version selection and the single-item bridge's race/
+  idempotency guarantees before defining any batch plan.
+- Specify a bounded preview that cannot consume work or expose message content,
+  provider identifiers or mailbox enumeration to ordinary Brain clients.
 
 ## Deferred by design
 
