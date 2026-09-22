@@ -1292,7 +1292,7 @@ def test_archive_member_text_publication_is_distinct_replayable_and_not_current_
     ctx, _ = tenant
     ctx = datacore_context(ctx)
     core = DataCoreStore(store)
-    _, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_member_text")
+    raw, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_member_text")
     recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
     member = result.members[0]
     target = core.archive_member_target(ctx, recorded.inventory_id, member.locator)
@@ -1318,6 +1318,10 @@ def test_archive_member_text_publication_is_distinct_replayable_and_not_current_
     assert first.version_id != result.source.version_id
     assert core.search(ctx, "archive derivative searchable")[0].evidence_id == first.evidence_id
     assert core.search_current_fileos(ctx, "archive derivative searchable") == []
+    current = core.search_current_archive_members(ctx, "archive derivative searchable")
+    assert [hit.evidence_id for hit in current] == [first.evidence_id]
+    assert current[0].locator.startswith("archive-member/archiveitem_")
+    assert member.locator not in current[0].locator
     with store.transaction(ctx) as conn:
         assert (
             conn.execute("SELECT count(*) AS n FROM brain_archive_member_text_receipts").fetchone()[
@@ -1356,6 +1360,12 @@ def test_archive_member_text_publication_is_distinct_replayable_and_not_current_
             code_revision="test-revision",
             idempotency_key=uuid4(),
         )
+    (tmp_path / "fixture.zip").write_bytes(raw + b"changed")
+    core.import_fileos_snapshot(
+        ctx, fileos_manifest(tmp_path, source_id="files_member_text", hour=2), uuid4()
+    )
+    assert core.search_current_archive_members(ctx, "archive derivative searchable") == []
+    assert core.search(ctx, "archive derivative searchable")[0].evidence_id == first.evidence_id
 
 
 def test_archive_member_text_publication_rechecks_current_parent_and_target(
@@ -2124,6 +2134,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         json={
             "query": "Project Atlas",
             "fileos_limit": 5,
+            "archive_member_limit": 5,
             "email_message_limit": 5,
             "email_attachment_limit": 5,
             "email_document_limit": 5,
@@ -2138,6 +2149,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert grouped["consistency"] == "independent_layer_reads"
     assert grouped["coverage"]["complete"] is False
     assert grouped["layers"]["fileos"][0]["evidence_id"] == evidence_id
+    assert grouped["layers"]["archive_members"] == []
     assert grouped["layers"]["email_messages"][0]["evidence_id"] == current_email.evidence_id
     assert grouped["layers"]["email_attachments"] == []
     assert grouped["layers"]["email_documents"] == []

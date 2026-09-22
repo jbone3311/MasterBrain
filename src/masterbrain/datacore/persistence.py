@@ -3211,6 +3211,55 @@ class DataCoreStore:
             )
             return [SearchHit(**row) for row in rows]
 
+    def search_current_archive_members(
+        self, ctx: TenantContext, query: str, *, limit: int = 10
+    ) -> list[SearchHit]:
+        """Search explicit archive text derivatives whose parent archive is current."""
+        self.store.require(ctx, "brain.search")
+        if not query.strip() or len(query) > 500 or "\x00" in query or not 1 <= limit <= 20:
+            raise ValueError("invalid current archive-member search")
+        with self.store.transaction(ctx) as conn:
+            rows = conn.execute(
+                "SELECT c.id AS chunk_id,c.document_id,e.id AS evidence_id,v.source_id,"
+                "i.locator,ts_headline('simple',c.text,plainto_tsquery('simple',%s),"
+                "'MaxWords=35,MinWords=10') AS excerpt,"
+                "ts_rank_cd(c.search_vector,plainto_tsquery('simple',%s)) AS rank "
+                "FROM brain_chunks c JOIN brain_normalized_documents d ON "
+                "d.tenant_id=c.tenant_id AND d.id=c.document_id "
+                "JOIN brain_evidence e ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id JOIN brain_source_items i ON "
+                "i.tenant_id=v.tenant_id AND i.source_id=v.source_id AND i.id=v.item_id "
+                "AND i.current_version_id=v.id WHERE EXISTS (SELECT 1 FROM "
+                "brain_archive_member_text_receipts r JOIN brain_archive_inventories a ON "
+                "a.tenant_id=r.tenant_id AND a.id=r.inventory_id "
+                "JOIN brain_archive_members m ON m.tenant_id=a.tenant_id "
+                "AND m.inventory_id=a.id AND m.locator=r.member_locator "
+                "JOIN brain_source_items p ON p.tenant_id=a.tenant_id "
+                "AND p.source_id=a.source_id AND p.id=a.item_id "
+                "AND p.current_version_id=a.source_version_id "
+                "JOIN brain_evidence pe ON pe.tenant_id=a.tenant_id "
+                "AND pe.id=r.parent_evidence_id AND pe.source_version_id=a.source_version_id "
+                "WHERE r.tenant_id=d.tenant_id AND r.document_id=d.id "
+                "AND r.evidence_id=e.id AND r.source_id=v.source_id "
+                "AND r.item_id=v.item_id AND r.version_id=v.id "
+                "AND r.parent_source_version_id=a.source_version_id "
+                "AND a.source_id=r.source_id AND NOT m.is_container "
+                "AND v.sha256=m.sha256 AND v.size_bytes=m.observed_size "
+                "AND v.media_type=m.media_hint) AND "
+                "c.search_vector @@ plainto_tsquery('simple',%s) "
+                "ORDER BY rank DESC,c.id LIMIT %s",
+                (query, query, query, limit),
+            ).fetchall()
+            self.store.audit(
+                conn,
+                ctx,
+                "brain.current_archive_member_search",
+                "brain_index",
+                "archive_member_derivatives",
+            )
+            return [SearchHit(**row) for row in rows]
+
     def search_current_email_family(
         self,
         ctx: TenantContext,

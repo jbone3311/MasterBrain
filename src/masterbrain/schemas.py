@@ -42,6 +42,7 @@ class UnifiedSearchRequest(ClosedModel):
 class CurrentGroupedSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     fileos_limit: int = Field(default=10, ge=1, le=20, strict=True)
+    archive_member_limit: int = Field(default=10, ge=1, le=20, strict=True)
     email_message_limit: int = Field(default=10, ge=1, le=20, strict=True)
     email_attachment_limit: int = Field(default=10, ge=1, le=20, strict=True)
     email_document_limit: int = Field(default=10, ge=1, le=20, strict=True)
