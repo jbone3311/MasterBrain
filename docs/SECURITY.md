@@ -68,6 +68,11 @@ actor/request/manifest digest. Closed outcome counts must cover every item and m
 published documents. Freshness reads expose only the latest complete run and never a
 partial prefix, root or locator.
 
+Completed FileOS inventories are independently balanced in PostgreSQL against their
+receipt counts. Per-source serialization and monotonic observation time prevent stale
+completion from replacing newer state. Absence is inferred only between two completed
+ledgers; it retains evidence and does not authorize hiding, deletion or any file effect.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

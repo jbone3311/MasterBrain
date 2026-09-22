@@ -469,6 +469,13 @@ def create_app(
     ) -> dict[str, Any]:
         return brain.fileos_freshness(principal.context, source_id)
 
+    @app.get("/v1/brain/sources/{source_id}/inventory")
+    def brain_source_inventory(
+        source_id: str,
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+    ) -> dict[str, Any]:
+        return brain.fileos_inventory(principal.context, source_id)
+
     @app.post("/v1/knowledge/assertions", status_code=201)
     def publish_knowledge(
         body: KnowledgePublishRequest,

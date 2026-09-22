@@ -1,7 +1,7 @@
 # MasterBrain Data Model
 
 This document combines implemented source-neutral tables with the remaining target
-model. Migrations `0015`, `0016` and `0017` implement the first DataCore,
+model. Migrations `0015` through `0018` implement the first DataCore,
 KnowledgeCore and FileOS completion/freshness slices; names not identified as
 implemented remain logical targets.
 
@@ -70,6 +70,10 @@ Migration `0017_fileos_run_receipts.sql` implements an append-only, forced-RLS
 completion receipt. It binds exact intake/manifest identity to terminal outcome counts
 and extractor provenance. Only a completed receipt advances the current FileOS
 freshness view; intake and partial document prefixes do not.
+
+Migration `0018_fileos_inventory_reconciliation.sql` binds every completed receipt to
+an exact immutable item/outcome ledger. Consecutive complete ledgers produce immutable
+absence events without deleting evidence or treating partial work as a full inventory.
 
 - **job**, **lease**, **checkpoint**, **inbox**, **outbox**, **idempotency_record**
 - **audit_event**, **policy_decision**, **change_feed**, **retention_action**

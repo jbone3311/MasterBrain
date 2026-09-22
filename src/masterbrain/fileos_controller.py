@@ -137,12 +137,19 @@ def run_fileos_controller(
         changed = sum(
             item.publication is not None and item.publication.changed for item in result.results
         )
+        manifest_items = manifest["items"]
+        item_id_by_version = {item["version_id"]: item["item_id"] for item in manifest_items}
+        item_outcomes = {
+            item_id_by_version[item.extraction.version_id]: item.extraction.status.value
+            for item in result.results
+        }
         authorize()
         receipt = core.complete_fileos_run(
             initial.context,
             manifest,
             idempotency_key,
             outcomes=result.counts,
+            item_outcomes=item_outcomes,
             published_documents=published,
             code_revision=config.code_revision,
             document_processor_version=(processor.processor_version if processor else None),

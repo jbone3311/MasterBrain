@@ -26,6 +26,8 @@ mean hosted, live-source accepted, or production ready.
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
   hosted PostgreSQL and populated-restore gates green.
+- Exact completed-run item ledger, stale-completion refusal, immutable absence events
+  and bounded inventory counts; hosted PostgreSQL/restore acceptance pending.
 - Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
   commitments and corrections with evidence links, temporal history, lexical search,
   exact reads, change feed, forced RLS and append-only enforcement.
@@ -34,8 +36,8 @@ mean hosted, live-source accepted, or production ready.
 
 ## Designed, not implemented
 
-- Scheduled/incremental FileOS scanning, source cursors/reconciliation and legacy
-  Office/archive/image/OCR extraction.
+- Scheduled/incremental FileOS scanning, source cursors, automatic rebuild/current-
+  visibility policy and legacy Office/archive/image/OCR extraction.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

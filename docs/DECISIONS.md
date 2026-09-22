@@ -380,6 +380,10 @@ audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
 
+[ADR-056 completed-inventory reconciliation](adr/056_fileos_inventory_reconciliation.md)
+adds exact per-run membership and immutable absence evidence without deletion or
+search-visibility effects.
+
 [ADR-055 FileOS completion and freshness](adr/055_fileos_completion_freshness.md)
 separates imported/partial work from an immutable fully accounted run and exposes only
 latest-complete source status.

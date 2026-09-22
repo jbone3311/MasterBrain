@@ -25,6 +25,8 @@ operator, date, result, exceptions and rollback receipt.
 - Chunk/index rebuild produces equivalent identities and query results.
 - Source freshness advances only on an immutable receipt whose terminal counts cover
   the exact intake manifest; crash prefixes and conflicts never report complete.
+- Inventory membership balances exactly against its completion receipt; absence is
+  inferred only between complete monotonic observations and never deletes evidence.
 - Dedupe never implies deletion; held-out/cross-domain protections pass.
 - Every migrated FOS tranche has zero unexplained golden differences and documented
   shadow tolerances.

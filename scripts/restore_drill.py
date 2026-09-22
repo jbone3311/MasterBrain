@@ -386,6 +386,7 @@ def seed(
             brain_manifest,
             brain_run_id,
             outcomes={"extracted": 1},
+            item_outcomes={brain_item_id: "extracted"},
             published_documents=1,
             code_revision="synthetic-restore-v1",
             document_processor_version=None,
@@ -748,6 +749,13 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             freshness["status"] == "complete"
             and freshness["latest_complete_run"]["run_id"] == current.brain_run_id,
             "restored DataCore FileOS completion receipt changed",
+        )
+        inventory = DataCoreStore(store).fileos_inventory(ctx, f"files_{current.keyword}")
+        require(
+            inventory["run_id"] == current.brain_run_id
+            and inventory["present_items"] == 1
+            and inventory["newly_absent_items"] == 0,
+            "restored DataCore FileOS inventory ledger changed",
         )
         knowledge = KnowledgeCore(store)
         knowledge_hits = knowledge.search(ctx, f"knowledgecoreproof {current.keyword}")

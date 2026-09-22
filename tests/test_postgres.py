@@ -390,6 +390,10 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
         manifest,
         run_id,
         outcomes=result.counts,
+        item_outcomes={
+            item["item_id"]: by_name[item["locator"]].extraction.status.value
+            for item in manifest["items"]
+        },
         published_documents=1,
         code_revision="test-adapter-v1",
         document_processor_version=None,
@@ -401,6 +405,10 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
             manifest,
             run_id,
             outcomes=result.counts,
+            item_outcomes={
+                item["item_id"]: by_name[item["locator"]].extraction.status.value
+                for item in manifest["items"]
+            },
             published_documents=1,
             code_revision="test-adapter-v1",
             document_processor_version=None,
@@ -413,7 +421,75 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
             manifest,
             run_id,
             outcomes={"changed": 1, "empty": 1, "unsupported": 1},
+            item_outcomes={
+                item["item_id"]: (
+                    "empty"
+                    if item["locator"] == "good.txt"
+                    else by_name[item["locator"]].extraction.status.value
+                )
+                for item in manifest["items"]
+            },
             published_documents=0,
+            code_revision="test-adapter-v1",
+            document_processor_version=None,
+        )
+    assert core.fileos_inventory(ctx, "files_adapter") | {"completed_at": None} == {
+        "source_id": "files_adapter",
+        "status": "complete",
+        "run_id": run_id,
+        "observed_at": datetime(2026, 9, 22, 1, tzinfo=UTC),
+        "completed_at": None,
+        "present_items": 3,
+        "newly_absent_items": 0,
+        "absent_evidence_retained": True,
+        "search_visibility_changed": False,
+    }
+
+    unsupported.unlink()
+    next_manifest = fileos_manifest(tmp_path, source_id="files_adapter", hour=2)
+    next_run_id = uuid4()
+    next_result = FileOSAdapter(core).publish_snapshot(
+        ctx,
+        tmp_path,
+        next_manifest,
+        next_run_id,
+        code_revision="test-adapter-v1",
+    )
+    next_by_version = {
+        entry.extraction.version_id: entry.extraction.status.value
+        for entry in next_result.results
+    }
+    core.complete_fileos_run(
+        ctx,
+        next_manifest,
+        next_run_id,
+        outcomes=next_result.counts,
+        item_outcomes={
+            item["item_id"]: next_by_version[item["version_id"]]
+            for item in next_manifest["items"]
+        },
+        published_documents=2,
+        code_revision="test-adapter-v1",
+        document_processor_version=None,
+    )
+    inventory = core.fileos_inventory(ctx, "files_adapter")
+    assert inventory["run_id"] == next_run_id
+    assert inventory["present_items"] == 2
+    assert inventory["newly_absent_items"] == 1
+    assert inventory["absent_evidence_retained"] is True
+    stale_run_id = uuid4()
+    core.import_fileos_snapshot(ctx, manifest, stale_run_id)
+    with pytest.raises(Conflict, match="not newer"):
+        core.complete_fileos_run(
+            ctx,
+            manifest,
+            stale_run_id,
+            outcomes=result.counts,
+            item_outcomes={
+                item["item_id"]: by_name[item["locator"]].extraction.status.value
+                for item in manifest["items"]
+            },
+            published_documents=1,
             code_revision="test-adapter-v1",
             document_processor_version=None,
         )
@@ -466,8 +542,14 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     freshness = api.get("/v1/brain/sources/files_adapter/freshness", headers=headers)
     assert freshness.status_code == 200
     assert freshness.json()["status"] == "complete"
-    assert freshness.json()["latest_complete_run"]["run_id"] == str(run_id)
-    assert freshness.json()["latest_complete_run"]["outcomes"] == result.counts
+    assert freshness.json()["latest_complete_run"]["run_id"] == str(next_run_id)
+    assert freshness.json()["latest_complete_run"]["outcomes"] == next_result.counts
+    inventory_response = api.get(
+        "/v1/brain/sources/files_adapter/inventory", headers=headers
+    )
+    assert inventory_response.status_code == 200
+    assert inventory_response.json()["run_id"] == str(next_run_id)
+    assert inventory_response.json()["newly_absent_items"] == 1
     with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
         conn.execute(
             "UPDATE brain_fileos_run_receipts SET outcomes='{}' WHERE tenant_id=%s",

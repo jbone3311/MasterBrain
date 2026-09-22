@@ -18,6 +18,8 @@ EmailBrain table and does not alter FOS-Master.
 | `brain_jobs` | Bounded extraction/OCR/normalization/index work | Controlled state transitions |
 | `brain_import_receipts` | Actor-scoped idempotency result | Append-only |
 | `brain_fileos_run_receipts` | Fully accounted run, outcomes and provenance | Append-only |
+| `brain_fileos_run_items` | Exact item/outcome membership of a completed run | Append-only |
+| `brain_fileos_absence_events` | Item absent between consecutive completed inventories | Append-only |
 
 Every table carries `tenant_id`, has forced PostgreSQL row-level security and is
 available only through explicit runtime-role grants. FileOS evidence is
@@ -62,3 +64,10 @@ A receipt is inserted only after every snapshot item is accounted and is bound t
 same actor, UUID and canonical manifest digest as its intake. Closed outcome counts
 and published-document totals are checked in Python and PostgreSQL. The latest
 complete receipt drives source freshness; partial work never advances it.
+
+Migration `0018_fileos_inventory_reconciliation.sql` adds the exact per-item ledger.
+A deferred database constraint independently balances it against the receipt. Only a
+newer completed observation can become current; a stale completion conflicts. Missing
+items are recorded only by comparing two consecutive completed ledgers, so partial
+imports cannot manufacture deletion. Absence retains all evidence and does not yet
+change search visibility.

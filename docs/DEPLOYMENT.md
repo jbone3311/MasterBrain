@@ -76,5 +76,10 @@ before using completion/freshness. A rollout may continue older one-shot publica
 without the new controller revision, but must not advertise source freshness until
 the receipt table, constraints, RLS and restore verification are active.
 
+Migration `0018_fileos_inventory_reconciliation.sql` must precede the matching
+controller revision because completion now writes the exact item ledger atomically.
+Do not mix the new controller with an older schema. Rollback stops the new controller
+and inventory read route; it does not remove immutable receipt or absence history.
+
 The current `compose.yaml` remains a local Email-capability PostgreSQL setup, not a
 production MasterBrain deployment.

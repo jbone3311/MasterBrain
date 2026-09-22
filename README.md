@@ -49,6 +49,7 @@ FileOS sources ┘       │              │                │
 | Isolated FileOS PDF/DOCX/XLSX extraction | Implemented; hosted container and restore gates green |
 | Authenticated one-snapshot FileOS publication command | Implemented; hosted PostgreSQL and restore gates green |
 | FileOS completion receipts and source freshness | Implemented; hosted PostgreSQL and restore gates green |
+| Completed FileOS inventory and absence reconciliation evidence | Implemented; hosted PostgreSQL/restore gate pending |
 | Archives, images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped DataCore/KnowledgeCore search | Working shared prototype |

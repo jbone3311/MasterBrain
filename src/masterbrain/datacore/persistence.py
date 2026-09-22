@@ -315,6 +315,7 @@ class DataCoreStore:
         run_id: UUID,
         *,
         outcomes: Mapping[str, int],
+        item_outcomes: Mapping[str, str],
         published_documents: int,
         code_revision: str,
         document_processor_version: str | None,
@@ -324,11 +325,19 @@ class DataCoreStore:
         source, observed_at, items = _manifest_items(manifest)
         allowed = {"extracted", "empty", "unsupported", "deferred", "changed", "failed"}
         counts = dict(sorted(outcomes.items()))
+        items_by_id = {item.item_id: item for item in items}
+        item_results = dict(sorted(item_outcomes.items()))
+        calculated: dict[str, int] = {}
+        for outcome in item_results.values():
+            calculated[outcome] = calculated.get(outcome, 0) + 1
         if (
             not isinstance(run_id, UUID)
             or (not counts and bool(items))
             or not set(counts) <= allowed
             or any(type(value) is not int or value <= 0 for value in counts.values())
+            or set(item_results) != set(items_by_id)
+            or not set(item_results.values()) <= allowed
+            or dict(sorted(calculated.items())) != counts
             or sum(counts.values()) != len(items)
             or type(published_documents) is not int
             or not 0 <= published_documents <= len(items)
@@ -359,7 +368,7 @@ class DataCoreStore:
         with self.store.transaction(ctx) as conn:
             conn.execute(
                 "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
-                (f"{ctx.tenant_id}:fileos-run:{ctx.actor_id}:{run_id}",),
+                (f"{ctx.tenant_id}:fileos-source:{source.source_id}",),
             )
             imported = conn.execute(
                 "SELECT request_hash,result FROM brain_import_receipts "
@@ -380,51 +389,117 @@ class DataCoreStore:
                 "FROM brain_fileos_run_receipts WHERE actor_id=%s AND run_id=%s",
                 (ctx.actor_id, run_id),
             ).fetchone()
+            previous = conn.execute(
+                "SELECT actor_id,run_id,observed_at,manifest_sha256 "
+                "FROM brain_fileos_run_receipts WHERE source_id=%s "
+                "AND NOT (actor_id=%s AND run_id=%s) "
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
+                (source.source_id, ctx.actor_id, run_id),
+            ).fetchone()
+            if previous and observed_at <= previous["observed_at"]:
+                raise Conflict("FileOS completion observation is not newer")
+            recorded = existing is None
             if existing:
                 completed_at = existing.pop("completed_at")
                 if existing != expected:
                     raise Conflict("FileOS completion receipt changed")
-                return FileOSRunReceipt(
-                    run_id,
-                    source.source_id,
-                    observed_at,
-                    completed_at,
-                    len(items),
-                    counts,
-                    published_documents,
-                    False,
+            else:
+                row = conn.execute(
+                    "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+                    "observed_at,manifest_sha256,code_revision,text_extractor_version,"
+                    "document_processor_version,item_count,outcomes,published_documents) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                    "RETURNING completed_at",
+                    (
+                        ctx.tenant_id,
+                        ctx.actor_id,
+                        run_id,
+                        source.source_id,
+                        observed_at,
+                        manifest_hash,
+                        code_revision,
+                        FILEOS_TEXT_EXTRACTOR_VERSION,
+                        document_processor_version,
+                        len(items),
+                        Jsonb(counts),
+                        published_documents,
+                    ),
+                ).fetchone()
+                assert row is not None
+                completed_at = row["completed_at"]
+            for item_id, outcome in item_results.items():
+                item = items_by_id[item_id]
+                conn.execute(
+                    "INSERT INTO brain_fileos_run_items(tenant_id,actor_id,run_id,source_id,"
+                    "observed_at,item_id,version_id,outcome) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) "
+                    "ON CONFLICT DO NOTHING",
+                    (
+                        ctx.tenant_id,
+                        ctx.actor_id,
+                        run_id,
+                        source.source_id,
+                        observed_at,
+                        item_id,
+                        item.version_id,
+                        outcome,
+                    ),
                 )
-            row = conn.execute(
-                "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
-                "observed_at,manifest_sha256,code_revision,text_extractor_version,"
-                "document_processor_version,item_count,outcomes,published_documents) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
-                "RETURNING completed_at",
-                (
-                    ctx.tenant_id,
-                    ctx.actor_id,
-                    run_id,
-                    source.source_id,
-                    observed_at,
-                    manifest_hash,
-                    code_revision,
-                    FILEOS_TEXT_EXTRACTOR_VERSION,
-                    document_processor_version,
-                    len(items),
-                    Jsonb(counts),
-                    published_documents,
-                ),
-            ).fetchone()
-            assert row is not None
+            saved_items = conn.execute(
+                "SELECT item_id,version_id,outcome FROM brain_fileos_run_items "
+                "WHERE actor_id=%s AND run_id=%s ORDER BY item_id",
+                (ctx.actor_id, run_id),
+            ).fetchall()
+            expected_items = [
+                {
+                    "item_id": item_id,
+                    "version_id": items_by_id[item_id].version_id,
+                    "outcome": outcome,
+                }
+                for item_id, outcome in item_results.items()
+            ]
+            if saved_items != expected_items:
+                raise Conflict("FileOS run item ledger changed")
+            if previous:
+                missing = conn.execute(
+                    "SELECT old.item_id,old.version_id FROM brain_fileos_run_items old "
+                    "LEFT JOIN brain_fileos_run_items current ON current.tenant_id=old.tenant_id "
+                    "AND current.actor_id=%s AND current.run_id=%s "
+                    "AND current.item_id=old.item_id "
+                    "WHERE old.actor_id=%s AND old.run_id=%s AND current.item_id IS NULL "
+                    "ORDER BY old.item_id",
+                    (ctx.actor_id, run_id, previous["actor_id"], previous["run_id"]),
+                ).fetchall()
+                for missing_item in missing:
+                    event_id = stable_id(
+                        "absence", str(run_id), missing_item["item_id"], missing_item["version_id"]
+                    )
+                    conn.execute(
+                        "INSERT INTO brain_fileos_absence_events(tenant_id,id,source_id,item_id,"
+                        "version_id,previous_actor_id,previous_run_id,observed_actor_id,"
+                        "observed_run_id,observed_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                        "ON CONFLICT DO NOTHING",
+                        (
+                            ctx.tenant_id,
+                            event_id,
+                            source.source_id,
+                            missing_item["item_id"],
+                            missing_item["version_id"],
+                            previous["actor_id"],
+                            previous["run_id"],
+                            ctx.actor_id,
+                            run_id,
+                            observed_at,
+                        ),
+                    )
             return FileOSRunReceipt(
                 run_id,
                 source.source_id,
                 observed_at,
-                row["completed_at"],
+                completed_at,
                 len(items),
                 counts,
                 published_documents,
-                True,
+                recorded,
             )
 
     def fileos_freshness(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
@@ -440,7 +515,7 @@ class DataCoreStore:
                 "published_documents,code_revision,"
                 "text_extractor_version,document_processor_version "
                 "FROM brain_fileos_run_receipts WHERE source_id=%s "
-                "ORDER BY completed_at DESC,run_id DESC LIMIT 1",
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
                 (source_id,),
             ).fetchone()
             self.store.audit(conn, ctx, "brain.fileos_freshness_read", "brain_source", source_id)
@@ -450,6 +525,56 @@ class DataCoreStore:
             "latest_complete_run": row,
             "partial_runs_included": False,
         }
+
+    def fileos_inventory(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
+        """Summarize membership and newly observed absence for the latest complete run."""
+        self.store.require(ctx, "brain.changes.read")
+        if not _IDENTITY.fullmatch(source_id):
+            raise NotFound()
+        with self.store.transaction(ctx) as conn:
+            source = conn.execute(
+                "SELECT 1 FROM brain_sources WHERE id=%s AND kind='fileos'", (source_id,)
+            ).fetchone()
+            if not source:
+                raise NotFound()
+            latest = conn.execute(
+                "SELECT actor_id,run_id,observed_at,completed_at,item_count "
+                "FROM brain_fileos_run_receipts WHERE source_id=%s "
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
+                (source_id,),
+            ).fetchone()
+            if latest:
+                absence = conn.execute(
+                    "SELECT count(*) AS n FROM brain_fileos_absence_events "
+                    "WHERE source_id=%s AND observed_actor_id=%s AND observed_run_id=%s",
+                    (source_id, latest["actor_id"], latest["run_id"]),
+                ).fetchone()
+                assert absence is not None
+                result = {
+                    "source_id": source_id,
+                    "status": "complete",
+                    "run_id": latest["run_id"],
+                    "observed_at": latest["observed_at"],
+                    "completed_at": latest["completed_at"],
+                    "present_items": latest["item_count"],
+                    "newly_absent_items": absence["n"],
+                    "absent_evidence_retained": True,
+                    "search_visibility_changed": False,
+                }
+            else:
+                result = {
+                    "source_id": source_id,
+                    "status": "no_completed_run",
+                    "run_id": None,
+                    "observed_at": None,
+                    "completed_at": None,
+                    "present_items": None,
+                    "newly_absent_items": None,
+                    "absent_evidence_retained": True,
+                    "search_visibility_changed": False,
+                }
+            self.store.audit(conn, ctx, "brain.fileos_inventory_read", "brain_source", source_id)
+            return result
 
     def publish_text(
         self,
