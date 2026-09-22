@@ -12,6 +12,7 @@ redirecting Email ingestion or search.
 | DataCore contracts | [contracts.py](../src/masterbrain/datacore/contracts.py); immutable source/version/evidence/provenance types |
 | Read-only FileOS inventory | [fileos.py](../src/masterbrain/datacore/fileos.py); deterministic bounded snapshot, no source effects |
 | Isolated FileOS documents | [document contract](../src/masterbrain/datacore/document_contract.py), [worker](../src/masterbrain/datacore/document_worker.py), [parent](../src/masterbrain/datacore/document_processor.py), [image](../Dockerfile.documents), [guide](FILEOS_DOCUMENT_EXTRACTION.md) |
+| Planned FileOS archives | [pinned donor audit and worker plan](FILEOS_ARCHIVE_EXTRACTION.md), [ADR-075](adr/075_fileos_archive_inventory_worker.md) |
 | Authenticated FileOS operator | [fileos_controller.py](../src/masterbrain/fileos_controller.py), [ADR-054](adr/054_fileos_operator_publication.md) |
 | FileOS index generation operator | [fileos_index_controller.py](../src/masterbrain/fileos_index_controller.py), [ADR-059](adr/059_fileos_index_operator.md) |
 | Email message/attachment/document bridge operator | [email_bridge_controller.py](../src/masterbrain/email_bridge_controller.py), [ADR-063](adr/063_email_bridge_operator.md), [ADR-067](adr/067_email_part_bridge_operator.md) |

@@ -2,12 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4N — FileOS archive donor inventory and containment design.** Work occurs
-on `codex/masterbrain-foundation` in PR #4. Audit FOS-Master `archive_unpack.py`, its
-tests and transitive contracts at the pinned donor commit; define a read-only isolated
-archive worker with entry, byte, depth, ratio, path and format bounds before copying
-behavior. No archive extraction enters the shared path until a live-donor golden and
-malicious/fault corpus proves the accepted contract.
+**Checkpoint 4N — FileOS archive inventory worker.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Implement the accepted source-bound,
+in-memory ZIP/TAR inventory contract and dedicated restricted worker, then compare it
+with pinned FOS-Master `archive_unpack.py`. No member bytes, persistence or search
+publication enter the shared path until live-donor golden and malicious/fault corpora
+prove the bounded manifest contract.
 
 ## Completed gates
 
@@ -119,10 +119,10 @@ malicious/fault corpus proves the accepted contract.
 
 ## Current work
 
-- Record the donor archive surface, supported formats, dependencies, observable
-  outputs, error behavior and any unsafe or source-effectful paths.
-- Define containment and golden-parity gates before extracting the first archive
-  primitive into DataCore.
+- Implement a closed request/result contract with donor-equivalent cumulative bounds,
+  safe relative member identities and explicit partial/bomb/refusal outcomes.
+- Add an in-memory worker, live-donor normalized parity harness and malicious/fault
+  corpus before adding persistence or a container image.
 
 ## Deferred by design
 

@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-075](adr/075_fileos_archive_inventory_worker.md) defines an isolated in-memory
+ZIP/TAR inventory worker before any member-byte or search publication. It preserves
+the pinned donor's bounded recognition/accounting contract while explicitly refusing
+duplicate-name ambiguity and bomb publication; implementation is pending.
+
 [ADR-074](adr/074_sealed_email_part_bridge_batch.md) defines a digest-bound,
 single-kind attachment or approved-document plan with fixed per-item keys, fail-stop
 execution and exact-plan replay. It authorizes no dependency discovery, mixed-kind

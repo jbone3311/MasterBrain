@@ -96,6 +96,7 @@ roadmap item is not an implementation claim.
 - [DataCore persistence and lexical retrieval](docs/DATACORE_PERSISTENCE.md)
 - [FileOS read-only extraction](docs/FILEOS_EXTRACTION.md)
 - [FileOS PDF and Office extraction](docs/FILEOS_DOCUMENT_EXTRACTION.md)
+- [FileOS archive donor audit and extraction plan](docs/FILEOS_ARCHIVE_EXTRACTION.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)

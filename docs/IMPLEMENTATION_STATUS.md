@@ -95,7 +95,9 @@ mean hosted, live-source accepted, or production ready.
   source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
-  scheduling/global-search cutover and legacy Office/archive/image/OCR extraction.
+  scheduling/global-search cutover and legacy Office/image/OCR extraction. A pinned
+  archive donor audit and isolated manifest-only worker contract are designed, not yet
+  implemented.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

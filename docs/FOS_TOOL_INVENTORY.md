@@ -56,6 +56,19 @@ The migration ledger pins the Git commit as the primary provenance. The extracti
 hashes cover the DC-004 text/Markdown/HTML/CSV candidate and its donor test suite;
 optional PDF/Office/image dependencies remain outside that tranche. Each later tranche
 must add source hashes for all transitive candidate files before adaptation.
+
+DC-004C archive audit adds:
+
+```text
+a1d20a266313d7b2c36af3ffc78311ee1999824cfe933883a3ed4f87223d21ba  _SYSTEM/tools/archive_unpack.py
+a5b177791a3045661b42c1aa4692b54546c8ce18711f00d7ca74fd08c055dfbc  _SYSTEM/tests/test_archive_unpack.py
+```
+
+The pinned donor archive suite passes 47 hermetic/adversarial tests. Runtime imports
+are standard-library-only plus best-effort logging. `intake_pipeline.py`,
+`doc_extract.py`, `email_core.py` and `intake_preflight.py` are integration references;
+`zip_index.py` and `archive_manager.py` contain database/file effects and are excluded.
+See [archive extraction plan](FILEOS_ARCHIVE_EXTRACTION.md).
 ## Gaps found during inspection
 
 - Common-tool test coverage is uneven: intake/dedupe/extraction are comparatively
