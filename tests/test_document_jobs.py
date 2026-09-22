@@ -24,6 +24,10 @@ from email_brain.pdf_contract import PdfPage, PdfResult, PdfUnavailable, source_
 from email_brain.schemas import SearchRequest
 from email_brain.store import AccessDenied, Conflict, NotFound
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.email_bridge_controller import (
+    run_email_attachment_bridge_controller,
+    run_email_document_bridge_controller,
+)
 
 database, tenant = pg.database, pg.tenant
 pytestmark = pytest.mark.postgres
@@ -136,7 +140,9 @@ def test_approved_result_search_citation_cache_and_unchanged_source(database, te
     assert jobs.run_once(worker, account, processor) is None
 
 
-def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(database, tenant):
+def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(
+    database, tenant, tmp_path
+):
     store, admin = database
     ctx, account = tenant
     jobs, _, worker, receipt, _ = setup(database, tenant)
@@ -158,22 +164,23 @@ def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(database, te
         )
     assert core.search(bridge_ctx, "pdfonlyproof") == []
 
-    attachment = core.bridge_email_attachment(
-        bridge_ctx, receipt, uuid4(), code_revision="pdf-derivative-test-v1"
+    config = pg.email_bridge_config(tmp_path, ctx, "pdf-derivative-test-v1")
+    attachment = run_email_attachment_bridge_controller(
+        config, store.dsn, receipt, uuid4()
     )
-    derived = core.bridge_email_document_extraction(
-        bridge_ctx, extraction_id, uuid4(), code_revision="pdf-derivative-test-v1"
+    derived = run_email_document_bridge_controller(
+        config, store.dsn, extraction_id, uuid4()
     )
-    assert derived.changed is True
-    assert derived.evidence_id == attachment.evidence_id
-    assert derived.extraction_status == "extracted" and derived.chunks == 1
+    assert derived["recorded"] is True and attachment["recorded"] is True
+    assert derived["evidence_id"] == attachment["evidence_id"]
+    assert derived["extraction_status"] == "extracted" and derived["chunks"] == 1
     assert [hit.evidence_id for hit in core.search(bridge_ctx, "pdfonlyproof")] == [
-        attachment.evidence_id
+        attachment["evidence_id"]
     ]
     replay = core.bridge_email_document_extraction(
         bridge_ctx, extraction_id, uuid4(), code_revision="pdf-derivative-test-v1"
     )
-    assert replay == replace(derived, changed=False)
+    assert replay.document_id == derived["document_id"] and replay.changed is False
 
     with store.transaction(bridge_ctx) as conn:
         saved = conn.execute(

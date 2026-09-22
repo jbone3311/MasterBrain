@@ -109,6 +109,89 @@ def test_bridge_returns_only_opaque_bounded_receipt(
     )
 
 
+@pytest.mark.parametrize(
+    ("runner", "operation"),
+    [
+        (control.run_email_attachment_bridge_controller, "bridge_email_attachment"),
+        (
+            control.run_email_document_bridge_controller,
+            "bridge_email_document_extraction",
+        ),
+    ],
+)
+def test_part_bridge_checks_are_non_consuming(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    runner: object,
+    operation: str,
+) -> None:
+    path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    store = MagicMock()
+    monkeypatch.setattr(control, "Store", Mock(return_value=store))
+    core = Mock(side_effect=AssertionError("check must not inspect the target"))
+    monkeypatch.setattr(control, "DataCoreStore", core)
+    result = runner(path, "runtime-dsn", uuid4(), uuid4(), check=True)
+    assert result == {
+        "configuration_valid": True,
+        "execution_verified": False,
+        "operation": operation,
+        "source_effects": False,
+        "data_effects": False,
+    }
+    core.assert_not_called()
+
+
+def test_part_bridge_dispatch_returns_content_free_receipts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, _ = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = MagicMock()
+    common = {
+        "source_id": "email_abc",
+        "item_id": "attachmentitem_abc",
+        "version_id": "attachmentversion_abc",
+        "evidence_id": "evidence_abc",
+        "document_id": "document_abc",
+        "chunks": 1,
+        "changed": True,
+    }
+    core.bridge_email_attachment.return_value = SimpleNamespace(
+        **common, part_id="part_abc", outcome="extracted"
+    )
+    core.bridge_email_document_extraction.return_value = SimpleNamespace(
+        **common, extraction_status="partial"
+    )
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    attachment_id, extraction_id, attachment_key, extraction_key = (
+        uuid4(),
+        uuid4(),
+        uuid4(),
+        uuid4(),
+    )
+    attachment = control.run_email_attachment_bridge_controller(
+        path, "runtime-dsn", attachment_id, attachment_key
+    )
+    document = control.run_email_document_bridge_controller(
+        path, "runtime-dsn", extraction_id, extraction_key
+    )
+    assert attachment["part_id"] == "part_abc" and attachment["outcome"] == "extracted"
+    assert document["extraction_status"] == "partial"
+    assert not {"content", "filename", "subject", "sender", "address"} & (
+        attachment.keys() | document.keys()
+    )
+    core.bridge_email_attachment.assert_called_once_with(
+        ANY, attachment_id, attachment_key, code_revision="unit-email-bridge-v1"
+    )
+    core.bridge_email_document_extraction.assert_called_once_with(
+        ANY, extraction_id, extraction_key, code_revision="unit-email-bridge-v1"
+    )
+
+
 def test_revocation_after_database_preflight_prevents_bridge(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

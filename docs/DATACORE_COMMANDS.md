@@ -27,8 +27,38 @@ Normal execution maps only the named current, visible Email version into DataCor
 Reuse the exact key after an uncertain result; never reuse it for another evidence
 version or code revision. Output contains opaque identities, chunk count and replay
 state, never Email content, addresses or provider identifiers. The command does not
-scan an account, bridge attachments, contact a provider, modify a mailbox or redirect
-legacy Email search.
+scan an account, contact a provider, modify a mailbox or redirect legacy Email search.
+
+## Bridge one Email attachment or approved PDF derivative
+
+After the parent message bridge succeeds, the same private config can bridge one
+explicit attachment occurrence:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain email bridge-attachment \
+  --config /private/operator/email-bridge.json \
+  --attachment-id 392ef97f-305d-494a-aa2f-7cf29a7f16a3 \
+  --idempotency-key bb642bc3-a561-446d-8dc3-971d99fc9de9 \
+  --check
+```
+
+After that occurrence bridge succeeds, one already-approved immutable PDF extraction
+can be published onto the same shared evidence:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain email bridge-document \
+  --config /private/operator/email-bridge.json \
+  --extraction-id f678b2e7-f5f5-4ddd-a95f-41106160a598 \
+  --idempotency-key fda0019c-354a-49e6-931e-42ffcc608ee7 \
+  --check
+```
+
+Both commands use the exact scopes and preflight rules above. `--check` does not
+inspect its target. Normal output contains opaque identities, bounded counts/status
+and replay state only. Neither command enumerates Email, approves or processes a
+document, reads attachment bytes or changes legacy search.
 
 ## Hash one file
 

@@ -197,3 +197,61 @@ def test_cli_email_bridge_uses_explicit_evidence_and_scrubs_dsn(
         "source_effects": False,
     }
     assert dsn not in output
+
+
+@pytest.mark.parametrize(
+    ("command", "flag", "attribute"),
+    [
+        ("bridge-attachment", "--attachment-id", "run_email_attachment_bridge_controller"),
+        ("bridge-document", "--extraction-id", "run_email_document_bridge_controller"),
+    ],
+)
+def test_cli_email_part_bridges_use_explicit_targets_and_scrub_dsn(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    command: str,
+    flag: str,
+    attribute: str,
+) -> None:
+    key = "93c5a004-81ab-45b6-8652-e8ced2b40e47"
+    target = "b22f0f5c-a784-46a1-95a7-b2b96e1f8396"
+    config = tmp_path / "email-bridge.json"
+    config.write_text("not opened by this dispatch test")
+    dsn = "postgresql://secret:secret@example.invalid/private"
+    monkeypatch.setenv("MASTERBRAIN_DSN", dsn)
+    monkeypatch.setattr(
+        cli,
+        attribute,
+        lambda path, received_dsn, received_target, received_key, check: {
+            "config": path == config,
+            "dsn": received_dsn == dsn,
+            "target": str(received_target) == target,
+            "key": str(received_key) == key,
+            "check": check,
+            "source_effects": False,
+        },
+    )
+    main(
+        [
+            "email",
+            command,
+            "--config",
+            str(config),
+            flag,
+            target,
+            "--idempotency-key",
+            key,
+            "--check",
+        ]
+    )
+    output = capsys.readouterr().out
+    assert json.loads(output) == {
+        "check": True,
+        "config": True,
+        "dsn": True,
+        "key": True,
+        "source_effects": False,
+        "target": True,
+    }
+    assert dsn not in output

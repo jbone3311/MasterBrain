@@ -250,6 +250,42 @@ def datacore_context(ctx: TenantContext) -> TenantContext:
     )
 
 
+def email_bridge_config(tmp_path: Path, ctx: TenantContext, code_revision: str) -> Path:
+    token = secrets.token_urlsafe(40)
+    credentials = tmp_path / "credentials.json"
+    token_file = tmp_path / "token"
+    config = tmp_path / "bridge.json"
+    credentials.write_text(
+        json.dumps(
+            [
+                {
+                    "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+                    "tenant_id": str(ctx.tenant_id),
+                    "actor_id": str(ctx.actor_id),
+                    "scopes": ["brain.source.ingest", "brain.document.publish"],
+                    "client_kind": "worker",
+                    "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+                }
+            ]
+        )
+    )
+    token_file.write_text(token)
+    for private in (credentials, token_file):
+        private.chmod(0o600)
+    config.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "credentials_file": str(credentials),
+                "token_file": str(token_file),
+                "code_revision": code_revision,
+            }
+        )
+    )
+    config.chmod(0o600)
+    return config
+
+
 def test_datacore_import_replay_drift_publish_and_search(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:
@@ -450,38 +486,7 @@ def test_email_bridge_private_operator_publishes_without_legacy_mutation(
     ctx, account = tenant
     store.ingest_page(ctx, account, None, "bridge-command", [item(body="Operator bridge")])
     legacy = store.search(ctx, SearchRequest(query="Operator bridge"))[0]["evidence_id"]
-    token = secrets.token_urlsafe(40)
-    credentials = tmp_path / "credentials.json"
-    token_file = tmp_path / "token"
-    config = tmp_path / "bridge.json"
-    credentials.write_text(
-        json.dumps(
-            [
-                {
-                    "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
-                    "tenant_id": str(ctx.tenant_id),
-                    "actor_id": str(ctx.actor_id),
-                    "scopes": ["brain.source.ingest", "brain.document.publish"],
-                    "client_kind": "worker",
-                    "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
-                }
-            ]
-        )
-    )
-    token_file.write_text(token)
-    for private in (credentials, token_file):
-        private.chmod(0o600)
-    config.write_text(
-        json.dumps(
-            {
-                "version": 1,
-                "credentials_file": str(credentials),
-                "token_file": str(token_file),
-                "code_revision": "email-bridge-command-test-v1",
-            }
-        )
-    )
-    config.chmod(0o600)
+    config = email_bridge_config(tmp_path, ctx, "email-bridge-command-test-v1")
     before = store.evidence(ctx, legacy)
     result = run_email_bridge_controller(config, store.dsn, legacy, uuid4())
     assert result["recorded"] is True

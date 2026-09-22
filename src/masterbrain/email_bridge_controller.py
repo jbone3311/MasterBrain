@@ -67,12 +67,69 @@ def run_email_bridge_controller(
     check: bool = False,
 ) -> dict[str, Any]:
     """Validate or bridge one explicitly selected current Email evidence version."""
+    return _run_email_bridge_controller(
+        path,
+        dsn,
+        legacy_version_id,
+        idempotency_key,
+        operation="bridge_current_email_version",
+        check=check,
+    )
+
+
+def run_email_attachment_bridge_controller(
+    path: Path,
+    dsn: str,
+    legacy_attachment_id: UUID,
+    idempotency_key: UUID,
+    *,
+    check: bool = False,
+) -> dict[str, Any]:
+    """Validate or bridge one explicitly selected Email attachment occurrence."""
+    return _run_email_bridge_controller(
+        path,
+        dsn,
+        legacy_attachment_id,
+        idempotency_key,
+        operation="bridge_email_attachment",
+        check=check,
+    )
+
+
+def run_email_document_bridge_controller(
+    path: Path,
+    dsn: str,
+    legacy_extraction_id: UUID,
+    idempotency_key: UUID,
+    *,
+    check: bool = False,
+) -> dict[str, Any]:
+    """Validate or bridge one explicitly selected approved Email PDF extraction."""
+    return _run_email_bridge_controller(
+        path,
+        dsn,
+        legacy_extraction_id,
+        idempotency_key,
+        operation="bridge_email_document_extraction",
+        check=check,
+    )
+
+
+def _run_email_bridge_controller(
+    path: Path,
+    dsn: str,
+    legacy_id: UUID,
+    idempotency_key: UUID,
+    *,
+    operation: Literal[
+        "bridge_current_email_version",
+        "bridge_email_attachment",
+        "bridge_email_document_extraction",
+    ],
+    check: bool,
+) -> dict[str, Any]:
     try:
-        if (
-            not dsn
-            or not isinstance(legacy_version_id, UUID)
-            or not isinstance(idempotency_key, UUID)
-        ):
+        if not dsn or not isinstance(legacy_id, UUID) or not isinstance(idempotency_key, UUID):
             raise EmailBridgeControllerError()
         config = EmailBridgeControllerConfig.model_validate(_json(path))
         identity = WorkerIdentity(
@@ -87,20 +144,22 @@ def run_email_bridge_controller(
             return {
                 "configuration_valid": True,
                 "execution_verified": False,
-                "operation": "bridge_current_email_version",
+                "operation": operation,
                 "source_effects": False,
                 "data_effects": False,
             }
         _current(identity, initial)
-        result = DataCoreStore(store).bridge_current_email_version(
+        core = DataCoreStore(store)
+        bridge = getattr(core, operation)
+        result = bridge(
             initial.context,
-            legacy_version_id,
+            legacy_id,
             idempotency_key,
             code_revision=config.code_revision,
         )
         _current(identity, initial)
-        return {
-            "operation": "bridge_current_email_version",
+        output = {
+            "operation": operation,
             "source_id": result.source_id,
             "item_id": result.item_id,
             "version_id": result.version_id,
@@ -110,5 +169,10 @@ def run_email_bridge_controller(
             "recorded": result.changed,
             "source_effects": False,
         }
+        if operation == "bridge_email_attachment":
+            output.update({"part_id": result.part_id, "outcome": result.outcome})
+        elif operation == "bridge_email_document_extraction":
+            output["extraction_status"] = result.extraction_status
+        return output
     except Exception:
         raise EmailBridgeControllerError() from None
