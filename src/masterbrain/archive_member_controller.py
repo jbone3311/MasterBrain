@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from pathlib import Path, PurePosixPath
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from email_brain.auth import Principal
 from email_brain.processing_controller import WorkerIdentity, _json, _path
 from email_brain.schemas import ClosedModel
-from email_brain.store import Store
+from email_brain.store import Conflict, NotFound, Store
 from masterbrain.datacore.archive_member_processor import DockerArchiveMemberProcessor
 from masterbrain.datacore.archive_member_text import (
     extract_archive_member_text,
@@ -67,6 +69,74 @@ class ArchiveMemberControllerConfig(ClosedModel):
         return value
 
 
+class ArchiveMemberBatchItem(ClosedModel):
+    member_locator: str = Field(min_length=1, max_length=1024)
+    idempotency_key: UUID
+
+    @field_validator("member_locator")
+    @classmethod
+    def safe_member_locator(cls, value: str) -> str:
+        _member_locator(value)
+        return value
+
+
+def archive_member_batch_sha256(
+    version: int,
+    inventory_id: str,
+    code_revision: str,
+    items: list[ArchiveMemberBatchItem],
+) -> str:
+    payload = {
+        "version": version,
+        "inventory_id": inventory_id,
+        "code_revision": code_revision,
+        "items": [
+            {
+                "member_locator": item.member_locator,
+                "idempotency_key": str(item.idempotency_key),
+            }
+            for item in items
+        ],
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+class ArchiveMemberBatchPlan(ClosedModel):
+    version: Literal[1]
+    inventory_id: str = Field(pattern=r"^archive_inventory_[a-f0-9]{32}\z")
+    code_revision: str = Field(min_length=1, max_length=200)
+    items: list[ArchiveMemberBatchItem] = Field(min_length=1, max_length=100)
+    plan_sha256: str = Field(pattern=r"^[a-f0-9]{64}\z")
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def exact_version(cls, value: Any) -> Any:
+        if type(value) is not int or value != 1:
+            raise ArchiveMemberControllerError()
+        return value
+
+    @field_validator("code_revision")
+    @classmethod
+    def revision_is_plain(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ArchiveMemberControllerError()
+        return value
+
+    @model_validator(mode="after")
+    def sealed_and_unique(self) -> ArchiveMemberBatchPlan:
+        locators = [item.member_locator for item in self.items]
+        keys = [item.idempotency_key for item in self.items]
+        if len(set(locators)) != len(locators) or len(set(keys)) != len(keys):
+            raise ArchiveMemberControllerError()
+        expected = archive_member_batch_sha256(
+            self.version, self.inventory_id, self.code_revision, self.items
+        )
+        if self.plan_sha256 != expected:
+            raise ArchiveMemberControllerError()
+        return self
+
+
 def _current(identity: WorkerIdentity, initial: Principal) -> Principal:
     principal = identity.authenticate()
     if (
@@ -77,11 +147,10 @@ def _current(identity: WorkerIdentity, initial: Principal) -> Principal:
     return principal
 
 
-def _selection(inventory_id: str, member_locator: str) -> None:
+def _member_locator(member_locator: str) -> None:
     relative = PurePosixPath(member_locator)
     if (
-        not _INVENTORY.fullmatch(inventory_id)
-        or not 1 <= len(member_locator) <= 1024
+        not 1 <= len(member_locator) <= 1024
         or relative.is_absolute()
         or ".." in relative.parts
         or "\\" in member_locator
@@ -90,6 +159,12 @@ def _selection(inventory_id: str, member_locator: str) -> None:
         or member_locator.endswith("/")
     ):
         raise ArchiveMemberControllerError()
+
+
+def _selection(inventory_id: str, member_locator: str) -> None:
+    if not _INVENTORY.fullmatch(inventory_id):
+        raise ArchiveMemberControllerError()
+    _member_locator(member_locator)
 
 
 def run_archive_member_controller(
@@ -203,5 +278,109 @@ def run_archive_member_plan_controller(
         )
         _current(identity, initial)
         return {"operation": "archive_member_text_plan", **result}
+    except Exception:
+        raise ArchiveMemberControllerError() from None
+
+
+def run_archive_member_batch_controller(
+    path: Path,
+    plan_path: Path,
+    dsn: str,
+    *,
+    check: bool = False,
+) -> dict[str, Any]:
+    """Validate or execute one sealed archive-member text publication plan."""
+    try:
+        if not dsn:
+            raise ArchiveMemberControllerError()
+        config = ArchiveMemberControllerConfig.model_validate(_json(path))
+        plan = ArchiveMemberBatchPlan.model_validate(_json(plan_path))
+        if plan.code_revision != config.code_revision:
+            raise ArchiveMemberControllerError()
+        root = config.root.resolve(strict=True)
+        if not root.is_dir():
+            raise ArchiveMemberControllerError()
+        identity = WorkerIdentity(
+            config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
+        )
+        initial = identity.authenticate()
+        store = Store(dsn)
+        with store.transaction(initial.context):
+            pass
+        _current(identity, initial)
+        if check:
+            return {
+                "configuration_valid": True,
+                "execution_verified": False,
+                "operation": "archive_member_text_batch",
+                "plan_sha256": plan.plan_sha256,
+                "requested": len(plan.items),
+                "source_effects": False,
+                "data_effects": False,
+            }
+        processor = DockerArchiveMemberProcessor(
+            config.archive_image_id, docker_binary=config.docker_binary
+        )
+        core = DataCoreStore(store)
+        results: list[dict[str, Any]] = []
+        recorded = 0
+        replayed = 0
+
+        def refused(index: int) -> dict[str, Any]:
+            return {
+                "operation": "archive_member_text_batch",
+                "plan_sha256": plan.plan_sha256,
+                "requested": len(plan.items),
+                "completed": len(results),
+                "recorded": recorded,
+                "replayed": replayed,
+                "results": results,
+                "complete": False,
+                "failed_item_index": index,
+                "error_code": "member_refused",
+                "source_effects": False,
+            }
+
+        for index, item in enumerate(plan.items):
+            _current(identity, initial)
+            try:
+                target = core.archive_member_target(
+                    initial.context, plan.inventory_id, item.member_locator
+                )
+            except (NotFound, ValueError):
+                return refused(index)
+            _current(identity, initial)
+            extraction = extract_archive_member_text(root, target, processor)
+            if extraction.status is not ExtractionStatus.EXTRACTED:
+                return refused(index)
+            _current(identity, initial)
+            try:
+                published = publish_extracted_archive_member_text(
+                    core,
+                    initial.context,
+                    target,
+                    extraction,
+                    code_revision=config.code_revision,
+                    idempotency_key=item.idempotency_key,
+                )
+            except (Conflict, NotFound, ValueError):
+                return refused(index)
+            _current(identity, initial)
+            recorded += int(published.changed)
+            replayed += int(not published.changed)
+            results.append({"item_index": index, "recorded": published.changed})
+        return {
+            "operation": "archive_member_text_batch",
+            "plan_sha256": plan.plan_sha256,
+            "requested": len(plan.items),
+            "completed": len(results),
+            "recorded": recorded,
+            "replayed": replayed,
+            "results": results,
+            "complete": True,
+            "failed_item_index": None,
+            "error_code": None,
+            "source_effects": False,
+        }
     except Exception:
         raise ArchiveMemberControllerError() from None

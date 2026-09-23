@@ -253,6 +253,48 @@ def test_cli_archive_text_plan_uses_explicit_inventory_and_bounds(
     assert dsn not in output
 
 
+def test_cli_archive_text_batch_uses_private_plan_and_scrubs_dsn(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config = tmp_path / "archive.json"
+    plan = tmp_path / "batch.json"
+    config.write_text("not opened by this dispatch test")
+    plan.write_text("not opened by this dispatch test")
+    dsn = "postgresql://secret:secret@example.invalid/private"
+    monkeypatch.setenv("MASTERBRAIN_DSN", dsn)
+    monkeypatch.setattr(
+        cli,
+        "run_archive_member_batch_controller",
+        lambda received_config, received_plan, received_dsn, check: {
+            "config": received_config == config,
+            "plan": received_plan == plan,
+            "dsn": received_dsn == dsn,
+            "check": check,
+            "source_effects": False,
+        },
+    )
+    main(
+        [
+            "fileos",
+            "archive-text-batch",
+            "--config",
+            str(config),
+            "--plan",
+            str(plan),
+            "--check",
+        ]
+    )
+    output = capsys.readouterr().out
+    assert json.loads(output) == {
+        "check": True,
+        "config": True,
+        "dsn": True,
+        "plan": True,
+        "source_effects": False,
+    }
+    assert dsn not in output
+
+
 def test_cli_email_bridge_uses_explicit_evidence_and_scrubs_dsn(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

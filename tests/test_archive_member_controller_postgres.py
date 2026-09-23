@@ -102,6 +102,33 @@ def setup_operator(tmp_path: Path, ctx: TenantContext, store) -> tuple[Path, Pat
     return path, root, inventory.inventory_id, "folder/proof.md", raw
 
 
+def batch_plan(
+    path: Path, inventory_id: str
+) -> tuple[Path, list[controller.ArchiveMemberBatchItem]]:
+    items = [
+        controller.ArchiveMemberBatchItem(member_locator=locator, idempotency_key=uuid4())
+        for locator in ("folder/proof.md", "sibling.txt")
+    ]
+    payload = {
+        "version": 1,
+        "inventory_id": inventory_id,
+        "code_revision": "archive-operator-test-v1",
+        "items": [
+            {
+                "member_locator": item.member_locator,
+                "idempotency_key": str(item.idempotency_key),
+            }
+            for item in items
+        ],
+        "plan_sha256": controller.archive_member_batch_sha256(
+            1, inventory_id, "archive-operator-test-v1", items
+        ),
+    }
+    plan = path.parent / "archive-batch.json"
+    private_write(plan, payload)
+    return plan, items
+
+
 @pytest.mark.parametrize("selected_locator", ["folder/proof.md", "sibling.txt"])
 def test_check_publish_replay_and_content_free_output(
     database: tuple[object, str],
@@ -252,4 +279,40 @@ def test_preview_pages_without_docker_source_or_receipt_effects(
                 "n"
             ]
             == 0
+        )
+
+
+def test_batch_publishes_exact_plan_and_replays_with_content_free_output(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    path, root, inventory_id, _, raw = setup_operator(tmp_path, ctx, store)
+    plan, items = batch_plan(path, inventory_id)
+    monkeypatch.setattr(controller, "DockerArchiveMemberProcessor", LocalArchiveMemberProcessor)
+    before = root.joinpath("bundle.zip").stat()
+    checked = controller.run_archive_member_batch_controller(path, plan, store.dsn, check=True)
+    assert checked["requested"] == 2 and checked["data_effects"] is False
+    first = controller.run_archive_member_batch_controller(path, plan, store.dsn)
+    replay = controller.run_archive_member_batch_controller(path, plan, store.dsn)
+    assert first["complete"] is True and first["recorded"] == 2
+    assert replay["complete"] is True and replay["replayed"] == 2
+    assert first["results"] == [
+        {"item_index": 0, "recorded": True},
+        {"item_index": 1, "recorded": True},
+    ]
+    serialized = json.dumps(first) + json.dumps(replay)
+    assert all(item.member_locator not in serialized for item in items)
+    assert "private operator archive proof" not in serialized
+    assert root.joinpath("bundle.zip").read_bytes() == raw
+    assert root.joinpath("bundle.zip").stat().st_mtime_ns == before.st_mtime_ns
+    with store.transaction(pg.datacore_context(ctx)) as conn:
+        assert (
+            conn.execute("SELECT count(*) AS n FROM brain_archive_member_text_receipts").fetchone()[
+                "n"
+            ]
+            == 2
         )

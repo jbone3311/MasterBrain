@@ -7,12 +7,14 @@ import json
 import secrets
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import ANY, MagicMock, Mock
 from uuid import uuid4
 
 import pytest
 
 from masterbrain import archive_member_controller as control
+from masterbrain.datacore.extraction import ExtractionStatus
 
 
 def private_write(path: Path, value: object) -> None:
@@ -52,6 +54,32 @@ def controller_files(
     path = state / "archive-controller.json"
     private_write(path, config)
     return path, config, credentials
+
+
+def batch_plan_file(
+    tmp_path: Path, *, code_revision: str = "unit-archive-controller-v1"
+) -> tuple[Path, str, list[control.ArchiveMemberBatchItem]]:
+    inventory = "archive_inventory_" + "b" * 32
+    items = [
+        control.ArchiveMemberBatchItem(member_locator=locator, idempotency_key=uuid4())
+        for locator in ("a.txt", "nested/b.md", "final.csv")
+    ]
+    payload = {
+        "version": 1,
+        "inventory_id": inventory,
+        "code_revision": code_revision,
+        "items": [
+            {
+                "member_locator": item.member_locator,
+                "idempotency_key": str(item.idempotency_key),
+            }
+            for item in items
+        ],
+        "plan_sha256": control.archive_member_batch_sha256(1, inventory, code_revision, items),
+    }
+    path = tmp_path / "state" / "archive-batch.json"
+    private_write(path, payload)
+    return path, inventory, items
 
 
 def test_check_preflights_without_target_query_or_worker_read(
@@ -133,6 +161,111 @@ def test_preview_check_is_non_consuming_and_normal_run_is_exact(
     assert result["source_effects"] is False and result["data_effects"] is False
     core.archive_member_text_plan.assert_called_once_with(ANY, inventory, after=3, limit=7)
     processor.assert_not_called()
+
+
+def test_batch_check_validates_seal_without_target_or_worker_access(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config, _, _ = controller_files(tmp_path)
+    plan, _, items = batch_plan_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = Mock(side_effect=AssertionError("check must not inspect batch targets"))
+    processor = Mock(side_effect=AssertionError("check must not construct Docker worker"))
+    monkeypatch.setattr(control, "DataCoreStore", core)
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", processor)
+    result = control.run_archive_member_batch_controller(config, plan, "runtime-dsn", check=True)
+    assert result["requested"] == len(items)
+    assert result["execution_verified"] is False
+    assert result["data_effects"] is False and result["source_effects"] is False
+    core.assert_not_called()
+    processor.assert_not_called()
+
+
+def test_batch_is_fail_stop_and_exact_retry_replays_completed_items(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config, _, _ = controller_files(tmp_path)
+    plan, inventory, items = batch_plan_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = MagicMock()
+    core.archive_member_target.side_effect = [SimpleNamespace(), SimpleNamespace()]
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", MagicMock())
+    extracted = SimpleNamespace(status=ExtractionStatus.EXTRACTED)
+    monkeypatch.setattr(control, "extract_archive_member_text", Mock(return_value=extracted))
+    publish = Mock(
+        side_effect=[SimpleNamespace(changed=True), control.Conflict("synthetic refusal")]
+    )
+    monkeypatch.setattr(control, "publish_extracted_archive_member_text", publish)
+    stopped = control.run_archive_member_batch_controller(config, plan, "runtime-dsn")
+    assert stopped["complete"] is False and stopped["completed"] == 1
+    assert stopped["failed_item_index"] == 1
+    assert stopped["recorded"] == 1 and stopped["replayed"] == 0
+    assert core.archive_member_target.call_count == 2
+
+    core.archive_member_target.reset_mock()
+    core.archive_member_target.side_effect = [SimpleNamespace() for _ in items]
+    publish.reset_mock()
+    publish.side_effect = [
+        SimpleNamespace(changed=False),
+        SimpleNamespace(changed=True),
+        SimpleNamespace(changed=True),
+    ]
+    completed = control.run_archive_member_batch_controller(config, plan, "runtime-dsn")
+    assert completed["complete"] is True and completed["completed"] == 3
+    assert completed["recorded"] == 2 and completed["replayed"] == 1
+    assert completed["results"] == [
+        {"item_index": 0, "recorded": False},
+        {"item_index": 1, "recorded": True},
+        {"item_index": 2, "recorded": True},
+    ]
+    assert [call.args[1:] for call in core.archive_member_target.call_args_list] == [
+        (inventory, item.member_locator) for item in items
+    ]
+    assert all(
+        call.kwargs["idempotency_key"] == item.idempotency_key
+        for call, item in zip(publish.call_args_list, items, strict=True)
+    )
+    assert not any(item.member_locator in json.dumps(completed) for item in items)
+
+
+@pytest.mark.parametrize("mutation", ["digest", "duplicate_locator", "duplicate_key"])
+def test_batch_rejects_invalid_seal_before_database(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    config, _, _ = controller_files(tmp_path)
+    plan, _, _ = batch_plan_file(tmp_path)
+    payload = json.loads(plan.read_text())
+    if mutation == "digest":
+        payload["plan_sha256"] = "0" * 64
+    elif mutation == "duplicate_locator":
+        payload["items"][1]["member_locator"] = payload["items"][0]["member_locator"]
+    else:
+        payload["items"][1]["idempotency_key"] = payload["items"][0]["idempotency_key"]
+    private_write(plan, payload)
+    store = Mock()
+    monkeypatch.setattr(control, "Store", store)
+    with pytest.raises(control.ArchiveMemberControllerError):
+        control.run_archive_member_batch_controller(config, plan, "runtime-dsn", check=True)
+    store.assert_not_called()
+
+
+def test_batch_requires_private_plan_and_matching_revision(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config, _, _ = controller_files(tmp_path)
+    plan, _, _ = batch_plan_file(tmp_path, code_revision="other-revision")
+    store = Mock()
+    monkeypatch.setattr(control, "Store", store)
+    with pytest.raises(control.ArchiveMemberControllerError):
+        control.run_archive_member_batch_controller(config, plan, "runtime-dsn")
+    plan, _, _ = batch_plan_file(tmp_path)
+    plan.chmod(0o644)
+    with pytest.raises(control.ArchiveMemberControllerError):
+        control.run_archive_member_batch_controller(config, plan, "runtime-dsn")
+    store.assert_not_called()
 
 
 @pytest.mark.parametrize(
