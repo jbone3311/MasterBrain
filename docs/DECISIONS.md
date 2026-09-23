@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-088](adr/088_archive_member_image_ocr.md) composes only one explicit current,
+hash-bound archive member with the separate image worker, returns a bounded in-memory
+result and grants no persistence, command, batch or fan-out. Runtime is not implemented.
+
 [ADR-087](adr/087_archive_image_ocr_boundary.md) requires a separate immutable,
 non-networked image worker with exact byte/format binding, full decode, single-frame
 policy, 25-megapixel/20-second/5,000-character limits and no EXIF, database, command
