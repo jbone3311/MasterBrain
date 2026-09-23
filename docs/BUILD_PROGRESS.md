@@ -71,10 +71,15 @@ head. A reviewed legitimate-large-removal path remains.
 ADR-096 defines the next separate FileOS guard: new completion receipts carry a
 validated, versioned inventory-policy digest, and a new run cannot compare against
 an unknown legacy or different prior policy. Migration 0031 preserves legacy
-receipts without inventing a digest. Twenty-four focused local tests and the
-pinned 3,000-file donor shadow passed; three PostgreSQL tests skipped locally
-without a disposable database. Hosted verification, a reviewed legacy baseline
-path and root-binding acceptance remain.
+receipts without inventing a digest. The corrected runtime head `26fd5b2` passed
+[hosted CI 35879001222](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35879001222)
+(2,700 Python passed, nine expected skips; browser, deployment, documentation and
+restricted-worker gates also green) and populated
+[restore 35879001244](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35879001244)
+on [PR #20](https://github.com/jbone3311/CW-EmailBrain/pull/20).
+Focused local tests and the pinned 3,000-file donor shadow also passed. Review,
+integration, a legitimate legacy baseline, per-locator exclusion accounting and
+root-binding acceptance remain; no donor policy switch or cutover occurred.
 
 ## Completed gates
 

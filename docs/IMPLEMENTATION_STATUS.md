@@ -1,6 +1,6 @@
 # MasterBrain Implementation Status
 
-Updated 2026-09-22. **Implemented** means executable in this repository; it does not
+Updated 2026-09-23. **Implemented** means executable in this repository; it does not
 mean hosted, live-source accepted, or production ready.
 
 ## Implemented
@@ -45,7 +45,8 @@ mean hosted, live-source accepted, or production ready.
 - New FileOS completion receipts carry a versioned inventory-policy digest and
   refuse consecutive-run absence inference across changed or unknown policies.
   Legacy receipts remain immutable with unknown policy; a reviewed baseline path,
-  root-binding fence and hosted verification are still pending. This does not
+  root-binding fence and PR review/integration are still pending. Hosted CI and
+  populated restore passed on PR #20's corrected runtime head. This does not
   switch to the donor scanner's exclusions or authorize cutover. A file crossing
   the unchanged size/exclusion boundary still lacks per-locator accounting.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,

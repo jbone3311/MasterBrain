@@ -1,6 +1,6 @@
 # ADR-096 — Bind FileOS completion to an immutable inventory policy
 
-Status: accepted for an isolated implementation tranche; hosted verification pending.
+Status: accepted and implemented in isolated PR #20; hosted CI and populated restore passed on runtime head `26fd5b2`. Review and integration remain pending.
 
 ## Context
 

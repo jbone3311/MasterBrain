@@ -21,8 +21,8 @@ PostgreSQL, full CI and populated restore are pending; no cutover is implied.
 The first hosted [restore 35874676362](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35874676362)
 stopped in its migrate-and-seed phase (the drill suppresses sensitive exception
 details). Inspection found that its synthetic FileOS seed still supplied the old
-single-field policy. The seed now uses the full versioned default policy; a fresh
-restore run must confirm this diagnosis.
+single-field policy. The seed now uses the same full versioned policy constructor
+as the snapshot; the corrected restore run below confirms the repair.
 The first [CI 35874676274](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35874676274)
 passed the new PostgreSQL policy regression but failed an older populated-upgrade
 test whose literal expected migration list ended at 0028. That expectation now
@@ -31,8 +31,15 @@ FileOS receipt before 0031, proves it remains null/immutable after the additive
 upgrade, and rejects a new digestless receipt. After the correction, focused local
 policy/coverage/recovery pytest reported **26 passed, 1 PostgreSQL skip**, 17
 deselected and two upstream warnings. Ruff check/format and the updated
-documentation inventory (178 files, 949 links) passed locally. Fresh hosted CI
-and restore are required.
+documentation inventory (178 files, 949 links) passed locally. Hosted CI
+and restore both completed successfully on corrected runtime head
+`26fd5b2`: [CI 35879001222](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35879001222)
+passed **2,700 Python tests, nine expected skips, two upstream warnings** and the
+browser, deployment, documentation, API-image and restricted-worker gates;
+[populated restore 35879001244](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35879001244)
+passed. These hosted results verify the corrected runtime, including the synthetic
+legacy-upgrade regression; they do not validate a live source, donor policy switch,
+root binding or a transition for historical receipts with unknown policy.
 
 ## Local FileOS mass-loss checkpoint
 
