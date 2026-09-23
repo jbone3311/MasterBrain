@@ -5,13 +5,18 @@ import io
 import zipfile
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import ANY, Mock
+from uuid import uuid4
 
 import pytest
 
 from email_brain.synthetic_formats import WORD_TYPE, docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain.datacore.archive_contract import source_for as archive_source_for
 from masterbrain.datacore.archive_member_contract import decode_result, encode_request
-from masterbrain.datacore.archive_member_document import extract_archive_member_document
+from masterbrain.datacore.archive_member_document import (
+    extract_archive_member_document,
+    publish_extracted_archive_member_document,
+)
 from masterbrain.datacore.archive_member_worker import process_request
 from masterbrain.datacore.archive_worker import inventory_archive
 from masterbrain.datacore.document_contract import CONTRACT, PDF_TYPE, DocumentUnavailable
@@ -150,3 +155,44 @@ def test_media_identity_mismatch_cannot_cross_document_boundary(tmp_path: Path) 
     assert result.status is ExtractionStatus.FAILED
     assert result.error_code == "document_processor_unavailable"
     assert target.member_media_type == WORD_TYPE
+
+
+def test_publication_wrapper_accepts_only_complete_bound_document_result(tmp_path: Path) -> None:
+    archive, target = fixture("memo.docx", docx_bytes("publication proof"))
+    (tmp_path / "bundle.zip").write_bytes(archive)
+    extraction = extract_archive_member_document(
+        tmp_path, target, LocalArchiveProcessor(), DirectDocumentProcessor()
+    )
+    core = Mock()
+    key = uuid4()
+    published = object()
+    core.publish_archive_member_document.return_value = published
+    assert (
+        publish_extracted_archive_member_document(
+            core,
+            object(),
+            target,
+            extraction,
+            code_revision="unit-v1",
+            idempotency_key=key,
+        )
+        is published
+    )
+    core.publish_archive_member_document.assert_called_once_with(
+        ANY,
+        target,
+        extraction.text,
+        CONTRACT + "-synthetic-unit",
+        "docx",
+        "unit-v1",
+        key,
+    )
+    with pytest.raises(ValueError):
+        publish_extracted_archive_member_document(
+            core,
+            object(),
+            target,
+            replace(extraction, metadata={**extraction.metadata, "format": "pdf"}),
+            code_revision="unit-v1",
+            idempotency_key=key,
+        )

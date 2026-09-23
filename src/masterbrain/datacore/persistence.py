@@ -45,6 +45,7 @@ MAX_GENERATION_CHUNKS = 100_000
 _IDENTITY = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 _ARCHIVE_PROCESSOR = re.compile(r"^sandbox-fileos-archive-v1-[a-f0-9]{64}$")
 _ARCHIVE_TEXT_SUFFIXES = frozenset({".txt", ".md", ".html", ".htm", ".csv"})
+_ARCHIVE_DOCUMENT_FORMATS = {".pdf": "pdf", ".docx": "docx", ".xlsx": "xlsx"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -2231,6 +2232,360 @@ class DataCoreStore:
                 conn,
                 ctx,
                 "brain.archive_member_text_published",
+                "archive_inventory",
+                target.inventory_id,
+            )
+            return ArchiveMemberTextRecord(
+                target.inventory_id,
+                target.member_locator,
+                target.source_id,
+                item_id,
+                version_id,
+                evidence_id,
+                document_id,
+                len(chunks),
+                True,
+            )
+
+    def publish_archive_member_document(
+        self,
+        ctx: TenantContext,
+        target: ArchiveMemberTargetRecord,
+        text: str,
+        document_processor: str,
+        document_format: str,
+        code_revision: str,
+        idempotency_key: UUID,
+    ) -> ArchiveMemberTextRecord:
+        """Publish one isolated archive-member PDF/Office extraction."""
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.document.publish")
+        suffix = (
+            PurePosixPath(target.member_locator).suffix.lower()
+            if isinstance(target, ArchiveMemberTargetRecord)
+            else ""
+        )
+        if (
+            not isinstance(target, ArchiveMemberTargetRecord)
+            or not isinstance(text, str)
+            or not text
+            or "\x00" in text
+            or len(text.encode()) > MAX_NORMALIZED_BYTES
+            or target.member_size_bytes > 8 * 1024 * 1024
+            or _ARCHIVE_DOCUMENT_FORMATS.get(suffix) != document_format
+            or not isinstance(document_processor, str)
+            or not 1 <= len(document_processor) <= 200
+            or "\x00" in document_processor
+            or not isinstance(code_revision, str)
+            or not 1 <= len(code_revision) <= 200
+            or "\x00" in code_revision
+            or not isinstance(idempotency_key, UUID)
+        ):
+            raise ValueError("invalid archive member document publication")
+        body_sha = hashlib.sha256(text.encode()).hexdigest()
+        request_hash = _canonical_digest(
+            {
+                "contract": "archive-member-document-v1",
+                "target": asdict(target),
+                "body_sha256": body_sha,
+                "document_processor": document_processor,
+                "document_format": document_format,
+                "code_revision": code_revision,
+            }
+        )
+        columns = (
+            "inventory_id,member_locator,source_id,item_id,version_id,evidence_id,"
+            "document_id,chunk_count,request_hash"
+        )
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:archive-member:{target.inventory_id}:{target.member_locator}",),
+            )
+            receipt = conn.execute(
+                f"SELECT {columns} FROM brain_archive_member_document_receipts "
+                "WHERE actor_id=%s AND idempotency_key=%s",
+                (ctx.actor_id, idempotency_key),
+            ).fetchone()
+            if receipt:
+                if receipt["request_hash"] != request_hash:
+                    raise Conflict("idempotency key reused for different archive member document")
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.archive_member_document_replayed",
+                    "archive_inventory",
+                    target.inventory_id,
+                )
+                return self._archive_member_text_record(receipt, changed=False)
+
+            prior = conn.execute(
+                f"SELECT actor_id,idempotency_key,{columns} "
+                "FROM brain_archive_member_document_receipts "
+                "WHERE inventory_id=%s AND member_locator=%s AND document_processor=%s "
+                "ORDER BY created_at,actor_id,idempotency_key LIMIT 1",
+                (target.inventory_id, target.member_locator, document_processor),
+            ).fetchone()
+            if prior:
+                if prior["request_hash"] != request_hash:
+                    raise Conflict("archive member document has different provenance")
+                conn.execute(
+                    "INSERT INTO brain_archive_member_document_receipts(tenant_id,actor_id,"
+                    "idempotency_key,inventory_id,member_locator,parent_source_version_id,"
+                    "parent_evidence_id,source_id,item_id,version_id,evidence_id,document_id,"
+                    "document_processor,document_format,chunk_count,code_revision,request_hash) "
+                    "SELECT %s,%s,%s,inventory_id,member_locator,parent_source_version_id,"
+                    "parent_evidence_id,source_id,item_id,version_id,evidence_id,document_id,"
+                    "document_processor,document_format,chunk_count,code_revision,request_hash "
+                    "FROM brain_archive_member_document_receipts WHERE tenant_id=%s "
+                    "AND actor_id=%s AND idempotency_key=%s",
+                    (
+                        ctx.tenant_id,
+                        ctx.actor_id,
+                        idempotency_key,
+                        ctx.tenant_id,
+                        prior["actor_id"],
+                        prior["idempotency_key"],
+                    ),
+                )
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.archive_member_document_replayed",
+                    "archive_inventory",
+                    target.inventory_id,
+                )
+                return self._archive_member_text_record(prior, changed=False)
+
+            row = conn.execute(
+                "SELECT a.id AS inventory_id,a.processor_version,a.source_id,a.item_id AS "
+                "parent_item_id,a.source_version_id,v.observed_at,v.sha256 AS source_sha256,"
+                "v.size_bytes AS source_size_bytes,v.media_type AS source_media_type,"
+                "i.locator AS source_locator,i.current_version_id,e.id AS parent_evidence_id,"
+                "m.locator AS member_locator,m.sha256 AS member_sha256,"
+                "m.observed_size AS member_size_bytes,m.media_hint AS member_media_type,"
+                "m.depth AS member_depth,m.parent_locator AS member_parent_locator,"
+                "m.is_container FROM brain_archive_inventories a "
+                "JOIN brain_archive_members m ON m.tenant_id=a.tenant_id "
+                "AND m.inventory_id=a.id JOIN brain_source_versions v "
+                "ON v.tenant_id=a.tenant_id AND v.id=a.source_version_id "
+                "JOIN brain_source_items i ON i.tenant_id=v.tenant_id "
+                "AND i.source_id=v.source_id AND i.id=v.item_id "
+                "JOIN brain_evidence e ON e.tenant_id=v.tenant_id "
+                "AND e.source_version_id=v.id WHERE a.id=%s AND m.locator=%s "
+                "FOR UPDATE OF i",
+                (target.inventory_id, target.member_locator),
+            ).fetchone()
+            if not row:
+                raise NotFound()
+            actual = ArchiveMemberTargetRecord(
+                row["inventory_id"],
+                row["processor_version"],
+                row["source_id"],
+                row["parent_item_id"],
+                row["source_version_id"],
+                row["source_locator"],
+                row["source_sha256"],
+                row["source_size_bytes"],
+                row["source_media_type"],
+                row["member_locator"],
+                row["member_sha256"],
+                row["member_size_bytes"],
+                row["member_media_type"],
+                row["member_depth"],
+                row["member_parent_locator"],
+            )
+            should_be_container = suffix in {".docx", ".xlsx"}
+            if (
+                row["current_version_id"] != target.source_version_id
+                or actual != target
+                or row["is_container"] is not should_be_container
+            ):
+                raise Conflict("archive document parent or identity is no longer current")
+
+            item_id = stable_id("archiveitem", target.inventory_id, target.member_locator)
+            version_id = stable_id(
+                "archiveversion",
+                target.inventory_id,
+                target.inventory_processor_version,
+                target.member_locator,
+                target.member_sha256,
+                str(target.member_size_bytes),
+            )
+            evidence_id = stable_id("evidence", version_id)
+            document_id = stable_id("document", version_id, document_processor, body_sha)
+            locator = f"archive-member/{item_id}"
+            metadata = {
+                "derived_from": target.source_version_id,
+                "inventory_id": target.inventory_id,
+                "member_locator": target.member_locator,
+                "inventory_processor": target.inventory_processor_version,
+                "document_format": document_format,
+            }
+            conn.execute(
+                "INSERT INTO brain_source_items(tenant_id,source_id,id,locator,"
+                "current_version_id,first_seen_at,last_seen_at) VALUES (%s,%s,%s,%s,%s,%s,%s) "
+                "ON CONFLICT (tenant_id,id) DO NOTHING",
+                (
+                    ctx.tenant_id,
+                    target.source_id,
+                    item_id,
+                    locator,
+                    version_id,
+                    row["observed_at"],
+                    row["observed_at"],
+                ),
+            )
+            saved_item = conn.execute(
+                "SELECT source_id,locator,current_version_id FROM brain_source_items "
+                "WHERE id=%s FOR UPDATE",
+                (item_id,),
+            ).fetchone()
+            if saved_item != {
+                "source_id": target.source_id,
+                "locator": locator,
+                "current_version_id": version_id,
+            }:
+                raise Conflict("archive document child item identity changed")
+            conn.execute(
+                "INSERT INTO brain_source_versions(tenant_id,source_id,item_id,id,observed_at,"
+                "sha256,size_bytes,media_type,metadata) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                "ON CONFLICT (tenant_id,id) DO NOTHING",
+                (
+                    ctx.tenant_id,
+                    target.source_id,
+                    item_id,
+                    version_id,
+                    row["observed_at"],
+                    target.member_sha256,
+                    target.member_size_bytes,
+                    target.member_media_type,
+                    Jsonb(metadata),
+                ),
+            )
+            saved_version = conn.execute(
+                "SELECT source_id,item_id,sha256,size_bytes,media_type,metadata "
+                "FROM brain_source_versions WHERE id=%s",
+                (version_id,),
+            ).fetchone()
+            if saved_version != {
+                "source_id": target.source_id,
+                "item_id": item_id,
+                "sha256": target.member_sha256,
+                "size_bytes": target.member_size_bytes,
+                "media_type": target.member_media_type,
+                "metadata": metadata,
+            }:
+                raise Conflict("archive document child version identity changed")
+            conn.execute(
+                "INSERT INTO brain_evidence(tenant_id,id,source_version_id,sha256,storage,"
+                "retained) VALUES (%s,%s,%s,%s,'source_bound',false) ON CONFLICT DO NOTHING",
+                (ctx.tenant_id, evidence_id, version_id, target.member_sha256),
+            )
+            saved_evidence = conn.execute(
+                "SELECT source_version_id,sha256,storage,retained FROM brain_evidence WHERE id=%s",
+                (evidence_id,),
+            ).fetchone()
+            if saved_evidence != {
+                "source_version_id": version_id,
+                "sha256": target.member_sha256,
+                "storage": "source_bound",
+                "retained": False,
+            }:
+                raise Conflict("archive document child evidence identity changed")
+            conn.execute(
+                "INSERT INTO brain_normalized_documents(tenant_id,id,evidence_id,normalizer,"
+                "body_sha256,body) VALUES (%s,%s,%s,%s,%s,%s)",
+                (ctx.tenant_id, document_id, evidence_id, document_processor, body_sha, text),
+            )
+            chunks = list(deterministic_chunks(text))
+            for ordinal, (start, end, chunk) in enumerate(chunks):
+                chunk_sha = hashlib.sha256(chunk.encode()).hexdigest()
+                conn.execute(
+                    "INSERT INTO brain_chunks(tenant_id,id,document_id,ordinal,start_offset,"
+                    "end_offset,text,sha256) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id,
+                        stable_id("chunk", document_id, str(ordinal), chunk_sha),
+                        document_id,
+                        ordinal,
+                        start,
+                        end,
+                        chunk,
+                        chunk_sha,
+                    ),
+                )
+            config_sha = _canonical_digest(
+                {
+                    "contract": "archive-member-document-v1",
+                    "inventory_processor": target.inventory_processor_version,
+                    "member_read_contract": "sandbox-fileos-archive-member-v1",
+                    "document_processor": document_processor,
+                    "document_format": document_format,
+                    "chunk_characters": CHUNK_CHARACTERS,
+                }
+            )
+            provenance_id = stable_id("provenance", document_id, code_revision, config_sha)
+            conn.execute(
+                "INSERT INTO brain_provenance(tenant_id,id,output_id,transform,"
+                "transform_version,code_revision,configuration_sha256,created_at) "
+                "VALUES (%s,%s,%s,'archive_member_document',%s,%s,%s,clock_timestamp())",
+                (
+                    ctx.tenant_id,
+                    provenance_id,
+                    document_id,
+                    document_processor,
+                    code_revision,
+                    config_sha,
+                ),
+            )
+            for ordinal, input_id in enumerate((row["parent_evidence_id"], target.inventory_id)):
+                conn.execute(
+                    "INSERT INTO brain_provenance_inputs(tenant_id,provenance_id,input_id,"
+                    "ordinal) VALUES (%s,%s,%s,%s)",
+                    (ctx.tenant_id, provenance_id, input_id, ordinal),
+                )
+            conn.execute(
+                "INSERT INTO brain_change_events(tenant_id,id,source_id,item_id,version_id,kind) "
+                "VALUES (%s,%s,%s,%s,%s,'document_published')",
+                (
+                    ctx.tenant_id,
+                    stable_id("change", "document_published", document_id),
+                    target.source_id,
+                    item_id,
+                    version_id,
+                ),
+            )
+            conn.execute(
+                "INSERT INTO brain_archive_member_document_receipts(tenant_id,actor_id,"
+                "idempotency_key,inventory_id,member_locator,parent_source_version_id,"
+                "parent_evidence_id,source_id,item_id,version_id,evidence_id,document_id,"
+                "document_processor,document_format,chunk_count,code_revision,request_hash) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id,
+                    ctx.actor_id,
+                    idempotency_key,
+                    target.inventory_id,
+                    target.member_locator,
+                    target.source_version_id,
+                    row["parent_evidence_id"],
+                    target.source_id,
+                    item_id,
+                    version_id,
+                    evidence_id,
+                    document_id,
+                    document_processor,
+                    document_format,
+                    len(chunks),
+                    code_revision,
+                    request_hash,
+                ),
+            )
+            self.store.audit(
+                conn,
+                ctx,
+                "brain.archive_member_document_published",
                 "archive_inventory",
                 target.inventory_id,
             )

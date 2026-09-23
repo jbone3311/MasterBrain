@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from pathlib import Path, PurePosixPath
+from uuid import UUID
 
+from email_brain.domain.models import TenantContext
 from masterbrain.datacore.archive_contract import ArchiveUnavailable
 from masterbrain.datacore.archive_member import (
     ArchiveMemberProcessor,
@@ -24,7 +26,11 @@ from masterbrain.datacore.extraction import (
     ExtractionResult,
     ExtractionStatus,
 )
-from masterbrain.datacore.persistence import ArchiveMemberTargetRecord
+from masterbrain.datacore.persistence import (
+    ArchiveMemberTargetRecord,
+    ArchiveMemberTextRecord,
+    DataCoreStore,
+)
 
 
 def extract_archive_member_document(
@@ -117,4 +123,39 @@ def extract_archive_member_document(
         extracted.text,
         None if status is ExtractionStatus.EXTRACTED else extracted.reason,
         metadata,
+    )
+
+
+def publish_extracted_archive_member_document(
+    core: DataCoreStore,
+    ctx: TenantContext,
+    target: ArchiveMemberTargetRecord,
+    extraction: ExtractionResult,
+    *,
+    code_revision: str,
+    idempotency_key: UUID,
+) -> ArchiveMemberTextRecord:
+    """Publish only a complete result from the isolated document contract."""
+    processor = extraction.metadata.get("extractor_version")
+    document_format = extraction.metadata.get("format")
+    reason = extraction.metadata.get("document_reason")
+    if (
+        extraction.version_id != archive_member_version_id(target)
+        or extraction.locator != target.member_locator
+        or extraction.status is not ExtractionStatus.EXTRACTED
+        or not extraction.text
+        or extraction.error_code is not None
+        or not isinstance(processor, str)
+        or not isinstance(document_format, str)
+        or reason != f"bounded_{document_format}_v1"
+    ):
+        raise ValueError("archive member document is not an accepted extraction")
+    return core.publish_archive_member_document(
+        ctx,
+        target,
+        extraction.text,
+        processor,
+        document_format,
+        code_revision,
+        idempotency_key,
     )

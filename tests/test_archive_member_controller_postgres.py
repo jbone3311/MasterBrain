@@ -25,8 +25,15 @@ from masterbrain.archive_member_controller import (
 )
 from masterbrain.datacore.archive_contract import source_for
 from masterbrain.datacore.archive_member_contract import decode_result, encode_request
+from masterbrain.datacore.archive_member_document import (
+    extract_archive_member_document,
+    publish_extracted_archive_member_document,
+)
 from masterbrain.datacore.archive_member_worker import process_request
 from masterbrain.datacore.archive_worker import inventory_archive
+from masterbrain.datacore.document_contract import CONTRACT
+from masterbrain.datacore.document_contract import source_for as document_source_for
+from masterbrain.datacore.document_worker import extract_document
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 
@@ -47,6 +54,15 @@ class LocalArchiveMemberProcessor:
 
     def read(self, raw, *, source, target):
         return decode_result(process_request(encode_request(raw, source, target)), source, target)
+
+
+class LocalDocumentProcessor:
+    processor_version = CONTRACT + "-synthetic-postgres"
+
+    def extract(self, raw, *, version_id, locator, sha256, media_type):
+        return extract_document(
+            raw, document_source_for(raw, version_id, locator, sha256, media_type)
+        )
 
 
 def setup_operator(
@@ -138,6 +154,75 @@ def test_document_selector_is_distinct_and_allows_only_pdf_or_opaque_ooxml(
         core.archive_document_member_target(datacore, inventory_id, "folder/proof.md")
     with pytest.raises(NotFound):
         core.archive_member_target(datacore, inventory_id, "documents/memo.docx")
+
+
+def test_archive_document_publication_is_replayable_and_retains_no_member_bytes(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    path, root, inventory_id, _, raw = setup_operator(
+        tmp_path,
+        ctx,
+        store,
+        extra_members={"documents/memo.docx": docx_bytes("archived document proof")},
+    )
+    core = DataCoreStore(store)
+    datacore = pg.datacore_context(ctx)
+    target = core.archive_document_member_target(datacore, inventory_id, "documents/memo.docx")
+    extraction = extract_archive_member_document(
+        root,
+        target,
+        LocalArchiveMemberProcessor("sha256:" + "a" * 64, docker_binary=Path("/usr/bin/false")),
+        LocalDocumentProcessor(),
+    )
+    key = uuid4()
+    first = publish_extracted_archive_member_document(
+        core,
+        datacore,
+        target,
+        extraction,
+        code_revision="archive-document-test-v1",
+        idempotency_key=key,
+    )
+    replay = publish_extracted_archive_member_document(
+        core,
+        datacore,
+        target,
+        extraction,
+        code_revision="archive-document-test-v1",
+        idempotency_key=key,
+    )
+    assert first.changed is True and replay.changed is False
+    assert first.document_id == replay.document_id and first.chunks > 0
+    assert (root / "bundle.zip").read_bytes() == raw
+    with store.transaction(datacore) as conn:
+        receipt = conn.execute(
+            "SELECT document_format,document_processor,chunk_count FROM "
+            "brain_archive_member_document_receipts"
+        ).fetchone()
+        assert receipt == {
+            "document_format": "docx",
+            "document_processor": CONTRACT + "-synthetic-postgres",
+            "chunk_count": first.chunks,
+        }
+        assert (
+            conn.execute(
+                "SELECT body FROM brain_normalized_documents WHERE id=%s", (first.document_id,)
+            ).fetchone()["body"]
+            == "archived document proof"
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_provenance_inputs p JOIN brain_provenance v "
+                "ON v.tenant_id=p.tenant_id AND v.id=p.provenance_id "
+                "WHERE v.output_id=%s",
+                (first.document_id,),
+            ).fetchone()["n"]
+            == 2
+        )
 
 
 def batch_plan(
