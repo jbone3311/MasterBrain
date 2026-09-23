@@ -13,6 +13,7 @@ from typing import Any
 from uuid import UUID
 
 from masterbrain.archive_member_controller import (
+    run_archive_document_plan_controller,
     run_archive_member_batch_controller,
     run_archive_member_controller,
     run_archive_member_document_controller,
@@ -146,6 +147,14 @@ def build_parser() -> argparse.ArgumentParser:
     archive_plan.add_argument("--after", type=int)
     archive_plan.add_argument("--limit", type=int, default=25)
     archive_plan.add_argument("--check", action="store_true")
+    archive_document_plan = file_commands.add_parser(
+        "archive-document-plan", help="Preview eligible archive PDF and Office members"
+    )
+    archive_document_plan.add_argument("--config", type=Path, required=True)
+    archive_document_plan.add_argument("--inventory-id", required=True)
+    archive_document_plan.add_argument("--after", type=int)
+    archive_document_plan.add_argument("--limit", type=int, default=25)
+    archive_document_plan.add_argument("--check", action="store_true")
     archive_batch = file_commands.add_parser(
         "archive-text-batch", help="Execute one sealed archive text-member batch"
     )
@@ -301,6 +310,22 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.inventory_id,
                         args.member_locator,
                         args.idempotency_key,
+                        check=args.check,
+                    )
+                )
+            )
+        elif args.command == "fileos" and args.file_command == "archive-document-plan":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_archive_document_plan_controller(
+                        args.config,
+                        dsn,
+                        args.inventory_id,
+                        after=args.after,
+                        limit=args.limit,
                         check=args.check,
                     )
                 )

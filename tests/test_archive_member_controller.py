@@ -192,6 +192,56 @@ def test_archive_document_check_constructs_neither_worker_or_target(
     core.assert_not_called()
 
 
+def test_archive_document_preview_is_non_consuming_and_exact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, config, _ = controller_files(tmp_path)
+    config["document_image_id"] = "sha256:" + "b" * 64
+    private_write(path, config)
+    store = MagicMock()
+    monkeypatch.setattr(control, "Store", Mock(return_value=store))
+    archive = Mock(side_effect=AssertionError("preview must not construct archive worker"))
+    document = Mock(side_effect=AssertionError("preview must not construct document worker"))
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", archive)
+    monkeypatch.setattr(control, "DockerDocumentProcessor", document)
+    core = MagicMock()
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    inventory = "archive_inventory_" + "e" * 32
+    checked = control.run_archive_document_plan_controller(
+        path, "runtime-dsn", inventory, after=4, limit=7, check=True
+    )
+    assert checked == {
+        "configuration_valid": True,
+        "execution_verified": False,
+        "operation": "archive_member_document_plan",
+        "source_effects": False,
+        "worker_effects": False,
+        "data_effects": False,
+    }
+    core.archive_member_document_plan.assert_not_called()
+    archive.assert_not_called()
+    document.assert_not_called()
+    core.archive_member_document_plan.return_value = {
+        "inventory_id": inventory,
+        "eligible_members": 1,
+        "results": [],
+        "next_cursor": None,
+        "limit": 7,
+        "untrusted_metadata": True,
+        "source_effects": False,
+        "worker_effects": False,
+        "data_effects": False,
+    }
+    result = control.run_archive_document_plan_controller(
+        path, "runtime-dsn", inventory, after=4, limit=7
+    )
+    assert result["operation"] == "archive_member_document_plan"
+    assert result["worker_effects"] is False
+    core.archive_member_document_plan.assert_called_once_with(ANY, inventory, after=4, limit=7)
+    archive.assert_not_called()
+    document.assert_not_called()
+
+
 def test_archive_document_runs_exact_target_and_content_free_output(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

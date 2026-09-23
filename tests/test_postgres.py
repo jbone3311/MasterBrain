@@ -37,7 +37,7 @@ from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError
 from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
-from email_brain.synthetic_formats import pdf_bytes
+from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
 from masterbrain.datacore.archive_member_text import (
     archive_member_version_id,
@@ -1556,6 +1556,88 @@ def test_archive_member_text_plan_is_current_paged_eligible_and_replay_deduplica
     )
     with pytest.raises(NotFound):
         core.archive_member_text_plan(ctx, recorded.inventory_id)
+
+
+def test_archive_document_plan_is_exact_paged_replay_safe_and_current(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w") as archive:
+        archive.writestr("a.pdf", pdf_bytes(("document preview proof",)))
+        archive.writestr("skip.txt", b"not a document candidate")
+        archive.writestr("b.docx", docx_bytes("word preview proof"))
+        archive.writestr("c.xlsx", xlsx_bytes("Preview", 1, 1, "sheetpreviewproof"))
+    raw = output.getvalue()
+    path = tmp_path / "document-preview.zip"
+    path.write_bytes(raw)
+    manifest = fileos_manifest(tmp_path, source_id="files_archive_document_preview")
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    item = manifest["items"][0]
+    source = source_for(
+        raw,
+        item["version_id"],
+        item["locator"],
+        item["digest"]["value"],
+        item["media_type"],
+    )
+    recorded = core.record_archive_inventory(
+        ctx, inventory_archive(raw, source), ARCHIVE_PROCESSOR, uuid4()
+    )
+
+    first = core.archive_member_document_plan(ctx, recorded.inventory_id, limit=1)
+    assert first["eligible_members"] == 3
+    assert first["results"][0]["member_locator"] == "a.pdf"
+    assert first["results"][0]["document_format"] == "pdf"
+    assert first["results"][0]["already_published"] is False
+    assert first["next_cursor"] == first["results"][0]["ordinal"]
+    assert first["worker_effects"] is False and first["data_effects"] is False
+    second = core.archive_member_document_plan(
+        ctx, recorded.inventory_id, after=first["next_cursor"], limit=2
+    )
+    assert [row["document_format"] for row in second["results"]] == ["docx", "xlsx"]
+    assert second["next_cursor"] is None
+    with pytest.raises(NotFound):
+        core.archive_member_document_plan(ctx, recorded.inventory_id, after=1)
+
+    target = core.archive_document_member_target(ctx, recorded.inventory_id, "a.pdf")
+    core.publish_archive_member_document(
+        ctx,
+        target,
+        "document preview proof",
+        "sandbox-fileos-document-v1-" + "c" * 64,
+        "pdf",
+        "document-preview-test-v1",
+        uuid4(),
+    )
+    replayed = core.archive_member_document_plan(ctx, recorded.inventory_id, limit=3)
+    assert len(replayed["results"]) == 3
+    assert replayed["results"][0]["already_published"] is True
+
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Document preview other')", (other_tenant,)
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
+    with pytest.raises(NotFound):
+        core.archive_member_document_plan(other, recorded.inventory_id)
+
+    path.write_bytes(raw + b"changed")
+    core.import_fileos_snapshot(
+        ctx,
+        fileos_manifest(tmp_path, source_id="files_archive_document_preview", hour=2),
+        uuid4(),
+    )
+    with pytest.raises(NotFound):
+        core.archive_member_document_plan(ctx, recorded.inventory_id)
 
 
 def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
