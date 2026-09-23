@@ -13,8 +13,11 @@ In a separate read-only FileOS parity lane, the pinned donor's scanner/reconcile
 inventory classifier has been copied into DataCore with two type-check-only comments
 in its standalone self-test. A 3,000-path
 synthetic live-donor comparison found no classification or pruning differences.
-Snapshot integration awaits an explicit policy decision because the donor scanner
-and DC-001 dedupe defaults differ; no FileOS source behavior changed in this tranche.
+Hosted [CI 35848399796](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35848399796)
+and [restore 35848399781](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35848399781)
+passed on [PR #14](https://github.com/jbone3311/CW-EmailBrain/pull/14). Snapshot
+integration awaits an explicit policy decision because the donor scanner and DC-001
+dedupe defaults differ; no FileOS source behavior changed in this tranche.
 See the [classifier contract](FILEOS_JUNK_POLICY.md).
 
 ## Completed gates

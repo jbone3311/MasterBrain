@@ -2,7 +2,7 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Local FileOS inventory-classifier parity checkpoint
+## Verified FileOS inventory-classifier parity checkpoint
 
 Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15` classifier
 SHA-256 is `12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437`.
@@ -10,9 +10,16 @@ The copied DataCore classifier adds only two type-check comments in its standalo
 self-test; removing them reproduces the exact donor hash.
 The explicit read-only donor harness compared 3,000 synthetic paths and reported
 zero mismatches across file, directory, operational-directory, path-reason and prune
-contracts. Twelve focused Python tests and lint passed locally. This is an extracted
-classifier, not scanner/snapshot integration, whole-inventory parity or production
-cutover. Hosted CI/restore remain pending for this branch.
+contracts. Twelve focused Python tests, lint and the 173-file/920-link documentation
+check passed locally. Runtime/provenance correction `4410a45` and test-import
+correction `b86b791` passed hosted
+[CI 35848399796](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35848399796)
+and [restore 35848399781](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35848399781)
+on [PR #14](https://github.com/jbone3311/CW-EmailBrain/pull/14). Hosted CI passed
+2,663 Python tests with one expected live-donor skip (no FOS checkout in CI), two
+upstream warnings and the deployment/worker gates. This is an extracted classifier,
+not scanner/snapshot integration, whole-inventory parity or production cutover.
+Independent review and integration are pending.
 
 ## Verified private archive-image OCR command
 
