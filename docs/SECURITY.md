@@ -72,6 +72,10 @@ Completed FileOS inventories are independently balanced in PostgreSQL against th
 receipt counts. Per-source serialization and monotonic observation time prevent stale
 completion from replacing newer state. Absence is inferred only between two completed
 ledgers; it retains evidence and does not authorize hiding, deletion or any file effect.
+Completion additionally refuses malformed snapshot error ledgers or uncertain
+directory/file/race coverage before absence inference. A deliberate no-follow
+symlink skip is the sole tolerated snapshot error; source-policy drift and mass loss
+remain separate unsatisfied cutover gates (ADR-094).
 
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and

@@ -126,3 +126,22 @@ def test_source_binding_and_manifest_ambiguity_fail_closed(tmp_path: Path, monke
     private_write(path.parent / "snapshot.json", b'{"source":{},"source":{}}')
     with pytest.raises(control.FileOSControllerError):
         control.run_fileos_controller(path, "runtime-dsn", uuid4(), check=True)
+
+
+def test_incomplete_snapshot_refused_before_database_or_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, _ = controller_files(tmp_path)
+    manifest_path = path.parent / "snapshot.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["errors"] = [{"locator": "inaccessible", "code": "directory_unreadable"}]
+    manifest["counts"]["errors"] = 1
+    private_write(manifest_path, manifest)
+    store = Mock()
+    adapter = Mock()
+    monkeypatch.setattr(control, "Store", store)
+    monkeypatch.setattr(control, "FileOSAdapter", adapter)
+    with pytest.raises(control.FileOSControllerError):
+        control.run_fileos_controller(path, "runtime-dsn", uuid4())
+    store.assert_not_called()
+    adapter.assert_not_called()

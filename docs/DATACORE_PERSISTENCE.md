@@ -107,6 +107,13 @@ items are recorded only by comparing two consecutive completed ledgers, so parti
 imports cannot manufacture deletion. Absence retains all evidence and does not yet
 change search visibility.
 
+ADR-094 adds a completion-only coverage gate: the manifest error count and ledger
+must agree, and read/race/directory/unknown errors cannot advance freshness or
+produce absence. Only an explicit `symlink_skipped` under the v1 no-follow policy
+is tolerated. The private publisher checks this before intake, while direct
+`complete_fileos_run` checks again. Lower-level partial imports remain possible and
+replayable. This does not yet compare inventory policy versions or guard mass loss.
+
 `fileos_rebuild_preview` reads a maximum of 50 opaque item records from the latest
 completed ledger while holding the source completion lock. It recomputes normalized
 body/document/chunk hashes and identities, returning only verification dispositions

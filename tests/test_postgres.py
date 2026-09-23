@@ -3701,3 +3701,69 @@ def test_sync_status_api_uses_database_owner_and_hides_unknown_accounts(database
     with psycopg.connect(database[1]) as conn:
         conn.execute("DELETE FROM tenant_memberships WHERE tenant_id=%s", (ctx.tenant_id,))
     assert client.get(f"/v1/accounts/{account}/sync-status", headers=headers).status_code == 403
+
+
+def test_fileos_incomplete_snapshot_cannot_advance_absence(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    source_id = "files_coverage_guard"
+    (tmp_path / "kept.txt").write_bytes(b"fictional kept evidence")
+    missing = tmp_path / "missing.txt"
+    missing.write_bytes(b"fictional missing evidence")
+    core = DataCoreStore(store)
+
+    def record(manifest: dict[str, Any], run_id: UUID) -> None:
+        core.import_fileos_snapshot(ctx, manifest, run_id)
+        core.complete_fileos_run(
+            ctx,
+            manifest,
+            run_id,
+            outcomes={"unsupported": len(manifest["items"])},
+            item_outcomes={item["item_id"]: "unsupported" for item in manifest["items"]},
+            published_documents=0,
+            code_revision="test-coverage-v1",
+            document_processor_version=None,
+        )
+
+    first = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    first_run = uuid4()
+    record(first, first_run)
+    assert core.fileos_inventory(ctx, source_id)["newly_absent_items"] == 0
+
+    partial = fileos_manifest(tmp_path, source_id=source_id, hour=2)
+    partial["items"] = [item for item in partial["items"] if item["locator"] == "kept.txt"]
+    partial["counts"]["items"] = 1
+    partial["counts"]["errors"] = 1
+    partial["errors"] = [{"locator": "missing.txt", "code": "file_unreadable"}]
+    partial_run = uuid4()
+    core.import_fileos_snapshot(ctx, partial, partial_run)
+    with pytest.raises(ValueError, match="coverage"):
+        core.complete_fileos_run(
+            ctx,
+            partial,
+            partial_run,
+            outcomes={"unsupported": 1},
+            item_outcomes={partial["items"][0]["item_id"]: "unsupported"},
+            published_documents=0,
+            code_revision="test-coverage-v1",
+            document_processor_version=None,
+        )
+    inventory = core.fileos_inventory(ctx, source_id)
+    assert inventory["run_id"] == first_run
+    assert inventory["newly_absent_items"] == 0
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 0
+
+    missing.unlink()
+    clean = fileos_manifest(tmp_path, source_id=source_id, hour=3)
+    clean_run = uuid4()
+    record(clean, clean_run)
+    inventory = core.fileos_inventory(ctx, source_id)
+    assert inventory["run_id"] == clean_run
+    assert inventory["newly_absent_items"] == 1

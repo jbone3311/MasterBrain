@@ -2,6 +2,17 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS completion-coverage checkpoint
+
+ADR-094 preceded the code change. A completion-only DataCore validator checks the
+manifest error ledger/count and refuses uncertain directory, file, race, boundary
+or unknown errors; only an explicit no-follow symlink skip is tolerated. The private
+publisher checks before database setup/import, and direct storage completion checks
+again. Twenty-four focused unit/controller tests passed locally, and Ruff passed.
+A synthetic PostgreSQL regression for clean → incomplete → clean consecutive runs
+is written but awaits hosted PostgreSQL and restore gates. No schema, donor or
+source-policy change is part of this tranche.
+
 ## Local FileOS scanner-edge safety checkpoint
 
 Fourteen focused shadow tests passed with the pinned donor checkout. New cases

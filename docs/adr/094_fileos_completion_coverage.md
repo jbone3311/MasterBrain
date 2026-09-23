@@ -1,7 +1,7 @@
 # ADR-094 — Refuse FileOS completion after incomplete snapshot coverage
 
-Status: accepted for implementation in an isolated tranche; hosted PostgreSQL,
-restore and review gates pending. This is not an inventory-policy switch or cutover.
+Status: implemented locally in an isolated tranche; hosted PostgreSQL, restore and
+review gates pending. This is not an inventory-policy switch or cutover.
 
 ## Context
 

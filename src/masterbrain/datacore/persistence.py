@@ -290,6 +290,44 @@ def validate_fileos_manifest(manifest: Mapping[str, Any]) -> tuple[str, int]:
     return source.source_id, len(items)
 
 
+def validate_fileos_completion_coverage(
+    manifest: Mapping[str, Any],
+) -> tuple[SourceRef, datetime, list[SourceItemVersion]]:
+    """Refuse a completion ledger that could mistake a scan failure for absence."""
+    source, observed_at, items = _manifest_items(manifest)
+    counts = manifest["counts"]
+    errors = manifest.get("errors")
+    if (
+        not isinstance(errors, list)
+        or type(counts.get("errors")) is not int
+        or counts["errors"] != len(errors)
+    ):
+        raise ValueError("invalid FileOS snapshot coverage")
+    item_locators = {item.locator for item in items}
+    error_locators: set[str] = set()
+    policy = manifest.get("policy")
+    no_follow = isinstance(policy, Mapping) and policy.get("follow_file_symlinks") is False
+    for raw in errors:
+        if not isinstance(raw, Mapping):
+            raise ValueError("invalid FileOS snapshot coverage")
+        locator = raw.get("locator")
+        code = raw.get("code")
+        if (
+            not isinstance(locator, str)
+            or not locator
+            or locator.startswith(("/", "\\"))
+            or "\x00" in locator
+            or ".." in locator.replace("\\", "/").split("/")
+            or locator in item_locators
+            or locator in error_locators
+        ):
+            raise ValueError("invalid FileOS snapshot coverage")
+        error_locators.add(locator)
+        if code != "symlink_skipped" or not no_follow:
+            raise ValueError("incomplete FileOS snapshot coverage")
+    return source, observed_at, items
+
+
 def deterministic_chunks(
     text: str, limit: int = CHUNK_CHARACTERS
 ) -> Iterator[tuple[int, int, str]]:
@@ -3237,7 +3275,7 @@ class DataCoreStore:
     ) -> FileOSRunReceipt:
         """Append a completion receipt only after every snapshot item is accounted."""
         self.store.require(ctx, "brain.document.publish")
-        source, observed_at, items = _manifest_items(manifest)
+        source, observed_at, items = validate_fileos_completion_coverage(manifest)
         allowed = {"extracted", "empty", "unsupported", "deferred", "changed", "failed"}
         counts = dict(sorted(outcomes.items()))
         items_by_id = {item.item_id: item for item in items}

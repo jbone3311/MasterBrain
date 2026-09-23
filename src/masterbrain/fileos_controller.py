@@ -15,7 +15,7 @@ from email_brain.schemas import ClosedModel
 from email_brain.store import Store
 from masterbrain.datacore.document_processor import DockerDocumentProcessor
 from masterbrain.datacore.extraction import FileOSAdapter
-from masterbrain.datacore.persistence import DataCoreStore, validate_fileos_manifest
+from masterbrain.datacore.persistence import DataCoreStore, validate_fileos_completion_coverage
 
 MAX_MANIFEST_BYTES = 16 * 1024 * 1024
 _SOURCE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,127}\Z", re.ASCII)
@@ -69,8 +69,8 @@ def _manifest(config: FileOSControllerConfig) -> dict[str, Any]:
     value = _json(config.manifest_file, MAX_MANIFEST_BYTES)
     if not isinstance(value, dict):
         raise FileOSControllerError()
-    source_id, _ = validate_fileos_manifest(value)
-    if source_id != config.source_id or not _SOURCE_ID.fullmatch(config.source_id):
+    source, _, _ = validate_fileos_completion_coverage(value)
+    if source.source_id != config.source_id or not _SOURCE_ID.fullmatch(config.source_id):
         raise FileOSControllerError()
     return value
 

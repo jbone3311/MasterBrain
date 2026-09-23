@@ -48,6 +48,12 @@ The donor's silent one-row removal
 and inconsistent raced size/hash reinforce the need for explicit coverage and
 stable-read gates before a policy change.
 
+ADR-094 now defines a separate FileOS completion-coverage guard. The private
+publisher refuses incomplete manifests before intake, and DataCore completion
+independently refuses to advance freshness or absence from scan errors. Local
+unit/controller tests pass; the consecutive-run PostgreSQL and hosted/restore gates
+remain pending. This does not switch donor inventory policy or solve mass loss.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.

@@ -74,6 +74,8 @@ freshness view; intake and partial document prefixes do not.
 Migration `0018_fileos_inventory_reconciliation.sql` binds every completed receipt to
 an exact immutable item/outcome ledger. Consecutive complete ledgers produce immutable
 absence events without deleting evidence or treating partial work as a full inventory.
+ADR-094 adds an application-level coverage precondition before those receipts:
+blocking snapshot errors cannot become a completed inventory or absence evidence.
 
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and

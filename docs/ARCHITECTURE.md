@@ -55,6 +55,9 @@ Whole-run completion is separate from intake and per-document publication. Only 
 append-only receipt whose terminal outcome counts cover the exact manifest advances a
 source's latest-complete freshness. A crash prefix stays replayable and visible as not
 complete; it cannot masquerade as a fresh source.
+The completion boundary also validates snapshot coverage. An unreadable directory,
+failed file read or hash-time change cannot be promoted to a complete run and
+therefore cannot create an absence event; partial imports remain separate.
 
 FileOS index rebuilds publish immutable generations from one exact completed run.
 Readiness is a database-checked closure over generation items and chunks. A separate
