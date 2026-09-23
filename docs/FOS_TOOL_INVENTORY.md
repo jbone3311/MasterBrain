@@ -69,6 +69,23 @@ are standard-library-only plus best-effort logging. `intake_pipeline.py`,
 `doc_extract.py`, `email_core.py` and `intake_preflight.py` are integration references;
 `zip_index.py` and `archive_manager.py` contain database/file effects and are excluded.
 See [archive extraction plan](FILEOS_ARCHIVE_EXTRACTION.md).
+
+DC-004D image/OCR audit adds:
+
+```text
+b3fbc5ab7bf8ce06072865b5f1c0c3cd57ab968c0490e6996f95ed37c657cfb0  _SYSTEM/tools/image_triage.py
+553503e599e91636e8e004b45e348559a3e43fc848b0dd1310454641db22be63  _SYSTEM/tools/extract_metadata.py
+83cff8f74b5736d7efb1fd130f968b6295f12a906d2281f1037781c7a4119335  _SYSTEM/tests/test_image_triage.py
+```
+
+Together with the already pinned `doc_extract.py` and its test hash, the focused donor
+image suites pass 149 tests using the donor's optional dependencies. Useful behavior
+is split: `doc_extract.py` supplies a 25-megapixel/5,000-character limit but no OCR
+timeout; `image_triage.py` supplies full-decode checks and a 90-second Tesseract
+timeout but also naming, SQLite, command and Anthropic effects; `extract_metadata.py`
+temporarily disables Pillow's global bomb guard. The tranche therefore extracts a
+closed isolated subset rather than copying any module. See the
+[image/OCR inventory and contract](ARCHIVE_IMAGE_OCR.md).
 ## Gaps found during inspection
 
 - Common-tool test coverage is uneven: intake/dedupe/extraction are comparatively
