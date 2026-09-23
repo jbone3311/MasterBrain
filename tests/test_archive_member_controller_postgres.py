@@ -16,8 +16,8 @@ import pytest
 import test_postgres as pg
 
 from email_brain.domain.models import TenantContext
-from email_brain.store import NotFound
-from email_brain.synthetic_formats import docx_bytes, pdf_bytes
+from email_brain.store import Conflict, NotFound
+from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain import archive_member_controller as controller
 from masterbrain.archive_member_controller import (
     ArchiveMemberControllerError,
@@ -308,6 +308,40 @@ def batch_plan(
     return plan, items
 
 
+def document_batch_plan(
+    path: Path, inventory_id: str
+) -> tuple[Path, list[controller.ArchiveDocumentBatchItem]]:
+    items = [
+        controller.ArchiveDocumentBatchItem(
+            member_locator=locator, document_format=document_format, idempotency_key=uuid4()
+        )
+        for locator, document_format in (
+            ("documents/report.pdf", "pdf"),
+            ("documents/memo.docx", "docx"),
+            ("documents/sheet.xlsx", "xlsx"),
+        )
+    ]
+    payload = {
+        "version": 1,
+        "inventory_id": inventory_id,
+        "code_revision": "archive-operator-test-v1",
+        "items": [
+            {
+                "member_locator": item.member_locator,
+                "document_format": item.document_format,
+                "idempotency_key": str(item.idempotency_key),
+            }
+            for item in items
+        ],
+        "plan_sha256": controller.archive_document_batch_sha256(
+            1, inventory_id, "archive-operator-test-v1", items
+        ),
+    }
+    plan = path.parent / "archive-document-batch.json"
+    private_write(plan, payload)
+    return plan, items
+
+
 @pytest.mark.parametrize("selected_locator", ["folder/proof.md", "sibling.txt"])
 def test_check_publish_replay_and_content_free_output(
     database: tuple[object, str],
@@ -494,4 +528,77 @@ def test_batch_publishes_exact_plan_and_replays_with_content_free_output(
                 "n"
             ]
             == 2
+        )
+
+
+def test_document_batch_fail_stop_exact_retry_and_content_free_output(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    path, root, inventory_id, _, raw = setup_operator(
+        tmp_path,
+        ctx,
+        store,
+        extra_members={
+            "documents/report.pdf": pdf_bytes(("batch pdf proof",)),
+            "documents/memo.docx": docx_bytes("batch word proof"),
+            "documents/sheet.xlsx": xlsx_bytes("Batch", 1, 1, "batchsheetproof"),
+        },
+    )
+    plan, items = document_batch_plan(path, inventory_id)
+    monkeypatch.setattr(controller, "DockerArchiveMemberProcessor", LocalArchiveMemberProcessor)
+    monkeypatch.setattr(controller, "DockerDocumentProcessor", LocalDocumentProcessor)
+    before = root.joinpath("bundle.zip").stat()
+    checked = controller.run_archive_document_batch_controller(path, plan, store.dsn, check=True)
+    assert checked["requested"] == 3 and checked["data_effects"] is False
+
+    publish = controller.publish_extracted_archive_member_document
+    calls = 0
+
+    def refuse_second(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise Conflict("synthetic document refusal")
+        return publish(*args, **kwargs)
+
+    monkeypatch.setattr(controller, "publish_extracted_archive_member_document", refuse_second)
+    stopped = controller.run_archive_document_batch_controller(path, plan, store.dsn)
+    assert stopped["complete"] is False and stopped["failed_item_index"] == 1
+    assert stopped["completed"] == 1 and stopped["recorded"] == 1
+    with store.transaction(pg.datacore_context(ctx)) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_archive_member_document_receipts "
+                "WHERE inventory_id=%s",
+                (inventory_id,),
+            ).fetchone()["n"]
+            == 1
+        )
+
+    monkeypatch.setattr(controller, "publish_extracted_archive_member_document", publish)
+    completed = controller.run_archive_document_batch_controller(path, plan, store.dsn)
+    replay = controller.run_archive_document_batch_controller(path, plan, store.dsn)
+    assert completed["complete"] is True
+    assert completed["recorded"] == 2 and completed["replayed"] == 1
+    assert replay["complete"] is True and replay["replayed"] == 3
+    assert [row["item_index"] for row in completed["results"]] == [0, 1, 2]
+    serialized = json.dumps(stopped) + json.dumps(completed) + json.dumps(replay)
+    assert all(item.member_locator not in serialized for item in items)
+    assert not any(item.document_format in serialized for item in items)
+    assert "batch pdf proof" not in serialized and "batch word proof" not in serialized
+    assert root.joinpath("bundle.zip").read_bytes() == raw
+    assert root.joinpath("bundle.zip").stat().st_mtime_ns == before.st_mtime_ns
+    with store.transaction(pg.datacore_context(ctx)) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_archive_member_document_receipts "
+                "WHERE inventory_id=%s",
+                (inventory_id,),
+            ).fetchone()["n"]
+            == 3
         )

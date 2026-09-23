@@ -13,6 +13,7 @@ from typing import Any
 from uuid import UUID
 
 from masterbrain.archive_member_controller import (
+    run_archive_document_batch_controller,
     run_archive_document_plan_controller,
     run_archive_member_batch_controller,
     run_archive_member_controller,
@@ -161,6 +162,12 @@ def build_parser() -> argparse.ArgumentParser:
     archive_batch.add_argument("--config", type=Path, required=True)
     archive_batch.add_argument("--plan", type=Path, required=True)
     archive_batch.add_argument("--check", action="store_true")
+    archive_document_batch = file_commands.add_parser(
+        "archive-document-batch", help="Execute one sealed archive document batch"
+    )
+    archive_document_batch.add_argument("--config", type=Path, required=True)
+    archive_document_batch.add_argument("--plan", type=Path, required=True)
+    archive_document_batch.add_argument("--check", action="store_true")
 
     email = commands.add_parser("email", help="Explicit Email source migration commands")
     email_commands = email.add_subparsers(dest="email_command", required=True)
@@ -337,6 +344,20 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(
                 _json(
                     run_archive_member_batch_controller(
+                        args.config,
+                        args.plan,
+                        dsn,
+                        check=args.check,
+                    )
+                )
+            )
+        elif args.command == "fileos" and args.file_command == "archive-document-batch":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_archive_document_batch_controller(
                         args.config,
                         args.plan,
                         dsn,

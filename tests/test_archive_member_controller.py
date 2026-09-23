@@ -82,6 +82,39 @@ def batch_plan_file(
     return path, inventory, items
 
 
+def document_batch_plan_file(
+    tmp_path: Path, *, code_revision: str = "unit-archive-controller-v1"
+) -> tuple[Path, str, list[control.ArchiveDocumentBatchItem]]:
+    inventory = "archive_inventory_" + "d" * 32
+    items = [
+        control.ArchiveDocumentBatchItem(
+            member_locator=locator, document_format=document_format, idempotency_key=uuid4()
+        )
+        for locator, document_format in (
+            ("a.pdf", "pdf"),
+            ("nested/b.docx", "docx"),
+            ("final.xlsx", "xlsx"),
+        )
+    ]
+    payload = {
+        "version": 1,
+        "inventory_id": inventory,
+        "code_revision": code_revision,
+        "items": [
+            {
+                "member_locator": item.member_locator,
+                "document_format": item.document_format,
+                "idempotency_key": str(item.idempotency_key),
+            }
+            for item in items
+        ],
+        "plan_sha256": control.archive_document_batch_sha256(1, inventory, code_revision, items),
+    }
+    path = tmp_path / "state" / "archive-document-batch.json"
+    private_write(path, payload)
+    return path, inventory, items
+
+
 def test_check_preflights_without_target_query_or_worker_read(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -399,6 +432,110 @@ def test_batch_requires_private_plan_and_matching_revision(
     plan.chmod(0o644)
     with pytest.raises(control.ArchiveMemberControllerError):
         control.run_archive_member_batch_controller(config, plan, "runtime-dsn")
+    store.assert_not_called()
+
+
+def test_document_batch_check_constructs_neither_worker_or_target(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, config, _ = controller_files(tmp_path)
+    config["document_image_id"] = "sha256:" + "b" * 64
+    private_write(config_path, config)
+    plan, _, items = document_batch_plan_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = Mock(side_effect=AssertionError("check must not inspect document targets"))
+    archive = Mock(side_effect=AssertionError("check must not construct archive worker"))
+    document = Mock(side_effect=AssertionError("check must not construct document worker"))
+    monkeypatch.setattr(control, "DataCoreStore", core)
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", archive)
+    monkeypatch.setattr(control, "DockerDocumentProcessor", document)
+    result = control.run_archive_document_batch_controller(
+        config_path, plan, "runtime-dsn", check=True
+    )
+    assert result["requested"] == len(items)
+    assert result["execution_verified"] is False and result["data_effects"] is False
+    core.assert_not_called()
+    archive.assert_not_called()
+    document.assert_not_called()
+
+
+def test_document_batch_is_fail_stop_and_exact_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, config, _ = controller_files(tmp_path)
+    config["document_image_id"] = "sha256:" + "b" * 64
+    private_write(config_path, config)
+    plan, inventory, items = document_batch_plan_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = MagicMock()
+    core.archive_document_member_target.side_effect = [SimpleNamespace(), SimpleNamespace()]
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", MagicMock())
+    monkeypatch.setattr(control, "DockerDocumentProcessor", MagicMock())
+    extractions = [
+        SimpleNamespace(
+            status=ExtractionStatus.EXTRACTED, metadata={"format": item.document_format}
+        )
+        for item in items
+    ]
+    extract = Mock(side_effect=extractions[:2])
+    monkeypatch.setattr(control, "extract_archive_member_document", extract)
+    publish = Mock(
+        side_effect=[SimpleNamespace(changed=True), control.Conflict("synthetic refusal")]
+    )
+    monkeypatch.setattr(control, "publish_extracted_archive_member_document", publish)
+    stopped = control.run_archive_document_batch_controller(config_path, plan, "runtime-dsn")
+    assert stopped["complete"] is False and stopped["failed_item_index"] == 1
+    assert stopped["completed"] == 1 and stopped["recorded"] == 1
+
+    core.archive_document_member_target.reset_mock()
+    core.archive_document_member_target.side_effect = [SimpleNamespace() for _ in items]
+    extract.reset_mock()
+    extract.side_effect = extractions
+    publish.reset_mock()
+    publish.side_effect = [
+        SimpleNamespace(changed=False),
+        SimpleNamespace(changed=True),
+        SimpleNamespace(changed=True),
+    ]
+    completed = control.run_archive_document_batch_controller(config_path, plan, "runtime-dsn")
+    assert completed["complete"] is True
+    assert completed["recorded"] == 2 and completed["replayed"] == 1
+    assert [call.args[1:] for call in core.archive_document_member_target.call_args_list] == [
+        (inventory, item.member_locator) for item in items
+    ]
+    assert all(
+        call.kwargs["idempotency_key"] == item.idempotency_key
+        for call, item in zip(publish.call_args_list, items, strict=True)
+    )
+    serialized = json.dumps(completed)
+    assert not any(item.member_locator in serialized for item in items)
+    assert not any(item.document_format in serialized for item in items)
+
+
+@pytest.mark.parametrize("mutation", ["digest", "format", "duplicate_locator", "duplicate_key"])
+def test_document_batch_rejects_invalid_plan_before_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str
+) -> None:
+    config_path, config, _ = controller_files(tmp_path)
+    config["document_image_id"] = "sha256:" + "b" * 64
+    private_write(config_path, config)
+    plan, _, _ = document_batch_plan_file(tmp_path)
+    payload = json.loads(plan.read_text())
+    if mutation == "digest":
+        payload["plan_sha256"] = "0" * 64
+    elif mutation == "format":
+        payload["items"][0]["document_format"] = "docx"
+    elif mutation == "duplicate_locator":
+        payload["items"][1]["member_locator"] = payload["items"][0]["member_locator"]
+        payload["items"][1]["document_format"] = "pdf"
+    else:
+        payload["items"][1]["idempotency_key"] = payload["items"][0]["idempotency_key"]
+    private_write(plan, payload)
+    store = Mock()
+    monkeypatch.setattr(control, "Store", store)
+    with pytest.raises(control.ArchiveMemberControllerError):
+        control.run_archive_document_batch_controller(config_path, plan, "runtime-dsn")
     store.assert_not_called()
 
 
