@@ -5,12 +5,14 @@ combines Email and FileOS source capabilities behind shared ingestion and knowle
 layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compact,
 progressive access with drill-down to original evidence.
 
-**Status:** migration foundation and working synthetic-data prototype. The existing
+**Status:** `0.2.0a1` synthetic alpha candidate, not yet a tagged release. The
 Email capability has executable read-only ingestion, evidence storage, search,
-review, recovery, and narrow structured-memory functions. The first FileOS donor
-primitive—read-only hashing and duplicate discovery—now lives in DataCore with a
-golden parity harness. MasterBrain is not yet a hosted product, and FOS-Master has
-not been replaced, renamed, or modified.
+review, recovery, and narrow structured-memory functions. Shared DataCore also
+has read-only FileOS intake, extraction, archive derivatives, lexical retrieval,
+and a pinned-donor parity harness. These paths are tested on fictional inputs and
+disposable PostgreSQL; MasterBrain is not a hosted or live-source product, and
+FOS-Master has not been replaced, renamed, or modified. See the
+[alpha test guide](docs/ALPHA_TESTING.md) for the precise trial boundary.
 
 The repository name and the internal `email_brain` package remain temporarily for
 Git history and compatibility. They identify the original Email capability, not the
@@ -102,6 +104,7 @@ roadmap item is not an implementation claim.
 - [FileOS whole-inventory shadow comparison](docs/FILEOS_INVENTORY_SHADOW.md)
 - [Incremental execution plan](docs/EXECUTION_PLAN.md)
 - [Current build progress](docs/BUILD_PROGRESS.md)
+- [Synthetic alpha test guide](docs/ALPHA_TESTING.md)
 - [Shared DataCore/FileOS commands](docs/DATACORE_COMMANDS.md)
 - [Source and provenance contract](docs/SOURCE_PROVENANCE.md)
 - [DataCore persistence and lexical retrieval](docs/DATACORE_PERSISTENCE.md)
