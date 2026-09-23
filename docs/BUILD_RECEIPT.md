@@ -2,7 +2,7 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Combined schema/FileOS integration checkpoint (hosted verification pending)
+## Combined schema/FileOS integration checkpoint
 
 The isolated integration branch merges #12–#13 into the exact green #22 FileOS
 head without rewriting applied migrations or FOS-Master. Migration order is
@@ -19,8 +19,13 @@ the PR #13 fixture expected only 0030 after its pre-0030 seed, while the combine
 branch correctly also applies 0031 and 0032. The fixture expectation was extended
 without changing migration behavior. First combined
 [restore 35892717493](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35892717493)
-passed. Corrected full CI and restore are pending; this is not yet combined hosted
-verification. Factory PR #11's competing 0029 is not included; its independent
+passed. Corrected head `9790b80` passed
+[CI 35893316583](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35893316583):
+**2,738 Python passed, nine expected skips, two upstream warnings**, plus lint,
+mypy, browser, deployment, documentation, API-image and restricted-worker gates.
+[Populated restore 35893316454](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35893316454)
+passed. This verifies the combined synthetic migration/application stack, not a
+production upgrade or FileOS cutover. Factory PR #11's competing 0029 is not included; its independent
 schema/workflow findings are tracked as a separate follow-up.
 
 ## FileOS physical-root binding checkpoint

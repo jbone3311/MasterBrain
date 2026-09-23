@@ -6,8 +6,11 @@
 the separately green migration-integrity/truncation stack (#12–#13) with the
 FileOS root-binding stack (#14–#22). Migration order is 0029 migration repair,
 0030 truncate guards, 0031 inventory policy and 0032 root binding. The merge
-preserves both branches' history; its combined hosted CI and populated restore
-are pending. Factory review PR #11 independently uses migration number 0029,
+preserves both branches' history. The corrected integration head `9790b80`
+passed [CI 35893316583](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35893316583)
+with 2,738 Python tests and
+[populated restore 35893316454](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35893316454).
+Factory review PR #11 independently uses migration number 0029,
 so it cannot be merged unchanged. Its non-overlapping ledger/FK and workflow
 findings need a separately numbered, reviewed follow-up. No FOS-Master edit or
 production cutover is part of this integration.

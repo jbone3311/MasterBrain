@@ -3,8 +3,10 @@
 ## Integration and parallel review
 
 The schema-safety integration branch keeps this repair at migration 0029, followed
-by the tested 0030 protected-record guard and FileOS migrations 0031–0032. It
-preserves original branch history and does not rewrite already applied SQL.
+by the tested 0030 protected-record guard and FileOS migrations 0031–0032. Its
+corrected head `9790b80` passed hosted CI 35893316583 and populated restore
+35893316454. It preserves original branch history and does not rewrite already
+applied SQL.
 Factory review [PR #11](https://github.com/jbone3311/CW-EmailBrain/pull/11)
 proposes a different migration 0029 and therefore cannot be merged unchanged.
 Its truncate concern is covered more comprehensively by ADR-092/0030; its archive
