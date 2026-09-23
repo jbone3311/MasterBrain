@@ -12,9 +12,8 @@ no force override, policy switch or donor change. Synthetic threshold and
 20→10 refusal / 20→12 acceptance regression tests are included. Local focused
 pytest: **6 passed, 2 PostgreSQL tests skipped** (no local test database), 78
 deselected, two upstream deprecation warnings. Ruff check/format passed, as did
-the documentation inventory (177 Markdown files, 940 links). PostgreSQL behavior
-and full hosted CI are still unverified for this branch; this is not a cutover
-gate pass.
+the documentation inventory (177 Markdown files, 940 links). This alone was not a
+PostgreSQL gate pass.
 
 First hosted [CI 35868676705](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35868676705)
 ran the PostgreSQL case and exposed a synthetic-fixture defect: rewriting two
@@ -22,8 +21,13 @@ unchanged files gave their existing content-derived versions new `mtime_ns`
 metadata, which the append-only source-version contract correctly refused. The
 test now moves the fictional files outside the scanned root and moves two back,
 preserving their metadata. The [restore 35868676442](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35868676442)
-passed on the first head; a new full-CI result is pending. No production behavior
-was changed to accommodate the fixture.
+passed on the first head. Corrected runtime head `c10a9a0` passed full
+[CI 35869402539](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402539)
+with **2,689 Python passed, 9 expected skips, 2 upstream warnings**, all browser,
+deployment, documentation and restricted-worker gates, and populated
+[restore 35869402685](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402685).
+No production behavior was changed to accommodate the fixture. Review, policy
+identity and a legitimate-large-removal approval path remain before cutover.
 
 ## Local FileOS completion-coverage checkpoint
 

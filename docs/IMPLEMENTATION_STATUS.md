@@ -40,7 +40,8 @@ mean hosted, live-source accepted, or production ready.
   items and at least half the prior inventory; it has no unreviewed bypass. This
   does not yet version inventory policy or protect smaller unexplained losses.
   Hosted PostgreSQL, full CI and populated restore passed on PR #18's runtime head.
-  Hosted verification of the mass-loss guard is pending.
+  Hosted CI and populated restore passed for the mass-loss guard on PR #19's
+  runtime head; review and policy-versioning remain pending.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

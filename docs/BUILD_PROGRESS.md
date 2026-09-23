@@ -61,8 +61,12 @@ ADR-095 defines the next isolated safety guard: a new complete FileOS run is ref
 when at least 10 prior items and at least half the prior inventory disappear. It
 matches the pinned donor's mass-prune threshold without performing deletion or
 granting a force override. Six focused local unit tests passed; two PostgreSQL
-cases were skipped because no local test database is configured. Hosted CI/restore
-and a reviewed legitimate-large-removal path remain.
+cases were skipped because no local test database is configured. Hosted
+[CI 35869402539](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402539)
+passed 2,689 Python tests and the full non-Python gate, and
+[restore 35869402685](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402685)
+passed on [PR #19](https://github.com/jbone3311/CW-EmailBrain/pull/19)'s runtime
+head. A reviewed legitimate-large-removal path and policy-version fence remain.
 
 ## Completed gates
 
