@@ -33,7 +33,7 @@ WORD_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.docu
 SHEET_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 _HASH = re.compile(r"[a-f0-9]{64}\Z", re.ASCII)
-_VERSION = re.compile(r"version_[a-f0-9]{32}\Z", re.ASCII)
+_VERSION = re.compile(r"(?:version|archiveversion)_[a-f0-9]{32}\Z", re.ASCII)
 _FORMATS = {
     (".pdf", PDF_TYPE): "pdf",
     (".docx", WORD_TYPE): "docx",

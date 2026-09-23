@@ -370,7 +370,7 @@ def read_archive_member(
     depth: int,
     parent_locator: str | None,
 ) -> bytes:
-    """Rerun accepted inventory and return only one exact non-container member."""
+    """Rerun accepted inventory and return one exact leaf or opaque OOXML member."""
     result, selected = _run_inventory(raw, source, locator)
     if result.status not in {"complete", "partial"} or selected is None:
         raise ArchiveUnavailable()
@@ -378,9 +378,13 @@ def read_archive_member(
     if len(matches) != 1:
         raise ArchiveUnavailable()
     member = matches[0]
+    # DOCX/XLSX are ZIP containers structurally, but are intentionally opaque inputs
+    # to the independently restricted document worker. Other nested archives remain
+    # containers and cannot cross this byte-release boundary.
+    opaque_document = PurePosixPath(locator).suffix.casefold() in {".docx", ".xlsx"}
     if (
-        member.is_container
-        or _kind(selected) is not None
+        (member.is_container and not opaque_document)
+        or (_kind(selected) is not None and not opaque_document)
         or (member.sha256, member.observed_size, member.depth, member.parent_locator)
         != (sha256, size_bytes, depth, parent_locator)
     ):

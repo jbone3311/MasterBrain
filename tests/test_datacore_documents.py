@@ -113,6 +113,13 @@ def test_contract_rejects_source_tampering_unknown_fields_and_bad_results() -> N
         source_for(raw, expected.version_id, "../memo.docx", expected.sha256, WORD_TYPE)
 
 
+def test_contract_accepts_deterministic_archive_member_version_identity() -> None:
+    raw = docx_bytes("archive member identity")
+    digest = hashlib.sha256(raw).hexdigest()
+    source = source_for(raw, "archiveversion_" + digest[:32], "memo.docx", digest, WORD_TYPE)
+    assert source.version_id.startswith("archiveversion_")
+
+
 def hostile_ooxml(raw: bytes, name: str, payload: bytes) -> bytes:
     output = BytesIO()
     with ZipFile(BytesIO(raw)) as original, ZipFile(output, "w", compression=ZIP_DEFLATED) as new:
