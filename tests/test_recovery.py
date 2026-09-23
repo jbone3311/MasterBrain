@@ -18,7 +18,7 @@ from test_service import TOKEN, registry
 from email_brain import store as persistence
 from email_brain.api import create_app
 from email_brain.auth import Principal
-from email_brain.migrate import migrate
+from email_brain.migrate import grant_runtime, migrate
 from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.schemas import SearchRequest
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
@@ -443,6 +443,25 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0012_document_jobs.sql",
             "0013_external_identities.sql",
             "0014_structured_memory.sql",
+            "0015_datacore_persistence.sql",
+            "0016_knowledgecore.sql",
+            "0017_fileos_run_receipts.sql",
+            "0018_fileos_inventory_reconciliation.sql",
+            "0019_datacore_index_generations.sql",
+            "0020_email_datacore_bridge.sql",
+            "0021_email_attachment_bridge.sql",
+            "0022_email_document_extraction_bridge.sql",
+            "0023_archive_manifests.sql",
+            "0024_archive_member_text_derivatives.sql",
+            "0025_current_archive_derivative_search.sql",
+            "0026_archive_member_documents.sql",
+            "0027_current_archive_document_search.sql",
+            "0028_archive_member_image_ocr.sql",
+            "0029_migration_integrity_repair.sql",
+            "0030_protected_record_truncate_guards.sql",
+            "0031_fileos_policy_identity.sql",
+            "0032_fileos_root_binding.sql",
+            "0033_archive_ledger_parent_integrity.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -453,3 +472,176 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
     finally:
         with psycopg.connect(admin, autocommit=True) as conn:
             conn.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(name)))
+
+
+@pytest.mark.postgres
+def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
+    from pathlib import Path
+
+    _, admin = database
+    name = "email_brain_test_policy_upgrade_" + uuid4().hex
+    with psycopg.connect(admin, autocommit=True) as conn:
+        conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
+    dsn = make_conninfo(admin, dbname=name)
+    try:
+        directory = Path(__file__).resolve().parents[1] / "migrations"
+        for path in sorted(directory.glob("[0-9][0-9][0-9][0-9]_*.sql")):
+            if path.name not in {
+                "0031_fileos_policy_identity.sql",
+                "0032_fileos_root_binding.sql",
+                "0033_archive_ledger_parent_integrity.sql",
+            }:
+                (tmp_path / path.name).write_bytes(path.read_bytes())
+        migrate(dsn, tmp_path)
+        tenant_id, actor_id, run_id = uuid4(), uuid4(), uuid4()
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO tenants(id,name) VALUES (%s,'Synthetic policy upgrade')",
+                (tenant_id,),
+            )
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,'files_policy_upgrade','fileos','Synthetic')",
+                (tenant_id,),
+            )
+            conn.execute(
+                "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+                "observed_at,manifest_sha256,code_revision,text_extractor_version,item_count,"
+                "outcomes,published_documents) VALUES (%s,%s,%s,'files_policy_upgrade',now(),"
+                "%s,'synthetic-old','fileos-text-v1',0,'{}'::jsonb,0)",
+                (tenant_id, actor_id, run_id, "a" * 64),
+            )
+        assert migrate(dsn, directory) == [
+            "0031_fileos_policy_identity.sql",
+            "0032_fileos_root_binding.sql",
+            "0033_archive_ledger_parent_integrity.sql",
+        ]
+        with psycopg.connect(dsn) as conn:
+            assert conn.execute(
+                "SELECT policy_sha256,root_binding_sha256 FROM brain_fileos_run_receipts "
+                "WHERE tenant_id=%s AND actor_id=%s AND run_id=%s",
+                (tenant_id, actor_id, run_id),
+            ).fetchone() == (None, None)
+            assert conn.execute(
+                "SELECT root_binding_sha256 FROM brain_sources "
+                "WHERE tenant_id=%s AND id='files_policy_upgrade'",
+                (tenant_id,),
+            ).fetchone() == (None,)
+        with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(dsn) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_run_receipts SET policy_sha256=%s "
+                "WHERE tenant_id=%s AND actor_id=%s AND run_id=%s",
+                ("c" * 64, tenant_id, actor_id, run_id),
+            )
+        with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+                "observed_at,manifest_sha256,code_revision,text_extractor_version,item_count,"
+                "outcomes,published_documents) VALUES (%s,%s,%s,'files_policy_upgrade',now(),"
+                "%s,'synthetic-new','fileos-text-v1',0,'{}'::jsonb,0)",
+                (tenant_id, actor_id, uuid4(), "b" * 64),
+            )
+        with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(dsn) as conn:
+            conn.execute(
+                "UPDATE brain_sources SET root_binding_sha256=%s "
+                "WHERE tenant_id=%s AND id='files_policy_upgrade'",
+                ("d" * 64, tenant_id),
+            )
+        with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,'files_new_without_root','fileos','Synthetic')",
+                (tenant_id,),
+            )
+        with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+                "observed_at,manifest_sha256,policy_sha256,code_revision,"
+                "text_extractor_version,item_count,outcomes,published_documents) "
+                "VALUES (%s,%s,%s,'files_policy_upgrade',now(),%s,%s,"
+                "'synthetic-new','fileos-text-v1',0,'{}'::jsonb,0)",
+                (tenant_id, actor_id, uuid4(), "b" * 64, "c" * 64),
+            )
+    finally:
+        with psycopg.connect(admin, autocommit=True) as conn:
+            conn.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(name)))
+
+
+@pytest.mark.postgres
+def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_path):
+    from pathlib import Path
+
+    _, admin = database
+    name = "email_brain_test_archive_ledger_" + uuid4().hex
+    role = "test_archive_" + uuid4().hex[:12]
+    password = "synthetic-" + uuid4().hex
+    role_created = False
+    with psycopg.connect(admin, autocommit=True) as conn:
+        conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
+    dsn = make_conninfo(admin, dbname=name)
+    try:
+        directory = Path(__file__).resolve().parents[1] / "migrations"
+        pre_upgrade = tmp_path / "pre_upgrade"
+        pre_upgrade.mkdir()
+        for path in sorted(directory.glob("[0-9][0-9][0-9][0-9]_*.sql")):
+            if path.name != "0033_archive_ledger_parent_integrity.sql":
+                (pre_upgrade / path.name).write_bytes(path.read_bytes())
+        migrate(dsn, pre_upgrade)
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                    sql.Identifier(role), sql.Literal(password)
+                )
+            )
+            grant_runtime(conn, role)
+        role_created = True
+        tenant_id, actor_id = uuid4(), uuid4()
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO tenants(id,name) VALUES (%s,'Synthetic archive upgrade')",
+                (tenant_id,),
+            )
+            conn.execute(
+                "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+                (tenant_id, actor_id),
+            )
+        ctx = pg.datacore_context(pg.TenantContext(tenant_id, actor_id, frozenset(), uuid4()))
+        core = pg.DataCoreStore(Store(make_conninfo(dsn, user=role, password=password)))
+        archive_root = tmp_path / "archive"
+        archive_root.mkdir()
+        _, _, result = pg.archive_fixture(
+            core, ctx, archive_root, source_id="files_archive_upgrade"
+        )
+        recorded = core.record_archive_inventory(ctx, result, pg.ARCHIVE_PROCESSOR, uuid4())
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO brain_archive_skips "
+                "(tenant_id,inventory_id,ordinal,locator,reason,depth) "
+                "VALUES (%s,%s,2000,'late.skip','unreadable',0)",
+                (tenant_id, recorded.inventory_id),
+            )
+        with pytest.raises(
+            psycopg.errors.RaiseException, match="existing archive inventory ledger"
+        ):
+            migrate(dsn, directory)
+        with psycopg.connect(dsn) as conn:
+            assert (
+                conn.execute(
+                    "SELECT count(*) FROM brain_archive_skips "
+                    "WHERE tenant_id=%s AND inventory_id=%s",
+                    (tenant_id, recorded.inventory_id),
+                ).fetchone()[0]
+                == 1
+            )
+            assert (
+                conn.execute(
+                    "SELECT count(*) FROM schema_migrations "
+                    "WHERE name='0033_archive_ledger_parent_integrity.sql'"
+                ).fetchone()[0]
+                == 0
+            )
+    finally:
+        with psycopg.connect(admin, autocommit=True) as conn:
+            conn.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
+            if role_created:
+                conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(role)))

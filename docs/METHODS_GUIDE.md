@@ -1,4 +1,6 @@
-# How Email Brain works
+# How the MasterBrain Email capability works
+
+This guide describes the retained Email capability, not the full cross-source product.
 
 Updated 2026-09-21. A plain-language map of the engineering methods and their
 product purpose. This explains the current design; it does not enable new features.

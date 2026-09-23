@@ -1,6 +1,7 @@
 """Real SQL source-to-search and adversarial document approval tests; synthetic only."""
 
 import hashlib
+import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
@@ -14,6 +15,7 @@ import test_postgres as pg
 from fastapi.testclient import TestClient
 from pdf_samples import mail_packet, variant
 from psycopg import sql
+from psycopg.types.json import Jsonb
 from test_recovery_jobs import worker_principal
 
 from email_brain.api import create_app
@@ -22,6 +24,14 @@ from email_brain.document_jobs import POLICY, DocumentJobs
 from email_brain.pdf_contract import PdfPage, PdfResult, PdfUnavailable, source_for
 from email_brain.schemas import SearchRequest
 from email_brain.store import AccessDenied, Conflict, NotFound
+from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.email_bridge_controller import (
+    EmailPartBridgeBatchItem,
+    email_part_bridge_batch_sha256,
+    run_email_attachment_bridge_controller,
+    run_email_document_bridge_controller,
+    run_email_part_bridge_batch_controller,
+)
 
 database, tenant = pg.database, pg.tenant
 pytestmark = pytest.mark.postgres
@@ -132,6 +142,272 @@ def test_approved_result_search_citation_cache_and_unchanged_source(database, te
     assert jobs.get(ctx, account, second["id"])["status"] == "completed"
     assert jobs.cancel(human, account, job["id"])["status"] == "completed"
     assert jobs.run_once(worker, account, processor) is None
+
+
+def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(
+    database, tenant, tmp_path
+):
+    store, admin = database
+    ctx, account = tenant
+    jobs, _, worker, receipt, _ = setup(database, tenant)
+    completed = jobs.run_once(worker, account, FakePdf())
+    extraction_id = completed["extraction_id"]
+    assert completed["status"] == "completed" and extraction_id is not None
+    bridge_ctx = pg.datacore_context(ctx)
+    core = DataCoreStore(store)
+    with store.transaction(ctx) as conn:
+        parent_id = conn.execute(
+            "SELECT evidence_id FROM attachment_receipts WHERE id=%s", (receipt,)
+        ).fetchone()["evidence_id"]
+    core.bridge_current_email_version(
+        bridge_ctx, parent_id, uuid4(), code_revision="pdf-derivative-test-v1"
+    )
+    with pytest.raises(Conflict, match="bridged current attachment"):
+        core.bridge_email_document_extraction(
+            bridge_ctx, extraction_id, uuid4(), code_revision="pdf-derivative-test-v1"
+        )
+    assert core.search(bridge_ctx, "pdfonlyproof") == []
+
+    config = pg.email_bridge_config(tmp_path, ctx, "pdf-derivative-test-v1")
+    attachment = run_email_attachment_bridge_controller(
+        config, store.dsn, receipt, uuid4()
+    )
+    derived = run_email_document_bridge_controller(
+        config, store.dsn, extraction_id, uuid4()
+    )
+    assert derived["recorded"] is True and attachment["recorded"] is True
+    assert derived["evidence_id"] == attachment["evidence_id"]
+    assert derived["extraction_status"] == "extracted" and derived["chunks"] == 1
+    assert [hit.evidence_id for hit in core.search(bridge_ctx, "pdfonlyproof")] == [
+        attachment["evidence_id"]
+    ]
+    family = core.search_current_email_family(bridge_ctx, "pdfonlyproof")
+    assert family.messages == () and family.attachments == ()
+    assert len(family.documents) == 1
+    assert family.documents[0].document_id == derived["document_id"]
+    replay = core.bridge_email_document_extraction(
+        bridge_ctx, extraction_id, uuid4(), code_revision="pdf-derivative-test-v1"
+    )
+    assert replay.document_id == derived["document_id"] and replay.changed is False
+
+    with store.transaction(bridge_ctx) as conn:
+        saved = conn.execute(
+            "SELECT legacy_attachment_id,legacy_extraction_id,legacy_approval_job_id,"
+            "extraction_status,result_sha256,chunk_count FROM "
+            "brain_email_document_bridge_receipts"
+        ).fetchone()
+        assert saved["legacy_attachment_id"] == receipt
+        assert saved["legacy_extraction_id"] == extraction_id
+        assert saved["legacy_approval_job_id"] == completed["id"]
+        assert saved["extraction_status"] == "extracted"
+        assert len(saved["result_sha256"]) == 64 and saved["chunk_count"] == 1
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Document bridge other')",
+            (other_tenant,),
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(
+        bridge_ctx,
+        tenant_id=other_tenant,
+        actor_id=other_actor,
+        request_id=uuid4(),
+        identity=None,
+    )
+    with store.transaction(other) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_document_bridge_receipts"
+        ).fetchone()["n"] == 0
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE brain_email_document_bridge_receipts SET code_revision='rewritten' "
+            "WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        )
+
+
+def test_email_part_bridge_preview_preserves_dependencies_and_current_state(
+    database, tenant
+):
+    store, _ = database
+    ctx, account = tenant
+    jobs, human, worker, receipt, _ = setup(database, tenant)
+    completed = jobs.run_once(worker, account, FakePdf())
+    extraction_id = completed["extraction_id"]
+    assert extraction_id is not None
+    bridge_ctx = pg.datacore_context(ctx)
+    core = DataCoreStore(store)
+    with store.transaction(ctx) as conn:
+        parent_id = conn.execute(
+            "SELECT evidence_id FROM attachment_receipts WHERE id=%s", (receipt,)
+        ).fetchone()["evidence_id"]
+
+    assert core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"] == []
+    assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"] == []
+    core.bridge_current_email_version(
+        bridge_ctx, parent_id, uuid4(), code_revision="part-preview-test-v1"
+    )
+    attachment_plan = core.email_part_bridge_plan(
+        bridge_ctx, account, "attachment", limit=1
+    )
+    assert attachment_plan["next_cursor"] is None
+    assert attachment_plan["results"] == [
+        {
+            "legacy_attachment_id": str(receipt),
+            "legacy_parent_version_id": str(parent_id),
+            "created_at": attachment_plan["results"][0]["created_at"],
+            "state": "deferred",
+            "already_bridged": False,
+        }
+    ]
+    assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"] == []
+
+    core.bridge_email_attachment(
+        bridge_ctx, receipt, uuid4(), code_revision="part-preview-test-v1"
+    )
+    approved = core.email_part_bridge_plan(bridge_ctx, account, "document")
+    assert approved["results"] == [
+        {
+            "legacy_document_id": str(extraction_id),
+            "legacy_parent_version_id": str(parent_id),
+            "created_at": approved["results"][0]["created_at"],
+            "state": "extracted",
+            "already_bridged": False,
+            "legacy_attachment_id": str(receipt),
+        }
+    ]
+    second = jobs.enqueue(human, account, receipt, VERSION, POLICY, uuid4())
+    assert jobs.run_once(worker, account, FakePdf())["extraction_id"] == extraction_id
+    assert jobs.get(ctx, account, second["id"])["status"] == "completed"
+    assert len(core.email_part_bridge_plan(bridge_ctx, account, "document")["results"]) == 1
+
+    core.bridge_email_document_extraction(
+        bridge_ctx, extraction_id, uuid4(), code_revision="part-preview-test-v1"
+    )
+    assert core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"][0][
+        "already_bridged"
+    ] is True
+    assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"][0][
+        "already_bridged"
+    ] is True
+    with store.transaction(ctx) as conn:
+        conn.execute(
+            "UPDATE messages SET quarantined=true WHERE account_id=%s", (account,)
+        )
+    assert core.email_part_bridge_plan(bridge_ctx, account, "attachment")["results"] == []
+    assert core.email_part_bridge_plan(bridge_ctx, account, "document")["results"] == []
+
+
+def test_email_document_batch_executes_and_replays_without_legacy_mutation(
+    database, tenant, tmp_path
+):
+    store, _ = database
+    ctx, account = tenant
+    jobs, _, worker, receipt, _ = setup(database, tenant)
+    completed_job = jobs.run_once(worker, account, FakePdf())
+    extraction_id = completed_job["extraction_id"]
+    assert extraction_id is not None
+    bridge_ctx = pg.datacore_context(ctx)
+    core = DataCoreStore(store)
+    with store.transaction(ctx) as conn:
+        parent_id = conn.execute(
+            "SELECT evidence_id FROM attachment_receipts WHERE id=%s", (receipt,)
+        ).fetchone()["evidence_id"]
+    code_revision = "email-document-batch-test-v1"
+    core.bridge_current_email_version(
+        bridge_ctx, parent_id, uuid4(), code_revision=code_revision
+    )
+    core.bridge_email_attachment(
+        bridge_ctx, receipt, uuid4(), code_revision=code_revision
+    )
+    before = store.evidence(ctx, parent_id)
+    config = pg.email_bridge_config(tmp_path, ctx, code_revision)
+    item = EmailPartBridgeBatchItem(
+        legacy_id=extraction_id, idempotency_key=uuid4()
+    )
+    digest = email_part_bridge_batch_sha256(
+        1, account, "document", code_revision, [item]
+    )
+    plan = tmp_path / "document-batch.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "account_id": str(account),
+                "kind": "document",
+                "code_revision": code_revision,
+                "items": [item.model_dump(mode="json")],
+                "plan_sha256": digest,
+            }
+        )
+    )
+    plan.chmod(0o600)
+    checked = run_email_part_bridge_batch_controller(
+        config, plan, store.dsn, check=True
+    )
+    assert checked["data_effects"] is False and checked["kind"] == "document"
+    recorded = run_email_part_bridge_batch_controller(config, plan, store.dsn)
+    assert recorded["complete"] is True and recorded["recorded"] == 1
+    replayed = run_email_part_bridge_batch_controller(config, plan, store.dsn)
+    assert replayed["complete"] is True and replayed["replayed"] == 1
+    assert store.evidence(ctx, parent_id) == before
+
+
+def test_unapproved_pdf_extraction_cannot_bridge(database, tenant):
+    store, admin = database
+    ctx, account = tenant
+    receipt = ready(store, ctx, account)
+    bridge_ctx = pg.datacore_context(ctx)
+    core = DataCoreStore(store)
+    with store.transaction(ctx) as conn:
+        source = conn.execute(
+            "SELECT a.evidence_id,a.part_id,a.sha256,v.raw_sha256 FROM attachment_receipts a "
+            "JOIN message_versions v ON v.tenant_id=a.tenant_id "
+            "AND v.account_id=a.account_id AND v.id=a.evidence_id WHERE a.id=%s",
+            (receipt,),
+        ).fetchone()
+    core.bridge_current_email_version(
+        bridge_ctx,
+        source["evidence_id"],
+        uuid4(),
+        code_revision="unapproved-pdf-test-v1",
+    )
+    core.bridge_email_attachment(
+        bridge_ctx, receipt, uuid4(), code_revision="unapproved-pdf-test-v1"
+    )
+    payload = {
+        "contract_version": "sandbox-pdf-v1",
+        "source": {
+            "raw_sha256": source["raw_sha256"],
+            "part_path": source["part_id"],
+            "part_sha256": source["sha256"],
+        },
+        "status": "extracted",
+        "reason": "bounded_pdf_v1",
+        "page_count": 1,
+        "pages": [{"number": 1, "text": "unapproved fictional result"}],
+        "scanner_status": "unscanned",
+    }
+    extraction_id = uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO document_extractions(id,tenant_id,account_id,receipt_id,"
+            "processor_version,policy_version,revision,result) "
+            "VALUES (%s,%s,%s,%s,%s,%s,1,%s)",
+            (extraction_id, ctx.tenant_id, account, receipt, VERSION, POLICY, Jsonb(payload)),
+        )
+    with pytest.raises(Conflict, match="not approved"):
+        core.bridge_email_document_extraction(
+            bridge_ctx, extraction_id, uuid4(), code_revision="unapproved-pdf-test-v1"
+        )
+    with store.transaction(bridge_ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_document_bridge_receipts"
+        ).fetchone()["n"] == 0
 
 
 def test_enqueue_idempotency_race_and_account_history(database, tenant):

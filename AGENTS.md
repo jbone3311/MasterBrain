@@ -1,10 +1,14 @@
 # Agent Instructions
 
-This repository is governed by the Email Brain architecture pack and is intended to run under the CW-Factory overlay.
+This repository is the MasterBrain product. `email_brain` is the retained internal
+Email capability; FileOS is migrated incrementally from FOS-Master through DataCore.
+The repository remains intended to run under the CW-Factory overlay.
 
 ## Required reading
 
-Before changing behavior, read `PRODUCT.md`, `docs/SECURITY.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, and the relevant provider/API document.
+Before changing behavior, read `PRODUCT.md`, `docs/SECURITY.md`,
+`docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, and the relevant
+source/API document. Migration work must also read `docs/FOS_MIGRATION.md`.
 
 ## Working rules
 
@@ -14,6 +18,14 @@ Before changing behavior, read `PRODUCT.md`, `docs/SECURITY.md`, `docs/ARCHITECT
 - Never add send, permanent-delete, broad mailbox-write, database-owner, or RLS-bypass privileges without a new approved ADR and security tests.
 - Never expose general SQL, arbitrary HTTP, provider tokens, or raw object access through MCP.
 - Preserve raw evidence; do not destructively replace it with cleaned text or summaries.
+- Keep Email and FileOS source-specific behavior behind adapters. Shared intake,
+  hashing/dedupe, extraction/OCR, normalization, metadata, provenance, chunking,
+  indexing and database primitives belong to DataCore. Knowledge projections belong
+  to KnowledgeCore; client access belongs to Brain API.
+- Do not modify, rename, retire or switch production work away from FOS-Master until
+  the applicable golden, shadow, rollback and acceptance gates pass.
+- Preserve donor repository/path/commit provenance. Extract behavior before improving
+  it; record intentional differences in an ADR.
 - Use transactional inbox/outbox and idempotency keys for external changes.
 - Use synthetic fixtures only. Never read or copy real mail into the repository or test logs.
 - Add or update tests, documentation, migration notes, telemetry, and rollback in the same change.
@@ -45,6 +57,7 @@ Keep observed OSS counts/dates and historical test receipts intact until remeasu
 
 - Rule/configuration semantics: update rule schema/tests and relevant docs.
 - Knowledge/entity semantics: preserve evidence and temporal correction behavior.
+- Donor extraction: add/update golden parity corpus, provenance ledger and rollback.
 - New integration, schema, API, workflow, permission, retention, or security behavior: write an ADR before implementation.
 
 ## Forbidden repository content

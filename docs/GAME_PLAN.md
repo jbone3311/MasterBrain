@@ -1,4 +1,9 @@
-# Email Brain: the game plan
+# MasterBrain game plan — Email capability detail
+
+MasterBrain is the final product. This document preserves the detailed owner plan for
+its Email capability. The cross-source plan and FileOS migration sequence live in
+[PRODUCT.md](../PRODUCT.md), [architecture](ARCHITECTURE.md), and
+[roadmap](ROADMAP.md).
 
 Updated 2026-09-21. Product direction, not a claim that all features are available.
 [Implementation status](IMPLEMENTATION_STATUS.md) and the exact-commit

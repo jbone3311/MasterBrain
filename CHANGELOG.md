@@ -1,10 +1,50 @@
 # Changelog
 
-## Unreleased — through 2026-09-21
+## 0.2.0a1 — synthetic alpha candidate (unreleased)
+
+- Consolidates the tested MasterBrain Email/FileOS stack into a test-only release
+  boundary. The version is not a release until the cumulative `main` commit passes
+  CI and populated restore and is tagged `v0.2.0a1`.
+- Adds a reproducible [alpha test guide](docs/ALPHA_TESTING.md), exact-head
+  branch/PR/merge/tag decision (ADR-101), and updated product identity/status.
+- Extends the `main` restore trigger to shared MasterBrain source, bounds CI run
+  time and cancels superseded PR runs (but not `main` runs), reports the collected/
+  executed/skipped PostgreSQL-test denominator, and ignores local dump files. No
+  runtime permission, schema or FileOS donor change.
+- Remaining: live-source authorization, hosted operations, production acceptance,
+  complete KnowledgeCore and LLM-client contract, plus separate FileOS cutover
+  proof. The pinned FOS-Master donor remains untouched.
+
+## Unreleased — through 2026-09-22
 
 The package remains version 0.1.0, a synthetic-data prototype. These entries do
 not announce a production release. [Build receipts](docs/BUILD_RECEIPT.md) retain
 exact tested commits and results.
+
+### MasterBrain foundation (ADR-047)
+
+- Established MasterBrain as the final product, retaining EmailBrain as the internal
+  Email capability and FOS-Master as an unchanged donor/reference.
+- Defined DataCore, KnowledgeCore and Brain API ownership; added product identity,
+  manifest, feature inventory, architecture, data model, security, deployment,
+  roadmap, migration and acceptance documentation.
+- Extracted FOS-Master's dependency-free read-only hash/dedupe behavior into
+  `masterbrain.datacore` with pinned provenance, synthetic tests and a live-donor
+  parity harness. No file move/delete behavior or FileOS cutover was added.
+- Added shared `masterbrain` hash/compare/duplicates/snapshot commands, immutable
+  source/evidence/provenance contracts, safe read-only FileOS manifests and expanded
+  3,000-file donor parity plus fault/symlink/no-mutation stress coverage.
+- Added completion-bound immutable FileOS lexical generations, database-validated
+  readiness, append-only activation/rollback receipts and active-generation Brain API
+  reads (ADR-058). FOS-Master and source files remain unchanged; hosted verification
+  is recorded only after the branch gates pass.
+- Added an explicit private FileOS index command for build-and-activate or activation-
+  only rollback, with exact per-operation worker scopes, non-consuming check mode,
+  reauthentication and scrubbed receipts (ADR-059). It is not a scheduler or cutover.
+- Added an explicitly current FileOS search across each source's latest activated
+  generation while preserving existing historical compatibility search (ADR-060).
+- Extended grouped DataCore/KnowledgeCore retrieval with an explicit current-FileOS
+  evidence mode; retained history remains the compatibility default (ADR-061).
 
 ### Tools discussion (documentation only)
 

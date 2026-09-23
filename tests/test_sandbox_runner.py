@@ -88,6 +88,8 @@ def fake_docker(
             result = deepcopy(state(name))
             result["Config"]["Cmd"] = list(processor._profile.command)
             result["Config"]["Labels"] = {processor._label: name}
+            if processor._profile.shm_size is not None:
+                result["HostConfig"]["ShmSize"] = processor._profile.shm_size
             if finished:
                 result["State"] = {"Status": "exited", "ExitCode": 0, "OOMKilled": False}
             if mutate:

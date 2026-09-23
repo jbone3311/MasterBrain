@@ -1,173 +1,256 @@
-# Implementation status
+# MasterBrain Implementation Status
 
-Updated 2026-09-21. This file distinguishes shipped prototype behavior from the
-ultimate product described in the PRD. A passing CI run does not make this production-ready.
+Updated 2026-09-23. **Implemented** means executable in this repository; it does not
+mean hosted, live-source accepted, or production ready.
 
-| Capability | Current implementation | Remaining gate |
-|---|---|---|
-| Structured memory | Typed reviewed trips/flights/hotels/bills, immutable evidence-backed revisions, idempotent publication, compact independent change cursors, partial freshness summary and developer UI | General email/LLM extraction, automatic interpretation coverage, guided editor, live/assistant acceptance, cross-account grouping, investment/project state |
-| Storage | PostgreSQL migrations; tenant RLS; composite ownership keys; runtime-role checks; verified synthetic logical dump/restore | Managed deployment, encryption/KMS, purge, offsite/PITR disaster-recovery drills |
-| Ingestion | Atomic evidence/checkpoint; resumable Fastmail worker and bounded private-configured read CLI; fenced leases, certified inventory reconciliation, expired-history recovery, bounded raw quarantine and audited human retry | Enrollment/resume administration, hosted supervision/alerts, live acceptance and soak |
-| Evidence | Default 1 MiB inline MIME; opt-in encrypted filesystem objects up to 16 MiB; restricted MIME recovery; durable approved processing API/UI/jobs with fenced atomic results | Hosted Blob/KMS, production identity/key recovery, controller hosting and retention/purge |
-| Read original email | Human-only complete selected body for MIME up to 1 MiB, inert HTML-to-text, headers, explicit verified original/leaf-part downloads | Larger bodies remain stored projections on screen; full large-message reader and nested-part export require restricted processing; no formatted HTML |
-| Attachments | Per-part receipts/events, duplicate links, bounded plain/calendar text extraction, FTS, explicit deferred/failed outcomes; explicit unscanned human downloads for small-source leaf parts | Malware scanner, production PDF intake policy, Office/OCR/archive extraction; bulk historical document reprocessing and large/nested separate exports |
-| Approved PDF processing | Separate restricted worker; synthetic API/library/operator and owner approval/history/cancel UI, durable fenced jobs, immutable results, opt-in FTS and cited pages | Browser acceptance, hosted supervision, scanner/live policy and real-world quality; ordinary ingestion still defers PDFs |
-| Retrieval | PostgreSQL FTS over subject/sender/body and extracted text attachments; opt-in latest-current PDF extraction text | Entity filters, chunk relevance excerpts, vector benchmarks and integration |
-| Access | Explicit bootstrap or RFC/Entra access-token verification; administrator-owned SQL mappings, revision/expiry/scope/owner rechecks and binding audit | Browser sign-in/session lifecycle, MFA/issuer enrollment, invitations, member/account grants, revocation UX, rate limiting |
-| Feedback | Typed proposals; human-reviewed sender rule simulation/activation; immutable revisions and rollback; virtual search labels | Rich predicates/protected-sender configuration, temporal/entity application, drift evaluation |
-| Providers | Fastmail durable worker; offline-tested Gmail/Graph read transports and injected-session IMAP contract | All live enrollment/acceptance; Gmail/Graph/IMAP durable database workers and notification ingress |
-| Models | Opt-in loopback Ollama library; installed-digest checks; bounded fake-server/output tests; code-first candidate routing | Actual isolated runtime/quality evaluation, durable receipts/cache, remote disclosures/budgets |
-| UI | Local search/evidence/proposals, rule preview/activation/rollback, account health, held-message retry, processing history/approval/cancellation; session/account/view race protection | Production login, bulk historical reprocessing, full browser/accessibility and live-data acceptance |
-| MCP | Planned typed REST-backed surface | Official SDK adapter, OAuth, actual client compatibility matrix |
-| Actions | No executable sending/deletion/mailbox-write path | Separate action ADR, preview/approval/outbox/reconciliation and disposable-account tests |
-| Factory | Architecture/intake mapping and Product handoff | Registration, hooks, clean sibling checkout, bind PASS and independent Factory audit |
-| Test data | Coherent seeded conversations/documents, independent PDF/Office reads, hash manifests, export and bounded paced/resumable SQL feed; mocked provider formats | More varied/held-out scenarios, scanned-text/password-protected fixtures, sustained soak and authorized live replay; see [test mailbox guide](TEST_MAILBOX_PLAN.md) |
+## Implemented
 
-The current source includes ADR-033's [known-answer test mailbox](TEST_MAILBOX_PLAN.md)
-and ADR-032's [bounded operator processing command](PROCESSING_CONTROLLER.md),
-plus ADR-031/migration 0011 processing history and owner controls. The command adds
-private configuration/preflight, fresh worker authentication and graceful stop,
-not credential enrollment or hosted supervision. Exact verification is recorded
-separately in [BUILD_RECEIPT.md](BUILD_RECEIPT.md);
-do not apply historical counts to a newer commit. Generic project/fact proposals
-do not create entities. Virtual labels do not change provider folders. A configured
-parser does not certify an online worker, and a completed job can have deferred attachments.
+- Existing `email_brain` capability: Fastmail/JMAP read worker, raw/evidence storage,
+  MIME/attachment accounting, PostgreSQL FTS, owner search/read, reviewed rules,
+  recovery/quarantine, synthetic mailbox, PDF approval path, and narrow reviewed
+  travel/bill memory. Existing detailed guides define exact limits.
+- Offline-tested Gmail/Graph libraries and an injected-session IMAP contract.
+- MasterBrain package boundary with DataCore read-only file hash, filter, duplicate
+  grouping, name grouping and file comparison extracted from FOS-Master.
+- Dedicated `masterbrain` CLI for shared hash/compare/duplicate commands and
+  deterministic read-only FileOS snapshots; source files are never changed.
+- Immutable source/item/version/evidence/provenance contracts with stable opaque IDs,
+  safe relative locators, bounded metadata and explicit source-bound evidence.
+- Synthetic DataCore unit corpus and live-donor parity harness pinned to FOS-Master
+  commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
+- Behavior-identical FOS scanner/reconciler inventory classifier with 3,000-path live-donor
+  parity. It is not yet wired into FileOS snapshots or dedupe; their different
+  exclusion policies require an explicit integration decision.
+- Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
+  database and temporary fictional root. It verifies common hashes/sizes, six current
+  policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;
+  it does not switch snapshot policy or publish evidence.
+- Synthetic pinned-donor scanner boundary tests cover sparse 100 MiB/2 GiB limit
+  differences, a retained stale row after donor read failure, MasterBrain's
+  changed-during-hash refusal and broken/directory symlinks. They do not establish
+  dataless, unreadable-directory or live-source parity.
+- Further synthetic pinned-donor edge tests expose metadata-only dataless behavior,
+  silent donor removal after an unreadable directory, a donor size/hash race and
+  valid unusual filename round trips. They do not prove real cloud or platform-wide
+  filename behavior and authorize no policy switch.
+- ADR-100's isolated FileOS read-hardening branch routes snapshot hashing and
+  text/PDF/Office extraction through bounded, descriptor-relative no-follow opens.
+  Synthetic symlink-swap and locator-stability regressions pass locally (15
+  cases, including an ancestor above the root). Hosted CI and populated restore
+  passed on code head `6e2eb8e` in
+  PR #25. The 3,000-file pinned-donor shadow passes with 3,002 ordinary
+  SHA/size matches; this is not a production FileOS release claim.
+- FileOS completion refuses malformed or uncertain snapshot coverage before writing
+  a latest-complete receipt or absence event. The private publisher rejects before
+  intake; direct storage completion independently enforces the rule. A separate
+  completion guard now refuses a clean-looking new run that loses at least 10 prior
+  items and at least half the prior inventory; it has no unreviewed bypass. This
+  does not protect smaller unexplained losses.
+  Hosted PostgreSQL, full CI and populated restore passed on PR #18's runtime head.
+  Hosted CI and populated restore passed for the mass-loss guard on PR #19's
+  runtime head; review remains pending.
+- New FileOS completion receipts carry a versioned inventory-policy digest and
+  refuse consecutive-run absence inference across changed or unknown policies.
+  Legacy receipts remain immutable with unknown policy; a reviewed baseline path
+  and PR review/integration are still pending. Hosted CI and
+  populated restore passed on PR #20's corrected runtime head. This does not
+  switch to the donor scanner's exclusions or authorize cutover.
+- ADR-097 adds bounded per-locator exclusion accounting and refuses absence
+  when a prior indexed file is still present but excluded, or intentionally skipped
+  as a no-follow symlink. Hosted CI and populated restore passed on PR #21's
+  runtime head; review/integration remain pending. It does not prove a live scanner;
+  root binding is separately guarded by ADR-098.
+- ADR-098 root binding is implemented in isolated PR #22, with hosted CI and
+  populated restore green on the runtime head. New FileOS sources and receipts carry
+  an immutable private physical-root digest; wrong-root intake, unknown legacy
+  roots and cross-root completion fail closed. This does not certify a live
+  scanner, donor-policy parity or FileOS cutover.
+- Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
+  lexical index and progressive evidence/content/change Brain API.
+- Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted
+  worker image with archive/active-content bounds; hosted container and restore gates green.
+- Source-bound, in-memory FileOS ZIP/TAR archive inventory contract and dedicated
+  restricted worker image with donor-equivalent cumulative bounds, safe hash-only
+  manifests and explicit bomb/duplicate non-publication; live donor, hostile/fault,
+  hosted container and restore gates green. It has no persistence or search path.
+- Append-only, forced-RLS archive hash-manifest persistence bound to current FileOS
+  source and immutable processor versions, with insert-time ledger balance and exact replay;
+  hosted PostgreSQL/restore gates green. It stores no member bytes and publishes no
+  evidence, documents, chunks or search entries.
+- The original archive inventory insert validates a balanced member/skip ledger,
+  but migration 0023 alone does not reject a later child insert. ADR-099 and
+  migration 0033 add deferred child-side checks and exact receipt/provenance links.
+  Hosted PostgreSQL and populated restore passed on PR #24's runtime head;
+  review and integration remain.
+- Hash-bound read of exactly one persisted non-container archive member through a
+  separate fixed restricted-image command. Forced-RLS selection requires the current
+  FileOS source version; the parent reopens it through no-follow descriptors, verifies
+  file identity before/after, and independently verifies the returned member hash and
+  size. Output is capped at 8 MiB, remains unscanned and is not persisted or searched;
+  hosted PostgreSQL/container/restore gates are green.
+- Explicit one-member text/Markdown/HTML/CSV normalization and append-only derived
+  evidence publication with deterministic child source/version/evidence identities,
+  parent archive plus inventory provenance, idempotent receipts and transaction-time
+  current-parent/member revalidation. It stores no raw member bytes and remains absent
+  from current-generation search; hosted PostgreSQL/restore gates are green.
+- Private `masterbrain fileos archive-text` publication for one explicit persisted
+  inventory/member pair, with immutable worker image binding, exact shared scopes,
+  non-consuming check mode, repeated reauthentication, content-free output and exact
+  replay. It grants no archive enumeration, batch, scheduling, public API, raw-byte
+  return or source effect.
+- Independently bounded current archive-member lexical search, fenced through the
+  current parent archive plus sealed inventory/member and exact derivative identities.
+  `/v1/brain/current-search` exposes it separately from immutable active FileOS
+  generations with explicit partial coverage; stale parents disappear while retained
+  history remains available. Hosted PostgreSQL/container/restore gates are green.
+- Private `masterbrain fileos archive-text-plan` read-only preview for one current
+  archive inventory. It returns only bounded eligible text-member metadata in sealed
+  ordinal pages with already-published labels, constructs no worker, reads no source
+  bytes and creates no derivative/key/batch authority. Hosted PostgreSQL/restore gates
+  are green.
+- Private `masterbrain fileos archive-text-batch` execution of one canonical,
+  digest-bound plan containing 1–100 reviewed member locators and caller-supplied
+  idempotency keys. It validates without target/worker/key effects, executes in exact
+  order, stops on first refusal, reauthenticates sensitive boundaries and resumes only
+  through unchanged-plan replay. Output contains indexes/counts rather than locators or
+  content; hosted PostgreSQL/container/restore gates are green.
+- Explicit one-member archive PDF/DOCX/XLSX extraction through two independently
+  restricted immutable images, followed by append-only publication on deterministic
+  child evidence. A separate receipt binds parent archive, inventory, member,
+  document processor, revision and retry key; the publication transaction rechecks
+  current parent/member identity and persists no raw member bytes. Private
+  `masterbrain fileos archive-document` provides non-consuming preflight, repeated
+  authorization, exact replay and content-free output. Hosted PostgreSQL, populated
+  restore and real chained-image PDF/Office gates are green; these derivatives remain
+  available to retained-history search and the separately fenced current layer.
+- Independently bounded current archive-document lexical search for explicitly
+  published PDF/DOCX/XLSX derivatives. It joins the immutable document receipt to the
+  sealed inventory/member, exact child evidence/document and still-current parent;
+  parent replacement removes current visibility without deleting retained history.
+  `/v1/brain/current-search` exposes a distinct rank/limit/coverage layer with opaque
+  locators. Hosted PostgreSQL, restore and all restricted-container gates are green.
+- Private `masterbrain fileos archive-document-plan` preview for one current archive
+  inventory. It returns only exact eligible PDF/DOCX/XLSX metadata and publication
+  state in sealed ordinal pages, constructs neither worker, reads no source/member
+  bytes and creates no retry or batch authority. Check mode is non-consuming; hosted
+  PostgreSQL, restore and restricted-container gates are green.
+- Private `masterbrain fileos archive-document-batch` execution of one canonical,
+  digest-bound 1–100 item plan. Each reviewed item binds locator, expected PDF/DOCX/
+  XLSX format and caller-supplied key. Execution reuses the exact selector, two-worker
+  extraction and publication path, stops at first refusal and resumes only through
+  unchanged-plan replay. Real PostgreSQL proves partial commit/retry; hosted restore
+  and all restricted-container gates are green.
+- Dedicated byte-bound raster OCR contract and independently restricted worker for
+  single-frame JPEG/PNG/TIFF/BMP/GIF/WebP. It binds suffix/format/signature/hash,
+  fully decodes under 8 MiB/25-megapixel limits, caps Tesseract at 20 seconds and
+  output at 5,000 characters, exposes no EXIF/path, and uses a 32 MiB in-memory
+  scratch area. Real-container OCR, bomb/animation/fault tests and 132 pinned-donor
+  golden/stress comparisons are green. It has no archive selection, persistence,
+  search, batch or public path.
+- Explicit private-config FileOS snapshot publication command with exact worker scopes,
+  idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
+- Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
+  hosted PostgreSQL and populated-restore gates green.
+- Exact completed-run item ledger, stale-completion refusal, immutable absence events
+  and bounded inventory counts; hosted PostgreSQL and populated-restore gates green.
+- Paginated, run-bound deterministic FileOS rebuild preview with no source or index
+  effects; hosted PostgreSQL and populated-restore gates green.
+- Immutable, latest-completion-bound FileOS lexical generations with database-checked
+  readiness, append-only activation/reactivation rollback and active-only API search;
+  hosted PostgreSQL and populated-restore gates green.
+- Explicit private generation build/activation and activation-only rollback command
+  with exact scopes, check mode and reauthentication; hosted PostgreSQL/restore green.
+- Explicit cross-source current FileOS search over newest activations while historical
+  compatibility search remains unchanged; hosted PostgreSQL/restore green.
+- Explicit current-FileOS evidence mode for grouped KnowledgeCore retrieval with
+  retained-history default and separate ranks; hosted PostgreSQL/restore green.
+- Additive current-Email evidence bridge into shared DataCore source/version/evidence/
+  document/chunk identities with opaque locators, exact replay, immutable provenance,
+  forced RLS and account-race fencing; hosted PostgreSQL/restore green. Existing Email
+  ingestion and search remain authoritative.
+- Private `masterbrain email bridge` command for one explicit evidence UUID with exact
+  shared worker scopes, non-consuming check mode, safe replay, reauthentication and
+  content-free output; hosted PostgreSQL/restore green.
+- Explicit `/v1/brain/email-search` read over bridged Email evidence that remains
+  current and visible in both shared and legacy state; retained history and legacy
+  Email search remain unchanged; hosted PostgreSQL/restore green.
+- Additive Email attachment-occurrence bridge with distinct child evidence/parts,
+  duplicate occurrence preservation, bounded legacy-text publication and explicit
+  zero-document outcomes. Existing Email attachment/document behavior is unchanged;
+  hosted PostgreSQL/restore gates green.
+- Additive approved Email PDF derivative bridge from one immutable completed legacy
+  extraction onto its existing attachment evidence, with exact approval/result/
+  processor provenance and no byte access; hosted PostgreSQL/restore gates green.
+- Private `masterbrain email bridge-attachment` and `bridge-document` commands using
+  the existing closed configuration, exact shared worker scopes, non-consuming checks,
+  reauthentication and content-free output; hosted PostgreSQL/restore gates green.
+- Explicit `/v1/brain/email-family-search` read with independently bounded/ranked
+  message, attachment-text and approved-document layers, each fenced by current legacy
+  parent and shared pointers. Existing reads remain unchanged; hosted PostgreSQL/
+  restore gates green.
+- Explicit `/v1/brain/current-search` grouped read across active FileOS, current Email
+  family and reviewed KnowledgeCore results with independent bounds/ranks, partial-
+  coverage labels and declared independent-layer consistency; hosted PostgreSQL/
+  restore gates green.
+- Bounded `/v1/brain/current-coverage` status across registered FileOS and Email
+  sources, including active-generation/completed-run comparison and current bridged
+  Email family counts/timestamps; hosted PostgreSQL/restore gates green.
+- Private, read-only `masterbrain email bridge-plan` command for a cursor-bounded page
+  of current visible versions in one explicit account, with already-bridged labels and
+  content-free output; hosted PostgreSQL/restore gates green.
+- Private `masterbrain email bridge-batch` command for one owner-private, digest-bound
+  list of 1–100 current message versions with fixed keys, account fencing, fail-stop
+  execution and exact-plan retry; hosted PostgreSQL/restore gates green.
+- Private, read-only `masterbrain email bridge-parts-plan` command with separate stable
+  attachment and approved-document queues, current parent/dependency fencing and
+  content-free output; hosted PostgreSQL/restore gates green.
+- Private `masterbrain email bridge-parts-batch` command for one owner-private,
+  digest-bound attachment or approved-document plan with fixed keys, batch account
+  fencing, fail-stop execution and exact-plan replay; hosted PostgreSQL/restore gates
+  green.
+- Reviewed KnowledgeCore entities, aliases, relationships, claims, events, projects,
+  commitments and corrections with evidence links, temporal history, lexical search,
+  exact reads, change feed, forced RLS and append-only enforcement.
+- Grouped dual-scope search across DataCore evidence and KnowledgeCore assertions,
+  with independent limits/ranks and evidence IDs for progressive drill-down.
+- Explicit one-member archive image OCR composition across the existing hash-bound
+  archive reader and separate image worker. It preserves exact member identity,
+  suffix/signature agreement, sibling exclusion and source immutability; maps blank,
+  policy and failure outcomes explicitly; and returns only bounded in-memory text and
+  metadata. Complete nonempty results may enter a separate append-only, forced-RLS
+  retained-history derivative with exact replay/current fencing and image-specific
+  receipt/provenance. Real immutable containers, PostgreSQL and restore are green. It
+  adds no automatic selection, current search, batch or fan-out.
+- Private `masterbrain fileos archive-image` one-member command with distinct pinned
+  OCR image, exact worker scopes, non-consuming check, reauthentication and
+  content-free output. Hosted CI/container and populated restore accepted in
+  `f658ace`; no live-source or production acceptance is claimed.
+- Forward-only protected-record TRUNCATE guards on the 56 direct append-only tables,
+  protected recovery/document jobs and audited external identity bindings. Focused
+  disposable-PostgreSQL catalog, direct/cascade, runtime-privilege, row-transition and
+  replay tests passed. Hosted CI (2,669 Python tests, browser and restricted-worker
+  gates) and populated restore passed on separate PR #13; review and integration
+  remain pending.
 
-## Validation
+## Designed, not implemented
 
-ADR-046 adds [structured memory](STRUCTURED_MEMORY.md). Exact-commit SQL/API/UI-
-contract/container/restore verification is recorded below. General email extraction,
-actual browser acceptance and live assistant integration remain unverified.
+- Automatic Email backfill scheduling, atomic cross-layer snapshots and automated
+  source coverage
+  accounting and any redirect of legacy Email search.
+- Scheduled/incremental FileOS scanning, source cursors, automatic rebuild and
+  generation scheduling/global-search cutover. Archive-member image/OCR current
+  search, previews, batches and automatic archive fan-out remain follow-on gates.
+- Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
+  semantic ranking and Email/FOS knowledge migration.
+- Unified cross-source synthesis and external LLM client integrations.
+- Hosted operation and production identity/source enrollment.
+- Any FileOS write, move, quarantine, dedupe deletion, cutover, fold or retirement.
 
-ADR-045 adds the [owner reader](MESSAGE_READER.md) and [fictional user test](USER_TESTING.md).
-The latter is a usability fixture, not database/live-mail acceptance. Its automated
-reader/SQL/container verification is recorded below; completed browser file saving
-and full cross-browser/accessibility acceptance remain open.
+## Verification boundaries
 
-ADR-044 corrects cache-refresh contention and sender ambiguity. Current search and
-rule previews require source-derived sender eligibility; historical snapshots
-without it remain readable but do not match rules. Ordinary parser is v5; no
-automatic reprocessing or schema change. Exact verification is in the build receipt.
-
-ADR-042 now supplies the optional [browser authorization/session backend](BROWSER_AUTH.md),
-including fake code exchange, current mapping, cookie/Origin/CSRF, expiry and
-cancellation/replay fences. ADR-043 adds explicit `serve --browser-config` with
-private TLS files and a non-consuming configuration check. Unflagged `serve` and
-the owner UI are unchanged. UI integration and actual browser acceptance remain
-next; no production sign-in or hosted availability is claimed.
-
-### Latest verified runtime
-
-**9769a22** passed [CI 35659369430](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35659369430):
-2,310 Python tests including 344 real SQL cases, 134 Node contracts, five actual
-MIME-container and 15 actual PDF-container cases. The same revision passed
-[restore 35659434985](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35659434985):
-30 tables, 162 rows, two tenants, four encrypted objects and two identity bindings,
-including revoked-context denial. Exact scope, local skips and limitations are in
-the [build receipt](BUILD_RECEIPT.md). Receipt-only edits are not a new runtime test.
-
-### Increment boundaries
-
-ADR-041 closes buffered response deadline gaps in Fastmail, Gmail, Graph and the
-local Ollama adapter. Sixteen controlled-clock transport cases include slow-drip
-and delayed-empty regression tests, fragmentation, byte caps and stream closure.
-This changes neither connector availability nor live-service acceptance.
-
-ADR-040 adds the [configured API identity foundation](IDENTITY_AUTH.md), migration
-0013 and PyJWT 2.14.0. Generated-key/fake-issuer tests exercise token/profile/cache
-boundaries; real SQL/API cases cover mapping/RLS/revocation and the restore fixture
-now includes populated identity bindings. Exact pass/fail evidence belongs in the
-build receipt, not this implementation description. No browser login, live issuer,
-MFA enforcement, team grants or public ingress is implied.
-
-ADR-039 adds the [bounded read controller](READ_CONTROLLER.md), exact ingest-worker
-identity, explicit execution flag and non-consuming preflight. Current tests use
-fake HTTPS plus SQL for restart, revocation, lease/source binding, retries/pauses
-and encrypted evidence. Exact observed results belong in the build receipt; no
-live/provider/hosted acceptance follows from the new CLI.
-
-ADR-038 adds the [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md), generation-fenced
-search/evidence rendering and opt-in document search. Node contracts and a real
-SQL/API-response-to-DOM bridge test this slice; neither is browser/accessibility
-acceptance. No new schema, dependency or mailbox/worker scope.
-
-ADR-036 adds [explicit document execution](DOCUMENT_CONTROLLER.md), separate
-purpose/policy configuration and worker scope, plus a loopback server channel flag.
-It fixes invalid demo-owner credential generation by allowlisting human scopes.
-Exact local/CI verification is recorded below and in the build receipt; do not
-apply these counts to an untested later revision.
-
-### Important attachment boundary
-
-The MIME processing CLI/API/UI operate on approved held-message recovery, not arbitrary
-PDF/Office parts in ready messages. Ready-body search and deferred-attachment
-accounting can coexist. ADR-035 now adds a separate synthetic-only document-job
-API/library and extraction publication; it does not expand MIME approvals or the
-existing operator CLI. [Document contract](DOCUMENT_PROCESSING.md).
-
-ADR-034 supplies the [restricted PDF worker](PDF_WORKER.md); ADR-035 supplies the
-separate API/SQL/search workflow. ADR-038 now adds separate owner controls. Exact-commit acceptance
-is recorded in the build receipt, not inferred from this row. ADR-036 adds the
-separate `process-documents` command; it does not expand `process-jobs` or its UI.
-
-ADR-037 strengthens documentation inventory/local-section-link checks and adds a
-methods guide. It changes no product capability or permission. Its tooling tests
-and verification are recorded separately from runtime and live-acceptance claims.
-
-### Previously verified read-operator runtime
-
-Read-controller implementation **0b4f0d3** passed
-[CI 35590968421](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968421):
-**1,772 Python tests (249 real PostgreSQL), 84 Node contracts, five MIME and 15 PDF
-actual-container cases**. New operator cases use fake HTTPS responses with real
-SQL, including restart, revoked credentials/ownership, changed bindings/leases,
-pause/retry and encrypted source readback. No real provider or identity enrollment.
-
-[Restore 35590968376](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968376)
-at the same runtime verified 26 tables, 142 rows, two tenants, four encrypted
-objects, matching hashes and RLS. Local tests explicitly skipped 249 SQL cases;
-the CI run supplies their proof. Later receipt-only changes do not alter this
-runtime. Full scope and remaining gates are in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
-
-### Prior verified owner PDF runtime
-
-Owner PDF implementation **8d8af93**, corrected at **f73c235**, passed
-[CI 35589125895](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125895):
-**1,668 Python tests (226 real PostgreSQL), 84 Node contracts, five MIME and 15 PDF
-actual-container cases**. The four SQL/API-to-DOM cases initially exposed a
-scan-status contract mismatch; the corrected implementation and fixtures now pass.
-No schema, permission or immutable-receipt change was needed.
-
-[Restore 35589125878](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125878)
-at f73c235 verified 26 tables, 142 rows, two tenants and four encrypted objects,
-matching hashes and RLS. The limited browser smoke covered initial controls and
-session reset only, not end-to-end PDF/browser accessibility acceptance. Exact
-scope, local skips and remaining gates are in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
-Later receipt-only documentation is not a newly CI-verified runtime revision.
-
-### Prior verified runtime (before the owner PDF screen)
-
-Application runtime **73a8459** and its documentation/tooling follow-up
-**874c288** passed [CI 35585839904](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35585839904):
-1,660 Python tests (222 real PostgreSQL), 52 Node UI contracts, five MIME
-and 15 PDF actual-container cases. The added 28 cases test documentation tooling,
-not new product features. Runtime revision 73a8459's separate
-[restore](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256115)
-verified 26 tables, 142 rows, two tenants and four encrypted objects. See
-[BUILD_RECEIPT.md](BUILD_RECEIPT.md) for exact scope, warnings and limitations.
-These include the explicit document CLI from encrypted source to restricted PDF/
-SQL/search/evidence, credential repair and known-answer mailbox generation/replay,
-not document UI, scanning, sustained live feed, real model
-accuracy or new browser/accessibility acceptance.
-
-Local unit/API/protocol/attachment tests, type checking and linting run with locked
-dependencies. CI additionally runs real PostgreSQL integration tests against a
-disposable database and non-owner runtime role. Check the repository's CI status
-for the exact tested commit. No real mailbox, production restore, cloud deployment,
-live model, or Factory bind has been tested by this bootstrap.
-
-First verified database slice: [CI run 35479970496](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35479970496)
-at commit `4515417`: **52 tests passed**, lint/type/repository gate passed. An earlier
-run caught an ingestion-lock permission issue, fixed with an account-scoped advisory
-transaction lock instead of granting account mutation privileges. Later additions
-require their own newer CI run; this receipt covers the exact named commit.
+Most Email tests use synthetic data; PostgreSQL suites require an explicitly disposable
+database and local skips do not count. The parity script requires a clean checkout of
+the pinned FOS-Master commit. It compares normalized observable scan results and does
+  now covers fixture and scale hash/name/both scans, pair comparisons and hashes. It
+  does not cover donor CLI text, configuration discovery, logging or file effects.
+  See [migration](FOS_MIGRATION.md) for the next gates.

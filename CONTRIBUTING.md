@@ -1,10 +1,10 @@
-# Building Email Brain
+# Building MasterBrain
 
 Updated 2026-09-21. Private product; this guide organizes existing engineering and
-release requirements. It grants no access to real mail, cloud spending, remote
-inference, mailbox actions or Factory-owned configuration.
+release requirements. It grants no access to real mail/files, cloud spending, remote
+inference, source actions or Factory-owned configuration.
 
-## Start with the product, then the existing code
+## Start with the product, then the existing capabilities
 
 Read [PRODUCT.md](PRODUCT.md) and [AGENTS.md](AGENTS.md), then the
 [game plan](docs/GAME_PLAN.md), [current status](docs/IMPLEMENTATION_STATUS.md) and
@@ -18,6 +18,10 @@ PostgreSQL, private bootstrap credentials and loopback serving. The
 attachment formats, answer keys and repeatable replay. No mail-provider account or
 model subscription is needed for that test path. Live state stays outside Git and
 Dropbox; never place production credentials in examples or screenshots.
+
+For FileOS migration, also read [the migration and parity plan](docs/FOS_MIGRATION.md).
+Do not modify FOS-Master during a donor extraction. Preserve provenance and establish
+parity before refactoring behavior.
 
 ## Make one independently verifiable increment
 

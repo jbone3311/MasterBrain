@@ -51,6 +51,15 @@ from email_brain.schemas import (
 )
 from email_brain.store import AccessDenied, IngestItem, NotFound, Store
 from email_brain.synthetic_formats import pdf_bytes
+from masterbrain.datacore.contracts import stable_id
+from masterbrain.datacore.fileos import (
+    ROOT_BINDING_VERSION,
+    SNAPSHOT_VERSION,
+    fileos_inventory_policy,
+)
+from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import ClaimWrite, EntityWrite
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 LABEL = "com.cw-email-brain.synthetic-restore"
@@ -217,6 +226,12 @@ class SeededTenant:
     document_id: UUID
     document_digest: str
     identity_id: UUID
+    brain_document_id: str
+    brain_evidence_id: str
+    brain_run_id: UUID
+    brain_generation_id: str
+    knowledge_entity_id: str
+    knowledge_claim_id: str
 
 
 class SyntheticDocumentProcessor:
@@ -319,11 +334,120 @@ def seed(
                     "email.proposal.create",
                     "email.proposal.read",
                     "email.review",
+                    "brain.source.ingest",
+                    "brain.document.publish",
+                    "brain.index.activate",
+                    "brain.search",
+                    "brain.changes.read",
+                    "knowledge.review",
+                    "knowledge.read",
+                    "knowledge.search",
+                    "knowledge.changes.read",
                 }
             ),
             uuid4(),
         )
         now = datetime(2026, 9, 20, tzinfo=UTC)
+        source_id = "files_" + keyword
+        locator = "restore-proof.txt"
+        body = f"masterbrainrestore {keyword} source evidence"
+        body_bytes = body.encode()
+        body_sha = hashlib.sha256(body_bytes).hexdigest()
+        brain_item_id = stable_id("item", source_id, locator)
+        brain_version_id = stable_id("version", brain_item_id, body_sha, str(len(body_bytes)))
+        brain_manifest = {
+            "manifest_version": SNAPSHOT_VERSION,
+            "source": {"source_id": source_id, "kind": "fileos"},
+            "observed_at": now.isoformat(),
+            "policy": fileos_inventory_policy(),
+            "root_binding": {
+                "version": ROOT_BINDING_VERSION,
+                "sha256": hashlib.sha256(f"fictional-restore-root:{keyword}".encode()).hexdigest(),
+            },
+            "counts": {"items": 1, "excluded": 0, "errors": 0},
+            "items": [
+                {
+                    "item_id": brain_item_id,
+                    "version_id": brain_version_id,
+                    "locator": locator,
+                    "observed_at": now.isoformat(),
+                    "digest": {"algorithm": "sha256", "value": body_sha},
+                    "size_bytes": len(body_bytes),
+                    "media_type": "text/plain",
+                    "metadata": {"synthetic": True},
+                    "is_symlink": False,
+                }
+            ],
+            "errors": [],
+            "exclusions": [],
+        }
+        datacore = DataCoreStore(store)
+        brain_run_id = uuid4()
+        imported = datacore.import_fileos_snapshot(context, brain_manifest, brain_run_id)
+        require(imported.new_versions == 1, "DataCore restore seed import failed")
+        brain_document = datacore.publish_text(
+            context,
+            brain_version_id,
+            body,
+            code_revision="synthetic-restore-v1",
+        )
+        require(brain_document.changed, "DataCore restore seed publication failed")
+        run_receipt = datacore.complete_fileos_run(
+            context,
+            brain_manifest,
+            brain_run_id,
+            outcomes={"extracted": 1},
+            item_outcomes={brain_item_id: "extracted"},
+            published_documents=1,
+            code_revision="synthetic-restore-v1",
+            document_processor_version=None,
+        )
+        require(run_receipt.recorded, "DataCore run receipt seed failed")
+        generation = datacore.build_fileos_index_generation(
+            context,
+            source_id,
+            brain_run_id,
+            code_revision="synthetic-restore-v1",
+        )
+        require(generation.recorded, "DataCore index generation seed failed")
+        activation = datacore.activate_fileos_index_generation(
+            context,
+            source_id,
+            generation.generation_id,
+            uuid4(),
+        )
+        require(activation.recorded, "DataCore index activation seed failed")
+        knowledge = KnowledgeCore(store)
+        entity = knowledge.publish(
+            context,
+            EntityWrite(
+                kind="entity",
+                entity_type="organization",
+                name=f"Synthetic {keyword} organization",
+                aliases=[f"Knowledge restore {keyword}"],
+                evidence_ids=[brain_document.evidence_id],
+                source_quote=body,
+                confidence=1,
+                observed_at=now,
+                reviewed=True,
+            ),
+            uuid4(),
+        )
+        claim = knowledge.publish(
+            context,
+            ClaimWrite(
+                kind="claim",
+                subject_entity_id=entity.object_id,
+                predicate="restore.status",
+                value=f"knowledgecoreproof {keyword}",
+                evidence_ids=[brain_document.evidence_id],
+                source_quote=body,
+                confidence=1,
+                observed_at=now,
+                reviewed=True,
+            ),
+            uuid4(),
+        )
         items = [
             IngestItem("good-event", "good-message", "v1", now, synthetic_mime(keyword)),
             IngestItem("poison-event", "poison-message", "v1", now, b""),
@@ -491,6 +615,12 @@ def seed(
                 document_id,
                 stable_digest(store.document_evidence(context, document_id)),
                 identity_id,
+                brain_document.document_id,
+                brain_document.evidence_id,
+                brain_run_id,
+                generation.generation_id,
+                entity.object_id,
+                claim.object_id,
             )
         )
     return tenants
@@ -629,6 +759,86 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             len(document_hits) == 1 and document_hits[0]["document_id"] == current.document_id,
             "restored document search failed",
         )
+        brain_hits = DataCoreStore(store).search(ctx, f"masterbrainrestore {current.keyword}")
+        require(
+            len(brain_hits) == 1
+            and brain_hits[0].document_id == current.brain_document_id
+            and brain_hits[0].evidence_id == current.brain_evidence_id,
+            "restored DataCore lexical evidence changed",
+        )
+        require(
+            not DataCoreStore(store).search(ctx, foreign.keyword),
+            "foreign restored DataCore evidence accessible",
+        )
+        freshness = DataCoreStore(store).fileos_freshness(ctx, f"files_{current.keyword}")
+        require(
+            freshness["status"] == "complete"
+            and freshness["latest_complete_run"]["run_id"] == current.brain_run_id,
+            "restored DataCore FileOS completion receipt changed",
+        )
+        inventory = DataCoreStore(store).fileos_inventory(ctx, f"files_{current.keyword}")
+        require(
+            inventory["run_id"] == current.brain_run_id
+            and inventory["present_items"] == 1
+            and inventory["newly_absent_items"] == 0,
+            "restored DataCore FileOS inventory ledger changed",
+        )
+        preview = DataCoreStore(store).fileos_rebuild_preview(
+            ctx, f"files_{current.keyword}", limit=1
+        )
+        require(
+            preview["run_id"] == current.brain_run_id
+            and len(preview["results"]) == 1
+            and preview["results"][0]["disposition"] == "verified"
+            and not preview["source_effects"]
+            and not preview["data_effects"],
+            "restored DataCore rebuild preview changed",
+        )
+        index_status = DataCoreStore(store).fileos_index_status(ctx, f"files_{current.keyword}")
+        require(
+            index_status["status"] == "active"
+            and index_status["active_generation"]["generation_id"] == current.brain_generation_id,
+            "restored DataCore active index generation changed",
+        )
+        generation_hits = DataCoreStore(store).search_fileos_active(
+            ctx, f"files_{current.keyword}", f"masterbrainrestore {current.keyword}"
+        )
+        require(
+            len(generation_hits) == 1
+            and generation_hits[0].document_id == current.brain_document_id,
+            "restored DataCore active-generation search changed",
+        )
+        current_fileos_hits = DataCoreStore(store).search_current_fileos(
+            ctx, f"masterbrainrestore {current.keyword}"
+        )
+        require(
+            len(current_fileos_hits) == 1
+            and current_fileos_hits[0].document_id == current.brain_document_id,
+            "restored DataCore current FileOS search changed",
+        )
+        knowledge = KnowledgeCore(store)
+        knowledge_hits = knowledge.search(ctx, f"knowledgecoreproof {current.keyword}")
+        require(
+            len(knowledge_hits) == 1
+            and knowledge_hits[0].object_id == current.knowledge_claim_id
+            and knowledge_hits[0].evidence_ids == (current.brain_evidence_id,),
+            "restored KnowledgeCore retrieval changed",
+        )
+        require(
+            knowledge.get(ctx, "entity", current.knowledge_entity_id)["name"]
+            == f"Synthetic {current.keyword} organization",
+            "restored KnowledgeCore entity changed",
+        )
+        require(
+            not knowledge.search(ctx, f"knowledgecoreproof {foreign.keyword}"),
+            "foreign restored KnowledgeCore assertion accessible",
+        )
+        try:
+            knowledge.get(ctx, "entity", foreign.knowledge_entity_id)
+        except NotFound:
+            pass
+        else:
+            raise DrillFailure("foreign restored KnowledgeCore entity accessible")
         try:
             store.document_evidence(ctx, foreign.document_id)
         except NotFound:

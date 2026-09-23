@@ -1,4 +1,8 @@
-# Features and methods
+# Email capability features and methods
+
+This document inventories the retained Email capability. For the full MasterBrain
+inventory across Email, FileOS, DataCore, KnowledgeCore and Brain API, see
+[MASTERBRAIN_FEATURE_INVENTORY.md](MASTERBRAIN_FEATURE_INVENTORY.md).
 
 Updated 2026-09-21. “Implemented” means bounded local/CI synthetic behavior, not
 production. [Status](IMPLEMENTATION_STATUS.md) and [receipts](BUILD_RECEIPT.md) govern claims.

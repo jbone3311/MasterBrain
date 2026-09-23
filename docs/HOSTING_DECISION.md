@@ -1,4 +1,7 @@
-# Hosting recommendation
+# Hosting recommendation — Email prototype baseline
+
+MasterBrain broadens this baseline to FileOS, DataCore, KnowledgeCore and Brain API.
+The target topology and migration constraints are in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Decision direction recorded 2026-09-20; explanation reviewed 2026-09-21 for Jim's
 preference to avoid multiple hosting accounts. No new provider/budget decision.

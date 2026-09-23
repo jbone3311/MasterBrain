@@ -10,6 +10,211 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-101](adr/101_synthetic_alpha_release.md) defines the test-only `0.2.0a1`
+checkpoint and the branch/PR/test/merge/tag cadence. It does not authorize live
+sources, production deployment, FileOS cutover or FOS-Master retirement.
+
+[ADR-100](adr/100_confined_fileos_reads.md) requires descriptor-relative,
+no-follow, bounded FileOS snapshot and extraction reads before bytes are hashed or
+parsed. The isolated implementation and adversarial regressions passed hosted CI,
+donor shadow and populated restore on PR #25's tested head. Integration is pending;
+the donor policy and FOS-Master remain unchanged.
+
+[ADR-099](adr/099_archive_ledger_and_parent_integrity.md) requires archive child
+inserts to keep sealed inventory counts/bytes balanced at commit, binds provenance
+outputs to normalized documents and binds text/document/image receipt parent
+versions to their exact inventory. Forward-only migration 0033 passed hosted
+PostgreSQL CI and populated restore on PR #24's runtime head. Review and
+integration remain pending.
+
+[ADR-098](adr/098_fileos_root_binding.md) binds FileOS intake and completion to a
+versioned physical-root digest. Historical unknown roots are not silently claimed.
+Implemented in isolated PR #22; hosted CI and populated restore passed on the
+runtime head. Review and integration remain; this is not a donor-policy switch
+or cutover.
+
+[ADR-097](adr/097_fileos_exclusion_ledger.md) requires a bounded, exact FileOS
+snapshot exclusion ledger and refuses absence inference when a previously indexed
+locator is now excluded or intentionally skipped. It leaves donor policy and
+FOS-Master unchanged. Implemented; hosted CI and populated restore are green on
+PR #21's runtime head. Review and integration remain pending.
+
+[ADR-096](adr/096_fileos_inventory_policy_identity.md) binds new FileOS completion
+receipts to a validated versioned inventory-policy digest and refuses absence
+inference across unknown or changed policies. It does not authorize automatic
+rebaselining or donor cutover. Implemented; hosted CI and populated restore are green
+on PR #20's runtime head. Review and integration remain pending.
+
+[ADR-095](adr/095_fileos_mass_loss_guard.md) refuses a new FileOS completion when
+at least 10 prior items and at least half the prior inventory disappear. It does
+not authorize a bypass, policy switch or donor cutover. Implemented; hosted CI
+and restore are green on PR #19.
+
+[ADR-094](adr/094_fileos_completion_coverage.md) requires a fail-closed snapshot
+error ledger before FileOS completion and absence inference. It permits only an
+explicit no-follow symlink skip; policy-version and mass-loss guards remain later
+decisions. Implemented; hosted CI and restore are green on PR #18.
+
+[ADR-093](adr/093_fileos_inventory_shadow.md) authorizes only a pinned,
+synthetic-database FileOS scanner-vs-snapshot shadow comparator. It requires exact,
+reason-coded policy divergences and no source or publication effects; a later ADR
+must decide an integrated inventory-policy switch.
+
+[ADR-092](adr/092_protected_record_truncate_guards.md) adds forward-only
+statement-level `TRUNCATE` refusal for append-only evidence, protected jobs and
+audited identity bindings. It leaves legitimate row-level transitions and runtime
+grants unchanged. See the [truncation contract](EVIDENCE_TRUNCATE_GUARDS.md).
+
+[ADR-091](adr/091_migration_integrity.md) requires an explicit privileged
+migration-role preflight and a forward-only audit/repair of legacy Email
+`message_sync_state` gaps. It preserves applied checksums and current evidence;
+runtime roles retain forced RLS. Implementation and hosted gates are green in
+[PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12); independent review
+and integration remain pending. See the [migration integrity contract](MIGRATION_INTEGRITY.md).
+
+[ADR-090](adr/090_private_archive_image_operator.md) defines the private,
+authenticated one-member archive-image OCR command using the accepted 5A composition
+and 5B publication contracts. Implemented in `f658ace`; hosted CI and populated
+restore are green. Current search remains a separate 5D proposal.
+
+[ADR-089](adr/089_archive_member_image_persistence.md) defines append-only publication
+for one explicit, nonempty, successful archive-image OCR result with a separate forced-
+RLS receipt, exact current-parent/member fence and image-specific provenance.
+Implemented through `63b478d`; that checkpoint did not yet authorize a command,
+search, batch or fan-out. ADR-090 later authorized one private command.
+
+[ADR-088](adr/088_archive_member_image_ocr.md) composes only one explicit current,
+hash-bound archive member with the separate image worker, returns a bounded in-memory
+result and grants no persistence, command, batch or fan-out. Implemented in `b17541d`;
+real two-image acceptance is
+[CI 35829326066](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829326066).
+
+[ADR-087](adr/087_archive_image_ocr_boundary.md) requires a separate immutable,
+non-networked image worker with exact byte/format binding, full decode, single-frame
+policy, 25-megapixel/20-second/5,000-character limits and no EXIF, database, command
+or external-vision effects. The isolated worker is implemented through `512185b`;
+archive composition and publication were deferred at that checkpoint and are covered
+by later ADRs.
+
+[ADR-086](adr/086_sealed_archive_document_batch.md) requires a private canonical plan
+of explicit locator/expected-format/key triples, sequential execution through both
+existing workers, fail-stop refusal and unchanged-plan replay. Implemented in
+`87ea0d0`.
+
+[ADR-085](adr/085_private_archive_document_preview.md) requires a private, bounded,
+non-consuming view of exact current PDF/Office candidates before any document batch
+format or executor is considered. Implemented in `1651c2b`.
+
+[ADR-084](adr/084_current_archive_document_search.md) keeps current archive-contained
+PDF/Office derivatives in a distinct, independently ranked layer, fenced through the
+document receipt and exact current parent/member identity. Implemented in `7329ba9`.
+
+[ADR-083](adr/083_archive_member_documents.md) composes the existing hash-bound member
+reader with the existing isolated PDF/Office worker for one explicit selection, using
+a separate receipt and no raw-byte persistence. Implemented through `5bb1aa1`; real
+two-image acceptance is `49b8383`.
+
+[ADR-082](adr/082_sealed_archive_member_batch.md) requires one canonical private plan
+with caller-supplied keys and fail-stop exact-plan retry before archive-member batch
+publication is authorized. Implemented in `1a3fd58`.
+
+[ADR-081](adr/081_private_archive_member_preview.md) requires a private, read-only,
+ordinal-cursor preview of eligible members in one current archive inventory before any
+sealed batch format or executor is considered. Implemented in `0a8c430` with fixture
+correction `5befc42`.
+
+[ADR-080](adr/080_current_archive_derivative_search.md) keeps explicitly published,
+still-current archive-member text in a separate bounded search layer. Currency is
+proved through the parent archive and sealed inventory/member identities; active
+FileOS generations remain immutable. Implemented in `6c7b043`.
+
+[ADR-079](adr/079_private_archive_member_text_operator.md) requires a private,
+reauthenticated, content-free one-member command before archive text publication.
+Implemented in `257ab30`, with hardened acceptance in `d66de6e`.
+
+[ADR-078](adr/078_archive_member_text_derivative.md) gives one explicitly selected
+archive member its own derived evidence identity before bounded text publication.
+Implemented in `97aeab1`.
+
+[ADR-077](adr/077_hash_bound_archive_member_read.md) defines a separate isolated
+command that returns at most one persisted non-container member by exact source and
+member hash/size, capped at 8 MiB and still unscanned. Implemented in `c7d2d27`.
+
+[ADR-076](adr/076_archive_manifest_persistence.md) defines an append-only forced-RLS
+hash-manifest ledger for accepted archive inventories. It creates no child evidence,
+member reads or search visibility. Implemented in `03dbb98` with correction `08ccb68`.
+
+[ADR-075](adr/075_fileos_archive_inventory_worker.md) defines an isolated in-memory
+ZIP/TAR inventory worker before any member-byte or search publication. It preserves
+the pinned donor's bounded recognition/accounting contract while explicitly refusing
+duplicate-name ambiguity and bomb publication. Implemented in `26473de`.
+
+[ADR-074](adr/074_sealed_email_part_bridge_batch.md) defines a digest-bound,
+single-kind attachment or approved-document plan with fixed per-item keys, fail-stop
+execution and exact-plan replay. It authorizes no dependency discovery, mixed-kind
+execution or best-effort continuation; hosted PostgreSQL and restore verification are
+green.
+
+[ADR-073](adr/073_email_part_bridge_preview.md) defines separate bounded, private and
+non-consuming previews for current bridged-message attachments and already-approved
+document derivatives. It preserves dependency order and exposes no content or batch
+execution authority; hosted PostgreSQL and restore verification are green.
+
+[ADR-072](adr/072_sealed_email_bridge_batch.md) defines a digest-bound, explicit
+1–100 item Email bridge plan with fixed per-item idempotency keys, fail-stop execution
+and exact-plan retry. It authorizes no discovery, implicit pagination or best-effort
+continuation; hosted PostgreSQL and restore verification are green.
+
+[ADR-071](adr/071_email_bridge_backfill_preview.md) defines a private, bounded and
+non-consuming current-Email bridge plan for one explicit account. It establishes safe
+selection and paging without adding batch writes, provider access or a Brain API
+mailbox-enumeration surface; hosted PostgreSQL and restore verification are green.
+
+[ADR-070](adr/070_current_source_coverage.md) defines a bounded, separately authorized
+status view for active FileOS generation readiness and explicitly bridged current Email
+coverage. It exposes only registered opaque sources and existing facts; hosted
+PostgreSQL and restore verification are green.
+
+[ADR-069](adr/069_grouped_current_source_search.md) defines a compact grouped read
+across active FileOS, current Email-family evidence and reviewed KnowledgeCore with
+independent limits/ranks and explicit partial coverage. Hosted PostgreSQL and restore
+verification are green.
+
+[ADR-068](adr/068_current_email_family_search.md) defines a separate, layered current-
+only read for bridged Email messages, attachment text and approved PDF derivatives.
+Existing message-only and retained-history reads remain unchanged; hosted PostgreSQL
+and restore verification are green.
+
+[ADR-067](adr/067_email_part_bridge_operator.md) defines explicit private commands
+for one Email attachment occurrence or one approved PDF derivative, reusing the exact
+shared worker scopes and non-consuming preflight. Hosted PostgreSQL and restore
+verification are green.
+
+[ADR-066](adr/066_email_document_extraction_bridge.md) defines a separate additive
+bridge for an immutable approved Email PDF extraction onto its existing shared
+attachment evidence. It reuses bounded legacy text and never reads attachment bytes;
+hosted PostgreSQL and restore verification are green.
+
+[ADR-065](adr/065_email_attachment_bridge.md) defines an additive bridge preserving
+each Email attachment occurrence as a shared child evidence/part. Existing bounded
+text may be indexed; unsafe bytes and approved document revisions are not reprocessed
+or rewritten. Hosted PostgreSQL and restore verification are green.
+
+[ADR-064](adr/064_current_bridged_email_search.md) defines an additive Brain read for
+explicitly bridged Email evidence that is still current and visible in both shared and
+legacy state. Existing Email and retained searches remain unchanged. Hosted
+PostgreSQL and restore verification are green.
+
+[ADR-063](adr/063_email_bridge_operator.md) defines a private one-version Email bridge
+command with exact shared worker scopes, non-consuming preflight and content-free
+output. It adds no scan, scheduler, provider access or search cutover. Hosted
+PostgreSQL and restore verification are green.
+
+[ADR-062](adr/062_email_evidence_bridge.md) defines an additive, replayable bridge
+from one current immutable Email version into shared DataCore identities, chunks and
+provenance. Existing Email ingestion/search remain authoritative; no mailbox access,
+automatic backfill or cutover is granted. Hosted PostgreSQL and restore are green.
+
 [ADR-046](adr/046_structured_memory.md) adds reviewed trip/flight/hotel/bill memory,
 immutable revisions, independent change cursors and explicit partial freshness.
 Migration 0014 and bounded REST/developer UI do not imply automatic interpretation.
@@ -379,6 +584,67 @@ current-status filtering and the no-raw-data API contract. Production login,
 audited reprocessing and browser accessibility acceptance remain gates.
 
 ## Additional accepted prototype decisions
+
+[ADR-061 current-aware grouped retrieval](adr/061_current_aware_unified_search.md)
+adds an explicit current-FileOS evidence mode to grouped KnowledgeCore search while
+preserving retained-history compatibility and separate ranks.
+
+[ADR-060 current FileOS search](adr/060_current_fileos_search.md) adds a cross-source
+read over latest activated generations without silently redirecting compatibility or
+unified search.
+
+[ADR-059 private FileOS index operator](adr/059_fileos_index_operator.md) adds an
+explicit authenticated build/activate and activation-only rollback command with exact
+worker scopes. It does not schedule work or switch global search.
+
+[ADR-058 immutable FileOS index generations](adr/058_fileos_index_generations.md)
+adds completion-bound, deterministic lexical generations, append-only activation and
+reactivation rollback. Mutation remains a trusted library operation until a narrow
+operator command is separately accepted.
+
+[ADR-057 read-only rebuild preview](adr/057_fileos_rebuild_preview.md) verifies current
+normalized documents and chunks before any index-rebuild executor is authorized.
+
+[ADR-056 completed-inventory reconciliation](adr/056_fileos_inventory_reconciliation.md)
+adds exact per-run membership and immutable absence evidence without deletion or
+search-visibility effects.
+
+[ADR-055 FileOS completion and freshness](adr/055_fileos_completion_freshness.md)
+separates imported/partial work from an immutable fully accounted run and exposes only
+latest-complete source status.
+
+[ADR-054 authenticated FileOS publication](adr/054_fileos_operator_publication.md)
+adds a closed private operator configuration, exact worker scopes, idempotent snapshot
+publication and repeated authorization checks without source effects.
+
+[ADR-053 isolated FileOS documents](adr/053_isolated_fileos_documents.md) adds
+source-revalidated PDF/DOCX/XLSX extraction through a dedicated networkless,
+read-only container; it grants no source effects or OCR authority.
+
+[ADR-052 grouped unified search](adr/052_grouped_unified_search.md) composes DataCore
+evidence and KnowledgeCore assertions in separately ranked, independently bounded
+layers requiring both scopes; it does not imply Email migration or synthesis.
+
+[ADR-051 reviewed KnowledgeCore assertions](adr/051_knowledgecore_reviewed_assertions.md)
+adds evidence-required entities, relationships, claims, events, projects, commitments,
+corrections, bitemporal fields and lexical retrieval without automatic model writes.
+
+[ADR-050 Brain API read slice](adr/050_brain_api_read_slice.md) adds source-neutral,
+progressive search/evidence/content/change endpoints with separate scopes and bounded
+untrusted content while preserving legacy Email API compatibility.
+
+[ADR-049 FileOS text extraction](adr/049_fileos_text_extraction.md) adds bounded,
+hash-reverified, read-only text/Markdown/HTML/CSV extraction with explicit outcomes
+and live parity against the pinned FOS-Master donor.
+
+[ADR-048 DataCore persistence](adr/048_datacore_persistence.md) adds bounded,
+idempotent FileOS snapshot import, immutable source/evidence/provenance records,
+deterministic chunks and tenant-isolated lexical retrieval without changing Email
+tables or authorizing source writes.
+
+[ADR-047 MasterBrain foundation](adr/047_masterbrain_foundation.md) establishes the
+final product identity, shared core boundaries, non-destructive FOS-Master migration
+protocol and first read-only DataCore hash/dedupe extraction.
 
 [ADR-026 calendar attachments and format fixtures](adr/026_calendar_attachments_and_format_fixtures.md)
 adds bounded searchable calendar source evidence and synthetic attachment/provider

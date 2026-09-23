@@ -1,13 +1,17 @@
-# Email Brain / Email OS
+# MasterBrain Documentation
 
-Status: target architecture plus an executable bounded prototype  
-Documentation updated: 2026-09-21; exact tested revisions are in the build receipt.
+Status: target architecture plus a `0.2.0a1` synthetic alpha candidate;
+not a production or live-source release. Exact tested revisions are in the build receipt.
 Source health measurements and historical validation retain their own dates.
 
-Email Brain's target is a private, multi-user intelligence layer that synchronizes
-mail, maintains people/project/thread/obligation state and gives assistants bounded
-evidence instead of whole mailboxes. The current prototype implements only a
-bounded portion: synthetic ingestion/search, review, virtual rules and recovery.
+MasterBrain is the final product: a private, multi-user intelligence layer across
+Email and FileOS sources. DataCore owns common evidence processing; KnowledgeCore
+owns evidence-backed knowledge; Brain API gives assistants progressive access.
+EmailBrain is retained as the internal Email capability, so detailed Email documents
+and compatibility names remain valid within that scope. The current candidate
+implements bounded synthetic Email ingestion/search, review, virtual rules and
+recovery, plus shared read-only FileOS intake, extraction, archive derivatives,
+and current-only retrieval. It does not implement live-source or FileOS cutover.
 It also connects approved synthetic PDFs to restricted extraction, immutable page
 evidence and opt-in search through a separate API/library and explicit operator
 command. The [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) now provides separate
@@ -15,11 +19,15 @@ selection/approval/history/cancellation and cited pages; live acceptance is pend
 
 ## Reading paths
 
+- **MasterBrain foundation:** [product contract](../PRODUCT.md), [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md), [architecture](ARCHITECTURE.md), [data model](DATA_MODEL.md), [Brain API](BRAIN_API.md), [FOS migration](FOS_MIGRATION.md), and [roadmap](ROADMAP.md).
+- **Naming and compatibility:** [product identity](PRODUCT_IDENTITY.md) and machine-readable [manifest](../MANIFEST.json).
+
 - **Tools under discussion:** [extraction, indexing and test-tool shortlist](TOOLS_DISCUSSION.md).
 
 - **Trips/bills and assistant change polling:** [structured memory](STRUCTURED_MEMORY.md).
 
 - **Try the latest reader:** [user testing](USER_TESTING.md), [reading and download limits](MESSAGE_READER.md).
+- **Try the synthetic alpha:** [alpha testing](ALPHA_TESTING.md), [exact-commit build receipts](BUILD_RECEIPT.md).
 
 - **Current build:** [browser session backend](BROWSER_AUTH.md) and explicit
   private TLS/operator startup are implemented; owner UI and browser acceptance come next.
@@ -48,11 +56,11 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 
 | Question | Authoritative starting point |
 |---|---|
-| What will this product ultimately do? | [Game plan](GAME_PLAN.md), then [PRD](PRD.md) |
+| What will this product ultimately do? | [Product contract](../PRODUCT.md), [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md), then [PRD](PRD.md) |
 | What actually works, and how? | [Features/methods](FEATURES_AND_METHODS.md), [status](IMPLEMENTATION_STATUS.md), [code map](CODE_MAP.md) |
 | What do the technical methods mean for me? | [Methods guide](METHODS_GUIDE.md): evidence, retries, search, corrections and permission boundaries |
 | Where will it run and what stays local? | [Hosting decision](HOSTING_DECISION.md), [deployment](DEPLOYMENT.md) |
-| What is the team building next? | [Browser/session lifecycle](BACKLOG.md#eb-007-next-production-identity-foundation), [roadmap sequence](ROADMAP.md#next-build-packages), [Factory assignment](FACTORY_HANDOFF.md#suggested-next-issue) |
+| What is the team building next? | [Roadmap](ROADMAP.md), [FOS migration](FOS_MIGRATION.md), then capability-specific [backlog](BACKLOG.md) |
 | How do we test believable mail and attachments? | [Runnable mailbox guide](TEST_MAILBOX_PLAN.md), [evaluation plan](TESTING_AND_EVALS.md) |
 | What has actually passed? | [Exact-commit build receipt](BUILD_RECEIPT.md), not roadmap targets |
 | How should a developer contribute? | [Contributor guide](../CONTRIBUTING.md), [Factory handoff](FACTORY_HANDOFF.md) |

@@ -1,271 +1,191 @@
-# Security
+# MasterBrain Security and Privacy
 
-Updated 2026-09-21. Current prototype controls are identified below; production
-requirements are not claims of completed deployment or compliance. Public sample
-files remain untrusted and unadopted; follow [fixture policy](PUBLIC_EMAIL_TEST_DATA.md).
-No realistic-feed proposal authorizes external delivery or private-data disclosure.
+MasterBrain processes highly sensitive email and files. Its threat model includes
+malicious source content, compromised client/model output, parser exploits, confused
+deputy actions, cross-tenant access, credential theft, poisoned indexes, data
+exfiltration, destructive file/mail effects, and leakage through logs/backups.
 
-## New local prototype boundaries
+## Trust boundaries
 
-[Structured memory](STRUCTURED_MEMORY.md) uses human review/evidence authority to
-publish owner-attributed claims; assistant readers cannot publish. Source quotes
-are bound to current retained evidence, but are not independent semantic proof.
-Account locks and tenant commit-order locks protect revisions; three tables force
-RLS and prohibit mutation. No model, provider write, payment or check-in execution.
-The development editor renders text only and persists no credentials/cursors.
+- Email, files, archives, metadata, OCR, extracted text, links, and model output are
+  untrusted data. They cannot grant permission or select credentials/tools.
+- Source adapters, extraction workers, DataCore, KnowledgeCore, Brain API, and effect
+  executors use separate identities and least-privilege scopes.
+- Brain API clients receive typed operations only—never general SQL, arbitrary HTTP,
+  provider tokens, storage credentials, unrestricted paths, or raw object keys.
 
-[ADR-045 owner reader](MESSAGE_READER.md) adds human-only source-bound reading
-and consented downloads, not a general raw-object tool. Hash/length and current
-authority are checked before release. Small MIME retains the 1 MiB API parser
-budget; larger MIME is not reparsed in this process. Email display is inert text;
-downloads use octet-stream, generated names, sandbox/no-store/nosniff headers,
-browser hash checks and explicit unscanned acknowledgement. No malware-safety
-claim, HTML rendering, provider write or new assistant/MCP access. Audit identifiers
-only; already delivered bytes cannot be retroactively revoked.
+## Privacy principles
 
-[ADR-044](adr/044_review_fixes.md) keeps unexpired cached signing keys available
-during single-flight refresh without extending expired authority. Sender rules
-now require source-derived single-sender eligibility, including legacy fail-closed
-behavior in search and simulation. This is header syntax, not sender authentication.
-No new privilege, model disclosure or mailbox action is introduced.
+- Collect only authorized sources and retain only what an explicit policy requires.
+- Prefer deterministic/local processing; remote inference is optional, minimized,
+  redacted where practical, disclosed, logged, and revocable.
+- Do not use user content to train a model without a separate explicit opt-in.
+- Separate metadata/search permission from extracted content and original evidence.
+- Support export, retention, purge, and legal hold with auditable receipts.
+- Telemetry excludes content by default; logs use opaque IDs, states, counts, timings,
+  and bounded sanitized errors.
 
-[ADR-042 browser backend](BROWSER_AUTH.md) adds fixed code/PKCE exchange and
-opaque server-side sessions only by explicit configuration. Current human
-mapping/SQL checks, one-use browser state, cancellation fences, cookie/Origin/CSRF
-and bounded process storage apply. No API/ID/refresh token is persisted in the
-browser. ADR-043 adds private CLI/TLS wiring with strict mode/file/certificate
-preflight; owner UI and actual browser acceptance remain next. This is not a
-deployed sign-in/MFA system or authorization for public ingress.
+## Required controls
 
-[ADR-040 identity foundation](IDENTITY_AUTH.md) adds explicit configured access-token
-verification and administrator-owned SQL identity mappings. Fixed issuer/audience/
-client/profile, bounded public-key retrieval, current binding revision/scope/expiry
-and owner rechecks are separate from future browser login/MFA. Mapping RLS uses
-verified identity context; runtime has SELECT only. No automatic enrollment, token
-role trust, worker scopes or bootstrap fallback. Existing durable processing consent
-is not cancelled by token revocation alone. No public ingress or real issuer tested.
+- Strong human/service identity, short-lived credentials, explicit enrollment and
+  current authorization checks.
+- Tenant/source isolation in application code and forced database RLS.
+- Encryption in transit and at rest; managed key rotation and recovery procedures.
+- Network isolation for databases/object storage; no public administrative endpoints.
+- Sandboxed parsers with type/size/time/memory/depth limits, malware policy, and
+  quarantine. Unsupported/partial content remains visible.
+- Hash verification before and after sensitive reads/effects where applicable.
+- Append-only audit and transactional receipts for access, policy and effects.
+- Protected evidence, approval jobs and identity bindings reject direct/cascaded
+  whole-table `TRUNCATE` as well as their existing row-level protections. Runtime
+  roles hold no `TRUNCATE` privilege; a malicious database owner remains outside
+  the trigger-only trust boundary and requires administrative audit/backups.
+- Backups encrypted separately and restore-tested; retention applies to derivatives,
+  indexes, caches, exports, and backups.
 
-[ADR-039's read controller](READ_CONTROLLER.md) requires a worker with exactly
-`email.ingest`, existing owner/account/provider/secret binding and explicit
-execution flag. No request-selectable endpoint, enrollment or pause reset. Fresh
-checks surround HTTP requests and precede ingestion; provider token bytes are
-pinned per step. File revocation is not atomic with SQL and cannot retract committed
-pages. Authorization failure may leave a lease to expire, never silently become a
-malformed-MIME pause. No new API/SQL scope or provider-write method.
+## FileOS document parser controls
 
-[ADR-038's owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) validates document/account/
-receipt/processor identity, policy and closed status/page envelopes before creating
-controls. Session, query, document view, selection and card generations fence stale
-requests/responses; uncertain approvals preserve one intent key until explicit
-retry within the session. No automatic consent, browser storage, raw-file rendering,
-new worker scope or endpoint for execution. Existing API/SQL authorization remains
-authoritative; UI checks alone are not a security boundary. Browser/accessibility
-and live/scanner acceptance remain pending.
+ADR-100 requires FileOS snapshot hashing and text/PDF/Office extraction to read
+through the authorized root with no-follow directory/file descriptors. Pathname
+prechecks and digest mismatch alone do not prevent an outside-root read after a
+symlink swap. The new reader bounds bytes and verifies open-file plus locator
+identity before publication. This isolated change is pending hosted and donor
+verification; it adds no source effect or FOS-Master cutover authority.
 
-[ADR-036's document controller](DOCUMENT_CONTROLLER.md) uses explicit purpose/policy
-configuration, exactly the worker-only document scope and synthetic account preflight.
-It reuses private-file/key/polling primitives, not MIME permissions or approvals.
-Fresh credential checks surround extraction; SQL fences remain authoritative for
-publication. The server flag only configures the approval channel. Demo human
-credentials now use a fixed human-scope allowlist and are validated before saving.
-No additional SQL grant, live account or hosted supervisor is introduced.
+PDF, DOCX and XLSX are accepted only when suffix and declared media type agree. The
+adapter reopens and hashes the source immediately before processing. A dedicated image
+with pinned reader dependencies runs with no network, read-only root, dropped Linux
+capabilities, bounded CPU/memory/processes/output and no source mount. Returned data is
+validated against a closed contract and rebound to the expected source version,
+locator, digest, size and media type before publication.
 
-[ADR-035 document jobs](DOCUMENT_PROCESSING.md) bind synthetic-only human consent
-to a current attachment/source event, exact processor and fixed unscanned policy.
-The new worker-only scope cannot reuse MIME grants. Database-clock lease/approval,
-current-owner/account and source fences protect immutable publication/cached reuse.
-Document FTS is opt-in and current-source/latest-revision; historical reads remain
-owner-scoped. No scanner or real-mail authorization is implied. Original attachment
-receipts are now SQL append-only as well as runtime SELECT/INSERT-only.
+The worker rejects encrypted PDFs, PDF actions/attachments/forms/annotations beyond
+the supported subset, encrypted or macro-enabled Office packages, unsafe or duplicate
+ZIP paths, excessive members/expansion/compression ratios, DTD/entity declarations and
+external Office relationships. Page, sheet, row, column, cell, stream and extracted
+text limits are enforced. Rejected or incomplete documents remain accounted as
+unsupported, deferred or failed; they do not silently publish partial text. See
+[FileOS document extraction](FILEOS_DOCUMENT_EXTRACTION.md).
 
-[ADR-034's PDF worker](PDF_WORKER.md) is a separately opted-in synthetic/local
-processing profile, not an API or broadened recovery permission. Whole-MIME and
-decoded-part hashes bind input; closed page-level output is parent-validated.
-It carries no provider/DB credentials, network or mounts and always reports
-`unscanned`. ADR-035 now supplies its separate synthetic authorization/publication channel.
-Pypdf is present only in the dedicated worker/development environments, not the
-default API/MIME image. Do not run the pure child helper on real mail in-process.
+The FileOS publication command accepts secrets only from owner-private files and a
+runtime environment DSN. Its credential is an expiring worker identity with exactly
+the two DataCore write scopes. Check mode performs no intake or extraction; execution
+revalidates the local identity around each item. PostgreSQL independently rejects
+privileged/owning roles and rechecks owner membership under forced RLS. Results omit
+paths, filenames, content, credentials and diagnostics.
 
-[Known-answer mailbox tooling](TEST_MAILBOX_PLAN.md) authors fictional files only;
-it accepts no recipients or external document inputs. Export refuses existing
-paths and symlinks. Paced replay uses existing synthetic-only account checks on
-every ingestion transaction, without provider writes. New PDF/Office readers are
-validators of generated data and absent from the default runtime image. Pypdf's
-separate optional worker adoption above is not an unsandboxed production extraction
-path. No public corpus is imported.
+FileOS completion receipts are append-only, forced-RLS records bound to the intake
+actor/request/manifest digest. Closed outcome counts must cover every item and match
+published documents. Freshness reads expose only the latest complete run and never a
+partial prefix, root or locator.
 
-Live PDF/Office support still requires accepted scanner/processing policy;
-today's MIME recovery permission must not silently expand to binary readers or
-ready-message attachments. Keep parser success, malware-scan status and semantic
-trust independent. Preserve valid body search when an attachment fails. The
-[next-work requirements](BACKLOG.md#eb-006-next-source-bound-document-processing)
-are not an authorization or a claim that a scanner/sandbox integration exists.
+Completed FileOS inventories are independently balanced in PostgreSQL against their
+receipt counts. Per-source serialization and monotonic observation time prevent stale
+completion from replacing newer state. Absence is inferred only between two completed
+ledgers; it retains evidence and does not authorize hiding, deletion or any file effect.
+Completion additionally refuses malformed snapshot error ledgers or uncertain
+directory/file/race coverage before absence inference. A deliberate no-follow
+symlink skip is the sole tolerated snapshot error (ADR-094). ADR-095 refuses the
+donor-equivalent mass-loss threshold before completion, without a force bypass;
+smaller unexplained losses remain an unsatisfied cutover gate.
+ADR-096 adds a versioned policy digest to new completion receipts and refuses
+completion across unknown or changed policies. Historical policy remains unknown;
+there is no silent backfill or force override. ADR-098 now guards accidental
+root changes; live scanner parity remains a separate cutover gate.
+An unchanged policy alone cannot distinguish a real deletion from a previously
+indexed file becoming oversize or newly excluded; a small such loss can fall below
+the mass-loss threshold. ADR-097 adds a bounded exclusion ledger to new snapshots.
+Completion now refuses
+to turn a prior item covered by an exclusion or intentional no-follow symlink skip
+into absence evidence; malformed or overflowing ledgers fail closed. This is not
+proof against a forged manifest, root mismatch or a live scanner race.
+ADR-098 adds a versioned physical-root digest to new FileOS sources and completion
+receipts. The private publisher checks the root before intake and after extraction;
+the database refuses a changed source binding or silent legacy claim. This reduces
+accidental root-switch risk but is not malicious-scanner attestation or live donor
+cutover proof. The digest stays within private manifest/database boundaries.
 
-[The operator processing command](PROCESSING_CONTROLLER.md) accepts closed private
-configuration and no-follow owner-only files; a separate exact-scope worker identity
-is reauthenticated at each poll and around parsing. No keys/DSN enter child input,
-no Docker rights enter the API, and no new SQL authority is granted. File revocation
-is not atomic with SQL: database membership/account and job cancellation fences
-remain authoritative. Preflight is not image/host isolation certification.
+Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
+dispositions and counts without paths or text. It uses the source completion lock and
+run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.
 
-[Owner processing controls](PROCESSING_REVIEW_SCREEN.md) validate response
-identifiers, account/parser binding and fixed states before displaying actions.
-Credential/account/view changes invalidate pending responses and old callbacks.
-History cursors resolve within the authorized account; only public job fields
-leave SQL. No raw content, lease authority or browser-persisted credentials are added.
+Index generation is separately authorized and transactionally bound to the latest
+completed run. Its immutable identity includes the exact item plan, code revision and
+chunker version. PostgreSQL refuses incomplete readiness, post-ready append, mutation
+and cross-tenant access. Activation uses a distinct scope and idempotency receipt;
+rollback reactivates a prior ready generation without deleting evidence or derivatives.
 
-[Durable recovery approvals](RECOVERY_JOBS.md) are bounded one-hour, single-source,
-exact-parser grants, not saved bearer credentials. Workers require a separate
-worker-only scope and both actors' current owner membership. Cancellation, lease
-loss, expiry and source change fence atomic publication, including cached outcomes.
-A narrow SECURITY DEFINER boolean helper locks current-tenant account/membership
-rows without granting runtime UPDATE authority. Fixed search path, UUID parameters,
-no dynamic SQL/data return and revoked PUBLIC execution limit this privileged seam.
-Hosted service-principal roles and queue supervision remain deployment gates.
+The index operator reads credentials only from owner-private files and the DSN only
+from the runtime environment. Build-and-activate requires exactly the publish and
+activation scopes; rollback requires exactly activation. It reauthenticates between
+build and activation and after completion, returns no paths/content/secrets, and has
+no source, Docker or scheduling authority.
 
-[Isolated MIME recovery](ISOLATED_MIME_RECOVERY.md) runs explicitly on a trusted
-controller with an image-bound parser, no network/mounts, disabled logs and enforced
-resource/output limits. Default API retry cannot select or launch it. Docker daemon
-access must never be given to the API or parser. This extracts bounded source text,
-not binary documents; hosted identity and sandbox operational acceptance
-remain gates. Infrastructure failures cannot be cached as successful/rejected mail.
+The Email bridge operator uses the same private-file and safe-runtime checks with
+exactly the shared ingest and document-publication scopes. It accepts one explicit
+legacy message, attachment or approved-extraction UUID, reauthenticates around the
+transaction and returns only opaque identities/counts/status. It has no Email ingest,
+document approval, provider, original-content, mailbox-write, scan, scheduler or batch
+authority. The bridge transactions share the Email account advisory lock so a current
+version cannot become historical during publication.
+Current bridged-Email search independently rejoins the receipt to the legacy current
+message on every query and excludes deleted/quarantined state. It returns bounded
+untrusted excerpts and opaque identities only; it does not expose raw MIME or grant
+Email/source authority.
 
-[Encrypted large evidence](LARGE_EVIDENCE_STORAGE.md) adds an opt-in tenant/account
-bound AES-GCM filesystem backend, immutable SQL manifests and verified reads.
-Only raw external objects are encrypted here; normalized database text and legacy
-inline bytes still need managed database encryption. Missing/corrupt storage fails
-closed, without checkpoint advancement or destructive cleanup. Cloud IAM/KMS and
-key-loss recovery remain gates.
+The attachment bridge requires a current visible bridged parent, shares its account
+lock and never reads MIME bytes. Each occurrence remains distinct even when its digest
+matches another attachment. Only already-bounded legacy extracted text is published;
+all other statuses remain explicit evidence/accounting with no document or chunk.
+Embedded bytes are source-bound to the retained parent MIME, not mislabeled as a
+separately retained object.
 
-[Held-message recovery](QUARANTINE_RECOVERY.md) requires a human owner with review
-and evidence scopes at the library boundary. Hash verification precedes parsing;
-account locking and latest-event checks prevent stale recovery from resurrecting
-deleted/replaced mail. Fixed attempt outcomes are immutable and tenant-isolated.
-Raw bytes, cursors and provider events are unchanged; parser exceptions are scrubbed.
-This supersedes earlier statements that all independent reprocessing is deferred;
-bulk reprocessing, automatic retry, binary execution and production access remain gated.
+The approved-PDF derivative bridge additionally requires an immutable extraction with
+a completed approval job and the existing current attachment bridge. It publishes
+only bounded legacy page text, records the exact result digest and processor/policy,
+and never opens attachment bytes or grants document-approval authority.
 
-Calendar extraction is quoted untrusted source text, never an RSVP or scheduler.
-It validates bounded syntax and MIME/body method agreement, with no alarm/URL
-execution or organizer authentication. Binary calendar data is unsupported and
-malware scan status remains unchanged. See [calendar boundary](CALENDAR_ATTACHMENTS.md).
+The private archive-image OCR command uses the existing exact-scope worker identity,
+private configuration and least-privileged database preflight. One current archive
+member is selected through forced RLS, then separately restricted archive and image
+workers process only that hash-bound member. Check mode does not select or read it.
+The controller reauthenticates around execution and the 5B publication transaction
+rechecks current parent/member identity, processor provenance and idempotency. Only
+complete nonempty OCR text may publish; normal output contains opaque identities and
+counts, never source locators, OCR content, image metadata, raw faults or credentials.
+The command passed hosted CI/container and populated restore at revision `f658ace`;
+live-source and production acceptance remain separate gates.
 
-Rule activation requires human owner identity plus review/search scopes, an
-actor-bound simulation receipt, unexpired database time and matching rules revision.
-Rollback is append-only; virtual Review Delete labels never hide or delete messages.
-Sender domains are untrusted header metadata, not authenticated identity.
-All direct request text fields reject NUL and unencodable Unicode before SQL.
-See [reviewed rules](REVIEWED_RULES.md).
+## Dedupe and file safety
 
-The opt-in [Ollama adapter](LOCAL_MODEL_RUNTIME.md) requires operator-attested local
-daemon isolation and checks installed model metadata/digest before email disclosure.
-These checks cannot substitute for daemon egress controls or eliminate a privileged
-local replacement race. No model path is enabled by default and no model output
-executes actions. [Restore testing](RESTORE_DRILL.md) uses a fresh disposable cluster,
-private temporary archive, content-free results and exact owned-container cleanup.
+ADR-099 adds a forward-only database guard for archive inventory history:
+late member/skip inserts must preserve the sealed count/byte ledger, provenance
+outputs must name an existing normalized document, and each archive derivative
+receipt must name its own inventory's parent source version. Migration preflight
+refuses historical inconsistencies rather than silently rewriting evidence.
+Hosted PostgreSQL and populated restore passed on PR #24's runtime head; review
+and integration remain. This is not
+a substitute for parser containment, backup/audit or live FileOS acceptance.
 
-## Implemented quarantine and reconciliation boundary
+Duplicate detection is read-only in DataCore. A matching hash does not authorize
+deletion. Cross-domain/cross-source matches require review. Held-out `TEST - */`
+corpora remain excluded from destructive dedupe. Future file effects must re-hash
+keeper and candidate at execution, quarantine instead of unlink where possible,
+respect legal hold, cap batches, log intent before action, reconcile the index, and
+support rollback.
 
-Bounded malformed MIME is stored byte-for-byte behind the same tenant RLS as raw
-evidence, not rendered, executed or exposed by the status API. Receipts contain a
-fixed reason rather than parser exception text. NUL bytes are removed only from
-normalized text fields; original bytes and their hash remain unchanged. This is
-not malware scanning or an isolated binary extractor. Default raw storage remains
-1 MiB; opt-in encrypted Fastmail ingestion preserves up to 16 MiB and holds mail
-above the parser budget. Beyond the configured download/storage limit still pauses.
-Only a certified complete provider inventory can hide absent current projections;
-partial or duplicate-ID inventories cannot authorize absence. No provider deletion
-or evidence erasure is involved. Demo corpus loading refuses enrolled accounts.
+## LLM and prompt-injection controls
 
-## Current release boundary
+Retrieved content is delimited and labelled with provenance. Models return closed,
+schema-validated proposals. Deterministic policy, current identity and explicit
+approval decide effects. Models cannot choose a tool outside the caller's grant or
+expand their own evidence scope. Cached summaries/embeddings are purged or made
+inaccessible when source access is revoked.
 
-The v0.1 service is loopback-only, synthetic-data-first, owner-only per tenant.
-Bootstrap tokens are hashed, expiring, scope-bound, and revocation is via the private
-registry plus restart; they are not production OAuth/OIDC. The separate configured
-JWT mode verifies API access tokens and database mappings, not browser login/MFA
-or complete production identity lifecycle. The schema is tenant-isolated
-but team/account-grant sharing is not implemented. Ordinary ingestion still defers
-binary documents; the separate synthetic PDF channel integrates approved extraction,
-immutable results and opt-in search, not malware scanning or live-mail acceptance.
-No send/delete/action/model network path is enabled by default. OIDC,
-rate limiting, grant-aware sharing, denial audit, external immutable audit export,
-full retention/purge, cloud encryption and restore proof are production blockers.
+## Incident posture
 
-RLS is defense in depth against missing query filters, not protection against a fully
-compromised server with arbitrary SQL execution and shared runtime credentials.
-The trusted server sets transaction-local tenant context only after token resolution.
-Separate per-tenant service credentials may be required by a stronger threat model.
-
-## Security objectives
-
-Protect message confidentiality, tenant isolation, provider credentials, mailbox integrity, and the trustworthiness of derived state. Assume every email, attachment, link, web result, and model response may be adversarial.
-
-## Threat model
-
-| Threat | Primary controls |
-|---|---|
-| Cross-tenant data access | Tenant IDs, API checks, PostgreSQL RLS, negative tests, scoped caches |
-| Stolen provider token | OAuth/app password vault, narrow scopes, envelope encryption, rotation/revocation |
-| Prompt injection in mail | Data/instruction separation, reader without tools, schema allowlists, action policy |
-| Assistant overreach | Per-tool scopes, bounded result sets, approval tokens, no token passthrough |
-| Malicious/buggy rule | Simulation, review tiers, immutable versions, protected classes, rollback |
-| Duplicate/destructive action | Idempotency, outbox state machine, confirmation, reconciliation |
-| Database/operator compromise | Private networking, KMS, least privilege, audit export, backups, break-glass alerts |
-| Backup leakage | Client/provider encryption, separate key access, retention, restore audit |
-| Supply-chain compromise | Pinned dependencies, SBOM, signature/provenance checks, staged upgrades |
-
-## Identity and authorization
-
-- Use an OIDC identity provider with MFA/passkeys; short-lived access tokens; server-side sessions where appropriate.
-- Resolve `tenant_id`, `user_id`, roles, grants, and purpose at ingress. Never accept tenant identity from an unverified request body.
-- Enforce authorization in service code and PostgreSQL RLS. Enable and `FORCE ROW LEVEL SECURITY` on tenant tables; runtime roles must not own tables and must not have `BYPASSRLS`. PostgreSQL RLS defaults to deny when enabled without a policy ([documentation](https://www.postgresql.org/docs/17/ddl-rowsecurity.html)).
-- Separate roles: migration owner, runtime API, read connector, action executor, audit reader, and backup operator.
-- Use object keys prefixed and authorized by tenant; signed URLs are short-lived and single-purpose.
-
-## Network and remote access
-
-- Database and internal services have no public ingress.
-- Put API ingress behind a managed WAF/reverse proxy and OIDC; optionally require a device-aware private overlay for owner/operator access. Tailscale Grants are deny-by-default and can combine network and application permissions ([docs](https://tailscale.com/docs/features/access-control/grants)). A Cloudflare Access or equivalent Zero Trust deployment is an acceptable alternative.
-- Require TLS in transit, certificate verification, egress allowlists for provider/model endpoints, and separate subnets/security groups for actions and inference.
-- Never expose Ollama/llama.cpp or a local MCP server to the LAN/Internet without authentication and policy enforcement.
-
-## Secrets and cryptography
-
-- Store OAuth refresh tokens and iCloud app-specific passwords in a managed secret vault, encrypted with KMS envelope keys; keep only secret references in PostgreSQL.
-- Prefer per-environment KMS keys and consider per-tenant data-encryption keys for high-sensitivity deployments.
-- Managed database/storage encryption is mandatory; encrypted backups and key rotation are tested.
-- Redact secrets, auth headers, body text, and attachment contents from logs. Hash identifiers only when correlation is necessary.
-
-## Prompt-injection defense
-
-OWASP recommends separating instructions from data, least privilege, output validation, monitoring, and—at higher risk—a quarantined reader/privileged actor split ([cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html)). Apply it as architecture:
-
-1. Parse and label message content as `UNTRUSTED_EMAIL_DATA`; never interpolate it into system/tool instructions.
-2. The inference reader has no provider write token, shell, arbitrary URL fetch, secret access, or broad database tool.
-3. Permit only versioned JSON Schemas; reject extra fields, URLs/tool calls, oversize output, and unknown enums.
-4. The policy engine evaluates proposed actions from original user intent + structured facts, not raw email instructions.
-5. High-impact actions require a fresh human approval bound to exact preview/hash/expiry.
-6. Sanitize rendered HTML/Markdown, proxy or disable remote images, and scan attachments before parsing.
-7. Maintain injection/red-team fixtures and alert on suspicious phrases, encoding, exfiltration patterns, and policy denial spikes.
-
-## MCP/API security
-
-The current MCP authorization guidance requires token audience validation and forbids token passthrough ([MCP security considerations](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/basic/authorization/security-considerations.mdx)). Therefore:
-
-- Remote MCP uses OAuth with PKCE/resource indicators, audience-bound tokens, exact redirect URIs, short lifetimes, and per-tool scopes.
-- The MCP gateway translates identity into a tenant-scoped service context; it never forwards a client bearer token to providers.
-- Tool descriptions and server packages are pinned/approved; tool-list changes are treated as security-sensitive.
-- Search and evidence tools are read-only by default. Mutation tools are separate and approval-aware.
-
-## Audit and privacy
-
-Append-only audit events record who/what/when/tenant/request, policy version, proposal/action hashes, approval, provider result, and correlation ID. Store minimal content in audit; evidence is referenced by ID. Export audit events to an access-restricted immutable sink.
-
-Support consented account connection, data export, retention settings, account disconnect, tenant deletion, and deletion propagation into replicas/backups according to documented retention. Legal/privacy obligations depend on deployment jurisdiction and require counsel before broad team deployment.
-
-## Backup and incident readiness
-
-- Managed PITR plus daily encrypted logical/object manifests; quarterly restore drills.
-- Separate backup credentials and deletion protection; document key-loss consequences.
-- Emergency controls: disable all mailbox writes, disable remote inference, revoke one account, revoke one assistant client, put service read-only, rotate credentials.
-- See [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) for playbooks.
+Fail closed on authorization/provenance ambiguity and fail loud on incomplete work.
+Support credential revocation, worker fencing, source pause, evidence quarantine,
+audit preservation, blast-radius analysis, rebuild from immutable evidence, and
+documented notification/recovery. Live-source use requires security review and the
+[release gates](RELEASE_ACCEPTANCE.md).

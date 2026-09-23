@@ -1,6 +1,1454 @@
 # Build and validation receipt
 
-Updated 2026-09-21 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+
+## MasterBrain synthetic alpha readiness candidate
+
+Local commit `947ea6e83fd18d0cb147bbc8325737bb67de194e` was published through
+the connected GitHub integration with the exact same tree as remote commit
+`9b1b0e0eb71291290ab30c418c9bd8e12e05a8b8` in
+[PR #27](https://github.com/jbone3311/CW-EmailBrain/pull/27), targeting the tested
+PR #25 branch. That code head passed full hosted
+[CI 35927108260](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108260)
+and the populated PostgreSQL
+[restore 35927108311](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108311).
+The local focused MasterBrain CLI suite passed 20 tests with `PYTHONPATH=src`;
+documentation inventory passed (188 Markdown files, 995 paths/fragments). The
+separate pinned FOS-Master donor comparison passed fixture scans, pair/hash and
+text/HTML/CSV/DOCX/XLSX extraction checks plus 3,000 synthetic files and edge
+cases. The initial local pytest collection without `PYTHONPATH=src` failed before
+tests ran because that existing virtual environment lacked an installed editable
+package; it is not counted as a product failure or pass.
+
+This is a synthetic alpha **candidate** only. The branch has not yet been merged
+to `main` or tagged. No live-source, hosted-operation, production identity or
+FileOS cutover acceptance is claimed; FOS-Master remains unchanged. ADR-101 and
+the alpha test guide define the release and test boundary.
+
+## Confined FileOS read checkpoint
+
+ADR-100 precedes a DataCore descriptor-relative reader shared by snapshot hashing
+and text/PDF/Office extraction. It refuses file and ancestor symlink swaps before
+bytes can leave the authorized root, keeps bounded reads and rechecks the locator.
+Focused synthetic tests are in `tests/test_fileos_confined_reads.py`; existing
+snapshot and donor-shadow race mocks have been adapted to the new read boundary.
+Local pinned-donor shadow passed on 3,000 synthetic files: 3,002 ordinary
+SHA/size matches, six reason-coded policy differences and two symlink policy
+differences; replay, change, removal, no-hash/rehash and mass-prune assertions
+passed. Documentation inventory passed (186 Markdown files, 985 paths/fragments).
+The existing focused suites passed locally (34 tests), followed by all 14
+adversarial confined-read tests. The code head
+`076922767e34951f3b8588362f908edd0f1104c2` passed the full hosted
+[gate](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35905426481)
+and populated [logical restore](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35905426478)
+in PR #25. This verifies the isolated branch, not production FileOS cutover or
+real cloud-placeholder behavior. No FOS-Master edit or inventory-policy switch
+occurs.
+The documentation head `9b000cfa139b8eafae9e83a530f3ae7d4f247a6c` also
+passed its hosted gate and restore. The extended no-follow walk of ancestors
+above the authorized root passed all 15 adversarial tests and the rerun pinned
+donor shadow locally. Its exact code head
+`6e2eb8e10ca5f740ecfb198ab229eb5e866dd1b7` passed the full hosted
+[gate](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35908573023)
+and populated [logical restore](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35908572905)
+in PR #25. FileOS cutover remains gated.
+
+## Proposed archive-ledger integrity checkpoint
+
+ADR-099 precedes additive migration 0033 on an isolated branch from the green
+schema/FileOS integration head. It adds deferred child-insert balance checks,
+preflights old inventory ledgers, validates provenance output documents and binds
+archive text/document/image receipt parent versions to the exact inventory.
+Regression tests cover late member/skip inserts, wrong-parent text receipt,
+provenance output, all three FK definitions, and a disposable pre-existing bad
+child ledger. Local PostgreSQL is unavailable. No production data repair,
+FOS-Master edit or cutover is included.
+The first hosted [CI 35897067189](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897067189)
+found only test-harness assumptions: an older migration-list fixture omitted 0033,
+an image-receipt catalog assertion expected five rather than six foreign keys,
+and the new disposable-upgrade test attempted to use an owner role as a runtime
+role. Its populated [restore 35897067297](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897067297)
+passed. The follow-up gives the synthetic upgrade its own non-owner runtime role
+and updates both catalog expectations. Corrected runtime head `f0064b8` passed
+[CI 35897626535](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897626535):
+**2,741 Python passed, nine expected skips, two upstream warnings**, plus lint,
+mypy, browser, deployment, documentation inventory (185 Markdown files and 979
+local links), API image and restricted-worker gates. The exact head also passed
+[populated restore 35897626540](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897626540).
+These are synthetic database and worker gates, not a production upgrade or donor
+cutover. PR review and final documentation-head verification remain.
+
+## Combined schema/FileOS integration checkpoint
+
+The isolated integration branch merges #12–#13 into the exact green #22 FileOS
+head without rewriting applied migrations or FOS-Master. Migration order is
+0029 migration-integrity repair, 0030 truncate guards, 0031 FileOS policy
+identity and 0032 FileOS root binding. Four textual conflicts in progress,
+receipt, decision and populated-upgrade test files were reconciled by retaining
+both branches' content and sorting the expected migrations. Local focused tests:
+**58 passed, 33 PostgreSQL skips** without a disposable database. Ruff check and
+format, mypy across 82 source files, documentation inventory (184 Markdown files,
+973 paths/fragments) and diff whitespace passed. The first combined
+[CI 35892717228](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35892717228)
+reached the PostgreSQL suite and found a test-fixture migration-list mismatch:
+the PR #13 fixture expected only 0030 after its pre-0030 seed, while the combined
+branch correctly also applies 0031 and 0032. The fixture expectation was extended
+without changing migration behavior. First combined
+[restore 35892717493](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35892717493)
+passed. Corrected head `9790b80` passed
+[CI 35893316583](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35893316583):
+**2,738 Python passed, nine expected skips, two upstream warnings**, plus lint,
+mypy, browser, deployment, documentation, API-image and restricted-worker gates.
+[Populated restore 35893316454](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35893316454)
+passed. This verifies the combined synthetic migration/application stack, not a
+production upgrade or FileOS cutover. Factory PR #11's competing 0029 is not included; its independent
+schema/workflow findings are tracked as a separate follow-up.
+
+## FileOS physical-root binding checkpoint
+
+ADR-098 preceded the runtime change. A versioned SHA-256 of the resolved root
+path bytes, device and inode is carried only in the private snapshot, source row
+and completed-run receipt. Scanner and publisher rechecks, intake source locking,
+new-insert SQL constraints and legacy-unknown preservation are implemented on
+`codex/masterbrain-fileos-root-binding` in PR #22. A different physical root
+must fail before intake or absence. Local FileOS and restore
+unit suites passed **85 tests**; the focused FileOS/PostgreSQL/recovery selection
+passed **55 with nine PostgreSQL skips** because no disposable database is
+configured. Ruff check/format and the documentation inventory (180 Markdown files,
+963 local paths/fragments) passed. The pinned 3,000-file synthetic donor shadow
+reported 3,002 common hash/size matches, the same six known policy differences,
+and a 1,502-row donor mass-prune refusal. The unscoped local full-suite collection
+was interrupted after a prolonged filesystem stall. Runtime head `10a2597`
+passed [hosted CI 35890079983](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35890079983):
+**2,721 Python passed, nine expected skips, two upstream warnings**, plus lint,
+mypy, browser, deployment, documentation, API-image and restricted-worker gates.
+[Populated restore 35890079939](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35890079939)
+passed. These are synthetic gates, not live-source parity or cutover proof. No
+FOS-Master edit, source effect, donor-policy switch, legacy rebaseline or cutover
+is included.
+
+## Local FileOS exclusion-ledger checkpoint
+
+ADR-097 preceded implementation. The snapshot now emits an exact bounded ledger of
+excluded file/directory locators, kinds and closed reasons; completion validates it
+and refuses a missing prior item covered by an exclusion or intentional no-follow
+symlink skip before committing receipt/absence. The manifest hash binds this ledger
+to existing immutable receipts. No SQL migration, donor edit, membership-policy
+switch, source effect or cutover is included. Synthetic unit and disposable-PostgreSQL
+tests cover malformed ledgers and one-item oversize/symlink/directory transitions
+versus genuine deletion. Focused local pytest: **35 passed, three PostgreSQL skips**
+without a disposable local database, 70 deselected and two upstream warnings.
+Ruff check/format and the documentation inventory (179 Markdown files, 955 local
+links) passed. Local mypy's normal cache failed with a disk-I/O error; the fresh
+no-incremental run was interrupted after prolonged local filesystem delay.
+Hosted [CI 35885818478](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35885818478)
+on runtime head `0bd6319` passed **2,712 Python tests, nine expected skips,
+two upstream warnings**, plus type, browser, deployment, documentation, API-image
+and restricted-worker gates. Populated
+[restore 35885818538](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35885818538)
+passed. Root binding, forged-manifest
+resistance, legacy baseline and live-shadow acceptance remain open.
+The pinned 3,000-file synthetic donor shadow still reports 3,002 common SHA/size
+matches, exactly six known policy differences, and a 1,502-row donor mass-prune
+refusal. This is not a live-source or snapshot-policy parity claim.
+
+## Local FileOS inventory-policy checkpoint
+
+ADR-096 preceded migration 0031 and the completion change. New snapshots label
+their policy version; a canonical digest of the exact membership policy is saved
+with each new immutable completion receipt. Unknown historical policy or changed
+policy refuses a new completion before absence inference. Legacy receipts are not
+backfilled; no force flag or donor policy switch is added. Unit and PostgreSQL
+tests cover digest stability/drift, malformed policy, SQL new-insert enforcement,
+replay and consecutive-run absence. Local focused pytest: **24 passed, 3
+PostgreSQL tests skipped** (no local disposable database), 77 deselected, two
+upstream deprecation warnings. Ruff check/format and diff whitespace checks passed.
+The documentation inventory passed (178 Markdown files, 947 local links). The
+pinned donor shadow run preserved 3,002 common hash/size matches, exactly six
+known policy differences and the 1,502-row donor mass-prune refusal. Hosted
+PostgreSQL, full CI and populated restore are pending; no cutover is implied.
+
+The first hosted [restore 35874676362](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35874676362)
+stopped in its migrate-and-seed phase (the drill suppresses sensitive exception
+details). Inspection found that its synthetic FileOS seed still supplied the old
+single-field policy. The seed now uses the same full versioned policy constructor
+as the snapshot; the corrected restore run below confirms the repair.
+The first [CI 35874676274](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35874676274)
+passed the new PostgreSQL policy regression but failed an older populated-upgrade
+test whose literal expected migration list ended at 0028. That expectation now
+includes 0031. A separate disposable-database regression now seeds a legacy
+FileOS receipt before 0031, proves it remains null/immutable after the additive
+upgrade, and rejects a new digestless receipt. After the correction, focused local
+policy/coverage/recovery pytest reported **26 passed, 1 PostgreSQL skip**, 17
+deselected and two upstream warnings. Ruff check/format and the updated
+documentation inventory (178 files, 949 links) passed locally. Hosted CI
+and restore both completed successfully on corrected runtime head
+`26fd5b2`: [CI 35879001222](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35879001222)
+passed **2,700 Python tests, nine expected skips, two upstream warnings** and the
+browser, deployment, documentation, API-image and restricted-worker gates;
+[populated restore 35879001244](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35879001244)
+passed. These hosted results verify the corrected runtime, including the synthetic
+legacy-upgrade regression; they do not validate a live source, donor policy switch,
+root binding or a transition for historical receipts with unknown policy.
+
+## Local FileOS mass-loss checkpoint
+
+ADR-095 records the pinned donor's mass-prune threshold as a fail-closed
+MasterBrain completion guard. A newly proposed run missing at least 10 prior
+items and at least half the previous complete inventory rolls back its completion
+and absence transaction. A lower-level import may remain for diagnosis; there is
+no force override, policy switch or donor change. Synthetic threshold and
+20→10 refusal / 20→12 acceptance regression tests are included. Local focused
+pytest: **6 passed, 2 PostgreSQL tests skipped** (no local test database), 78
+deselected, two upstream deprecation warnings. Ruff check/format passed, as did
+the documentation inventory (177 Markdown files, 940 links). This alone was not a
+PostgreSQL gate pass.
+
+First hosted [CI 35868676705](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35868676705)
+ran the PostgreSQL case and exposed a synthetic-fixture defect: rewriting two
+unchanged files gave their existing content-derived versions new `mtime_ns`
+metadata, which the append-only source-version contract correctly refused. The
+test now moves the fictional files outside the scanned root and moves two back,
+preserving their metadata. The [restore 35868676442](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35868676442)
+passed on the first head. Corrected runtime head `c10a9a0` passed full
+[CI 35869402539](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402539)
+with **2,689 Python passed, 9 expected skips, 2 upstream warnings**, all browser,
+deployment, documentation and restricted-worker gates, and populated
+[restore 35869402685](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402685).
+No production behavior was changed to accommodate the fixture. Review, policy
+identity and a legitimate-large-removal approval path remain before cutover.
+
+## Local FileOS completion-coverage checkpoint
+
+ADR-094 preceded the code change. A completion-only DataCore validator checks the
+manifest error ledger/count and refuses uncertain directory, file, race, boundary
+or unknown errors; only an explicit no-follow symlink skip is tolerated. The private
+publisher checks before database setup/import, and direct storage completion checks
+again. Twenty-four focused unit/controller tests passed locally, and Ruff passed.
+A synthetic PostgreSQL regression for clean → incomplete → clean consecutive runs
+passed in hosted [CI 35863559605](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35863559605)
+on runtime head `d7e698e` (2,682 Python passed, nine expected skips, two upstream
+warnings; browser/deployment/restricted-worker gates also passed). The populated
+[restore 35863559359](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35863559359)
+passed. No schema, donor or source-policy change is part of this tranche.
+
+## Local FileOS scanner-edge safety checkpoint
+
+Fourteen focused shadow tests passed with the pinned donor checkout. New cases
+simulate a dataless flag without reading source bytes, an unreadable directory
+after a prior donor scan, donor-side content mutation during hashing, and four
+unusual valid filenames. The donor silently removed its one old row when the
+directory vanished from its walk, and its hash-time race stored the old size with
+the new digest. MasterBrain recorded a directory error and the subsequent stable
+snapshot showed the size mismatch. The filename locators round-tripped through
+both inventories and JSON. These are local synthetic observations, not real cloud
+or cross-platform acceptance. Hosted
+[CI 35857585834](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35857585834)
+passed on PR #17's code head `1845d5f`; the donor-specific comparisons skip on
+hosted CI because there is no donor checkout. Integrated inventory policy remains
+pending; no donor CLI/default database/registry or MasterBrain publication ran.
+
+## Local FileOS scanner fault/size boundary checkpoint
+
+On a separate branch stacked above PR #15, ten focused shadow tests passed with
+the pinned FOS-Master checkout. Sparse 100 MiB + 1 and 2 GiB + 1 byte files
+confirmed the shared 100 MiB exclusion versus donor hash and donor metadata-only
+row respectively. A forced donor read failure retained the prior row, while the
+shared snapshot reported `file_unreadable`; a synthetic hash-time content change
+reported `changed_during_scan`. Broken-file and directory symlink outcomes were
+checked. The test used a temporary fictional root and in-memory donor SQLite only;
+no donor CLI, configured database, registry or MasterBrain publication ran.
+Hosted [CI 35855259654](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35855259654)
+passed on PR #16's fault-test commit `ad50578` (Python, browser, deployment,
+documentation and restricted-worker gates). Hosted CI has no donor checkout, so
+its donor-specific tests skip; the 22-test live-donor result is local. PR #16 does
+not match the restore workflow's path filter. The remaining adversarial cases and
+integrated policy gate are pending.
+
+## Verified FileOS whole-inventory shadow checkpoint
+
+ADR-093 precedes the synthetic-only scanner comparison. The pinned donor scanner
+`scan_domains.py` and shared `snapshot_tree` were exercised on 3,000 generated files
+plus fixed edge cases. **3,002 common SHA-256/size matches** and exactly six
+reason-coded policy differences were observed. Replay stayed unchanged; one content
+change updated one donor row; one removal removed one; no-hash deferred 3,002
+otherwise-common records and rehash backfilled all 3,004 donor rows. After a mass
+loss, the donor refused to prune 1,502 rows, all absent from the fresh snapshot.
+The donor followed and hashed two synthetic symlinks, including one outside the
+synthetic root; MasterBrain skipped both. No real outside-root file was read.
+Seven focused tests and local lint passed. No donor CLI, configured donor database,
+registry, MasterBrain publication or live source was used. These are local synthetic
+results. Hosted [CI 35852211467](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852211467)
+passed on PR #15's synchronized head `16d9cab`, with 2,669 Python tests passing,
+two expected donor-checkout skips, and two upstream warnings. The browser,
+deployment, documentation and restricted-worker gates also passed. The donor
+comparison itself remains local because CI has no FOS-Master checkout. PR #15 did
+not trigger a restore drill under its path filters; the underlying PR #14
+[restore 35852112586](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852112586)
+passed. Adversarial boundary coverage and policy integration remain pending.
+
+## Verified FileOS inventory-classifier parity checkpoint
+
+Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15` classifier
+SHA-256 is `12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437`.
+The copied DataCore classifier adds only two type-check comments in its standalone
+self-test; removing them reproduces the exact donor hash.
+The explicit read-only donor harness compared 3,000 synthetic paths and reported
+zero mismatches across file, directory, operational-directory, path-reason and prune
+contracts. Twelve focused Python tests, lint and the 173-file/920-link documentation
+check passed locally. Runtime/provenance correction `4410a45` and test-import
+correction `b86b791` passed hosted
+[CI 35848399796](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35848399796)
+and [restore 35848399781](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35848399781)
+on [PR #14](https://github.com/jbone3311/CW-EmailBrain/pull/14). Hosted CI passed
+2,663 Python tests with one expected live-donor skip (no FOS checkout in CI), two
+upstream warnings and the deployment/worker gates. This is an extracted classifier,
+not scanner/snapshot integration, whole-inventory parity or production cutover.
+Independent review and integration are pending.
+
+## Verified protected-record truncation guards proposal
+
+Design **f2756b3**, runtime/tests **99d5783** and test correction **02052da**
+passed [CI 35844322327](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35844322327)
+and [restore 35844322318](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35844322318)
+on separate [PR #13](https://github.com/jbone3311/CW-EmailBrain/pull/13), stacked
+on PR #12. Hosted CI passed **2,669 Python tests** with two upstream warnings,
+browser contracts, documentation/deployment checks and restricted worker/container
+gates. The populated restore passed. Thirteen focused disposable-PostgreSQL 17 tests
+passed locally.
+
+- Forward-only migration 0030 refuses direct and foreign-key-cascaded `TRUNCATE` on
+  the 56 directly row-guarded append-only tables, two protected approval-job tables
+  and audited external identities. Catalog coverage is exact for this baseline.
+- Tests reproduced the pre-0030 gap on disposable data, checked all 59 protected
+  targets with `CASCADE`, retained synthetic rows/history, runtime privilege denial,
+  legitimate row transitions and replay. No real evidence or production database
+  was touched.
+- This guards accidental privileged bulk erasure, not malicious table owners who
+  can disable triggers. PR review and integration remain pending; FOS-Master is
+  unchanged.
+
+## Verified migration-integrity repair proposal
+
+Design commit **16b0de3** and runtime commit **fc2a329**, followed by validation
+note **bea8c5e**, passed [CI 35839648723](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839648723)
+and [restore 35839648689](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839648689)
+on the separate [PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12)
+branch. Hosted CI passed **2,656 PostgreSQL-backed Python tests**, browser contracts,
+deployment/document checks and every restricted worker/container gate. The populated
+PostgreSQL 17 restore passed. Locally, four focused disposable-PostgreSQL tests and
+the full 397-test PostgreSQL-marked suite passed.
+
+- A non-superuser, non-`BYPASSRLS` owner is rejected before any migration ledger or
+  schema write. The focused corpus reproduces the historical 0006 silent omission
+  under forced RLS.
+- Forward-only migration 0029 repeats the parser-provenance mismatch guard and
+  repairs only missing sync-state keys across tenants; existing states and event
+  pointers remain untouched. A mismatch rolls the migration back with no receipt.
+- Previously applied migration checksums, runtime privileges and the pinned
+  FOS-Master donor are unchanged. This is a reviewed-branch proposal, not a
+  production database repair or FileOS cutover. Independent review and integration
+into the foundation remain pending.
+
+## Verified private archive-image OCR command
+
+Checkpoint 5C design revision **3d9b9b9** and runtime revision **f658ace** passed
+[CI 35836198307](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198307)
+and [restore 35836198414](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198414),
+observed 2026-09-23 Pacific. Hosted CI passed **2,652 PostgreSQL-backed Python tests**,
+**134 browser contracts** and every restricted worker/container gate. The populated
+restore passed. These results do not establish live-source or production acceptance.
+
+- The private `masterbrain fileos archive-image` command requires one explicit
+  inventory/member/key, a distinct pinned OCR image, exact worker scopes,
+  non-consuming check mode, current forced-RLS selection and reauthentication around
+  the existing two-worker composition and 5B publication.
+- Normal output is limited to opaque identities, chunk count and replay state.
+  Blank, deferred, failed and unsupported OCR do not publish. Controller, CLI and
+  PostgreSQL regression tests cover the command; hosted restricted worker/container
+  gates remain green.
+- FOS-Master remains pinned at
+  `218d5caec2f20b9047fd3eb8e027dc671acf0c15`. The separate
+  [Claude 5D issue](https://github.com/jbone3311/CW-EmailBrain/issues/10) requests an
+  independent review of 5B persistence and a proposed current-only OCR search layer.
+  The issue is open; Claude has not submitted a branch or PR yet.
+
+## Verified archive-member image OCR persistence
+
+Design revision **16d452a**, runtime revision **760a644** and correction revision
+**63b478d** passed
+[CI 35833506295](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506295)
+and [restore 35833506298](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506298),
+observed 2026-09-23 Pacific.
+
+- Only a complete nonempty, exact-target `bounded_image_ocr_v1` result may publish.
+  The forced-RLS transaction reconstructs and locks the current parent/inventory/member,
+  writes deterministic child evidence/document/chunks, and records a separate immutable
+  image receipt plus provenance binding both sandbox contracts, processor digest,
+  format, dimensions, mode, frame policy, truncation, chunking and code revision.
+- Exact, fresh equivalent-key and concurrent replay converge without duplicate derived
+  data. New equivalent keys cross the current-parent fence; changed keys/requests,
+  stale parents, cross-tenant targets and row mutation fail closed. A later processor
+  may create a new derivative without changing raw child source identity. Blank,
+  deferred and failed OCR create no rows.
+- Local verification passed **2,248 tests** with 392 explicit PostgreSQL/container
+  skips, 31 focused wrapper/composition cases, strict typing, lint, documentation and
+  deployment gates. Hosted CI and deployment each passed **2,640 Python tests** with
+  PostgreSQL and no skips, **134 browser contracts**, and every restricted-container
+  gate including the four-case real archive-plus-image chain.
+- The first hosted runtime run failed at the intended boundary because the new table
+  was absent from the explicit runtime grants. Correction `63b478d` added only its
+  SELECT/INSERT grants. Parallel review also found and corrected stale fresh-key replay,
+  processor-dependent child metadata and missing explicit image-contract/policy
+  provenance before acceptance.
+- Documentation before this receipt covered **170 Markdown files / 902 local paths
+  and fragments**. Populated PostgreSQL 17 restore verified **72 tables / 238 rows /
+  two tenants / four encrypted objects / two identity bindings** with equal hashes,
+  forced RLS and revocation state.
+
+No raw image/member byte, pixels or EXIF are stored. At the 5B checkpoint, no private
+command, current search, preview, batch, scheduler, automatic fan-out, source effect
+or FOS-Master cutover was authorized. The accepted 5C command above supersedes only
+that historical command limit.
+
+## Verified one-member archive image OCR composition
+
+Design revision **6029240** and runtime revision **b17541d** passed
+[CI 35829326066](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829326066)
+and [restore 35829325907](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829325907),
+observed 2026-09-23 Pacific.
+
+- The parent accepts one explicit persisted image member, reopens the current archive
+  through the existing no-follow/hash-bound reader, derives the canonical format from
+  the validated suffix and sends only the selected bytes to the separate image worker.
+  It revalidates the full worker result and immutable processor identity before
+  returning bounded in-memory text and metadata.
+- Fourteen focused composition tests cover all eight suffix aliases across six static
+  formats, nested selection, exact metadata, blank OCR, unsupported/oversize refusal
+  before workers, missing source, worker crash, response substitution, format
+  masquerade, invalid processor identity and animation policy. The local full suite
+  passed **2,231 tests** with 389 explicit PostgreSQL/container skips.
+- Hosted CI and deployment each passed **2,620 Python tests** with PostgreSQL and no
+  skips, **134 browser contracts**, every prior restricted-container gate and the new
+  four-case real two-image chain. The chain proved OCR text, a blank image, animated
+  GIF refusal, nested locator, 64 unrelated siblings, source byte/timestamp
+  preservation and member-hash substitution refusal.
+- Documentation before this receipt covered **168 Markdown files / 897 local paths
+  and fragments**. The 29 restore safety tests passed; the unchanged PostgreSQL 17
+  shape remains **71 tables / 237 rows / two tenants / four encrypted objects / two
+  identity bindings**.
+
+No raw member/image byte or OCR result is persisted or searched. No selector,
+operator, batch, scheduler, scanner verdict, automatic fan-out, source effect or
+FOS-Master cutover is authorized. The next gate is separately reviewed append-only
+publication for one explicit successful result.
+
+## Verified isolated image/OCR worker and donor parity
+
+Design revision **55b4854**, runtime revision **cb6b940**, engine binding **f21e534**
+and bounded scratch correction **512185b** passed
+[CI 35826212304](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35826212304)
+and [restore 35826212333](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35826212333),
+observed 2026-09-22 Pacific.
+
+- The separate immutable image accepts only hash/length/suffix/signature-bound,
+  single-frame JPEG/PNG/TIFF/BMP/GIF/WebP bytes. It fully decodes before OCR, caps
+  input at 8 MiB, pixels at 25 million, Tesseract at 20 seconds, text at 5,000 code
+  points/20,000 UTF-8 bytes and response at 64 KiB. It returns no path, EXIF/GPS,
+  pixels, command output or exception.
+- The container runs non-root with no network, mounts, credentials or capabilities,
+  a read-only root and fixed 32 MiB in-memory scratch. Pillow 11.3.0, pytesseract
+  0.3.13, Tesseract 5.5.0 and English data 4.1.0-2 are bound; the ordinary API image
+  proves those parser dependencies absent.
+- Local full-suite verification passed **2,217 tests** with 389 explicit PostgreSQL/
+  container skips. Focused resource/protocol tests passed 185 cases. CI and deployment
+  each passed **2,606 Python tests** with PostgreSQL and no skips, **134 browser
+  contracts**, two real image-container cases and every prior restricted-container
+  gate. Documentation covered **166 Markdown files / 888 local paths and fragments**
+  before this receipt refresh.
+- The first hosted build correctly failed closed on a mismatched Tesseract version;
+  the second real OCR run exposed the inherited zero-byte file-write limit. The final
+  implementation keeps zero bytes as the default for every older worker and grants
+  only image OCR a maximum 32 MiB per file inside the equally bounded scratch area.
+- The pinned donor's two focused modules passed **149 tests**. The clean-checkout live
+  harness then proved 12 normalized text/blank cases across all six formats, **120
+  generated OCR stress comparisons** and one deliberate safer multi-frame refusal.
+  The donor remained clean at **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+- The 29 restore safety tests passed; the unchanged PostgreSQL 17 shape remains **71
+  tables / 237 rows / two tenants / four encrypted objects / two identity bindings**.
+
+No raw byte or OCR result is persisted, and no search, operator, batch, scheduler,
+scanner verdict, external vision, source effect or FileOS cutover is authorized. The
+later 5A receipt above supersedes this section's former composition limitation.
+
+## Verified sealed archive-document batches
+
+Design revision **2869aed** and runtime revision **87ea0d0** passed
+[CI 35821165890](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35821165890)
+and [restore 35821165886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35821165886),
+observed 2026-09-22 Pacific.
+
+- The closed private plan binds one inventory, exact code revision and 1–100 ordered,
+  unique locator/expected-format/idempotency-key triples under a canonical SHA-256
+  seal. Suffix and declared PDF/DOCX/XLSX format must agree before database access.
+- `masterbrain fileos archive-document-batch` reuses the existing forced-RLS selector,
+  hash-bound member reader, isolated document worker and transaction-time publisher.
+  It reauthenticates sensitive boundaries, stops at the first refusal and returns only
+  indexes/counts and a generic error code.
+- Real PostgreSQL committed item one, injected a publication refusal at item two and
+  proved item three absent. Retrying the unchanged plan replayed item one and recorded
+  items two and three using the original keys; a further retry replayed all three.
+  Source archive bytes and timestamp remained unchanged and output exposed no locator,
+  format, text or worker metadata.
+- CI and deployment each passed **2,594 Python tests** with PostgreSQL and no skips;
+  **134 browser contracts** and every restricted-container case passed. Documentation
+  covered **164 Markdown files / 881 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **71 tables / 237
+  rows / two tenants / four encrypted objects / two identity bindings** in 16.11
+  seconds. FOS-Master remains clean and unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+No discovery, generated keys, skip/continue, parallelism, scheduling, public mutation,
+images/OCR, source effects or FOS-Master cutover is authorized.
+
+## Verified private archive-document preview
+
+Design revision **ce2bf30** and runtime revision **1651c2b** passed
+[CI 35818667860](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35818667860)
+and [restore 35818668296](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35818668296),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.archive_member_document_plan` performs one forced-RLS metadata read
+  for an explicitly named current inventory. Exact suffix/media/container and 8 MiB
+  fences admit only PDF/DOCX/XLSX candidates; sealed ordinals provide stable bounded
+  pages and an ineligible cursor fails closed.
+- `masterbrain fileos archive-document-plan` reuses the private configuration and
+  exact worker scopes, but constructs neither worker and reads no source/member bytes.
+  Check mode does not query a target. Results label replay-deduplicated publication
+  state and explicitly declare no source, worker or data effects.
+- Real PostgreSQL proved mixed eligible/ineligible selection, paging, receipt replay,
+  tenant isolation and parent-replacement refusal. No batch, retry-key generation,
+  public route, source effect or automatic continuation was added.
+- CI and deployment each passed **2,586 Python tests** with PostgreSQL and no skips;
+  **134 browser contracts** and every prior restricted-container case passed.
+  Documentation covered **162 Markdown files / 874 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **71 tables / 237
+  rows / two tenants / four encrypted objects / two identity bindings** in 18.56
+  seconds. FOS-Master remains clean and unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+The next gate is a separately reviewed, sealed document-batch format and executor.
+Images/OCR, automatic fan-out, scheduling, source effects and FOS-Master cutover remain
+unauthorized.
+
+## Verified current archive-document search
+
+Design revision **9ba4b88** and runtime revision **7329ba9** passed
+[CI 35816277436](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35816277436)
+and [restore 35816277514](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35816277514),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.search_current_archive_documents` returns only an exact published
+  PDF/DOCX/XLSX derivative whose immutable receipt, sealed inventory/member, current
+  parent FileOS version, child version/evidence and normalized document all agree.
+  Parent replacement removes the result from current search without deleting retained
+  evidence; replay cannot duplicate a result and foreign tenants see nothing.
+- `/v1/brain/current-search` exposes a distinct `archive_documents` layer with a
+  strict 1–20 limit, independent rank and explicit partial-coverage label. It returns
+  only compact search fields and opaque child locators; ordinary FileOS, archive text,
+  Email-family, KnowledgeCore and retained-history behavior remains separate.
+- Migration `0027_current_archive_document_search.sql` adds only the tenant-leading
+  receipt lookup index. The read creates no workers, source reads, generations,
+  receipts, evidence, chunks or source effects.
+- CI and deployment each passed **2,583 Python tests** with PostgreSQL and no skips;
+  **134 browser contracts**, five MIME-container, 15 Email PDF-container, five FileOS
+  document-container, two archive-inventory, two archive-member and four chained
+  archive-document cases passed. Documentation covered **160 Markdown files / 867
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **71 tables / 237
+  rows / two tenants / four encrypted objects / two identity bindings** in 20.86
+  seconds. The pinned donor's **47 archive tests**, six-case live archive parity and
+  3,000-file hash/dedupe/text/Office stress parity passed locally. FOS-Master remains
+  clean and unchanged at **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+This does not authorize archive enumeration, document preview/batches, images/OCR,
+automatic fan-out, scheduling, source effects or FOS-Master cutover.
+
+## Verified archive-member PDF and Office derivatives
+
+Design revision **ea6fd29**, orchestration **6680218**, selector/receipt revision
+**0210ad1**, publication **4d098fa**, private command **5bb1aa1** and real two-image
+gate **49b8383** passed
+[CI 35810970182](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970182)
+and [restore 35810970151](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970151),
+observed 2026-09-22 Pacific. Revision **a4af448** corrects one refusal assertion and
+changes no runtime behavior.
+
+- One exact current PDF, DOCX or XLSX member crosses the existing hash-bound archive
+  member reader and then the separate bounded document worker. Neither image sees both
+  the source tree and sibling/document parsing authority; raw member bytes remain
+  bounded in parent memory and are never persisted.
+- Migration `0026_archive_member_documents.sql` adds a separate forced-RLS,
+  append-only receipt. The publication transaction locks and reconstructs the current
+  parent/inventory/member identity, then records deterministic child evidence,
+  normalized document/chunks and provenance binding both immutable processors.
+- `masterbrain fileos archive-document` requires both immutable image IDs, exact shared
+  scopes and repeated authorization. Check mode constructs neither worker and inspects
+  no target. Normal output is content-free and exact-key retry converges on one receipt.
+- CI and deployment each passed **2,582 Python tests** with PostgreSQL and no skips;
+  **134 browser contracts**, five MIME-container, 15 Email PDF-container, five FileOS
+  document-container, two archive-inventory and two archive-member cases passed. The
+  new four-case chained-image gate extracted PDF/DOCX/XLSX with 64 unrelated siblings,
+  preserved source bytes/timestamps and refused member-hash substitution.
+  Documentation covered **158 Markdown files / 865 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **71 tables / 236
+  rows / two tenants / four encrypted objects / two identity bindings** in 15.27
+  seconds. FOS-Master remains clean and unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+The derivatives remain retained-history-only. Current-search activation, preview,
+batching, images/OCR, recursion, automatic fan-out and FileOS cutover are separate
+future gates.
+
+## Verified append-only archive manifest persistence
+
+Design revision **2d30728**, runtime revision **03dbb98** and upgrade-expectation
+correction **08ccb68** passed
+[CI 35783950712](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35783950712)
+and [restore 35783950915](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35783950915),
+observed 2026-09-22 Pacific.
+
+- Migration `0023_archive_manifests.sql` adds forced-RLS, append-only inventory,
+  ordered-member, ordered-skip and actor-scoped replay tables. A deferred database
+  trigger seals row counts and aggregate observed bytes to the parent inventory.
+- The store accepts only validated complete/partial hash manifests for the exact
+  current FileOS source version and immutable archive image. Bomb, duplicate,
+  unsupported and invalid results create no rows. Deterministic result drift, stale
+  parents and key reuse fail closed.
+- Real PostgreSQL proved exact replay, concurrent replay, RLS isolation, runtime
+  mutation denial, stale-parent and drift conflicts, and unchanged search/change-feed
+  state. No evidence, document, chunk, change-event or index row is created.
+- The first hosted run passed 2,507 tests and found one explicit populated-upgrade
+  migration list still ending at `0022`; `08ccb68` added `0023` to that expectation.
+  The corrected run passed **2,508 Python tests** with PostgreSQL and no skips, **134
+  Node contracts**, documentation, deployment and every restricted worker.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **69 tables / 233
+  rows / two tenants / four encrypted objects / two identity bindings** in 17.14
+  seconds. FOS-Master remains clean and unchanged at the pinned commit.
+
+No member bytes or archive-derived search visibility exist yet. The next gate is a
+separate, one-member, persisted-hash-bound read contract.
+
+## Verified isolated FileOS archive inventory
+
+Design revision **2aaeb26** and runtime revision **26473de** passed
+[CI 35780244211](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35780244211)
+and [restore 35780244282](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35780244282),
+observed 2026-09-22 Pacific.
+
+- A closed source-bound contract and dedicated in-memory ZIP/TAR worker return only
+  ordered safe locators, hashes, declared/observed sizes, media hints, nesting
+  provenance, skips and bounded accounting. They return no member bytes or text and
+  publish nothing to the database or search.
+- The worker preserves the donor's 256 MiB cumulative, 64 MiB member, 2,000-file,
+  100x ratio and depth-three expansion limits, with a separate 32 MiB compressed-input
+  cap. Traversal, links, encryption, corruption, depth and unsupported formats are
+  explicit. Bombs and duplicate safe identities publish no child manifest.
+- The live harness passed flat ZIP/TAR, nested and filtered cases against unchanged
+  FOS-Master commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`, plus named assertions
+  for safer bomb and duplicate publication policies. The donor's 47-test archive suite
+  also passed and its checkout remained clean.
+- Local checks passed **2,137 Python tests**, with 368 database/container cases
+  intentionally skipped, **134 Node contracts**, lint, strict typing across 71 source
+  files, the documentation gate and the focused 90-test archive/isolation set.
+- CI passed **2,505 Python tests** with PostgreSQL and no skips, all 134 Node contracts,
+  prior restricted workers, the new immutable archive image build and two real
+  source-bound archive-container cases. Documentation covered 142 Markdown files / 810
+  local paths and fragments.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 23.97
+  seconds. No schema or source checkout changed in this tranche.
+
+Remaining archive work is deliberately separate: append-only tenant-isolated manifest
+persistence, then a hash-bound one-member read contract, then explicit extraction and
+search publication. No FileOS cutover is authorized.
+
+## Verified sealed Email attachment/document batches
+
+Design revision **2825529** and runtime revision **c143e0c** passed
+[CI 35774641187](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641187)
+and [restore 35774641102](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641102),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-parts-batch` accepts one owner-private, canonical-digest
+  plan containing one account, one attachment or approved-document kind, the exact
+  configured revision and 1–100 ordered unique target/key pairs. Kind is part of the
+  digest, so a plan cannot mix dependency levels.
+- Batch-only account fencing leaves existing one-item receipt/replay ordering intact.
+  Execution reauthenticates before each accepted one-item transaction, stops at the
+  first refusal and returns only opaque target identities and counts.
+- Real PostgreSQL injected an attachment refusal at item two, proved exactly one
+  immutable receipt existed, then retried the unchanged plan to replay one and record
+  two. A separately sealed approved-document plan recorded and replayed without
+  changing legacy evidence.
+- CI and deployment each passed **2,469 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **140 Markdown files / 804
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 23.58
+  seconds. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified Email attachment/document bridge preview
+
+Runtime revision **e3c0ee5** plus checkpoint-tracking revision **0c687e8** passed
+[CI 35763636718](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636718)
+and [restore 35763636696](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636696),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-parts-plan` exposes separate 1–100 item attachment and
+  approved-document pages for one explicit account. It returns only opaque legacy
+  identities, stable timestamps, state, bridge labels and a kind-specific cursor.
+- Real PostgreSQL proves the full dependency chain: no attachment before its current
+  message bridge, no document before its attachment bridge, completed approval
+  required, duplicate completed approvals collapse to one extraction, one-item bridge
+  results update labels, and quarantine removes both queues.
+- Check mode authenticates and validates the safe database role without reading a
+  target account. The normal read is tenant-scoped and performs no source/provider
+  access, byte read, approval, reservation or bridge write.
+- CI and deployment each passed **2,458 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **139 Markdown files / 803
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 15.74
+  seconds. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified sealed Email message bridge batches
+
+Runtime revision **0fd8c35** and legacy one-item idempotency compatibility correction
+**7ca0568** passed
+[CI 35759175176](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175176)
+and [restore 35759175355](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175355),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-batch` accepts one owner-private, canonical-digest-bound
+  plan containing one account, the exact configured revision and 1–100 ordered unique
+  message-version/idempotency-key pairs. Check mode validates without target lookup or
+  data effects; execution reauthenticates before every existing one-item transaction.
+- Unit and CLI tests prove closed schema, digest, private-file, revision, duplicate,
+  scope, ordered-dispatch and content-free receipt contracts. Real PostgreSQL injected
+  a failure on item two, proved only item one had a receipt, then retried the unchanged
+  plan to replay one and record two without duplication.
+- The first hosted run found a backward-compatibility regression: account fencing had
+  moved target lookup ahead of legacy one-item idempotency lookup. Revision `7ca0568`
+  keeps the batch account fence while restoring the established one-item replay and
+  conflict ordering; the corrected full gate is green.
+- CI and deployment each passed **2,454 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **138 Markdown files / 802
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 16.05
+  seconds.
+- The operator does not discover messages, follow preview cursors, skip refused items,
+  bridge attachments/documents, contact a provider or change a mailbox. Existing
+  immutable one-item receipts are the retry authority. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified private Email bridge backfill preview
+
+Runtime revision **4c3347c** and current-version transition assertion correction
+**e9cf62f** passed
+[CI 35756327120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35756327120)
+and [restore 35756327113](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35756327113),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-plan` reads one explicit account through the same private
+  closed configuration and exact worker scopes as the one-item bridge. It returns a
+  1–100 item page containing only version UUID, recorded time, already-bridged state
+  and next cursor; `--check` does not inspect the account.
+- PostgreSQL proves stable `(recorded_at, version_id)` pagination, bridged labeling,
+  current-version replacement after update, quarantine/delete exclusion, invalid
+  account/cursor refusal and tenant isolation. Controller tests prove exact scopes,
+  revocation checks and content-free output.
+- The first hosted run exposed an invalid test expectation: after an update the new
+  current unbridged version correctly replaces the historical version in the plan.
+  Revision `e9cf62f` asserts that identity/state transition; runtime code was unchanged.
+- CI and deployment each passed **2,446 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **137 Markdown files / 801
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 19.41
+  seconds.
+- The preview creates no bridge, reserves no work, contacts no provider and grants no
+  batch execution authority. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified current-source coverage status
+
+Runtime revision **82012e9** and state-transition stress revision **c2c97da** passed
+[CI 35753479059](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35753479059)
+and [restore 35753479343](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35753479343),
+observed 2026-09-22 Pacific.
+
+- `GET /v1/brain/current-coverage` provides a cursor-bounded, single-transaction view
+  over registered opaque sources. FileOS rows report active immutable generation and
+  latest completed-run facts; Email rows report only current explicitly bridged
+  message/attachment/document counts and newest bridge timestamps.
+- The route requires `brain.changes.read`, declares incomplete coverage and never
+  enumerates filesystem paths, mailboxes, provider IDs or content. It performs no
+  scan, bridge, rebuild, activation or source access.
+- PostgreSQL proves no-generation and search-ready FileOS states, active/latest-run
+  comparison, pagination, tenant isolation and Email counts across update, bridge,
+  quarantine, recovery and deletion. Retained evidence remains available while current
+  counts disappear as required.
+- CI and deployment each passed **2,442 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **136 Markdown files / 800
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 17.91
+  seconds.
+- The endpoint does not claim a complete mailbox/filesystem inventory or calculate a
+  policy-dependent stale threshold. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified grouped current-source search
+
+Runtime revision **8da5b36** and mixed-source assertion correction **7939674** passed
+[CI 35751228402](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35751228402)
+and [restore 35751228447](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35751228447),
+observed 2026-09-22 Pacific.
+
+- `POST /v1/brain/current-search` returns separately bounded and ranked active FileOS,
+  current Email message/attachment/document and reviewed KnowledgeCore groups. It
+  declares within-group-only rank meaning, independent layer reads and incomplete
+  coverage instead of implying a globally comparable or complete answer.
+- API tests prove both required scopes, closed bounds/kinds, exact group labels,
+  independent limits and missing-group behavior. PostgreSQL returns all three source
+  families together while retaining the existing routes and drill-down identities.
+- The first hosted run exposed an obsolete test assumption, not a runtime defect:
+  retained mixed-source search correctly returned Email as well as FileOS, while the
+  fixture required FileOS to rank first. Revision `7939674` now asserts the promised
+  presence contract; product code and ranking behavior were unchanged.
+- CI and deployment each passed **2,441 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **135 Markdown files / 799
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 25.6
+  seconds.
+- Coverage is intentionally partial: FileOS requires an active immutable generation,
+  Email requires explicit current bridges and KnowledgeCore remains reviewed retained
+  state. There is no cross-layer atomic snapshot, scan, provider access, synthesis or
+  cutover. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified current-only layered Email-family search
+
+Revision **9b427e1** passed
+[CI 35749176559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176559)
+and [restore 35749176556](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176556),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.search_current_email_family` and
+  `POST /v1/brain/email-family-search` return three independently bounded/ranked
+  layers: current bridged message text, attachment-receipt text and approved PDF
+  derivatives. Results remain compact, untrusted and linked by opaque evidence IDs.
+- Every SQL branch rejoins the legacy parent raw/parser version, deletion/quarantine
+  state and shared parent/child current pointers. Attachment and approved-document
+  receipt identities are cross-checked; same-hash attachment occurrences remain
+  distinct. Existing message-only and retained-history searches are unchanged.
+- PostgreSQL proved all three layers, independent limits, duplicate occurrences,
+  update/delete/quarantine disappearance and retained-history availability. API
+  contracts proved `brain.search`, closed request bounds and within-layer-only ranking.
+- CI and deployment each passed **2,440 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **134 Markdown files / 798
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 16.17
+  seconds.
+- The route is incomplete by definition because only explicitly bridged Email appears.
+  It does not batch/backfill, change legacy Email search, compare ranks across layers or
+  access a mailbox. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified private Email attachment/document bridge commands
+
+Revision **6156b70** passed
+[CI 35745615962](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615962)
+and [restore 35745615958](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615958),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge-attachment` and `masterbrain email bridge-document` accept
+  one explicit legacy UUID, the existing private closed config and an idempotency UUID.
+  Both require the exact shared ingest/document scopes, perform a non-consuming check,
+  reauthenticate around execution and return only opaque IDs, counts/status and replay
+  state.
+- Unit and command tests prove exact dispatch, scope/config denial, revocation,
+  content-free scrubbed output and no target inspection during `--check`. PostgreSQL
+  executed both operators through the approved PDF path, then proved shared search,
+  replay, RLS, immutability and unchanged legacy evidence behavior.
+- CI and deployment each passed **2,439 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **133 Markdown files / 796
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 23.71
+  seconds.
+- The commands do not enumerate Email, approve/process documents, read bytes, contact
+  providers, schedule work, mutate mailboxes or redirect legacy search. FOS-Master
+  remains unchanged at **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified approved Email PDF derivative bridge
+
+Runtime revision **cd425d0** and tenant-isolation fixture correction **c183a07**
+passed [CI 35743436225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436225)
+and [restore 35743436167](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35743436167),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.bridge_email_document_extraction` publishes one explicitly selected,
+  immutable approved-PDF extraction only after its completed approval and ADR-065
+  occurrence bridge are proven current. Extracted or partial bounded text becomes a
+  deterministic document/chunks on the existing attachment evidence.
+- Migration 0022 adds a forced-RLS, append-only receipt binding the legacy extraction,
+  completed approval job, attachment and shared identities to processor, policy,
+  revision, result digest and exact bridge provenance. The bridge never loads, parses,
+  scans, executes or copies attachment bytes.
+- PostgreSQL cases prove prerequisite occurrence fencing, approved publication,
+  shared search, exact replay, tenant isolation, immutability and rejection of an
+  otherwise valid extraction inserted without a completed approval.
+- CI and deployment each passed **2,434 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **132 Markdown files / 794
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **65 tables / 232
+  rows / two tenants / four encrypted objects / two identity bindings** in 16.21
+  seconds.
+- The first hosted application run exposed only a test-fixture error: the new RLS
+  assertion used a nonexistent tenant/member, so bootstrap correctly denied it before
+  RLS. Correction `c183a07` created a real second tenant/member; the unchanged product
+  path then passed the full gate and restore.
+- Existing Email approved-PDF search, citations, approvals and attachment state remain
+  authoritative. There is no bridge operator, batch/backfill, new format, byte access,
+  global search cutover or mailbox effect. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified additive Email attachment occurrence/text bridge
+
+Runtime revision **02eefb5** and historical-parent fixture correction **aaf8df0**
+passed [CI 35740735789](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740735789)
+and [restore 35740736075](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740736075),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.bridge_email_attachment` maps one explicit legacy attachment
+  occurrence beneath its already-bridged, still-current Email evidence. Deterministic
+  child item/version/evidence and `brain_parts` identities preserve occurrences even
+  when two attachments share bytes; the retained parent MIME remains authoritative.
+- Non-empty legacy extracted text publishes through `email-attachment-text-v1` with
+  chunks and provenance. Empty extracted or deferred/skipped/failed/pending receipts
+  produce explicit zero-document accounting. The bridge never reads, decodes,
+  executes, scans, downloads or copies attachment bytes.
+- Migration 0021 adds forced-RLS, append-only `brain_parts` and
+  `brain_email_attachment_bridge_receipts`. Tests prove duplicate-occurrence
+  preservation, extracted and deferred outcomes, exact replay, historical-parent
+  rejection, rollback, tenant isolation and immutability.
+- CI and deployment each passed **2,432 Python tests** with PostgreSQL and no skips;
+  **134 Node contracts**, five MIME-container, 15 Email PDF-container and five FileOS
+  document-container cases passed. Documentation covered **131 Markdown files / 793
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **64 tables / 231
+  rows / two tenants / four encrypted objects / two identity bindings** in 24.14
+  seconds.
+- The first hosted application run exposed a test-only history-fixture error: it
+  created a different provider message rather than a newer version of the bridged
+  parent. Correction `aaf8df0` fixed only the fixture, after which the intended
+  current-parent rejection passed. The first restore attempt then failed during
+  disposable Docker-cluster startup before migration; the unchanged failed job was
+  rerun and passed in 38 seconds.
+- Existing Email attachment/document search and citations remain authoritative. There
+  is no batch bridge, approved-PDF derivative bridge, byte extraction, global search
+  cutover or mailbox effect. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified current-only bridged Email retrieval
+
+Revision **743fb9e** passed
+[CI 35737349912](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35737349912)
+and [restore 35737349873](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35737349873),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.search_current_email` and `POST /v1/brain/email-search` return only
+  explicitly bridged Email documents whose shared current pointer and legacy immutable
+  raw/parser version still agree and whose message is not deleted or quarantined.
+- Hosted PostgreSQL proved initial visibility, update-before-rebridge disappearance,
+  new-version visibility, bounds, and immediate delete hiding while retained DataCore
+  history remains queryable. API contracts prove explicit `brain.search` scope,
+  current-visibility labeling and bounded untrusted results.
+- Hosted CI and deployment each passed **2,430 Python tests** with PostgreSQL and no
+  skips; **134 Node contracts**, five MIME-container, 15 Email PDF-container and five
+  FileOS document-container cases passed. Documentation covered **130 Markdown files /
+  791 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **62 tables / 230
+  rows / two tenants / four encrypted objects / two identity bindings** in 15.54 seconds.
+- The route is additive and incomplete by definition: unbridged Email is absent.
+  Legacy Email search remains authoritative. No automatic bridge, attachment migration,
+  global ranking, unified-mode redirect or mailbox effect is implied. FOS-Master remains
+  unchanged at **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified private one-version Email bridge operator
+
+Revision **f600508** passed
+[CI 35736010764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010764)
+and [restore 35736010659](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35736010659),
+observed 2026-09-22 Pacific.
+
+- `masterbrain email bridge` accepts one explicit legacy evidence UUID, private closed
+  config and idempotency UUID. It requires an exact two-scope worker, verifies the
+  least-privileged database role, reauthenticates around execution and returns only
+  opaque identities, counts and replay state.
+- `--check` is non-consuming and does not inspect the target. Unit and PostgreSQL
+  tests prove closed/private configuration, exact scopes, revocation, scrubbed
+  errors/output, real command publication, shared search and unchanged legacy evidence.
+- Hosted CI and deployment each passed **2,428 Python tests** with PostgreSQL and no
+  skips; **134 Node contracts**, five MIME-container, 15 Email PDF-container and five
+  FileOS document-container cases passed. Documentation covered **129 Markdown files /
+  790 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **62 tables / 230
+  rows / two tenants / four encrypted objects / two identity bindings** in 23.74 seconds.
+- There is no automatic scan, batch, attachment migration, provider call, mailbox
+  effect or Email search cutover. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified additive Email evidence bridge into DataCore
+
+Runtime revision **0eae4c4** and least-privilege correction **bb4b45d** passed
+[CI 35734147533](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147533)
+and [restore 35734147551](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35734147551),
+observed 2026-09-22 Pacific.
+
+- One explicitly selected current, visible, immutable Email version can now publish
+  deterministic opaque source/item/version/evidence/document/chunk identities into
+  DataCore. Subject, sender and clean text preserve the legacy lexical fields;
+  retained raw MIME stays in its original immutable table and is not copied.
+- Migration 0020 adds a forced-RLS, append-only bridge receipt tying the legacy UUID
+  to every shared identity and exact transform/code provenance. Exact replay is a
+  no-op; changed requests, historical versions, deleted/quarantined messages and
+  inconsistent snapshots fail closed. The account lock prevents ingestion races.
+- The first hosted run correctly exposed that `SELECT ... FOR SHARE` would require
+  broader runtime privileges. Revision `bb4b45d` removed the unnecessary row lock,
+  retained advisory serialization and added migration-history coverage; no new
+  UPDATE/DELETE/table-owner authority was granted.
+- Hosted CI passed **2,414 Python tests** with PostgreSQL and no skips; deployment
+  repeated the suite. **134 Node contracts**, five MIME-container cases, 15 Email
+  PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed. Documentation
+  verification covered **128 Markdown files / 786 local paths and fragments**.
+- PostgreSQL 17 restore passed 29 safety tests and verified **62 tables / 230 rows /
+  two tenants / four encrypted objects / two identity bindings** in 22.5 seconds.
+- Existing Email ingestion/search remains authoritative. No automatic scan, bridge
+  operator, attachment migration, current-Email read projection, API cutover or
+  mailbox effect is implied. FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+## Verified current-aware grouped FileOS and KnowledgeCore retrieval
+
+Revision **8bada56** passed
+[CI 35731669724](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35731669724)
+and [restore 35731669604](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35731669604),
+observed 2026-09-22 Pacific.
+
+- `/v1/brain/unified-search` now accepts explicit `retained` or `current_fileos`
+  evidence visibility. Retained history remains the compatibility default; current
+  mode uses newest activated FileOS generations. Knowledge results and their limits
+  are unchanged, and ranks remain separate by layer.
+- Hosted PostgreSQL completed an exact FileOS run and generation, activated it,
+  published reviewed KnowledgeCore objects citing the same evidence, and returned both
+  layers under current mode. Contract tests proved default compatibility, mode
+  selection, closed values and both-scope enforcement.
+- The hosted suite passed **2,411 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **127 Markdown files / 785 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **61 tables / 229 rows / two tenants / four encrypted
+  objects / two identity bindings** in 14.97 seconds. The 29 restore safety tests passed.
+- Local gates passed **2,057 tests / 354 explicit PostgreSQL skips**, lint, strict
+  types, browser contracts, documentation, deployment and pinned donor parity.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. No Email migration, synthesis,
+  automatic activation, source effect, cutover, rename or retirement is implied.
+
+## Verified cross-source current FileOS search
+
+Runtime revision **42606da** and two-source stress revision **83f5747** passed
+[CI 35729843020](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843020)
+and [restore 35729843019](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35729843019),
+observed 2026-09-22 Pacific.
+
+- `POST /v1/brain/fileos-search` searches only the newest activated immutable
+  generation for every tenant-visible FileOS source. Existing retained-history
+  DataCore and grouped unified search keep their compatibility behavior.
+- Hosted PostgreSQL proved two simultaneously active sources, multi-query identity
+  parity, result bounds, changed content, zero hits, rollback disappearance,
+  reactivation, API labeling and forced-RLS execution.
+- The hosted suite passed **2,411 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **126 Markdown files / 784 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **61 tables / 229 rows / two tenants / four encrypted
+  objects / two identity bindings**, including current FileOS retrieval, in 14.75
+  seconds. The 29 restore safety tests passed.
+- Local gates passed **2,057 tests / 354 explicit PostgreSQL skips**, lint, strict
+  types, 134 Node contracts, documentation, deployment and the pinned live-donor
+  2,000-file-plus-edge stress corpus. Local SQL skips are not passes.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. No historical route was redirected;
+  no scheduler, source effect, cutover, rename or retirement exists.
+
+## Verified private FileOS index operator
+
+Runtime revision **8a50eab** and test-authorization correction **4716c88** passed
+[CI 35727909717](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35727909717)
+and [restore 35727909764](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35727909764),
+observed 2026-09-22 Pacific.
+
+- `masterbrain fileos index` now supports explicit build-and-activate for one exact
+  completed run and activation-only rollback to a ready generation. Closed private
+  configuration, runtime DSN, exact per-operation worker scopes, non-consuming check
+  mode and repeated authentication fence every operation.
+- Hosted PostgreSQL proved build/activation, exact replay, distinct code-revision
+  generation, activation-only rollback, privileged-role refusal, revoked-worker
+  refusal and deterministic active-versus-existing query identities. Source bytes
+  remained unchanged.
+- The hosted suite passed **2,411 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **125 Markdown files / 783 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **61 tables / 229 rows / two tenants / four encrypted
+  objects / two identity bindings** in 24.7 seconds. The 29 restore safety tests passed.
+- Local gates passed **2,057 tests / 354 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. The live donor
+  harness still matched FOS-Master across the adopted corpus and 2,000-file-plus-edge
+  stress set. Local SQL skips are not passes.
+- The first hosted run reached successful rollback, then its verification read used a
+  fixture context without `brain.changes.read`; authorization correctly denied it.
+  Commit `4716c88` uses the established DataCore read context. Runtime permissions and
+  behavior were unchanged; the complete rerun passed.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. The command adds no scanner,
+  scheduler, global-search switch, source effect, cutover, rename or retirement.
+
+## Verified immutable FileOS index generations and rollback
+
+Revision **b715bf1** passed
+[CI 35725616036](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725616036)
+and [restore 35725615886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35725615886),
+observed 2026-09-22 Pacific.
+
+- Migration 0019 adds forced-RLS, immutable generation/item/chunk/readiness tables and
+  append-only activations. PostgreSQL validates exact declared closure before readiness
+  and rejects post-ready append. Generation identity binds the latest completed run,
+  exact plan, code revision and chunker version.
+- Hosted PostgreSQL proved deterministic replay, a distinct generation for a changed
+  code revision, changed-run generation, activation replay/conflict, active-only
+  queries, prior-generation rollback/reactivation, API reads and immutable closure.
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **124 Markdown files / 780 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **61 tables / 229 rows / two tenants / four encrypted
+  objects / two identity bindings**, including the same active generation and query
+  result, in 17.86 seconds. The 29 restore safety tests also passed.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. The live donor
+  harness matched the pinned FOS-Master baseline across adopted extraction and a
+  2,000-file-plus-edge stress corpus. Local SQL skips are not passes.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. No scheduler, automatic generation,
+  global-search switch, source effect, cutover, rename or retirement exists.
+
+## Verified deterministic FileOS rebuild preview
+
+Revision **0653a35d5376efcee5151c35a827f9fa715d242d** passed
+[CI 35720358559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358559)
+and [restore 35720358811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358811),
+observed 2026-09-22 Pacific.
+
+- The run-bound, paginated preview recomputes body digests, deterministic document IDs,
+  chunk ranges, chunk digests and chunk IDs for the latest completed inventory. It
+  returns `verified`, `rebuild_required` or `source_reprocess_required` without paths,
+  text, source effects or DataCore effects.
+- The source completion lock prevents a page from mixing inventory runs; page cursors
+  must belong to the exact current run. PostgreSQL/API cases proved two-page traversal,
+  unknown-cursor refusal, verified and source-reprocess classifications, bounded output
+  and no disclosure fields.
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **123 Markdown files / 779 local paths and
+  fragments**.
+- PostgreSQL 17 restore verified **56 tables / 218 rows / two tenants / four encrypted
+  objects / two identity bindings** and a `verified` restored rebuild preview in 16.17
+  seconds. The 29 restore safety tests also passed.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. Local SQL skips
+  are not passes; the hosted run is the authoritative database result.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. No rebuild executor, active-generation
+  switch, search-visibility change, file effect, cutover, rename or retirement exists.
+
+## Verified FileOS completed-inventory reconciliation evidence
+
+Revision **77ccc81f0659727e2c26fe0c952421e9ac98f14d** passed
+[CI 35718606046](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606046)
+and [restore 35718606093](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35718606093),
+observed 2026-09-22 Pacific.
+
+- Migration 0018 adds immutable, forced-RLS completed-run item ledgers and absence
+  events. Deferred PostgreSQL constraints require exact item and grouped-outcome
+  agreement with the completion receipt; source/run/time foreign keys prevent a ledger
+  from being rebound.
+- Completion is serialized per tenant/source and refuses an older or equal observation.
+  Absence is derived only between consecutive completed ledgers, never from a partial
+  import or crashed publication prefix. Evidence remains retained and searchable.
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **122 Markdown files / 778 local paths and
+  fragments**.
+- PostgreSQL integration proved two completed snapshots, one absence, stale-run
+  refusal, exact replay, RLS/immutability and bounded API counts. PostgreSQL 17 restore
+  verified **56 tables / 218 rows / two tenants / four encrypted objects / two identity
+  bindings**, including the inventory ledger, in 19.06 seconds.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. Local SQL skips
+  are not passes; the hosted run is the authoritative database result.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. This tranche adds no automatic
+  rebuild, current/historical search policy, scheduler, file effect, cutover, rename or
+  retirement.
+
+## Verified FileOS completion receipts and source freshness
+
+Runtime revision **1e0f87ed8ac5fe9fa29d186b2c242c7584d9a24a** and the
+valid-conflict test correction **c12800fee682c4f0e922698a8adbc342096f07b7** passed
+[CI 35716362139](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35716362139)
+and [restore 35716362094](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35716362094),
+observed 2026-09-22 Pacific.
+
+- Migration 0017 adds forced-RLS, append-only whole-run receipts. Completion is bound
+  to the exact actor, request UUID, source, canonical manifest digest, item/outcome
+  counts and extractor/code provenance. Replay preserves the original completion time;
+  changed receipts conflict.
+- `GET /v1/brain/sources/{source_id}/freshness` reports only the latest completed run.
+  A partial/crashed prefix remains explicitly `no_completed_run` and cannot be
+  presented as fresh.
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated it. **134 Node contracts**, five MIME-container cases,
+  15 Email PDF-container cases and five FileOS PDF/DOCX/XLSX cases passed.
+  Documentation verification covered **121 Markdown files / 776 local paths and
+  fragments**.
+- PostgreSQL integration proved exact intake binding, valid replay/conflict,
+  immutability, RLS, API access and invalid direct-write rejection. PostgreSQL 17
+  restore verified **54 tables / 215 rows / two tenants / four encrypted objects /
+  two identity bindings**, including the same latest-complete run, in 18.37 seconds.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. Local SQL skips
+  are not passes; the hosted run is the authoritative database result.
+- The first hosted gate exposed a malformed conflict-test input: its internally
+  inconsistent published count was correctly rejected by validation before replay
+  conflict detection. The fixture now submits a different but internally valid closed
+  outcome set; runtime validation was unchanged, and the complete rerun passed.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. This tranche adds no scheduler,
+  deletion inference, source cursor, file effect, cutover, rename or retirement.
+
+## Verified authenticated FileOS publication command
+
+Runtime revision **e7f319cae5a68e4a2072a326fba9ab853cb15643** and the
+tenant-isolated test correction **aaaf156a0c8ad6f7243fd11300da2b4309f59ded** passed
+[CI 35713893737](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893737)
+and [restore 35713893769](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893769),
+observed 2026-09-22 Pacific.
+
+- The hosted suite passed **2,394 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated the suite. Ruff, strict mypy over **65 source files**,
+  **134 Node contracts**, and documentation verification over **120 Markdown files /
+  774 local paths and fragments** passed.
+- Real PostgreSQL cases proved non-mutating preflight, least-privileged publication,
+  exact idempotent replay, deterministic no-duplicate documents, source byte/mtime
+  preservation, privileged DSN refusal and revoked local worker refusal.
+- All restricted runtime boundaries stayed green: five real MIME-container cases, 15
+  Email PDF-container cases and five FileOS PDF/DOCX/XLSX container/SQL cases. The
+  populated PostgreSQL 17 restore passed in 26 seconds.
+- Local gates passed **2,042 tests / 352 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, documentation and deployment checks. Local SQL skips
+  are not passes; the hosted suite exercised the new two-case SQL module.
+- The first hosted run exposed a test-only cross-tenant counting error: the denial
+  assertion observed the successful fixture from another tenant. The query was scoped
+  to its own tenant; runtime code and permissions were unchanged, and the complete
+  rerun passed.
+- FOS-Master remains clean at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. This command adds no scheduler,
+  public upload, durable whole-run completion receipt, file effect, cutover, rename or
+  retirement.
+
+## Verified isolated FileOS PDF and Office extraction
+
+Runtime/test revision **a6488c66ff5027789be093374b9b269f2c945fa2** adds the
+source-bound, isolated DataCore PDF/DOCX/XLSX path. It passed
+[CI 35711403192](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403192)
+and [restore 35711403138](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403138),
+observed 2026-09-22 Pacific.
+
+- The hosted suite passed **2,379 Python tests** with PostgreSQL and no skips; the
+  deployment gate repeated the same suite successfully. Ruff, strict mypy over
+  **64 source files**, **134 Node contracts**, and documentation verification over
+  **119 Markdown files / 771 local paths and fragments** passed.
+- The dedicated locked worker image built from the dependency lock. Five real-container
+  cases passed: bounded PDF, DOCX and XLSX reads; source substitution/external-link
+  refusal; and PostgreSQL publication/search of all three formats without source writes.
+- The ordinary runtime image still excludes `pypdf`, `openpyxl`, `python-docx` and
+  `lxml`. The existing five MIME-container and 15 PDF-container cases also remained
+  green. The populated PostgreSQL 17 logical restore passed in 29 seconds.
+- The live donor harness matched unchanged FOS-Master commit
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15** for DOCX/XLSX extracted tokens and
+  sheet counts plus the prior text/HTML/CSV/hash/dedupe and **3,000-file** stress corpus.
+- Local gates passed **2,029 tests / 350 explicit PostgreSQL skips**, 134 Node
+  contracts, lint, strict types, docs and deployment checks. Local SQL skips are not
+  passes; the hosted suite and container publication case exercised PostgreSQL.
+- This is a read-only additive tranche, not antivirus or production acceptance.
+  Legacy Office, archives, images/OCR, root enrollment, incremental operation,
+  live-source shadowing, effects, cutover, FOS rename and retirement remain open.
+
+## Verified grouped MasterBrain retrieval
+
+Runtime/test revision **b60acd2** adds a dual-scope, grouped search over DataCore
+evidence and KnowledgeCore assertions. It passed
+[CI 35707895947](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35707895947)
+and [restore 35707895954](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35707895954),
+observed 2026-09-22 Pacific.
+
+- The hosted suite passed **2,369 Python tests** with no skips and two dependency
+  warnings; Ruff and strict mypy over **61 source files** passed.
+- **134 Node contracts**, five actual MIME-container cases and 15 actual PDF-container
+  cases passed. Documentation verification passed **117 Markdown files / 762 local
+  paths and fragments**.
+- The real PostgreSQL test publishes source text and a reviewed project, then verifies
+  one `/v1/brain/unified-search` request returns both evidence and knowledge layers.
+  Unit contracts prove dual-scope enforcement, independent 25-result caps, strict
+  kind filters and explicit `within_layer_only` ranking.
+- The populated PostgreSQL 17 restore remained green. This additive endpoint does not
+  change stored data, migrate legacy Email evidence, calibrate cross-layer ranks,
+  synthesize answers or authorize source effects.
+- Local gates passed **2,019 tests / 350 explicit PostgreSQL skips**. Local SQL skips
+  are not passes; the hosted suite exercised the PostgreSQL endpoint.
+
+## Verified reviewed KnowledgeCore foundation
+
+Runtime/test revision **7d2afbf** adds the reviewed, evidence-linked KnowledgeCore
+foundation and its `/v1/knowledge` API. It passed
+[CI 35706332421](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35706332421)
+and [restore 35706332264](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35706332264),
+observed 2026-09-22 Pacific.
+
+- The hosted suite passed **2,368 Python tests** with no skips and two dependency
+  warnings. The deployment gate repeated the suite successfully; repeated runs are
+  not additional unique tests.
+- Ruff, strict mypy over **61 source files**, **134 Node contracts**, both restricted
+  processor image builds, five actual MIME-container cases and 15 actual PDF-container
+  cases passed. Documentation verification passed **116 Markdown files / 761 local
+  paths and fragments**.
+- PostgreSQL integration covers all seven knowledge assertion kinds, concurrent
+  idempotent publication, conflicting and superseded claims, corrections, temporal
+  fields, evidence links, API access, immutable rows and tenant isolation.
+- PostgreSQL 17 restore verified **53 tables / 212 rows / two tenants / four encrypted
+  objects / two identity bindings** with equal table hashes, including restored
+  KnowledgeCore entity/claim retrieval and cross-tenant denial. The real drill took
+  22.65 seconds; the 29 restore safety tests also passed. This is not a production RTO.
+- Local gates passed **2,018 tests / 350 explicit PostgreSQL skips**, 134 Node
+  contracts, strict types, lint and documentation checks. Local SQL skips are not
+  passes; the hosted count above exercised PostgreSQL.
+- FOS-Master remains unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. This tranche adds no source writes,
+  automatic model publishing, FileOS cutover, rename or retirement. Known-answer
+  extraction evaluation, Email memory migration, FOS fact parity, graph traversal,
+  unified synthesis and broader document/OCR ingestion remain open.
+
+## Verified MasterBrain working read slice
+
+Runtime/test revision **a06bcad12facb084cf7d5ef4c031e1919cfd0e71** implements
+the additive DataCore persistence/index, verified FileOS text extraction and the
+progressive Brain API read slice. It passed
+[CI 35703242987](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35703242987)
+and [restore 35703242983](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35703242983),
+observed 2026-09-22 Pacific. Later receipt-only changes do not alter this runtime.
+
+- The complete hosted suite passed **2,364 Python tests** including real PostgreSQL
+  cases, with no skips and two existing dependency warnings. The deployment gate
+  repeated the same suite successfully; repeated runs are not additional unique tests.
+- Ruff, strict mypy over **59 source files**, **134 Node contracts**, both container
+  builds, CLI/runtime-image checks, five actual MIME-container cases and 15 actual
+  PDF-container cases passed.
+- Documentation verification passed **114 Markdown files / 755 local paths and
+  fragments**. Local full suite passed **2,015 tests / 349 explicit PostgreSQL skips**;
+  skipped local SQL cases are not passes.
+- The live donor harness matched unchanged FOS-Master commit
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15** for hash/name/both dedupe, pair
+  comparison, SHA-256/MD5, UTF/HTML/CSV extraction and a **3,000-file stress corpus**.
+- PostgreSQL 17 restore verified **41 tables / 185 rows / two tenants / four encrypted
+  objects / two identity bindings** with equal content hashes, forced RLS, identity
+  revocation and database-only-restore refusal. The 29 restore safety tests passed;
+  14.43 seconds includes disposable startup and is not a production RTO claim.
+- The working vertical path is: read-only FileOS snapshot → idempotent tenant-isolated
+  import → source re-hash → bounded text/Markdown/HTML/CSV extraction → immutable
+  provenance/chunks → lexical index → scoped Brain search/evidence/content/changes.
+- The first hosted run found and preserved two security boundaries: Brain scopes must
+  not leak into legacy Email credentials, and immutable version rows must not receive
+  update privilege merely to lock publication. The corrected advisory lock and local
+  test contexts passed the full rerun; no permission was widened.
+- FOS-Master is unchanged and remains the rollback/reference implementation. PDF,
+  Office, archives, images/OCR, KnowledgeCore claims/entities, unified Email+FileOS
+  search, live root enrollment, hosted identity enrollment and production shadow
+  acceptance remain open. No file/mail effects, real source, model call, paid service,
+  rename, retirement or cutover was enabled.
+
+## Verified MasterBrain foundation
+
+Runtime/test revision **fa514df9aef97c1e339996478ca97b92eaa434c7** establishes
+the MasterBrain identity and ADR-047 boundaries, plus the first read-only DataCore
+donor extraction. It passed
+[CI 35696953888](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35696953888)
+and [restore 35696953874](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35696953874),
+observed 2026-09-21 Pacific. Later receipt-only changes do not alter this runtime.
+
+- Full local Python suite: **1,969 passed / 344 explicit PostgreSQL skips** with two
+  pre-existing dependency deprecation warnings. The skipped SQL cases are not passes.
+- **134 Node contracts** passed. Full Ruff and strict mypy over **53 source files**
+  passed. The deployment/repository quality gate and diff checks passed.
+- Documentation gate passed: **105 Markdown files / 740 local paths/fragments**.
+- The live-donor harness passed hash, name and combined duplicate scans against an
+  unchanged FOS-Master checkout at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**. The focused DataCore suite passed
+  three cases. The synthetic corpus includes exact duplicates, name versions, empty
+  duplicates and donor exclusion patterns.
+- Local Python 3.14 did not load the pre-existing editable-install `.pth` inside two
+  isolated subprocess tests. A normal wheel reinstall made both tests pass; the same
+  issue affected the untouched `email_brain` import and was not a product regression.
+- The first CI run correctly rejected a synthetic file named with the forbidden `.db`
+  extension. The fixture was replaced with a safe AppleDouble-style exclusion case;
+  no gate was weakened. The full CI and restore rerun above passed.
+- No live source, database migration, file move/delete, remote model, cloud resource,
+  FileOS cutover, FOS-Master modification/rename/retirement, or Brain API runtime was
+  added. Golden/shadow/production acceptance remains open.
 
 ## Verified structured memory
 

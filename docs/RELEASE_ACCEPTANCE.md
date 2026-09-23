@@ -1,78 +1,95 @@
-# Release acceptance and evidence
+# MasterBrain Release Acceptance
 
-Updated 2026-09-21. This checklist consolidates existing PRD, security, roadmap and
-Factory handoff requirements. It does not approve a deployment or add runtime
-permissions. The current product is a synthetic-data prototype, not a live release.
+No documentation, unit test, or donor extraction alone makes MasterBrain production
+ready. Evidence for every gate records artifact version, environment, corpus/source,
+operator, date, result, exceptions and rollback receipt.
 
-## Three different decisions
+## Synthetic alpha checkpoint (not production acceptance)
 
-| Decision | Required evidence | What it does not authorize |
-|---|---|---|
-| Merge a bounded increment | Contract/ADR where required, reviewed implementation, relevant tests, docs and compatibility/rollback notes | Real mail, paid services, remote disclosure or production promotion |
-| Accept a disposable live pilot | Explicit provider/account and environment authorization; identity/storage/scanner coverage policy; actual conformance, restore and operator acceptance | Arbitrary user accounts, sharing, write scopes or broader rollout |
-| Release production capability | Every applicable launch gate below, named accountable reviewers, exact artifact/configuration and recorded acceptance | Unreviewed future scope or a claim that every planned feature exists |
+ADR-101 permits `v0.2.0a1` only after the cumulative `main` commit passes locked
+installation, lint, types, Python/PostgreSQL and browser tests, restricted worker
+checks, documentation inventory, pinned-donor parity, and populated restore.
+Record exact commit/run IDs and label database skips. The guide must use fictional
+inputs and disposable PostgreSQL. Passing this subsection does not satisfy the
+production or FileOS cutover gates below.
 
-## Gate register for the first read-only service
+## Product and source gates
 
-“Existing evidence” describes a foundation, not a checked production gate. Record
-pass/fail/pending/not-applicable with rationale for each proposed release.
+- Email and FileOS are presented as capabilities under MasterBrain, not competing
+  product identities.
+- Each authorized source can initial-sync, resume, replay, reconcile, pause and revoke
+  without omission or unintended duplication.
+- FileOS operator preflight is non-mutating; exact retries converge, credential
+  revocation fails closed, and output/logs do not disclose paths, content or secrets.
+- Unsupported/partial/quarantined items are counted and inspectable.
+- FOS-Master stays available and unchanged until FileOS cutover is separately accepted.
 
-| Gate | Existing evidence | Still required for live promotion |
-|---|---|---|
-| Product scope and consent | PRD, roadmap, parked owner choices | First account/backfill, region, budget, retention and document coverage decisions |
-| Provider integrity | Synthetic Fastmail HTTP-to-SQL; offline Gmail/Graph/IMAP contracts | Enrolled disposable provider, cursor expiry/moves/outages and sustained reconciliation |
-| Identity and isolation | Bootstrap or explicit RFC/Entra verifier, server-owned SQL mappings/revisions, owner/scopes, forced RLS, composite keys and negative tests | Browser login/session, issuer/MFA and enrollment policy, revocation UX, rate limits; grants before any sharing |
-| Source durability | Immutable evidence, encrypted local objects, atomic cursors | Hosted Blob/KMS/IAM, separately recoverable keys and accepted retention/purge |
-| Document safety and usefulness | Restricted MIME/PDF containers; synthetic PDF approval/result/search, operator command and owner review UI | Browser/owner acceptance, accepted scanner/live policy, deployed isolation and quality on supported inputs |
-| Independent operation | Worker libraries, separate read/MIME/PDF operator commands, bounded retries/fences | Hosted supervision, enrollment, restarts/soak, alerts and responsible operator |
-| Search and evidence | Authorized FTS, immutable citations, opt-in PDF results | Representative held-out retrieval and latency results at accepted corpus size |
-| Backup and disaster recovery | Disposable SQL/object restore with hashes/search/RLS | Managed PITR/offsite recovery, key loss scenario, measured production-like RPO/RTO |
-| Supply chain and governance | Locked builds, lint/types/tests, recorded scans, Factory proposal | Release SBOM/license/advisory/signature gates and independent Factory bind/audit |
-| User acceptance | Local UI and Node DOM-contract tests | Real browser, keyboard/screen-reader, operational failure and owner acceptance |
+## DataCore gates
 
-An initial read-only pilot can explicitly defer an unsupported document format;
-it cannot silently count it as extracted. Models, vectors, team sharing, MCP and
-mailbox effects are separate milestones, not prerequisites invented to block the
-first lexical-search pilot. If enabled later, each needs its own acceptance evidence.
+- Stable source/version/evidence IDs and SHA-256 are reproducible.
+- Original evidence is immutable/verified; all derivatives have complete provenance.
+- Extraction/OCR limits, format outcomes and malicious corpus tests pass.
+- Document workers prove network isolation, read-only root, dropped capabilities,
+  process/resource/output limits, dependency separation and closed-result validation.
+- Chunk/index rebuild produces equivalent identities and query results.
+- Rebuild preview is run-bound, paginated and side-effect free. Generation execution
+  is completion/plan/code/chunker-bound, idempotent, transactionally closed and
+  immutable; activation is separately authorized and prior-generation reactivation
+  proves rollback before any global search cutover.
+- Generation check mode is non-consuming; build and rollback credentials have exact
+  operation scopes, revocation fences activation, and output contains no paths,
+  content, credentials or database diagnostics.
+- Current FileOS retrieval selects only each source's latest activation; rollback
+  changes current results while retained historical evidence remains accessible.
+- Grouped retrieval labels retained versus current FileOS visibility and never merges
+  evidence and KnowledgeCore ranks into a misleading global score.
+- Source freshness advances only on an immutable receipt whose terminal counts cover
+  the exact intake manifest; crash prefixes and conflicts never report complete.
+- Inventory membership balances exactly against its completion receipt; absence is
+  inferred only between complete monotonic observations and never deletes evidence.
+- Dedupe never implies deletion; held-out/cross-domain protections pass.
+- Every migrated FOS tranche has zero unexplained golden differences and documented
+  shadow tolerances.
 
-## The metrics must say what they measured
+## KnowledgeCore gates
 
-Targets remain in [PRD.md](PRD.md); record results against a versioned test set.
+- Entity resolution, claims, relationships, timeline, projects and commitments meet
+  agreed precision/recall or reviewed known-answer thresholds.
+- Every surfaced claim has supporting/contradicting evidence and precise locators.
+- Corrections/supersession preserve history; conflicting claims remain visible.
+- Source, DataCore and KnowledgeCore freshness are independently reported.
 
-- **Coverage:** received, preserved, held, searchable body, extracted document,
-  unscanned/scanned and interpreted counts separately. Queue completion is not a
-  document-quality metric.
-- **Quality:** top-5 retrieval success, correct citations, extraction correctness,
-  Needs Reply/Review Delete precision and recall, abstention and correction rate.
-  Unimplemented features are “not evaluated,” never assigned a perfect score.
-- **Reliability:** cursor lag, duplicate/replayed events, retries, stale publication
-  denials, provider drift, queue age and duration of outage/soak scenarios.
-- **Cost/performance:** p50/p95 latency, corpus size, concurrency, CPU/memory,
-  storage growth and model-disclosure rate/cost when inference is actually enabled.
-- **Recovery/security:** restore time, recoverable point, hash/citation integrity,
-  authorization negatives, revocation and independent review findings.
+## Brain API gates
 
-Report sample size, fixture origin, seed/version, runtime/model/image versions,
-environment and known limitations. A generated known-answer corpus proves expected
-behavior on those cases, not accuracy on the owner's entire mailbox.
+- Search/answer/expand/evidence pagination and byte/token budgets are enforced.
+- Citations resolve to hash-verified evidence; revocation invalidates all derived access.
+- Claude, Grok, ChatGPT and reference clients pass one provider-neutral contract suite.
+- Prompt injection cannot expand scopes, select credentials, invoke arbitrary tools, or
+  turn a proposal into an effect.
+- Cross-tenant/source isolation and enumeration tests pass.
 
-## What a release record contains
+## Privacy, security and operations gates
 
-Create the record with the proposed change/release; do not fill it with assumed passes.
+- Threat model, least-privilege identities, RLS, network isolation, key rotation,
+  dependency/container scans and parser sandbox review are accepted.
+- Retention, export, purge and legal hold cover originals, derivatives, indexes,
+  summaries, caches, logs and backups.
+- Telemetry/content leakage tests pass; remote-model disclosure/consent is verified.
+- Backup/restore, disaster recovery, worker crash, cursor expiry, queue replay,
+  rate-limit and dependency outage drills meet RPO/RTO targets.
+- Dashboards and alerts expose lag/failure without content.
 
-1. User-visible outcome, exclusions, backlog IDs and governing ADRs.
-2. Exact Git SHA, container digests, lockfile, schema/migration level and compatible
-   API/worker versions; private environment/configuration reference without secrets.
-3. Authorization for any live accounts, resources or disclosure, and the accepted
-   data classes/region/budget/retention. An issue title is not that authorization.
-4. Checks and linked results: local skips, real SQL, actual containers, browser,
-   restore, live conformance, load/soak and quality evidence separately.
-5. Each applicable gate's disposition, named reviewer/owner and unresolved risks.
-6. Rollout/stop criteria, exact rollback or forward-repair procedure, migration
-   compatibility and treatment of outstanding processing approvals after restore.
-7. Operational owner, alerts, incident path, recovery artifacts/key custody and
-   post-release verification. Do not store backup archives or keys in this record.
+## FileOS cutover gates
 
-Latest verified builds are in [BUILD_RECEIPT.md](BUILD_RECEIPT.md). Follow
-[DEPLOYMENT.md](DEPLOYMENT.md), [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) and
-[RESTORE_DRILL.md](RESTORE_DRILL.md) for the corresponding operational contracts.
+- Pinned donor provenance and inventory are complete.
+- Golden, fault-injection, scale and read-only shadow comparisons pass.
+- Safe-effect broker equivalence is proven separately if effects are in scope.
+- Bounded cohort cutover and rollback are rehearsed.
+- Owner accepts results and explicitly authorizes broader switch.
+- FOS-Master rename/retirement is not bundled with initial cutover.
+
+## Initial read-only release decision
+
+Release requires all applicable gates above, no unresolved critical/high security or
+data-loss defect, complete operator/user documentation, and a signed exception record
+for any deferred non-critical item. Local test skips are not passes.

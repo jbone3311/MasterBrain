@@ -1,146 +1,95 @@
-# Roadmap
+# MasterBrain Roadmap
 
-Updated 2026-09-21. This delivery order supersedes the initial phase numbering;
-it does not grant new permissions. Dates depend on evidence and owner approvals,
-not optimistic calendar promises. [Backlog IDs](BACKLOG.md) remain stable.
-
-## Current position
-
-The synthetic foundation is substantial: Fastmail worker/checkpoints, PostgreSQL
-RLS/FTS, immutable evidence, attachment receipts, narrow reviewed virtual rules,
-encrypted local objects, restricted MIME jobs and owner processing controls.
-Real PostgreSQL, actual restricted-container and disposable restore tests run in
-CI. No production phase is complete. Live enrollment, hosted identity/storage,
-worker supervision, production binary-intake policy, operational acceptance and Factory bind remain.
+Roadmap entries are targets, not implementation claims. Gates are dependency-ordered.
 
 ## Next build packages
 
-Alongside identity/hosting, ADR-046 now supplies a synthetic owner-reviewed
-[travel/bill memory slice](STRUCTURED_MEMORY.md), with independent assistant
-change cursors. Next prove a complete travel correction/cancellation workflow,
-replace the developer JSON editor with guided fields, and evaluate candidate
-extraction on held-out realistic mail. Do not equate this slice with automatic
-mailbox interpretation or delay all product usability learning until hosting.
+DC-004C now has accepted isolated ZIP/TAR inventory, append-only manifests,
+persisted-hash-bound member reads, explicit text publication/search/batches and an
+exact retained-history PDF/Office derivative command chained across two restricted
+images, plus a separately ranked current-only archive-document layer with an exact
+parent/member/receipt fence. Private document preview and sealed document batches are
+implemented. The image/OCR donor inventory, closed protocol, isolated worker, real
+container, golden parity gate, explicit one-member archive composition and append-only
+retained-history image derivative are also implemented. The private operator for one
+explicit inventory/member/key using both immutable worker images and the accepted
+transaction is accepted at revision `f658ace` with hosted
+CI/container and populated restore green. The next package is 5D current-only
+archive-image OCR search. [GitHub issue #10](https://github.com/jbone3311/CW-EmailBrain/issues/10)
+prepares an independent 5B review and 5D proposal for Claude on a separate branch and
+PR; no Claude branch or PR has been submitted yet. Automatic selection, fan-out,
+KnowledgeCore projection and all source effects remain later packages.
 
-These are the remaining delivery packages, not a list of components to rebuild.
+In parallel, ADR-093 establishes a synthetic full-inventory FileOS shadow gate.
+It must be extended across unreadable, dataless, oversize and race cases
+before a separate policy ADR can change snapshots. Consecutive completed-run,
+absence and index-visibility tests are required before any FileOS cutover.
 
-ADR-042 now supplies the optional [browser session backend](BROWSER_AUTH.md).
-ADR-043 supplies private operator/TLS configuration. Package 1 next wires owner UI, followed by
-actual browser acceptance. A fake HTTPS test client does not prove browser cookies,
-deployed TLS, MFA or hosted availability.
+## Phase 0 — Identity and baseline (current)
 
-| Order | Package | Completion evidence |
-|---|---|---|
-| 1 | **Identity lifecycle (EB-007/021):** browser sign-in/session and enrollment/revocation controls over ADR-040's implemented API token/mapping foundation | New ADR; fake authorization server, callback/session/CSRF and revocation tests; browser acceptance; real issuer policy/enrollment only with approval |
-| 2 | **Independent operation (EB-005/008/009):** hosted storage adapters, key recovery, supervision, enrollment administration, rate limits and alerts | Synthetic adapter contracts first; approved environment, DB/object/key restore, restart and alert-delivery proof before promotion |
-| Alongside 1–2 | **Owner/document acceptance (EB-006/021/023):** browser/accessibility checks, broader held-out documents and an explicit scanner/live coverage policy | Actual browser and restricted-host evidence, per-format quality/deferral results; no implied Office/OCR support |
-| 3 | **Read-only pilot:** one explicitly authorized disposable mailbox | Provider conformance, multi-day staging soak, security review, stop/rollback procedure and owner acceptance |
+- Establish MasterBrain product identity and layer ownership.
+- Preserve EmailBrain as the Email capability and FOS-Master as untouched donor.
+- Inventory Email implementation, FOS tools/tests/schema, and migration candidates.
+- Pin donor provenance and create a synthetic parity framework.
+- Extract the first read-only hash/dedupe tranche.
 
-ADR-040 supplies the [access-token/SQL mapping foundation](IDENTITY_AUTH.md); do not
-rebuild that slice. The next identity package starts with its own ADR; it does not create cloud accounts, app
-registrations or public ingress. A token verifier alone is not browser login,
-MFA, member invitations or authenticated MCP. Those boundaries must be explicit
-in the implementation and acceptance record. See the
-[Factory assignment](FACTORY_HANDOFF.md#suggested-next-issue).
+Exit: documentation is internally consistent; baseline commits are recorded; CI runs
+DataCore unit tests and the live-donor parity command is reproducible.
 
-Existing foundations to reuse: the [read command](READ_CONTROLLER.md),
-[MIME recovery command](PROCESSING_CONTROLLER.md), [PDF command](DOCUMENT_CONTROLLER.md),
-[document owner UI](DOCUMENT_REVIEW_SCREEN.md) and
-[known-answer mailbox](TEST_MAILBOX_PLAN.md). These have bounded synthetic
-implementations, not hosted supervision or live acceptance. The API never
-receives Docker authority. Keep the three worker identities and their approvals separate.
+## Phase 1 — DataCore read path
 
-Some work can proceed independently. Provider conformance cannot be declared
-complete from local capture alone, and production deployment cannot precede identity.
+- Define source/evidence/provenance contracts and additive schema.
+- Add read-only FileOS scanning in shadow mode.
+- Consolidate file/attachment type detection, extraction, metadata, OCR policy,
+  normalization, deterministic chunks and lexical indexing.
+- Unify jobs, leases, receipts, freshness and reconciliation.
 
-## Milestone 1 — Reproducible synthetic foundation
+Exit: Email and synthetic FileOS items traverse one source-neutral DataCore path with
+no evidence loss; golden and shadow parity meet documented tolerances.
 
-Scope: preserve source, normalize/account for every part, durable cursors,
-search/evidence, owner review, forced RLS, replay and restore.
+## Phase 2 — KnowledgeCore
 
-Current: implemented bounded slices; source/CI evidence is in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
+- Build evidence-backed entities, aliases, relationships, claims, contradictions,
+  events/timeline, projects and commitments.
+- Migrate narrow Email memory and FOS fact lessons into versioned projections.
+- Add evaluation sets for identity resolution, temporal correction and retrieval.
 
-Exit: locked tests reproducible; migration/grant negatives pass; crashed/replayed
-events cannot skip evidence; account isolation and restored hashes/search hold.
-No claim of live mail, model quality or hosted durability.
+Exit: representative cross-source questions are answered from deterministic retrieval
+with correct citations, conflict handling, freshness and rebuild proof.
 
-## Milestone 2 — Independent read-only pilot
+## Phase 3 — Brain API and clients
 
-Scope: one provider (Fastmail engineering default, owner choice pending), approved
-enrollment/backfill, supervision, hosted Postgres/objects, recoverable keys,
-OIDC/MFA, current-owner access, rate limits, audit export and operator alerts.
-Selected document extraction either passes isolated acceptance or stays explicitly
-deferred under an approved pilot coverage policy.
+- Implement progressive search/expand/evidence/change-feed contracts.
+- Add client-neutral authentication/scopes and adapters for Claude, Grok, ChatGPT and
+  other approved clients.
+- Enforce budgets, redaction, revocation and content-safe audit.
 
-Exit: disposable-mailbox bootstrap/change/expiry/reconciliation tests; multi-day
-bounded soak with restarts/outages; independent DB+object+key restore; private
-networking/authorization review; approved retention and incident owner. All real
-account use and paid resources require explicit approval.
+Exit: each client passes the same authorization, compactness, citation, revocation and
+prompt-injection suites; no client has general storage/source authority.
 
-## Milestone 3 — Useful understanding and organization
+## Phase 4 — Hosted read-only acceptance
 
-Scope: richer reviewed rules/protected classes, supported PDF/Office/OCR extraction,
-evaluated local candidates, relational people/projects/threads/obligations, temporal
-corrections and reversible merges. Keep lexical search and no-model operation.
+- Complete browser identity lifecycle, managed storage/keys, supervision, alerts,
+  backups/restores and incident runbooks.
+- Enroll one disposable Email account and one bounded FileOS root, then expand only
+  after acceptance.
 
-Current: narrow virtual sender rules, a fake-tested optional local adapter and a
-separate synthetic PDF approval/extraction/search backend and owner controls. State
-projectors and evaluated production interpretation remain open; explicit
-synthetic operator execution is now available separately from MIME recovery.
+Exit: all [release acceptance](RELEASE_ACCEPTANCE.md) read-only gates pass.
 
-Exit: held-out retrieval/extraction/classification results with sample sizes,
-abstention and error costs; evidence links valid; stale facts supersede correctly;
-rule rollback tested; no inference path can execute actions. A generated answer
-key is necessary but not a real-world quality certificate.
+## Phase 5 — FileOS cutover
 
-## Milestone 4 — Assistant and authorized team access
+- Shadow FOS-Master in production-like operation; compare inventory, hashes, metadata,
+  extraction, index, queries, errors and performance.
+- Cut over a bounded cohort with rollback, then broaden gradually.
 
-Scope: REST-backed official MCP adapter, audience/scope-aware OAuth, explicit
-member/account/project grants, invitations/revocation and tested client support.
+Exit: sustained accepted parity and owner sign-off. Only then consider folding or
+renaming FOS-Master; deletion/retirement remains a separate decision.
 
-Exit: Grok/ChatGPT/Claude compatibility recorded individually; no raw SQL/token
-passthrough; authorization before retrieval/cache candidates; revoked access cannot
-reappear through stale UI/caches; independent cross-tenant/resource tests pass.
+## Phase 6 — Reviewed actions
 
-## Milestone 5 — Controlled mailbox effects
+- Add typed proposals, policy, preview/approval and narrowly scoped executors for
+  selected mailbox/file actions.
+- Migrate quarantine/move/dedupe brokers only after adversarial safety tests.
 
-Scope: previewed labels/folders/moves/flags/archive and provider drafts; separate
-executor/credentials, expiring exact-intent approval, outbox, kill switch and
-uncertain-outcome reconciliation. No automatic send/permanent deletion.
-
-Exit: separately approved ADR and disposable write-account tests; duplicate and
-out-of-order commands cannot bypass policy; ambiguous responses reconciled before
-retry; compensation limits shown to owner; every effect audited. Never promise
-universal exactly-once delivery or that sent mail can be unsent.
-
-## Milestone 6 — Measured expansion
-
-Scope: durable Gmail/Graph/IMAP workers and notification lifecycles; hybrid
-FTS/vector retrieval if measured beneficial; approved remote inference with
-disclosure/retention/budget rules; optional encrypted local read cache.
-
-Exit: per-provider conformance; lexical-versus-hybrid comparison; permission-safe
-candidate retrieval; model version/quality/disclosure receipts; offline edge
-behavior and revocation tested. Do not add a graph database without measured need.
-
-## Continuous release gates
-
-The [worked product scenario](PRODUCT_WALKTHROUGH.md) is a useful acceptance
-walkthrough, not proof of implementation. Update its status alongside the
-[documentation maintenance checklist](DOCUMENTATION_STANDARD.md) when a milestone advances.
-
-- Every behavior change: ADR where required, implementation/tests/docs together,
-  migration compatibility, telemetry, rollback and exact-commit evidence.
-- Every dependency: pinned versions, license/provenance/advisory review and an
-  adapter escape hatch. SBOM/signature automation remains backlog work.
-- Every release: distinguish local skips, real DB tests, actual containers,
-  browser checks, live acceptance and soak. No promotion on test count alone.
-- Every dataset: provenance, privacy/rights, bounded offline execution, known
-  outcomes and separate development/test cases. [Test plan](TEST_MAILBOX_PLAN.md).
-- Every hosted operation: independent product identities, budgets, alert ownership,
-  retention/purge and tested recovery. Factory is not a runtime dependency.
-
-See [PRD](PRD.md) for numeric quality/SLO targets and [open choices](OPEN_QUESTIONS.md)
-for decisions that block live rollout but not safe synthetic implementation.
-Use the [release acceptance record](RELEASE_ACCEPTANCE.md) to collect evidence for
-each promotion; passing a component suite does not close a whole milestone.
+Exit: idempotency, audit, rollback, legal hold, batch caps and human control are proven.
+Automatic sending and permanent deletion remain out of scope unless separately approved.

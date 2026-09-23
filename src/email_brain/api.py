@@ -39,6 +39,16 @@ from email_brain.schemas import (
     SearchRequest,
 )
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
+from masterbrain.datacore.persistence import DataCoreStore, SearchHit
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import KnowledgePublishRequest, KnowledgeSearchRequest
+from masterbrain.schemas import (
+    BrainSearchRequest,
+    CurrentGroupedSearchRequest,
+    EmailFamilySearchRequest,
+    EvidenceContentRequest,
+    UnifiedSearchRequest,
+)
 
 log = logging.getLogger("email_brain.requests")
 WEB = Path(__file__).parent / "web"
@@ -86,6 +96,8 @@ def create_app(
     store: Store,
     registry: Authenticator,
     *,
+    brain_store: DataCoreStore | None = None,
+    knowledge_store: KnowledgeCore | None = None,
     recovery_parser_version: str | None = None,
     document_processor_version: str | None = None,
     browser_auth: BrowserAuth | None = None,
@@ -93,7 +105,7 @@ def create_app(
     if browser_auth is not None and browser_auth.authenticator is not registry:
         raise ValueError("browser and API must share the same authenticator")
     app = FastAPI(
-        title="Email Brain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
+        title="MasterBrain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
     )
     app.add_middleware(BodyLimit)
     bearer = HTTPBearer(auto_error=False)
@@ -103,6 +115,8 @@ def create_app(
     document_jobs = DocumentJobs(store, document_processor_version)
     message_reader = MessageReader(store)
     memory = Memory(store)
+    brain = brain_store or DataCoreStore(store)
+    knowledge = knowledge_store or KnowledgeCore(store)
     if browser_auth is not None:
         if browser_auth.authenticator.store is not store:
             raise ValueError("browser and API must share the same Store")
@@ -355,6 +369,403 @@ def create_app(
             "untrusted_content": True,
             "results": store.search(principal.context, body),
         }
+
+    @app.post("/v1/brain/search")
+    def brain_search(
+        body: BrainSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        hits = brain.search(principal.context, body.query, limit=body.limit)
+        return {
+            "mode": "lexical",
+            "results": [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ],
+            "page": {"next_cursor": None, "truncated": False},
+            "policy": {"scope": "brain.search", "redactions": []},
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/unified-search")
+    def unified_search(
+        body: UnifiedSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        if "knowledge.search" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        evidence_hits = (
+            brain.search_current_fileos(principal.context, body.query, limit=body.evidence_limit)
+            if body.evidence_visibility == "current_fileos"
+            else brain.search(principal.context, body.query, limit=body.evidence_limit)
+        )
+        knowledge_hits = knowledge.search(
+            principal.context,
+            body.query,
+            limit=body.knowledge_limit,
+            kinds=list(body.knowledge_kinds),
+        )
+        return {
+            "mode": "grouped_lexical",
+            "ranking": "within_layer_only",
+            "evidence_visibility": (
+                "current_fileos_active_generations"
+                if body.evidence_visibility == "current_fileos"
+                else "retained_history_compatible"
+            ),
+            "layers": {
+                "evidence": [
+                    {
+                        "chunk_id": hit.chunk_id,
+                        "document_id": hit.document_id,
+                        "evidence_id": hit.evidence_id,
+                        "source_id": hit.source_id,
+                        "locator": hit.locator,
+                        "excerpt": hit.excerpt,
+                        "rank": hit.rank,
+                    }
+                    for hit in evidence_hits
+                ],
+                "knowledge": [
+                    {
+                        "object_kind": hit.object_kind,
+                        "object_id": hit.object_id,
+                        "title": hit.title,
+                        "excerpt": hit.excerpt,
+                        "rank": hit.rank,
+                        "evidence_ids": hit.evidence_ids,
+                    }
+                    for hit in knowledge_hits
+                ],
+            },
+            "limits": {
+                "evidence": body.evidence_limit,
+                "knowledge": body.knowledge_limit,
+            },
+            "policy": {"scopes": ["brain.search", "knowledge.search"], "redactions": []},
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/current-search")
+    def current_grouped_search(
+        body: CurrentGroupedSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        if "knowledge.search" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        fileos_hits = brain.search_current_fileos(
+            principal.context, body.query, limit=body.fileos_limit
+        )
+        archive_member_hits = brain.search_current_archive_members(
+            principal.context, body.query, limit=body.archive_member_limit
+        )
+        archive_document_hits = brain.search_current_archive_documents(
+            principal.context, body.query, limit=body.archive_document_limit
+        )
+        email_hits = brain.search_current_email_family(
+            principal.context,
+            body.query,
+            message_limit=body.email_message_limit,
+            attachment_limit=body.email_attachment_limit,
+            document_limit=body.email_document_limit,
+        )
+        knowledge_hits = knowledge.search(
+            principal.context,
+            body.query,
+            limit=body.knowledge_limit,
+            kinds=list(body.knowledge_kinds),
+        )
+
+        def evidence(hits: tuple[SearchHit, ...] | list[SearchHit]) -> list[dict[str, Any]]:
+            return [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ]
+
+        return {
+            "mode": "grouped_current_sources",
+            "ranking": "within_group_only",
+            "consistency": "independent_layer_reads",
+            "coverage": {
+                "fileos": "sources_with_active_generation_only",
+                "archive_members": "explicitly_published_current_archive_members_only",
+                "archive_documents": ("explicitly_published_current_archive_documents_only"),
+                "email": "explicitly_bridged_current_only",
+                "knowledge": "reviewed_retained_assertions",
+                "complete": False,
+            },
+            "layers": {
+                "fileos": evidence(fileos_hits),
+                "archive_members": evidence(archive_member_hits),
+                "archive_documents": evidence(archive_document_hits),
+                "email_messages": evidence(email_hits.messages),
+                "email_attachments": evidence(email_hits.attachments),
+                "email_documents": evidence(email_hits.documents),
+                "knowledge": [
+                    {
+                        "object_kind": hit.object_kind,
+                        "object_id": hit.object_id,
+                        "title": hit.title,
+                        "excerpt": hit.excerpt,
+                        "rank": hit.rank,
+                        "evidence_ids": hit.evidence_ids,
+                    }
+                    for hit in knowledge_hits
+                ],
+            },
+            "limits": {
+                "fileos": body.fileos_limit,
+                "archive_members": body.archive_member_limit,
+                "archive_documents": body.archive_document_limit,
+                "email_messages": body.email_message_limit,
+                "email_attachments": body.email_attachment_limit,
+                "email_documents": body.email_document_limit,
+                "knowledge": body.knowledge_limit,
+            },
+            "policy": {"scopes": ["brain.search", "knowledge.search"], "redactions": []},
+            "untrusted_content": True,
+        }
+
+    @app.get("/v1/brain/evidence/{evidence_id}")
+    def brain_evidence(
+        evidence_id: str,
+        principal: Annotated[Principal, Depends(require("brain.evidence.read"))],
+    ) -> dict[str, Any]:
+        return brain.evidence(principal.context, evidence_id)
+
+    @app.post("/v1/brain/evidence/{evidence_id}/content")
+    def brain_evidence_content(
+        evidence_id: str,
+        body: EvidenceContentRequest,
+        principal: Annotated[Principal, Depends(require("brain.content.read"))],
+    ) -> dict[str, Any]:
+        return brain.evidence_content(principal.context, evidence_id, max_chars=body.max_chars)
+
+    @app.get("/v1/brain/changes")
+    def brain_changes(
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        after: str | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return brain.changes(principal.context, after=after, limit=limit)
+
+    @app.get("/v1/brain/current-coverage")
+    def brain_current_coverage(
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        after: str | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return brain.current_coverage(principal.context, after=after, limit=limit)
+
+    @app.get("/v1/brain/sources/{source_id}/freshness")
+    def brain_source_freshness(
+        source_id: str,
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+    ) -> dict[str, Any]:
+        return brain.fileos_freshness(principal.context, source_id)
+
+    @app.get("/v1/brain/sources/{source_id}/inventory")
+    def brain_source_inventory(
+        source_id: str,
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+    ) -> dict[str, Any]:
+        return brain.fileos_inventory(principal.context, source_id)
+
+    @app.get("/v1/brain/sources/{source_id}/rebuild-preview")
+    def brain_source_rebuild_preview(
+        source_id: str,
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        after: str | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return brain.fileos_rebuild_preview(principal.context, source_id, after=after, limit=limit)
+
+    @app.get("/v1/brain/sources/{source_id}/index")
+    def brain_source_index_status(
+        source_id: str,
+        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+    ) -> dict[str, Any]:
+        return brain.fileos_index_status(principal.context, source_id)
+
+    @app.post("/v1/brain/sources/{source_id}/search")
+    def brain_source_active_search(
+        source_id: str,
+        body: BrainSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        hits = brain.search_fileos_active(
+            principal.context, source_id, body.query, limit=body.limit
+        )
+        return {
+            "source_id": source_id,
+            "results": [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ],
+            "active_generation_only": True,
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/fileos-search")
+    def brain_current_fileos_search(
+        body: BrainSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        hits = brain.search_current_fileos(principal.context, body.query, limit=body.limit)
+        return {
+            "results": [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ],
+            "visibility": "current_fileos_active_generations",
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/email-search")
+    def brain_current_email_search(
+        body: BrainSearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        hits = brain.search_current_email(principal.context, body.query, limit=body.limit)
+        return {
+            "results": [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ],
+            "visibility": "current_bridged_email",
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/email-family-search")
+    def brain_current_email_family_search(
+        body: EmailFamilySearchRequest,
+        principal: Annotated[Principal, Depends(require("brain.search"))],
+    ) -> dict[str, Any]:
+        family = brain.search_current_email_family(
+            principal.context,
+            body.query,
+            message_limit=body.message_limit,
+            attachment_limit=body.attachment_limit,
+            document_limit=body.document_limit,
+        )
+
+        def compact(hits: tuple[SearchHit, ...]) -> list[dict[str, Any]]:
+            return [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ]
+
+        return {
+            "layers": {
+                "messages": compact(family.messages),
+                "attachments": compact(family.attachments),
+                "documents": compact(family.documents),
+            },
+            "visibility": "current_bridged_email_family",
+            "ranking": "within_layer_only",
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/knowledge/assertions", status_code=201)
+    def publish_knowledge(
+        body: KnowledgePublishRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        result = knowledge.publish(principal.context, body.assertion, idempotency_key)
+        return {
+            "object_kind": result.object_kind,
+            "object_id": result.object_id,
+            "changed": result.changed,
+            "reviewed": True,
+        }
+
+    @app.post("/v1/knowledge/search")
+    def search_knowledge(
+        body: KnowledgeSearchRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.search"))],
+    ) -> dict[str, Any]:
+        hits = knowledge.search(
+            principal.context, body.query, limit=body.limit, kinds=list(body.kinds)
+        )
+        return {
+            "results": [
+                {
+                    "object_kind": hit.object_kind,
+                    "object_id": hit.object_id,
+                    "title": hit.title,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                    "evidence_ids": hit.evidence_ids,
+                }
+                for hit in hits
+            ],
+            "page": {"next_cursor": None, "truncated": False},
+            "untrusted_content": True,
+        }
+
+    @app.get("/v1/knowledge/changes")
+    def knowledge_changes(
+        principal: Annotated[Principal, Depends(require("knowledge.changes.read"))],
+        after: str | None = None,
+        limit: Annotated[int, Query(ge=1, le=50)] = 25,
+    ) -> dict[str, Any]:
+        return knowledge.changes(principal.context, after=after, limit=limit)
+
+    @app.get("/v1/knowledge/{kind}/{object_id}")
+    def knowledge_object(
+        kind: str,
+        object_id: str,
+        principal: Annotated[Principal, Depends(require("knowledge.read"))],
+    ) -> dict[str, Any]:
+        return knowledge.get(principal.context, kind, object_id)
 
     @app.get("/v1/accounts/{account_id}/quarantine")
     def quarantine(

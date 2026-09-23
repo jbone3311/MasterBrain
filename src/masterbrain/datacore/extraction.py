@@ -1,0 +1,404 @@
+"""Bounded, read-only FileOS extraction with source-version revalidation."""
+
+from __future__ import annotations
+
+import codecs
+import csv
+import io
+from collections import Counter
+from collections.abc import Callable, Mapping
+from dataclasses import asdict, dataclass, field
+from enum import StrEnum
+from html.parser import HTMLParser
+from pathlib import Path, PurePosixPath
+from typing import Any, Protocol
+from uuid import UUID
+
+from email_brain.domain.models import TenantContext
+from masterbrain.datacore.confined_files import (
+    ConfinedFileChanged,
+    ConfinedFileTooLarge,
+    ConfinedFileUnavailable,
+    read_confined_file,
+)
+from masterbrain.datacore.document_contract import (
+    MAX_DOCUMENT_BYTES,
+    DocumentResult,
+    DocumentUnavailable,
+)
+from masterbrain.datacore.fileos import fileos_root_binding_sha256
+from masterbrain.datacore.persistence import (
+    FILEOS_TEXT_EXTRACTOR_VERSION,
+    DataCoreStore,
+    ImportResult,
+    PublishedDocument,
+    fileos_manifest_root_binding_sha256,
+)
+
+EXTRACTOR_VERSION = FILEOS_TEXT_EXTRACTOR_VERSION
+MAX_SOURCE_BYTES = 1_048_576
+SUPPORTED_SUFFIXES = frozenset({".txt", ".md", ".html", ".htm", ".csv"})
+DOCUMENT_SUFFIXES = frozenset({".pdf", ".docx", ".xlsx"})
+
+
+class DocumentProcessor(Protocol):
+    @property
+    def processor_version(self) -> str: ...
+
+    def extract(
+        self,
+        raw: bytes,
+        *,
+        version_id: str,
+        locator: str,
+        sha256: str,
+        media_type: str,
+    ) -> DocumentResult: ...
+
+
+class ExtractionStatus(StrEnum):
+    EXTRACTED = "extracted"
+    EMPTY = "empty"
+    UNSUPPORTED = "unsupported"
+    DEFERRED = "deferred"
+    CHANGED = "changed"
+    FAILED = "failed"
+
+
+@dataclass(frozen=True, slots=True)
+class ExtractionResult:
+    version_id: str
+    locator: str
+    status: ExtractionStatus
+    text: str = ""
+    error_code: str | None = None
+    metadata: Mapping[str, str | int | bool] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class PublishedExtraction:
+    extraction: ExtractionResult
+    publication: PublishedDocument | None
+
+
+@dataclass(frozen=True, slots=True)
+class SnapshotPublication:
+    imported: ImportResult
+    results: tuple[PublishedExtraction, ...]
+    counts: Mapping[str, int]
+
+
+class _HTMLStripper(HTMLParser):
+    """FOS-Master-compatible structural HTML text projection."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.result: list[str] = []
+        self.skip_tags = {"script", "style", "head"}
+        self._skip = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        del attrs
+        if tag in self.skip_tags:
+            self._skip = True
+        elif tag in {"p", "div", "br", "h1", "h2", "h3", "h4", "h5", "h6", "li", "tr"}:
+            self.result.append("\n")
+        elif tag in {"td", "th"}:
+            self.result.append(" ")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self.skip_tags:
+            self._skip = False
+
+    def handle_data(self, data: str) -> None:
+        if not self._skip:
+            self.result.append(data)
+
+    def text(self) -> str:
+        return "".join(self.result).strip()
+
+
+def _decode(raw: bytes) -> tuple[str, dict[str, str | int | bool]]:
+    metadata: dict[str, str | int | bool]
+    if raw.startswith(codecs.BOM_UTF32_LE) or raw.startswith(codecs.BOM_UTF32_BE):
+        text, metadata = raw.decode("utf-32"), {}
+    elif raw.startswith(codecs.BOM_UTF16_LE) or raw.startswith(codecs.BOM_UTF16_BE):
+        text, metadata = raw.decode("utf-16"), {}
+    else:
+        try:
+            text, metadata = raw.decode("utf-8-sig"), {}
+        except UnicodeDecodeError:
+            text, metadata = raw.decode("latin-1"), {"encoding_uncertain": True}
+    return text.replace("\r\n", "\n").replace("\r", "\n"), metadata
+
+
+def _extract_bytes(
+    locator: str, version_id: str, raw: bytes
+) -> tuple[ExtractionStatus, str, str | None, dict[str, str | int | bool]]:
+    suffix = PurePosixPath(locator).suffix.lower()
+    if suffix not in SUPPORTED_SUFFIXES:
+        return ExtractionStatus.UNSUPPORTED, "", "unsupported_type", {"suffix": suffix or "none"}
+    try:
+        text, metadata = _decode(raw)
+        if "\x00" in text:
+            return ExtractionStatus.FAILED, "", "nul_text", metadata
+        if suffix in {".html", ".htm"}:
+            stripper = _HTMLStripper()
+            stripper.feed(text)
+            lines = [line.strip() for line in stripper.text().splitlines()]
+            text = "\n".join(line for line in lines if line)
+        elif suffix == ".csv":
+            rows = list(csv.reader(io.StringIO(text)))
+            metadata["row_count"] = max(0, len(rows) - 1)
+            metadata["column_count"] = len(rows[0]) if rows else 0
+        text = text.strip()
+        metadata.update(
+            {
+                "char_count": len(text),
+                "word_count": len(text.split()),
+                "extractor_version": EXTRACTOR_VERSION,
+            }
+        )
+        status = ExtractionStatus.EXTRACTED if text else ExtractionStatus.EMPTY
+        return status, text, None, metadata
+    except (UnicodeError, csv.Error):
+        return ExtractionStatus.FAILED, "", "decode_or_parse_failed", {}
+
+
+def extract_source_version(
+    root: Path,
+    item: Mapping[str, Any],
+    *,
+    max_bytes: int = MAX_SOURCE_BYTES,
+) -> ExtractionResult:
+    """Revalidate one source-bound version and extract without source writes."""
+    locator = item.get("locator")
+    version_id = item.get("version_id")
+    digest = item.get("digest")
+    declared_size = item.get("size_bytes")
+    if (
+        not isinstance(locator, str)
+        or not isinstance(version_id, str)
+        or not isinstance(digest, Mapping)
+        or not isinstance(declared_size, int)
+        or isinstance(declared_size, bool)
+        or digest.get("algorithm") != "sha256"
+        or not isinstance(digest.get("value"), str)
+    ):
+        raise ValueError("invalid source-version item")
+    relative = PurePosixPath(locator)
+    if not locator or relative.is_absolute() or ".." in relative.parts or "\\" in locator:
+        raise ValueError("unsafe source locator")
+    if max_bytes < 1 or max_bytes > MAX_SOURCE_BYTES:
+        raise ValueError("invalid extraction byte bound")
+    if declared_size > max_bytes:
+        return ExtractionResult(
+            version_id,
+            locator,
+            ExtractionStatus.DEFERRED,
+            error_code="source_too_large",
+            metadata={"size_bytes": declared_size},
+        )
+
+    authorized_root = root.resolve(strict=True)
+    if not authorized_root.is_dir():
+        raise ValueError("FileOS root must be a directory")
+    path = authorized_root.joinpath(*relative.parts)
+    try:
+        if path.is_symlink():
+            return ExtractionResult(
+                version_id, locator, ExtractionStatus.FAILED, error_code="symlink_refused"
+            )
+        read = read_confined_file(authorized_root, locator, max_bytes=max_bytes, capture_bytes=True)
+    except ConfinedFileTooLarge:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.DEFERRED, error_code="source_too_large"
+        )
+    except ConfinedFileChanged:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
+        )
+    except (ConfinedFileUnavailable, OSError, RuntimeError, ValueError):
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.FAILED, error_code="source_unavailable"
+        )
+    if read.size_bytes != declared_size:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
+        )
+    if read.sha256 != digest["value"]:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="digest_mismatch"
+        )
+    assert read.raw is not None
+    raw = read.raw
+    status, text, error, metadata = _extract_bytes(locator, version_id, raw)
+    return ExtractionResult(version_id, locator, status, text, error, metadata)
+
+
+def extract_document_source_version(
+    root: Path,
+    item: Mapping[str, Any],
+    processor: DocumentProcessor,
+) -> ExtractionResult:
+    """Revalidate a bounded document before passing bytes into the isolated processor."""
+    locator = item.get("locator")
+    version_id = item.get("version_id")
+    digest = item.get("digest")
+    declared_size = item.get("size_bytes")
+    media_type = item.get("media_type")
+    if (
+        not isinstance(locator, str)
+        or not isinstance(version_id, str)
+        or not isinstance(digest, Mapping)
+        or not isinstance(declared_size, int)
+        or isinstance(declared_size, bool)
+        or not isinstance(media_type, str)
+        or digest.get("algorithm") != "sha256"
+        or not isinstance(digest.get("value"), str)
+    ):
+        raise ValueError("invalid document source-version item")
+    relative = PurePosixPath(locator)
+    if (
+        not locator
+        or relative.is_absolute()
+        or ".." in relative.parts
+        or "\\" in locator
+        or relative.suffix.lower() not in DOCUMENT_SUFFIXES
+    ):
+        raise ValueError("unsafe or unsupported document locator")
+    if declared_size > MAX_DOCUMENT_BYTES:
+        return ExtractionResult(
+            version_id,
+            locator,
+            ExtractionStatus.DEFERRED,
+            error_code="document_byte_limit",
+            metadata={"size_bytes": declared_size},
+        )
+
+    authorized_root = root.resolve(strict=True)
+    if not authorized_root.is_dir():
+        raise ValueError("FileOS root must be a directory")
+    path = authorized_root.joinpath(*relative.parts)
+    try:
+        if path.is_symlink():
+            return ExtractionResult(
+                version_id, locator, ExtractionStatus.FAILED, error_code="symlink_refused"
+            )
+        read = read_confined_file(
+            authorized_root, locator, max_bytes=MAX_DOCUMENT_BYTES, capture_bytes=True
+        )
+    except ConfinedFileTooLarge:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.DEFERRED, error_code="document_byte_limit"
+        )
+    except ConfinedFileChanged:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
+        )
+    except (ConfinedFileUnavailable, OSError, RuntimeError, ValueError):
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.FAILED, error_code="source_unavailable"
+        )
+    if read.size_bytes != declared_size:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
+        )
+    if read.sha256 != digest["value"]:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="digest_mismatch"
+        )
+    assert read.raw is not None
+    raw = read.raw
+    actual = read.sha256
+    try:
+        result = processor.extract(
+            raw,
+            version_id=version_id,
+            locator=locator,
+            sha256=actual,
+            media_type=media_type,
+        )
+    except DocumentUnavailable:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.FAILED, error_code="processor_unavailable"
+        )
+    status = {
+        "extracted": ExtractionStatus.EXTRACTED,
+        "deferred": ExtractionStatus.DEFERRED,
+        "failed": ExtractionStatus.FAILED,
+    }[result.status]
+    metadata = {key: value for key, value in asdict(result.metadata).items() if value is not None}
+    metadata.update(
+        {"extractor_version": processor.processor_version, "format": result.source.format}
+    )
+    return ExtractionResult(
+        version_id,
+        locator,
+        status,
+        result.text,
+        None if status is ExtractionStatus.EXTRACTED else result.reason,
+        metadata,
+    )
+
+
+class FileOSAdapter:
+    def __init__(
+        self, store: DataCoreStore, document_processor: DocumentProcessor | None = None
+    ) -> None:
+        self.store = store
+        self.document_processor = document_processor
+
+    def publish_snapshot(
+        self,
+        ctx: TenantContext,
+        root: Path,
+        manifest: Mapping[str, Any],
+        idempotency_key: UUID,
+        *,
+        code_revision: str,
+        authorize: Callable[[], None] | None = None,
+    ) -> SnapshotPublication:
+        """Import, independently extract each item, and publish successful text."""
+        if authorize is not None:
+            authorize()
+        if fileos_root_binding_sha256(root) != fileos_manifest_root_binding_sha256(manifest):
+            raise ValueError("FileOS root binding changed")
+        imported = self.store.import_fileos_snapshot(ctx, manifest, idempotency_key)
+        raw_items = manifest.get("items")
+        if not isinstance(raw_items, list):
+            raise ValueError("invalid snapshot items")
+        results: list[PublishedExtraction] = []
+        counts: Counter[str] = Counter()
+        for raw_item in raw_items:
+            if authorize is not None:
+                authorize()
+            if not isinstance(raw_item, Mapping):
+                raise ValueError("invalid snapshot item")
+            locator = raw_item.get("locator")
+            suffix = PurePosixPath(locator).suffix.lower() if isinstance(locator, str) else ""
+            extraction = (
+                extract_document_source_version(root, raw_item, self.document_processor)
+                if self.document_processor is not None and suffix in DOCUMENT_SUFFIXES
+                else extract_source_version(root, raw_item)
+            )
+            if authorize is not None:
+                authorize()
+            publication = None
+            if extraction.status is ExtractionStatus.EXTRACTED:
+                publication = self.store.publish_text(
+                    ctx,
+                    extraction.version_id,
+                    extraction.text,
+                    code_revision=code_revision,
+                    normalizer=(
+                        self.document_processor.processor_version
+                        if suffix in DOCUMENT_SUFFIXES and self.document_processor is not None
+                        else EXTRACTOR_VERSION
+                    ),
+                )
+            counts[extraction.status.value] += 1
+            results.append(PublishedExtraction(extraction, publication))
+        if fileos_root_binding_sha256(root) != fileos_manifest_root_binding_sha256(manifest):
+            raise ValueError("FileOS root binding changed during publication")
+        return SnapshotPublication(imported, tuple(results), dict(sorted(counts.items())))

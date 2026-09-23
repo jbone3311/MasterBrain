@@ -387,15 +387,19 @@ def process_raw(raw: bytes) -> bytes:
         raise MimeUnavailable() from None
 
 
-def _resource_limits() -> None:
-    if sys.platform != "linux":
+def _resource_limits(*, max_file_bytes: int = 0) -> None:
+    if (
+        sys.platform != "linux"
+        or type(max_file_bytes) is not int
+        or not 0 <= max_file_bytes <= 32 * 1024 * 1024
+    ):
         raise MimeUnavailable()
     import resource
 
     for limit, value in (
         (resource.RLIMIT_CPU, 10),
         (resource.RLIMIT_AS, 512 * 1024 * 1024),
-        (resource.RLIMIT_FSIZE, 0),
+        (resource.RLIMIT_FSIZE, max_file_bytes),
         (resource.RLIMIT_CORE, 0),
         (resource.RLIMIT_NOFILE, 64),
     ):

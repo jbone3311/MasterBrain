@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "product": {
+    "id": "masterbrain",
+    "name": "MasterBrain",
+    "version": "0.2.0a1",
+    "status": "synthetic-alpha",
+    "repository": "jbone3311/CW-EmailBrain",
+    "repository_rename": "deferred"
+  },
+  "capabilities": {
+    "email": {
+      "legacy_names": ["EmailBrain", "Email Brain", "email_brain", "email-brain"],
+      "role": "internal source capability",
+      "status": "synthetic-prototype"
+    },
+    "fileos": {
+      "donor_repository": "jbone3311/FOS-Master",
+      "donor_commit": "218d5caec2f20b9047fd3eb8e027dc671acf0c15",
+      "role": "internal source capability",
+      "status": "read-only-migration-slice",
+      "cutover": "prohibited-before-parity"
+    }
+  },
+  "shared_layers": ["DataCore", "KnowledgeCore", "Brain API"],
+  "implemented_shared_components": [
+    "DataCore read-only hashing/dedupe and FileOS text extraction",
+    "source-bound isolated FileOS PDF, DOCX and XLSX extraction",
+    "explicit authenticated idempotent FileOS snapshot publication",
+    "append-only FileOS completion receipts and latest-complete freshness",
+    "immutable FileOS completed-inventory and absence reconciliation evidence",
+    "read-only deterministic FileOS rebuild preview",
+    "immutable FileOS index generations, activation receipts and rollback",
+    "explicit private FileOS generation and rollback operator",
+    "current FileOS search across active generations",
+    "explicit current FileOS and KnowledgeCore grouped retrieval",
+    "DataCore persistence, lexical retrieval and progressive Brain API",
+    "reviewed KnowledgeCore assertions, retrieval and changes",
+    "grouped DataCore and KnowledgeCore search",
+    "source and provenance contracts",
+    "read-only FileOS snapshot",
+    "FileOS archive inventory, text, document and image OCR derivatives",
+    "sealed exact-retry archive member publication batches",
+    "current-only Email and FileOS evidence retrieval with coverage status",
+    "root-confined FileOS snapshot and extraction reads",
+    "shared MasterBrain CLI"
+  ],
+  "prohibited_claims": [
+    "FOS-Master retired",
+    "FileOS cut over",
+    "hosted production ready",
+    "unified cross-source synthesis implemented"
+  ]
+}
