@@ -196,8 +196,8 @@ def _selftest() -> int:
         ("__MACOSX/foo/bar.pdf", "junk_dir"),
         ("_SYSTEM/state.json", "operational"),
     ]
-    for rel, exp in preason:
-        got = path_skip_reason(rel)
+    for rel, exp in preason:  # type: ignore[assignment]
+        got = path_skip_reason(rel)  # type: ignore[assignment]
         ok = got == exp
         fails += not ok
         print(f"  {'ok ' if ok else 'FAIL'}  reason {rel!r:48} -> {got} exp={exp}")

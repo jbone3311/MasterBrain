@@ -4,9 +4,10 @@ Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **priva
 
 ## Local FileOS inventory-classifier parity checkpoint
 
-Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15` and the copied
-DataCore classifier have identical SHA-256
-`12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437`.
+Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15` classifier
+SHA-256 is `12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437`.
+The copied DataCore classifier adds only two type-check comments in its standalone
+self-test; removing them reproduces the exact donor hash.
 The explicit read-only donor harness compared 3,000 synthetic paths and reported
 zero mismatches across file, directory, operational-directory, path-reason and prune
 contracts. Twelve focused Python tests and lint passed locally. This is an extracted

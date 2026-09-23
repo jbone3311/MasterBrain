@@ -94,7 +94,8 @@ FileOS inventory classifier extraction adds:
 12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437  _SYSTEM/tools/junk_filter.py
 ```
 
-The target copy has the same digest. See [classifier contract](FILEOS_JUNK_POLICY.md).
+The target differs only by two type-check comments in the donor self-test; the
+comment-stripped copy has this exact digest. See [classifier contract](FILEOS_JUNK_POLICY.md).
 ## Gaps found during inspection
 
 - Common-tool test coverage is uneven: intake/dedupe/extraction are comparatively

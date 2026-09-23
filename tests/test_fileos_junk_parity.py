@@ -17,9 +17,12 @@ from scripts.fileos_junk_parity import (
 )
 
 
-def test_extracted_module_is_byte_identical_to_pinned_donor() -> None:
+def test_extracted_module_differs_only_by_two_type_comments() -> None:
     source = Path(shared.__file__ or "")
-    assert hashlib.sha256(source.read_bytes()).hexdigest() == PINNED_SOURCE_SHA256
+    text = source.read_text(encoding="utf-8")
+    assert text.count("  # type: ignore[assignment]") == 2
+    restored = text.replace("  # type: ignore[assignment]", "")
+    assert hashlib.sha256(restored.encode()).hexdigest() == PINNED_SOURCE_SHA256
 
 
 @pytest.mark.parametrize(

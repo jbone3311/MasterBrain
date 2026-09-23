@@ -45,7 +45,7 @@ FileOS sources ┘       │              │                │
 | Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
 | Typed reviewed travel/bill memory | Working narrow prototype |
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
-| FileOS scanner/reconciler inventory classifier | Extracted byte-for-byte; 3,000-path donor parity, not yet wired into snapshots |
+| FileOS scanner/reconciler inventory classifier | Behavior-identical donor extraction; 3,000-path parity, not yet wired into snapshots |
 | File text/Markdown/HTML/CSV extraction | Working shared prototype |
 | Isolated FileOS PDF/DOCX/XLSX extraction | Implemented; hosted container and restore gates green |
 | Authenticated one-snapshot FileOS publication command | Implemented; hosted PostgreSQL and restore gates green |

@@ -10,7 +10,8 @@ PR. Checkpoint 5C is accepted on `codex/masterbrain-foundation` in PR #4. Any 5D
 implementation requires its own review and hosted gates before integration.
 
 In a separate read-only FileOS parity lane, the pinned donor's scanner/reconciler
-inventory classifier has been copied byte-for-byte into DataCore. A 3,000-path
+inventory classifier has been copied into DataCore with two type-check-only comments
+in its standalone self-test. A 3,000-path
 synthetic live-donor comparison found no classification or pruning differences.
 Snapshot integration awaits an explicit policy decision because the donor scanner
 and DC-001 dedupe defaults differ; no FileOS source behavior changed in this tranche.

@@ -19,7 +19,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Email | Provider drafts, moves, sends, permanent delete | Not implemented | Later reviewed action executor |
 | FileOS | In-place domain scanning and unified index | Implemented in FOS-Master donor | FileOS adapter + DataCore |
 | FileOS | SHA-256 inventory and read-only duplicate reports | Extracted to DataCore; parity harness present | DataCore |
-| FileOS | Scanner/reconciler junk and operational-path classification | Exact donor module extracted; 3,000-path parity green; snapshot integration pending | FileOS adapter + DataCore |
+| FileOS | Scanner/reconciler junk and operational-path classification | Behavior-identical donor module extracted; 3,000-path parity green; snapshot integration pending | FileOS adapter + DataCore |
 | FileOS | Audited safe move/rename, collision diversion, quarantine | Donor only | Later effect broker |
 | FileOS | Held-out-test and cross-domain dedupe protections | Donor only; required invariant | DataCore policy + effect broker |
 | FileOS | Intake classification/routing/preflight | Donor only | FileOS adapter + DataCore |

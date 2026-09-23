@@ -1,11 +1,16 @@
 # FileOS inventory classifier extraction
 
 The pinned FOS-Master scanner and reconciler both import
-`_SYSTEM/tools/junk_filter.py`. MasterBrain now carries an exact, byte-identical
+`_SYSTEM/tools/junk_filter.py`. MasterBrain now carries a behavior-identical
 copy at `src/masterbrain/datacore/fileos_junk_filter.py` for a future shared
 FileOS inventory policy. The donor is `jbone3311/FOS-Master` commit
-`218d5caec2f20b9047fd3eb8e027dc671acf0c15`; both source and copy have
-SHA-256 `12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437`.
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`; its SHA-256 is
+`12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437`.
+The target SHA-256 is
+`0bc54e3597ed90549f505695c9912882c7c7b1cdbd82fade67eb7797c69f3b3b`.
+The **only** difference is two `type: ignore[assignment]` comments in the donor's
+standalone self-test, needed for MasterBrain's strict mypy gate. Removing those
+comments reproduces the pinned donor's exact bytes; the test suite asserts this.
 No donor file was edited.
 
 This is **extracted and parity-tested, not integrated** into `snapshot_tree`,
