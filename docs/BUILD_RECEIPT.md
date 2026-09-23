@@ -2,6 +2,17 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Proposed archive-ledger integrity checkpoint
+
+ADR-099 precedes additive migration 0033 on an isolated branch from the green
+schema/FileOS integration head. It adds deferred child-insert balance checks,
+preflights old inventory ledgers, validates provenance output documents and binds
+archive text/document/image receipt parent versions to the exact inventory.
+Regression tests cover late member/skip inserts, wrong-parent text receipt,
+provenance output and all three FK definitions. Local PostgreSQL is unavailable;
+hosted full CI and populated restore are still required before this is a verified
+checkpoint. No production data repair, FOS-Master edit or cutover is included.
+
 ## Combined schema/FileOS integration checkpoint
 
 The isolated integration branch merges #12–#13 into the exact green #22 FileOS

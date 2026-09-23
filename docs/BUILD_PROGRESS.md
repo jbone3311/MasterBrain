@@ -2,6 +2,13 @@
 
 ## Active checkpoint
 
+**Archive ledger/parent integrity (isolated, unverified).** ADR-099 and proposed
+migration 0033 close the post-seal archive-child insert gap, bind provenance output
+to its normalized document and bind three archive derivative receipt types to the
+exact inventory parent version. Synthetic PostgreSQL regressions and populated
+upgrade expectations are being added on a branch from the green #23 head. Nothing
+in this tranche changes FOS-Master, FileOS source policy or production routing.
+
 **Integration of tested schema and FileOS branches.** A dedicated branch combines
 the separately green migration-integrity/truncation stack (#12–#13) with the
 FileOS root-binding stack (#14–#22). Migration order is 0029 migration repair,
@@ -11,8 +18,9 @@ passed [CI 35893316583](https://github.com/jbone3311/CW-EmailBrain/actions/runs/
 with 2,738 Python tests and
 [populated restore 35893316454](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35893316454).
 Factory review PR #11 independently uses migration number 0029,
-so it cannot be merged unchanged. Its non-overlapping ledger/FK and workflow
-findings need a separately numbered, reviewed follow-up. No FOS-Master edit or
+so it cannot be merged unchanged. Its non-overlapping ledger/FK findings are now
+the separate ADR-099/migration-0033 proposal; workflow suggestions still need
+review. No FOS-Master edit or
 production cutover is part of this integration.
 
 **Checkpoint 5D — current-only archive-image OCR search proposal.** Work is tracked in

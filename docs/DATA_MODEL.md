@@ -116,6 +116,14 @@ on its existing attachment evidence. It records the completed approval job, proc
 policy, extraction revision, result digest, shared identities and bridge provenance;
 it does not read or copy source bytes.
 
+Proposed migration `0033_archive_ledger_parent_integrity.sql` completes the archive
+inventory's deferred ledger check on both child insert paths: a new member or skip
+must leave the sealed count and byte totals equal at commit. It also validates a
+tenant-composite provenance-output document reference and exact inventory-parent
+references for text, document and image archive receipts. It deliberately leaves
+polymorphic provenance inputs unbound to any single evidence table. Existing ledger
+drift or bad references stop migration for reviewed repair; no rows are rewritten.
+
 - **job**, **lease**, **checkpoint**, **inbox**, **outbox**, **idempotency_record**
 - **audit_event**, **policy_decision**, **change_feed**, **retention_action**
 - **schema_version**, **extractor_version**, **model_version**, **restore_receipt**

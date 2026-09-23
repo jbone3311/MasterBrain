@@ -10,6 +10,12 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-099](adr/099_archive_ledger_and_parent_integrity.md) requires archive child
+inserts to keep sealed inventory counts/bytes balanced at commit, binds provenance
+outputs to normalized documents and binds text/document/image receipt parent
+versions to their exact inventory. Migration 0033 is an isolated forward-only
+proposal; hosted PostgreSQL and populated-upgrade verification are pending.
+
 [ADR-098](adr/098_fileos_root_binding.md) binds FileOS intake and completion to a
 versioned physical-root digest. Historical unknown roots are not silently claimed.
 Implemented in isolated PR #22; hosted CI and populated restore passed on the

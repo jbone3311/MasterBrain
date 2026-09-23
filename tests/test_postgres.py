@@ -1170,6 +1170,107 @@ def test_archive_manifest_record_replay_concurrency_and_no_search_effect(
     assert after_changes == before_changes
 
 
+def test_archive_sealed_ledger_rejects_late_members_and_skips(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    _, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_late_archive_child")
+    recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
+    with psycopg.connect(admin) as conn:
+        before = conn.execute(
+            "SELECT (SELECT count(*) FROM brain_archive_members WHERE tenant_id=%s "
+            "AND inventory_id=%s), (SELECT count(*) FROM brain_archive_skips "
+            "WHERE tenant_id=%s AND inventory_id=%s)",
+            (ctx.tenant_id, recorded.inventory_id, ctx.tenant_id, recorded.inventory_id),
+        ).fetchone()
+    with pytest.raises(psycopg.errors.RaiseException, match="invalid archive inventory ledger"):
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO brain_archive_members(tenant_id,inventory_id,ordinal,locator,"
+                "sha256,declared_size,observed_size,media_hint,depth,is_container) "
+                "VALUES (%s,%s,1999,'late.bin',%s,1,1,'application/octet-stream',0,false)",
+                (ctx.tenant_id, recorded.inventory_id, "a" * 64),
+            )
+    with pytest.raises(psycopg.errors.RaiseException, match="invalid archive inventory ledger"):
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO brain_archive_skips "
+                "(tenant_id,inventory_id,ordinal,locator,reason,depth) "
+                "VALUES (%s,%s,2000,'late.skip','unreadable',0)",
+                (ctx.tenant_id, recorded.inventory_id),
+            )
+    with psycopg.connect(admin) as conn:
+        after = conn.execute(
+            "SELECT (SELECT count(*) FROM brain_archive_members WHERE tenant_id=%s "
+            "AND inventory_id=%s), (SELECT count(*) FROM brain_archive_skips "
+            "WHERE tenant_id=%s AND inventory_id=%s)",
+            (ctx.tenant_id, recorded.inventory_id, ctx.tenant_id, recorded.inventory_id),
+        ).fetchone()
+    assert after == before
+
+
+def test_archive_derivative_parent_and_provenance_database_links(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    _, _, result = archive_fixture(core, ctx, tmp_path, source_id="files_archive_fk")
+    recorded = core.record_archive_inventory(ctx, result, ARCHIVE_PROCESSOR, uuid4())
+    target = core.archive_member_target(ctx, recorded.inventory_id, result.members[0].locator)
+    extraction = ExtractionResult(
+        archive_member_version_id(target),
+        target.member_locator,
+        ExtractionStatus.EXTRACTED,
+        "synthetic archive parent link",
+        metadata={"extractor_version": "fileos-text-v1"},
+    )
+    publish_extracted_archive_member_text(
+        core, ctx, target, extraction, code_revision="test-revision", idempotency_key=uuid4()
+    )
+    with psycopg.connect(admin) as conn:
+        constraints = conn.execute(
+            "SELECT conrelid::regclass::text,convalidated,"
+            "pg_get_constraintdef(oid) FROM pg_constraint "
+            "WHERE conname IN ('brain_archive_text_parent_inventory_fk',"
+            "'brain_archive_document_parent_inventory_fk',"
+            "'brain_archive_image_parent_inventory_fk') ORDER BY conname"
+        ).fetchall()
+    assert len(constraints) == 3
+    assert all(
+        validated
+        and "FOREIGN KEY (tenant_id, inventory_id, parent_source_version_id)" in definition
+        and "REFERENCES brain_archive_inventories(tenant_id, id, source_version_id)" in definition
+        for _, validated, definition in constraints
+    )
+    with pytest.raises(psycopg.errors.ForeignKeyViolation):
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO brain_archive_member_text_receipts "
+                "(tenant_id,actor_id,idempotency_key,inventory_id,member_locator,"
+                "parent_source_version_id,parent_evidence_id,source_id,item_id,version_id,"
+                "evidence_id,document_id,normalizer,chunk_count,code_revision,request_hash) "
+                "SELECT tenant_id,actor_id,%s,inventory_id,member_locator,version_id,"
+                "parent_evidence_id,source_id,item_id,version_id,evidence_id,document_id,"
+                "normalizer,chunk_count,code_revision,request_hash "
+                "FROM brain_archive_member_text_receipts WHERE tenant_id=%s "
+                "AND inventory_id=%s LIMIT 1",
+                (uuid4(), ctx.tenant_id, recorded.inventory_id),
+            )
+    with pytest.raises(psycopg.errors.ForeignKeyViolation):
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO brain_provenance(tenant_id,id,output_id,transform,transform_version,"
+                "code_revision,configuration_sha256,created_at) "
+                "VALUES (%s,%s,%s,'synthetic-link','v1','test-revision',%s,now())",
+                (ctx.tenant_id, "provenance_" + uuid4().hex, "missing_" + uuid4().hex, "a" * 64),
+            )
+
+
 def test_archive_manifest_rejects_terminal_drift_and_stale_parent(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:

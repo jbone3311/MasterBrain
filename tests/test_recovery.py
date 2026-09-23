@@ -461,6 +461,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0030_protected_record_truncate_guards.sql",
             "0031_fileos_policy_identity.sql",
             "0032_fileos_root_binding.sql",
+            "0033_archive_ledger_parent_integrity.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -488,6 +489,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             if path.name not in {
                 "0031_fileos_policy_identity.sql",
                 "0032_fileos_root_binding.sql",
+                "0033_archive_ledger_parent_integrity.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -512,6 +514,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
         assert migrate(dsn, directory) == [
             "0031_fileos_policy_identity.sql",
             "0032_fileos_root_binding.sql",
+            "0033_archive_ledger_parent_integrity.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -562,3 +565,70 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
     finally:
         with psycopg.connect(admin, autocommit=True) as conn:
             conn.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(name)))
+
+
+@pytest.mark.postgres
+def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_path):
+    from pathlib import Path
+
+    _, admin = database
+    name = "email_brain_test_archive_ledger_" + uuid4().hex
+    with psycopg.connect(admin, autocommit=True) as conn:
+        conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
+    dsn = make_conninfo(admin, dbname=name)
+    try:
+        directory = Path(__file__).resolve().parents[1] / "migrations"
+        pre_upgrade = tmp_path / "pre_upgrade"
+        pre_upgrade.mkdir()
+        for path in sorted(directory.glob("[0-9][0-9][0-9][0-9]_*.sql")):
+            if path.name != "0033_archive_ledger_parent_integrity.sql":
+                (pre_upgrade / path.name).write_bytes(path.read_bytes())
+        migrate(dsn, pre_upgrade)
+        tenant_id, actor_id = uuid4(), uuid4()
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO tenants(id,name) VALUES (%s,'Synthetic archive upgrade')",
+                (tenant_id,),
+            )
+            conn.execute(
+                "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+                (tenant_id, actor_id),
+            )
+        ctx = pg.datacore_context(pg.TenantContext(tenant_id, actor_id, frozenset(), uuid4()))
+        core = pg.DataCoreStore(Store(dsn))
+        archive_root = tmp_path / "archive"
+        archive_root.mkdir()
+        _, _, result = pg.archive_fixture(
+            core, ctx, archive_root, source_id="files_archive_upgrade"
+        )
+        recorded = core.record_archive_inventory(ctx, result, pg.ARCHIVE_PROCESSOR, uuid4())
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO brain_archive_skips "
+                "(tenant_id,inventory_id,ordinal,locator,reason,depth) "
+                "VALUES (%s,%s,2000,'late.skip','unreadable',0)",
+                (tenant_id, recorded.inventory_id),
+            )
+        with pytest.raises(
+            psycopg.errors.RaiseException, match="existing archive inventory ledger"
+        ):
+            migrate(dsn, directory)
+        with psycopg.connect(dsn) as conn:
+            assert (
+                conn.execute(
+                    "SELECT count(*) FROM brain_archive_skips "
+                    "WHERE tenant_id=%s AND inventory_id=%s",
+                    (tenant_id, recorded.inventory_id),
+                ).fetchone()[0]
+                == 1
+            )
+            assert (
+                conn.execute(
+                    "SELECT count(*) FROM schema_migrations "
+                    "WHERE name='0033_archive_ledger_parent_integrity.sql'"
+                ).fetchone()[0]
+                == 0
+            )
+    finally:
+        with psycopg.connect(admin, autocommit=True) as conn:
+            conn.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
