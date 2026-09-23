@@ -12,6 +12,8 @@ The **only** difference is two `type: ignore[assignment]` comments in the donor'
 standalone self-test, needed for MasterBrain's strict mypy gate. Removing those
 comments reproduces the pinned donor's exact bytes; the test suite asserts this.
 No donor file was edited.
+The live-donor loader suppresses Python bytecode-cache writes while importing the
+pinned module, so comparison does not create cache files in the donor checkout.
 
 This is **extracted and parity-tested, not integrated** into `snapshot_tree`,
 `dedup`, reconciliation or publication. The copied function classifies names and
