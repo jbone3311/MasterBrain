@@ -295,6 +295,57 @@ def test_cli_archive_text_batch_uses_private_plan_and_scrubs_dsn(
     assert dsn not in output
 
 
+def test_cli_archive_document_uses_exact_selection_and_scrubs_dsn(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config = tmp_path / "archive.json"
+    config.write_text("not opened by this dispatch test")
+    dsn = "postgresql://secret:secret@example.invalid/private"
+    inventory = "archive_inventory_" + "d" * 32
+    locator = "documents/report.pdf"
+    key = "93c5a004-81ab-45b6-8652-e8ced2b40e47"
+    monkeypatch.setenv("MASTERBRAIN_DSN", dsn)
+    monkeypatch.setattr(
+        cli,
+        "run_archive_member_document_controller",
+        lambda path, received_dsn, received_inventory, received_locator, received_key, check: {
+            "config": path == config,
+            "dsn": received_dsn == dsn,
+            "inventory": received_inventory == inventory,
+            "locator": received_locator == locator,
+            "key": str(received_key) == key,
+            "check": check,
+            "source_effects": False,
+        },
+    )
+    main(
+        [
+            "fileos",
+            "archive-document",
+            "--config",
+            str(config),
+            "--inventory-id",
+            inventory,
+            "--member-locator",
+            locator,
+            "--idempotency-key",
+            key,
+            "--check",
+        ]
+    )
+    output = capsys.readouterr().out
+    assert json.loads(output) == {
+        "check": True,
+        "config": True,
+        "dsn": True,
+        "inventory": True,
+        "key": True,
+        "locator": True,
+        "source_effects": False,
+    }
+    assert dsn not in output
+
+
 def test_cli_email_bridge_uses_explicit_evidence_and_scrubs_dsn(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

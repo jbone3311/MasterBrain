@@ -1,4 +1,4 @@
-"""Private one-shot operator for one archive-member text derivative."""
+"""Private operators for selected archive-member derivatives."""
 
 from __future__ import annotations
 
@@ -15,11 +15,16 @@ from email_brain.auth import Principal
 from email_brain.processing_controller import WorkerIdentity, _json, _path
 from email_brain.schemas import ClosedModel
 from email_brain.store import Conflict, NotFound, Store
+from masterbrain.datacore.archive_member_document import (
+    extract_archive_member_document,
+    publish_extracted_archive_member_document,
+)
 from masterbrain.datacore.archive_member_processor import DockerArchiveMemberProcessor
 from masterbrain.datacore.archive_member_text import (
     extract_archive_member_text,
     publish_extracted_archive_member_text,
 )
+from masterbrain.datacore.document_processor import DockerDocumentProcessor
 from masterbrain.datacore.extraction import ExtractionStatus
 from masterbrain.datacore.persistence import DataCoreStore
 
@@ -37,6 +42,7 @@ class ArchiveMemberControllerConfig(ClosedModel):
     version: Literal[1]
     root: Path
     archive_image_id: str = Field(pattern=r"^sha256:[a-f0-9]{64}\z")
+    document_image_id: str | None = Field(default=None, pattern=r"^sha256:[a-f0-9]{64}\z")
     docker_binary: Path
     credentials_file: Path
     token_file: Path
@@ -278,6 +284,90 @@ def run_archive_member_plan_controller(
         )
         _current(identity, initial)
         return {"operation": "archive_member_text_plan", **result}
+    except Exception:
+        raise ArchiveMemberControllerError() from None
+
+
+def run_archive_member_document_controller(
+    path: Path,
+    dsn: str,
+    inventory_id: str,
+    member_locator: str,
+    idempotency_key: UUID,
+    *,
+    check: bool = False,
+) -> dict[str, Any]:
+    """Validate or publish one selected archive-member PDF/Office derivative."""
+    try:
+        if not dsn or not isinstance(idempotency_key, UUID):
+            raise ArchiveMemberControllerError()
+        _selection(inventory_id, member_locator)
+        config = ArchiveMemberControllerConfig.model_validate(_json(path))
+        if config.document_image_id is None:
+            raise ArchiveMemberControllerError()
+        root = config.root.resolve(strict=True)
+        if not root.is_dir():
+            raise ArchiveMemberControllerError()
+        identity = WorkerIdentity(
+            config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
+        )
+        initial = identity.authenticate()
+        store = Store(dsn)
+        with store.transaction(initial.context):
+            pass
+        _current(identity, initial)
+        if check:
+            return {
+                "configuration_valid": True,
+                "execution_verified": False,
+                "operation": "archive_member_document",
+                "source_effects": False,
+                "data_effects": False,
+            }
+        core = DataCoreStore(store)
+        target = core.archive_document_member_target(initial.context, inventory_id, member_locator)
+        _current(identity, initial)
+        archive_processor = DockerArchiveMemberProcessor(
+            config.archive_image_id, docker_binary=config.docker_binary
+        )
+        document_processor = DockerDocumentProcessor(
+            config.document_image_id, docker_binary=config.docker_binary
+        )
+        _current(identity, initial)
+        extraction = extract_archive_member_document(
+            root, target, archive_processor, document_processor
+        )
+        if extraction.status is not ExtractionStatus.EXTRACTED:
+            raise ArchiveMemberControllerError()
+        _current(identity, initial)
+        published = publish_extracted_archive_member_document(
+            core,
+            initial.context,
+            target,
+            extraction,
+            code_revision=config.code_revision,
+            idempotency_key=idempotency_key,
+        )
+        _current(identity, initial)
+        counts = {
+            key: value
+            for key, value in extraction.metadata.items()
+            if key.endswith("_count") and isinstance(value, int) and not isinstance(value, bool)
+        }
+        return {
+            "operation": "archive_member_document",
+            "inventory_id": published.inventory_id,
+            "source_id": published.source_id,
+            "item_id": published.item_id,
+            "version_id": published.version_id,
+            "evidence_id": published.evidence_id,
+            "document_id": published.document_id,
+            "format": extraction.metadata["format"],
+            "metadata_counts": counts,
+            "chunks": published.chunks,
+            "changed": published.changed,
+            "source_effects": False,
+        }
     except Exception:
         raise ArchiveMemberControllerError() from None
 

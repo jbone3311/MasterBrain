@@ -22,6 +22,7 @@ from masterbrain import archive_member_controller as controller
 from masterbrain.archive_member_controller import (
     ArchiveMemberControllerError,
     run_archive_member_controller,
+    run_archive_member_document_controller,
 )
 from masterbrain.datacore.archive_contract import source_for
 from masterbrain.datacore.archive_member_contract import decode_result, encode_request
@@ -58,6 +59,11 @@ class LocalArchiveMemberProcessor:
 
 class LocalDocumentProcessor:
     processor_version = CONTRACT + "-synthetic-postgres"
+
+    def __init__(self, image_id: str | None = None, *, docker_binary: Path | None = None) -> None:
+        if image_id is not None:
+            assert image_id == "sha256:" + "b" * 64
+            assert docker_binary == Path("/usr/bin/false")
 
     def extract(self, raw, *, version_id, locator, sha256, media_type):
         return extract_document(
@@ -118,6 +124,7 @@ def setup_operator(
         "version": 1,
         "root": str(root),
         "archive_image_id": "sha256:" + "a" * 64,
+        "document_image_id": "sha256:" + "b" * 64,
         "docker_binary": "/usr/bin/false",
         "credentials_file": str(state / "credentials.json"),
         "token_file": str(state / "token"),
@@ -222,6 +229,55 @@ def test_archive_document_publication_is_replayable_and_retains_no_member_bytes(
                 (first.document_id,),
             ).fetchone()["n"]
             == 2
+        )
+
+
+def test_archive_document_private_command_checks_publishes_and_replays(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    locator = "documents/report.pdf"
+    path, root, inventory_id, _, raw = setup_operator(
+        tmp_path,
+        ctx,
+        store,
+        extra_members={locator: pdf_bytes(("archived pdf operator proof",))},
+    )
+    monkeypatch.setattr(controller, "DockerArchiveMemberProcessor", LocalArchiveMemberProcessor)
+    monkeypatch.setattr(controller, "DockerDocumentProcessor", LocalDocumentProcessor)
+    key = uuid4()
+
+    checked = run_archive_member_document_controller(
+        path, store.dsn, inventory_id, locator, key, check=True
+    )
+    assert checked == {
+        "configuration_valid": True,
+        "execution_verified": False,
+        "operation": "archive_member_document",
+        "source_effects": False,
+        "data_effects": False,
+    }
+    first = run_archive_member_document_controller(path, store.dsn, inventory_id, locator, key)
+    replay = run_archive_member_document_controller(path, store.dsn, inventory_id, locator, key)
+
+    assert first["changed"] is True and replay == {**first, "changed": False}
+    assert first["operation"] == "archive_member_document"
+    assert first["format"] == "pdf"
+    assert first["metadata_counts"]["page_count"] == 1
+    assert first["chunks"] > 0 and first["source_effects"] is False
+    serialized = json.dumps(first) + json.dumps(replay)
+    assert locator not in serialized and "archived pdf operator proof" not in serialized
+    assert (root / "bundle.zip").read_bytes() == raw
+    with store.transaction(pg.datacore_context(ctx)) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_archive_member_document_receipts"
+            ).fetchone()["n"]
+            == 1
         )
 
 

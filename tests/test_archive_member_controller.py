@@ -163,6 +163,90 @@ def test_preview_check_is_non_consuming_and_normal_run_is_exact(
     processor.assert_not_called()
 
 
+def test_archive_document_check_constructs_neither_worker_or_target(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, config, _ = controller_files(tmp_path)
+    config["document_image_id"] = "sha256:" + "b" * 64
+    private_write(path, config)
+    store = MagicMock()
+    monkeypatch.setattr(control, "Store", Mock(return_value=store))
+    archive = Mock(side_effect=AssertionError("check must not construct archive worker"))
+    document = Mock(side_effect=AssertionError("check must not construct document worker"))
+    core = Mock(side_effect=AssertionError("check must not inspect target"))
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", archive)
+    monkeypatch.setattr(control, "DockerDocumentProcessor", document)
+    monkeypatch.setattr(control, "DataCoreStore", core)
+    result = control.run_archive_member_document_controller(
+        path,
+        "runtime-dsn",
+        "archive_inventory_" + "d" * 32,
+        "documents/proof.pdf",
+        uuid4(),
+        check=True,
+    )
+    assert result["operation"] == "archive_member_document"
+    assert result["data_effects"] is False and result["source_effects"] is False
+    archive.assert_not_called()
+    document.assert_not_called()
+    core.assert_not_called()
+
+
+def test_archive_document_runs_exact_target_and_content_free_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, config, _ = controller_files(tmp_path)
+    config["document_image_id"] = "sha256:" + "b" * 64
+    private_write(path, config)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = MagicMock()
+    target = SimpleNamespace()
+    core.archive_document_member_target.return_value = target
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    archive = MagicMock()
+    document = MagicMock()
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", archive)
+    monkeypatch.setattr(control, "DockerDocumentProcessor", document)
+    extraction = SimpleNamespace(
+        status=ExtractionStatus.EXTRACTED,
+        metadata={"format": "pdf", "page_count": 2, "title": "must not escape"},
+    )
+    monkeypatch.setattr(control, "extract_archive_member_document", Mock(return_value=extraction))
+    published = SimpleNamespace(
+        inventory_id="archive_inventory_" + "d" * 32,
+        source_id="files",
+        item_id="archiveitem_opaque",
+        version_id="archiveversion_opaque",
+        evidence_id="evidence_opaque",
+        document_id="document_opaque",
+        chunks=3,
+        changed=True,
+    )
+    publish = Mock(return_value=published)
+    monkeypatch.setattr(control, "publish_extracted_archive_member_document", publish)
+    key = uuid4()
+    result = control.run_archive_member_document_controller(
+        path,
+        "runtime-dsn",
+        published.inventory_id,
+        "documents/proof.pdf",
+        key,
+    )
+    core.archive_document_member_target.assert_called_once_with(
+        ANY, published.inventory_id, "documents/proof.pdf"
+    )
+    publish.assert_called_once_with(
+        core,
+        ANY,
+        target,
+        extraction,
+        code_revision="unit-archive-controller-v1",
+        idempotency_key=key,
+    )
+    assert result["metadata_counts"] == {"page_count": 2}
+    assert "title" not in json.dumps(result) and "member_locator" not in result
+
+
 def test_batch_check_validates_seal_without_target_or_worker_access(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
