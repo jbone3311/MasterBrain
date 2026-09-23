@@ -2,12 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4Y — sealed archive-document batch design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define a canonical-digest-bound private plan
-for 1–100 explicitly reviewed PDF/DOCX/XLSX member selections and caller-supplied
-idempotency keys. Execution must use the existing one-document command semantics,
-reauthenticate sensitive boundaries, stop on first refusal and resume only through
-unchanged-plan replay. It grants no discovery, automatic fan-out or scheduling.
+**Checkpoint 4Z — archive image/OCR donor and security inventory.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Inventory the pinned donor's image/OCR tools,
+dependencies, tests, limits and failure behavior, then define a closed isolated read
+contract before any worker, persistence or search path. It must preserve byte/hash
+provenance, bound pixels/pages/time/output, treat OCR as untrusted derived evidence,
+and grant no automatic archive fan-out or FOS-Master cutover.
 
 ## Completed gates
 
@@ -184,15 +184,24 @@ unchanged-plan replay. It grants no discovery, automatic fan-out or scheduling.
   [CI 35818667860](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35818667860)
   and [restore 35818668296](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35818668296)
   are green.
+- Checkpoint 4Y sealed archive-document batch design `2869aed` and runtime `87ea0d0`
+  passed 2,594 hosted Python tests with PostgreSQL, 134 browser contracts, deployment,
+  documentation and all restricted-container gates. Canonical format/key/order seals,
+  check-mode non-consumption, sequential two-worker execution, item-two refusal and
+  unchanged-plan replay are proven; hosted
+  [CI 35821165890](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35821165890)
+  and [restore 35821165886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35821165886)
+  are green.
 
 ## Current work
 
-- Design a sealed, digest-bound archive-document batch with caller-supplied keys,
-  fail-stop execution and exact-plan replay across both restricted workers.
+- Inventory pinned-donor image/OCR behavior and define the isolated format, resource,
+  fault, provenance and non-publication contract before implementation.
 
 ## Deferred by design
 
-- Archive-member images and OCR until separate format/fault/persistence gates exist.
+- Archive-image/OCR runtime, persistence and search until the inventory/contract gate
+  is accepted.
 - Automatic archive-document fan-out and scheduling.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.

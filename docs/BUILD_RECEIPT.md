@@ -2,6 +2,36 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified sealed archive-document batches
+
+Design revision **2869aed** and runtime revision **87ea0d0** passed
+[CI 35821165890](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35821165890)
+and [restore 35821165886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35821165886),
+observed 2026-09-22 Pacific.
+
+- The closed private plan binds one inventory, exact code revision and 1–100 ordered,
+  unique locator/expected-format/idempotency-key triples under a canonical SHA-256
+  seal. Suffix and declared PDF/DOCX/XLSX format must agree before database access.
+- `masterbrain fileos archive-document-batch` reuses the existing forced-RLS selector,
+  hash-bound member reader, isolated document worker and transaction-time publisher.
+  It reauthenticates sensitive boundaries, stops at the first refusal and returns only
+  indexes/counts and a generic error code.
+- Real PostgreSQL committed item one, injected a publication refusal at item two and
+  proved item three absent. Retrying the unchanged plan replayed item one and recorded
+  items two and three using the original keys; a further retry replayed all three.
+  Source archive bytes and timestamp remained unchanged and output exposed no locator,
+  format, text or worker metadata.
+- CI and deployment each passed **2,594 Python tests** with PostgreSQL and no skips;
+  **134 browser contracts** and every restricted-container case passed. Documentation
+  covered **164 Markdown files / 881 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **71 tables / 237
+  rows / two tenants / four encrypted objects / two identity bindings** in 16.11
+  seconds. FOS-Master remains clean and unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+No discovery, generated keys, skip/continue, parallelism, scheduling, public mutation,
+images/OCR, source effects or FOS-Master cutover is authorized.
+
 ## Verified private archive-document preview
 
 Design revision **ce2bf30** and runtime revision **1651c2b** passed

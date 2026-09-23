@@ -82,6 +82,12 @@ mean hosted, live-source accepted, or production ready.
   state in sealed ordinal pages, constructs neither worker, reads no source/member
   bytes and creates no retry or batch authority. Check mode is non-consuming; hosted
   PostgreSQL, restore and restricted-container gates are green.
+- Private `masterbrain fileos archive-document-batch` execution of one canonical,
+  digest-bound 1–100 item plan. Each reviewed item binds locator, expected PDF/DOCX/
+  XLSX format and caller-supplied key. Execution reuses the exact selector, two-worker
+  extraction and publication path, stops at first refusal and resumes only through
+  unchanged-plan replay. Real PostgreSQL proves partial commit/retry; hosted restore
+  and all restricted-container gates are green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;

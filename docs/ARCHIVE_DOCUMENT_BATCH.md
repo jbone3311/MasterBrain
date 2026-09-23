@@ -1,6 +1,6 @@
 # Sealed archive-document batch design
 
-Status: checkpoint 4Y accepted design; runtime not yet implemented.
+Status: checkpoint 4Y implemented in `87ea0d0`; hosted CI and restore are green.
 
 ## Purpose
 
@@ -42,7 +42,7 @@ never reseal completed intent with new keys.
 
 ## Check and execution
 
-Add `masterbrain fileos archive-document-batch --config ... --plan ... [--check]`
+`masterbrain fileos archive-document-batch --config ... --plan ... [--check]` runs
 using the one-document operator's exact scopes, authorized root, two immutable image
 IDs and private-file rules.
 

@@ -1,6 +1,6 @@
 # ADR-086 — Seal document batches and preserve both worker boundaries
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `87ea0d0`.
 
 ## Context
 

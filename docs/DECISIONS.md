@@ -12,8 +12,8 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-086](adr/086_sealed_archive_document_batch.md) requires a private canonical plan
 of explicit locator/expected-format/key triples, sequential execution through both
-existing workers, fail-stop refusal and unchanged-plan replay. Implementation is
-pending.
+existing workers, fail-stop refusal and unchanged-plan replay. Implemented in
+`87ea0d0`.
 
 [ADR-085](adr/085_private_archive_document_preview.md) requires a private, bounded,
 non-consuming view of exact current PDF/Office candidates before any document batch
