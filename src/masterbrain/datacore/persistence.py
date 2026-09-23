@@ -32,6 +32,7 @@ from masterbrain.datacore.contracts import (
 from masterbrain.datacore.fileos import (
     INVENTORY_POLICY_VERSION,
     MAX_SNAPSHOT_EXCLUSIONS,
+    ROOT_BINDING_VERSION,
     SNAPSHOT_VERSION,
 )
 
@@ -268,6 +269,21 @@ def fileos_inventory_policy_sha256(manifest: Mapping[str, Any]) -> str:
     return _canonical_digest({"manifest_version": SNAPSHOT_VERSION, "policy": dict(policy)})
 
 
+def fileos_manifest_root_binding_sha256(manifest: Mapping[str, Any]) -> str:
+    """Validate the private local-root identity carried by a FileOS snapshot."""
+    binding = manifest.get("root_binding")
+    if not isinstance(binding, Mapping) or set(binding) != {"version", "sha256"}:
+        raise ValueError("invalid FileOS root binding")
+    digest = binding["sha256"]
+    if (
+        binding["version"] != ROOT_BINDING_VERSION
+        or not isinstance(digest, str)
+        or re.fullmatch(r"[a-f0-9]{64}", digest) is None
+    ):
+        raise ValueError("invalid FileOS root binding")
+    return digest
+
+
 def _parse_time(value: object) -> datetime:
     if not isinstance(value, str) or len(value) > 100:
         raise ValueError("invalid observed timestamp")
@@ -282,6 +298,7 @@ def _manifest_items(
 ) -> tuple[SourceRef, datetime, list[SourceItemVersion]]:
     if manifest.get("manifest_version") != SNAPSHOT_VERSION:
         raise ValueError("unsupported snapshot manifest")
+    fileos_manifest_root_binding_sha256(manifest)
     raw_source = manifest.get("source")
     if not isinstance(raw_source, Mapping):
         raise ValueError("missing source")
@@ -3256,6 +3273,7 @@ class DataCoreStore:
     ) -> ImportResult:
         self.store.require(ctx, "brain.source.ingest")
         source, observed_at, items = _manifest_items(manifest)
+        root_binding_hash = fileos_manifest_root_binding_sha256(manifest)
         request_hash = _canonical_digest(manifest)
         with self.store.transaction(ctx) as conn:
             conn.execute(
@@ -3272,15 +3290,38 @@ class DataCoreStore:
                     raise Conflict("idempotency key reused for a different snapshot")
                 return ImportResult(**receipt["result"])
             conn.execute(
-                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) VALUES (%s,%s,%s,%s) "
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name,root_binding_sha256) "
+                "VALUES (%s,%s,%s,%s,%s) "
                 "ON CONFLICT (tenant_id,id) DO NOTHING",
-                (ctx.tenant_id, source.source_id, source.kind.value, source.display_name),
+                (
+                    ctx.tenant_id,
+                    source.source_id,
+                    source.kind.value,
+                    source.display_name,
+                    root_binding_hash,
+                ),
             )
             saved_source = conn.execute(
-                "SELECT kind FROM brain_sources WHERE id=%s FOR UPDATE", (source.source_id,)
+                "SELECT kind,root_binding_sha256 FROM brain_sources WHERE id=%s FOR UPDATE",
+                (source.source_id,),
             ).fetchone()
             if not saved_source or saved_source["kind"] != source.kind.value:
                 raise Conflict("source identity has a different kind")
+            if saved_source["root_binding_sha256"] is None:
+                existing_evidence = conn.execute(
+                    "SELECT EXISTS(SELECT 1 FROM brain_source_items WHERE source_id=%s) "
+                    "OR EXISTS(SELECT 1 FROM brain_fileos_run_receipts WHERE source_id=%s) "
+                    "AS present",
+                    (source.source_id, source.source_id),
+                ).fetchone()
+                if existing_evidence and existing_evidence["present"]:
+                    raise Conflict("FileOS legacy root binding requires review")
+                conn.execute(
+                    "UPDATE brain_sources SET root_binding_sha256=%s WHERE id=%s",
+                    (root_binding_hash, source.source_id),
+                )
+            elif saved_source["root_binding_sha256"] != root_binding_hash:
+                raise Conflict("FileOS source root binding changed")
 
             new_versions = 0
             for item in items:
@@ -3395,6 +3436,7 @@ class DataCoreStore:
         self.store.require(ctx, "brain.document.publish")
         source, observed_at, items = validate_fileos_completion_coverage(manifest)
         policy_hash = fileos_inventory_policy_sha256(manifest)
+        root_binding_hash = fileos_manifest_root_binding_sha256(manifest)
         allowed = {"extracted", "empty", "unsupported", "deferred", "changed", "failed"}
         counts = dict(sorted(outcomes.items()))
         items_by_id = {item.item_id: item for item in items}
@@ -3431,6 +3473,7 @@ class DataCoreStore:
             "observed_at": observed_at,
             "manifest_sha256": manifest_hash,
             "policy_sha256": policy_hash,
+            "root_binding_sha256": root_binding_hash,
             "code_revision": code_revision,
             "text_extractor_version": FILEOS_TEXT_EXTRACTOR_VERSION,
             "document_processor_version": document_processor_version,
@@ -3456,36 +3499,47 @@ class DataCoreStore:
             ):
                 raise Conflict("FileOS completion is not bound to its intake")
             existing = conn.execute(
-                "SELECT source_id,observed_at,manifest_sha256,policy_sha256,code_revision,"
+                "SELECT source_id,observed_at,manifest_sha256,policy_sha256,"
+                "root_binding_sha256,code_revision,"
                 "text_extractor_version,document_processor_version,item_count,outcomes,"
                 "published_documents,completed_at "
                 "FROM brain_fileos_run_receipts WHERE actor_id=%s AND run_id=%s",
                 (ctx.actor_id, run_id),
             ).fetchone()
             previous = conn.execute(
-                "SELECT actor_id,run_id,observed_at,manifest_sha256,policy_sha256,item_count "
+                "SELECT actor_id,run_id,observed_at,manifest_sha256,policy_sha256,"
+                "root_binding_sha256,item_count "
                 "FROM brain_fileos_run_receipts WHERE source_id=%s "
                 "AND NOT (actor_id=%s AND run_id=%s) "
                 "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
                 (source.source_id, ctx.actor_id, run_id),
             ).fetchone()
+            bound_source = conn.execute(
+                "SELECT root_binding_sha256 FROM brain_sources WHERE id=%s FOR UPDATE",
+                (source.source_id,),
+            ).fetchone()
+            if not bound_source or bound_source["root_binding_sha256"] != root_binding_hash:
+                raise Conflict("FileOS source root binding changed")
             if previous and observed_at <= previous["observed_at"]:
                 raise Conflict("FileOS completion observation is not newer")
             recorded = existing is None
             if existing:
                 completed_at = existing.pop("completed_at")
-                if existing["policy_sha256"] is None:
+                if existing["policy_sha256"] is None or existing["root_binding_sha256"] is None:
                     raise Conflict("FileOS inventory policy requires review")
                 if existing != expected:
                     raise Conflict("FileOS completion receipt changed")
             else:
                 if previous and previous["policy_sha256"] != policy_hash:
                     raise Conflict("FileOS inventory policy requires review")
+                if previous and previous["root_binding_sha256"] != root_binding_hash:
+                    raise Conflict("FileOS root binding requires review")
                 row = conn.execute(
                     "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
-                    "observed_at,manifest_sha256,policy_sha256,code_revision,text_extractor_version,"
-                    "document_processor_version,item_count,outcomes,published_documents) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                    "observed_at,manifest_sha256,policy_sha256,root_binding_sha256,"
+                    "code_revision,text_extractor_version,document_processor_version,item_count,"
+                    "outcomes,published_documents) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
                     "RETURNING completed_at",
                     (
                         ctx.tenant_id,
@@ -3495,6 +3549,7 @@ class DataCoreStore:
                         observed_at,
                         manifest_hash,
                         policy_hash,
+                        root_binding_hash,
                         code_revision,
                         FILEOS_TEXT_EXTRACTOR_VERSION,
                         document_processor_version,

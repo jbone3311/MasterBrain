@@ -88,6 +88,11 @@ Completion now refuses
 to turn a prior item covered by an exclusion or intentional no-follow symlink skip
 into absence evidence; malformed or overflowing ledgers fail closed. This is not
 proof against a forged manifest, root mismatch or a live scanner race.
+ADR-098 adds a versioned physical-root digest to new FileOS sources and completion
+receipts. The private publisher checks the root before intake and after extraction;
+the database refuses a changed source binding or silent legacy claim. This reduces
+accidental root-switch risk but is not malicious-scanner attestation or live donor
+cutover proof. The digest stays within private manifest/database boundaries.
 
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and

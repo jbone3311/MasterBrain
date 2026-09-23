@@ -15,7 +15,12 @@ from email_brain.schemas import ClosedModel
 from email_brain.store import Store
 from masterbrain.datacore.document_processor import DockerDocumentProcessor
 from masterbrain.datacore.extraction import FileOSAdapter
-from masterbrain.datacore.persistence import DataCoreStore, validate_fileos_completion_coverage
+from masterbrain.datacore.fileos import fileos_root_binding_sha256
+from masterbrain.datacore.persistence import (
+    DataCoreStore,
+    fileos_manifest_root_binding_sha256,
+    validate_fileos_completion_coverage,
+)
 
 MAX_MANIFEST_BYTES = 16 * 1024 * 1024
 _SOURCE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,127}\Z", re.ASCII)
@@ -100,6 +105,8 @@ def run_fileos_controller(
         manifest = _manifest(config)
         root = config.root.resolve(strict=True)
         if not root.is_dir():
+            raise FileOSControllerError()
+        if fileos_root_binding_sha256(root) != fileos_manifest_root_binding_sha256(manifest):
             raise FileOSControllerError()
         identity = WorkerIdentity(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})

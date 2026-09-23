@@ -134,6 +134,14 @@ refuses the whole new completion before absence events commit. A genuine deletio
 outside that coverage still uses the existing absence and mass-loss rules. This
 adds no migration or donor behavior change.
 
+ADR-098 and migration 0032 bind each new FileOS source and completed run to the
+same versioned physical-root digest. The scanner, private controller and adapter
+check the configured root; intake checks the source row under lock, and completion
+checks both source and previous receipt before absence inference. Existing sources
+and receipts without a root identity remain unknown. A populated legacy source
+cannot be auto-claimed, and there is no force or rebaseline path. This isolated
+change still requires hosted PostgreSQL and populated-restore verification.
+
 `fileos_rebuild_preview` reads a maximum of 50 opaque item records from the latest
 completed ledger while holding the source completion lock. It recomputes normalized
 body/document/chunk hashes and identities, returning only verification dispositions

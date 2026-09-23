@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import mimetypes
 import os
 from dataclasses import asdict, dataclass
@@ -20,6 +22,7 @@ from masterbrain.datacore.dedup import DEFAULT_CONFIG, file_hash, is_excluded_pa
 
 SNAPSHOT_VERSION = "masterbrain-fileos-snapshot-v1"
 INVENTORY_POLICY_VERSION = "fileos-inventory-policy-v1"
+ROOT_BINDING_VERSION = "fileos-root-binding-v1"
 MAX_SNAPSHOT_EXCLUSIONS = 10_000
 
 
@@ -50,6 +53,22 @@ def fileos_inventory_policy(
         "include_extensions": policy.get("include_extensions"),
         "exclude_patterns": policy.get("exclude_patterns", []),
     }
+
+
+def fileos_root_binding_sha256(root: Path) -> str:
+    """Identify a resolved local root without persisting its path in the manifest."""
+    resolved = root.resolve(strict=True)
+    if not resolved.is_dir():
+        raise ValueError("FileOS root must be a directory")
+    stat = resolved.stat()
+    identity = {
+        "version": ROOT_BINDING_VERSION,
+        "path_bytes_hex": os.fsencode(str(resolved)).hex(),
+        "device": stat.st_dev,
+        "inode": stat.st_ino,
+    }
+    encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _relative(path: Path, root: Path) -> str:
@@ -84,6 +103,7 @@ def snapshot_tree(
         raise ValueError("FileOS root must be a directory")
     if observed_at.tzinfo is None or observed_at.utcoffset() is None:
         raise ValueError("observed_at must be timezone-aware")
+    root_binding = fileos_root_binding_sha256(root)
     policy = dict(DEFAULT_CONFIG if config is None else config)
     source = SourceRef(source_id, SourceKind.FILEOS, source_id)
     observed_at = observed_at.astimezone(UTC)
@@ -177,6 +197,11 @@ def snapshot_tree(
             )
             items.append(_item_dict(item, is_symlink=is_symlink))
 
+    try:
+        if fileos_root_binding_sha256(root) != root_binding:
+            errors.append(SnapshotError(".", "root_changed_during_scan"))
+    except (OSError, RuntimeError, ValueError):
+        errors.append(SnapshotError(".", "root_changed_during_scan"))
     items.sort(key=lambda item: item["locator"])
     errors.sort(key=lambda item: (item.locator, item.code))
     exclusions.sort(key=lambda item: (item.locator, item.kind, item.reason))
@@ -185,6 +210,7 @@ def snapshot_tree(
         "source": {"source_id": source.source_id, "kind": source.kind.value},
         "observed_at": observed_at.isoformat(),
         "policy": fileos_inventory_policy(policy, follow_file_symlinks=follow_file_symlinks),
+        "root_binding": {"version": ROOT_BINDING_VERSION, "sha256": root_binding},
         "counts": {"items": len(items), "excluded": excluded, "errors": len(errors)},
         "items": items,
         "errors": [asdict(item) for item in errors],

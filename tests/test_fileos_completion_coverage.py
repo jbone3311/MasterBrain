@@ -8,9 +8,14 @@ from pathlib import Path
 import pytest
 
 import masterbrain.datacore.fileos as fileos_module
-from masterbrain.datacore.fileos import fileos_inventory_policy, snapshot_tree
+from masterbrain.datacore.fileos import (
+    fileos_inventory_policy,
+    fileos_root_binding_sha256,
+    snapshot_tree,
+)
 from masterbrain.datacore.persistence import (
     fileos_inventory_policy_sha256,
+    fileos_manifest_root_binding_sha256,
     fileos_mass_loss_requires_review,
     fileos_missing_locator_is_excluded,
     validate_fileos_completion_coverage,
@@ -236,5 +241,61 @@ def test_exclusion_ledger_overflow_fails_closed(
     )
     assert manifest["counts"]["excluded"] == 2
     assert manifest["errors"] == [{"locator": ".", "code": "exclusion_ledger_overflow"}]
+    with pytest.raises(ValueError, match="coverage"):
+        validate_fileos_completion_coverage(manifest)
+
+
+def test_root_binding_is_stable_for_alias_and_distinct_for_other_roots(tmp_path: Path) -> None:
+    first = tmp_path / "first"
+    other = tmp_path / "other"
+    first.mkdir()
+    other.mkdir()
+    alias = tmp_path / "alias"
+    alias.symlink_to(first, target_is_directory=True)
+    first_hash = fileos_root_binding_sha256(first)
+    assert first_hash == fileos_root_binding_sha256(alias)
+    assert first_hash != fileos_root_binding_sha256(other)
+    manifest = _manifest(first)
+    assert fileos_manifest_root_binding_sha256(manifest) == first_hash
+
+
+def test_root_binding_changes_if_directory_is_replaced_at_same_path(tmp_path: Path) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    original_hash = fileos_root_binding_sha256(root)
+    root.rename(tmp_path / "old_root")
+    root.mkdir()
+    assert fileos_root_binding_sha256(root) != original_hash
+
+
+@pytest.mark.parametrize("defect", ["missing", "version", "digest", "extra"])
+def test_invalid_root_binding_refuses_completion(tmp_path: Path, defect: str) -> None:
+    manifest = _manifest(tmp_path)
+    if defect == "missing":
+        del manifest["root_binding"]
+    elif defect == "version":
+        manifest["root_binding"]["version"] = "fileos-root-binding-v0"
+    elif defect == "digest":
+        manifest["root_binding"]["sha256"] = "A" * 64
+    else:
+        manifest["root_binding"]["path"] = str(tmp_path)
+    with pytest.raises(ValueError, match="root binding"):
+        validate_fileos_completion_coverage(manifest)
+
+
+def test_root_change_during_scan_refuses_completion(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = fileos_module.fileos_root_binding_sha256
+    calls = 0
+
+    def changed(root: Path) -> str:
+        nonlocal calls
+        calls += 1
+        return original(root) if calls == 1 else "0" * 64
+
+    monkeypatch.setattr(fileos_module, "fileos_root_binding_sha256", changed)
+    manifest = _manifest(tmp_path)
+    assert manifest["errors"] == [{"locator": ".", "code": "root_changed_during_scan"}]
     with pytest.raises(ValueError, match="coverage"):
         validate_fileos_completion_coverage(manifest)

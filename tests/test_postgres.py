@@ -3796,6 +3796,60 @@ def test_fileos_incomplete_snapshot_cannot_advance_absence(
     assert inventory["newly_absent_items"] == 1
 
 
+def test_fileos_source_refuses_different_physical_root_before_intake(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    source_id = "files_root_bound"
+    original = tmp_path / "original"
+    other = tmp_path / "other"
+    original.mkdir()
+    other.mkdir()
+    (original / "proof.txt").write_bytes(b"fictional proof")
+    (other / "proof.txt").write_bytes(b"fictional proof")
+    first = fileos_manifest(original, source_id=source_id)
+    first_run = uuid4()
+    core.import_fileos_snapshot(ctx, first, first_run)
+    core.complete_fileos_run(
+        ctx,
+        first,
+        first_run,
+        outcomes={"unsupported": 1},
+        item_outcomes={first["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-root-binding-v1",
+        document_processor_version=None,
+    )
+    different = fileos_manifest(other, source_id=source_id, hour=2)
+    with pytest.raises(Conflict, match="source root binding changed"):
+        core.import_fileos_snapshot(ctx, different, uuid4())
+    assert core.fileos_inventory(ctx, source_id)["run_id"] == first_run
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute(
+                "SELECT root_binding_sha256 FROM brain_sources WHERE id=%s", (source_id,)
+            ).fetchone()["root_binding_sha256"]
+            == first["root_binding"]["sha256"]
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_run_receipts WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
+
+
 def test_fileos_mass_loss_refuses_completion_without_absence(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:

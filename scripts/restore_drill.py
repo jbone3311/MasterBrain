@@ -52,7 +52,11 @@ from email_brain.schemas import (
 from email_brain.store import AccessDenied, IngestItem, NotFound, Store
 from email_brain.synthetic_formats import pdf_bytes
 from masterbrain.datacore.contracts import stable_id
-from masterbrain.datacore.fileos import SNAPSHOT_VERSION, fileos_inventory_policy
+from masterbrain.datacore.fileos import (
+    ROOT_BINDING_VERSION,
+    SNAPSHOT_VERSION,
+    fileos_inventory_policy,
+)
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import ClaimWrite, EntityWrite
@@ -356,6 +360,10 @@ def seed(
             "source": {"source_id": source_id, "kind": "fileos"},
             "observed_at": now.isoformat(),
             "policy": fileos_inventory_policy(),
+            "root_binding": {
+                "version": ROOT_BINDING_VERSION,
+                "sha256": hashlib.sha256(f"fictional-restore-root:{keyword}".encode()).hexdigest(),
+            },
             "counts": {"items": 1, "excluded": 0, "errors": 0},
             "items": [
                 {

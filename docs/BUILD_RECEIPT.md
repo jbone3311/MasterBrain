@@ -2,6 +2,26 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS physical-root binding checkpoint (verification in progress)
+
+ADR-098 preceded the runtime change. A versioned SHA-256 of the resolved root
+path bytes, device and inode is carried only in the private snapshot, source row
+and completed-run receipt. Scanner and publisher rechecks, intake source locking,
+new-insert SQL constraints and legacy-unknown preservation are implemented on
+`codex/masterbrain-fileos-root-binding`; this branch is not yet pushed. A
+different physical root must fail before intake or absence. Unit, PostgreSQL,
+populated-upgrade and restore tests are being finalized. Local FileOS and restore
+unit suites passed **85 tests**; the focused FileOS/PostgreSQL/recovery selection
+passed **55 with nine PostgreSQL skips** because no disposable database is
+configured. Ruff check/format and the documentation inventory (180 Markdown files,
+963 local paths/fragments) passed. The pinned 3,000-file synthetic donor shadow
+reported 3,002 common hash/size matches, the same six known policy differences,
+and a 1,502-row donor mass-prune refusal. The unscoped local full-suite collection
+was interrupted after a prolonged filesystem stall; hosted full CI and populated
+restore remain required. Do not read this entry as a passing hosted gate. No
+FOS-Master edit, source effect, donor-policy switch,
+legacy rebaseline or cutover is included.
+
 ## Local FileOS exclusion-ledger checkpoint
 
 ADR-097 preceded implementation. The snapshot now emits an exact bounded ledger of

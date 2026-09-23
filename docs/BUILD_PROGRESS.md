@@ -96,6 +96,15 @@ on [PR #21](https://github.com/jbone3311/CW-EmailBrain/pull/21). Review and
 integration remain. This changes
 neither FOS-Master nor the inventory membership policy.
 
+ADR-098 starts the next isolated root-binding tranche. The scanner records a
+private, versioned physical-root digest and checks for root drift; the private
+publisher and DataCore check it before intake and completion. Migration 0032
+preserves unknown legacy roots without auto-claiming a populated source. This is
+currently local implementation work, not a pushed PR or a hosted verification
+claim. Synthetic root mismatch and malformed-binding tests are being added.
+FOS-Master remains pinned and unchanged; root binding alone does not certify
+the donor inventory policy or authorize cutover.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.

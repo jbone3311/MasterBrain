@@ -21,11 +21,13 @@ from masterbrain.datacore.document_contract import (
     DocumentResult,
     DocumentUnavailable,
 )
+from masterbrain.datacore.fileos import fileos_root_binding_sha256
 from masterbrain.datacore.persistence import (
     FILEOS_TEXT_EXTRACTOR_VERSION,
     DataCoreStore,
     ImportResult,
     PublishedDocument,
+    fileos_manifest_root_binding_sha256,
 )
 
 EXTRACTOR_VERSION = FILEOS_TEXT_EXTRACTOR_VERSION
@@ -364,6 +366,8 @@ class FileOSAdapter:
         """Import, independently extract each item, and publish successful text."""
         if authorize is not None:
             authorize()
+        if fileos_root_binding_sha256(root) != fileos_manifest_root_binding_sha256(manifest):
+            raise ValueError("FileOS root binding changed")
         imported = self.store.import_fileos_snapshot(ctx, manifest, idempotency_key)
         raw_items = manifest.get("items")
         if not isinstance(raw_items, list):
@@ -399,4 +403,6 @@ class FileOSAdapter:
                 )
             counts[extraction.status.value] += 1
             results.append(PublishedExtraction(extraction, publication))
+        if fileos_root_binding_sha256(root) != fileos_manifest_root_binding_sha256(manifest):
+            raise ValueError("FileOS root binding changed during publication")
         return SnapshotPublication(imported, tuple(results), dict(sorted(counts.items())))

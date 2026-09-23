@@ -65,6 +65,11 @@ Each new completion also records an immutable digest of its explicit inventory
 policy. Comparing consecutive completed runs with an unknown or different policy
 is refused before absence inference. Legacy policy cannot be recovered from a
 whole-manifest hash, so it is not silently backfilled.
+FileOS root identity is a separate versioned boundary: the private publisher
+rechecks its physical root, source intake records an immutable digest, and
+completion requires it to match the source and prior receipt. Old sources with
+evidence and unknown roots need a reviewed baseline transition. The digest is
+private metadata, not a Brain API field (ADR-098).
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

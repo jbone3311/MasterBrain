@@ -145,3 +145,19 @@ def test_incomplete_snapshot_refused_before_database_or_publication(
         control.run_fileos_controller(path, "runtime-dsn", uuid4())
     store.assert_not_called()
     adapter.assert_not_called()
+
+
+def test_different_physical_root_refused_before_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, config, _ = controller_files(tmp_path)
+    other = tmp_path / "other"
+    other.mkdir()
+    (other / "note.txt").write_text("controller unit proof")
+    config["root"] = str(other)
+    private_write(path, config)
+    store = Mock()
+    monkeypatch.setattr(control, "Store", store)
+    with pytest.raises(control.FileOSControllerError, match="sensitive details suppressed"):
+        control.run_fileos_controller(path, "runtime-dsn", uuid4(), check=True)
+    store.assert_not_called()
