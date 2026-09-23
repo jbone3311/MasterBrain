@@ -9,8 +9,12 @@ MasterBrain completion guard. A newly proposed run missing at least 10 prior
 items and at least half the previous complete inventory rolls back its completion
 and absence transaction. A lower-level import may remain for diagnosis; there is
 no force override, policy switch or donor change. Synthetic threshold and
-20→10 refusal / 20→12 acceptance regression tests are included. Local and hosted
-test results will be recorded after execution; this is not yet a cutover gate pass.
+20→10 refusal / 20→12 acceptance regression tests are included. Local focused
+pytest: **6 passed, 2 PostgreSQL tests skipped** (no local test database), 78
+deselected, two upstream deprecation warnings. Ruff check/format passed, as did
+the documentation inventory (177 Markdown files, 940 links). PostgreSQL behavior
+and hosted CI/restore are still unverified for this branch; this is not a cutover
+gate pass.
 
 ## Local FileOS completion-coverage checkpoint
 
