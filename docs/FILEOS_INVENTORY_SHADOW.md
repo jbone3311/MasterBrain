@@ -76,6 +76,9 @@ MasterBrain `symlink_skipped` error but no donor row, while neither scanner desc
 through the synthetic directory symlink. These tests use only temporary roots and
 an in-memory donor database. They do not authorize treating a retained donor row as
 proof that the file was successfully read on the latest run.
+Hosted [CI 35855259654](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35855259654)
+passed on the fault-test commit in PR #16; the live pinned-donor tests passed
+locally and skip in hosted CI because that runner has no donor checkout.
 
 ## Limits and next gate
 

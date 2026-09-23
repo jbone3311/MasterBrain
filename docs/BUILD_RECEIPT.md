@@ -12,7 +12,12 @@ shared snapshot reported `file_unreadable`; a synthetic hash-time content change
 reported `changed_during_scan`. Broken-file and directory symlink outcomes were
 checked. The test used a temporary fictional root and in-memory donor SQLite only;
 no donor CLI, configured database, registry or MasterBrain publication ran.
-Hosted CI and the remaining adversarial cases are pending.
+Hosted [CI 35855259654](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35855259654)
+passed on PR #16's fault-test commit `ad50578` (Python, browser, deployment,
+documentation and restricted-worker gates). Hosted CI has no donor checkout, so
+its donor-specific tests skip; the 22-test live-donor result is local. PR #16 does
+not match the restore workflow's path filter. The remaining adversarial cases and
+integrated policy gate are pending.
 
 ## Verified FileOS whole-inventory shadow checkpoint
 

@@ -35,7 +35,9 @@ passed. Snapshot policy integration and adversarial boundaries remain pending.
 
 The next isolated fault tranche adds sparse size-boundary, read-failure, race and
 broken/directory-symlink cases against the pinned donor in memory. Local focused
-tests are green; hosted CI is pending. This is still comparison work, not a
+tests and [hosted CI 35855259654](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35855259654)
+are green on [PR #16](https://github.com/jbone3311/CW-EmailBrain/pull/16).
+This is still comparison work, not a
 FileOS snapshot-policy switch.
 
 ## Completed gates
