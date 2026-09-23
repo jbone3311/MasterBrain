@@ -226,7 +226,11 @@ def protected_database(
         tenant_id = seeded["tenant_id"]
         assert isinstance(tenant_id, UUID)
         before = _record_counts(admin_dsn, tenant_id)
-        assert migrate(admin_dsn, MIGRATIONS) == [TRUNCATE_MIGRATION]
+        assert migrate(admin_dsn, MIGRATIONS) == [
+            TRUNCATE_MIGRATION,
+            "0031_fileos_policy_identity.sql",
+            "0032_fileos_root_binding.sql",
+        ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:
             grant_runtime(conn, conninfo_to_dict(runtime_dsn)["user"])

@@ -12,7 +12,14 @@ receipt, decision and populated-upgrade test files were reconciled by retaining
 both branches' content and sorting the expected migrations. Local focused tests:
 **58 passed, 33 PostgreSQL skips** without a disposable database. Ruff check and
 format, mypy across 82 source files, documentation inventory (184 Markdown files,
-973 paths/fragments) and diff whitespace passed. This is not combined hosted
+973 paths/fragments) and diff whitespace passed. The first combined
+[CI 35892717228](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35892717228)
+reached the PostgreSQL suite and found a test-fixture migration-list mismatch:
+the PR #13 fixture expected only 0030 after its pre-0030 seed, while the combined
+branch correctly also applies 0031 and 0032. The fixture expectation was extended
+without changing migration behavior. First combined
+[restore 35892717493](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35892717493)
+passed. Corrected full CI and restore are pending; this is not yet combined hosted
 verification. Factory PR #11's competing 0029 is not included; its independent
 schema/workflow findings are tracked as a separate follow-up.
 
