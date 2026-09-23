@@ -36,6 +36,10 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
   quarantine. Unsupported/partial content remains visible.
 - Hash verification before and after sensitive reads/effects where applicable.
 - Append-only audit and transactional receipts for access, policy and effects.
+- Protected evidence, approval jobs and identity bindings reject direct/cascaded
+  whole-table `TRUNCATE` as well as their existing row-level protections. Runtime
+  roles hold no `TRUNCATE` privilege; a malicious database owner remains outside
+  the trigger-only trust boundary and requires administrative audit/backups.
 - Backups encrypted separately and restore-tested; retention applies to derivatives,
   indexes, caches, exports, and backups.
 

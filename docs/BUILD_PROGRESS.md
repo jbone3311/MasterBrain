@@ -21,6 +21,12 @@ passed 2,656 PostgreSQL-backed Python tests and all browser, deployment and
 restricted-worker gates. Independent review and integration remain pending.
 FOS-Master remains unchanged.
 
+A separate protected-record maintenance branch follows ADR-092 and
+[issue #8](https://github.com/jbone3311/CW-EmailBrain/issues/8). Its additive 0030
+migration rejects whole-table truncation of 56 append-only tables, two protected
+approval-job tables and audited identity bindings. Thirteen focused disposable
+PostgreSQL 17 tests pass; full and hosted gates, review and integration are pending.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.

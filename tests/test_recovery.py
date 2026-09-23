@@ -458,6 +458,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0027_current_archive_document_search.sql",
             "0028_archive_member_image_ocr.sql",
             "0029_migration_integrity_repair.sql",
+            "0030_protected_record_truncate_guards.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(

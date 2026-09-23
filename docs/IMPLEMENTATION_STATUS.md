@@ -1,6 +1,6 @@
 # MasterBrain Implementation Status
 
-Updated 2026-09-22. **Implemented** means executable in this repository; it does not
+Updated 2026-09-23. **Implemented** means executable in this repository; it does not
 mean hosted, live-source accepted, or production ready.
 
 ## Implemented
@@ -173,6 +173,10 @@ mean hosted, live-source accepted, or production ready.
   OCR image, exact worker scopes, non-consuming check, reauthentication and
   content-free output. Hosted CI/container and populated restore accepted in
   `f658ace`; no live-source or production acceptance is claimed.
+- Forward-only protected-record TRUNCATE guards on the 56 direct append-only tables,
+  protected recovery/document jobs and audited external identity bindings. Focused
+  disposable-PostgreSQL catalog, direct/cascade, runtime-privilege, row-transition and
+  replay tests passed; full and hosted gates remain pending on a separate branch.
 
 ## Designed, not implemented
 

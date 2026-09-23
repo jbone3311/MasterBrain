@@ -51,6 +51,11 @@ older 0006/0008 receipts made under a non-bypass table owner do not prove that t
 cross-tenant reads ran. Before applying 0029, audit missing sync-state keys and
 parser mismatches with the actual migration identity. A mismatch stops the rollout
 for reviewed evidence repair. See the [migration-integrity contract](MIGRATION_INTEGRITY.md).
+Apply 0030 only after 0029 has completed. Verify the public-schema protected-table
+inventory and enabled statement triggers under that same migrator, then exercise
+direct and FK-cascaded truncation refusal in staging. See the
+[protected-record contract](EVIDENCE_TRUNCATE_GUARDS.md). Neither guard replaces
+privileged-administrator monitoring or restorable backups.
 
 Build immutable artifacts with dependency locks, SBOM/provenance, schema compatibility
 checks, migrations with rollback/forward recovery, and staged health gates. Deploy

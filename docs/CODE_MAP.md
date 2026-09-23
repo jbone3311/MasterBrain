@@ -1,6 +1,6 @@
 # Current MasterBrain code map
 
-Updated 2026-09-22. Existing files, not a proposed directory tree. Python modular
+Updated 2026-09-23. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without
@@ -60,6 +60,7 @@ redirecting Email ingestion or search.
 | Owner UI | [web/](../src/email_brain/web/) |
 | PDF owner workflow/search | [document_review.js](../src/email_brain/web/document_review.js); existing API calls, independent document state and text-only evidence |
 | Schema upgrades | [migrations/](../migrations/), [migrate.py](../src/email_brain/migrate.py) |
+| Protected-record TRUNCATE refusal | [migration 0030](../migrations/0030_protected_record_truncate_guards.sql), [contract](EVIDENCE_TRUNCATE_GUARDS.md), [ADR-092](adr/092_protected_record_truncate_guards.md) |
 | Checks | [tests/](../tests/), [CI](../.github/workflows/ci.yml) |
 | Offline documentation gate | [check_docs.py](../scripts/check_docs.py), [regression tests](../tests/test_check_docs.py); inventory/paths/supported headings, including `.github/` templates |
 | Disposable restore | [restore_drill.py](../scripts/restore_drill.py), [workflow](../.github/workflows/restore-drill.yml) |

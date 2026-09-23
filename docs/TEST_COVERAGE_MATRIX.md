@@ -1,6 +1,6 @@
 # Test coverage and limits
 
-Updated 2026-09-21. These are executable behavior checks, not a claim of 100% line
+Updated 2026-09-23. These are executable behavior checks, not a claim of 100% line
 coverage or production readiness. All message content is synthetic. Exact results
 and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
@@ -27,6 +27,7 @@ and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 | Recovery | History expiry, certified inventory, empty mailbox, query churn, multiple reconciliation pages, partial inventory refusal, v1 upgrade | Multi-day soak and provider-specific race/retention windows |
 | Poison mail | Exact rejected bytes retained; immutable receipts; good mail progresses; human retry; concurrent retry/provider update races; hash verification; parser drift rollback; old citations stable; opt-in large-object quarantine | Bulk historical reprocessing, alerting, larger isolated parsing |
 | Consistency | Atomic evidence/checkpoint, duplicate event checks, collision rollback, lease fencing, eight concurrent claims, crash-after-commit | Production concurrency/load and database failover |
+| Protected-record integrity | Disposable PostgreSQL reproduces pre-0030 whole-table erasure inside rollback; 59 catalog guards, direct and 59 cascaded TRUNCATE refusals, parent FK cascades, unchanged synthetic evidence/jobs/identity rows, runtime privilege denial, row-transition compatibility and migration replay | Privileged DBA separation/audit, reviewed retention/purge, managed backups and independent security acceptance; triggers cannot stop a malicious table owner from disabling them |
 | Retrieval | Body/attachment FTS, opt-in latest-current document text, stable historical evidence, tombstone/quarantine exclusions | Recall benchmark, vector retrieval, entity/state filters |
 | Bootstrap authorization | Expired/invalid local tokens, server-bound context, denied scopes, owner membership revocation, forced RLS, cross-tenant keys and context reset | Full browser/MFA lifecycle, invitation/member/account grants, rate limits; implemented configured-token boundary is covered in API identity above |
 | API | Authentication, bounded bodies, validation without input echo, secure response headers, status counts, proposals/reviews, absent write endpoints | Browser accessibility, CSRF/session/OAuth threat tests for future login |

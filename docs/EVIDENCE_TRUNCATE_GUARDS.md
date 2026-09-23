@@ -2,7 +2,7 @@
 
 ADR-092 addresses [issue #8](https://github.com/jbone3311/CW-EmailBrain/issues/8)
 without claiming that triggers make privileged database administrators powerless.
-Implementation and hosted verification are pending.
+Focused disposable-PostgreSQL verification passed; full and hosted gates are pending.
 
 ## Scope
 

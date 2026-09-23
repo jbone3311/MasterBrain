@@ -110,3 +110,7 @@ All derivatives trace to evidence and transform versions. Original content and s
 previews are separate. Cursor advancement and publication are transactional.
 Cross-tenant references are forbidden. Cascade behavior must never erase retained
 evidence or audit history accidentally.
+Migration 0030 adds statement-level refusal of direct and cascaded `TRUNCATE` for
+protected evidence/receipt rows, stateful approval jobs and audited identity
+bindings. This guard supplements row triggers and forced RLS; an administrative
+table owner can still disable it, so backup/audit controls remain essential.
