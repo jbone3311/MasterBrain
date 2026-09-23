@@ -11,6 +11,8 @@ Synthetic leaf/ancestor swaps and ordinary-file tests are added; the pinned
 symlink differences). Hosted CI and populated restore passed on code head
 `0769227` in PR #25. This does not alter the
 inventory policy, authorize effects, or touch FOS-Master.
+An additional race review extends the no-follow walk above the authorized root;
+its exact-head hosted gate is pending.
 
 **Archive ledger/parent integrity (isolated, hosted-verified).** ADR-099 and
 migration 0033 close the post-seal archive-child insert gap, bind provenance output

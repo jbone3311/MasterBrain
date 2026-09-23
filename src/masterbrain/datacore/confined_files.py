@@ -46,15 +46,17 @@ def _parts(locator: str) -> tuple[str, ...]:
 def _open_confined_descriptor(root: Path, locator: str) -> int:
     """Open only regular bytes below root; never follow an ancestor or leaf link."""
     parts = _parts(locator)
+    if not root.is_absolute() or any(part in {"", ".", ".."} for part in root.parts[1:]):
+        raise ConfinedFileUnavailable()
     directory_flag = getattr(os, "O_DIRECTORY", None)
     nofollow_flag = getattr(os, "O_NOFOLLOW", None)
     if directory_flag is None or nofollow_flag is None:
         raise ConfinedFileUnavailable()
     opened: list[int] = []
     try:
-        directory = os.open(root, os.O_RDONLY | directory_flag | nofollow_flag)
+        directory = os.open(root.anchor, os.O_RDONLY | directory_flag | nofollow_flag)
         opened.append(directory)
-        for part in parts[:-1]:
+        for part in (*root.parts[1:], *parts[:-1]):
             directory = os.open(
                 part, os.O_RDONLY | directory_flag | nofollow_flag, dir_fd=directory
             )

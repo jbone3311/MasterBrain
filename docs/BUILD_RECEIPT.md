@@ -21,6 +21,10 @@ and populated [logical restore](https://github.com/jbone3311/CW-EmailBrain/actio
 in PR #25. This verifies the isolated branch, not production FileOS cutover or
 real cloud-placeholder behavior. No FOS-Master edit or inventory-policy switch
 occurs.
+The documentation head `9b000cfa139b8eafae9e83a530f3ae7d4f247a6c` also
+passed its hosted gate and restore. A further no-follow walk of ancestors above
+the authorized root and a matching regression are in progress; their final-head
+hosted result is not yet claimed here.
 
 ## Proposed archive-ledger integrity checkpoint
 

@@ -1,7 +1,8 @@
 # ADR-100 — Confine FileOS snapshot and extraction reads to the authorized root
 
 Status: accepted for isolated implementation; hosted gate and restore passed on
-code head `0769227` in PR #25. No production cutover.
+code head `0769227` in PR #25. An additional ancestor-above-root guard awaits
+final-head hosted verification. No production cutover.
 
 ## Context
 
@@ -18,7 +19,8 @@ that observed donor behavior is intentionally not adopted by MasterBrain.
 
 - Use one DataCore root-confined, descriptor-relative read primitive for FileOS
   snapshot hashing and text/PDF/Office extraction. Open the resolved authorized
-  root and every ancestor with `O_DIRECTORY | O_NOFOLLOW`; open the leaf with
+  root and every ancestor from the filesystem root with
+  `O_DIRECTORY | O_NOFOLLOW`; open the leaf with
   `O_NOFOLLOW | O_NONBLOCK`, require a regular file, and read only a bounded number
   of bytes. Never use a prechecked pathname as the byte source.
 - Compare file identity and size/time metadata on the open descriptor before and
@@ -39,7 +41,8 @@ that observed donor behavior is intentionally not adopted by MasterBrain.
 ## Verification
 
 Use synthetic roots only. Test ordinary nested files, zero and bounded sizes,
-direct/internal/outside symlinks, file and ancestor swaps immediately before open,
+direct/internal/outside symlinks, file and ancestor swaps both below and above
+the authorized root immediately before open,
 read-time mutation, source removal/replacement, and exact extraction outcomes.
 Run the pinned donor shadow to confirm that ordinary common SHA/size parity remains
 while explicit symlink differences remain reason-coded. Run full hosted CI,

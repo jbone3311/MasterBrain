@@ -111,6 +111,28 @@ def test_confined_reader_refuses_rebound_root(tmp_path: Path) -> None:
         read_confined_file(root, "proof.txt", max_bytes=100, capture_bytes=True)
 
 
+def test_confined_reader_rejects_root_ancestor_swap_before_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "parent"
+    root = parent / "root"
+    root.mkdir(parents=True)
+    (root / "proof.txt").write_bytes(b"fictional proof")
+    outside = tmp_path / "outside"
+    (outside / "root").mkdir(parents=True)
+    (outside / "root" / "proof.txt").write_bytes(b"outside secret")
+    original = confined_files._open_confined_descriptor
+
+    def swapped(candidate_root: Path, locator: str) -> int:
+        parent.rename(tmp_path / "moved")
+        parent.symlink_to(outside, target_is_directory=True)
+        return original(candidate_root, locator)
+
+    monkeypatch.setattr(confined_files, "_open_confined_descriptor", swapped)
+    with pytest.raises(ConfinedFileUnavailable):
+        read_confined_file(root, "proof.txt", max_bytes=100, capture_bytes=True)
+
+
 def test_confined_reader_rejects_replacement_after_read(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
