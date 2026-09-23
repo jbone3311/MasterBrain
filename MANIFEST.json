@@ -3,7 +3,8 @@
   "product": {
     "id": "masterbrain",
     "name": "MasterBrain",
-    "status": "migration-foundation",
+    "version": "0.2.0a1",
+    "status": "synthetic-alpha",
     "repository": "jbone3311/CW-EmailBrain",
     "repository_rename": "deferred"
   },
@@ -17,7 +18,7 @@
       "donor_repository": "jbone3311/FOS-Master",
       "donor_commit": "218d5caec2f20b9047fd3eb8e027dc671acf0c15",
       "role": "internal source capability",
-      "status": "migration-started",
+      "status": "read-only-migration-slice",
       "cutover": "prohibited-before-parity"
     }
   },
@@ -38,6 +39,10 @@
     "grouped DataCore and KnowledgeCore search",
     "source and provenance contracts",
     "read-only FileOS snapshot",
+    "FileOS archive inventory, text, document and image OCR derivatives",
+    "sealed exact-retry archive member publication batches",
+    "current-only Email and FileOS evidence retrieval with coverage status",
+    "root-confined FileOS snapshot and extraction reads",
     "shared MasterBrain CLI"
   ],
   "prohibited_claims": [

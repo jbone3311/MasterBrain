@@ -2,6 +2,29 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## MasterBrain synthetic alpha readiness candidate
+
+Local commit `947ea6e83fd18d0cb147bbc8325737bb67de194e` was published through
+the connected GitHub integration with the exact same tree as remote commit
+`9b1b0e0eb71291290ab30c418c9bd8e12e05a8b8` in
+[PR #27](https://github.com/jbone3311/CW-EmailBrain/pull/27), targeting the tested
+PR #25 branch. That code head passed full hosted
+[CI 35927108260](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108260)
+and the populated PostgreSQL
+[restore 35927108311](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108311).
+The local focused MasterBrain CLI suite passed 20 tests with `PYTHONPATH=src`;
+documentation inventory passed (188 Markdown files, 995 paths/fragments). The
+separate pinned FOS-Master donor comparison passed fixture scans, pair/hash and
+text/HTML/CSV/DOCX/XLSX extraction checks plus 3,000 synthetic files and edge
+cases. The initial local pytest collection without `PYTHONPATH=src` failed before
+tests ran because that existing virtual environment lacked an installed editable
+package; it is not counted as a product failure or pass.
+
+This is a synthetic alpha **candidate** only. The branch has not yet been merged
+to `main` or tagged. No live-source, hosted-operation, production identity or
+FileOS cutover acceptance is claimed; FOS-Master remains unchanged. ADR-101 and
+the alpha test guide define the release and test boundary.
+
 ## Confined FileOS read checkpoint
 
 ADR-100 precedes a DataCore descriptor-relative reader shared by snapshot hashing

@@ -1,16 +1,17 @@
 # MasterBrain Documentation
 
-Status: target architecture plus an executable bounded Email prototype and first DataCore migration tranche
-Documentation updated: 2026-09-21; exact tested revisions are in the build receipt.
+Status: target architecture plus a `0.2.0a1` synthetic alpha candidate;
+not a production or live-source release. Exact tested revisions are in the build receipt.
 Source health measurements and historical validation retain their own dates.
 
 MasterBrain is the final product: a private, multi-user intelligence layer across
 Email and FileOS sources. DataCore owns common evidence processing; KnowledgeCore
 owns evidence-backed knowledge; Brain API gives assistants progressive access.
 EmailBrain is retained as the internal Email capability, so detailed Email documents
-and compatibility names remain valid within that scope. The current prototype
-implements a bounded portion: synthetic Email ingestion/search, review, virtual
-rules and recovery, plus read-only DataCore hashing/dedupe extraction.
+and compatibility names remain valid within that scope. The current candidate
+implements bounded synthetic Email ingestion/search, review, virtual rules and
+recovery, plus shared read-only FileOS intake, extraction, archive derivatives,
+and current-only retrieval. It does not implement live-source or FileOS cutover.
 It also connects approved synthetic PDFs to restricted extraction, immutable page
 evidence and opt-in search through a separate API/library and explicit operator
 command. The [owner PDF screen](DOCUMENT_REVIEW_SCREEN.md) now provides separate
@@ -26,6 +27,7 @@ selection/approval/history/cancellation and cited pages; live acceptance is pend
 - **Trips/bills and assistant change polling:** [structured memory](STRUCTURED_MEMORY.md).
 
 - **Try the latest reader:** [user testing](USER_TESTING.md), [reading and download limits](MESSAGE_READER.md).
+- **Try the synthetic alpha:** [alpha testing](ALPHA_TESTING.md), [exact-commit build receipts](BUILD_RECEIPT.md).
 
 - **Current build:** [browser session backend](BROWSER_AUTH.md) and explicit
   private TLS/operator startup are implemented; owner UI and browser acceptance come next.

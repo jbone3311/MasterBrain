@@ -10,11 +10,15 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-101](adr/101_synthetic_alpha_release.md) defines the test-only `0.2.0a1`
+checkpoint and the branch/PR/test/merge/tag cadence. It does not authorize live
+sources, production deployment, FileOS cutover or FOS-Master retirement.
+
 [ADR-100](adr/100_confined_fileos_reads.md) requires descriptor-relative,
 no-follow, bounded FileOS snapshot and extraction reads before bytes are hashed or
-parsed. The isolated implementation and adversarial regressions are pending hosted
-CI, donor shadow and populated restore. It leaves the donor policy and FOS-Master
-unchanged.
+parsed. The isolated implementation and adversarial regressions passed hosted CI,
+donor shadow and populated restore on PR #25's tested head. Integration is pending;
+the donor policy and FOS-Master remain unchanged.
 
 [ADR-099](adr/099_archive_ledger_and_parent_integrity.md) requires archive child
 inserts to keep sealed inventory counts/bytes balanced at commit, binds provenance

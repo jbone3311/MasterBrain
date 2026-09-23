@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0a1 — synthetic alpha candidate (unreleased)
+
+- Consolidates the tested MasterBrain Email/FileOS stack into a test-only release
+  boundary. The version is not a release until the cumulative `main` commit passes
+  CI and populated restore and is tagged `v0.2.0a1`.
+- Adds a reproducible [alpha test guide](docs/ALPHA_TESTING.md), exact-head
+  branch/PR/merge/tag decision (ADR-101), and updated product identity/status.
+- Extends the `main` restore trigger to shared MasterBrain source, bounds CI run
+  time and cancels superseded PR runs (but not `main` runs), reports the collected/
+  executed/skipped PostgreSQL-test denominator, and ignores local dump files. No
+  runtime permission, schema or FileOS donor change.
+- Remaining: live-source authorization, hosted operations, production acceptance,
+  complete KnowledgeCore and LLM-client contract, plus separate FileOS cutover
+  proof. The pinned FOS-Master donor remains untouched.
+
 ## Unreleased — through 2026-09-22
 
 The package remains version 0.1.0, a synthetic-data prototype. These entries do
