@@ -33,6 +33,11 @@ mean hosted, live-source accepted, or production ready.
   silent donor removal after an unreadable directory, a donor size/hash race and
   valid unusual filename round trips. They do not prove real cloud or platform-wide
   filename behavior and authorize no policy switch.
+- ADR-100's isolated FileOS read-hardening branch routes snapshot hashing and
+  text/PDF/Office extraction through bounded, descriptor-relative no-follow opens.
+  Synthetic symlink-swap and locator-stability regressions are added. Hosted CI,
+  populated restore remain pending. The 3,000-file pinned-donor shadow passes
+  with 3,002 ordinary SHA/size matches; it is not yet a release claim.
 - FileOS completion refuses malformed or uncertain snapshot coverage before writing
   a latest-complete receipt or absence event. The private publisher rejects before
   intake; direct storage completion independently enforces the rule. A separate

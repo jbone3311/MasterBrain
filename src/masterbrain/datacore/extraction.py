@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import codecs
 import csv
-import hashlib
 import io
 from collections import Counter
 from collections.abc import Callable, Mapping
@@ -16,6 +15,12 @@ from typing import Any, Protocol
 from uuid import UUID
 
 from email_brain.domain.models import TenantContext
+from masterbrain.datacore.confined_files import (
+    ConfinedFileChanged,
+    ConfinedFileTooLarge,
+    ConfinedFileUnavailable,
+    read_confined_file,
+)
 from masterbrain.datacore.document_contract import (
     MAX_DOCUMENT_BYTES,
     DocumentResult,
@@ -204,35 +209,29 @@ def extract_source_version(
             return ExtractionResult(
                 version_id, locator, ExtractionStatus.FAILED, error_code="symlink_refused"
             )
-        resolved = path.resolve(strict=True)
-        resolved.relative_to(authorized_root)
-        before = resolved.stat()
-        if not resolved.is_file():
-            raise OSError
-        with resolved.open("rb") as handle:
-            raw = handle.read(max_bytes + 1)
-        after = resolved.stat()
-    except (OSError, RuntimeError, ValueError):
-        return ExtractionResult(
-            version_id, locator, ExtractionStatus.FAILED, error_code="source_unavailable"
-        )
-    if len(raw) > max_bytes:
+        read = read_confined_file(authorized_root, locator, max_bytes=max_bytes, capture_bytes=True)
+    except ConfinedFileTooLarge:
         return ExtractionResult(
             version_id, locator, ExtractionStatus.DEFERRED, error_code="source_too_large"
         )
-    if (
-        before.st_size != after.st_size
-        or before.st_mtime_ns != after.st_mtime_ns
-        or len(raw) != declared_size
-    ):
+    except ConfinedFileChanged:
         return ExtractionResult(
             version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
         )
-    actual = hashlib.sha256(raw).hexdigest()
-    if actual != digest["value"]:
+    except (ConfinedFileUnavailable, OSError, RuntimeError, ValueError):
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.FAILED, error_code="source_unavailable"
+        )
+    if read.size_bytes != declared_size:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
+        )
+    if read.sha256 != digest["value"]:
         return ExtractionResult(
             version_id, locator, ExtractionStatus.CHANGED, error_code="digest_mismatch"
         )
+    assert read.raw is not None
+    raw = read.raw
     status, text, error, metadata = _extract_bytes(locator, version_id, raw)
     return ExtractionResult(version_id, locator, status, text, error, metadata)
 
@@ -286,35 +285,32 @@ def extract_document_source_version(
             return ExtractionResult(
                 version_id, locator, ExtractionStatus.FAILED, error_code="symlink_refused"
             )
-        resolved = path.resolve(strict=True)
-        resolved.relative_to(authorized_root)
-        before = resolved.stat()
-        if not resolved.is_file():
-            raise OSError
-        with resolved.open("rb") as handle:
-            raw = handle.read(MAX_DOCUMENT_BYTES + 1)
-        after = resolved.stat()
-    except (OSError, RuntimeError, ValueError):
-        return ExtractionResult(
-            version_id, locator, ExtractionStatus.FAILED, error_code="source_unavailable"
+        read = read_confined_file(
+            authorized_root, locator, max_bytes=MAX_DOCUMENT_BYTES, capture_bytes=True
         )
-    if len(raw) > MAX_DOCUMENT_BYTES:
+    except ConfinedFileTooLarge:
         return ExtractionResult(
             version_id, locator, ExtractionStatus.DEFERRED, error_code="document_byte_limit"
         )
-    if (
-        before.st_size != after.st_size
-        or before.st_mtime_ns != after.st_mtime_ns
-        or len(raw) != declared_size
-    ):
+    except ConfinedFileChanged:
         return ExtractionResult(
             version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
         )
-    actual = hashlib.sha256(raw).hexdigest()
-    if actual != digest["value"]:
+    except (ConfinedFileUnavailable, OSError, RuntimeError, ValueError):
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.FAILED, error_code="source_unavailable"
+        )
+    if read.size_bytes != declared_size:
+        return ExtractionResult(
+            version_id, locator, ExtractionStatus.CHANGED, error_code="source_changed"
+        )
+    if read.sha256 != digest["value"]:
         return ExtractionResult(
             version_id, locator, ExtractionStatus.CHANGED, error_code="digest_mismatch"
         )
+    assert read.raw is not None
+    raw = read.raw
+    actual = read.sha256
     try:
         result = processor.extract(
             raw,

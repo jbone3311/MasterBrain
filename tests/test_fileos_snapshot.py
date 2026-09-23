@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from masterbrain.datacore import fileos as fileos_module
 from masterbrain.datacore.fileos import snapshot_tree
 
 NOW = datetime(2026, 9, 22, 12, tzinfo=UTC)
@@ -50,13 +51,16 @@ def test_snapshot_uses_donor_exclusions_and_bounds(tmp_path: Path) -> None:
     cache = tmp_path / "__pycache__"
     cache.mkdir()
     (cache / "ignored.txt").write_text("ignored", encoding="utf-8")
-    result = snapshot(tmp_path, config={
-        "hash_algorithm": "sha256",
-        "min_file_size": 0,
-        "max_file_size_mb": 100,
-        "exclude_patterns": [".db", "__pycache__"],
-        "include_extensions": [".txt"],
-    })
+    result = snapshot(
+        tmp_path,
+        config={
+            "hash_algorithm": "sha256",
+            "min_file_size": 0,
+            "max_file_size_mb": 100,
+            "exclude_patterns": [".db", "__pycache__"],
+            "include_extensions": [".txt"],
+        },
+    )
     assert result["counts"] == {"items": 1, "excluded": 2, "errors": 0}
     assert result["items"][0]["locator"] == "keep.txt"
 
@@ -81,20 +85,20 @@ def test_snapshot_can_follow_internal_file_symlink_but_never_escape(tmp_path: Pa
     os.symlink(outside, root / "outside-link.txt")
     result = snapshot(root, follow_file_symlinks=True)
     assert [item["locator"] for item in result["items"]] == ["inside-link.txt", "target.txt"]
-    assert result["errors"] == [
-        {"locator": "outside-link.txt", "code": "symlink_outside_root"}
-    ]
+    assert result["errors"] == [{"locator": "outside-link.txt", "code": "symlink_outside_root"}]
 
 
 def test_snapshot_detects_mid_scan_change(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     path = tmp_path / "changing.txt"
     path.write_text("before", encoding="utf-8")
 
-    def mutate(candidate: Path, algorithm: str = "sha256") -> str:
-        candidate.write_text("after-change", encoding="utf-8")
-        return "0" * 64
+    original_read = fileos_module.read_confined_file
 
-    monkeypatch.setattr("masterbrain.datacore.fileos.file_hash", mutate)
+    def mutate(root: Path, locator: str, *, max_bytes: int, capture_bytes: bool):
+        (root / locator).write_text("after-change", encoding="utf-8")
+        return original_read(root, locator, max_bytes=max_bytes, capture_bytes=capture_bytes)
+
+    monkeypatch.setattr(fileos_module, "read_confined_file", mutate)
     result = snapshot(tmp_path)
     assert result["items"] == []
     assert result["errors"] == [{"locator": "changing.txt", "code": "changed_during_scan"}]

@@ -11,6 +11,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from masterbrain.datacore.confined_files import (
+    ConfinedFileChanged,
+    ConfinedFileTooLarge,
+    ConfinedFileUnavailable,
+    read_confined_file,
+)
 from masterbrain.datacore.contracts import (
     Digest,
     SourceItemVersion,
@@ -18,7 +24,7 @@ from masterbrain.datacore.contracts import (
     SourceRef,
     stable_id,
 )
-from masterbrain.datacore.dedup import DEFAULT_CONFIG, file_hash, is_excluded_path, should_include
+from masterbrain.datacore.dedup import DEFAULT_CONFIG, is_excluded_path, should_include
 
 SNAPSHOT_VERSION = "masterbrain-fileos-snapshot-v1"
 INVENTORY_POLICY_VERSION = "fileos-inventory-policy-v1"
@@ -153,7 +159,8 @@ def snapshot_tree(
                     errors.append(SnapshotError(locator, "symlink_skipped"))
                     continue
                 try:
-                    path.resolve(strict=True).relative_to(root)
+                    target = path.resolve(strict=True)
+                    target_locator = _relative(target, root)
                 except (FileNotFoundError, RuntimeError, ValueError):
                     errors.append(SnapshotError(locator, "symlink_outside_root"))
                     continue
@@ -172,17 +179,38 @@ def snapshot_tree(
                     record_exclusion(path, "file", reason)
                     continue
                 before = path.stat()
-                digest_value = file_hash(path)
+                read_locator = target_locator if is_symlink else locator
+                read = read_confined_file(
+                    root,
+                    read_locator,
+                    max_bytes=policy.get("max_file_size_mb", 100) * 1024 * 1024,
+                    capture_bytes=False,
+                )
                 after = path.stat()
+                if (
+                    before.st_dev != read.device
+                    or before.st_ino != read.inode
+                    or before.st_size != read.size_bytes
+                    or before.st_mtime_ns != read.mtime_ns
+                    or after.st_dev != read.device
+                    or after.st_ino != read.inode
+                    or after.st_size != read.size_bytes
+                    or after.st_mtime_ns != read.mtime_ns
+                    or (is_symlink and path.resolve(strict=True) != target)
+                ):
+                    raise ConfinedFileChanged()
+            except (ConfinedFileChanged, ConfinedFileTooLarge):
+                errors.append(SnapshotError(locator, "changed_during_scan"))
+                continue
+            except ConfinedFileUnavailable:
+                errors.append(SnapshotError(locator, "file_unreadable"))
+                continue
             except OSError:
                 errors.append(SnapshotError(locator, "file_unreadable"))
                 continue
-            if before.st_size != after.st_size or before.st_mtime_ns != after.st_mtime_ns:
-                errors.append(SnapshotError(locator, "changed_during_scan"))
-                continue
-            digest = Digest("sha256", digest_value)
+            digest = Digest("sha256", read.sha256)
             item_id = stable_id("item", source_id, locator)
-            version_id = stable_id("version", item_id, digest_value, str(after.st_size))
+            version_id = stable_id("version", item_id, read.sha256, str(read.size_bytes))
             media_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
             item = SourceItemVersion(
                 item_id,
@@ -191,9 +219,9 @@ def snapshot_tree(
                 locator,
                 observed_at,
                 digest,
-                after.st_size,
+                read.size_bytes,
                 media_type,
-                {"mtime_ns": after.st_mtime_ns},
+                {"mtime_ns": read.mtime_ns},
             )
             items.append(_item_dict(item, is_symlink=is_symlink))
 

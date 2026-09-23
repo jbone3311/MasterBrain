@@ -2,6 +2,15 @@
 
 ## Active checkpoint
 
+**Confined FileOS source reads (isolated, unverified).** ADR-100 addresses a
+pathname check/open race in snapshot hashing and text/PDF/Office extraction.
+The proposed DataCore descriptor reader walks beneath the authorized root with
+no-follow opens, bounds bytes and reopens the locator to detect replacement.
+Synthetic leaf/ancestor swaps and ordinary-file tests are added; the pinned
+3,000-file donor shadow passes (3,002 ordinary matches, six policy and two
+symlink differences). Hosted CI and populated restore are pending. This does not alter the
+inventory policy, authorize effects, or touch FOS-Master.
+
 **Archive ledger/parent integrity (isolated, hosted-verified).** ADR-099 and
 migration 0033 close the post-seal archive-child insert gap, bind provenance output
 to its normalized document and bind three archive derivative receipt types to the

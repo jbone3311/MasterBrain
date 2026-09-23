@@ -45,6 +45,13 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
 
 ## FileOS document parser controls
 
+ADR-100 requires FileOS snapshot hashing and text/PDF/Office extraction to read
+through the authorized root with no-follow directory/file descriptors. Pathname
+prechecks and digest mismatch alone do not prevent an outside-root read after a
+symlink swap. The new reader bounds bytes and verifies open-file plus locator
+identity before publication. This isolated change is pending hosted and donor
+verification; it adds no source effect or FOS-Master cutover authority.
+
 PDF, DOCX and XLSX are accepted only when suffix and declared media type agree. The
 adapter reopens and hashes the source immediately before processing. A dedicated image
 with pinned reader dependencies runs with no network, read-only root, dropped Linux

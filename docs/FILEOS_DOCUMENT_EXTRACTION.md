@@ -5,6 +5,12 @@ source-bound `.pdf`, `.docx` and `.xlsx` files whose media type, size and SHA-25
 the FileOS snapshot. Source files are opened read-only and are never moved, renamed,
 rewritten or deleted.
 
+ADR-100's isolated read-hardening branch revalidates those source bytes through a
+bounded, descriptor-relative DataCore reader. It opens every directory and the
+file without following symlinks, then rechecks the locator before any bytes reach
+the document worker. This branch still needs hosted verification; it does not
+authorize FileOS cutover.
+
 ## Components
 
 - `document_contract.py` defines the closed request/result envelope and all bounds.

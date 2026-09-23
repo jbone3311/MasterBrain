@@ -58,6 +58,13 @@ the donor scanner follows and hashes both, while MasterBrain marks both
 `symlink_skipped`. The future integrated adapter must not inherit the donor's
 outside-root read behavior.
 
+ADR-100's isolated follow-up routes MasterBrain snapshot hashes through confined,
+descriptor-relative reads. Ordinary SHA/size parity and the explicit symlink
+divergences were rerun locally against this change on 3,000 synthetic files:
+3,002 ordinary SHA/size matches, six known policy differences and two symlink
+differences. Hosted verification remains pending. FOS-Master remains pinned and
+unchanged.
+
 ## Synthetic fault and size boundary tranche
 
 Focused live-donor tests now exercise two sparse, fictional size boundaries without

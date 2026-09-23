@@ -44,6 +44,10 @@ source version and sends only bounded bytes plus identity metadata to a format-s
 worker. That worker has no filesystem/source authority and returns a closed result;
 DataCore independently validates identity, limits and outcome before transactionally
 publishing text and chunks. Parser dependencies do not ship in the Brain API image.
+ADR-100 strengthens the source side of this boundary: snapshot and text/document
+reads open every path component beneath the authorized root with no-follow
+descriptors, then recheck the same locator after bounded reading. A pathname
+precheck is not the authority to open bytes.
 
 The first operator boundary is a one-shot authenticated publisher, separate from the
 Brain API. It binds a private config to one root/source/snapshot, requires exact worker

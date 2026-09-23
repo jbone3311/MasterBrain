@@ -198,10 +198,10 @@ def test_live_pinned_donor_read_failure_retains_old_row(
         rows = shadow.donor_rows(conn)
         assert rows["readfail.txt"] == old_row
 
-        def shared_unreadable(_path: Path, algorithm: str = "sha256") -> str:
-            raise OSError("synthetic shared read refusal")
+        def shared_unreadable(_root: Path, _locator: str, *, max_bytes: int, capture_bytes: bool):
+            raise shared_fileos.ConfinedFileUnavailable()
 
-        monkeypatch.setattr(shared_fileos, "file_hash", shared_unreadable)
+        monkeypatch.setattr(shared_fileos, "read_confined_file", shared_unreadable)
         manifest = shadow.snapshot_tree(
             root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT
         )
@@ -229,14 +229,14 @@ def test_live_pinned_donor_snapshot_race_and_broken_link(
     assert donor_result["scanned"] == 2
     assert set(rows) == {"changing.txt"}
 
-    original_hash = shared_fileos.file_hash
+    original_read = shared_fileos.read_confined_file
 
-    def changing_hash(candidate: Path, algorithm: str = "sha256") -> str:
-        digest = original_hash(candidate, algorithm)
-        candidate.write_bytes(b"new and longer fictional bytes")
-        return digest
+    def changing_read(root: Path, locator: str, *, max_bytes: int, capture_bytes: bool):
+        result = original_read(root, locator, max_bytes=max_bytes, capture_bytes=capture_bytes)
+        (root / locator).write_bytes(b"new and longer fictional bytes")
+        return result
 
-    monkeypatch.setattr(shared_fileos, "file_hash", changing_hash)
+    monkeypatch.setattr(shared_fileos, "read_confined_file", changing_read)
     manifest = shadow.snapshot_tree(root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT)
     assert manifest["items"] == []
     assert manifest["errors"] == [

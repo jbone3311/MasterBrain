@@ -10,6 +10,12 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-100](adr/100_confined_fileos_reads.md) requires descriptor-relative,
+no-follow, bounded FileOS snapshot and extraction reads before bytes are hashed or
+parsed. The isolated implementation and adversarial regressions are pending hosted
+CI, donor shadow and populated restore. It leaves the donor policy and FOS-Master
+unchanged.
+
 [ADR-099](adr/099_archive_ledger_and_parent_integrity.md) requires archive child
 inserts to keep sealed inventory counts/bytes balanced at commit, binds provenance
 outputs to normalized documents and binds text/document/image receipt parent
