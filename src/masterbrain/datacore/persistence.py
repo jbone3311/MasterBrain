@@ -29,7 +29,7 @@ from masterbrain.datacore.contracts import (
     SourceRef,
     stable_id,
 )
-from masterbrain.datacore.fileos import SNAPSHOT_VERSION
+from masterbrain.datacore.fileos import INVENTORY_POLICY_VERSION, SNAPSHOT_VERSION
 
 MAX_MANIFEST_ITEMS = 10_000
 MAX_NORMALIZED_BYTES = 1_048_576
@@ -218,6 +218,52 @@ def fileos_manifest_sha256(manifest: Mapping[str, Any]) -> str:
     return _canonical_digest(manifest)
 
 
+def fileos_inventory_policy_sha256(manifest: Mapping[str, Any]) -> str:
+    """Validate and identify the exact policy used for FileOS inventory membership."""
+    policy = manifest.get("policy")
+    expected_fields = {
+        "policy_version",
+        "hash_algorithm",
+        "follow_file_symlinks",
+        "min_file_size",
+        "max_file_size_mb",
+        "include_extensions",
+        "exclude_patterns",
+    }
+    if not isinstance(policy, Mapping) or set(policy) != expected_fields:
+        raise ValueError("invalid FileOS inventory policy")
+    minimum = policy["min_file_size"]
+    maximum = policy["max_file_size_mb"]
+    extensions = policy["include_extensions"]
+    exclusions = policy["exclude_patterns"]
+    if (
+        policy["policy_version"] != INVENTORY_POLICY_VERSION
+        or policy["hash_algorithm"] != "sha256"
+        or type(policy["follow_file_symlinks"]) is not bool
+        or type(minimum) is not int
+        or not 0 <= minimum <= 2048 * 1024 * 1024
+        or type(maximum) is not int
+        or not 1 <= maximum <= 2048
+        or minimum > maximum * 1024 * 1024
+        or (extensions is not None and not isinstance(extensions, list))
+        or not isinstance(exclusions, list)
+    ):
+        raise ValueError("invalid FileOS inventory policy")
+    if extensions is not None and (
+        len(extensions) > 256
+        or any(
+            not isinstance(value, str) or len(value) > 32 or "\x00" in value for value in extensions
+        )
+    ):
+        raise ValueError("invalid FileOS inventory policy")
+    if len(exclusions) > 256 or any(
+        not isinstance(value, str) or not 1 <= len(value) <= 128 or "\x00" in value
+        for value in exclusions
+    ):
+        raise ValueError("invalid FileOS inventory policy")
+    return _canonical_digest({"manifest_version": SNAPSHOT_VERSION, "policy": dict(policy)})
+
+
 def _parse_time(value: object) -> datetime:
     if not isinstance(value, str) or len(value) > 100:
         raise ValueError("invalid observed timestamp")
@@ -295,6 +341,7 @@ def validate_fileos_completion_coverage(
 ) -> tuple[SourceRef, datetime, list[SourceItemVersion]]:
     """Refuse a completion ledger that could mistake a scan failure for absence."""
     source, observed_at, items = _manifest_items(manifest)
+    fileos_inventory_policy_sha256(manifest)
     counts = manifest["counts"]
     errors = manifest.get("errors")
     if (
@@ -3281,6 +3328,7 @@ class DataCoreStore:
         """Append a completion receipt only after every snapshot item is accounted."""
         self.store.require(ctx, "brain.document.publish")
         source, observed_at, items = validate_fileos_completion_coverage(manifest)
+        policy_hash = fileos_inventory_policy_sha256(manifest)
         allowed = {"extracted", "empty", "unsupported", "deferred", "changed", "failed"}
         counts = dict(sorted(outcomes.items()))
         items_by_id = {item.item_id: item for item in items}
@@ -3316,6 +3364,7 @@ class DataCoreStore:
             "source_id": source.source_id,
             "observed_at": observed_at,
             "manifest_sha256": manifest_hash,
+            "policy_sha256": policy_hash,
             "code_revision": code_revision,
             "text_extractor_version": FILEOS_TEXT_EXTRACTOR_VERSION,
             "document_processor_version": document_processor_version,
@@ -3341,14 +3390,14 @@ class DataCoreStore:
             ):
                 raise Conflict("FileOS completion is not bound to its intake")
             existing = conn.execute(
-                "SELECT source_id,observed_at,manifest_sha256,code_revision,"
+                "SELECT source_id,observed_at,manifest_sha256,policy_sha256,code_revision,"
                 "text_extractor_version,document_processor_version,item_count,outcomes,"
                 "published_documents,completed_at "
                 "FROM brain_fileos_run_receipts WHERE actor_id=%s AND run_id=%s",
                 (ctx.actor_id, run_id),
             ).fetchone()
             previous = conn.execute(
-                "SELECT actor_id,run_id,observed_at,manifest_sha256,item_count "
+                "SELECT actor_id,run_id,observed_at,manifest_sha256,policy_sha256,item_count "
                 "FROM brain_fileos_run_receipts WHERE source_id=%s "
                 "AND NOT (actor_id=%s AND run_id=%s) "
                 "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
@@ -3359,14 +3408,18 @@ class DataCoreStore:
             recorded = existing is None
             if existing:
                 completed_at = existing.pop("completed_at")
+                if existing["policy_sha256"] is None:
+                    raise Conflict("FileOS inventory policy requires review")
                 if existing != expected:
                     raise Conflict("FileOS completion receipt changed")
             else:
+                if previous and previous["policy_sha256"] != policy_hash:
+                    raise Conflict("FileOS inventory policy requires review")
                 row = conn.execute(
                     "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
-                    "observed_at,manifest_sha256,code_revision,text_extractor_version,"
+                    "observed_at,manifest_sha256,policy_sha256,code_revision,text_extractor_version,"
                     "document_processor_version,item_count,outcomes,published_documents) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
                     "RETURNING completed_at",
                     (
                         ctx.tenant_id,
@@ -3375,6 +3428,7 @@ class DataCoreStore:
                         source.source_id,
                         observed_at,
                         manifest_hash,
+                        policy_hash,
                         code_revision,
                         FILEOS_TEXT_EXTRACTOR_VERSION,
                         document_processor_version,

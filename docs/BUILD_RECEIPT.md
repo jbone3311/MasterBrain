@@ -2,6 +2,22 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS inventory-policy checkpoint
+
+ADR-096 preceded migration 0031 and the completion change. New snapshots label
+their policy version; a canonical digest of the exact membership policy is saved
+with each new immutable completion receipt. Unknown historical policy or changed
+policy refuses a new completion before absence inference. Legacy receipts are not
+backfilled; no force flag or donor policy switch is added. Unit and PostgreSQL
+tests cover digest stability/drift, malformed policy, SQL new-insert enforcement,
+replay and consecutive-run absence. Local focused pytest: **24 passed, 3
+PostgreSQL tests skipped** (no local disposable database), 77 deselected, two
+upstream deprecation warnings. Ruff check/format and diff whitespace checks passed.
+The documentation inventory passed (178 Markdown files, 947 local links). The
+pinned donor shadow run preserved 3,002 common hash/size matches, exactly six
+known policy differences and the 1,502-row donor mass-prune refusal. Hosted
+PostgreSQL, full CI and populated restore are pending; no cutover is implied.
+
 ## Local FileOS mass-loss checkpoint
 
 ADR-095 records the pinned donor's mass-prune threshold as a fail-closed

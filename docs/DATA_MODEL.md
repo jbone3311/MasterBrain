@@ -76,6 +76,11 @@ an exact immutable item/outcome ledger. Consecutive complete ledgers produce imm
 absence events without deleting evidence or treating partial work as a full inventory.
 ADR-094 adds an application-level coverage precondition before those receipts:
 blocking snapshot errors cannot become a completed inventory or absence evidence.
+Migration `0031_fileos_policy_identity.sql` adds a nullable historical
+`policy_sha256` to the immutable completion receipt. A NOT VALID check preserves
+unknown legacy policies while requiring a valid digest on every new insert.
+ADR-096 compares consecutive policy identities before absence inference; it does
+not invent a digest for old receipts or rebaseline a source automatically.
 
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and

@@ -38,10 +38,16 @@ mean hosted, live-source accepted, or production ready.
   intake; direct storage completion independently enforces the rule. A separate
   completion guard now refuses a clean-looking new run that loses at least 10 prior
   items and at least half the prior inventory; it has no unreviewed bypass. This
-  does not yet version inventory policy or protect smaller unexplained losses.
+  does not protect smaller unexplained losses.
   Hosted PostgreSQL, full CI and populated restore passed on PR #18's runtime head.
   Hosted CI and populated restore passed for the mass-loss guard on PR #19's
-  runtime head; review and policy-versioning remain pending.
+  runtime head; review remains pending.
+- New FileOS completion receipts carry a versioned inventory-policy digest and
+  refuse consecutive-run absence inference across changed or unknown policies.
+  Legacy receipts remain immutable with unknown policy; a reviewed baseline path,
+  root-binding fence and hosted verification are still pending. This does not
+  switch to the donor scanner's exclusions or authorize cutover. A file crossing
+  the unchanged size/exclusion boundary still lacks per-locator accounting.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

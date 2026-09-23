@@ -61,6 +61,10 @@ therefore cannot create an absence event; partial imports remain separate. A
 second guard refuses a new complete run with at least 10 missing prior items and
 at least 50% loss, even if its scan reports no errors. It retains the previous
 complete inventory until a separately reviewed recovery path exists.
+Each new completion also records an immutable digest of its explicit inventory
+policy. Comparing consecutive completed runs with an unknown or different policy
+is refused before absence inference. Legacy policy cannot be recovered from a
+whole-manifest hash, so it is not silently backfilled.
 
 FileOS index rebuilds publish immutable generations from one exact completed run.
 Readiness is a database-checked closure over generation items and chunks. A separate

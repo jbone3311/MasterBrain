@@ -74,10 +74,16 @@ completion from replacing newer state. Absence is inferred only between two comp
 ledgers; it retains evidence and does not authorize hiding, deletion or any file effect.
 Completion additionally refuses malformed snapshot error ledgers or uncertain
 directory/file/race coverage before absence inference. A deliberate no-follow
-symlink skip is the sole tolerated snapshot error; source-policy drift and mass loss
-remain separate cutover gates (ADR-094). ADR-095 now refuses the donor-equivalent
-mass-loss threshold before completion, without a force bypass; smaller losses and
-inventory-policy drift remain unsatisfied cutover gates.
+symlink skip is the sole tolerated snapshot error (ADR-094). ADR-095 refuses the
+donor-equivalent mass-loss threshold before completion, without a force bypass;
+smaller unexplained losses remain an unsatisfied cutover gate.
+ADR-096 adds a versioned policy digest to new completion receipts and refuses
+completion across unknown or changed policies. Historical policy remains unknown;
+there is no silent backfill or force override. Root-binding changes and live
+scanner parity remain separate cutover gates.
+An unchanged policy still needs per-locator accounting when a previously indexed
+file becomes oversize or newly excluded; a small such loss can fall below the
+mass-loss threshold and must not be mistaken for a proven deletion at cutover.
 
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and

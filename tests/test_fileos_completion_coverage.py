@@ -9,6 +9,7 @@ import pytest
 
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import (
+    fileos_inventory_policy_sha256,
     fileos_mass_loss_requires_review,
     validate_fileos_completion_coverage,
 )
@@ -82,3 +83,56 @@ def test_malformed_coverage_ledger_blocks_completion(tmp_path: Path, defect: str
 )
 def test_mass_loss_threshold(previous: int, missing: int, requires_review: bool) -> None:
     assert fileos_mass_loss_requires_review(previous, missing) is requires_review
+
+
+def test_policy_identity_is_stable_across_observations_but_detects_drift(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "fictional.txt").write_bytes(b"fictional evidence")
+    first = _manifest(tmp_path)
+    later = snapshot_tree(
+        tmp_path,
+        source_id="coverage_test",
+        observed_at=datetime(2026, 9, 24, tzinfo=UTC),
+    )
+    baseline = fileos_inventory_policy_sha256(first)
+    assert baseline == fileos_inventory_policy_sha256(later)
+    assert first["policy"]["policy_version"] == "fileos-inventory-policy-v1"
+    for field, value in (
+        ("exclude_patterns", ["fictional.txt"]),
+        ("max_file_size_mb", 1),
+        ("follow_file_symlinks", True),
+    ):
+        changed = _manifest(tmp_path)
+        changed["policy"][field] = value
+        assert fileos_inventory_policy_sha256(changed) != baseline
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("policy_version", "unknown-policy"),
+        ("hash_algorithm", "md5"),
+        ("follow_file_symlinks", 1),
+        ("min_file_size", -1),
+        ("max_file_size_mb", 0),
+        ("include_extensions", [17]),
+        ("exclude_patterns", ["bad\x00pattern"]),
+    ],
+)
+def test_invalid_policy_cannot_complete(tmp_path: Path, field: str, value: object) -> None:
+    manifest = _manifest(tmp_path)
+    manifest["policy"][field] = value
+    with pytest.raises(ValueError, match="inventory policy"):
+        validate_fileos_completion_coverage(manifest)
+
+
+def test_missing_or_extra_policy_field_cannot_complete(tmp_path: Path) -> None:
+    missing = _manifest(tmp_path)
+    del missing["policy"]["policy_version"]
+    with pytest.raises(ValueError, match="inventory policy"):
+        validate_fileos_completion_coverage(missing)
+    extra = _manifest(tmp_path)
+    extra["policy"]["unknown"] = True
+    with pytest.raises(ValueError, match="inventory policy"):
+        validate_fileos_completion_coverage(extra)

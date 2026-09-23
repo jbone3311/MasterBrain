@@ -66,7 +66,15 @@ cases were skipped because no local test database is configured. Hosted
 passed 2,689 Python tests and the full non-Python gate, and
 [restore 35869402685](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402685)
 passed on [PR #19](https://github.com/jbone3311/CW-EmailBrain/pull/19)'s runtime
-head. A reviewed legitimate-large-removal path and policy-version fence remain.
+head. A reviewed legitimate-large-removal path remains.
+
+ADR-096 defines the next separate FileOS guard: new completion receipts carry a
+validated, versioned inventory-policy digest, and a new run cannot compare against
+an unknown legacy or different prior policy. Migration 0031 preserves legacy
+receipts without inventing a digest. Twenty-four focused local tests and the
+pinned 3,000-file donor shadow passed; three PostgreSQL tests skipped locally
+without a disposable database. Hosted verification, a reviewed legacy baseline
+path and root-binding acceptance remain.
 
 ## Completed gates
 

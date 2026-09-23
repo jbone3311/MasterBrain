@@ -109,7 +109,9 @@ document labels/CRC and MasterBrain media types/IDs are not equivalent fields.
 Real cloud dataless placeholders, permission-driven unreadable directories,
 cross-platform normalization/case collisions and invalid-byte filenames still
 need platform-appropriate acceptance before any
-integrated inventory-policy change. The future policy ADR must version manifests,
-represent metadata-only/oversize candidates without calling them complete evidence,
-prevent policy-only absence events, and prove replay, rollback and search visibility
-on consecutive completed runs. FOS-Master remains the operational reference.
+integrated inventory-policy change. ADR-096 now versions the current snapshot
+policy and refuses policy-only absence inference across complete runs; it does not
+adopt the donor policy. A future integration decision must represent metadata-only/
+oversize candidates without calling them complete evidence and prove replay,
+rollback and search visibility on consecutive completed runs. FOS-Master remains
+the operational reference.

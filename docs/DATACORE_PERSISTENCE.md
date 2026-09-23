@@ -116,8 +116,16 @@ replayable. ADR-095 additionally refuses a new completion when at least 10 prior
 items and at least half the previous complete inventory are absent. The comparison
 runs under the source lock before the transaction commits; refusal leaves the prior
 latest-complete receipt and absence ledger unchanged. There is no force bypass;
-legitimate large removal needs a separately reviewed override contract. Inventory
-policy identities are not yet compared across runs.
+legitimate large removal needs a separately reviewed override contract.
+
+ADR-096 and migration 0031 bind each new completion to the canonical hash of its
+versioned snapshot policy (hashing algorithm, symlink behavior, size bounds,
+extension allowlist and exclusions). A new complete run refuses to compare against
+an unknown legacy policy or a different digest, before recording absence. Existing
+receipts remain immutable with a null policy identity; no automatic backfill or
+rebaseline is inferred from their whole-manifest hashes. A direct SQL insert of a
+new receipt without the policy digest is rejected. This is a policy-drift fence,
+not donor-policy adoption, root enrollment or production cutover.
 
 `fileos_rebuild_preview` reads a maximum of 50 opaque item records from the latest
 completed ledger while holding the source completion lock. It recomputes normalized

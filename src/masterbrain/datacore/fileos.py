@@ -19,6 +19,7 @@ from masterbrain.datacore.contracts import (
 from masterbrain.datacore.dedup import DEFAULT_CONFIG, file_hash, is_excluded_path, should_include
 
 SNAPSHOT_VERSION = "masterbrain-fileos-snapshot-v1"
+INVENTORY_POLICY_VERSION = "fileos-inventory-policy-v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,6 +139,7 @@ def snapshot_tree(
         "source": {"source_id": source.source_id, "kind": source.kind.value},
         "observed_at": observed_at.isoformat(),
         "policy": {
+            "policy_version": INVENTORY_POLICY_VERSION,
             "hash_algorithm": "sha256",
             "follow_file_symlinks": follow_file_symlinks,
             "min_file_size": policy.get("min_file_size", 0),

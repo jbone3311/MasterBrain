@@ -54,7 +54,11 @@ from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
 from masterbrain.datacore.image_ocr_contract import source_for as image_source_for
-from masterbrain.datacore.persistence import ArchiveMemberTargetRecord, DataCoreStore
+from masterbrain.datacore.persistence import (
+    ArchiveMemberTargetRecord,
+    DataCoreStore,
+    fileos_inventory_policy_sha256,
+)
 from masterbrain.email_bridge_controller import (
     EmailBridgeBatchItem,
     EmailPartBridgeBatchItem,
@@ -3820,6 +3824,12 @@ def test_fileos_mass_loss_refuses_completion_without_absence(
     first_run = uuid4()
     assert record(first, first_run) is True
     assert record(first, first_run) is False
+    with store.transaction(ctx) as conn:
+        saved = conn.execute(
+            "SELECT policy_sha256 FROM brain_fileos_run_receipts WHERE actor_id=%s AND run_id=%s",
+            (ctx.actor_id, first_run),
+        ).fetchone()
+        assert saved["policy_sha256"] == fileos_inventory_policy_sha256(first)
 
     held = tmp_path.parent / f"{tmp_path.name}_held"
     held.mkdir()
@@ -3854,3 +3864,79 @@ def test_fileos_mass_loss_refuses_completion_without_absence(
     inventory = core.fileos_inventory(ctx, source_id)
     assert inventory["run_id"] == clean_run
     assert inventory["newly_absent_items"] == 8
+
+
+def test_fileos_policy_drift_cannot_infer_absence(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    source_id = "files_policy_guard"
+    core = DataCoreStore(store)
+    (tmp_path / "kept.txt").write_bytes(b"fictional kept evidence")
+    gone = tmp_path / "gone.txt"
+    gone.write_bytes(b"fictional removed evidence")
+
+    def record(manifest: dict[str, Any], run_id: UUID) -> bool:
+        core.import_fileos_snapshot(ctx, manifest, run_id)
+        return core.complete_fileos_run(
+            ctx,
+            manifest,
+            run_id,
+            outcomes={"unsupported": len(manifest["items"])},
+            item_outcomes={item["item_id"]: "unsupported" for item in manifest["items"]},
+            published_documents=0,
+            code_revision="test-policy-v1",
+            document_processor_version=None,
+        ).recorded
+
+    first = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    first_run = uuid4()
+    assert record(first, first_run) is True
+    assert record(first, first_run) is False
+
+    changes = [
+        {"config": {"exclude_patterns": ["gone.txt"]}},
+        {"config": {"max_file_size_mb": 1}},
+        {"follow_file_symlinks": True},
+    ]
+    for hour, options in enumerate(changes, start=2):
+        changed = snapshot_tree(
+            tmp_path,
+            source_id=source_id,
+            observed_at=datetime(2026, 9, 22, hour, tzinfo=UTC),
+            **options,
+        )
+        with pytest.raises(Conflict, match="inventory policy requires review"):
+            record(changed, uuid4())
+        assert core.fileos_inventory(ctx, source_id)["run_id"] == first_run
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_run_receipts WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
+
+    gone.unlink()
+    clean = fileos_manifest(tmp_path, source_id=source_id, hour=5)
+    clean_run = uuid4()
+    assert record(clean, clean_run) is True
+    assert core.fileos_inventory(ctx, source_id)["newly_absent_items"] == 1
+    with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+            "observed_at,manifest_sha256,code_revision,text_extractor_version,item_count,"
+            "outcomes,published_documents) VALUES (%s,%s,%s,%s,now(),%s,"
+            "'test-policy-v1','fileos-text-v1',0,'{}'::jsonb,0)",
+            (ctx.tenant_id, ctx.actor_id, uuid4(), source_id, "a" * 64),
+        )
