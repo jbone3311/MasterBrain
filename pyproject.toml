@@ -27,6 +27,10 @@ document-worker = [
   "openpyxl==3.1.5",
   "python-docx==1.2.0",
 ]
+image-worker = [
+  "pillow==11.3.0",
+  "pytesseract==0.3.13",
+]
 dev = [
   "mypy>=1.11",
   "ruff>=0.6",
@@ -34,6 +38,8 @@ dev = [
   "pypdf>=6.19,<7",
   "openpyxl>=3.1.5,<4",
   "python-docx>=1.2,<2",
+  "pillow==11.3.0",
+  "pytesseract==0.3.13",
 ]
 
 [project.scripts]

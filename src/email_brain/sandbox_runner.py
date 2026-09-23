@@ -38,6 +38,8 @@ from masterbrain.datacore.archive_member_contract import (
 )
 from masterbrain.datacore.document_contract import MAX_OUTPUT_BYTES as DOCUMENT_OUTPUT_BYTES
 from masterbrain.datacore.document_contract import MAX_REQUEST_BYTES as DOCUMENT_REQUEST_BYTES
+from masterbrain.datacore.image_ocr_contract import MAX_OUTPUT_BYTES as IMAGE_OCR_OUTPUT_BYTES
+from masterbrain.datacore.image_ocr_contract import MAX_REQUEST_BYTES as IMAGE_OCR_REQUEST_BYTES
 
 _IMAGE = re.compile(r"sha256:[a-f0-9]{64}\Z", re.ASCII)
 _CONTAINER = re.compile(r"[a-f0-9]{64}\Z", re.ASCII)
@@ -61,6 +63,7 @@ class _Profile:
     command: tuple[str, ...]
     input_bytes: int
     output_bytes: int
+    shm_size: int | None = None
 
 
 _MIME_PROFILE = _Profile("mime", tuple(_COMMAND), MAX_INPUT_BYTES, MAX_OUTPUT_BYTES)
@@ -84,6 +87,13 @@ _ARCHIVE_MEMBER_PROFILE = _Profile(
     ("-I", "-B", "-m", "masterbrain.datacore.archive_member_worker"),
     ARCHIVE_MEMBER_REQUEST_BYTES,
     ARCHIVE_MEMBER_OUTPUT_BYTES,
+)
+_IMAGE_OCR_PROFILE = _Profile(
+    "image-ocr",
+    ("-I", "-B", "-m", "masterbrain.datacore.image_ocr_worker"),
+    IMAGE_OCR_REQUEST_BYTES,
+    IMAGE_OCR_OUTPUT_BYTES,
+    32 * 1024 * 1024,
 )
 
 
@@ -184,6 +194,7 @@ class _DockerPipe:
                 _DOCUMENT_PROFILE,
                 _ARCHIVE_PROFILE,
                 _ARCHIVE_MEMBER_PROFILE,
+                _IMAGE_OCR_PROFILE,
             )
             or not isinstance(image_id, str)
             or not _IMAGE.fullmatch(image_id)
@@ -289,6 +300,10 @@ class _DockerPipe:
             or host.get("PublishAllPorts")
             or host.get("PortBindings")
             or host.get("RestartPolicy", {}).get("Name") != "no"
+            or (
+                self._profile.shm_size is not None
+                and host.get("ShmSize") != self._profile.shm_size
+            )
         ):
             raise MimeUnavailable()
 
@@ -333,6 +348,8 @@ class _DockerPipe:
                 ]
                 for key, value in _ENV.items():
                     args.extend(["--env", f"{key}={value}"])
+                if self._profile.shm_size is not None:
+                    args.extend(["--shm-size", str(self._profile.shm_size)])
                 result = (
                     self._invoke([*args, self._image_id, *self._profile.command])
                     .decode("ascii")

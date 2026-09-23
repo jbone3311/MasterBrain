@@ -76,7 +76,7 @@ The worker must enforce all of these limits before OCR:
 | Encoded bytes | 8 MiB |
 | Width × height | 25,000,000 pixels |
 | Frames | exactly 1 |
-| OCR wall time | 30 seconds inside a stricter parent/container deadline |
+| OCR wall time | 20 seconds inside a 30-second parent/container deadline |
 | Returned OCR text | first 5,000 Unicode code points and at most 20,000 UTF-8 bytes |
 | Whole response | 64 KiB |
 
@@ -84,7 +84,7 @@ The worker forces a full decode before Tesseract. Pillow's own guard stays enabl
 the independent 25-megapixel check does not rely on global state. Tesseract language,
 page-segmentation defaults, executable version and language data must be fixed in the
 immutable image and reported as non-secret runtime provenance. The worker has a
-read-only root filesystem, a bounded writable scratch area, no network, no inherited
+read-only root filesystem, a 32 MiB in-memory writable scratch area, no network, no inherited
 secrets, dropped capabilities, non-root identity, memory/CPU/PID limits and no shell.
 The parent validates the closed response again and treats timeout, process exit,
 malformed/oversized output or hash/format disagreement as refusal.
