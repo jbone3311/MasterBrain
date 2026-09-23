@@ -42,7 +42,9 @@ FileOS snapshot-policy switch.
 
 Another isolated edge tranche measures a simulated dataless branch, unreadable
 directory, donor hash-time mutation and unusual valid filenames. Fourteen focused
-shadow tests pass locally; hosted CI is pending. The donor's silent one-row removal
+shadow tests pass locally and [hosted CI 35857585834](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35857585834)
+is green on [PR #17](https://github.com/jbone3311/CW-EmailBrain/pull/17).
+The donor's silent one-row removal
 and inconsistent raced size/hash reinforce the need for explicit coverage and
 stable-read gates before a policy change.
 

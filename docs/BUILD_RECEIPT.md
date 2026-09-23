@@ -12,7 +12,10 @@ directory vanished from its walk, and its hash-time race stored the old size wit
 the new digest. MasterBrain recorded a directory error and the subsequent stable
 snapshot showed the size mismatch. The filename locators round-tripped through
 both inventories and JSON. These are local synthetic observations, not real cloud
-or cross-platform acceptance. Hosted CI and integrated inventory policy remain
+or cross-platform acceptance. Hosted
+[CI 35857585834](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35857585834)
+passed on PR #17's code head `1845d5f`; the donor-specific comparisons skip on
+hosted CI because there is no donor checkout. Integrated inventory policy remains
 pending; no donor CLI/default database/registry or MasterBrain publication ran.
 
 ## Local FileOS scanner fault/size boundary checkpoint

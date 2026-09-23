@@ -97,6 +97,9 @@ a later stable MasterBrain snapshot exposes a `common_size_mismatch`. These are
 measured safety gaps, not accepted parity. Four unusual but valid names (leading
 space, Unicode accent, emoji, embedded newline) retain exact locators through both
 inventories and JSON serialization on the local test filesystem.
+Hosted [CI 35857585834](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35857585834)
+passed on PR #17's code head; donor-specific tests skip on hosted CI without a
+FOS-Master checkout.
 
 ## Limits and next gate
 
