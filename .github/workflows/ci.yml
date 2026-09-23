@@ -73,3 +73,10 @@ jobs:
         run: |
           archive_image_id="$(docker image inspect masterbrain-archives-ci --format '{{.Id}}')"
           MASTERBRAIN_ARCHIVE_IMAGE_ID="$archive_image_id" uv run pytest -q tests/container_archive_member_checks.py
+      - name: Actual two-image FileOS archive document extraction
+        run: |
+          archive_image_id="$(docker image inspect masterbrain-archives-ci --format '{{.Id}}')"
+          document_image_id="$(docker image inspect masterbrain-documents-ci --format '{{.Id}}')"
+          MASTERBRAIN_ARCHIVE_IMAGE_ID="$archive_image_id" \
+            MASTERBRAIN_DOCUMENT_IMAGE_ID="$document_image_id" \
+            uv run pytest -q tests/container_archive_document_checks.py
