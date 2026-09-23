@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-093](adr/093_fileos_inventory_shadow.md) authorizes only a pinned,
+synthetic-database FileOS scanner-vs-snapshot shadow comparator. It requires exact,
+reason-coded policy divergences and no source or publication effects; a later ADR
+must decide an integrated inventory-policy switch.
+
 [ADR-090](adr/090_private_archive_image_operator.md) defines the private,
 authenticated one-member archive-image OCR command using the accepted 5A composition
 and 5B publication contracts. Implemented in `f658ace`; hosted CI and populated
