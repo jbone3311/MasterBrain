@@ -1545,9 +1545,27 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
     first = core.publish_archive_member_image_ocr(*arguments, key)
     same_key = core.publish_archive_member_image_ocr(*arguments, key)
     equivalent_key = core.publish_archive_member_image_ocr(*arguments, uuid4())
+    alternate_processor = core.publish_archive_member_image_ocr(
+        ctx,
+        target,
+        "alternate processor archive OCR proof",
+        "sandbox-fileos-image-ocr-v1-" + "f" * 64,
+        "png",
+        "png",
+        1200,
+        260,
+        "RGB",
+        1,
+        True,
+        "archive-image-test-v2",
+        uuid4(),
+    )
 
     assert first.changed is True
     assert same_key == equivalent_key == replace(first, changed=False)
+    assert alternate_processor.changed is True
+    assert alternate_processor.version_id == first.version_id
+    assert alternate_processor.document_id != first.document_id
     assert core.search(ctx, marker)[0].evidence_id == first.evidence_id
     assert core.search_current_archive_members(ctx, marker) == []
     assert core.search_current_archive_documents(ctx, marker) == []
@@ -1574,14 +1592,39 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
             "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
             "WHERE inventory_id=%s AND member_locator=%s",
             (target.inventory_id, target.member_locator),
-        ).fetchone()["n"] == 2
+        ).fetchone()["n"] == 3
         provenance = conn.execute(
-            "SELECT transform,transform_version FROM brain_provenance WHERE output_id=%s",
+            "SELECT transform,transform_version,configuration_sha256 "
+            "FROM brain_provenance WHERE output_id=%s",
             (first.document_id,),
         ).fetchone()
+        expected_configuration = hashlib.sha256(
+            json.dumps(
+                {
+                    "contract": "archive-member-image-ocr-v1",
+                    "inventory_processor": target.inventory_processor_version,
+                    "member_read_contract": "sandbox-fileos-archive-member-v1",
+                    "image_contract": "sandbox-fileos-image-ocr-v1",
+                    "image_policy": "bounded_image_ocr_v1",
+                    "image_processor": processor,
+                    "image_format": "png",
+                    "detected_format": "png",
+                    "width": 1200,
+                    "height": 260,
+                    "mode": "RGB",
+                    "frame_count": 1,
+                    "truncated": False,
+                    "chunk_characters": 1000,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode()
+        ).hexdigest()
         assert provenance == {
             "transform": "archive_member_image_ocr",
             "transform_version": processor,
+            "configuration_sha256": expected_configuration,
         }
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_provenance_inputs p JOIN brain_provenance v "
@@ -1690,6 +1733,8 @@ def test_archive_member_image_ocr_publication_converges_and_rechecks_current_par
         fileos_manifest(tmp_path, source_id="files_archive_image_fence", hour=2),
         uuid4(),
     )
+    with pytest.raises(Conflict, match="no longer current"):
+        publish(uuid4())
     with pytest.raises(Conflict, match="no longer current"):
         core.publish_archive_member_image_ocr(
             ctx,

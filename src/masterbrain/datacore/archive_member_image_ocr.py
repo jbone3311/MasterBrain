@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path, PurePosixPath
 from typing import Protocol
 from uuid import UUID
@@ -15,8 +16,11 @@ from masterbrain.datacore.archive_member import (
 from masterbrain.datacore.archive_member_text import archive_member_version_id
 from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus
 from masterbrain.datacore.image_ocr_contract import (
+    CONTRACT,
     MAX_IMAGE_BYTES,
     MAX_PIXELS,
+    MAX_TEXT_BYTES,
+    MAX_TEXT_CHARS,
     ImageOcrResult,
     ImageOcrUnavailable,
     decode_result,
@@ -40,6 +44,9 @@ IMAGE_SUFFIX_FORMAT = {
     ".gif": "gif",
     ".webp": "webp",
 }
+_IMAGE_PROCESSOR_VERSION = re.compile(
+    rf"{re.escape(CONTRACT)}-[a-f0-9]{{64}}\Z", re.ASCII
+)
 
 
 class ImageOcrProcessor(Protocol):
@@ -201,14 +208,14 @@ def publish_extracted_archive_member_image_ocr(
         or not extraction.text
         or "\x00" in extraction.text
         or extraction.text != extraction.text.strip()
-        or len(extraction.text.encode()) > MAX_NORMALIZED_BYTES
+        or len(extraction.text) > MAX_TEXT_CHARS
+        or len(extraction.text.encode()) > min(MAX_TEXT_BYTES, MAX_NORMALIZED_BYTES)
         or extraction.error_code is not None
         or type(target.member_size_bytes) is not int
         or not 0 < target.member_size_bytes <= MAX_IMAGE_BYTES
         or set(metadata) != required_metadata
         or type(processor) is not str
-        or not 1 <= len(processor) <= 200
-        or "\x00" in processor
+        or not _IMAGE_PROCESSOR_VERSION.fullmatch(processor)
         or type(image_format) is not str
         or type(detected_format) is not str
         or image_format != expected_format

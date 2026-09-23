@@ -38,7 +38,7 @@ class LocalArchiveProcessor:
 
 
 class DirectImageProcessor:
-    processor_version = CONTRACT + "-synthetic-unit"
+    processor_version = CONTRACT + "-" + "a" * 64
 
     def extract(self, raw, *, suffix, sha256, format):
         return image_ocr_worker.extract_image_ocr(
@@ -127,7 +127,7 @@ def test_exact_static_image_member_crosses_both_workers_without_sibling(
     assert result.text == "INVOICE 4471" and "sibling content" not in result.text
     assert result.error_code is None
     assert result.metadata == {
-        "extractor_version": CONTRACT + "-synthetic-unit",
+        "extractor_version": CONTRACT + "-" + "a" * 64,
         "format": expected_format,
         "image_reason": "bounded_image_ocr_v1",
         "truncated": False,
@@ -307,7 +307,7 @@ def test_publication_wrapper_accepts_only_complete_bound_image_result(
         ANY,
         target,
         "IMAGE PROOF",
-        CONTRACT + "-synthetic-unit",
+        CONTRACT + "-" + "a" * 64,
         "png",
         "png",
         40,
@@ -325,6 +325,7 @@ def test_publication_wrapper_accepts_only_complete_bound_image_result(
     [
         ("extractor_version", ""),
         ("extractor_version", "worker\x00version"),
+        ("extractor_version", CONTRACT + "-synthetic-unit"),
         ("format", "jpeg"),
         ("detected_format", "jpeg"),
         ("image_reason", "empty_ocr"),
@@ -371,6 +372,7 @@ def test_publication_wrapper_rejects_incomplete_or_unbound_results(
         replace(extraction, text=""),
         replace(extraction, text="bad\x00text"),
         replace(extraction, text=" untrimmed"),
+        replace(extraction, text="x" * 5_001),
         replace(extraction, error_code="unexpected"),
         replace(extraction, metadata={**extraction.metadata, "extra": "not admitted"}),
         replace(

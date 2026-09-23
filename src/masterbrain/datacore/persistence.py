@@ -2794,46 +2794,6 @@ class DataCoreStore:
                 )
                 return self._archive_member_text_record(receipt, changed=False)
 
-            prior = conn.execute(
-                f"SELECT actor_id,idempotency_key,{columns} "
-                "FROM brain_archive_member_image_receipts "
-                "WHERE inventory_id=%s AND member_locator=%s AND image_processor=%s "
-                "ORDER BY created_at,actor_id,idempotency_key LIMIT 1",
-                (target.inventory_id, target.member_locator, image_processor),
-            ).fetchone()
-            if prior:
-                if prior["request_hash"] != request_hash:
-                    raise Conflict("archive member image OCR has different provenance")
-                conn.execute(
-                    "INSERT INTO brain_archive_member_image_receipts(tenant_id,actor_id,"
-                    "idempotency_key,inventory_id,member_locator,parent_source_version_id,"
-                    "parent_evidence_id,source_id,item_id,version_id,evidence_id,document_id,"
-                    "image_processor,image_format,detected_format,width,height,mode,frame_count,"
-                    "truncated,chunk_count,code_revision,request_hash) SELECT %s,%s,%s,"
-                    "inventory_id,member_locator,parent_source_version_id,parent_evidence_id,"
-                    "source_id,item_id,version_id,evidence_id,document_id,image_processor,"
-                    "image_format,detected_format,width,height,mode,frame_count,truncated,"
-                    "chunk_count,code_revision,request_hash FROM "
-                    "brain_archive_member_image_receipts WHERE tenant_id=%s AND actor_id=%s "
-                    "AND idempotency_key=%s",
-                    (
-                        ctx.tenant_id,
-                        ctx.actor_id,
-                        idempotency_key,
-                        ctx.tenant_id,
-                        prior["actor_id"],
-                        prior["idempotency_key"],
-                    ),
-                )
-                self.store.audit(
-                    conn,
-                    ctx,
-                    "brain.archive_member_image_ocr_replayed",
-                    "archive_inventory",
-                    target.inventory_id,
-                )
-                return self._archive_member_text_record(prior, changed=False)
-
             row = conn.execute(
                 "SELECT a.id AS inventory_id,a.processor_version,a.source_id,a.item_id AS "
                 "parent_item_id,a.source_version_id,v.observed_at,v.sha256 AS source_sha256,"
@@ -2879,6 +2839,46 @@ class DataCoreStore:
             ):
                 raise Conflict("archive image parent or identity is no longer current")
 
+            prior = conn.execute(
+                f"SELECT actor_id,idempotency_key,{columns} "
+                "FROM brain_archive_member_image_receipts "
+                "WHERE inventory_id=%s AND member_locator=%s AND image_processor=%s "
+                "ORDER BY created_at,actor_id,idempotency_key LIMIT 1",
+                (target.inventory_id, target.member_locator, image_processor),
+            ).fetchone()
+            if prior:
+                if prior["request_hash"] != request_hash:
+                    raise Conflict("archive member image OCR has different provenance")
+                conn.execute(
+                    "INSERT INTO brain_archive_member_image_receipts(tenant_id,actor_id,"
+                    "idempotency_key,inventory_id,member_locator,parent_source_version_id,"
+                    "parent_evidence_id,source_id,item_id,version_id,evidence_id,document_id,"
+                    "image_processor,image_format,detected_format,width,height,mode,frame_count,"
+                    "truncated,chunk_count,code_revision,request_hash) SELECT %s,%s,%s,"
+                    "inventory_id,member_locator,parent_source_version_id,parent_evidence_id,"
+                    "source_id,item_id,version_id,evidence_id,document_id,image_processor,"
+                    "image_format,detected_format,width,height,mode,frame_count,truncated,"
+                    "chunk_count,code_revision,request_hash FROM "
+                    "brain_archive_member_image_receipts WHERE tenant_id=%s AND actor_id=%s "
+                    "AND idempotency_key=%s",
+                    (
+                        ctx.tenant_id,
+                        ctx.actor_id,
+                        idempotency_key,
+                        ctx.tenant_id,
+                        prior["actor_id"],
+                        prior["idempotency_key"],
+                    ),
+                )
+                self.store.audit(
+                    conn,
+                    ctx,
+                    "brain.archive_member_image_ocr_replayed",
+                    "archive_inventory",
+                    target.inventory_id,
+                )
+                return self._archive_member_text_record(prior, changed=False)
+
             item_id = stable_id("archiveitem", target.inventory_id, target.member_locator)
             version_id = stable_id(
                 "archiveversion",
@@ -2897,11 +2897,6 @@ class DataCoreStore:
                 "member_locator": target.member_locator,
                 "inventory_processor": target.inventory_processor_version,
                 "image_format": image_format,
-                "image_width": width,
-                "image_height": height,
-                "image_mode": mode,
-                "image_frame_count": frame_count,
-                "image_text_truncated": truncated,
             }
             conn.execute(
                 "INSERT INTO brain_source_items(tenant_id,source_id,id,locator,"
@@ -3001,6 +2996,8 @@ class DataCoreStore:
                     "contract": "archive-member-image-ocr-v1",
                     "inventory_processor": target.inventory_processor_version,
                     "member_read_contract": "sandbox-fileos-archive-member-v1",
+                    "image_contract": "sandbox-fileos-image-ocr-v1",
+                    "image_policy": "bounded_image_ocr_v1",
                     "image_processor": image_processor,
                     "image_format": image_format,
                     "detected_format": detected_format,
