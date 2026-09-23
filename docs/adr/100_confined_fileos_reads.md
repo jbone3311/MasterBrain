@@ -1,8 +1,8 @@
 # ADR-100 — Confine FileOS snapshot and extraction reads to the authorized root
 
 Status: accepted for isolated implementation; hosted gate and restore passed on
-code head `0769227` in PR #25. An additional ancestor-above-root guard awaits
-final-head hosted verification. No production cutover.
+code head `6e2eb8e` in PR #25, including the ancestor-above-root guard. No
+production cutover.
 
 ## Context
 

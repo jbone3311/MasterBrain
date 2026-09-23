@@ -62,7 +62,7 @@ ADR-100's isolated follow-up routes MasterBrain snapshot hashes through confined
 descriptor-relative reads. Ordinary SHA/size parity and the explicit symlink
 divergences were rerun locally against this change on 3,000 synthetic files:
 3,002 ordinary SHA/size matches, six known policy differences and two symlink
-differences. Hosted gate and restore passed on code head `0769227` in PR #25.
+differences. Hosted gate and restore passed on code head `6e2eb8e` in PR #25.
 FOS-Master remains pinned and unchanged.
 
 ## Synthetic fault and size boundary tranche

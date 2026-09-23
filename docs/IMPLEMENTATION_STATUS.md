@@ -35,8 +35,9 @@ mean hosted, live-source accepted, or production ready.
   filename behavior and authorize no policy switch.
 - ADR-100's isolated FileOS read-hardening branch routes snapshot hashing and
   text/PDF/Office extraction through bounded, descriptor-relative no-follow opens.
-  Synthetic symlink-swap and locator-stability regressions pass locally (14
-  cases). Hosted CI and populated restore passed on code head `0769227` in
+  Synthetic symlink-swap and locator-stability regressions pass locally (15
+  cases, including an ancestor above the root). Hosted CI and populated restore
+  passed on code head `6e2eb8e` in
   PR #25. The 3,000-file pinned-donor shadow passes with 3,002 ordinary
   SHA/size matches; this is not a production FileOS release claim.
 - FileOS completion refuses malformed or uncertain snapshot coverage before writing
