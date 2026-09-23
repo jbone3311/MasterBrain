@@ -16,6 +16,8 @@ import pytest
 import test_postgres as pg
 
 from email_brain.domain.models import TenantContext
+from email_brain.store import NotFound
+from email_brain.synthetic_formats import docx_bytes, pdf_bytes
 from masterbrain import archive_member_controller as controller
 from masterbrain.archive_member_controller import (
     ArchiveMemberControllerError,
@@ -47,7 +49,13 @@ class LocalArchiveMemberProcessor:
         return decode_result(process_request(encode_request(raw, source, target)), source, target)
 
 
-def setup_operator(tmp_path: Path, ctx: TenantContext, store) -> tuple[Path, Path, str, str, bytes]:
+def setup_operator(
+    tmp_path: Path,
+    ctx: TenantContext,
+    store,
+    *,
+    extra_members: dict[str, bytes] | None = None,
+) -> tuple[Path, Path, str, str, bytes]:
     state, root = tmp_path / "state", tmp_path / "source"
     state.mkdir(mode=0o700)
     root.mkdir()
@@ -55,6 +63,8 @@ def setup_operator(tmp_path: Path, ctx: TenantContext, store) -> tuple[Path, Pat
     with zipfile.ZipFile(output, "w") as archive:
         archive.writestr("folder/proof.md", b"private operator archive proof")
         archive.writestr("sibling.txt", b"must remain unpublished")
+        for name, content in (extra_members or {}).items():
+            archive.writestr(name, content)
     raw = output.getvalue()
     (root / "bundle.zip").write_bytes(raw)
     manifest = snapshot_tree(
@@ -100,6 +110,34 @@ def setup_operator(tmp_path: Path, ctx: TenantContext, store) -> tuple[Path, Pat
     path = state / "archive-controller.json"
     private_write(path, config)
     return path, root, inventory.inventory_id, "folder/proof.md", raw
+
+
+def test_document_selector_is_distinct_and_allows_only_pdf_or_opaque_ooxml(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    _, _, inventory_id, _, _ = setup_operator(
+        tmp_path,
+        ctx,
+        store,
+        extra_members={
+            "documents/report.pdf": pdf_bytes(("selector pdf proof",)),
+            "documents/memo.docx": docx_bytes("selector word proof"),
+        },
+    )
+    core = DataCoreStore(store)
+    datacore = pg.datacore_context(ctx)
+    pdf = core.archive_document_member_target(datacore, inventory_id, "documents/report.pdf")
+    word = core.archive_document_member_target(datacore, inventory_id, "documents/memo.docx")
+    assert pdf.member_media_type == "application/pdf"
+    assert word.member_media_type.endswith("wordprocessingml.document")
+    with pytest.raises(NotFound):
+        core.archive_document_member_target(datacore, inventory_id, "folder/proof.md")
+    with pytest.raises(NotFound):
+        core.archive_member_target(datacore, inventory_id, "documents/memo.docx")
 
 
 def batch_plan(
