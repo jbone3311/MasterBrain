@@ -37,6 +37,7 @@ mean hosted, live-source accepted, or production ready.
   a latest-complete receipt or absence event. The private publisher rejects before
   intake; direct storage completion independently enforces the rule. This does not
   yet version inventory policy or guard a clean-looking mass loss.
+  Hosted PostgreSQL, full CI and populated restore passed on PR #18's runtime head.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

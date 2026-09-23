@@ -51,8 +51,11 @@ stable-read gates before a policy change.
 ADR-094 now defines a separate FileOS completion-coverage guard. The private
 publisher refuses incomplete manifests before intake, and DataCore completion
 independently refuses to advance freshness or absence from scan errors. Local
-unit/controller tests pass; the consecutive-run PostgreSQL and hosted/restore gates
-remain pending. This does not switch donor inventory policy or solve mass loss.
+unit/controller tests and hosted
+[CI 35863559605](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35863559605)
+plus [restore 35863559359](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35863559359)
+pass on [PR #18](https://github.com/jbone3311/CW-EmailBrain/pull/18). This does
+not switch donor inventory policy or solve mass loss.
 
 ## Completed gates
 

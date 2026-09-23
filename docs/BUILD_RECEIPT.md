@@ -10,8 +10,11 @@ or unknown errors; only an explicit no-follow symlink skip is tolerated. The pri
 publisher checks before database setup/import, and direct storage completion checks
 again. Twenty-four focused unit/controller tests passed locally, and Ruff passed.
 A synthetic PostgreSQL regression for clean → incomplete → clean consecutive runs
-is written but awaits hosted PostgreSQL and restore gates. No schema, donor or
-source-policy change is part of this tranche.
+passed in hosted [CI 35863559605](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35863559605)
+on runtime head `d7e698e` (2,682 Python passed, nine expected skips, two upstream
+warnings; browser/deployment/restricted-worker gates also passed). The populated
+[restore 35863559359](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35863559359)
+passed. No schema, donor or source-policy change is part of this tranche.
 
 ## Local FileOS scanner-edge safety checkpoint
 
