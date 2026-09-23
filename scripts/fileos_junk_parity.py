@@ -12,6 +12,7 @@ import hashlib
 import importlib.util
 import json
 import subprocess
+import sys
 from pathlib import Path
 from types import ModuleType
 
@@ -60,7 +61,12 @@ def load_donor(repo: Path) -> ModuleType:
     if spec is None or spec.loader is None:
         raise RuntimeError("cannot load pinned donor classifier")
     donor = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(donor)
+    old_bytecode_policy = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        spec.loader.exec_module(donor)
+    finally:
+        sys.dont_write_bytecode = old_bytecode_policy
     return donor
 
 
