@@ -8,6 +8,13 @@ The documentation refresh changes explanations/navigation, not runtime privilege
 ADR-035 now defines the separate approved PDF source-to-search channel for ready
 mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion.
 
+## Proposed
+
+[ADR-090](adr/090_private_archive_image_operator.md) designs one private,
+authenticated archive-image OCR command using the accepted 5A composition and 5B
+publication contracts. It grants no runtime authority until checkpoint 5C is
+implemented and verified.
+
 ## Accepted
 
 [ADR-089](adr/089_archive_member_image_persistence.md) defines append-only publication
