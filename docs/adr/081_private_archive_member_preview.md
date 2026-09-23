@@ -1,6 +1,6 @@
 # ADR-081 — Require a read-only archive-member preview before batch design
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `0a8c430`, with fixture correction `5befc42`.
 
 ## Context
 
@@ -33,4 +33,3 @@ be a separately reviewed, digest-bound plan with caller-supplied stable keys.
 
 Remove the preview store method, controller and command. Existing inventories,
 one-member publication and current/retained search remain unchanged.
-

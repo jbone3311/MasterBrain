@@ -2,11 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4T — archive-member publication preview design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Specify a private, read-only, cursor-bounded
-view of eligible non-container text members in one explicit current archive inventory,
-including already-published state and stable ordering. It must not read member bytes,
-invoke Docker, allocate idempotency keys or authorize batch execution.
+**Checkpoint 4U — sealed archive-member publication batch design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Specify an owner-private, digest-bound plan for
+1–100 reviewed inventory/member/key selections from one current archive inventory,
+with fail-stop execution and exact-plan replay. It must not discover members, follow
+preview cursors, allocate keys, continue after refusal or broaden source effects.
 
 ## Completed gates
 
@@ -144,16 +144,22 @@ invoke Docker, allocate idempotency keys or authorize batch execution.
   restore, all restricted worker containers, plus
   [CI 35796920249](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35796920249)
   and [restore 35796920235](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35796920235).
+- Checkpoint 4T private archive-member preview design `7163334`, runtime `0a8c430`
+  and deterministic non-bomb oversize-fixture correction `5befc42` passed 2,560 hosted
+  Python tests, forced-RLS page/cursor/eligibility/replay/stale-parent tests, no-worker/
+  no-source/no-receipt operator checks, all restricted containers, plus
+  [CI 35799779137](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35799779137)
+  and [restore 35799779396](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35799779396).
 
 ## Current work
 
-- Specify a non-consuming archive-member publication preview with stable cursor,
-  explicit eligibility and already-published state before any sealed batch executor.
+- Specify a sealed archive-member batch plan and fail-stop executor with caller-supplied
+  fixed keys, exact digest/replay and no discovery or automatic continuation.
 
 ## Deferred by design
 
-- Archive-member batch publication, non-text extraction, images and OCR until separate
-  selection/format/fault/persistence gates exist.
+- Archive-member sealed batch publication, non-text extraction, images and OCR until
+  separate plan/format/fault/persistence gates exist.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.

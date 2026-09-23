@@ -51,6 +51,11 @@ mean hosted, live-source accepted, or production ready.
   `/v1/brain/current-search` exposes it separately from immutable active FileOS
   generations with explicit partial coverage; stale parents disappear while retained
   history remains available. Hosted PostgreSQL/container/restore gates are green.
+- Private `masterbrain fileos archive-text-plan` read-only preview for one current
+  archive inventory. It returns only bounded eligible text-member metadata in sealed
+  ordinal pages with already-published labels, constructs no worker, reads no source
+  bytes and creates no derivative/key/batch authority. Hosted PostgreSQL/restore gates
+  are green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -125,7 +130,7 @@ mean hosted, live-source accepted, or production ready.
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy image/OCR extraction. Archive-member
-  preview/batch operation and non-text extraction remain follow-on gates; automatic
+  sealed batch operation and non-text extraction remain follow-on gates; automatic
   archive fan-out remains prohibited.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.

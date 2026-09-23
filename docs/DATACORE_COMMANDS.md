@@ -211,8 +211,25 @@ enrollment.
 
 ## Publish one selected archive text member
 
-After a source snapshot and its isolated archive inventory have been persisted, first
-validate the private one-member command:
+After a source snapshot and its isolated archive inventory have been persisted, preview
+one bounded page of eligible members without reading the archive:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain fileos archive-text-plan \
+  --config /private/operator/archive-member.json \
+  --inventory-id archive_inventory_0123456789abcdef0123456789abcdef \
+  --limit 25 \
+  --check
+```
+
+Remove `--check` to run the read-only preview. `--after` accepts only a returned sealed
+member ordinal. Output contains eligible text-member virtual locators, bounded metadata
+and already-published labels; treat it as private untrusted source metadata. The preview
+does not construct Docker, read archive bytes, generate keys, write derivatives or
+authorize a batch. Parent replacement makes the inventory unavailable.
+
+After reviewing one returned member, validate the private one-member command:
 
 ```sh
 MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \

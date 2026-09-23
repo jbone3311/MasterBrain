@@ -1,6 +1,9 @@
 # Private archive-member publication preview design
 
-Status: checkpoint 4T design; runtime not yet implemented.
+Status: implemented in `0a8c430`, with the non-bomb oversized fixture correction in
+`5befc42`. The corrected runtime passed 2,560 hosted Python tests and all restricted
+worker gates in [CI 35799779137](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35799779137),
+plus [restore 35799779396](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35799779396).
 
 ## Purpose
 
@@ -74,3 +77,13 @@ No sealed batch format, batch executor, automatic continuation, key generation,
 publication, member byte read, Docker call, public API, scheduler, source effect,
 unsupported-member listing, non-text extraction or FOS-Master cutover is authorized.
 
+## Implemented result
+
+`DataCoreStore.archive_member_text_plan` performs the current-parent and cursor fences
+inside forced RLS, filters eligibility in SQL, uses `EXISTS` for replay-deduplicated
+publication state and records only a preview audit event. The private controller
+preflights the runtime role and reauthenticates around the query; check mode never
+constructs DataCore or the Docker worker. The CLI returns sealed ordinal pages and
+explicitly labels member metadata untrusted. PostgreSQL acceptance proves mixed
+eligibility, page boundaries, replay labels, arbitrary-cursor refusal, stale-parent
+refusal, no source access and zero derivative receipts.
