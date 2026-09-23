@@ -67,6 +67,7 @@ redirecting Email ingestion or search.
 | Owner UI | [web/](../src/email_brain/web/) |
 | PDF owner workflow/search | [document_review.js](../src/email_brain/web/document_review.js); existing API calls, independent document state and text-only evidence |
 | Schema upgrades | [migrations/](../migrations/), [migrate.py](../src/email_brain/migrate.py) |
+| Protected-record TRUNCATE refusal | [migration 0030](../migrations/0030_protected_record_truncate_guards.sql), [contract](EVIDENCE_TRUNCATE_GUARDS.md), [ADR-092](adr/092_protected_record_truncate_guards.md) |
 | Checks | [tests/](../tests/), [CI](../.github/workflows/ci.yml) |
 | Offline documentation gate | [check_docs.py](../scripts/check_docs.py), [regression tests](../tests/test_check_docs.py); inventory/paths/supported headings, including `.github/` templates |
 | Disposable restore | [restore_drill.py](../scripts/restore_drill.py), [workflow](../.github/workflows/restore-drill.yml) |

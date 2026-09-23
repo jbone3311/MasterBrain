@@ -157,6 +157,11 @@ def migrate(dsn: str, directory: Path) -> list[str]:
         raise ValueError("migration directory is empty")
     applied: list[str] = []
     with psycopg.connect(dsn, autocommit=True) as conn:
+        migration_role = conn.execute(
+            "SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user"
+        ).fetchone()
+        if not migration_role or not (migration_role[0] or migration_role[1]):
+            raise ValueError("migrations require superuser or BYPASSRLS role")
         conn.execute("SELECT pg_advisory_lock(713428691)")
         try:
             conn.execute(

@@ -43,6 +43,18 @@ synthetic-database FileOS scanner-vs-snapshot shadow comparator. It requires exa
 reason-coded policy divergences and no source or publication effects; a later ADR
 must decide an integrated inventory-policy switch.
 
+[ADR-092](adr/092_protected_record_truncate_guards.md) adds forward-only
+statement-level `TRUNCATE` refusal for append-only evidence, protected jobs and
+audited identity bindings. It leaves legitimate row-level transitions and runtime
+grants unchanged. See the [truncation contract](EVIDENCE_TRUNCATE_GUARDS.md).
+
+[ADR-091](adr/091_migration_integrity.md) requires an explicit privileged
+migration-role preflight and a forward-only audit/repair of legacy Email
+`message_sync_state` gaps. It preserves applied checksums and current evidence;
+runtime roles retain forced RLS. Implementation and hosted gates are green in
+[PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12); independent review
+and integration remain pending. See the [migration integrity contract](MIGRATION_INTEGRITY.md).
+
 [ADR-090](adr/090_private_archive_image_operator.md) defines the private,
 authenticated one-member archive-image OCR command using the accepted 5A composition
 and 5B publication contracts. Implemented in `f658ace`; hosted CI and populated

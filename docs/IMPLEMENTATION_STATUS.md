@@ -44,15 +44,15 @@ mean hosted, live-source accepted, or production ready.
   runtime head; review remains pending.
 - New FileOS completion receipts carry a versioned inventory-policy digest and
   refuse consecutive-run absence inference across changed or unknown policies.
-  Legacy receipts remain immutable with unknown policy; a reviewed baseline path,
-  root-binding fence and PR review/integration are still pending. Hosted CI and
+  Legacy receipts remain immutable with unknown policy; a reviewed baseline path
+  and PR review/integration are still pending. Hosted CI and
   populated restore passed on PR #20's corrected runtime head. This does not
   switch to the donor scanner's exclusions or authorize cutover.
 - ADR-097 adds bounded per-locator exclusion accounting and refuses absence
   when a prior indexed file is still present but excluded, or intentionally skipped
   as a no-follow symlink. Hosted CI and populated restore passed on PR #21's
-  runtime head; review/integration remain pending. It does not prove a live scanner
-  or resolve root binding.
+  runtime head; review/integration remain pending. It does not prove a live scanner;
+  root binding is separately guarded by ADR-098.
 - ADR-098 root binding is implemented in isolated PR #22, with hosted CI and
   populated restore green on the runtime head. New FileOS sources and receipts carry
   an immutable private physical-root digest; wrong-root intake, unknown legacy
@@ -213,6 +213,12 @@ mean hosted, live-source accepted, or production ready.
   OCR image, exact worker scopes, non-consuming check, reauthentication and
   content-free output. Hosted CI/container and populated restore accepted in
   `f658ace`; no live-source or production acceptance is claimed.
+- Forward-only protected-record TRUNCATE guards on the 56 direct append-only tables,
+  protected recovery/document jobs and audited external identity bindings. Focused
+  disposable-PostgreSQL catalog, direct/cascade, runtime-privilege, row-transition and
+  replay tests passed. Hosted CI (2,669 Python tests, browser and restricted-worker
+  gates) and populated restore passed on separate PR #13; review and integration
+  remain pending.
 
 ## Designed, not implemented
 

@@ -2,6 +2,20 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Combined schema/FileOS integration checkpoint (hosted verification pending)
+
+The isolated integration branch merges #12–#13 into the exact green #22 FileOS
+head without rewriting applied migrations or FOS-Master. Migration order is
+0029 migration-integrity repair, 0030 truncate guards, 0031 FileOS policy
+identity and 0032 FileOS root binding. Four textual conflicts in progress,
+receipt, decision and populated-upgrade test files were reconciled by retaining
+both branches' content and sorting the expected migrations. Local focused tests:
+**58 passed, 33 PostgreSQL skips** without a disposable database. Ruff check and
+format, mypy across 82 source files, documentation inventory (184 Markdown files,
+973 paths/fragments) and diff whitespace passed. This is not combined hosted
+verification. Factory PR #11's competing 0029 is not included; its independent
+schema/workflow findings are tracked as a separate follow-up.
+
 ## FileOS physical-root binding checkpoint
 
 ADR-098 preceded the runtime change. A versioned SHA-256 of the resolved root
@@ -203,6 +217,50 @@ on [PR #14](https://github.com/jbone3311/CW-EmailBrain/pull/14). Hosted CI passe
 upstream warnings and the deployment/worker gates. This is an extracted classifier,
 not scanner/snapshot integration, whole-inventory parity or production cutover.
 Independent review and integration are pending.
+
+## Verified protected-record truncation guards proposal
+
+Design **f2756b3**, runtime/tests **99d5783** and test correction **02052da**
+passed [CI 35844322327](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35844322327)
+and [restore 35844322318](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35844322318)
+on separate [PR #13](https://github.com/jbone3311/CW-EmailBrain/pull/13), stacked
+on PR #12. Hosted CI passed **2,669 Python tests** with two upstream warnings,
+browser contracts, documentation/deployment checks and restricted worker/container
+gates. The populated restore passed. Thirteen focused disposable-PostgreSQL 17 tests
+passed locally.
+
+- Forward-only migration 0030 refuses direct and foreign-key-cascaded `TRUNCATE` on
+  the 56 directly row-guarded append-only tables, two protected approval-job tables
+  and audited external identities. Catalog coverage is exact for this baseline.
+- Tests reproduced the pre-0030 gap on disposable data, checked all 59 protected
+  targets with `CASCADE`, retained synthetic rows/history, runtime privilege denial,
+  legitimate row transitions and replay. No real evidence or production database
+  was touched.
+- This guards accidental privileged bulk erasure, not malicious table owners who
+  can disable triggers. PR review and integration remain pending; FOS-Master is
+  unchanged.
+
+## Verified migration-integrity repair proposal
+
+Design commit **16b0de3** and runtime commit **fc2a329**, followed by validation
+note **bea8c5e**, passed [CI 35839648723](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839648723)
+and [restore 35839648689](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839648689)
+on the separate [PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12)
+branch. Hosted CI passed **2,656 PostgreSQL-backed Python tests**, browser contracts,
+deployment/document checks and every restricted worker/container gate. The populated
+PostgreSQL 17 restore passed. Locally, four focused disposable-PostgreSQL tests and
+the full 397-test PostgreSQL-marked suite passed.
+
+- A non-superuser, non-`BYPASSRLS` owner is rejected before any migration ledger or
+  schema write. The focused corpus reproduces the historical 0006 silent omission
+  under forced RLS.
+- Forward-only migration 0029 repeats the parser-provenance mismatch guard and
+  repairs only missing sync-state keys across tenants; existing states and event
+  pointers remain untouched. A mismatch rolls the migration back with no receipt.
+- Previously applied migration checksums, runtime privileges and the pinned
+  FOS-Master donor are unchanged. This is a reviewed-branch proposal, not a
+  production database repair or FileOS cutover. Independent review and integration
+into the foundation remain pending.
 
 ## Verified private archive-image OCR command
 

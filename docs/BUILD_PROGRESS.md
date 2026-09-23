@@ -2,6 +2,16 @@
 
 ## Active checkpoint
 
+**Integration of tested schema and FileOS branches.** A dedicated branch combines
+the separately green migration-integrity/truncation stack (#12–#13) with the
+FileOS root-binding stack (#14–#22). Migration order is 0029 migration repair,
+0030 truncate guards, 0031 inventory policy and 0032 root binding. The merge
+preserves both branches' history; its combined hosted CI and populated restore
+are pending. Factory review PR #11 independently uses migration number 0029,
+so it cannot be merged unchanged. Its non-overlapping ledger/FK and workflow
+findings need a separately numbered, reviewed follow-up. No FOS-Master edit or
+production cutover is part of this integration.
+
 **Checkpoint 5D — current-only archive-image OCR search proposal.** Work is tracked in
 [GitHub issue #10](https://github.com/jbone3311/CW-EmailBrain/issues/10): the Claude
 handoff requests an independent review of 5B persistence and a current search layer
@@ -109,6 +119,29 @@ Review and integration remain; synthetic root mismatch and malformed-binding
 tests are included.
 FOS-Master remains pinned and unchanged; root binding alone does not certify
 the donor inventory policy or authorize cutover.
+
+In parallel, migration-integrity [PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12)
+addresses verified [issue #5](https://github.com/jbone3311/CW-EmailBrain/issues/5)
+without touching the 5D search workstream. ADR-091 precedes its forward-only 0029
+repair. On a disposable PostgreSQL 17 server, the focused tests passed 4/4 and the
+full PostgreSQL-marked suite passed 397 tests; the historical forced-RLS omission was
+reproduced. Hosted restore passed in
+[run 35839369275](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839369275);
+hosted [CI 35839648723](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839648723)
+passed 2,656 PostgreSQL-backed Python tests and all browser, deployment and
+restricted-worker gates. Independent review and integration remain pending.
+FOS-Master remains unchanged.
+
+A separate protected-record maintenance [PR #13](https://github.com/jbone3311/CW-EmailBrain/pull/13) follows ADR-092 and
+[issue #8](https://github.com/jbone3311/CW-EmailBrain/issues/8). Its additive 0030
+migration rejects whole-table truncation of 56 append-only tables, two protected
+approval-job tables and audited identity bindings. Thirteen focused disposable
+PostgreSQL 17 tests passed. Hosted
+[CI 35844322327](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35844322327)
+passed 2,669 Python tests, browser, documentation/deployment and restricted-worker
+gates; [restore 35844322318](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35844322318)
+passed. Independent review and integration are pending. This is not a production
+database change.
 
 ## Completed gates
 

@@ -36,6 +36,10 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
   quarantine. Unsupported/partial content remains visible.
 - Hash verification before and after sensitive reads/effects where applicable.
 - Append-only audit and transactional receipts for access, policy and effects.
+- Protected evidence, approval jobs and identity bindings reject direct/cascaded
+  whole-table `TRUNCATE` as well as their existing row-level protections. Runtime
+  roles hold no `TRUNCATE` privilege; a malicious database owner remains outside
+  the trigger-only trust boundary and requires administrative audit/backups.
 - Backups encrypted separately and restore-tested; retention applies to derivatives,
   indexes, caches, exports, and backups.
 
@@ -79,8 +83,8 @@ donor-equivalent mass-loss threshold before completion, without a force bypass;
 smaller unexplained losses remain an unsatisfied cutover gate.
 ADR-096 adds a versioned policy digest to new completion receipts and refuses
 completion across unknown or changed policies. Historical policy remains unknown;
-there is no silent backfill or force override. Root-binding changes and live
-scanner parity remain separate cutover gates.
+there is no silent backfill or force override. ADR-098 now guards accidental
+root changes; live scanner parity remains a separate cutover gate.
 An unchanged policy alone cannot distinguish a real deletion from a previously
 indexed file becoming oversize or newly excluded; a small such loss can fall below
 the mass-loss threshold. ADR-097 adds a bounded exclusion ledger to new snapshots.

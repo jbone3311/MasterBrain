@@ -32,7 +32,7 @@ def test_archive_member_image_receipt_schema_is_private_immutable_and_bounded(
             "WHERE tgrelid='brain_archive_member_image_receipts'::regclass "
             "AND NOT tgisinternal"
         ).fetchall()
-        assert triggers == [("immutable",)]
+        assert set(triggers) == {("immutable",), ("protected_no_truncate",)}
 
         checks = " ".join(
             row[0]

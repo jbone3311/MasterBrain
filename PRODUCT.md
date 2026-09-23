@@ -52,6 +52,11 @@ only the relevant objects, and reach the original evidence for verification.
   parity gates prove replacement.
 - Migration preserves source repository, path, commit, license, and adaptation notes.
 
+While retained, database evidence and receipts reject ordinary row mutation and
+whole-table truncation. This is a runtime/accidental-administrator control, not a
+claim that a malicious database owner cannot disable triggers; administrative audit,
+separation of duties and restorable backups remain part of the preservation promise.
+
 ## Initial user and release
 
 The initial user is an owner operating several personal/business mailboxes and file
