@@ -1,7 +1,7 @@
 # Archive image/OCR donor inventory and closed contract
 
-Status: checkpoint 4Z design; no image/OCR runtime, persistence or search is
-authorized by this document.
+Status: checkpoint 4Z isolated worker implemented through `512185b`; archive-member
+composition, persistence and search are not authorized by this document.
 
 ## Pinned evidence
 
@@ -126,6 +126,13 @@ Before publication, the runtime gate must include:
 Exact OCR equality is only meaningful when the Tesseract executable and language
 data match. Across runtime versions, compare the bounded normalized contract and use
 reviewed known-answer token thresholds; never silently call drift parity.
+
+The implemented live harness is `scripts/image_ocr_parity.py`. Against the pinned,
+clean donor it passed 12 text/blank cases across all six admitted formats, 120
+additional generated text-image comparisons and one deliberate safer animated-GIF
+refusal. It compares both paths under the same local OCR engine while the real
+container gate separately proves the immutable Tesseract 5.5.0 runtime. Source files
+and the donor checkout remain unchanged.
 
 ## Explicit exclusions
 

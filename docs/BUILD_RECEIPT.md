@@ -2,6 +2,44 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified isolated image/OCR worker and donor parity
+
+Design revision **55b4854**, runtime revision **cb6b940**, engine binding **f21e534**
+and bounded scratch correction **512185b** passed
+[CI 35826212304](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35826212304)
+and [restore 35826212333](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35826212333),
+observed 2026-09-22 Pacific.
+
+- The separate immutable image accepts only hash/length/suffix/signature-bound,
+  single-frame JPEG/PNG/TIFF/BMP/GIF/WebP bytes. It fully decodes before OCR, caps
+  input at 8 MiB, pixels at 25 million, Tesseract at 20 seconds, text at 5,000 code
+  points/20,000 UTF-8 bytes and response at 64 KiB. It returns no path, EXIF/GPS,
+  pixels, command output or exception.
+- The container runs non-root with no network, mounts, credentials or capabilities,
+  a read-only root and fixed 32 MiB in-memory scratch. Pillow 11.3.0, pytesseract
+  0.3.13, Tesseract 5.5.0 and English data 4.1.0-2 are bound; the ordinary API image
+  proves those parser dependencies absent.
+- Local full-suite verification passed **2,217 tests** with 389 explicit PostgreSQL/
+  container skips. Focused resource/protocol tests passed 185 cases. CI and deployment
+  each passed **2,606 Python tests** with PostgreSQL and no skips, **134 browser
+  contracts**, two real image-container cases and every prior restricted-container
+  gate. Documentation covered **166 Markdown files / 888 local paths and fragments**
+  before this receipt refresh.
+- The first hosted build correctly failed closed on a mismatched Tesseract version;
+  the second real OCR run exposed the inherited zero-byte file-write limit. The final
+  implementation keeps zero bytes as the default for every older worker and grants
+  only image OCR a maximum 32 MiB per file inside the equally bounded scratch area.
+- The pinned donor's two focused modules passed **149 tests**. The clean-checkout live
+  harness then proved 12 normalized text/blank cases across all six formats, **120
+  generated OCR stress comparisons** and one deliberate safer multi-frame refusal.
+  The donor remained clean at **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+- The 29 restore safety tests passed; the unchanged PostgreSQL 17 shape remains **71
+  tables / 237 rows / two tenants / four encrypted objects / two identity bindings**.
+
+No archive member is selected, no raw byte or OCR result is persisted, and no search,
+operator, batch, scheduler, scanner verdict, external vision, source effect or FileOS
+cutover is authorized. The next gate is a separately reviewed one-member composition.
+
 ## Verified sealed archive-document batches
 
 Design revision **2869aed** and runtime revision **87ea0d0** passed

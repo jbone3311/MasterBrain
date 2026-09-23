@@ -2,12 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4Z — archive image/OCR donor and security inventory.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Inventory the pinned donor's image/OCR tools,
-dependencies, tests, limits and failure behavior, then define a closed isolated read
-contract before any worker, persistence or search path. It must preserve byte/hash
-provenance, bound pixels/pages/time/output, treat OCR as untrusted derived evidence,
-and grant no automatic archive fan-out or FOS-Master cutover.
+**Checkpoint 5A — one-member archive image composition design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define one explicit current archive-member
+handoff from the existing hash-bound reader to the proven image worker. Preserve exact
+member hash/size/suffix identity, sibling exclusion and source immutability. Authorize
+no persistence, search, public command, batch, automatic fan-out or FOS-Master cutover.
 
 ## Completed gates
 
@@ -192,16 +191,24 @@ and grant no automatic archive fan-out or FOS-Master cutover.
   [CI 35821165890](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35821165890)
   and [restore 35821165886](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35821165886)
   are green.
+- Checkpoint 4Z image/OCR inventory design `55b4854`, isolated runtime `cb6b940`,
+  runtime binding `f21e534` and bounded scratch correction `512185b` passed 2,606
+  hosted Python tests, 134 browser contracts, real byte-bound Tesseract OCR and every
+  restricted-container gate; hosted
+  [CI 35826212304](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35826212304)
+  and [restore 35826212333](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35826212333)
+  are green. The clean pinned donor passed 149 focused tests, 12 six-format golden
+  cases and 120 generated parity stress cases; animated GIF is deliberately safer.
 
 ## Current work
 
-- Inventory pinned-donor image/OCR behavior and define the isolated format, resource,
-  fault, provenance and non-publication contract before implementation.
+- Define and test one explicit archive-member-to-image-worker composition without
+  persistence or automatic selection.
 
 ## Deferred by design
 
-- Archive-image/OCR runtime, persistence and search until the inventory/contract gate
-  is accepted.
+- Archive-image/OCR persistence, operator, search and batch scheduling until the
+  one-member composition and later persistence contracts are accepted.
 - Automatic archive-document fan-out and scheduling.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.

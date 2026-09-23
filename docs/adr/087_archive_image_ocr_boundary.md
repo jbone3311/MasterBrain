@@ -1,6 +1,6 @@
 # ADR-087 — Isolate archive image OCR before any publication
 
-Status: accepted design; runtime not implemented.
+Status: accepted; isolated worker implemented through `512185b`; publication not implemented.
 
 ## Context
 
@@ -16,7 +16,7 @@ paths.
 Extract only the format validation, full decode, bounded OCR and minimal technical
 metadata behavior into a dedicated immutable worker. Bind raw bytes to exact hash,
 length and canonical format; accept six single-frame raster formats; cap input at
-8 MiB, decoded size at 25 megapixels, OCR at 30 seconds and returned text at 5,000
+8 MiB, decoded size at 25 megapixels, OCR at 20 seconds and returned text at 5,000
 code points/20,000 UTF-8 bytes. Keep Pillow's bomb guard enabled and add an independent
 limit. Return no path, broad EXIF or pixels.
 

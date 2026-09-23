@@ -88,6 +88,13 @@ mean hosted, live-source accepted, or production ready.
   extraction and publication path, stops at first refusal and resumes only through
   unchanged-plan replay. Real PostgreSQL proves partial commit/retry; hosted restore
   and all restricted-container gates are green.
+- Dedicated byte-bound raster OCR contract and independently restricted worker for
+  single-frame JPEG/PNG/TIFF/BMP/GIF/WebP. It binds suffix/format/signature/hash,
+  fully decodes under 8 MiB/25-megapixel limits, caps Tesseract at 20 seconds and
+  output at 5,000 characters, exposes no EXIF/path, and uses a 32 MiB in-memory
+  scratch area. Real-container OCR, bomb/animation/fault tests and 132 pinned-donor
+  golden/stress comparisons are green. It has no archive selection, persistence,
+  search, batch or public path.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -160,10 +167,10 @@ mean hosted, live-source accepted, or production ready.
 - Automatic Email backfill scheduling, atomic cross-layer snapshots and automated
   source coverage
   accounting and any redirect of legacy Email search.
-- Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
-  scheduling/global-search cutover and legacy image/OCR extraction. Archive-member
-  document current-search activation, preview/batch expansion and automatic archive
-  fan-out remain follow-on gates and are prohibited by the implemented command.
+- Scheduled/incremental FileOS scanning, source cursors, automatic rebuild and
+  generation scheduling/global-search cutover. Archive-member image/OCR composition,
+  persistence, private operator, search, batches and automatic archive fan-out remain
+  follow-on gates and are prohibited by the isolated worker.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

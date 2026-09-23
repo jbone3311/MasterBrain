@@ -12,8 +12,9 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-087](adr/087_archive_image_ocr_boundary.md) requires a separate immutable,
 non-networked image worker with exact byte/format binding, full decode, single-frame
-policy, 25-megapixel/30-second/5,000-character limits and no EXIF, database, command
-or external-vision effects. Runtime and publication remain unimplemented.
+policy, 25-megapixel/20-second/5,000-character limits and no EXIF, database, command
+or external-vision effects. The isolated worker is implemented through `512185b`;
+archive composition and publication remain unimplemented.
 
 [ADR-086](adr/086_sealed_archive_document_batch.md) requires a private canonical plan
 of explicit locator/expected-format/key triples, sequential execution through both

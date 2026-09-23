@@ -73,7 +73,7 @@ FileOS sources ┘       │              │                │
 | Current-only layered Email-family Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Grouped current FileOS + Email-family + KnowledgeCore search | Implemented; hosted PostgreSQL and restore gates green |
 | Current-source coverage/readiness status | Implemented; hosted PostgreSQL and restore gates green |
-| Archive images and OCR | Donor/security inventory and isolated contract complete; runtime not implemented |
+| Archive images and OCR | Isolated worker and donor parity proven; archive integration/persistence not implemented |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |
 | Hosted identity, operations, live sources | Not accepted |
