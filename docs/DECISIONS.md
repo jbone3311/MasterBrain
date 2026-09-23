@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-084](adr/084_current_archive_document_search.md) keeps current archive-contained
+PDF/Office derivatives in a distinct, independently ranked layer, fenced through the
+document receipt and exact current parent/member identity. Implementation is pending.
+
 [ADR-083](adr/083_archive_member_documents.md) composes the existing hash-bound member
 reader with the existing isolated PDF/Office worker for one explicit selection, using
 a separate receipt and no raw-byte persistence. Implemented through `5bb1aa1`; real

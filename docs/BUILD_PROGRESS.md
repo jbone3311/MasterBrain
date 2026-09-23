@@ -7,7 +7,8 @@
 surface checkpoint-4V PDF/Office derivatives only while their exact parent archive,
 inventory, member and document receipt remain current. It must not rewrite active
 FileOS generations, broaden retained-history search, create automatic archive fan-out
-or imply FOS-Master cutover.
+or imply FOS-Master cutover. ADR-084 and the closed search contract are accepted;
+implementation remains pending.
 
 ## Completed gates
 
