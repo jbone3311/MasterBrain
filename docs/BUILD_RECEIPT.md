@@ -2,6 +2,18 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS scanner fault/size boundary checkpoint
+
+On a separate branch stacked above PR #15, ten focused shadow tests passed with
+the pinned FOS-Master checkout. Sparse 100 MiB + 1 and 2 GiB + 1 byte files
+confirmed the shared 100 MiB exclusion versus donor hash and donor metadata-only
+row respectively. A forced donor read failure retained the prior row, while the
+shared snapshot reported `file_unreadable`; a synthetic hash-time content change
+reported `changed_during_scan`. Broken-file and directory symlink outcomes were
+checked. The test used a temporary fictional root and in-memory donor SQLite only;
+no donor CLI, configured database, registry or MasterBrain publication ran.
+Hosted CI and the remaining adversarial cases are pending.
+
 ## Verified FileOS whole-inventory shadow checkpoint
 
 ADR-093 precedes the synthetic-only scanner comparison. The pinned donor scanner

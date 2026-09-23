@@ -25,6 +25,10 @@ mean hosted, live-source accepted, or production ready.
   database and temporary fictional root. It verifies common hashes/sizes, six current
   policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;
   it does not switch snapshot policy or publish evidence.
+- Synthetic pinned-donor scanner boundary tests cover sparse 100 MiB/2 GiB limit
+  differences, a retained stale row after donor read failure, MasterBrain's
+  changed-during-hash refusal and broken/directory symlinks. They do not establish
+  dataless, unreadable-directory or live-source parity.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

@@ -33,6 +33,11 @@ match the restore workflow's path filters, so it did not start a new restore dri
 the underlying PR #14 [restore 35852112586](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852112586)
 passed. Snapshot policy integration and adversarial boundaries remain pending.
 
+The next isolated fault tranche adds sparse size-boundary, read-failure, race and
+broken/directory-symlink cases against the pinned donor in memory. Local focused
+tests are green; hosted CI is pending. This is still comparison work, not a
+FileOS snapshot-policy switch.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.

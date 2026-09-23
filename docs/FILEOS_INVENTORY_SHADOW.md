@@ -58,13 +58,32 @@ the donor scanner follows and hashes both, while MasterBrain marks both
 `symlink_skipped`. The future integrated adapter must not inherit the donor's
 outside-root read behavior.
 
+## Synthetic fault and size boundary tranche
+
+Focused live-donor tests now exercise two sparse, fictional size boundaries without
+allocating gigabytes of disk. At 100 MiB + 1 byte, the pinned donor hashes and
+indexes the file while the current MasterBrain snapshot excludes it. At 2 GiB + 1
+byte, the donor catalogs a metadata-only row with null SHA-256; the test forbids
+calling its hash reader for that file, and MasterBrain again excludes it. Both are
+reason-coded `shared_size_limit`, not equal evidence. The sparse fixture skips on a
+filesystem that cannot provide sparse allocation.
+
+A deterministic donor read failure after a prior successful scan marks the path as
+seen but leaves its old row unchanged; MasterBrain records `file_unreadable` and
+publishes no item. A synthetic content mutation during MasterBrain hashing records
+`changed_during_scan` instead of a mismatched item. A broken file symlink produces a
+MasterBrain `symlink_skipped` error but no donor row, while neither scanner descends
+through the synthetic directory symlink. These tests use only temporary roots and
+an in-memory donor database. They do not authorize treating a retained donor row as
+proof that the file was successfully read on the latest run.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,
 metadata-only hashing, and the donor mass-prune tripwire on synthetic files. Donor
 document labels/CRC and MasterBrain media types/IDs are not equivalent fields.
-Cloud dataless placeholders, >100 MiB/2 GiB policy boundaries, unreadable
-directories and source races still need explicit adversarial cases before any
+Cloud dataless placeholders, unreadable directories, donor-side source races and
+unusual/invalid filenames still need explicit adversarial cases before any
 integrated inventory-policy change. The future policy ADR must version manifests,
 represent metadata-only/oversize candidates without calling them complete evidence,
 prevent policy-only absence events, and prove replay, rollback and search visibility
