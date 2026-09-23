@@ -41,7 +41,7 @@ def test_actual_restricted_ocr_and_empty_image(processor: DockerImageOcrProcesso
     )
     assert "INVOICE" in result.text and "4471" in result.text
     assert (result.width, result.height, result.frame_count) == (1200, 260, 1)
-    assert result.engine == "tesseract-5.3.0-eng" and result.scanner_status == "unscanned"
+    assert result.engine == "tesseract-5.5.0-eng" and result.scanner_status == "unscanned"
 
     output = BytesIO()
     Image.new("RGB", (80, 60), "white").save(output, format="PNG")

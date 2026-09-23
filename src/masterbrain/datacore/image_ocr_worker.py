@@ -52,7 +52,7 @@ def _ocr(image: object) -> str:
 
     if pytesseract.__version__ != _PYTESSERACT_VERSION:
         raise ImageOcrUnavailable()
-    if str(pytesseract.get_tesseract_version()).split()[0] != "5.3.0":
+    if str(pytesseract.get_tesseract_version()).split()[0] != "5.5.0":
         raise ImageOcrUnavailable()
     try:
         value = pytesseract.image_to_string(

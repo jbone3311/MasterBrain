@@ -13,7 +13,7 @@ from typing import Any
 from email_brain.mime_sandbox import _invalid_constant, _json_budget, _unique_object
 
 CONTRACT = "sandbox-fileos-image-ocr-v1"
-OCR_ENGINE = "tesseract-5.3.0-eng"
+OCR_ENGINE = "tesseract-5.5.0-eng"
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_REQUEST_BYTES = 12 * 1024 * 1024
 MAX_OUTPUT_BYTES = 64 * 1024
