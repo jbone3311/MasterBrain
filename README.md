@@ -117,6 +117,7 @@ roadmap item is not an implementation claim.
 - [Sealed archive-document batch design](docs/ARCHIVE_DOCUMENT_BATCH.md)
 - [Archive image/OCR donor inventory and closed contract](docs/ARCHIVE_IMAGE_OCR.md)
 - [One-member archive image/OCR composition](docs/ARCHIVE_MEMBER_IMAGE_OCR.md)
+- [Archive-member image OCR persistence](docs/ARCHIVE_MEMBER_IMAGE_PERSISTENCE.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
