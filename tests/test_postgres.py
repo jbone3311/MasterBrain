@@ -18,6 +18,7 @@ from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 from uuid import UUID, uuid4
 
 import httpx
@@ -38,14 +39,21 @@ from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
 from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
+from masterbrain import archive_member_controller as archive_controller
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
+from masterbrain.datacore.archive_member_contract import decode_result as decode_member_result
+from masterbrain.datacore.archive_member_contract import encode_request as encode_member_request
 from masterbrain.datacore.archive_member_text import (
     archive_member_version_id,
     publish_extracted_archive_member_text,
 )
+from masterbrain.datacore.archive_member_worker import process_request as read_archive_member
 from masterbrain.datacore.archive_worker import inventory_archive
 from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
+from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
+from masterbrain.datacore.image_ocr_contract import ImageOcrResult
+from masterbrain.datacore.image_ocr_contract import source_for as image_source_for
 from masterbrain.datacore.persistence import ArchiveMemberTargetRecord, DataCoreStore
 from masterbrain.email_bridge_controller import (
     EmailBridgeBatchItem,
@@ -1751,6 +1759,141 @@ def test_archive_member_image_ocr_publication_converges_and_rechecks_current_par
             "archive-image-stale-v1",
             uuid4(),
         )
+
+
+def test_private_archive_image_command_publishes_replays_and_refuses_stale_parent(
+    database: tuple[Store, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    tenant_ctx, _ = tenant
+    ctx = datacore_context(tenant_ctx)
+    root = tmp_path / "source"
+    root.mkdir()
+    core = DataCoreStore(store)
+    raw, target = archive_image_fixture(
+        core, ctx, root, source_id="files_archive_image_private_command"
+    )
+    state = tmp_path / "state"
+    state.mkdir(mode=0o700)
+    token = secrets.token_urlsafe(40)
+    token_file = state / "token"
+    token_file.write_bytes(token.encode())
+    token_file.chmod(0o600)
+    credentials_file = state / "credentials.json"
+    credentials_file.write_text(
+        json.dumps(
+            [
+                {
+                    "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+                    "tenant_id": str(ctx.tenant_id),
+                    "actor_id": str(ctx.actor_id),
+                    "scopes": ["brain.source.ingest", "brain.document.publish"],
+                    "client_kind": "worker",
+                    "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+                }
+            ]
+        )
+    )
+    credentials_file.chmod(0o600)
+    config_file = state / "archive-image.json"
+    config_file.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "root": str(root),
+                "archive_image_id": "sha256:" + "a" * 64,
+                "image_ocr_image_id": "sha256:" + "b" * 64,
+                "docker_binary": "/usr/bin/false",
+                "credentials_file": str(credentials_file),
+                "token_file": str(token_file),
+                "code_revision": "archive-image-command-test-v1",
+            }
+        )
+    )
+    config_file.chmod(0o600)
+
+    class LocalArchiveProcessor:
+        def __init__(self, image_id: str, *, docker_binary: Path) -> None:
+            assert image_id == "sha256:" + "a" * 64
+            assert docker_binary == Path("/usr/bin/false")
+
+        def read(self, archive_raw: bytes, *, source: Any, target: Any) -> Any:
+            return decode_member_result(
+                read_archive_member(encode_member_request(archive_raw, source, target)),
+                source,
+                target,
+            )
+
+    marker = "private archive image OCR proof 4881"
+
+    class LocalImageProcessor:
+        processor_version = IMAGE_OCR_CONTRACT + "-" + "b" * 64
+
+        def __init__(self, image_id: str, *, docker_binary: Path) -> None:
+            assert image_id == "sha256:" + "b" * 64
+            assert docker_binary == Path("/usr/bin/false")
+
+        def extract(self, image_raw: bytes, *, suffix: str, sha256: str, format: str) -> Any:
+            source = image_source_for(image_raw, suffix=suffix, sha256=sha256, format=format)
+            return ImageOcrResult(
+                source=source,
+                status="extracted",
+                reason="bounded_image_ocr_v1",
+                detected_format="png",
+                width=40,
+                height=30,
+                mode="RGB",
+                frame_count=1,
+                text=marker,
+            )
+
+    monkeypatch.setattr(archive_controller, "Store", Mock(return_value=store))
+    monkeypatch.setattr(archive_controller, "DockerArchiveMemberProcessor", LocalArchiveProcessor)
+    monkeypatch.setattr(archive_controller, "DockerImageOcrProcessor", LocalImageProcessor)
+    key = uuid4()
+    arguments = (config_file, store.dsn, target.inventory_id, target.member_locator, key)
+    checked = archive_controller.run_archive_member_image_ocr_controller(*arguments, check=True)
+    assert checked["execution_verified"] is False and checked["data_effects"] is False
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
+            "WHERE inventory_id=%s", (target.inventory_id,)
+        ).fetchone()["n"] == 0
+
+    first = archive_controller.run_archive_member_image_ocr_controller(*arguments)
+    replay = archive_controller.run_archive_member_image_ocr_controller(*arguments)
+    assert first["changed"] is True and replay == {**first, "changed": False}
+    assert first["operation"] == "archive_member_image_ocr"
+    assert first["chunks"] == 1 and first["source_effects"] is False
+    assert target.member_locator not in json.dumps(first)
+    assert marker not in json.dumps(first)
+    assert (root / "fixture.zip").read_bytes() == raw
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
+            "WHERE inventory_id=%s", (target.inventory_id,)
+        ).fetchone()["n"] == 1
+        assert conn.execute(
+            "SELECT body FROM brain_normalized_documents WHERE id=%s",
+            (first["document_id"],),
+        ).fetchone()["body"] == marker
+
+    (root / "fixture.zip").write_bytes(raw + b"changed")
+    core.import_fileos_snapshot(
+        ctx, fileos_manifest(root, source_id="files_archive_image_private_command", hour=2),
+        uuid4(),
+    )
+    with pytest.raises(archive_controller.ArchiveMemberControllerError):
+        archive_controller.run_archive_member_image_ocr_controller(*arguments)
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
+            "WHERE inventory_id=%s", (target.inventory_id,)
+        ).fetchone()["n"] == 1
+    assert core.search(ctx, marker)[0].evidence_id == first["evidence_id"]
 
 
 def test_archive_member_text_plan_is_current_paged_eligible_and_replay_deduplicated(

@@ -19,6 +19,10 @@ from masterbrain.datacore.archive_member_document import (
     extract_archive_member_document,
     publish_extracted_archive_member_document,
 )
+from masterbrain.datacore.archive_member_image_ocr import (
+    extract_archive_member_image_ocr,
+    publish_extracted_archive_member_image_ocr,
+)
 from masterbrain.datacore.archive_member_processor import DockerArchiveMemberProcessor
 from masterbrain.datacore.archive_member_text import (
     extract_archive_member_text,
@@ -26,6 +30,7 @@ from masterbrain.datacore.archive_member_text import (
 )
 from masterbrain.datacore.document_processor import DockerDocumentProcessor
 from masterbrain.datacore.extraction import ExtractionStatus
+from masterbrain.datacore.image_ocr_processor import DockerImageOcrProcessor
 from masterbrain.datacore.persistence import DataCoreStore
 
 _INVENTORY = re.compile(r"archive_inventory_[a-f0-9]{32}\Z", re.ASCII)
@@ -43,6 +48,7 @@ class ArchiveMemberControllerConfig(ClosedModel):
     root: Path
     archive_image_id: str = Field(pattern=r"^sha256:[a-f0-9]{64}\z")
     document_image_id: str | None = Field(default=None, pattern=r"^sha256:[a-f0-9]{64}\z")
+    image_ocr_image_id: str | None = Field(default=None, pattern=r"^sha256:[a-f0-9]{64}\z")
     docker_binary: Path
     credentials_file: Path
     token_file: Path
@@ -73,6 +79,15 @@ class ArchiveMemberControllerConfig(ClosedModel):
         if "\x00" in value:
             raise ArchiveMemberControllerError()
         return value
+
+    @model_validator(mode="after")
+    def separate_ocr_image(self) -> ArchiveMemberControllerConfig:
+        if self.image_ocr_image_id is not None and self.image_ocr_image_id in {
+            self.archive_image_id,
+            self.document_image_id,
+        }:
+            raise ArchiveMemberControllerError()
+        return self
 
 
 class ArchiveMemberBatchItem(ClosedModel):
@@ -490,6 +505,83 @@ def run_archive_member_document_controller(
             "document_id": published.document_id,
             "format": extraction.metadata["format"],
             "metadata_counts": counts,
+            "chunks": published.chunks,
+            "changed": published.changed,
+            "source_effects": False,
+        }
+    except Exception:
+        raise ArchiveMemberControllerError() from None
+
+
+def run_archive_member_image_ocr_controller(
+    path: Path,
+    dsn: str,
+    inventory_id: str,
+    member_locator: str,
+    idempotency_key: UUID,
+    *,
+    check: bool = False,
+) -> dict[str, Any]:
+    """Validate or publish one explicitly selected archive image OCR derivative."""
+    try:
+        if not dsn or not isinstance(idempotency_key, UUID):
+            raise ArchiveMemberControllerError()
+        _selection(inventory_id, member_locator)
+        config = ArchiveMemberControllerConfig.model_validate(_json(path))
+        if config.image_ocr_image_id is None:
+            raise ArchiveMemberControllerError()
+        root = config.root.resolve(strict=True)
+        if not root.is_dir():
+            raise ArchiveMemberControllerError()
+        identity = WorkerIdentity(
+            config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
+        )
+        initial = identity.authenticate()
+        store = Store(dsn)
+        with store.transaction(initial.context):
+            pass
+        _current(identity, initial)
+        if check:
+            return {
+                "configuration_valid": True,
+                "execution_verified": False,
+                "operation": "archive_member_image_ocr",
+                "source_effects": False,
+                "data_effects": False,
+            }
+        core = DataCoreStore(store)
+        target = core.archive_member_target(initial.context, inventory_id, member_locator)
+        _current(identity, initial)
+        archive_processor = DockerArchiveMemberProcessor(
+            config.archive_image_id, docker_binary=config.docker_binary
+        )
+        image_processor = DockerImageOcrProcessor(
+            config.image_ocr_image_id, docker_binary=config.docker_binary
+        )
+        _current(identity, initial)
+        extraction = extract_archive_member_image_ocr(
+            root, target, archive_processor, image_processor
+        )
+        if extraction.status is not ExtractionStatus.EXTRACTED:
+            raise ArchiveMemberControllerError()
+        _current(identity, initial)
+        published = publish_extracted_archive_member_image_ocr(
+            core,
+            initial.context,
+            target,
+            extraction,
+            code_revision=config.code_revision,
+            idempotency_key=idempotency_key,
+        )
+        _current(identity, initial)
+        return {
+            "operation": "archive_member_image_ocr",
+            "inventory_id": published.inventory_id,
+            "source_id": published.source_id,
+            "item_id": published.item_id,
+            "version_id": published.version_id,
+            "evidence_id": published.evidence_id,
+            "document_id": published.document_id,
             "chunks": published.chunks,
             "changed": published.changed,
             "source_effects": False,

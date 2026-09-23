@@ -18,6 +18,7 @@ from masterbrain.archive_member_controller import (
     run_archive_member_batch_controller,
     run_archive_member_controller,
     run_archive_member_document_controller,
+    run_archive_member_image_ocr_controller,
     run_archive_member_plan_controller,
 )
 from masterbrain.datacore.dedup import DEFAULT_CONFIG, compare_files, file_hash, find_duplicates
@@ -140,6 +141,14 @@ def build_parser() -> argparse.ArgumentParser:
     archive_document.add_argument("--member-locator", required=True)
     archive_document.add_argument("--idempotency-key", type=UUID, required=True)
     archive_document.add_argument("--check", action="store_true")
+    archive_image = file_commands.add_parser(
+        "archive-image", help="Publish one selected archive image OCR member"
+    )
+    archive_image.add_argument("--config", type=Path, required=True)
+    archive_image.add_argument("--inventory-id", required=True)
+    archive_image.add_argument("--member-locator", required=True)
+    archive_image.add_argument("--idempotency-key", type=UUID, required=True)
+    archive_image.add_argument("--check", action="store_true")
     archive_plan = file_commands.add_parser(
         "archive-text-plan", help="Preview eligible archive text members"
     )
@@ -312,6 +321,22 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(
                 _json(
                     run_archive_member_document_controller(
+                        args.config,
+                        dsn,
+                        args.inventory_id,
+                        args.member_locator,
+                        args.idempotency_key,
+                        check=args.check,
+                    )
+                )
+            )
+        elif args.command == "fileos" and args.file_command == "archive-image":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(
+                _json(
+                    run_archive_member_image_ocr_controller(
                         args.config,
                         dsn,
                         args.inventory_id,

@@ -330,6 +330,188 @@ def test_archive_document_runs_exact_target_and_content_free_output(
     assert "title" not in json.dumps(result) and "member_locator" not in result
 
 
+def image_controller_file(tmp_path: Path) -> Path:
+    path, config, _ = controller_files(tmp_path)
+    config["image_ocr_image_id"] = "sha256:" + "c" * 64
+    private_write(path, config)
+    return path
+
+
+def test_archive_image_check_is_non_consuming_and_requires_both_images(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = image_controller_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = Mock(side_effect=AssertionError("check inspected a member"))
+    archive = Mock(side_effect=AssertionError("check constructed archive worker"))
+    image = Mock(side_effect=AssertionError("check constructed image worker"))
+    monkeypatch.setattr(control, "DataCoreStore", core)
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", archive)
+    monkeypatch.setattr(control, "DockerImageOcrProcessor", image)
+    checked = control.run_archive_member_image_ocr_controller(
+        path, "runtime-dsn", "archive_inventory_" + "d" * 32, "images/proof.png", uuid4(),
+        check=True,
+    )
+    assert checked == {
+        "configuration_valid": True,
+        "execution_verified": False,
+        "operation": "archive_member_image_ocr",
+        "source_effects": False,
+        "data_effects": False,
+    }
+    core.assert_not_called()
+    archive.assert_not_called()
+    image.assert_not_called()
+
+    config = json.loads(path.read_text())
+    del config["image_ocr_image_id"]
+    private_write(path, config)
+    with pytest.raises(control.ArchiveMemberControllerError):
+        control.run_archive_member_image_ocr_controller(
+            path, "runtime-dsn", "archive_inventory_" + "d" * 32,
+            "images/proof.png", uuid4(), check=True,
+        )
+
+
+@pytest.mark.parametrize("scopes", [[], ["brain.source.ingest"], ["brain.search"]])
+def test_archive_image_requires_exact_publication_scopes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, scopes: list[str]
+) -> None:
+    path = image_controller_file(tmp_path)
+    credentials = json.loads((path.parent / "credentials.json").read_text())
+    credentials[0]["scopes"] = scopes
+    private_write(path.parent / "credentials.json", credentials)
+    store = Mock()
+    monkeypatch.setattr(control, "Store", store)
+    with pytest.raises(control.ArchiveMemberControllerError):
+        control.run_archive_member_image_ocr_controller(
+            path, "runtime-dsn", "archive_inventory_" + "d" * 32,
+            "images/proof.png", uuid4(), check=True,
+        )
+    store.assert_not_called()
+
+
+def test_archive_image_publishes_exact_member_and_scrubs_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = image_controller_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = MagicMock()
+    target = SimpleNamespace(member_locator="images/private-proof.png")
+    core.archive_member_target.return_value = target
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    archive = MagicMock()
+    image = MagicMock()
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", archive)
+    monkeypatch.setattr(control, "DockerImageOcrProcessor", image)
+    extraction = SimpleNamespace(
+        status=ExtractionStatus.EXTRACTED,
+        metadata={
+            "format": "png", "width": 240, "height": 90, "frame_count": 1,
+            "image_reason": "bounded_image_ocr_v1", "private_note": "secret evidence text",
+        },
+        text="secret evidence text",
+    )
+    extract = Mock(return_value=extraction)
+    monkeypatch.setattr(control, "extract_archive_member_image_ocr", extract)
+    published = SimpleNamespace(
+        inventory_id="archive_inventory_" + "d" * 32,
+        source_id="files", item_id="archiveitem_opaque", version_id="archiveversion_opaque",
+        evidence_id="evidence_opaque", document_id="document_opaque", chunks=1, changed=True,
+    )
+    replayed = SimpleNamespace(**{**vars(published), "changed": False})
+    publish = Mock(side_effect=[published, replayed])
+    monkeypatch.setattr(control, "publish_extracted_archive_member_image_ocr", publish)
+    key = uuid4()
+    args = (path, "runtime-dsn", published.inventory_id, target.member_locator, key)
+    first = control.run_archive_member_image_ocr_controller(*args)
+    replay = control.run_archive_member_image_ocr_controller(*args)
+    assert core.archive_member_target.call_count == 2
+    assert all(
+        call.args[1:] == (published.inventory_id, target.member_locator)
+        for call in core.archive_member_target.call_args_list
+    )
+    assert extract.call_count == publish.call_count == 2
+    assert all(call.args[1] is target for call in extract.call_args_list)
+    publish.assert_any_call(
+        core, ANY, target, extraction,
+        code_revision="unit-archive-controller-v1", idempotency_key=key,
+    )
+    assert first["changed"] is True and replay["changed"] is False
+    for result in (first, replay):
+        encoded = json.dumps(result)
+        assert result["operation"] == "archive_member_image_ocr"
+        assert result["source_effects"] is False
+        assert target.member_locator not in encoded
+        assert "secret evidence text" not in encoded
+        assert "runtime-dsn" not in encoded
+
+
+@pytest.mark.parametrize(
+    "status", [ExtractionStatus.EMPTY, ExtractionStatus.DEFERRED, ExtractionStatus.FAILED]
+)
+def test_archive_image_refuses_unpublishable_results(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: ExtractionStatus
+) -> None:
+    path = image_controller_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = MagicMock()
+    core.archive_member_target.return_value = SimpleNamespace()
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", MagicMock())
+    monkeypatch.setattr(control, "DockerImageOcrProcessor", MagicMock())
+    monkeypatch.setattr(
+        control, "extract_archive_member_image_ocr",
+        Mock(return_value=SimpleNamespace(status=status, text="untrusted detail")),
+    )
+    publish = Mock()
+    monkeypatch.setattr(control, "publish_extracted_archive_member_image_ocr", publish)
+    with pytest.raises(control.ArchiveMemberControllerError) as denied:
+        control.run_archive_member_image_ocr_controller(
+            path, "runtime-dsn", "archive_inventory_" + "d" * 32, "proof.png", uuid4()
+        )
+    assert "untrusted detail" not in str(denied.value)
+    publish.assert_not_called()
+
+
+@pytest.mark.parametrize("failure", ["reauth", "stale"])
+def test_archive_image_refuses_revoked_or_stale_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+) -> None:
+    path = image_controller_file(tmp_path)
+    monkeypatch.setattr(control, "Store", Mock(return_value=MagicMock()))
+    core = MagicMock()
+    core.archive_member_target.return_value = SimpleNamespace()
+    monkeypatch.setattr(control, "DataCoreStore", Mock(return_value=core))
+    monkeypatch.setattr(control, "DockerArchiveMemberProcessor", MagicMock())
+    monkeypatch.setattr(control, "DockerImageOcrProcessor", MagicMock())
+    monkeypatch.setattr(
+        control, "extract_archive_member_image_ocr",
+        Mock(return_value=SimpleNamespace(status=ExtractionStatus.EXTRACTED)),
+    )
+    publish = Mock(side_effect=control.Conflict("stale private member path"))
+    monkeypatch.setattr(control, "publish_extracted_archive_member_image_ocr", publish)
+    if failure == "reauth":
+        counter = 0
+
+        def revoked(*args: object) -> None:
+            nonlocal counter
+            counter += 1
+            if counter >= 4:
+                raise control.ArchiveMemberControllerError()
+
+        monkeypatch.setattr(control, "_current", revoked)
+    with pytest.raises(control.ArchiveMemberControllerError) as denied:
+        control.run_archive_member_image_ocr_controller(
+            path, "runtime-dsn", "archive_inventory_" + "d" * 32, "proof.png", uuid4()
+        )
+    assert "private member path" not in str(denied.value)
+    if failure == "reauth":
+        publish.assert_not_called()
+    else:
+        publish.assert_called_once()
+
+
 def test_batch_check_validates_seal_without_target_or_worker_access(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
