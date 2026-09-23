@@ -14,6 +14,7 @@ later tranche identifies shared behavior.
 | Hash and duplicate discovery | `dedup_tool.py`, `dedup_engine.py` | `test_dedup_tool.py`, `test_dedup_engine.py` | DC-001 read-only core now; policy engine later |
 | Safe filesystem effects | `safe_fileops.py`, `safe_delete.py`, `folder_history.py` | `test_safe_fileops.py`; dedup/broker invariants embedded elsewhere | Effects phase only |
 | Source discovery | `scan_domains.py`, `index_tools.py`, `fos_tools.py`, `domain_paths.py`, `spoke_config.py` | `test_scan_domains.py`, `test_fos_tools.py`, `test_spoke_tools.py` | DC-003 read-only adapter |
+| FileOS inventory exclusions | `junk_filter.py` (shared by scanner and reconciler) | donor 18-case self-test; MasterBrain 3,000-path live classifier parity | Pure classifier extracted; snapshot integration awaits policy ADR |
 | Intake | `intake_preflight.py`, `intake_pipeline.py`, `intake_classifier.py`, `intake_router.py`, `intake_consolidate.py`, `intake_manager.py`, `ingest_folder.py` | five matching `test_intake_*.py` modules | DC-003/DC-004 |
 | Extraction | `doc_extract.py`, `extract_metadata.py`, `archive_unpack.py`, `image_triage.py`, `zip_index.py`, `statement_extract.py` | `test_doc_extract.py`, `test_extract_metadata.py`, `test_archive_unpack.py`, `test_image_triage.py` | DC-004 by format/risk |
 | Index/retrieval | `content_search.py`, `embed_documents.py`, `cross_db_search.py`, `corpus_reconcile.py` | `test_embed_documents.py`; parity corpus required for others | DC-005 |
@@ -86,6 +87,14 @@ timeout but also naming, SQLite, command and Anthropic effects; `extract_metadat
 temporarily disables Pillow's global bomb guard. The tranche therefore extracts a
 closed isolated subset rather than copying any module. See the
 [image/OCR inventory and contract](ARCHIVE_IMAGE_OCR.md).
+
+FileOS inventory classifier extraction adds:
+
+```text
+12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437  _SYSTEM/tools/junk_filter.py
+```
+
+The target copy has the same digest. See [classifier contract](FILEOS_JUNK_POLICY.md).
 ## Gaps found during inspection
 
 - Common-tool test coverage is uneven: intake/dedupe/extraction are comparatively

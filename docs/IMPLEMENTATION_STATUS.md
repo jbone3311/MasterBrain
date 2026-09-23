@@ -18,6 +18,9 @@ mean hosted, live-source accepted, or production ready.
   safe relative locators, bounded metadata and explicit source-bound evidence.
 - Synthetic DataCore unit corpus and live-donor parity harness pinned to FOS-Master
   commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
+- Exact copied FOS scanner/reconciler inventory classifier with 3,000-path live-donor
+  parity. It is not yet wired into FileOS snapshots or dedupe; their different
+  exclusion policies require an explicit integration decision.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

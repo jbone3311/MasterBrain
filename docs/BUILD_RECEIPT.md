@@ -2,6 +2,17 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS inventory-classifier parity checkpoint
+
+Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15` and the copied
+DataCore classifier have identical SHA-256
+`12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437`.
+The explicit read-only donor harness compared 3,000 synthetic paths and reported
+zero mismatches across file, directory, operational-directory, path-reason and prune
+contracts. Twelve focused Python tests and lint passed locally. This is an extracted
+classifier, not scanner/snapshot integration, whole-inventory parity or production
+cutover. Hosted CI/restore remain pending for this branch.
+
 ## Verified private archive-image OCR command
 
 Checkpoint 5C design revision **3d9b9b9** and runtime revision **f658ace** passed

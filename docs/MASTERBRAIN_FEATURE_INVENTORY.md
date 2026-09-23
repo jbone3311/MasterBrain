@@ -19,11 +19,13 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Email | Provider drafts, moves, sends, permanent delete | Not implemented | Later reviewed action executor |
 | FileOS | In-place domain scanning and unified index | Implemented in FOS-Master donor | FileOS adapter + DataCore |
 | FileOS | SHA-256 inventory and read-only duplicate reports | Extracted to DataCore; parity harness present | DataCore |
+| FileOS | Scanner/reconciler junk and operational-path classification | Exact donor module extracted; 3,000-path parity green; snapshot integration pending | FileOS adapter + DataCore |
 | FileOS | Audited safe move/rename, collision diversion, quarantine | Donor only | Later effect broker |
 | FileOS | Held-out-test and cross-domain dedupe protections | Donor only; required invariant | DataCore policy + effect broker |
 | FileOS | Intake classification/routing/preflight | Donor only | FileOS adapter + DataCore |
 | FileOS | PDF/DOCX/XLSX text/metadata extraction and indexing | Isolated shared tranche; hosted container/SQL gate green | DataCore |
-| FileOS | ZIP/TAR recursive inventory | Isolated hash-only worker plus append-only manifest ledger; live donor/hosted SQL/restore green; no member reads/search | DataCore |
+| FileOS | ZIP/TAR recursive inventory | Isolated hash-only worker and append-only manifest ledger; exact member reads, text/document derivatives, current text/document search and private batch operators implemented | DataCore |
+| FileOS | Archive-contained image OCR | Isolated worker, exact member composition, retained-history derivative and private one-member command implemented; current-only OCR search pending | DataCore + Brain API |
 | FileOS | Authenticated idempotent snapshot publication | Explicit one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Explicit index generation and rollback | Private one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
@@ -36,8 +38,8 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Hashing | Streaming content digests with algorithm/version | Implemented first tranche |
 | Dedupe | Exact-content groups; signals distinct from deletion authority | Implemented read-only first tranche |
 | Evidence | Immutable original bytes or provider-bound immutable reference | FileOS evidence plus additive current-Email shared bridge implemented |
-| File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | File text/PDF/Office, Email attachment occurrence/text and approved PDF derivative bridges implemented; ZIP/TAR hash-only inventory implemented, member reads/search planned |
-| OCR | Explicitly approved, isolated, page/image outputs with confidence | Planned |
+| File/attachment extraction | Bounded type detection, archive/MIME accounting, isolated workers | File text/PDF/Office, Email attachment occurrence/text and approved PDF derivative bridges; ZIP/TAR member read and text/document publication/search implemented |
+| OCR | Explicitly approved, isolated, page/image outputs with confidence | Exact archive-image OCR worker, composition, persistence and private command implemented; current search and automatic fan-out pending |
 | Normalization | Source-neutral document/message representation | FileOS text plus current Email message, attachment text and approved PDF derivative slices implemented |
 | Metadata | Source and extracted metadata, versioned independently | FileOS/Email partial; archive member hash manifests now durable |
 | Provenance | Every derivative links source, transform, version, code and time | Implemented FileOS and current Email message/attachment/PDF bridge slices |

@@ -11,6 +11,7 @@ redirecting Email ingestion or search.
 | MasterBrain command surface | [cli.py](../src/masterbrain/cli.py); read-only hash/compare/duplicates/FileOS snapshot and explicit publication |
 | DataCore contracts | [contracts.py](../src/masterbrain/datacore/contracts.py); immutable source/version/evidence/provenance types |
 | Read-only FileOS inventory | [fileos.py](../src/masterbrain/datacore/fileos.py); deterministic bounded snapshot, no source effects |
+| Extracted FileOS inventory classifier | [fileos_junk_filter.py](../src/masterbrain/datacore/fileos_junk_filter.py); [3,000-path donor parity](../scripts/fileos_junk_parity.py), [contract](FILEOS_JUNK_POLICY.md); not yet integrated into snapshots |
 | Isolated FileOS documents | [document contract](../src/masterbrain/datacore/document_contract.py), [worker](../src/masterbrain/datacore/document_worker.py), [parent](../src/masterbrain/datacore/document_processor.py), [image](../Dockerfile.documents), [guide](FILEOS_DOCUMENT_EXTRACTION.md) |
 | Isolated FileOS archive inventory | [contract](../src/masterbrain/datacore/archive_contract.py), [worker](../src/masterbrain/datacore/archive_worker.py), [parent](../src/masterbrain/datacore/archive_processor.py), [image](../Dockerfile.archives), [live donor parity](../scripts/archive_parity.py), [guide](FILEOS_ARCHIVE_EXTRACTION.md) |
 | Archive hash-manifest persistence | [DataCore store](../src/masterbrain/datacore/persistence.py), [migration 0023](../migrations/0023_archive_manifests.sql), [contract](ARCHIVE_MANIFEST_PERSISTENCE.md) |

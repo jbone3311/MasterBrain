@@ -45,6 +45,7 @@ FileOS sources ┘       │              │                │
 | Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
 | Typed reviewed travel/bill memory | Working narrow prototype |
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
+| FileOS scanner/reconciler inventory classifier | Extracted byte-for-byte; 3,000-path donor parity, not yet wired into snapshots |
 | File text/Markdown/HTML/CSV extraction | Working shared prototype |
 | Isolated FileOS PDF/DOCX/XLSX extraction | Implemented; hosted container and restore gates green |
 | Authenticated one-snapshot FileOS publication command | Implemented; hosted PostgreSQL and restore gates green |
@@ -96,6 +97,7 @@ roadmap item is not an implementation claim.
 - [Roadmap](docs/ROADMAP.md)
 - [FOS-Master migration and parity plan](docs/FOS_MIGRATION.md)
 - [FOS-Master common tool/test inventory](docs/FOS_TOOL_INVENTORY.md)
+- [FileOS inventory classifier extraction and parity](docs/FILEOS_JUNK_POLICY.md)
 - [Incremental execution plan](docs/EXECUTION_PLAN.md)
 - [Current build progress](docs/BUILD_PROGRESS.md)
 - [Shared DataCore/FileOS commands](docs/DATACORE_COMMANDS.md)
