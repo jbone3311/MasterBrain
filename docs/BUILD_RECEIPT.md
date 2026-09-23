@@ -2,6 +2,23 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## `main` synthetic alpha integration checkpoint
+
+Cumulative [PR #28](https://github.com/jbone3311/CW-EmailBrain/pull/28) merged
+the tested MasterBrain stack into `main` at
+`2dd4a8549f29fe56514e1bfa831e9a8b24821b35`. Its exact PR head
+`f0de8ba5897488effe9cffeda54d00d10f476339` passed
+[CI 35929447361](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35929447361)
+and [populated restore 35929447372](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35929447372).
+GitHub comparison found zero changed files between that head and the merge commit.
+The `main` push itself then passed
+[CI 35930140690](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35930140690)
+and [populated restore 35930140723](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35930140723)
+on the exact merge SHA. This establishes a testable **synthetic alpha baseline**,
+not live-source, production or FileOS cutover acceptance. FOS-Master remains
+untouched. The `v0.2.0a1` tag has not been created through the available GitHub
+connection; the repository currently carries a versioned, untagged checkpoint.
+
 ## MasterBrain synthetic alpha readiness candidate
 
 Local commit `947ea6e83fd18d0cb147bbc8325737bb67de194e` was published through
@@ -20,10 +37,10 @@ cases. The initial local pytest collection without `PYTHONPATH=src` failed befor
 tests ran because that existing virtual environment lacked an installed editable
 package; it is not counted as a product failure or pass.
 
-This is a synthetic alpha **candidate** only. The branch has not yet been merged
-to `main` or tagged. No live-source, hosted-operation, production identity or
-FileOS cutover acceptance is claimed; FOS-Master remains unchanged. ADR-101 and
-the alpha test guide define the release and test boundary.
+This paragraph describes the earlier readiness PR checkpoint; the cumulative
+`main` integration and its own gates are recorded above. No live-source,
+hosted-operation, production identity or FileOS cutover acceptance is claimed;
+FOS-Master remains unchanged. ADR-101 and the alpha test guide define the boundary.
 
 ## Confined FileOS read checkpoint
 

@@ -1,5 +1,18 @@
 # MasterBrain Build Progress
 
+## Current baseline on `main`
+
+MasterBrain's synthetic alpha candidate reached `main` in merge commit
+`2dd4a8549f29fe56514e1bfa831e9a8b24821b35` via PR #28. The exact
+`main` push passed
+[CI 35930140690](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35930140690)
+and [populated restore 35930140723](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35930140723).
+The `v0.2.0a1` tag remains uncreated; see
+[handoff issue #29](https://github.com/jbone3311/CW-EmailBrain/issues/29).
+Next: a synthetic cross-source Email/FileOS walkthrough with citation drill-down,
+coverage status and tenant-isolation tests on a short branch. No live-source
+operation, production deployment or FileOS cutover is accepted.
+
 ## Synthetic alpha integration
 
 ADR-101 defines `0.2.0a1` as a test-only candidate, not a production release.
@@ -9,9 +22,8 @@ the tested PR #25 branch. Its exact code head
 `9b1b0e0eb71291290ab30c418c9bd8e12e05a8b8` passed
 [CI 35927108260](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108260)
 and [populated restore 35927108311](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108311).
-The local 3,000-file pinned-donor parity run passed. The next gates are a
-documentation-receipt head check, branch integration, a cumulative PR against
-`main`, and exact-head CI/restore before any alpha tag. Live use and FileOS
+The local 3,000-file pinned-donor parity run passed. Those integration gates are
+now complete and recorded above. The tag remains pending. Live use and FileOS
 cutover remain prohibited.
 
 ## Active checkpoint
