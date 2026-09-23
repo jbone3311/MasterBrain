@@ -2,6 +2,36 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified private archive-document preview
+
+Design revision **ce2bf30** and runtime revision **1651c2b** passed
+[CI 35818667860](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35818667860)
+and [restore 35818668296](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35818668296),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.archive_member_document_plan` performs one forced-RLS metadata read
+  for an explicitly named current inventory. Exact suffix/media/container and 8 MiB
+  fences admit only PDF/DOCX/XLSX candidates; sealed ordinals provide stable bounded
+  pages and an ineligible cursor fails closed.
+- `masterbrain fileos archive-document-plan` reuses the private configuration and
+  exact worker scopes, but constructs neither worker and reads no source/member bytes.
+  Check mode does not query a target. Results label replay-deduplicated publication
+  state and explicitly declare no source, worker or data effects.
+- Real PostgreSQL proved mixed eligible/ineligible selection, paging, receipt replay,
+  tenant isolation and parent-replacement refusal. No batch, retry-key generation,
+  public route, source effect or automatic continuation was added.
+- CI and deployment each passed **2,586 Python tests** with PostgreSQL and no skips;
+  **134 browser contracts** and every prior restricted-container case passed.
+  Documentation covered **162 Markdown files / 874 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **71 tables / 237
+  rows / two tenants / four encrypted objects / two identity bindings** in 18.56
+  seconds. FOS-Master remains clean and unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+The next gate is a separately reviewed, sealed document-batch format and executor.
+Images/OCR, automatic fan-out, scheduling, source effects and FOS-Master cutover remain
+unauthorized.
+
 ## Verified current archive-document search
 
 Design revision **9ba4b88** and runtime revision **7329ba9** passed

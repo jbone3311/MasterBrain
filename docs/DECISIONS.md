@@ -12,7 +12,7 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-085](adr/085_private_archive_document_preview.md) requires a private, bounded,
 non-consuming view of exact current PDF/Office candidates before any document batch
-format or executor is considered. Implementation is pending.
+format or executor is considered. Implemented in `1651c2b`.
 
 [ADR-084](adr/084_current_archive_document_search.md) keeps current archive-contained
 PDF/Office derivatives in a distinct, independently ranked layer, fenced through the

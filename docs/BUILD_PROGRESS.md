@@ -2,12 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4X — private archive-document preview design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define a bounded, non-consuming operator view
-of eligible current PDF/DOCX/XLSX members and their publication state before any
-sealed document-batch authority is considered. It must inspect no member bytes,
-construct no worker, allocate no retry keys, publish nothing, and imply neither
-automatic archive fan-out nor FOS-Master cutover.
+**Checkpoint 4Y — sealed archive-document batch design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define a canonical-digest-bound private plan
+for 1–100 explicitly reviewed PDF/DOCX/XLSX member selections and caller-supplied
+idempotency keys. Execution must use the existing one-document command semantics,
+reauthenticate sensitive boundaries, stop on first refusal and resume only through
+unchanged-plan replay. It grants no discovery, automatic fan-out or scheduling.
 
 ## Completed gates
 
@@ -176,16 +176,24 @@ automatic archive fan-out nor FOS-Master cutover.
   are green. The pinned donor's 47 archive tests, six-case live archive parity and
   3,000-file hash/dedupe/extraction stress parity also passed locally without changing
   FOS-Master.
+- Checkpoint 4X private archive-document preview design `ce2bf30` and runtime
+  `1651c2b` passed 2,586 hosted Python tests with PostgreSQL, 134 browser contracts,
+  deployment, documentation and all restricted-container gates. Exact PDF/DOCX/XLSX
+  eligibility, sealed paging, replay-deduplicated publication state, tenant isolation,
+  stale-parent refusal and non-consuming check mode are proven; hosted
+  [CI 35818667860](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35818667860)
+  and [restore 35818668296](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35818668296)
+  are green.
 
 ## Current work
 
-- Design a private, read-only archive-document preview with bounded opaque pages,
-  exact eligibility/publication labels and no source, worker or publication effects.
+- Design a sealed, digest-bound archive-document batch with caller-supplied keys,
+  fail-stop execution and exact-plan replay across both restricted workers.
 
 ## Deferred by design
 
 - Archive-member images and OCR until separate format/fault/persistence gates exist.
-- Archive-document batch expansion, automatic fan-out and scheduling.
+- Automatic archive-document fan-out and scheduling.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.

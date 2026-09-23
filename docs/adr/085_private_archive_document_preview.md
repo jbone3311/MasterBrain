@@ -1,6 +1,6 @@
 # ADR-085 — Require archive-document preview before batch design
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `1651c2b`.
 
 ## Context
 

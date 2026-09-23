@@ -77,6 +77,11 @@ mean hosted, live-source accepted, or production ready.
   parent replacement removes current visibility without deleting retained history.
   `/v1/brain/current-search` exposes a distinct rank/limit/coverage layer with opaque
   locators. Hosted PostgreSQL, restore and all restricted-container gates are green.
+- Private `masterbrain fileos archive-document-plan` preview for one current archive
+  inventory. It returns only exact eligible PDF/DOCX/XLSX metadata and publication
+  state in sealed ordinal pages, constructs neither worker, reads no source/member
+  bytes and creates no retry or batch authority. Check mode is non-consuming; hosted
+  PostgreSQL, restore and restricted-container gates are green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;

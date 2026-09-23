@@ -1,6 +1,6 @@
 # Private archive-document publication preview design
 
-Status: checkpoint 4X accepted design; runtime not yet implemented.
+Status: checkpoint 4X implemented in `1651c2b`; hosted CI and restore are green.
 
 ## Purpose
 
@@ -39,7 +39,7 @@ hash, evidence content, processor identity, credential or generated idempotency 
 
 ## Operator command
 
-Add `masterbrain fileos archive-document-plan` using the existing closed private
+`masterbrain fileos archive-document-plan` uses the existing closed private
 archive-document configuration and exact shared scopes:
 
 ```sh

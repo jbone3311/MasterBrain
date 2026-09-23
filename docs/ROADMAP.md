@@ -9,8 +9,9 @@ persisted-hash-bound member reads, explicit text publication/search/batches and 
 exact retained-history PDF/Office derivative command chained across two restricted
 images, plus a separately ranked current-only archive-document layer with an exact
 parent/member/receipt fence. The immediate package is a private, bounded document
-preview before any sealed document batch is considered. Images/OCR, automatic fan-out,
-KnowledgeCore projection and all source effects remain later packages.
+preview, which is now implemented. The next package is a separately reviewed,
+digest-bound, fail-stop document batch using caller-supplied keys. Images/OCR,
+automatic fan-out, KnowledgeCore projection and all source effects remain later packages.
 
 ## Phase 0 — Identity and baseline (current)
 
