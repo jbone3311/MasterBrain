@@ -164,8 +164,7 @@ def test_historical_0006_backfill_was_silent_under_forced_rls(
         raw = b"synthetic historical message"
         digest = hashlib.sha256(raw).hexdigest()
         conn.execute(
-            "INSERT INTO raw_objects(tenant_id,account_id,sha256,raw_mime) "
-            "VALUES (%s,%s,%s,%s)",
+            "INSERT INTO raw_objects(tenant_id,account_id,sha256,raw_mime) VALUES (%s,%s,%s,%s)",
             (tenant_id, account_id, digest, raw),
         )
         conn.execute(

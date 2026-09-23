@@ -9,6 +9,15 @@ on a separate branch and PR. The issue exists; Claude has not submitted a branch
 PR. Checkpoint 5C is accepted on `codex/masterbrain-foundation` in PR #4. Any 5D
 implementation requires its own review and hosted gates before integration.
 
+In parallel, migration-integrity [PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12)
+addresses verified [issue #5](https://github.com/jbone3311/CW-EmailBrain/issues/5)
+without touching the 5D search workstream. ADR-091 precedes its forward-only 0029
+repair. On a disposable PostgreSQL 17 server, the focused tests passed 4/4 and the
+full PostgreSQL-marked suite passed 397 tests; the historical forced-RLS omission was
+reproduced. Hosted restore passed in
+[run 35839369275](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839369275);
+hosted CI and integration review remain pending. FOS-Master remains unchanged.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.
