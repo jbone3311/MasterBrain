@@ -328,6 +328,11 @@ def validate_fileos_completion_coverage(
     return source, observed_at, items
 
 
+def fileos_mass_loss_requires_review(previous_items: int, missing_items: int) -> bool:
+    """Match the pinned donor's mass-prune threshold without authorizing pruning."""
+    return missing_items >= 10 and missing_items * 2 >= previous_items
+
+
 def deterministic_chunks(
     text: str, limit: int = CHUNK_CHARACTERS
 ) -> Iterator[tuple[int, int, str]]:
@@ -3343,7 +3348,7 @@ class DataCoreStore:
                 (ctx.actor_id, run_id),
             ).fetchone()
             previous = conn.execute(
-                "SELECT actor_id,run_id,observed_at,manifest_sha256 "
+                "SELECT actor_id,run_id,observed_at,manifest_sha256,item_count "
                 "FROM brain_fileos_run_receipts WHERE source_id=%s "
                 "AND NOT (actor_id=%s AND run_id=%s) "
                 "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
@@ -3422,6 +3427,10 @@ class DataCoreStore:
                     "ORDER BY old.item_id",
                     (ctx.actor_id, run_id, previous["actor_id"], previous["run_id"]),
                 ).fetchall()
+                if recorded and fileos_mass_loss_requires_review(
+                    previous["item_count"], len(missing)
+                ):
+                    raise Conflict("FileOS inventory mass loss requires review")
                 for missing_item in missing:
                     event_id = stable_id(
                         "absence", str(run_id), missing_item["item_id"], missing_item["version_id"]

@@ -35,9 +35,12 @@ mean hosted, live-source accepted, or production ready.
   filename behavior and authorize no policy switch.
 - FileOS completion refuses malformed or uncertain snapshot coverage before writing
   a latest-complete receipt or absence event. The private publisher rejects before
-  intake; direct storage completion independently enforces the rule. This does not
-  yet version inventory policy or guard a clean-looking mass loss.
+  intake; direct storage completion independently enforces the rule. A separate
+  completion guard now refuses a clean-looking new run that loses at least 10 prior
+  items and at least half the prior inventory; it has no unreviewed bypass. This
+  does not yet version inventory policy or protect smaller unexplained losses.
   Hosted PostgreSQL, full CI and populated restore passed on PR #18's runtime head.
+  Hosted verification of the mass-loss guard is pending.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

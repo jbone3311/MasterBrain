@@ -57,7 +57,10 @@ source's latest-complete freshness. A crash prefix stays replayable and visible 
 complete; it cannot masquerade as a fresh source.
 The completion boundary also validates snapshot coverage. An unreadable directory,
 failed file read or hash-time change cannot be promoted to a complete run and
-therefore cannot create an absence event; partial imports remain separate.
+therefore cannot create an absence event; partial imports remain separate. A
+second guard refuses a new complete run with at least 10 missing prior items and
+at least 50% loss, even if its scan reports no errors. It retains the previous
+complete inventory until a separately reviewed recovery path exists.
 
 FileOS index rebuilds publish immutable generations from one exact completed run.
 Readiness is a database-checked closure over generation items and chunks. A separate

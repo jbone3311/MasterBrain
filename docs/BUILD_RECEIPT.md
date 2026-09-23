@@ -2,6 +2,16 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS mass-loss checkpoint
+
+ADR-095 records the pinned donor's mass-prune threshold as a fail-closed
+MasterBrain completion guard. A newly proposed run missing at least 10 prior
+items and at least half the previous complete inventory rolls back its completion
+and absence transaction. A lower-level import may remain for diagnosis; there is
+no force override, policy switch or donor change. Synthetic threshold and
+20→10 refusal / 20→12 acceptance regression tests are included. Local and hosted
+test results will be recorded after execution; this is not yet a cutover gate pass.
+
 ## Local FileOS completion-coverage checkpoint
 
 ADR-094 preceded the code change. A completion-only DataCore validator checks the

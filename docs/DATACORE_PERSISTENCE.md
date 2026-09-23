@@ -112,7 +112,12 @@ must agree, and read/race/directory/unknown errors cannot advance freshness or
 produce absence. Only an explicit `symlink_skipped` under the v1 no-follow policy
 is tolerated. The private publisher checks this before intake, while direct
 `complete_fileos_run` checks again. Lower-level partial imports remain possible and
-replayable. This does not yet compare inventory policy versions or guard mass loss.
+replayable. ADR-095 additionally refuses a new completion when at least 10 prior
+items and at least half the previous complete inventory are absent. The comparison
+runs under the source lock before the transaction commits; refusal leaves the prior
+latest-complete receipt and absence ledger unchanged. There is no force bypass;
+legitimate large removal needs a separately reviewed override contract. Inventory
+policy identities are not yet compared across runs.
 
 `fileos_rebuild_preview` reads a maximum of 50 opaque item records from the latest
 completed ledger while holding the source completion lock. It recomputes normalized

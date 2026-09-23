@@ -57,6 +57,12 @@ plus [restore 35863559359](https://github.com/jbone3311/CW-EmailBrain/actions/ru
 pass on [PR #18](https://github.com/jbone3311/CW-EmailBrain/pull/18). This does
 not switch donor inventory policy or solve mass loss.
 
+ADR-095 defines the next isolated safety guard: a new complete FileOS run is refused
+when at least 10 prior items and at least half the prior inventory disappear. It
+matches the pinned donor's mass-prune threshold without performing deletion or
+granting a force override. Synthetic boundary and consecutive-run SQL tests are
+being checked; hosted CI/restore and a reviewed legitimate-large-removal path remain.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.

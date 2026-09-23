@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-095](adr/095_fileos_mass_loss_guard.md) refuses a new FileOS completion when
+at least 10 prior items and at least half the prior inventory disappear. It does
+not authorize a bypass, policy switch or donor cutover. Implementation and hosted
+verification are pending.
+
 [ADR-094](adr/094_fileos_completion_coverage.md) requires a fail-closed snapshot
 error ledger before FileOS completion and absence inference. It permits only an
 explicit no-follow symlink skip; policy-version and mass-loss guards remain later

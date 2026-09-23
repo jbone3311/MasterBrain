@@ -75,7 +75,9 @@ ledgers; it retains evidence and does not authorize hiding, deletion or any file
 Completion additionally refuses malformed snapshot error ledgers or uncertain
 directory/file/race coverage before absence inference. A deliberate no-follow
 symlink skip is the sole tolerated snapshot error; source-policy drift and mass loss
-remain separate unsatisfied cutover gates (ADR-094).
+remain separate cutover gates (ADR-094). ADR-095 now refuses the donor-equivalent
+mass-loss threshold before completion, without a force bypass; smaller losses and
+inventory-policy drift remain unsatisfied cutover gates.
 
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and

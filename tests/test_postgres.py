@@ -1529,9 +1529,7 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
     ctx, _ = tenant
     ctx = datacore_context(ctx)
     core = DataCoreStore(store)
-    _, target = archive_image_fixture(
-        core, ctx, tmp_path, source_id="files_archive_image_publish"
-    )
+    _, target = archive_image_fixture(core, ctx, tmp_path, source_id="files_archive_image_publish")
     processor = "sandbox-fileos-image-ocr-v1-" + "b" * 64
     marker = "archive image OCR retained proof 4471"
     key = uuid4()
@@ -1596,11 +1594,14 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
             "truncated": False,
             "chunk_count": 1,
         }
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
-            "WHERE inventory_id=%s AND member_locator=%s",
-            (target.inventory_id, target.member_locator),
-        ).fetchone()["n"] == 3
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
+                "WHERE inventory_id=%s AND member_locator=%s",
+                (target.inventory_id, target.member_locator),
+            ).fetchone()["n"]
+            == 3
+        )
         provenance = conn.execute(
             "SELECT transform,transform_version,configuration_sha256 "
             "FROM brain_provenance WHERE output_id=%s",
@@ -1634,21 +1635,27 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
             "transform_version": processor,
             "configuration_sha256": expected_configuration,
         }
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_provenance_inputs p JOIN brain_provenance v "
-            "ON v.tenant_id=p.tenant_id AND v.id=p.provenance_id "
-            "WHERE v.output_id=%s",
-            (first.document_id,),
-        ).fetchone()["n"] == 2
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_provenance_inputs p JOIN brain_provenance v "
+                "ON v.tenant_id=p.tenant_id AND v.id=p.provenance_id "
+                "WHERE v.output_id=%s",
+                (first.document_id,),
+            ).fetchone()["n"]
+            == 2
+        )
         evidence = conn.execute(
             "SELECT storage,retained FROM brain_evidence WHERE id=%s",
             (first.evidence_id,),
         ).fetchone()
         assert evidence == {"storage": "source_bound", "retained": False}
-        assert conn.execute(
-            "SELECT body FROM brain_normalized_documents WHERE id=%s",
-            (first.document_id,),
-        ).fetchone()["body"] == marker
+        assert (
+            conn.execute(
+                "SELECT body FROM brain_normalized_documents WHERE id=%s",
+                (first.document_id,),
+            ).fetchone()["body"]
+            == marker
+        )
 
     with pytest.raises(Conflict, match="idempotency key"):
         core.publish_archive_member_image_ocr(
@@ -1668,8 +1675,7 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
         )
     with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
         conn.execute(
-            "UPDATE brain_archive_member_image_receipts SET width=1 "
-            "WHERE idempotency_key=%s",
+            "UPDATE brain_archive_member_image_receipts SET width=1 WHERE idempotency_key=%s",
             (key,),
         )
 
@@ -1681,9 +1687,7 @@ def test_archive_member_image_ocr_publication_converges_and_rechecks_current_par
     ctx, _ = tenant
     ctx = datacore_context(ctx)
     core = DataCoreStore(store)
-    raw, target = archive_image_fixture(
-        core, ctx, tmp_path, source_id="files_archive_image_fence"
-    )
+    raw, target = archive_image_fixture(core, ctx, tmp_path, source_id="files_archive_image_fence")
     processor = "sandbox-fileos-image-ocr-v1-" + "c" * 64
 
     def publish(key: UUID):
@@ -1858,10 +1862,14 @@ def test_private_archive_image_command_publishes_replays_and_refuses_stale_paren
     checked = archive_controller.run_archive_member_image_ocr_controller(*arguments, check=True)
     assert checked["execution_verified"] is False and checked["data_effects"] is False
     with store.transaction(ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
-            "WHERE inventory_id=%s", (target.inventory_id,)
-        ).fetchone()["n"] == 0
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
+                "WHERE inventory_id=%s",
+                (target.inventory_id,),
+            ).fetchone()["n"]
+            == 0
+        )
 
     first = archive_controller.run_archive_member_image_ocr_controller(*arguments)
     replay = archive_controller.run_archive_member_image_ocr_controller(*arguments)
@@ -1872,27 +1880,39 @@ def test_private_archive_image_command_publishes_replays_and_refuses_stale_paren
     assert marker not in json.dumps(first)
     assert (root / "fixture.zip").read_bytes() == raw
     with store.transaction(ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
-            "WHERE inventory_id=%s", (target.inventory_id,)
-        ).fetchone()["n"] == 1
-        assert conn.execute(
-            "SELECT body FROM brain_normalized_documents WHERE id=%s",
-            (first["document_id"],),
-        ).fetchone()["body"] == marker
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
+                "WHERE inventory_id=%s",
+                (target.inventory_id,),
+            ).fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute(
+                "SELECT body FROM brain_normalized_documents WHERE id=%s",
+                (first["document_id"],),
+            ).fetchone()["body"]
+            == marker
+        )
 
     (root / "fixture.zip").write_bytes(raw + b"changed")
     core.import_fileos_snapshot(
-        ctx, fileos_manifest(root, source_id="files_archive_image_private_command", hour=2),
+        ctx,
+        fileos_manifest(root, source_id="files_archive_image_private_command", hour=2),
         uuid4(),
     )
     with pytest.raises(archive_controller.ArchiveMemberControllerError):
         archive_controller.run_archive_member_image_ocr_controller(*arguments)
     with store.transaction(ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
-            "WHERE inventory_id=%s", (target.inventory_id,)
-        ).fetchone()["n"] == 1
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
+                "WHERE inventory_id=%s",
+                (target.inventory_id,),
+            ).fetchone()["n"]
+            == 1
+        )
     assert core.search(ctx, marker)[0].evidence_id == first["evidence_id"]
 
 
@@ -3755,10 +3775,13 @@ def test_fileos_incomplete_snapshot_cannot_advance_absence(
     assert inventory["run_id"] == first_run
     assert inventory["newly_absent_items"] == 0
     with store.transaction(ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
-            (source_id,),
-        ).fetchone()["n"] == 0
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
 
     missing.unlink()
     clean = fileos_manifest(tmp_path, source_id=source_id, hour=3)
@@ -3767,3 +3790,65 @@ def test_fileos_incomplete_snapshot_cannot_advance_absence(
     inventory = core.fileos_inventory(ctx, source_id)
     assert inventory["run_id"] == clean_run
     assert inventory["newly_absent_items"] == 1
+
+
+def test_fileos_mass_loss_refuses_completion_without_absence(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    source_id = "files_mass_loss_guard"
+    core = DataCoreStore(store)
+    for number in range(20):
+        (tmp_path / f"fictional_{number:02}.bin").write_bytes(f"fictional {number}".encode())
+
+    def record(manifest: dict[str, Any], run_id: UUID) -> bool:
+        core.import_fileos_snapshot(ctx, manifest, run_id)
+        return core.complete_fileos_run(
+            ctx,
+            manifest,
+            run_id,
+            outcomes={"unsupported": len(manifest["items"])},
+            item_outcomes={item["item_id"]: "unsupported" for item in manifest["items"]},
+            published_documents=0,
+            code_revision="test-mass-loss-v1",
+            document_processor_version=None,
+        ).recorded
+
+    first = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    first_run = uuid4()
+    assert record(first, first_run) is True
+    assert record(first, first_run) is False
+
+    for number in range(10):
+        (tmp_path / f"fictional_{number:02}.bin").unlink()
+    thin = fileos_manifest(tmp_path, source_id=source_id, hour=2)
+    thin_run = uuid4()
+    with pytest.raises(Conflict, match="mass loss requires review"):
+        record(thin, thin_run)
+    assert core.fileos_inventory(ctx, source_id)["run_id"] == first_run
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_run_receipts WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
+
+    for number in range(2):
+        (tmp_path / f"fictional_{number:02}.bin").write_bytes(f"fictional {number}".encode())
+    clean = fileos_manifest(tmp_path, source_id=source_id, hour=3)
+    clean_run = uuid4()
+    assert record(clean, clean_run) is True
+    inventory = core.fileos_inventory(ctx, source_id)
+    assert inventory["run_id"] == clean_run
+    assert inventory["newly_absent_items"] == 8

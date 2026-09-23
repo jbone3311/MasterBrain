@@ -8,7 +8,10 @@ from pathlib import Path
 import pytest
 
 from masterbrain.datacore.fileos import snapshot_tree
-from masterbrain.datacore.persistence import validate_fileos_completion_coverage
+from masterbrain.datacore.persistence import (
+    fileos_mass_loss_requires_review,
+    validate_fileos_completion_coverage,
+)
 
 OBSERVED = datetime(2026, 9, 23, tzinfo=UTC)
 
@@ -64,3 +67,18 @@ def test_malformed_coverage_ledger_blocks_completion(tmp_path: Path, defect: str
         manifest["policy"]["follow_file_symlinks"] = True
     with pytest.raises(ValueError, match="coverage"):
         validate_fileos_completion_coverage(manifest)
+
+
+@pytest.mark.parametrize(
+    ("previous", "missing", "requires_review"),
+    [
+        (0, 0, False),
+        (20, 9, False),
+        (20, 10, True),
+        (100, 49, False),
+        (100, 50, True),
+        (18, 10, True),
+    ],
+)
+def test_mass_loss_threshold(previous: int, missing: int, requires_review: bool) -> None:
+    assert fileos_mass_loss_requires_review(previous, missing) is requires_review
