@@ -1,6 +1,7 @@
 # ADR-097 — Account for excluded FileOS locators before inferring absence
 
-Status: accepted for an isolated implementation tranche; verification pending.
+Status: accepted and implemented in isolated PR #21; hosted CI and populated restore
+passed on runtime head `0bd6319`. Review and integration remain pending.
 
 ## Context
 

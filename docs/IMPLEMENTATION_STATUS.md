@@ -50,8 +50,9 @@ mean hosted, live-source accepted, or production ready.
   switch to the donor scanner's exclusions or authorize cutover.
 - ADR-097 adds bounded per-locator exclusion accounting and refuses absence
   when a prior indexed file is still present but excluded, or intentionally skipped
-  as a no-follow symlink. Local tests are underway; hosted PostgreSQL/restore and
-  review remain pending. It does not prove a live scanner or resolve root binding.
+  as a no-follow symlink. Hosted CI and populated restore passed on PR #21's
+  runtime head; review/integration remain pending. It does not prove a live scanner
+  or resolve root binding.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

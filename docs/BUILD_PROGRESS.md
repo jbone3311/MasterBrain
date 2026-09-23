@@ -87,8 +87,13 @@ Completion refuses to interpret a previously indexed locator covered by this led
 or an intentional no-follow symlink skip as deletion. Genuine removals retain the
 existing absence behavior. Focused local tests reported 35 passed and three
 PostgreSQL skips without a disposable local database; Ruff and the 179-file/955-link
-documentation inventory passed. Hosted PostgreSQL CI and populated restore are
-required before the proposal is review-ready. This changes
+documentation inventory passed. The runtime head `0bd6319` passed
+[hosted CI 35885818478](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35885818478)
+(2,712 Python passed, nine expected skips; type, browser, deployment, docs and
+restricted-worker gates also green) and populated
+[restore 35885818538](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35885818538)
+on [PR #21](https://github.com/jbone3311/CW-EmailBrain/pull/21). Review and
+integration remain. This changes
 neither FOS-Master nor the inventory membership policy.
 
 ## Completed gates

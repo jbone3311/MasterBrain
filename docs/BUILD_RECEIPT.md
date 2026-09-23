@@ -14,7 +14,14 @@ tests cover malformed ledgers and one-item oversize/symlink/directory transition
 versus genuine deletion. Focused local pytest: **35 passed, three PostgreSQL skips**
 without a disposable local database, 70 deselected and two upstream warnings.
 Ruff check/format and the documentation inventory (179 Markdown files, 955 local
-links) passed. Hosted results remain pending. Root binding, forged-manifest
+links) passed. Local mypy's normal cache failed with a disk-I/O error; the fresh
+no-incremental run was interrupted after prolonged local filesystem delay.
+Hosted [CI 35885818478](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35885818478)
+on runtime head `0bd6319` passed **2,712 Python tests, nine expected skips,
+two upstream warnings**, plus type, browser, deployment, documentation, API-image
+and restricted-worker gates. Populated
+[restore 35885818538](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35885818538)
+passed. Root binding, forged-manifest
 resistance, legacy baseline and live-shadow acceptance remain open.
 The pinned 3,000-file synthetic donor shadow still reports 3,002 common SHA/size
 matches, exactly six known policy differences, and a 1,502-row donor mass-prune
