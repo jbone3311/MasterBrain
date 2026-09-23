@@ -52,7 +52,7 @@ from email_brain.schemas import (
 from email_brain.store import AccessDenied, IngestItem, NotFound, Store
 from email_brain.synthetic_formats import pdf_bytes
 from masterbrain.datacore.contracts import stable_id
-from masterbrain.datacore.fileos import SNAPSHOT_VERSION
+from masterbrain.datacore.fileos import SNAPSHOT_VERSION, fileos_inventory_policy
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import ClaimWrite, EntityWrite
@@ -355,7 +355,7 @@ def seed(
             "manifest_version": SNAPSHOT_VERSION,
             "source": {"source_id": source_id, "kind": "fileos"},
             "observed_at": now.isoformat(),
-            "policy": {"hash_algorithm": "sha256"},
+            "policy": fileos_inventory_policy(),
             "counts": {"items": 1, "excluded": 0, "errors": 0},
             "items": [
                 {
@@ -785,13 +785,10 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             and not preview["data_effects"],
             "restored DataCore rebuild preview changed",
         )
-        index_status = DataCoreStore(store).fileos_index_status(
-            ctx, f"files_{current.keyword}"
-        )
+        index_status = DataCoreStore(store).fileos_index_status(ctx, f"files_{current.keyword}")
         require(
             index_status["status"] == "active"
-            and index_status["active_generation"]["generation_id"]
-            == current.brain_generation_id,
+            and index_status["active_generation"]["generation_id"] == current.brain_generation_id,
             "restored DataCore active index generation changed",
         )
         generation_hits = DataCoreStore(store).search_fileos_active(

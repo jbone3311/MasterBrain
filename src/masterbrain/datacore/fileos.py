@@ -28,6 +28,22 @@ class SnapshotError:
     code: str
 
 
+def fileos_inventory_policy(
+    config: dict[str, Any] | None = None, *, follow_file_symlinks: bool = False
+) -> dict[str, Any]:
+    """Describe the exact v1 membership rules used by a FileOS snapshot."""
+    policy = DEFAULT_CONFIG if config is None else config
+    return {
+        "policy_version": INVENTORY_POLICY_VERSION,
+        "hash_algorithm": "sha256",
+        "follow_file_symlinks": follow_file_symlinks,
+        "min_file_size": policy.get("min_file_size", 0),
+        "max_file_size_mb": policy.get("max_file_size_mb", 100),
+        "include_extensions": policy.get("include_extensions"),
+        "exclude_patterns": policy.get("exclude_patterns", []),
+    }
+
+
 def _relative(path: Path, root: Path) -> str:
     return path.relative_to(root).as_posix()
 
@@ -138,15 +154,7 @@ def snapshot_tree(
         "manifest_version": SNAPSHOT_VERSION,
         "source": {"source_id": source.source_id, "kind": source.kind.value},
         "observed_at": observed_at.isoformat(),
-        "policy": {
-            "policy_version": INVENTORY_POLICY_VERSION,
-            "hash_algorithm": "sha256",
-            "follow_file_symlinks": follow_file_symlinks,
-            "min_file_size": policy.get("min_file_size", 0),
-            "max_file_size_mb": policy.get("max_file_size_mb", 100),
-            "include_extensions": policy.get("include_extensions"),
-            "exclude_patterns": policy.get("exclude_patterns", []),
-        },
+        "policy": fileos_inventory_policy(policy, follow_file_symlinks=follow_file_symlinks),
         "counts": {"items": len(items), "excluded": excluded, "errors": len(errors)},
         "items": items,
         "errors": [asdict(item) for item in errors],

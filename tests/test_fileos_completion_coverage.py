@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from masterbrain.datacore.fileos import snapshot_tree
+from masterbrain.datacore.fileos import fileos_inventory_policy, snapshot_tree
 from masterbrain.datacore.persistence import (
     fileos_inventory_policy_sha256,
     fileos_mass_loss_requires_review,
@@ -90,6 +90,7 @@ def test_policy_identity_is_stable_across_observations_but_detects_drift(
 ) -> None:
     (tmp_path / "fictional.txt").write_bytes(b"fictional evidence")
     first = _manifest(tmp_path)
+    assert first["policy"] == fileos_inventory_policy()
     later = snapshot_tree(
         tmp_path,
         source_id="coverage_test",

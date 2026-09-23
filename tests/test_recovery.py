@@ -457,6 +457,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0026_archive_member_documents.sql",
             "0027_current_archive_document_search.sql",
             "0028_archive_member_image_ocr.sql",
+            "0031_fileos_policy_identity.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -464,6 +465,65 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             ).fetchone() == (version_id, snapshot, "synthetic-old")
         with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(dsn) as conn:
             conn.execute("UPDATE message_versions SET snapshot='{}'")
+    finally:
+        with psycopg.connect(admin, autocommit=True) as conn:
+            conn.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(name)))
+
+
+@pytest.mark.postgres
+def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
+    from pathlib import Path
+
+    _, admin = database
+    name = "email_brain_test_policy_upgrade_" + uuid4().hex
+    with psycopg.connect(admin, autocommit=True) as conn:
+        conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
+    dsn = make_conninfo(admin, dbname=name)
+    try:
+        directory = Path(__file__).resolve().parents[1] / "migrations"
+        for path in sorted(directory.glob("[0-9][0-9][0-9][0-9]_*.sql")):
+            if path.name != "0031_fileos_policy_identity.sql":
+                (tmp_path / path.name).write_bytes(path.read_bytes())
+        migrate(dsn, tmp_path)
+        tenant_id, actor_id, run_id = uuid4(), uuid4(), uuid4()
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO tenants(id,name) VALUES (%s,'Synthetic policy upgrade')",
+                (tenant_id,),
+            )
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,'files_policy_upgrade','fileos','Synthetic')",
+                (tenant_id,),
+            )
+            conn.execute(
+                "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+                "observed_at,manifest_sha256,code_revision,text_extractor_version,item_count,"
+                "outcomes,published_documents) VALUES (%s,%s,%s,'files_policy_upgrade',now(),"
+                "%s,'synthetic-old','fileos-text-v1',0,'{}'::jsonb,0)",
+                (tenant_id, actor_id, run_id, "a" * 64),
+            )
+        assert migrate(dsn, directory) == ["0031_fileos_policy_identity.sql"]
+        with psycopg.connect(dsn) as conn:
+            assert conn.execute(
+                "SELECT policy_sha256 FROM brain_fileos_run_receipts "
+                "WHERE tenant_id=%s AND actor_id=%s AND run_id=%s",
+                (tenant_id, actor_id, run_id),
+            ).fetchone() == (None,)
+        with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(dsn) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_run_receipts SET policy_sha256=%s "
+                "WHERE tenant_id=%s AND actor_id=%s AND run_id=%s",
+                ("c" * 64, tenant_id, actor_id, run_id),
+            )
+        with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+                "observed_at,manifest_sha256,code_revision,text_extractor_version,item_count,"
+                "outcomes,published_documents) VALUES (%s,%s,%s,'files_policy_upgrade',now(),"
+                "%s,'synthetic-new','fileos-text-v1',0,'{}'::jsonb,0)",
+                (tenant_id, actor_id, uuid4(), "b" * 64),
+            )
     finally:
         with psycopg.connect(admin, autocommit=True) as conn:
             conn.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(name)))

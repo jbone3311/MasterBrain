@@ -18,6 +18,22 @@ pinned donor shadow run preserved 3,002 common hash/size matches, exactly six
 known policy differences and the 1,502-row donor mass-prune refusal. Hosted
 PostgreSQL, full CI and populated restore are pending; no cutover is implied.
 
+The first hosted [restore 35874676362](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35874676362)
+stopped in its migrate-and-seed phase (the drill suppresses sensitive exception
+details). Inspection found that its synthetic FileOS seed still supplied the old
+single-field policy. The seed now uses the full versioned default policy; a fresh
+restore run must confirm this diagnosis.
+The first [CI 35874676274](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35874676274)
+passed the new PostgreSQL policy regression but failed an older populated-upgrade
+test whose literal expected migration list ended at 0028. That expectation now
+includes 0031. A separate disposable-database regression now seeds a legacy
+FileOS receipt before 0031, proves it remains null/immutable after the additive
+upgrade, and rejects a new digestless receipt. After the correction, focused local
+policy/coverage/recovery pytest reported **26 passed, 1 PostgreSQL skip**, 17
+deselected and two upstream warnings. Ruff check/format and the updated
+documentation inventory (178 files, 949 links) passed locally. Fresh hosted CI
+and restore are required.
+
 ## Local FileOS mass-loss checkpoint
 
 ADR-095 records the pinned donor's mass-prune threshold as a fail-closed
