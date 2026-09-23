@@ -56,6 +56,12 @@ mean hosted, live-source accepted, or production ready.
   ordinal pages with already-published labels, constructs no worker, reads no source
   bytes and creates no derivative/key/batch authority. Hosted PostgreSQL/restore gates
   are green.
+- Private `masterbrain fileos archive-text-batch` execution of one canonical,
+  digest-bound plan containing 1–100 reviewed member locators and caller-supplied
+  idempotency keys. It validates without target/worker/key effects, executes in exact
+  order, stops on first refusal, reauthenticates sensitive boundaries and resumes only
+  through unchanged-plan replay. Output contains indexes/counts rather than locators or
+  content; hosted PostgreSQL/container/restore gates are green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;

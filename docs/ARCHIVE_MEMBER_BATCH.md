@@ -1,6 +1,6 @@
-# Sealed archive-member text batch design
+# Sealed archive-member text batch
 
-Status: checkpoint 4U design; runtime not yet implemented.
+Status: checkpoint 4U implemented and accepted in `1a3fd58`.
 
 ## Purpose
 
@@ -84,9 +84,15 @@ bytes, text, hash, evidence content, Docker details, exception or credentials.
 - full PostgreSQL, restore, real restricted image, donor parity and existing search
   gates remain green.
 
+Accepted evidence: 2,568 local Python cases (2,185 passed, 383 environment-gated),
+134 browser cases, the repository deployment gate, the pinned donor's 47 archive
+tests and six-case live parity corpus passed. Hosted
+[CI 35803130109](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35803130109)
+and [restore 35803130165](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35803130165)
+passed, including real PostgreSQL publication/replay and all restricted worker images.
+
 ## Non-goals
 
 No discovery, preview continuation, generated keys, best-effort skip/continue,
 parallelism, scheduler, public API, automatic inventory-wide publication, archive
 upload, non-text extraction, source effect or FOS-Master cutover is authorized.
-

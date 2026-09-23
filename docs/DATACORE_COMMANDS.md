@@ -257,6 +257,29 @@ Output is content-free: opaque IDs, chunk count, replay state and
 There is no enumeration, glob, batch, automatic sibling continuation, public route or
 current-search activation.
 
+## Execute a sealed archive-member text batch
+
+After reviewing a preview, create an owner-private plan containing one current
+inventory ID, the configured code revision, 1–100 unique ordered member locators,
+one caller-supplied UUID key per item, and the canonical `plan_sha256`. Validate it
+without inspecting targets or constructing the worker:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain fileos archive-text-batch \
+  --config /private/operator/archive-member.json \
+  --plan /private/operator/archive-member-batch.json \
+  --check
+```
+
+Remove `--check` only for the exact reviewed plan. Execution is sequential and stops
+at the first refused target, stale parent, extraction failure or publication conflict.
+Completed receipts remain valid; retry the exact unchanged plan so completed items
+replay and remaining items keep their original keys. Output contains the plan digest,
+counts and item indexes only—never locators, paths, bytes, normalized text or worker
+details. The command never discovers members, follows preview cursors, skips failures,
+runs items in parallel, changes source files or exposes a public route.
+
 ## Build, activate or roll back a FileOS index generation
 
 After a snapshot has a completed run receipt, validate a one-shot generation command:

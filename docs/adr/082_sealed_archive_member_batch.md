@@ -1,6 +1,6 @@
 # ADR-082 — Seal archive-member batches and stop on first refusal
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `1a3fd58`.
 
 ## Context
 
@@ -34,4 +34,3 @@ append-only derivatives and let current-parent fences control search visibility.
 
 Remove the batch plan/controller/command. One-member publication, existing derivatives,
 preview and current/retained search remain valid and unchanged.
-

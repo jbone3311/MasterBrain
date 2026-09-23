@@ -12,7 +12,7 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-082](adr/082_sealed_archive_member_batch.md) requires one canonical private plan
 with caller-supplied keys and fail-stop exact-plan retry before archive-member batch
-publication is authorized.
+publication is authorized. Implemented in `1a3fd58`.
 
 [ADR-081](adr/081_private_archive_member_preview.md) requires a private, read-only,
 ordinal-cursor preview of eligible members in one current archive inventory before any

@@ -2,11 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 4U — sealed archive-member publication batch design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Specify an owner-private, digest-bound plan for
-1–100 reviewed inventory/member/key selections from one current archive inventory,
-with fail-stop execution and exact-plan replay. It must not discover members, follow
-preview cursors, allocate keys, continue after refusal or broaden source effects.
+**Checkpoint 4V — archive-contained non-text derivative design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define how one explicitly selected current
+archive member may enter the existing PDF/Office extraction path without publishing
+raw bytes, bypassing member/parent hash fences, weakening isolated-worker limits or
+creating automatic archive fan-out. Design and hostile-format gates precede runtime.
 
 ## Completed gates
 
@@ -150,16 +150,21 @@ preview cursors, allocate keys, continue after refusal or broaden source effects
   no-source/no-receipt operator checks, all restricted containers, plus
   [CI 35799779137](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35799779137)
   and [restore 35799779396](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35799779396).
+- Checkpoint 4U sealed archive-member batch design `b98b720` and runtime `1a3fd58`
+  passed 2,568 local Python cases, 134 browser cases, the repository deployment gate,
+  real PostgreSQL exact-plan publication/replay, all restricted containers, the pinned
+  donor's 47 archive tests and six-case live parity corpus, plus
+  [CI 35803130109](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35803130109)
+  and [restore 35803130165](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35803130165).
 
 ## Current work
 
-- Specify a sealed archive-member batch plan and fail-stop executor with caller-supplied
-  fixed keys, exact digest/replay and no discovery or automatic continuation.
+- Specify one hash-bound archive-member PDF/Office derivative path that reuses existing
+  isolated document contracts without raw-byte persistence or automatic fan-out.
 
 ## Deferred by design
 
-- Archive-member sealed batch publication, non-text extraction, images and OCR until
-  separate plan/format/fault/persistence gates exist.
+- Archive-member images and OCR until separate format/fault/persistence gates exist.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.
