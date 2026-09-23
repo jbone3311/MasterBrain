@@ -37,6 +37,7 @@ from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError
 from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
+from email_brain.synthetic_formats import pdf_bytes
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
 from masterbrain.datacore.archive_member_text import (
     archive_member_version_id,
@@ -1401,6 +1402,88 @@ def test_archive_member_text_publication_rechecks_current_parent_and_target(
         )
 
 
+def test_current_archive_document_search_is_exact_replay_safe_and_parent_fenced(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    output = io.BytesIO()
+    marker = "current archive document searchable proof"
+    with zipfile.ZipFile(output, "w") as archive:
+        archive.writestr("documents/report.pdf", pdf_bytes((marker,)))
+        archive.writestr("sibling.txt", b"must not enter document search")
+    raw = output.getvalue()
+    (tmp_path / "documents.zip").write_bytes(raw)
+    manifest = fileos_manifest(tmp_path, source_id="files_archive_document_search")
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    item = manifest["items"][0]
+    source = source_for(
+        raw,
+        item["version_id"],
+        item["locator"],
+        item["digest"]["value"],
+        item["media_type"],
+    )
+    inventory = inventory_archive(raw, source)
+    recorded = core.record_archive_inventory(ctx, inventory, ARCHIVE_PROCESSOR, uuid4())
+    target = core.archive_document_member_target(ctx, recorded.inventory_id, "documents/report.pdf")
+    processor = "sandbox-fileos-document-v1-" + "b" * 64
+    first = core.publish_archive_member_document(
+        ctx,
+        target,
+        marker,
+        processor,
+        "pdf",
+        "archive-document-search-test-v1",
+        uuid4(),
+    )
+    replay = core.publish_archive_member_document(
+        ctx,
+        target,
+        marker,
+        processor,
+        "pdf",
+        "archive-document-search-test-v1",
+        uuid4(),
+    )
+
+    assert first.changed is True and replay == replace(first, changed=False)
+    assert core.search_current_archive_members(ctx, marker) == []
+    assert core.search_current_fileos(ctx, marker) == []
+    current = core.search_current_archive_documents(ctx, marker)
+    assert [hit.evidence_id for hit in current] == [first.evidence_id]
+    assert current[0].locator.startswith("archive-member/archiveitem_")
+    assert target.member_locator not in current[0].locator
+    assert core.search(ctx, marker)[0].evidence_id == first.evidence_id
+    with pytest.raises(ValueError, match="invalid current archive-document search"):
+        core.search_current_archive_documents(ctx, " ")
+    with pytest.raises(ValueError, match="invalid current archive-document search"):
+        core.search_current_archive_documents(ctx, marker, limit=21)
+
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Archive document other')", (other_tenant,)
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
+    assert core.search_current_archive_documents(other, marker) == []
+
+    (tmp_path / "documents.zip").write_bytes(raw + b"changed")
+    core.import_fileos_snapshot(
+        ctx,
+        fileos_manifest(tmp_path, source_id="files_archive_document_search", hour=2),
+        uuid4(),
+    )
+    assert core.search_current_archive_documents(ctx, marker) == []
+    assert core.search(ctx, marker)[0].evidence_id == first.evidence_id
+
+
 def test_archive_member_text_plan_is_current_paged_eligible_and_replay_deduplicated(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:
@@ -2210,6 +2293,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
             "query": "Project Atlas",
             "fileos_limit": 5,
             "archive_member_limit": 5,
+            "archive_document_limit": 5,
             "email_message_limit": 5,
             "email_attachment_limit": 5,
             "email_document_limit": 5,
@@ -2225,6 +2309,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert grouped["coverage"]["complete"] is False
     assert grouped["layers"]["fileos"][0]["evidence_id"] == evidence_id
     assert grouped["layers"]["archive_members"] == []
+    assert grouped["layers"]["archive_documents"] == []
     assert grouped["layers"]["email_messages"][0]["evidence_id"] == current_email.evidence_id
     assert grouped["layers"]["email_attachments"] == []
     assert grouped["layers"]["email_documents"] == []

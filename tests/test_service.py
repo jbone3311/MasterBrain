@@ -482,8 +482,18 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
         "Project Atlas archive member",
         0.75,
     )
+    archive_document_hit = SearchHit(
+        "chunk_" + "5" * 32,
+        "document_" + "5" * 32,
+        "evidence_" + "5" * 32,
+        "files_current",
+        "archive-member/archiveitem_document_opaque",
+        "Project Atlas archive document",
+        0.74,
+    )
     brain.search_current_fileos.return_value = [file_hit]
     brain.search_current_archive_members.return_value = [archive_hit]
+    brain.search_current_archive_documents.return_value = [archive_document_hit]
     brain.search_current_email_family.return_value = EmailFamilySearch((email_hit,), (), ())
     knowledge.search.return_value = [
         KnowledgeHit(
@@ -524,6 +534,7 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
             "query": "Atlas",
             "fileos_limit": 2,
             "archive_member_limit": 7,
+            "archive_document_limit": 8,
             "email_message_limit": 3,
             "email_attachment_limit": 4,
             "email_document_limit": 5,
@@ -541,6 +552,7 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
     assert set(body["layers"]) == {
         "fileos",
         "archive_members",
+        "archive_documents",
         "email_messages",
         "email_attachments",
         "email_documents",
@@ -548,14 +560,21 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
     }
     assert body["layers"]["fileos"][0]["evidence_id"] == file_hit.evidence_id
     assert body["layers"]["archive_members"][0]["evidence_id"] == archive_hit.evidence_id
+    assert body["layers"]["archive_documents"][0]["evidence_id"] == (
+        archive_document_hit.evidence_id
+    )
     assert body["coverage"]["archive_members"] == (
         "explicitly_published_current_archive_members_only"
+    )
+    assert body["coverage"]["archive_documents"] == (
+        "explicitly_published_current_archive_documents_only"
     )
     assert body["layers"]["email_messages"][0]["evidence_id"] == email_hit.evidence_id
     assert body["layers"]["email_attachments"] == []
     assert body["layers"]["knowledge"][0]["object_kind"] == "project"
     assert brain.search_current_fileos.call_args.kwargs == {"limit": 2}
     assert brain.search_current_archive_members.call_args.kwargs == {"limit": 7}
+    assert brain.search_current_archive_documents.call_args.kwargs == {"limit": 8}
     assert brain.search_current_email_family.call_args.kwargs == {
         "message_limit": 3,
         "attachment_limit": 4,
@@ -565,6 +584,7 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
     for invalid in (
         {"query": "Atlas", "fileos_limit": 21},
         {"query": "Atlas", "archive_member_limit": 0},
+        {"query": "Atlas", "archive_document_limit": 21},
         {"query": "Atlas", "email_message_limit": 0},
         {"query": "Atlas", "knowledge_kinds": ["project", "project"]},
         {"query": "Atlas", "unknown": True},
