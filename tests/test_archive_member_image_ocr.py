@@ -5,7 +5,8 @@ import io
 import zipfile
 from dataclasses import replace
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import ANY, Mock
+from uuid import uuid4
 
 import pytest
 from PIL import Image
@@ -13,10 +14,14 @@ from PIL import Image
 from masterbrain.datacore import image_ocr_worker
 from masterbrain.datacore.archive_contract import source_for as archive_source_for
 from masterbrain.datacore.archive_member_contract import decode_result, encode_request
-from masterbrain.datacore.archive_member_image_ocr import extract_archive_member_image_ocr
+from masterbrain.datacore.archive_member_image_ocr import (
+    extract_archive_member_image_ocr,
+    publish_extracted_archive_member_image_ocr,
+)
+from masterbrain.datacore.archive_member_text import archive_member_version_id
 from masterbrain.datacore.archive_member_worker import process_request
 from masterbrain.datacore.archive_worker import inventory_archive
-from masterbrain.datacore.extraction import ExtractionStatus
+from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus
 from masterbrain.datacore.image_ocr_contract import (
     CONTRACT,
     ImageOcrResult,
@@ -263,3 +268,146 @@ def test_animation_is_bounded_deferred(tmp_path: Path) -> None:
         "multiframe",
         "",
     )
+
+
+def accepted_publication_fixture(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> tuple[ArchiveMemberTargetRecord, ExtractionResult]:
+    archive, target = fixture("nested/photo.png", image_bytes("PNG"))
+    (tmp_path / "bundle.zip").write_bytes(archive)
+    monkeypatch.setattr(image_ocr_worker, "_ocr", lambda image: "  IMAGE PROOF  ")
+    extraction = extract_archive_member_image_ocr(
+        tmp_path, target, LocalArchiveProcessor(), DirectImageProcessor()
+    )
+    assert extraction.status is ExtractionStatus.EXTRACTED
+    return target, extraction
+
+
+def test_publication_wrapper_accepts_only_complete_bound_image_result(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    target, extraction = accepted_publication_fixture(monkeypatch, tmp_path)
+    core = Mock()
+    key = uuid4()
+    published = object()
+    core.publish_archive_member_image_ocr.return_value = published
+
+    assert (
+        publish_extracted_archive_member_image_ocr(
+            core,
+            object(),
+            target,
+            extraction,
+            code_revision="unit-v1",
+            idempotency_key=key,
+        )
+        is published
+    )
+    core.publish_archive_member_image_ocr.assert_called_once_with(
+        ANY,
+        target,
+        "IMAGE PROOF",
+        CONTRACT + "-synthetic-unit",
+        "png",
+        "png",
+        40,
+        30,
+        "RGB",
+        1,
+        False,
+        "unit-v1",
+        key,
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("extractor_version", ""),
+        ("extractor_version", "worker\x00version"),
+        ("format", "jpeg"),
+        ("detected_format", "jpeg"),
+        ("image_reason", "empty_ocr"),
+        ("width", 0),
+        ("width", True),
+        ("height", 25_000_001),
+        ("height", 625_001),
+        ("mode", ""),
+        ("mode", "RGB\x00"),
+        ("frame_count", 2),
+        ("frame_count", True),
+        ("truncated", 0),
+    ],
+)
+def test_publication_wrapper_rejects_malformed_image_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    field: str,
+    value: object,
+) -> None:
+    target, extraction = accepted_publication_fixture(monkeypatch, tmp_path)
+    core = Mock()
+    malformed = replace(extraction, metadata={**extraction.metadata, field: value})
+    with pytest.raises(ValueError, match="not an accepted extraction"):
+        publish_extracted_archive_member_image_ocr(
+            core,
+            object(),
+            target,
+            malformed,
+            code_revision="unit-v1",
+            idempotency_key=uuid4(),
+        )
+    core.publish_archive_member_image_ocr.assert_not_called()
+
+
+def test_publication_wrapper_rejects_incomplete_or_unbound_results(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    target, extraction = accepted_publication_fixture(monkeypatch, tmp_path)
+    variants = [
+        replace(extraction, version_id="version_stale"),
+        replace(extraction, locator="other.png"),
+        replace(extraction, status=ExtractionStatus.EMPTY),
+        replace(extraction, text=""),
+        replace(extraction, text="bad\x00text"),
+        replace(extraction, text=" untrimmed"),
+        replace(extraction, error_code="unexpected"),
+        replace(extraction, metadata={**extraction.metadata, "extra": "not admitted"}),
+        replace(
+            extraction,
+            metadata={
+                key: value
+                for key, value in extraction.metadata.items()
+                if key != "detected_format"
+            },
+        ),
+    ]
+    for invalid in variants:
+        core = Mock()
+        with pytest.raises(ValueError, match="not an accepted extraction"):
+            publish_extracted_archive_member_image_ocr(
+                core,
+                object(),
+                target,
+                invalid,
+                code_revision="unit-v1",
+                idempotency_key=uuid4(),
+            )
+        core.publish_archive_member_image_ocr.assert_not_called()
+
+    core = Mock()
+    oversized = replace(target, member_size_bytes=8 * 1024 * 1024 + 1)
+    oversized_extraction = replace(
+        extraction,
+        version_id=archive_member_version_id(oversized),
+    )
+    with pytest.raises(ValueError, match="not an accepted extraction"):
+        publish_extracted_archive_member_image_ocr(
+            core,
+            object(),
+            oversized,
+            oversized_extraction,
+            code_revision="unit-v1",
+            idempotency_key=uuid4(),
+        )
+    core.publish_archive_member_image_ocr.assert_not_called()

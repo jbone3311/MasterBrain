@@ -46,7 +46,7 @@ from masterbrain.datacore.archive_member_text import (
 from masterbrain.datacore.archive_worker import inventory_archive
 from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
-from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.datacore.persistence import ArchiveMemberTargetRecord, DataCoreStore
 from masterbrain.email_bridge_controller import (
     EmailBridgeBatchItem,
     EmailPartBridgeBatchItem,
@@ -279,6 +279,36 @@ def archive_fixture(
         item["media_type"],
     )
     return raw, manifest, inventory_archive(raw, source)
+
+
+def archive_image_fixture(
+    core: DataCoreStore,
+    ctx: TenantContext,
+    root: Path,
+    *,
+    source_id: str,
+    hour: int = 1,
+) -> tuple[bytes, ArchiveMemberTargetRecord]:
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w") as archive:
+        archive.writestr("nested/proof.png", b"\x89PNG\r\n\x1a\nsynthetic-image-body")
+        archive.writestr("sibling.txt", b"must never enter image OCR text")
+    raw = output.getvalue()
+    (root / "fixture.zip").write_bytes(raw)
+    manifest = fileos_manifest(root, source_id=source_id, hour=hour)
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    item = manifest["items"][0]
+    source = source_for(
+        raw,
+        item["version_id"],
+        item["locator"],
+        item["digest"]["value"],
+        item["media_type"],
+    )
+    inventory = inventory_archive(raw, source)
+    recorded = core.record_archive_inventory(ctx, inventory, ARCHIVE_PROCESSOR, uuid4())
+    target = core.archive_member_target(ctx, recorded.inventory_id, "nested/proof.png")
+    return raw, target
 
 
 def datacore_context(ctx: TenantContext) -> TenantContext:
@@ -1482,6 +1512,200 @@ def test_current_archive_document_search_is_exact_replay_safe_and_parent_fenced(
     )
     assert core.search_current_archive_documents(ctx, marker) == []
     assert core.search(ctx, marker)[0].evidence_id == first.evidence_id
+
+
+def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanced(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    _, target = archive_image_fixture(
+        core, ctx, tmp_path, source_id="files_archive_image_publish"
+    )
+    processor = "sandbox-fileos-image-ocr-v1-" + "b" * 64
+    marker = "archive image OCR retained proof 4471"
+    key = uuid4()
+    arguments = (
+        ctx,
+        target,
+        marker,
+        processor,
+        "png",
+        "png",
+        1200,
+        260,
+        "RGB",
+        1,
+        False,
+        "archive-image-test-v1",
+    )
+
+    first = core.publish_archive_member_image_ocr(*arguments, key)
+    same_key = core.publish_archive_member_image_ocr(*arguments, key)
+    equivalent_key = core.publish_archive_member_image_ocr(*arguments, uuid4())
+
+    assert first.changed is True
+    assert same_key == equivalent_key == replace(first, changed=False)
+    assert core.search(ctx, marker)[0].evidence_id == first.evidence_id
+    assert core.search_current_archive_members(ctx, marker) == []
+    assert core.search_current_archive_documents(ctx, marker) == []
+    assert core.search_current_fileos(ctx, marker) == []
+    with store.transaction(ctx) as conn:
+        receipt = conn.execute(
+            "SELECT image_processor,image_format,detected_format,width,height,mode,"
+            "frame_count,truncated,chunk_count FROM brain_archive_member_image_receipts "
+            "WHERE idempotency_key=%s",
+            (key,),
+        ).fetchone()
+        assert receipt == {
+            "image_processor": processor,
+            "image_format": "png",
+            "detected_format": "png",
+            "width": 1200,
+            "height": 260,
+            "mode": "RGB",
+            "frame_count": 1,
+            "truncated": False,
+            "chunk_count": 1,
+        }
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_archive_member_image_receipts "
+            "WHERE inventory_id=%s AND member_locator=%s",
+            (target.inventory_id, target.member_locator),
+        ).fetchone()["n"] == 2
+        provenance = conn.execute(
+            "SELECT transform,transform_version FROM brain_provenance WHERE output_id=%s",
+            (first.document_id,),
+        ).fetchone()
+        assert provenance == {
+            "transform": "archive_member_image_ocr",
+            "transform_version": processor,
+        }
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_provenance_inputs p JOIN brain_provenance v "
+            "ON v.tenant_id=p.tenant_id AND v.id=p.provenance_id "
+            "WHERE v.output_id=%s",
+            (first.document_id,),
+        ).fetchone()["n"] == 2
+        evidence = conn.execute(
+            "SELECT storage,retained FROM brain_evidence WHERE id=%s",
+            (first.evidence_id,),
+        ).fetchone()
+        assert evidence == {"storage": "source_bound", "retained": False}
+        assert conn.execute(
+            "SELECT body FROM brain_normalized_documents WHERE id=%s",
+            (first.document_id,),
+        ).fetchone()["body"] == marker
+
+    with pytest.raises(Conflict, match="idempotency key"):
+        core.publish_archive_member_image_ocr(
+            ctx,
+            target,
+            marker + " changed",
+            processor,
+            "png",
+            "png",
+            1200,
+            260,
+            "RGB",
+            1,
+            False,
+            "archive-image-test-v1",
+            key,
+        )
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
+        conn.execute(
+            "UPDATE brain_archive_member_image_receipts SET width=1 "
+            "WHERE idempotency_key=%s",
+            (key,),
+        )
+
+
+def test_archive_member_image_ocr_publication_converges_and_rechecks_current_parent(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    raw, target = archive_image_fixture(
+        core, ctx, tmp_path, source_id="files_archive_image_fence"
+    )
+    processor = "sandbox-fileos-image-ocr-v1-" + "c" * 64
+
+    def publish(key: UUID):
+        return core.publish_archive_member_image_ocr(
+            ctx,
+            target,
+            "concurrent archive image proof",
+            processor,
+            "png",
+            "png",
+            40,
+            30,
+            "RGB",
+            1,
+            False,
+            "archive-image-concurrency-v1",
+            key,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(publish, (uuid4(), uuid4())))
+    assert sorted(result.changed for result in results) == [False, True]
+    assert len({result.document_id for result in results}) == 1
+
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Archive image other')", (other_tenant,)
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
+    with pytest.raises(NotFound):
+        core.publish_archive_member_image_ocr(
+            other,
+            target,
+            "cross tenant must fail",
+            "sandbox-fileos-image-ocr-v1-" + "d" * 64,
+            "png",
+            "png",
+            40,
+            30,
+            "RGB",
+            1,
+            False,
+            "archive-image-cross-tenant-v1",
+            uuid4(),
+        )
+
+    (tmp_path / "fixture.zip").write_bytes(raw + b"changed")
+    core.import_fileos_snapshot(
+        ctx,
+        fileos_manifest(tmp_path, source_id="files_archive_image_fence", hour=2),
+        uuid4(),
+    )
+    with pytest.raises(Conflict, match="no longer current"):
+        core.publish_archive_member_image_ocr(
+            ctx,
+            target,
+            "stale archive image proof",
+            "sandbox-fileos-image-ocr-v1-" + "e" * 64,
+            "png",
+            "png",
+            40,
+            30,
+            "RGB",
+            1,
+            False,
+            "archive-image-stale-v1",
+            uuid4(),
+        )
 
 
 def test_archive_member_text_plan_is_current_paged_eligible_and_replay_deduplicated(

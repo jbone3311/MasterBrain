@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
 from typing import Protocol
+from uuid import UUID
 
+from email_brain.domain.models import TenantContext
 from masterbrain.datacore.archive_contract import ArchiveUnavailable
 from masterbrain.datacore.archive_member import (
     ArchiveMemberProcessor,
@@ -14,13 +16,19 @@ from masterbrain.datacore.archive_member_text import archive_member_version_id
 from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus
 from masterbrain.datacore.image_ocr_contract import (
     MAX_IMAGE_BYTES,
+    MAX_PIXELS,
     ImageOcrResult,
     ImageOcrUnavailable,
     decode_result,
     encode_result,
     source_for,
 )
-from masterbrain.datacore.persistence import ArchiveMemberTargetRecord
+from masterbrain.datacore.persistence import (
+    MAX_NORMALIZED_BYTES,
+    ArchiveMemberTargetRecord,
+    ArchiveMemberTextRecord,
+    DataCoreStore,
+)
 
 IMAGE_SUFFIX_FORMAT = {
     ".jpg": "jpeg",
@@ -145,4 +153,92 @@ def extract_archive_member_image_ocr(
             else extracted.reason
         ),
         metadata,
+    )
+
+
+def publish_extracted_archive_member_image_ocr(
+    core: DataCoreStore,
+    ctx: TenantContext,
+    target: ArchiveMemberTargetRecord,
+    extraction: ExtractionResult,
+    *,
+    code_revision: str,
+    idempotency_key: UUID,
+) -> ArchiveMemberTextRecord:
+    """Publish only a complete, nonempty result from the isolated image contract."""
+    suffix = (
+        PurePosixPath(target.member_locator).suffix.lower()
+        if isinstance(target, ArchiveMemberTargetRecord)
+        else ""
+    )
+    expected_format = IMAGE_SUFFIX_FORMAT.get(suffix)
+    metadata = extraction.metadata
+    required_metadata = {
+        "extractor_version",
+        "format",
+        "image_reason",
+        "truncated",
+        "detected_format",
+        "width",
+        "height",
+        "mode",
+        "frame_count",
+    }
+    processor = metadata.get("extractor_version")
+    image_format = metadata.get("format")
+    detected_format = metadata.get("detected_format")
+    width = metadata.get("width")
+    height = metadata.get("height")
+    mode = metadata.get("mode")
+    frame_count = metadata.get("frame_count")
+    truncated = metadata.get("truncated")
+    if (
+        not isinstance(target, ArchiveMemberTargetRecord)
+        or extraction.version_id != archive_member_version_id(target)
+        or extraction.locator != target.member_locator
+        or extraction.status is not ExtractionStatus.EXTRACTED
+        or type(extraction.text) is not str
+        or not extraction.text
+        or "\x00" in extraction.text
+        or extraction.text != extraction.text.strip()
+        or len(extraction.text.encode()) > MAX_NORMALIZED_BYTES
+        or extraction.error_code is not None
+        or type(target.member_size_bytes) is not int
+        or not 0 < target.member_size_bytes <= MAX_IMAGE_BYTES
+        or set(metadata) != required_metadata
+        or type(processor) is not str
+        or not 1 <= len(processor) <= 200
+        or "\x00" in processor
+        or type(image_format) is not str
+        or type(detected_format) is not str
+        or image_format != expected_format
+        or detected_format != expected_format
+        or metadata.get("image_reason") != "bounded_image_ocr_v1"
+        or type(width) is not int
+        or type(height) is not int
+        or not 1 <= width <= MAX_PIXELS
+        or not 1 <= height <= MAX_PIXELS
+        or width * height > MAX_PIXELS
+        or type(mode) is not str
+        or not 1 <= len(mode) <= 16
+        or "\x00" in mode
+        or type(frame_count) is not int
+        or frame_count != 1
+        or type(truncated) is not bool
+    ):
+        raise ValueError("archive member image OCR is not an accepted extraction")
+    return core.publish_archive_member_image_ocr(
+        ctx,
+        target,
+        extraction.text,
+        processor,
+        image_format,
+        detected_format,
+        width,
+        height,
+        mode,
+        frame_count,
+        truncated,
+        code_revision,
+        idempotency_key,
     )
