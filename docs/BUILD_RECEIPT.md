@@ -2,7 +2,7 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Local FileOS whole-inventory shadow checkpoint
+## Verified FileOS whole-inventory shadow checkpoint
 
 ADR-093 precedes the synthetic-only scanner comparison. The pinned donor scanner
 `scan_domains.py` and shared `snapshot_tree` were exercised on 3,000 generated files
@@ -15,8 +15,14 @@ The donor followed and hashed two synthetic symlinks, including one outside the
 synthetic root; MasterBrain skipped both. No real outside-root file was read.
 Seven focused tests and local lint passed. No donor CLI, configured donor database,
 registry, MasterBrain publication or live source was used. These are local synthetic
-results; hosted CI/restore, adversarial boundary coverage and policy integration
-remain pending.
+results. Hosted [CI 35852211467](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852211467)
+passed on PR #15's synchronized head `16d9cab`, with 2,669 Python tests passing,
+two expected donor-checkout skips, and two upstream warnings. The browser,
+deployment, documentation and restricted-worker gates also passed. The donor
+comparison itself remains local because CI has no FOS-Master checkout. PR #15 did
+not trigger a restore drill under its path filters; the underlying PR #14
+[restore 35852112586](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852112586)
+passed. Adversarial boundary coverage and policy integration remain pending.
 
 ## Verified FileOS inventory-classifier parity checkpoint
 

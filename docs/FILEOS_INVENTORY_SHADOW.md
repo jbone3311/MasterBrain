@@ -22,6 +22,12 @@ in-memory SQLite connection. It invokes `scan_domain` directly; never the donor 
 or its configured database/registry. MasterBrain only runs `snapshot_tree`; it does
 not import, complete, activate or publish the manifest.
 
+Hosted [CI 35852211467](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852211467)
+passed on PR #15. Its two donor-checkout skips are expected: CI does not include
+FOS-Master, so the pinned-donor comparison was run locally. PR #15 did not trigger
+a restore drill under the workflow's path filters; PR #14's underlying restore
+[passed](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852112586).
+
 ## Measured baseline
 
 On 3,000 generated ordinary files plus fixed fictional edge cases, the current

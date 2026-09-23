@@ -1,7 +1,7 @@
 # ADR-093 — Compare FileOS inventories in isolated shadow mode
 
-Status: accepted design for a synthetic-only comparison harness; no snapshot policy
-switch, source enrollment, publication or cutover authorized.
+Status: implemented synthetic-only harness with hosted CI green on PR #15; review
+pending. No snapshot policy switch, source enrollment, publication or cutover authorized.
 
 ## Context
 

@@ -26,7 +26,12 @@ source publication. Locally, 3,002 common files matched on size/SHA-256; six exa
 path differences reflect the current policies. Replay, one changed file, one
 removal, donor no-hash/rehash, a 1,502-row mass-prune refusal and internal/external
 symlink policy differences were exercised.
-Snapshot policy integration, adversarial boundaries and hosted gates remain pending.
+Hosted [CI 35852211467](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852211467)
+passed on [PR #15](https://github.com/jbone3311/CW-EmailBrain/pull/15), including
+the browser, deployment, documentation and restricted-worker gates. PR #15 does not
+match the restore workflow's path filters, so it did not start a new restore drill;
+the underlying PR #14 [restore 35852112586](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852112586)
+passed. Snapshot policy integration and adversarial boundaries remain pending.
 
 ## Completed gates
 
