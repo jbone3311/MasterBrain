@@ -110,6 +110,7 @@ roadmap item is not an implementation claim.
 - [Sealed archive-member text batch contract](docs/ARCHIVE_MEMBER_BATCH.md)
 - [Archive-member PDF and Office derivative contract](docs/ARCHIVE_MEMBER_DOCUMENT.md)
 - [Current archive-document search contract](docs/ARCHIVE_DOCUMENT_SEARCH.md)
+- [Private archive-document preview design](docs/ARCHIVE_DOCUMENT_PREVIEW.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
