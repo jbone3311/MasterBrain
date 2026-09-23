@@ -80,13 +80,32 @@ Hosted [CI 35855259654](https://github.com/jbone3311/CW-EmailBrain/actions/runs/
 passed on the fault-test commit in PR #16; the live pinned-donor tests passed
 locally and skip in hosted CI because that runner has no donor checkout.
 
+## Synthetic scanner-edge tranche
+
+Four further tests use the pinned donor scanner on temporary fictional files and
+in-memory SQLite. A simulated dataless flag yields a donor metadata-only row with
+null SHA-256 and no donor byte read, while MasterBrain hashes the locally present
+fixture. This tests the decision branch, **not** a real cloud placeholder or
+materialization behavior.
+
+A simulated unreadable directory after a successful one-file donor scan causes the
+donor to remove that old row: its walk has no error callback and the one missing row
+is below the mass-prune threshold. MasterBrain records `directory_unreadable` on
+the same synthetic omission. In a separate donor-side race, changing a file inside
+the donor hash call produces a row with the pre-change size and post-change SHA-256;
+a later stable MasterBrain snapshot exposes a `common_size_mismatch`. These are
+measured safety gaps, not accepted parity. Four unusual but valid names (leading
+space, Unicode accent, emoji, embedded newline) retain exact locators through both
+inventories and JSON serialization on the local test filesystem.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,
 metadata-only hashing, and the donor mass-prune tripwire on synthetic files. Donor
 document labels/CRC and MasterBrain media types/IDs are not equivalent fields.
-Cloud dataless placeholders, unreadable directories, donor-side source races and
-unusual/invalid filenames still need explicit adversarial cases before any
+Real cloud dataless placeholders, permission-driven unreadable directories,
+cross-platform normalization/case collisions and invalid-byte filenames still
+need platform-appropriate acceptance before any
 integrated inventory-policy change. The future policy ADR must version manifests,
 represent metadata-only/oversize candidates without calling them complete evidence,
 prevent policy-only absence events, and prove replay, rollback and search visibility

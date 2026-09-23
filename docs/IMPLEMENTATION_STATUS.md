@@ -29,6 +29,10 @@ mean hosted, live-source accepted, or production ready.
   differences, a retained stale row after donor read failure, MasterBrain's
   changed-during-hash refusal and broken/directory symlinks. They do not establish
   dataless, unreadable-directory or live-source parity.
+- Further synthetic pinned-donor edge tests expose metadata-only dataless behavior,
+  silent donor removal after an unreadable directory, a donor size/hash race and
+  valid unusual filename round trips. They do not prove real cloud or platform-wide
+  filename behavior and authorize no policy switch.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

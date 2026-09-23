@@ -2,6 +2,19 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS scanner-edge safety checkpoint
+
+Fourteen focused shadow tests passed with the pinned donor checkout. New cases
+simulate a dataless flag without reading source bytes, an unreadable directory
+after a prior donor scan, donor-side content mutation during hashing, and four
+unusual valid filenames. The donor silently removed its one old row when the
+directory vanished from its walk, and its hash-time race stored the old size with
+the new digest. MasterBrain recorded a directory error and the subsequent stable
+snapshot showed the size mismatch. The filename locators round-tripped through
+both inventories and JSON. These are local synthetic observations, not real cloud
+or cross-platform acceptance. Hosted CI and integrated inventory policy remain
+pending; no donor CLI/default database/registry or MasterBrain publication ran.
+
 ## Local FileOS scanner fault/size boundary checkpoint
 
 On a separate branch stacked above PR #15, ten focused shadow tests passed with

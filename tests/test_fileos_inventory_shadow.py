@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import os
 import sqlite3
 from pathlib import Path
@@ -248,3 +250,116 @@ def test_live_pinned_donor_snapshot_race_and_broken_link(
             {"locator": "changing.txt", "code": "shared_changed_during_scan"},
         ],
     }
+
+
+def test_live_pinned_donor_dataless_placeholder_simulation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scanner = _pinned_scanner_or_skip()
+    root = tmp_path / "synthetic_placeholder"
+    root.mkdir()
+    path = root / "placeholder.txt"
+    path.write_bytes(b"fictional local bytes standing in for cloud metadata")
+    monkeypatch.setattr(scanner, "_is_dataless", lambda candidate: candidate == path)
+
+    def forbidden_hash(_path: Path):
+        raise AssertionError("simulated dataless donor file must not be read")
+
+    monkeypatch.setattr(scanner, "_hash_streaming", forbidden_hash)
+    with sqlite3.connect(":memory:") as conn:
+        scanner.ensure_schema(conn)
+        assert shadow.donor_scan(scanner, root, conn)["added"] == 1
+        rows = shadow.donor_rows(conn)
+    assert rows["placeholder.txt"]["sha256"] is None
+    manifest = shadow.snapshot_tree(root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT)
+    assert shadow.compare_inventory(root, rows, manifest) == {
+        "common": 0,
+        "differences": [{"locator": "placeholder.txt", "code": "unexpected_donor_hashless"}],
+    }
+
+
+def test_live_pinned_donor_unreadable_directory_is_not_a_complete_scan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scanner = _pinned_scanner_or_skip()
+    root = tmp_path / "synthetic_unreadable_directory"
+    hidden = root / "inaccessible"
+    hidden.mkdir(parents=True)
+    (hidden / "old.txt").write_bytes(b"fictional prior content")
+    with sqlite3.connect(":memory:") as conn:
+        scanner.ensure_schema(conn)
+        assert shadow.donor_scan(scanner, root, conn)["added"] == 1
+        original_walk = os.walk
+
+        def donor_walk(_root: Path):
+            yield str(root), [], []
+
+        with monkeypatch.context() as patcher:
+            patcher.setattr(os, "walk", donor_walk)
+            result = shadow.donor_scan(scanner, root, conn)
+        assert (result["scanned"], result["removed"]) == (0, 1)
+        assert shadow.donor_rows(conn) == {}
+
+        def shared_walk(_root: Path, *, topdown: bool, onerror):
+            assert topdown
+            onerror(PermissionError(13, "synthetic access denial", str(hidden)))
+            yield str(root), [], []
+
+        with monkeypatch.context() as patcher:
+            patcher.setattr(os, "walk", shared_walk)
+            manifest = shadow.snapshot_tree(
+                root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT
+            )
+        assert os.walk is original_walk
+    assert manifest["items"] == []
+    assert manifest["errors"] == [{"locator": "inaccessible", "code": "directory_unreadable"}]
+
+
+def test_live_pinned_donor_hash_time_mutation_can_record_stale_size(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scanner = _pinned_scanner_or_skip()
+    root = tmp_path / "synthetic_donor_race"
+    root.mkdir()
+    path = root / "changing.txt"
+    path.write_bytes(b"short")
+    original_hash = scanner._hash_streaming
+
+    def mutate_then_hash(candidate: Path):
+        candidate.write_bytes(b"new and longer fictional content")
+        return original_hash(candidate)
+
+    monkeypatch.setattr(scanner, "_hash_streaming", mutate_then_hash)
+    with sqlite3.connect(":memory:") as conn:
+        scanner.ensure_schema(conn)
+        assert shadow.donor_scan(scanner, root, conn)["added"] == 1
+        rows = shadow.donor_rows(conn)
+    donor_row = rows["changing.txt"]
+    assert donor_row["size_bytes"] == len(b"short")
+    assert donor_row["sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+    manifest = shadow.snapshot_tree(root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT)
+    assert shadow.compare_inventory(root, rows, manifest) == {
+        "common": 0,
+        "differences": [{"locator": "changing.txt", "code": "common_size_mismatch"}],
+    }
+
+
+def test_live_pinned_donor_unusual_valid_filenames_round_trip(tmp_path: Path) -> None:
+    scanner = _pinned_scanner_or_skip()
+    root = tmp_path / "synthetic_filenames"
+    root.mkdir()
+    locators = {" leading space.txt", "emoji-🧪.txt", "café.txt", "line\nbreak.txt"}
+    for locator in locators:
+        (root / locator).write_bytes(b"fictional name fixture")
+    with sqlite3.connect(":memory:") as conn:
+        scanner.ensure_schema(conn)
+        assert shadow.donor_scan(scanner, root, conn)["added"] == len(locators)
+        rows = shadow.donor_rows(conn)
+    manifest = shadow.snapshot_tree(root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT)
+    assert set(rows) == locators
+    assert {item["locator"] for item in manifest["items"]} == locators
+    assert shadow.compare_inventory(root, rows, manifest) == {
+        "common": len(locators),
+        "differences": [],
+    }
+    assert {item["locator"] for item in json.loads(json.dumps(manifest))["items"]} == locators

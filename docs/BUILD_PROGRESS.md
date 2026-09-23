@@ -40,6 +40,12 @@ are green on [PR #16](https://github.com/jbone3311/CW-EmailBrain/pull/16).
 This is still comparison work, not a
 FileOS snapshot-policy switch.
 
+Another isolated edge tranche measures a simulated dataless branch, unreadable
+directory, donor hash-time mutation and unusual valid filenames. Fourteen focused
+shadow tests pass locally; hosted CI is pending. The donor's silent one-row removal
+and inconsistent raced size/hash reinforce the need for explicit coverage and
+stable-read gates before a policy change.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.
