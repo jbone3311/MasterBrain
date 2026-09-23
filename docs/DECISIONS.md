@@ -12,8 +12,9 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-098](adr/098_fileos_root_binding.md) binds FileOS intake and completion to a
 versioned physical-root digest. Historical unknown roots are not silently claimed.
-Implementation and hosted verification are pending on an isolated branch; this is
-not a donor-policy switch or cutover.
+Implemented in isolated PR #22; hosted CI and populated restore passed on the
+runtime head. Review and integration remain; this is not a donor-policy switch
+or cutover.
 
 [ADR-097](adr/097_fileos_exclusion_ledger.md) requires a bounded, exact FileOS
 snapshot exclusion ledger and refuses absence inference when a previously indexed

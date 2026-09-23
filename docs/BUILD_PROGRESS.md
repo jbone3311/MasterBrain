@@ -100,8 +100,13 @@ ADR-098 starts the next isolated root-binding tranche. The scanner records a
 private, versioned physical-root digest and checks for root drift; the private
 publisher and DataCore check it before intake and completion. Migration 0032
 preserves unknown legacy roots without auto-claiming a populated source. This is
-currently local implementation work, not a pushed PR or a hosted verification
-claim. Synthetic root mismatch and malformed-binding tests are being added.
+now [PR #22](https://github.com/jbone3311/CW-EmailBrain/pull/22), stacked on
+#21. The runtime head `10a2597` passed
+[hosted CI 35890079983](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35890079983)
+with 2,721 Python tests and nine expected skips, plus all other gates, and
+[populated restore 35890079939](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35890079939).
+Review and integration remain; synthetic root mismatch and malformed-binding
+tests are included.
 FOS-Master remains pinned and unchanged; root binding alone does not certify
 the donor inventory policy or authorize cutover.
 

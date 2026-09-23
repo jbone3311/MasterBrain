@@ -140,7 +140,8 @@ check the configured root; intake checks the source row under lock, and completi
 checks both source and previous receipt before absence inference. Existing sources
 and receipts without a root identity remain unknown. A populated legacy source
 cannot be auto-claimed, and there is no force or rebaseline path. This isolated
-change still requires hosted PostgreSQL and populated-restore verification.
+change passed hosted PostgreSQL and populated-restore checks on PR #22's runtime
+head; review and integration remain.
 
 `fileos_rebuild_preview` reads a maximum of 50 opaque item records from the latest
 completed ledger while holding the source completion lock. It recomputes normalized

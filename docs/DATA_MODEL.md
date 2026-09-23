@@ -89,8 +89,9 @@ Migration `0032_fileos_root_binding.sql` adds a nullable historical root digest
 to FileOS sources and completion receipts. New FileOS sources and receipts require
 one; a source trigger prevents changing a bound root or silently binding legacy
 sources that already contain items or receipts. Unknown historical roots stay null.
-ADR-098 requires intake and completion to agree on that digest. Hosted migration
-verification remains pending.
+ADR-098 requires intake and completion to agree on that digest. The populated
+restore and migration regression passed on PR #22's runtime head; review and
+integration remain.
 
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and

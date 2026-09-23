@@ -1,6 +1,7 @@
 # ADR-098 — Bind FileOS intake and completion to one physical root
 
-Status: accepted for an isolated implementation tranche; verification pending.
+Status: implemented in isolated PR #22; runtime head passed hosted CI and populated
+restore; review and integration pending.
 
 ## Context
 
@@ -49,10 +50,13 @@ different versioned provider-native root identity and separate acceptance decisi
 
 Use fictional temporary roots for stable replay, symlink alias, root path change,
 same-path inode replacement, malformed/missing digest and scan-time root drift.
-PostgreSQL tests prove pre-intake refusal of root drift, same-root consecutive
-completion and genuine deletion, old unbound source refusal, receipt immutability,
-new-insert constraints and forced-RLS isolation. Run hosted full CI and populated
-restore; keep FOS-Master pinned and unchanged.
+PostgreSQL tests prove pre-intake refusal of root drift and preservation of the
+previous completion; populated migration tests preserve unknown legacy roots,
+refuse a silent populated-source claim, and enforce new-insert constraints.
+Hosted CI 35890079983 passed 2,721 Python tests with nine expected skips, plus
+type, browser, deployment, documentation and restricted-worker gates. Populated
+restore 35890079939 passed. These synthetic gates do not establish live-source
+parity or authorize cutover. FOS-Master remains pinned and unchanged.
 
 ## Rollback
 

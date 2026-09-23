@@ -53,8 +53,8 @@ mean hosted, live-source accepted, or production ready.
   as a no-follow symlink. Hosted CI and populated restore passed on PR #21's
   runtime head; review/integration remain pending. It does not prove a live scanner
   or resolve root binding.
-- ADR-098 root binding is implemented on an isolated local branch, not yet
-  published or hosted-verified. New FileOS sources and completion receipts carry
+- ADR-098 root binding is implemented in isolated PR #22, with hosted CI and
+  populated restore green on the runtime head. New FileOS sources and receipts carry
   an immutable private physical-root digest; wrong-root intake, unknown legacy
   roots and cross-root completion fail closed. This does not certify a live
   scanner, donor-policy parity or FileOS cutover.
