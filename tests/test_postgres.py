@@ -3821,8 +3821,10 @@ def test_fileos_mass_loss_refuses_completion_without_absence(
     assert record(first, first_run) is True
     assert record(first, first_run) is False
 
+    held = tmp_path.parent / f"{tmp_path.name}_held"
+    held.mkdir()
     for number in range(10):
-        (tmp_path / f"fictional_{number:02}.bin").unlink()
+        (tmp_path / f"fictional_{number:02}.bin").rename(held / f"fictional_{number:02}.bin")
     thin = fileos_manifest(tmp_path, source_id=source_id, hour=2)
     thin_run = uuid4()
     with pytest.raises(Conflict, match="mass loss requires review"):
@@ -3845,7 +3847,7 @@ def test_fileos_mass_loss_refuses_completion_without_absence(
         )
 
     for number in range(2):
-        (tmp_path / f"fictional_{number:02}.bin").write_bytes(f"fictional {number}".encode())
+        (held / f"fictional_{number:02}.bin").rename(tmp_path / f"fictional_{number:02}.bin")
     clean = fileos_manifest(tmp_path, source_id=source_id, hour=3)
     clean_run = uuid4()
     assert record(clean, clean_run) is True

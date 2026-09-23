@@ -13,8 +13,17 @@ no force override, policy switch or donor change. Synthetic threshold and
 pytest: **6 passed, 2 PostgreSQL tests skipped** (no local test database), 78
 deselected, two upstream deprecation warnings. Ruff check/format passed, as did
 the documentation inventory (177 Markdown files, 940 links). PostgreSQL behavior
-and hosted CI/restore are still unverified for this branch; this is not a cutover
+and full hosted CI are still unverified for this branch; this is not a cutover
 gate pass.
+
+First hosted [CI 35868676705](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35868676705)
+ran the PostgreSQL case and exposed a synthetic-fixture defect: rewriting two
+unchanged files gave their existing content-derived versions new `mtime_ns`
+metadata, which the append-only source-version contract correctly refused. The
+test now moves the fictional files outside the scanned root and moves two back,
+preserving their metadata. The [restore 35868676442](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35868676442)
+passed on the first head; a new full-CI result is pending. No production behavior
+was changed to accommodate the fixture.
 
 ## Local FileOS completion-coverage checkpoint
 
