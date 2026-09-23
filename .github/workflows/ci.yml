@@ -8,9 +8,18 @@ on:
 permissions:
   contents: read
 
+# A superseded run proves nothing about the head it was not run against, and this job
+# builds six images plus a Postgres service, so leaving it running costs real minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   gate:
     runs-on: ubuntu-latest
+    # Without this a hung docker build runs to GitHub's 6-hour default. The restore drill
+    # already sets its own; this job did not.
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17

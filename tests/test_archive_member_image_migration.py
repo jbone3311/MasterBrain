@@ -32,7 +32,9 @@ def test_archive_member_image_receipt_schema_is_private_immutable_and_bounded(
             "WHERE tgrelid='brain_archive_member_image_receipts'::regclass "
             "AND NOT tgisinternal"
         ).fetchall()
-        assert triggers == [("immutable",)]
+        # 0029 adds a statement-level TRUNCATE guard to every append-only table:
+        # row triggers do not fire on TRUNCATE, so "immutable" alone did not survive it.
+        assert triggers == [("immutable",), ("no_truncate",)]
 
         checks = " ".join(
             row[0]
@@ -59,4 +61,6 @@ def test_archive_member_image_receipt_schema_is_private_immutable_and_bounded(
             "WHERE conrelid='brain_archive_member_image_receipts'::regclass "
             "AND contype='f'"
         ).fetchone()
-        assert foreign_keys == (5,)
+        # 0029 binds parent_source_version_id, which was NOT NULL and referenced
+        # nothing while every sibling id column in this table was already bound.
+        assert foreign_keys == (6,)
