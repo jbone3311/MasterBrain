@@ -113,5 +113,7 @@ integrated inventory-policy change. ADR-096 now versions the current snapshot
 policy and refuses policy-only absence inference across complete runs; it does not
 adopt the donor policy. A future integration decision must represent metadata-only/
 oversize candidates without calling them complete evidence and prove replay,
-rollback and search visibility on consecutive completed runs. FOS-Master remains
-the operational reference.
+rollback and search visibility on consecutive completed runs. ADR-097 adds
+per-locator exclusion accounting and refuses a prior indexed file newly covered
+by an exclusion or no-follow skip; that safety guard does not make donor and
+MasterBrain scanner policies equal. FOS-Master remains the operational reference.

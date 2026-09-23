@@ -65,6 +65,11 @@ Each new completion also records an immutable digest of its explicit inventory
 policy. Comparing consecutive completed runs with an unknown or different policy
 is refused before absence inference. Legacy policy cannot be recovered from a
 whole-manifest hash, so it is not silently backfilled.
+Each new snapshot also accounts for excluded file and directory locators. Before
+absence inference, completion refuses any missing prior item covered by an
+exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for
+absence evidence under the existing mass-loss guard. This ledger does not change
+membership policy or authorize FileOS cutover.
 
 FileOS index rebuilds publish immutable generations from one exact completed run.
 Readiness is a database-checked closure over generation items and chunks. A separate

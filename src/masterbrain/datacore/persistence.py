@@ -29,7 +29,11 @@ from masterbrain.datacore.contracts import (
     SourceRef,
     stable_id,
 )
-from masterbrain.datacore.fileos import INVENTORY_POLICY_VERSION, SNAPSHOT_VERSION
+from masterbrain.datacore.fileos import (
+    INVENTORY_POLICY_VERSION,
+    MAX_SNAPSHOT_EXCLUSIONS,
+    SNAPSHOT_VERSION,
+)
 
 MAX_MANIFEST_ITEMS = 10_000
 MAX_NORMALIZED_BYTES = 1_048_576
@@ -372,7 +376,69 @@ def validate_fileos_completion_coverage(
         error_locators.add(locator)
         if code != "symlink_skipped" or not no_follow:
             raise ValueError("incomplete FileOS snapshot coverage")
+    exclusions = manifest.get("exclusions")
+    if (
+        not isinstance(exclusions, list)
+        or len(exclusions) > MAX_SNAPSHOT_EXCLUSIONS
+        or type(counts.get("excluded")) is not int
+        or counts["excluded"] != len(exclusions)
+    ):
+        raise ValueError("invalid FileOS snapshot exclusion coverage")
+    exclusion_locators: set[str] = set()
+    directory_exclusions: set[str] = set()
+    ordered: list[tuple[str, str, str]] = []
+    file_reasons = {
+        "policy_path",
+        "not_regular",
+        "below_min_size",
+        "above_max_size",
+        "extension_filtered",
+    }
+    directory_reasons = {"policy_path", "symlink_directory"}
+    for raw in exclusions:
+        if not isinstance(raw, Mapping) or set(raw) != {"locator", "kind", "reason"}:
+            raise ValueError("invalid FileOS snapshot exclusion coverage")
+        locator, kind, reason = raw["locator"], raw["kind"], raw["reason"]
+        if (
+            not isinstance(locator, str)
+            or not 1 <= len(locator) <= 4000
+            or locator.startswith(("/", "\\"))
+            or "\x00" in locator
+            or any(part in {"", ".", ".."} for part in locator.replace("\\", "/").split("/"))
+            or locator in item_locators
+            or locator in error_locators
+            or locator in exclusion_locators
+            or not isinstance(kind, str)
+            or not isinstance(reason, str)
+            or kind not in {"file", "directory"}
+            or (kind == "file" and reason not in file_reasons)
+            or (kind == "directory" and reason not in directory_reasons)
+        ):
+            raise ValueError("invalid FileOS snapshot exclusion coverage")
+        exclusion_locators.add(locator)
+        if kind == "directory":
+            directory_exclusions.add(locator)
+        ordered.append((locator, kind, reason))
+    if ordered != sorted(ordered):
+        raise ValueError("invalid FileOS snapshot exclusion coverage")
+    for locator in item_locators | error_locators | exclusion_locators:
+        parts = locator.split("/")
+        if any("/".join(parts[:index]) in directory_exclusions for index in range(1, len(parts))):
+            raise ValueError("invalid FileOS snapshot exclusion coverage")
     return source, observed_at, items
+
+
+def fileos_missing_locator_is_excluded(
+    locator: str,
+    excluded_files: set[str],
+    excluded_directories: set[str],
+    skipped_symlinks: set[str],
+) -> bool:
+    """A present-but-unindexed path must never become deletion evidence."""
+    if locator in skipped_symlinks or locator in excluded_files or locator in excluded_directories:
+        return True
+    parts = locator.split("/")
+    return any("/".join(parts[:index]) in excluded_directories for index in range(1, len(parts)))
 
 
 def fileos_mass_loss_requires_review(previous_items: int, missing_items: int) -> bool:
@@ -3473,7 +3539,10 @@ class DataCoreStore:
                 raise Conflict("FileOS run item ledger changed")
             if previous:
                 missing = conn.execute(
-                    "SELECT old.item_id,old.version_id FROM brain_fileos_run_items old "
+                    "SELECT old.item_id,old.version_id,prior.locator "
+                    "FROM brain_fileos_run_items old "
+                    "JOIN brain_source_items prior ON prior.tenant_id=old.tenant_id "
+                    "AND prior.source_id=old.source_id AND prior.id=old.item_id "
                     "LEFT JOIN brain_fileos_run_items current ON current.tenant_id=old.tenant_id "
                     "AND current.actor_id=%s AND current.run_id=%s "
                     "AND current.item_id=old.item_id "
@@ -3481,6 +3550,22 @@ class DataCoreStore:
                     "ORDER BY old.item_id",
                     (ctx.actor_id, run_id, previous["actor_id"], previous["run_id"]),
                 ).fetchall()
+                excluded_files = {
+                    entry["locator"] for entry in manifest["exclusions"] if entry["kind"] == "file"
+                }
+                excluded_directories = {
+                    entry["locator"]
+                    for entry in manifest["exclusions"]
+                    if entry["kind"] == "directory"
+                }
+                skipped_symlinks = {error["locator"] for error in manifest["errors"]}
+                if recorded and any(
+                    fileos_missing_locator_is_excluded(
+                        row["locator"], excluded_files, excluded_directories, skipped_symlinks
+                    )
+                    for row in missing
+                ):
+                    raise Conflict("FileOS excluded prior item requires review")
                 if recorded and fileos_mass_loss_requires_review(
                     previous["item_count"], len(missing)
                 ):

@@ -20,12 +20,20 @@ from masterbrain.datacore.dedup import DEFAULT_CONFIG, file_hash, is_excluded_pa
 
 SNAPSHOT_VERSION = "masterbrain-fileos-snapshot-v1"
 INVENTORY_POLICY_VERSION = "fileos-inventory-policy-v1"
+MAX_SNAPSHOT_EXCLUSIONS = 10_000
 
 
 @dataclass(frozen=True, slots=True)
 class SnapshotError:
     locator: str
     code: str
+
+
+@dataclass(frozen=True, slots=True)
+class SnapshotExclusion:
+    locator: str
+    kind: str
+    reason: str
 
 
 def fileos_inventory_policy(
@@ -81,7 +89,16 @@ def snapshot_tree(
     observed_at = observed_at.astimezone(UTC)
     items: list[dict[str, Any]] = []
     errors: list[SnapshotError] = []
+    exclusions: list[SnapshotExclusion] = []
     excluded = 0
+
+    def record_exclusion(path: Path, kind: str, reason: str) -> None:
+        nonlocal excluded
+        excluded += 1
+        if len(exclusions) < MAX_SNAPSHOT_EXCLUSIONS:
+            exclusions.append(SnapshotExclusion(_relative(path, root), kind, reason))
+        elif not any(error.code == "exclusion_ledger_overflow" for error in errors):
+            errors.append(SnapshotError(".", "exclusion_ledger_overflow"))
 
     def onerror(exc: OSError) -> None:
         filename = Path(exc.filename) if exc.filename else root
@@ -96,8 +113,10 @@ def snapshot_tree(
         kept_dirs = []
         for name in sorted(dirnames):
             candidate = current / name
-            if candidate.is_symlink() or is_excluded_path(candidate, policy):
-                excluded += 1
+            if candidate.is_symlink():
+                record_exclusion(candidate, "directory", "symlink_directory")
+            elif is_excluded_path(candidate, policy):
+                record_exclusion(candidate, "directory", "policy_path")
             else:
                 kept_dirs.append(name)
         dirnames[:] = kept_dirs
@@ -107,7 +126,7 @@ def snapshot_tree(
             locator = _relative(path, root)
             is_symlink = path.is_symlink()
             if is_excluded_path(path, policy):
-                excluded += 1
+                record_exclusion(path, "file", "policy_path")
                 continue
             if is_symlink:
                 if not follow_file_symlinks:
@@ -119,8 +138,18 @@ def snapshot_tree(
                     errors.append(SnapshotError(locator, "symlink_outside_root"))
                     continue
             try:
-                if not path.is_file() or not should_include(path, policy):
-                    excluded += 1
+                if not path.is_file():
+                    record_exclusion(path, "file", "not_regular")
+                    continue
+                if not should_include(path, policy):
+                    size = path.stat().st_size
+                    if size < policy.get("min_file_size", 0):
+                        reason = "below_min_size"
+                    elif size > policy.get("max_file_size_mb", 100) * 1024 * 1024:
+                        reason = "above_max_size"
+                    else:
+                        reason = "extension_filtered"
+                    record_exclusion(path, "file", reason)
                     continue
                 before = path.stat()
                 digest_value = file_hash(path)
@@ -150,6 +179,7 @@ def snapshot_tree(
 
     items.sort(key=lambda item: item["locator"])
     errors.sort(key=lambda item: (item.locator, item.code))
+    exclusions.sort(key=lambda item: (item.locator, item.kind, item.reason))
     return {
         "manifest_version": SNAPSHOT_VERSION,
         "source": {"source_id": source.source_id, "kind": source.kind.value},
@@ -158,4 +188,5 @@ def snapshot_tree(
         "counts": {"items": len(items), "excluded": excluded, "errors": len(errors)},
         "items": items,
         "errors": [asdict(item) for item in errors],
+        "exclusions": [asdict(item) for item in exclusions],
     }

@@ -81,6 +81,16 @@ Focused local tests and the pinned 3,000-file donor shadow also passed. Review,
 integration, a legitimate legacy baseline, per-locator exclusion accounting and
 root-binding acceptance remain; no donor policy switch or cutover occurred.
 
+ADR-097 begins the next isolated FileOS safety tranche: a bounded snapshot ledger
+records excluded files and pruned directories without reading excluded bytes.
+Completion refuses to interpret a previously indexed locator covered by this ledger
+or an intentional no-follow symlink skip as deletion. Genuine removals retain the
+existing absence behavior. Focused local tests reported 35 passed and three
+PostgreSQL skips without a disposable local database; Ruff and the 179-file/955-link
+documentation inventory passed. Hosted PostgreSQL CI and populated restore are
+required before the proposal is review-ready. This changes
+neither FOS-Master nor the inventory membership policy.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.

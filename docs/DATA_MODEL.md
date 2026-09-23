@@ -81,6 +81,10 @@ Migration `0031_fileos_policy_identity.sql` adds a nullable historical
 unknown legacy policies while requiring a valid digest on every new insert.
 ADR-096 compares consecutive policy identities before absence inference; it does
 not invent a digest for old receipts or rebaseline a source automatically.
+ADR-097 adds a bounded, exact file/directory exclusion ledger to the immutable
+snapshot manifest, not a new SQL table. The existing canonical manifest digest
+binds this ledger to a completion receipt. A previously indexed locator covered by
+the new ledger cannot produce an absence event; there is no schema migration.
 
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and

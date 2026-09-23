@@ -81,9 +81,13 @@ ADR-096 adds a versioned policy digest to new completion receipts and refuses
 completion across unknown or changed policies. Historical policy remains unknown;
 there is no silent backfill or force override. Root-binding changes and live
 scanner parity remain separate cutover gates.
-An unchanged policy still needs per-locator accounting when a previously indexed
-file becomes oversize or newly excluded; a small such loss can fall below the
-mass-loss threshold and must not be mistaken for a proven deletion at cutover.
+An unchanged policy alone cannot distinguish a real deletion from a previously
+indexed file becoming oversize or newly excluded; a small such loss can fall below
+the mass-loss threshold. ADR-097 adds a bounded exclusion ledger to new snapshots.
+Completion now refuses
+to turn a prior item covered by an exclusion or intentional no-follow symlink skip
+into absence evidence; malformed or overflowing ledgers fail closed. This is not
+proof against a forged manifest, root mismatch or a live scanner race.
 
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and

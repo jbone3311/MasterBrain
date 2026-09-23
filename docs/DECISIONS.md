@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-097](adr/097_fileos_exclusion_ledger.md) requires a bounded, exact FileOS
+snapshot exclusion ledger and refuses absence inference when a previously indexed
+locator is now excluded or intentionally skipped. It leaves donor policy and
+FOS-Master unchanged. Implementation and hosted verification are pending.
+
 [ADR-096](adr/096_fileos_inventory_policy_identity.md) binds new FileOS completion
 receipts to a validated versioned inventory-policy digest and refuses absence
 inference across unknown or changed policies. It does not authorize automatic

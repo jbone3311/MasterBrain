@@ -371,6 +371,7 @@ def seed(
                 }
             ],
             "errors": [],
+            "exclusions": [],
         }
         datacore = DataCoreStore(store)
         brain_run_id = uuid4()

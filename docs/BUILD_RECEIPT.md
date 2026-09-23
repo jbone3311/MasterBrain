@@ -2,6 +2,24 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS exclusion-ledger checkpoint
+
+ADR-097 preceded implementation. The snapshot now emits an exact bounded ledger of
+excluded file/directory locators, kinds and closed reasons; completion validates it
+and refuses a missing prior item covered by an exclusion or intentional no-follow
+symlink skip before committing receipt/absence. The manifest hash binds this ledger
+to existing immutable receipts. No SQL migration, donor edit, membership-policy
+switch, source effect or cutover is included. Synthetic unit and disposable-PostgreSQL
+tests cover malformed ledgers and one-item oversize/symlink/directory transitions
+versus genuine deletion. Focused local pytest: **35 passed, three PostgreSQL skips**
+without a disposable local database, 70 deselected and two upstream warnings.
+Ruff check/format and the documentation inventory (179 Markdown files, 955 local
+links) passed. Hosted results remain pending. Root binding, forged-manifest
+resistance, legacy baseline and live-shadow acceptance remain open.
+The pinned 3,000-file synthetic donor shadow still reports 3,002 common SHA/size
+matches, exactly six known policy differences, and a 1,502-row donor mass-prune
+refusal. This is not a live-source or snapshot-policy parity claim.
+
 ## Local FileOS inventory-policy checkpoint
 
 ADR-096 preceded migration 0031 and the completion change. New snapshots label

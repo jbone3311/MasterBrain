@@ -126,6 +126,13 @@ receipts remain immutable with a null policy identity; no automatic backfill or
 rebaseline is inferred from their whole-manifest hashes. A direct SQL insert of a
 new receipt without the policy digest is rejected. This is a policy-drift fence,
 not donor-policy adoption, root enrollment or production cutover.
+ADR-097 requires a bounded, sorted file/directory exclusion ledger whose length
+exactly matches `counts.excluded`; missing, malformed, overlapping or overflowing
+ledgers refuse completion. Under the same source lock, a prior item now covered by
+an excluded file, excluded directory subtree or intentional no-follow file symlink
+refuses the whole new completion before absence events commit. A genuine deletion
+outside that coverage still uses the existing absence and mass-loss rules. This
+adds no migration or donor behavior change.
 
 `fileos_rebuild_preview` reads a maximum of 50 opaque item records from the latest
 completed ledger while holding the source completion lock. It recomputes normalized

@@ -7,10 +7,12 @@ from pathlib import Path
 
 import pytest
 
+import masterbrain.datacore.fileos as fileos_module
 from masterbrain.datacore.fileos import fileos_inventory_policy, snapshot_tree
 from masterbrain.datacore.persistence import (
     fileos_inventory_policy_sha256,
     fileos_mass_loss_requires_review,
+    fileos_missing_locator_is_excluded,
     validate_fileos_completion_coverage,
 )
 
@@ -137,3 +139,102 @@ def test_missing_or_extra_policy_field_cannot_complete(tmp_path: Path) -> None:
     extra["policy"]["unknown"] = True
     with pytest.raises(ValueError, match="inventory policy"):
         validate_fileos_completion_coverage(extra)
+
+
+def test_exclusion_ledger_accounts_for_policy_size_type_and_directory(tmp_path: Path) -> None:
+    (tmp_path / ".db").mkdir()
+    (tmp_path / ".db" / "nested.txt").write_bytes(b"fictional")
+    (tmp_path / "large.txt").write_bytes(b"x" * (1_048_576 + 1))
+    (tmp_path / "wrong.bin").write_bytes(b"fictional")
+    (tmp_path / "kept.txt").write_bytes(b"fictional")
+    policy = {
+        "min_file_size": 0,
+        "max_file_size_mb": 1,
+        "include_extensions": [".txt"],
+        "exclude_patterns": [".db"],
+    }
+    manifest = snapshot_tree(
+        tmp_path, source_id="coverage_test", observed_at=OBSERVED, config=policy
+    )
+    assert manifest["exclusions"] == [
+        {"locator": ".db", "kind": "directory", "reason": "policy_path"},
+        {"locator": "large.txt", "kind": "file", "reason": "above_max_size"},
+        {"locator": "wrong.bin", "kind": "file", "reason": "extension_filtered"},
+    ]
+    assert manifest["counts"]["excluded"] == 3
+    assert [item["locator"] for item in manifest["items"]] == ["kept.txt"]
+    validate_fileos_completion_coverage(manifest)
+    assert fileos_missing_locator_is_excluded(
+        ".db/nested.txt", {"large.txt", "wrong.bin"}, {".db"}, set()
+    )
+    assert not fileos_missing_locator_is_excluded(
+        "genuinely-gone.txt", {"large.txt", "wrong.bin"}, {".db"}, set()
+    )
+    assert fileos_missing_locator_is_excluded("link.txt", set(), set(), {"link.txt"})
+
+
+def test_min_size_and_no_follow_directory_have_exclusion_records(tmp_path: Path) -> None:
+    (tmp_path / "small.txt").write_bytes(b"x")
+    real_dir = tmp_path / "real"
+    real_dir.mkdir()
+    (real_dir / "fictional.txt").write_bytes(b"fictional")
+    (tmp_path / "linked").symlink_to(real_dir, target_is_directory=True)
+    manifest = snapshot_tree(
+        tmp_path,
+        source_id="coverage_test",
+        observed_at=OBSERVED,
+        config={"min_file_size": 2, "exclude_patterns": []},
+    )
+    assert manifest["exclusions"] == [
+        {"locator": "linked", "kind": "directory", "reason": "symlink_directory"},
+        {"locator": "small.txt", "kind": "file", "reason": "below_min_size"},
+    ]
+    validate_fileos_completion_coverage(manifest)
+
+
+@pytest.mark.parametrize("defect", ["missing", "count", "duplicate", "overlap", "reason", "order"])
+def test_malformed_exclusion_ledger_blocks_completion(tmp_path: Path, defect: str) -> None:
+    (tmp_path / "kept.txt").write_bytes(b"fictional")
+    (tmp_path / "bad.bin").write_bytes(b"fictional")
+    manifest = snapshot_tree(
+        tmp_path,
+        source_id="coverage_test",
+        observed_at=OBSERVED,
+        config={"include_extensions": [".txt"], "exclude_patterns": []},
+    )
+    if defect == "missing":
+        del manifest["exclusions"]
+    elif defect == "count":
+        manifest["counts"]["excluded"] = 0
+    elif defect == "duplicate":
+        manifest["exclusions"].append(manifest["exclusions"][0].copy())
+        manifest["counts"]["excluded"] = 2
+    elif defect == "overlap":
+        manifest["exclusions"][0]["locator"] = "kept.txt"
+    elif defect == "reason":
+        manifest["exclusions"][0]["reason"] = "untrusted"
+    else:
+        manifest["exclusions"].append(
+            {"locator": "a.bin", "kind": "file", "reason": "extension_filtered"}
+        )
+        manifest["counts"]["excluded"] = 2
+    with pytest.raises(ValueError, match="exclusion coverage"):
+        validate_fileos_completion_coverage(manifest)
+
+
+def test_exclusion_ledger_overflow_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "a.bin").write_bytes(b"fictional")
+    (tmp_path / "b.bin").write_bytes(b"fictional")
+    monkeypatch.setattr(fileos_module, "MAX_SNAPSHOT_EXCLUSIONS", 1)
+    manifest = snapshot_tree(
+        tmp_path,
+        source_id="coverage_test",
+        observed_at=OBSERVED,
+        config={"include_extensions": [".txt"], "exclude_patterns": []},
+    )
+    assert manifest["counts"]["excluded"] == 2
+    assert manifest["errors"] == [{"locator": ".", "code": "exclusion_ledger_overflow"}]
+    with pytest.raises(ValueError, match="coverage"):
+        validate_fileos_completion_coverage(manifest)

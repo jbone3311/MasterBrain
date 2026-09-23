@@ -47,8 +47,11 @@ mean hosted, live-source accepted, or production ready.
   Legacy receipts remain immutable with unknown policy; a reviewed baseline path,
   root-binding fence and PR review/integration are still pending. Hosted CI and
   populated restore passed on PR #20's corrected runtime head. This does not
-  switch to the donor scanner's exclusions or authorize cutover. A file crossing
-  the unchanged size/exclusion boundary still lacks per-locator accounting.
+  switch to the donor scanner's exclusions or authorize cutover.
+- ADR-097 adds bounded per-locator exclusion accounting and refuses absence
+  when a prior indexed file is still present but excluded, or intentionally skipped
+  as a no-follow symlink. Local tests are underway; hosted PostgreSQL/restore and
+  review remain pending. It does not prove a live scanner or resolve root binding.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

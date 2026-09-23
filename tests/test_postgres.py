@@ -3940,3 +3940,96 @@ def test_fileos_policy_drift_cannot_infer_absence(
             "'test-policy-v1','fileos-text-v1',0,'{}'::jsonb,0)",
             (ctx.tenant_id, ctx.actor_id, uuid4(), source_id, "a" * 64),
         )
+
+
+@pytest.mark.parametrize("transition", ["oversize", "symlink_file", "symlink_directory"])
+def test_fileos_excluded_prior_locator_cannot_become_absence(
+    database: tuple[Store, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    transition: str,
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    source_id = "files_exclusion_" + transition
+    core = DataCoreStore(store)
+    (tmp_path / "kept.txt").write_bytes(b"fictional kept evidence")
+    target = (
+        tmp_path / "sub" / "target.txt"
+        if transition == "symlink_directory"
+        else tmp_path / "target.txt"
+    )
+    target.parent.mkdir(exist_ok=True)
+    target.write_bytes(b"fictional target evidence")
+    policy = {
+        "min_file_size": 0,
+        "max_file_size_mb": 1,
+        "include_extensions": None,
+        "exclude_patterns": [],
+    }
+
+    def snapshot(hour: int) -> dict[str, Any]:
+        return snapshot_tree(
+            tmp_path,
+            source_id=source_id,
+            observed_at=datetime(2026, 9, 22, hour, tzinfo=UTC),
+            config=policy,
+        )
+
+    def complete(manifest: dict[str, Any], run_id: UUID) -> bool:
+        core.import_fileos_snapshot(ctx, manifest, run_id)
+        count = len(manifest["items"])
+        return core.complete_fileos_run(
+            ctx,
+            manifest,
+            run_id,
+            outcomes={"unsupported": count} if count else {},
+            item_outcomes={item["item_id"]: "unsupported" for item in manifest["items"]},
+            published_documents=0,
+            code_revision="test-exclusion-v1",
+            document_processor_version=None,
+        ).recorded
+
+    first = snapshot(1)
+    first_run = uuid4()
+    assert complete(first, first_run)
+    if transition == "oversize":
+        target.write_bytes(b"x" * (1_048_576 + 1))
+    elif transition == "symlink_file":
+        target.unlink()
+        target.symlink_to(tmp_path / "kept.txt")
+    else:
+        prior_dir = target.parent
+        prior_dir.rename(tmp_path / "outside")
+        prior_dir.symlink_to(tmp_path / "outside", target_is_directory=True)
+    excluded = snapshot(2)
+    with pytest.raises(Conflict, match="excluded prior item requires review"):
+        complete(excluded, uuid4())
+    assert core.fileos_inventory(ctx, source_id)["run_id"] == first_run
+    with store.transaction(ctx) as conn:
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_run_receipts WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
+
+    if transition == "symlink_directory":
+        (tmp_path / "sub").unlink()
+    else:
+        target.unlink()
+    genuinely_absent = snapshot(3)
+    final_run = uuid4()
+    assert complete(genuinely_absent, final_run)
+    inventory = core.fileos_inventory(ctx, source_id)
+    assert inventory["run_id"] == final_run
+    assert inventory["newly_absent_items"] == 1

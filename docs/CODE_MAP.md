@@ -1,6 +1,6 @@
 # Current MasterBrain code map
 
-Updated 2026-09-22. Existing files, not a proposed directory tree. Python modular
+Updated 2026-09-23. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without
@@ -16,6 +16,7 @@ redirecting Email ingestion or search.
 | FileOS completion coverage gate | [DataCore validation](../src/masterbrain/datacore/persistence.py), [private publisher preflight](../src/masterbrain/fileos_controller.py), [unit tests](../tests/test_fileos_completion_coverage.py), [PostgreSQL tests](../tests/test_postgres.py), [ADR-094](adr/094_fileos_completion_coverage.md) |
 | FileOS mass-loss completion guard | [DataCore completion](../src/masterbrain/datacore/persistence.py), [threshold tests](../tests/test_fileos_completion_coverage.py), [PostgreSQL regression](../tests/test_postgres.py), [ADR-095](adr/095_fileos_mass_loss_guard.md) |
 | FileOS inventory-policy identity | [versioned snapshot](../src/masterbrain/datacore/fileos.py), [DataCore completion](../src/masterbrain/datacore/persistence.py), [migration 0031](../migrations/0031_fileos_policy_identity.sql), [unit tests](../tests/test_fileos_completion_coverage.py), [PostgreSQL regression](../tests/test_postgres.py), [populated upgrade](../tests/test_recovery.py), [restore seed](../scripts/restore_drill.py), [ADR-096](adr/096_fileos_inventory_policy_identity.md) |
+| FileOS exclusion/skip ledger | [snapshot](../src/masterbrain/datacore/fileos.py), [completion guard](../src/masterbrain/datacore/persistence.py), [unit tests](../tests/test_fileos_completion_coverage.py), [PostgreSQL regression](../tests/test_postgres.py), [ADR-097](adr/097_fileos_exclusion_ledger.md) |
 | Isolated FileOS documents | [document contract](../src/masterbrain/datacore/document_contract.py), [worker](../src/masterbrain/datacore/document_worker.py), [parent](../src/masterbrain/datacore/document_processor.py), [image](../Dockerfile.documents), [guide](FILEOS_DOCUMENT_EXTRACTION.md) |
 | Isolated FileOS archive inventory | [contract](../src/masterbrain/datacore/archive_contract.py), [worker](../src/masterbrain/datacore/archive_worker.py), [parent](../src/masterbrain/datacore/archive_processor.py), [image](../Dockerfile.archives), [live donor parity](../scripts/archive_parity.py), [guide](FILEOS_ARCHIVE_EXTRACTION.md) |
 | Archive hash-manifest persistence | [DataCore store](../src/masterbrain/datacore/persistence.py), [migration 0023](../migrations/0023_archive_manifests.sql), [contract](ARCHIVE_MANIFEST_PERSISTENCE.md) |
