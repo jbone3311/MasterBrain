@@ -2,7 +2,7 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
-## Proposed confined FileOS read checkpoint
+## Confined FileOS read checkpoint
 
 ADR-100 precedes a DataCore descriptor-relative reader shared by snapshot hashing
 and text/PDF/Office extraction. It refuses file and ancestor symlink swaps before
@@ -13,9 +13,14 @@ Local pinned-donor shadow passed on 3,000 synthetic files: 3,002 ordinary
 SHA/size matches, six reason-coded policy differences and two symlink policy
 differences; replay, change, removal, no-hash/rehash and mass-prune assertions
 passed. Documentation inventory passed (186 Markdown files, 985 paths/fragments).
-Local test startup is slow on the current workspace, and full hosted CI and
-populated restore remain required before this checkpoint is verified. No
-FOS-Master edit, inventory-policy switch or FileOS cutover occurs.
+The existing focused suites passed locally (34 tests), followed by all 14
+adversarial confined-read tests. The code head
+`076922767e34951f3b8588362f908edd0f1104c2` passed the full hosted
+[gate](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35905426481)
+and populated [logical restore](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35905426478)
+in PR #25. This verifies the isolated branch, not production FileOS cutover or
+real cloud-placeholder behavior. No FOS-Master edit or inventory-policy switch
+occurs.
 
 ## Proposed archive-ledger integrity checkpoint
 

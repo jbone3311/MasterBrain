@@ -8,8 +8,8 @@ rewritten or deleted.
 ADR-100's isolated read-hardening branch revalidates those source bytes through a
 bounded, descriptor-relative DataCore reader. It opens every directory and the
 file without following symlinks, then rechecks the locator before any bytes reach
-the document worker. This branch still needs hosted verification; it does not
-authorize FileOS cutover.
+the document worker. Hosted gate and restore passed on code head `0769227` in
+PR #25; this does not authorize FileOS cutover.
 
 ## Components
 

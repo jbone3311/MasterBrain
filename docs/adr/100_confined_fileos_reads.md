@@ -1,6 +1,7 @@
 # ADR-100 — Confine FileOS snapshot and extraction reads to the authorized root
 
-Status: accepted for isolated implementation; hosted verification pending.
+Status: accepted for isolated implementation; hosted gate and restore passed on
+code head `0769227` in PR #25. No production cutover.
 
 ## Context
 
