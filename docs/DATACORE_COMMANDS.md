@@ -257,6 +257,39 @@ Output is content-free: opaque IDs, chunk count, replay state and
 There is no enumeration, glob, batch, automatic sibling continuation, public route or
 current-search activation.
 
+## Publish one selected archive PDF or Office member
+
+After a current archive inventory identifies an exact `.pdf`, `.docx` or `.xlsx`
+member, validate the private two-worker command:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain fileos archive-document \
+  --config /private/operator/archive-member.json \
+  --inventory-id archive_inventory_0123456789abcdef0123456789abcdef \
+  --member-locator reports/approved-report.pdf \
+  --idempotency-key fda0019c-354a-49e6-931e-42ffcc608ee7 \
+  --check
+```
+
+The same closed version-1 archive config must also bind `document_image_id` to an
+immutable `sha256:` image. `--check` validates private configuration, authentication
+and the least-privileged database role without selecting the member, constructing
+either worker, reading bytes or consuming the key.
+
+Remove `--check` only for the exact reviewed inventory/member pair. The archive-member
+worker verifies and releases only that member in memory; the separate document worker
+then applies the existing bounded PDF/DOCX/XLSX contract. Publication rechecks the
+current parent, sealed inventory/member and exact processor/revision inside the
+transaction. Reuse the exact key only for an uncertain retry.
+
+Output contains opaque identities, format, bounded metadata counts, chunks, replay
+state and `source_effects: false`. It never includes locator, path, bytes, text,
+document properties, worker details or underlying faults. Raw member bytes are never
+persisted. The derivative is retained-history-only: this command grants no current
+search, preview, batch, recursion, automatic sibling continuation, scheduler, public
+route or source effect.
+
 ## Execute a sealed archive-member text batch
 
 After reviewing a preview, create an owner-private plan containing one current

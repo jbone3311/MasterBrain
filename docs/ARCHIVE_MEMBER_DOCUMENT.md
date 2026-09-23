@@ -1,6 +1,6 @@
-# Archive-member PDF and Office derivative design
+# Archive-member PDF and Office derivative contract
 
-Status: checkpoint 4V design; runtime not yet implemented.
+Status: checkpoint 4V implemented and accepted on the private migration branch.
 
 ## Purpose
 
@@ -77,6 +77,18 @@ state—never locator, path, bytes, text, document properties, Docker details or
 - source bytes and metadata remain unchanged; no sibling or embedded object is read;
 - full PostgreSQL/restore, both real restricted images, donor parity and existing text
   batch/search gates remain green.
+
+Checkpoint 4V is implemented in design revision `ea6fd29`, orchestration `6680218`,
+selector/receipt migration `0210ad1` with assertion correction `a4af448`, publication
+`4d098fa`, private command `5bb1aa1` and real two-image chain gate `49b8383`. Final-head
+[CI 35810970182](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970182)
+passed 2,582 Python tests and the four-case real chained-image gate; populated
+[restore 35810970151](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970151)
+also passed.
+
+The implemented tranche intentionally remains retained-history-only. Current archive
+document search, preview/batch expansion, scheduling and automatic fan-out require
+separate checkpoints.
 
 ## Non-goals
 

@@ -12,7 +12,8 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-083](adr/083_archive_member_documents.md) composes the existing hash-bound member
 reader with the existing isolated PDF/Office worker for one explicit selection, using
-a separate receipt and no raw-byte persistence. Implementation is pending.
+a separate receipt and no raw-byte persistence. Implemented through `5bb1aa1`; real
+two-image acceptance is `49b8383`.
 
 [ADR-082](adr/082_sealed_archive_member_batch.md) requires one canonical private plan
 with caller-supplied keys and fail-stop exact-plan retry before archive-member batch

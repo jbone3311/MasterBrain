@@ -1,6 +1,6 @@
 # Current MasterBrain code map
 
-Updated 2026-09-21. Existing files, not a proposed directory tree. Python modular
+Updated 2026-09-22. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without
@@ -20,6 +20,7 @@ redirecting Email ingestion or search.
 | Current archive-derivative search | [DataCore query](../src/masterbrain/datacore/persistence.py), [Brain API](../src/email_brain/api.py), [migration 0025](../migrations/0025_current_archive_derivative_search.sql), [contract](ARCHIVE_DERIVATIVE_SEARCH.md) |
 | Private archive-member preview | [archive controller](../src/masterbrain/archive_member_controller.py), [DataCore query](../src/masterbrain/datacore/persistence.py), [CLI](../src/masterbrain/cli.py), [contract](ARCHIVE_MEMBER_PREVIEW.md) |
 | Sealed archive-member text batch | [archive controller](../src/masterbrain/archive_member_controller.py), [CLI](../src/masterbrain/cli.py), [contract](ARCHIVE_MEMBER_BATCH.md), [ADR-082](adr/082_sealed_archive_member_batch.md) |
+| Archive-member PDF/Office derivative | [two-worker orchestration](../src/masterbrain/datacore/archive_member_document.py), [archive/document controller](../src/masterbrain/archive_member_controller.py), [DataCore store](../src/masterbrain/datacore/persistence.py), [migration 0026](../migrations/0026_archive_member_documents.sql), [contract](ARCHIVE_MEMBER_DOCUMENT.md), [ADR-083](adr/083_archive_member_documents.md) |
 | Authenticated FileOS operator | [fileos_controller.py](../src/masterbrain/fileos_controller.py), [ADR-054](adr/054_fileos_operator_publication.md) |
 | FileOS index generation operator | [fileos_index_controller.py](../src/masterbrain/fileos_index_controller.py), [ADR-059](adr/059_fileos_index_operator.md) |
 | Email message/attachment/document bridge operator | [email_bridge_controller.py](../src/masterbrain/email_bridge_controller.py), [ADR-063](adr/063_email_bridge_operator.md), [ADR-067](adr/067_email_part_bridge_operator.md) |

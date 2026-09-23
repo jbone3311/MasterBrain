@@ -62,6 +62,15 @@ mean hosted, live-source accepted, or production ready.
   order, stops on first refusal, reauthenticates sensitive boundaries and resumes only
   through unchanged-plan replay. Output contains indexes/counts rather than locators or
   content; hosted PostgreSQL/container/restore gates are green.
+- Explicit one-member archive PDF/DOCX/XLSX extraction through two independently
+  restricted immutable images, followed by append-only publication on deterministic
+  child evidence. A separate receipt binds parent archive, inventory, member,
+  document processor, revision and retry key; the publication transaction rechecks
+  current parent/member identity and persists no raw member bytes. Private
+  `masterbrain fileos archive-document` provides non-consuming preflight, repeated
+  authorization, exact replay and content-free output. Hosted PostgreSQL, populated
+  restore and real chained-image PDF/Office gates are green; these derivatives remain
+  retained-history-only.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
@@ -136,8 +145,8 @@ mean hosted, live-source accepted, or production ready.
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild, generation
   scheduling/global-search cutover and legacy image/OCR extraction. Archive-member
-  sealed batch operation and non-text extraction remain follow-on gates; automatic
-  archive fan-out remains prohibited.
+  document current-search activation, preview/batch expansion and automatic archive
+  fan-out remain follow-on gates and are prohibited by the implemented command.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

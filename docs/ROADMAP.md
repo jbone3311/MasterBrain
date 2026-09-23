@@ -4,11 +4,12 @@ Roadmap entries are targets, not implementation claims. Gates are dependency-ord
 
 ## Next build packages
 
-DC-004C now has an accepted isolated hash-only ZIP/TAR inventory worker and append-only
-tenant-isolated manifest ledger. The immediate package is a separately approved,
-persisted-hash-bound one-member read boundary. Images/OCR, automatic
-KnowledgeCore projection, archive search publication and all source effects remain
-later packages.
+DC-004C now has accepted isolated ZIP/TAR inventory, append-only manifests,
+persisted-hash-bound member reads, explicit text publication/search/batches and an
+exact retained-history PDF/Office derivative command chained across two restricted
+images. The immediate package is current-only archive-document retrieval with an exact
+parent/member/receipt currency fence. Images/OCR, automatic fan-out, KnowledgeCore
+projection and all source effects remain later packages.
 
 ## Phase 0 — Identity and baseline (current)
 

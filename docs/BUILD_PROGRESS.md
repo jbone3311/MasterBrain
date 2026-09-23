@@ -2,12 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4V — archive-contained non-text derivative runtime.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define how one explicitly selected current
-archive member may enter the existing PDF/Office extraction path without publishing
-raw bytes, bypassing member/parent hash fences, weakening isolated-worker limits or
-creating automatic archive fan-out. ADR-083 and the closed contract are accepted;
-implement the one-member orchestration, separate receipt, private command and gates.
+**Checkpoint 4W — current archive-document retrieval design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define a separately bounded read that can
+surface checkpoint-4V PDF/Office derivatives only while their exact parent archive,
+inventory, member and document receipt remain current. It must not rewrite active
+FileOS generations, broaden retained-history search, create automatic archive fan-out
+or imply FOS-Master cutover.
 
 ## Completed gates
 
@@ -157,15 +157,25 @@ implement the one-member orchestration, separate receipt, private command and ga
   donor's 47 archive tests and six-case live parity corpus, plus
   [CI 35803130109](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35803130109)
   and [restore 35803130165](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35803130165).
+- Checkpoint 4V archive-member PDF/Office design `ea6fd29`, two-worker orchestration
+  `6680218`, receipt/selector `0210ad1`, publication `4d098fa`, private command
+  `5bb1aa1` and real two-image gate `49b8383` passed 2,582 hosted Python tests, 134
+  browser contracts, four chained restricted-image cases, populated restore and all
+  prior container gates. PDF/DOCX/XLSX publication is exact, replayable,
+  source-preserving and retained-history-only; hosted
+  [CI 35810970182](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970182)
+  and [restore 35810970151](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970151)
+  are green.
 
 ## Current work
 
-- Implement the accepted hash-bound archive-member PDF/Office derivative path with a
-  separate receipt, exact retry and two isolated worker boundaries.
+- Design current-only archive-document retrieval with an exact parent/member/receipt
+  currency join, independent limit/rank and no activation or source effects.
 
 ## Deferred by design
 
 - Archive-member images and OCR until separate format/fault/persistence gates exist.
+- Archive-document preview/batch expansion, automatic fan-out and scheduling.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.

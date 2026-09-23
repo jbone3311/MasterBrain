@@ -1,6 +1,6 @@
 # ADR-083 — Chain isolated member read and document extraction
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented.
 
 ## Context
 
@@ -38,3 +38,11 @@ provenance. Initially expose the document only through retained-history retrieva
 Remove the private command, orchestration and new append-only receipt migration.
 Existing archive manifests, one-member reads, text derivatives/batches/search and
 ordinary FileOS document processing remain unchanged.
+
+## Implementation
+
+Implemented additively in `6680218`, `0210ad1`, `4d098fa` and `5bb1aa1`; selector-test
+correction `a4af448` changed no runtime behavior. Revision `49b8383` proves the real
+archive-member and document images chained together for PDF, DOCX and XLSX, plus
+member-identity substitution refusal. Final-head CI and populated restore are green.
+Current-search activation remains a separate decision and checkpoint.

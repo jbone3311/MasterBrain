@@ -2,6 +2,42 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified archive-member PDF and Office derivatives
+
+Design revision **ea6fd29**, orchestration **6680218**, selector/receipt revision
+**0210ad1**, publication **4d098fa**, private command **5bb1aa1** and real two-image
+gate **49b8383** passed
+[CI 35810970182](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970182)
+and [restore 35810970151](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970151),
+observed 2026-09-22 Pacific. Revision **a4af448** corrects one refusal assertion and
+changes no runtime behavior.
+
+- One exact current PDF, DOCX or XLSX member crosses the existing hash-bound archive
+  member reader and then the separate bounded document worker. Neither image sees both
+  the source tree and sibling/document parsing authority; raw member bytes remain
+  bounded in parent memory and are never persisted.
+- Migration `0026_archive_member_documents.sql` adds a separate forced-RLS,
+  append-only receipt. The publication transaction locks and reconstructs the current
+  parent/inventory/member identity, then records deterministic child evidence,
+  normalized document/chunks and provenance binding both immutable processors.
+- `masterbrain fileos archive-document` requires both immutable image IDs, exact shared
+  scopes and repeated authorization. Check mode constructs neither worker and inspects
+  no target. Normal output is content-free and exact-key retry converges on one receipt.
+- CI and deployment each passed **2,582 Python tests** with PostgreSQL and no skips;
+  **134 browser contracts**, five MIME-container, 15 Email PDF-container, five FileOS
+  document-container, two archive-inventory and two archive-member cases passed. The
+  new four-case chained-image gate extracted PDF/DOCX/XLSX with 64 unrelated siblings,
+  preserved source bytes/timestamps and refused member-hash substitution.
+  Documentation covered **158 Markdown files / 865 local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **71 tables / 236
+  rows / two tenants / four encrypted objects / two identity bindings** in 15.27
+  seconds. FOS-Master remains clean and unchanged at
+  **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+The derivatives remain retained-history-only. Current-search activation, preview,
+batching, images/OCR, recursion, automatic fan-out and FileOS cutover are separate
+future gates.
+
 ## Verified append-only archive manifest persistence
 
 Design revision **2d30728**, runtime revision **03dbb98** and upgrade-expectation
