@@ -2,6 +2,22 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Local FileOS whole-inventory shadow checkpoint
+
+ADR-093 precedes the synthetic-only scanner comparison. The pinned donor scanner
+`scan_domains.py` and shared `snapshot_tree` were exercised on 3,000 generated files
+plus fixed edge cases. **3,002 common SHA-256/size matches** and exactly six
+reason-coded policy differences were observed. Replay stayed unchanged; one content
+change updated one donor row; one removal removed one; no-hash deferred 3,002
+otherwise-common records and rehash backfilled all 3,004 donor rows. After a mass
+loss, the donor refused to prune 1,502 rows, all absent from the fresh snapshot.
+The donor followed and hashed two synthetic symlinks, including one outside the
+synthetic root; MasterBrain skipped both. No real outside-root file was read.
+Seven focused tests and local lint passed. No donor CLI, configured donor database,
+registry, MasterBrain publication or live source was used. These are local synthetic
+results; hosted CI/restore, adversarial boundary coverage and policy integration
+remain pending.
+
 ## Verified FileOS inventory-classifier parity checkpoint
 
 Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15` classifier

@@ -34,6 +34,9 @@ The extracted branch passed hosted
 and [restore 35848399781](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35848399781).
 The hosted runner has no donor checkout, so its live-donor test skips; the explicit
 local 3,000-path donor comparison and 18-case donor self-test supplied that gate.
+The separate [whole-inventory shadow comparator](FILEOS_INVENTORY_SHADOW.md) now
+measures scanner rows against snapshot manifests, including current policy gaps and
+the donor's mass-loss refusal. It still does not authorize snapshot integration.
 
 Before wiring the copied classifier into FileOS snapshots, decide the source-level
 inventory policy in an ADR, test the resulting manifest and exclusion counts against

@@ -20,6 +20,14 @@ integration awaits an explicit policy decision because the donor scanner and DC-
 dedupe defaults differ; no FileOS source behavior changed in this tranche.
 See the [classifier contract](FILEOS_JUNK_POLICY.md).
 
+The next isolated lane follows ADR-093: a synthetic FOS scanner-vs-MasterBrain
+whole-inventory [shadow comparison](FILEOS_INVENTORY_SHADOW.md), with no database or
+source publication. Locally, 3,002 common files matched on size/SHA-256; six exact
+path differences reflect the current policies. Replay, one changed file, one
+removal, donor no-hash/rehash, a 1,502-row mass-prune refusal and internal/external
+symlink policy differences were exercised.
+Snapshot policy integration, adversarial boundaries and hosted gates remain pending.
+
 ## Completed gates
 
 - Foundation identity/architecture documentation and ADR-047.

@@ -21,6 +21,10 @@ mean hosted, live-source accepted, or production ready.
 - Behavior-identical FOS scanner/reconciler inventory classifier with 3,000-path live-donor
   parity. It is not yet wired into FileOS snapshots or dedupe; their different
   exclusion policies require an explicit integration decision.
+- Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
+  database and temporary fictional root. It verifies common hashes/sizes, six current
+  policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;
+  it does not switch snapshot policy or publish evidence.
 - Additive shared DataCore persistence, FileOS text/Markdown/HTML/CSV extraction,
   lexical index and progressive evidence/content/change Brain API.
 - Source-bound FileOS PDF/DOCX/XLSX extraction contract and dedicated restricted

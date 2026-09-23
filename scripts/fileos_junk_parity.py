@@ -12,6 +12,7 @@ import hashlib
 import importlib.util
 import json
 import subprocess
+import sys
 from pathlib import Path
 from types import ModuleType
 
@@ -26,20 +27,41 @@ def corpus(total: int = 3000) -> list[str]:
     if not 100 <= total <= 100000:
         raise ValueError("total must be 100..100000")
     seeds = [
-        ".DS_Store", "Thumbs.db", "~$draft.docx", ".~lock.foo.odt#",
-        "._resource", "_status.html", "metadata.db", "notes.tmp",
-        ".Investor Letters/2026/Q1.pdf", ".trashes/old.pdf",
-        "_SYSTEM/state.json", "_DocsToAdd/queued.pdf", "__MACOSX/fork",
-        ".git/config", ".db/child.txt", "ordinary/report.txt",
-        "résumé/été.txt", ".hidden content/real.pdf", "folder/.DS_STORE",
-        "folder/DESKTOP.INI", "folder/.~temp.txt", "folder/genuine.stackdump",
+        ".DS_Store",
+        "Thumbs.db",
+        "~$draft.docx",
+        ".~lock.foo.odt#",
+        "._resource",
+        "_status.html",
+        "metadata.db",
+        "notes.tmp",
+        ".Investor Letters/2026/Q1.pdf",
+        ".trashes/old.pdf",
+        "_SYSTEM/state.json",
+        "_DocsToAdd/queued.pdf",
+        "__MACOSX/fork",
+        ".git/config",
+        ".db/child.txt",
+        "ordinary/report.txt",
+        "résumé/été.txt",
+        ".hidden content/real.pdf",
+        "folder/.DS_STORE",
+        "folder/DESKTOP.INI",
+        "folder/.~temp.txt",
+        "folder/genuine.stackdump",
     ]
     result = list(seeds)
     for i in range(total - len(result)):
         name = f"record_{i:05d}.txt"
         parent = (
-            "ordinary", ".Investor Letters", ".spotlight-v100", "_SYSTEM",
-            "._fork", "project", "node_modules", "Résumé",
+            "ordinary",
+            ".Investor Letters",
+            ".spotlight-v100",
+            "_SYSTEM",
+            "._fork",
+            "project",
+            "node_modules",
+            "Résumé",
         )[i % 8]
         result.append(f"{parent}/{i % 17:02d}/{name}")
     return result
@@ -60,7 +82,12 @@ def load_donor(repo: Path) -> ModuleType:
     if spec is None or spec.loader is None:
         raise RuntimeError("cannot load pinned donor classifier")
     donor = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(donor)
+    old_bytecode_policy = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        spec.loader.exec_module(donor)
+    finally:
+        sys.dont_write_bytecode = old_bytecode_policy
     return donor
 
 

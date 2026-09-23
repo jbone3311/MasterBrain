@@ -20,6 +20,11 @@ prepares an independent 5B review and 5D proposal for Claude on a separate branc
 PR; no Claude branch or PR has been submitted yet. Automatic selection, fan-out,
 KnowledgeCore projection and all source effects remain later packages.
 
+In parallel, ADR-093 establishes a synthetic full-inventory FileOS shadow gate.
+It must be extended across unreadable, dataless, oversize and race cases
+before a separate policy ADR can change snapshots. Consecutive completed-run,
+absence and index-visibility tests are required before any FileOS cutover.
+
 ## Phase 0 — Identity and baseline (current)
 
 - Establish MasterBrain product identity and layer ownership.
