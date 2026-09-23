@@ -4,6 +4,15 @@ No documentation, unit test, or donor extraction alone makes MasterBrain product
 ready. Evidence for every gate records artifact version, environment, corpus/source,
 operator, date, result, exceptions and rollback receipt.
 
+## Synthetic alpha checkpoint (not production acceptance)
+
+ADR-101 permits `v0.2.0a1` only after the cumulative `main` commit passes locked
+installation, lint, types, Python/PostgreSQL and browser tests, restricted worker
+checks, documentation inventory, pinned-donor parity, and populated restore.
+Record exact commit/run IDs and label database skips. The guide must use fictional
+inputs and disposable PostgreSQL. Passing this subsection does not satisfy the
+production or FileOS cutover gates below.
+
 ## Product and source gates
 
 - Email and FileOS are presented as capabilities under MasterBrain, not competing

@@ -1,5 +1,19 @@
 # MasterBrain Build Progress
 
+## Synthetic alpha integration
+
+ADR-101 defines `0.2.0a1` as a test-only candidate, not a production release.
+[PR #27](https://github.com/jbone3311/CW-EmailBrain/pull/27) adds the alpha trial
+guide, version/status correction, and CI/restore coverage controls on top of
+the tested PR #25 branch. Its exact code head
+`9b1b0e0eb71291290ab30c418c9bd8e12e05a8b8` passed
+[CI 35927108260](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108260)
+and [populated restore 35927108311](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108311).
+The local 3,000-file pinned-donor parity run passed. The next gates are a
+documentation-receipt head check, branch integration, a cumulative PR against
+`main`, and exact-head CI/restore before any alpha tag. Live use and FileOS
+cutover remain prohibited.
+
 ## Active checkpoint
 
 **Confined FileOS source reads (isolated, hosted-verified).** ADR-100 addresses a
