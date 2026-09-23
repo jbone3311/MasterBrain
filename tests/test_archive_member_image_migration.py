@@ -59,4 +59,4 @@ def test_archive_member_image_receipt_schema_is_private_immutable_and_bounded(
             "WHERE conrelid='brain_archive_member_image_receipts'::regclass "
             "AND contype='f'"
         ).fetchone()
-        assert foreign_keys == (5,)
+        assert foreign_keys == (6,)

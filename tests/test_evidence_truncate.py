@@ -230,6 +230,7 @@ def protected_database(
             TRUNCATE_MIGRATION,
             "0031_fileos_policy_identity.sql",
             "0032_fileos_root_binding.sql",
+            "0033_archive_ledger_parent_integrity.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:

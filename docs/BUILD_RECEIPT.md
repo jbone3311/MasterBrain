@@ -12,6 +12,13 @@ Regression tests cover late member/skip inserts, wrong-parent text receipt,
 provenance output and all three FK definitions. Local PostgreSQL is unavailable;
 hosted full CI and populated restore are still required before this is a verified
 checkpoint. No production data repair, FOS-Master edit or cutover is included.
+The first hosted [CI 35897067189](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897067189)
+found only test-harness assumptions: an older migration-list fixture omitted 0033,
+an image-receipt catalog assertion expected five rather than six foreign keys,
+and the new disposable-upgrade test attempted to use an owner role as a runtime
+role. Its populated [restore 35897067297](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897067297)
+passed. The follow-up gives the synthetic upgrade its own non-owner runtime role
+and updates both catalog expectations; hosted re-verification is pending.
 
 ## Combined schema/FileOS integration checkpoint
 

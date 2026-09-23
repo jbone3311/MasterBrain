@@ -18,7 +18,7 @@ from test_service import TOKEN, registry
 from email_brain import store as persistence
 from email_brain.api import create_app
 from email_brain.auth import Principal
-from email_brain.migrate import migrate
+from email_brain.migrate import grant_runtime, migrate
 from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.schemas import SearchRequest
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
@@ -573,6 +573,9 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
 
     _, admin = database
     name = "email_brain_test_archive_ledger_" + uuid4().hex
+    role = "test_archive_" + uuid4().hex[:12]
+    password = "synthetic-" + uuid4().hex
+    role_created = False
     with psycopg.connect(admin, autocommit=True) as conn:
         conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
     dsn = make_conninfo(admin, dbname=name)
@@ -584,6 +587,14 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
             if path.name != "0033_archive_ledger_parent_integrity.sql":
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                    sql.Identifier(role), sql.Literal(password)
+                )
+            )
+            grant_runtime(conn, role)
+        role_created = True
         tenant_id, actor_id = uuid4(), uuid4()
         with psycopg.connect(dsn) as conn:
             conn.execute(
@@ -595,7 +606,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
                 (tenant_id, actor_id),
             )
         ctx = pg.datacore_context(pg.TenantContext(tenant_id, actor_id, frozenset(), uuid4()))
-        core = pg.DataCoreStore(Store(dsn))
+        core = pg.DataCoreStore(Store(make_conninfo(dsn, user=role, password=password)))
         archive_root = tmp_path / "archive"
         archive_root.mkdir()
         _, _, result = pg.archive_fixture(
@@ -632,3 +643,5 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
     finally:
         with psycopg.connect(admin, autocommit=True) as conn:
             conn.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
+            if role_created:
+                conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(role)))
