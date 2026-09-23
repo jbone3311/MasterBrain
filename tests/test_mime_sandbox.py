@@ -317,6 +317,14 @@ def test_worker_resource_limits_are_hard_and_linux_only(monkeypatch):
         (resource.RLIMIT_CORE, (0, 0)),
         (resource.RLIMIT_NOFILE, (64, 64)),
     ]
+    calls.clear()
+    sandbox._resource_limits(max_file_bytes=32 * 1024 * 1024)
+    assert calls[2] == (
+        resource.RLIMIT_FSIZE,
+        (32 * 1024 * 1024, 32 * 1024 * 1024),
+    )
+    with pytest.raises(MimeUnavailable):
+        sandbox._resource_limits(max_file_bytes=32 * 1024 * 1024 + 1)
     monkeypatch.setattr(sandbox.sys, "platform", "darwin")
     with pytest.raises(MimeUnavailable):
         sandbox._resource_limits()

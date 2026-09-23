@@ -130,7 +130,7 @@ def process_request(payload: bytes) -> bytes:
 
 def main() -> int:
     try:
-        _resource_limits()
+        _resource_limits(max_file_bytes=32 * 1024 * 1024)
         logging.disable(sys.maxsize)
         os.environ["TMPDIR"] = "/dev/shm"
         payload = sys.stdin.buffer.read(MAX_REQUEST_BYTES + 1)
