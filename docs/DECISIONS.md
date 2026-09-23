@@ -10,6 +10,12 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-091](adr/091_migration_integrity.md) requires an explicit privileged
+migration-role preflight and a forward-only audit/repair of legacy Email
+`message_sync_state` gaps. It preserves applied checksums and current evidence;
+runtime roles retain forced RLS. The design is accepted; implementation and hosted
+verification are pending. See the [migration integrity contract](MIGRATION_INTEGRITY.md).
+
 [ADR-090](adr/090_private_archive_image_operator.md) defines the private,
 authenticated one-member archive-image OCR command using the accepted 5A composition
 and 5B publication contracts. Implemented in `f658ace`; hosted CI and populated
