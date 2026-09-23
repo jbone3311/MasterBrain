@@ -151,12 +151,13 @@ live-source and production acceptance remain separate gates.
 
 ## Dedupe and file safety
 
-ADR-099 proposes a forward-only database guard for archive inventory history:
+ADR-099 adds a forward-only database guard for archive inventory history:
 late member/skip inserts must preserve the sealed count/byte ledger, provenance
 outputs must name an existing normalized document, and each archive derivative
 receipt must name its own inventory's parent source version. Migration preflight
 refuses historical inconsistencies rather than silently rewriting evidence.
-This is pending hosted PostgreSQL and populated-upgrade verification and is not
+Hosted PostgreSQL and populated restore passed on PR #24's runtime head; review
+and integration remain. This is not
 a substitute for parser containment, backup/audit or live FileOS acceptance.
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

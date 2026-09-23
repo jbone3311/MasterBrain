@@ -2,12 +2,16 @@
 
 ## Active checkpoint
 
-**Archive ledger/parent integrity (isolated, unverified).** ADR-099 and proposed
+**Archive ledger/parent integrity (isolated, hosted-verified).** ADR-099 and
 migration 0033 close the post-seal archive-child insert gap, bind provenance output
 to its normalized document and bind three archive derivative receipt types to the
-exact inventory parent version. Synthetic PostgreSQL regressions and populated
-upgrade expectations are being added on a branch from the green #23 head. Nothing
-in this tranche changes FOS-Master, FileOS source policy or production routing.
+exact inventory parent version. Synthetic PostgreSQL regressions include a
+pre-existing corrupt-child refusal on disposable data. Runtime head `f0064b8`
+passed [CI 35897626535](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897626535)
+with 2,741 Python tests and
+[populated restore 35897626540](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897626540).
+Review and integration remain. Nothing in this tranche changes FOS-Master,
+FileOS source policy or production routing.
 
 **Integration of tested schema and FileOS branches.** A dedicated branch combines
 the separately green migration-integrity/truncation stack (#12–#13) with the
@@ -19,7 +23,7 @@ with 2,738 Python tests and
 [populated restore 35893316454](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35893316454).
 Factory review PR #11 independently uses migration number 0029,
 so it cannot be merged unchanged. Its non-overlapping ledger/FK findings are now
-the separate ADR-099/migration-0033 proposal; workflow suggestions still need
+the separate hosted-verified ADR-099/migration-0033 PR #24; workflow suggestions still need
 review. No FOS-Master edit or
 production cutover is part of this integration.
 

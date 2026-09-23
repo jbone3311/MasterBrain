@@ -13,7 +13,8 @@ Its truncate concern is covered more comprehensively by ADR-092/0030; its archiv
 ledger and provenance/parent-version foreign-key proposals are not included in
 that merge; they are independently reproduced and addressed by proposed
 [ADR-099](adr/099_archive_ledger_and_parent_integrity.md) and forward-only
-migration 0033. Hosted verification remains pending. The CI
+migration 0033. Hosted CI and populated restore passed on PR #24's runtime
+head; review/integration remain. The CI
 timeout/concurrency and restore path-filter proposals also remain unadopted for
 separate review. This is a collision disposition, not a claim that all PR #11
 findings are closed.

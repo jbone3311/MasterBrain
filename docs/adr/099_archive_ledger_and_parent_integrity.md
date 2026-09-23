@@ -1,6 +1,7 @@
 # ADR-099 — Keep archive child ledgers sealed and derivative parents exact
 
-Status: accepted for isolated implementation; hosted verification pending.
+Status: implemented in isolated PR #24; hosted CI and populated restore green on
+runtime head `f0064b8`; review and integration pending.
 
 ## Context
 

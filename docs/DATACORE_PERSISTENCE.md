@@ -35,12 +35,13 @@ available only through explicit runtime-role grants. FileOS evidence is
 `source_bound`: this tranche stores a relative locator and verified hash, not file
 bytes. The source remains authoritative and read-only.
 
-Proposed migration 0033 adds a validated provenance-output reference to the
+Migration 0033 adds a validated provenance-output reference to the
 normalized document and exact archive receipt parent-inventory references. It
 also checks archive member/skip inserts against immutable inventory totals at
 commit, after refusing pre-existing ledger drift during migration. Provenance
 inputs remain polymorphic (evidence or inventory) and are not forced into one
-foreign-key target. This safeguard is not yet hosted-verified.
+foreign-key target. Hosted PostgreSQL CI and populated restore passed on PR #24's
+runtime head; review and integration remain.
 
 Current Email versions may be added through `bridge_current_email_version`. It
 requires both shared ingest and document-publication scopes, the exact legacy UUID,

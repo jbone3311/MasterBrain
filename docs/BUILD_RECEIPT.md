@@ -9,16 +9,23 @@ schema/FileOS integration head. It adds deferred child-insert balance checks,
 preflights old inventory ledgers, validates provenance output documents and binds
 archive text/document/image receipt parent versions to the exact inventory.
 Regression tests cover late member/skip inserts, wrong-parent text receipt,
-provenance output and all three FK definitions. Local PostgreSQL is unavailable;
-hosted full CI and populated restore are still required before this is a verified
-checkpoint. No production data repair, FOS-Master edit or cutover is included.
+provenance output, all three FK definitions, and a disposable pre-existing bad
+child ledger. Local PostgreSQL is unavailable. No production data repair,
+FOS-Master edit or cutover is included.
 The first hosted [CI 35897067189](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897067189)
 found only test-harness assumptions: an older migration-list fixture omitted 0033,
 an image-receipt catalog assertion expected five rather than six foreign keys,
 and the new disposable-upgrade test attempted to use an owner role as a runtime
 role. Its populated [restore 35897067297](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897067297)
 passed. The follow-up gives the synthetic upgrade its own non-owner runtime role
-and updates both catalog expectations; hosted re-verification is pending.
+and updates both catalog expectations. Corrected runtime head `f0064b8` passed
+[CI 35897626535](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897626535):
+**2,741 Python passed, nine expected skips, two upstream warnings**, plus lint,
+mypy, browser, deployment, documentation inventory (185 Markdown files and 979
+local links), API image and restricted-worker gates. The exact head also passed
+[populated restore 35897626540](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35897626540).
+These are synthetic database and worker gates, not a production upgrade or donor
+cutover. PR review and final documentation-head verification remain.
 
 ## Combined schema/FileOS integration checkpoint
 

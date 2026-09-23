@@ -71,10 +71,10 @@ mean hosted, live-source accepted, or production ready.
   hosted PostgreSQL/restore gates green. It stores no member bytes and publishes no
   evidence, documents, chunks or search entries.
 - The original archive inventory insert validates a balanced member/skip ledger,
-  but migration 0023 alone does not reject a later child insert. ADR-099 proposes
-  migration 0033 with deferred child-side checks and exact receipt/provenance links.
-  This additional safeguard is not verified until hosted PostgreSQL and populated
-  restore pass on its exact head.
+  but migration 0023 alone does not reject a later child insert. ADR-099 and
+  migration 0033 add deferred child-side checks and exact receipt/provenance links.
+  Hosted PostgreSQL and populated restore passed on PR #24's runtime head;
+  review and integration remain.
 - Hash-bound read of exactly one persisted non-container archive member through a
   separate fixed restricted-image command. Forced-RLS selection requires the current
   FileOS source version; the parent reopens it through no-follow descriptors, verifies
