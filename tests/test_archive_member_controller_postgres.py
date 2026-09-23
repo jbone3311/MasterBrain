@@ -134,7 +134,7 @@ def test_document_selector_is_distinct_and_allows_only_pdf_or_opaque_ooxml(
     word = core.archive_document_member_target(datacore, inventory_id, "documents/memo.docx")
     assert pdf.member_media_type == "application/pdf"
     assert word.member_media_type.endswith("wordprocessingml.document")
-    with pytest.raises(NotFound):
+    with pytest.raises(ValueError):
         core.archive_document_member_target(datacore, inventory_id, "folder/proof.md")
     with pytest.raises(NotFound):
         core.archive_member_target(datacore, inventory_id, "documents/memo.docx")
