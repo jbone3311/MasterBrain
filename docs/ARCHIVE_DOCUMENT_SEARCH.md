@@ -1,6 +1,6 @@
-# Current archive-document search design
+# Current archive-document search contract
 
-Status: checkpoint 4W accepted design; runtime not yet implemented.
+Status: checkpoint 4W implemented in `7329ba9`; hosted CI and restore are green.
 
 ## Purpose
 
@@ -31,12 +31,12 @@ or retained-history retrieval.
 
 ## Retrieval and API shape
 
-Add `DataCoreStore.search_current_archive_documents`, requiring `brain.search`, using
+`DataCoreStore.search_current_archive_documents` requires `brain.search` and uses
 the existing 500-character plain-text query, deterministic PostgreSQL lexical rank,
 bounded headline and a strict 1–20 limit. Add a tenant-leading receipt lookup index;
 do not rewrite document rows or an active FileOS generation.
 
-Add `archive_document_limit` to the closed `/v1/brain/current-search` request and an
+The closed `/v1/brain/current-search` request includes `archive_document_limit` and an
 `archive_documents` response layer. Its coverage label is
 `explicitly_published_current_archive_documents_only`. Ranks are meaningful only
 inside this layer. Existing FileOS, archive-text, Email-family, KnowledgeCore and
@@ -79,4 +79,3 @@ No publication, preview, batch, scheduler, automatic archive fan-out, active-gen
 mutation, rank merge, semantic search, atomic cross-layer snapshot, image/OCR support,
 current-source coverage count, public mutation, source effect or FOS-Master cutover is
 authorized.
-

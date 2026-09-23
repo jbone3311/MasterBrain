@@ -1,6 +1,6 @@
 # ADR-084 — Keep current archive documents in their own search layer
 
-Status: accepted design; implementation pending.
+Status: accepted and implemented in `7329ba9`.
 
 ## Context
 
@@ -37,4 +37,3 @@ require existing evidence/content scopes for drill-down.
 Remove the read method, request/response layer and lookup index. Checkpoint-4V
 receipts, evidence, normalized documents, retained search and source state remain
 unchanged.
-

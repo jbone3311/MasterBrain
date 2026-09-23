@@ -63,14 +63,15 @@ FileOS sources ┘       │              │                │
 | Sealed Email attachment/document batches | Implemented; hosted PostgreSQL and restore gates green |
 | FileOS archive inventory, exact member read and text publication | Implemented; donor/container/PostgreSQL/restore gates green |
 | Private archive-member preview and sealed text batches | Implemented; hosted PostgreSQL and restore gates green |
-| Exact archive-contained PDF/DOCX/XLSX publication and private command | Implemented; chained-container/PostgreSQL/restore gates green; retained-history only |
+| Exact archive-contained PDF/DOCX/XLSX publication and private command | Implemented; chained-container/PostgreSQL/restore gates green |
+| Current archive-document search | Implemented as a separate exact-current layer; PostgreSQL/restore gates green |
 | Current-only bridged Email Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Email attachment occurrence/text bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Approved Email PDF derivative bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Current-only layered Email-family Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Grouped current FileOS + Email-family + KnowledgeCore search | Implemented; hosted PostgreSQL and restore gates green |
 | Current-source coverage/readiness status | Implemented; hosted PostgreSQL and restore gates green |
-| Current archive-document search, archive images and OCR | Planned migration |
+| Archive images and OCR | Planned migration |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |
 | Hosted identity, operations, live sources | Not accepted |
@@ -108,7 +109,7 @@ roadmap item is not an implementation claim.
 - [Private archive-member publication preview contract](docs/ARCHIVE_MEMBER_PREVIEW.md)
 - [Sealed archive-member text batch contract](docs/ARCHIVE_MEMBER_BATCH.md)
 - [Archive-member PDF and Office derivative contract](docs/ARCHIVE_MEMBER_DOCUMENT.md)
-- [Current archive-document search design](docs/ARCHIVE_DOCUMENT_SEARCH.md)
+- [Current archive-document search contract](docs/ARCHIVE_DOCUMENT_SEARCH.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)

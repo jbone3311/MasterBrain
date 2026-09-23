@@ -2,13 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4W — current archive-document retrieval design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define a separately bounded read that can
-surface checkpoint-4V PDF/Office derivatives only while their exact parent archive,
-inventory, member and document receipt remain current. It must not rewrite active
-FileOS generations, broaden retained-history search, create automatic archive fan-out
-or imply FOS-Master cutover. ADR-084 and the closed search contract are accepted;
-implementation remains pending.
+**Checkpoint 4X — private archive-document preview design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define a bounded, non-consuming operator view
+of eligible current PDF/DOCX/XLSX members and their publication state before any
+sealed document-batch authority is considered. It must inspect no member bytes,
+construct no worker, allocate no retry keys, publish nothing, and imply neither
+automatic archive fan-out nor FOS-Master cutover.
 
 ## Completed gates
 
@@ -167,16 +166,26 @@ implementation remains pending.
   [CI 35810970182](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970182)
   and [restore 35810970151](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970151)
   are green.
+- Checkpoint 4W current archive-document search design `9ba4b88` and runtime
+  `7329ba9` passed 2,583 hosted Python tests with real PostgreSQL, 134 browser
+  contracts, deployment, documentation and every restricted-container gate. Exact
+  receipt/member/child/parent fencing, replay deduplication, tenant isolation and
+  stale-parent removal are proven; hosted
+  [CI 35816277436](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35816277436)
+  and [restore 35816277514](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35816277514)
+  are green. The pinned donor's 47 archive tests, six-case live archive parity and
+  3,000-file hash/dedupe/extraction stress parity also passed locally without changing
+  FOS-Master.
 
 ## Current work
 
-- Design current-only archive-document retrieval with an exact parent/member/receipt
-  currency join, independent limit/rank and no activation or source effects.
+- Design a private, read-only archive-document preview with bounded opaque pages,
+  exact eligibility/publication labels and no source, worker or publication effects.
 
 ## Deferred by design
 
 - Archive-member images and OCR until separate format/fault/persistence gates exist.
-- Archive-document preview/batch expansion, automatic fan-out and scheduling.
+- Archive-document batch expansion, automatic fan-out and scheduling.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
 - All file/mail effects and any FOS-Master cutover/retirement.

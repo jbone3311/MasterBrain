@@ -2,6 +2,39 @@
 
 Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified current archive-document search
+
+Design revision **9ba4b88** and runtime revision **7329ba9** passed
+[CI 35816277436](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35816277436)
+and [restore 35816277514](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35816277514),
+observed 2026-09-22 Pacific.
+
+- `DataCoreStore.search_current_archive_documents` returns only an exact published
+  PDF/DOCX/XLSX derivative whose immutable receipt, sealed inventory/member, current
+  parent FileOS version, child version/evidence and normalized document all agree.
+  Parent replacement removes the result from current search without deleting retained
+  evidence; replay cannot duplicate a result and foreign tenants see nothing.
+- `/v1/brain/current-search` exposes a distinct `archive_documents` layer with a
+  strict 1–20 limit, independent rank and explicit partial-coverage label. It returns
+  only compact search fields and opaque child locators; ordinary FileOS, archive text,
+  Email-family, KnowledgeCore and retained-history behavior remains separate.
+- Migration `0027_current_archive_document_search.sql` adds only the tenant-leading
+  receipt lookup index. The read creates no workers, source reads, generations,
+  receipts, evidence, chunks or source effects.
+- CI and deployment each passed **2,583 Python tests** with PostgreSQL and no skips;
+  **134 browser contracts**, five MIME-container, 15 Email PDF-container, five FileOS
+  document-container, two archive-inventory, two archive-member and four chained
+  archive-document cases passed. Documentation covered **160 Markdown files / 867
+  local paths and fragments**.
+- The 29 restore safety tests passed; PostgreSQL 17 restore verified **71 tables / 237
+  rows / two tenants / four encrypted objects / two identity bindings** in 20.86
+  seconds. The pinned donor's **47 archive tests**, six-case live archive parity and
+  3,000-file hash/dedupe/text/Office stress parity passed locally. FOS-Master remains
+  clean and unchanged at **218d5caec2f20b9047fd3eb8e027dc671acf0c15**.
+
+This does not authorize archive enumeration, document preview/batches, images/OCR,
+automatic fan-out, scheduling, source effects or FOS-Master cutover.
+
 ## Verified archive-member PDF and Office derivatives
 
 Design revision **ea6fd29**, orchestration **6680218**, selector/receipt revision

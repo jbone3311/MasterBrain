@@ -7,9 +7,10 @@ Roadmap entries are targets, not implementation claims. Gates are dependency-ord
 DC-004C now has accepted isolated ZIP/TAR inventory, append-only manifests,
 persisted-hash-bound member reads, explicit text publication/search/batches and an
 exact retained-history PDF/Office derivative command chained across two restricted
-images. The immediate package is current-only archive-document retrieval with an exact
-parent/member/receipt currency fence. Images/OCR, automatic fan-out, KnowledgeCore
-projection and all source effects remain later packages.
+images, plus a separately ranked current-only archive-document layer with an exact
+parent/member/receipt fence. The immediate package is a private, bounded document
+preview before any sealed document batch is considered. Images/OCR, automatic fan-out,
+KnowledgeCore projection and all source effects remain later packages.
 
 ## Phase 0 — Identity and baseline (current)
 

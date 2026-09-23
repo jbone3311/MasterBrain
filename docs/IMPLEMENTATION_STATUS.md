@@ -70,7 +70,13 @@ mean hosted, live-source accepted, or production ready.
   `masterbrain fileos archive-document` provides non-consuming preflight, repeated
   authorization, exact replay and content-free output. Hosted PostgreSQL, populated
   restore and real chained-image PDF/Office gates are green; these derivatives remain
-  retained-history-only.
+  available to retained-history search and the separately fenced current layer.
+- Independently bounded current archive-document lexical search for explicitly
+  published PDF/DOCX/XLSX derivatives. It joins the immutable document receipt to the
+  sealed inventory/member, exact child evidence/document and still-current parent;
+  parent replacement removes current visibility without deleting retained history.
+  `/v1/brain/current-search` exposes a distinct rank/limit/coverage layer with opaque
+  locators. Hosted PostgreSQL, restore and all restricted-container gates are green.
 - Explicit private-config FileOS snapshot publication command with exact worker scopes,
   idempotent replay and repeated authorization; hosted PostgreSQL/restore gates green.
 - Append-only FileOS whole-run receipt and Brain API latest-complete freshness endpoint;
