@@ -1,6 +1,6 @@
 # ADR-089 — Persist one successful archive-image OCR derivative
 
-Status: accepted design; runtime not implemented.
+Status: accepted and implemented through `63b478d`.
 
 ## Context
 
@@ -37,3 +37,11 @@ Remove the publication wrapper/method and forward migration before production us
 The 5A in-memory composition, isolated image worker, archive manifests, text/document
 derivatives and all existing retrieval remain unchanged. Applied append-only evidence
 is retained unless a separately authorized data-retention operation is designed.
+
+## Implementation
+
+Implemented in design `16d452a`, runtime `760a644` and correction `63b478d`. Hosted
+[CI 35833506295](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506295)
+and [restore 35833506298](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506298)
+are green. Private command, current search, preview, batch and fan-out remain separate
+decisions.

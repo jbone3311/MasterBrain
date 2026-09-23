@@ -1,6 +1,6 @@
 # Archive-member image OCR persistence
 
-Status: checkpoint 5B accepted design; runtime not implemented.
+Status: checkpoint 5B implemented and accepted through correction revision `63b478d`.
 
 ## Purpose
 
@@ -82,3 +82,17 @@ No database selector, private/public command, current search, preview, batch, re
 generation, scheduling, automatic fan-out, archive recursion, blank-result receipt,
 scanner verdict, external vision, raw image/pixel/EXIF retention, source effect,
 KnowledgeCore projection or FOS-Master cutover is authorized.
+
+## Accepted evidence
+
+Design revision `16d452a`, runtime revision `760a644` and grant/freshness/provenance
+correction `63b478d` passed
+[CI 35833506295](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506295)
+with 2,640 PostgreSQL-backed Python tests and every restricted-container gate. The
+independent populated [restore
+35833506298](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506298)
+verified 72 tables and 238 rows with content hashes, forced RLS and identity state
+preserved. The first hosted runtime attempt correctly exposed the omitted runtime-table
+grant; independent review also moved fresh equivalent-key replay behind the current
+fence, kept processor-specific observations out of child source identity, and bound the
+image contract/policy explicitly in provenance before acceptance.

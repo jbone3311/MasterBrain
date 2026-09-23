@@ -2,6 +2,43 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified archive-member image OCR persistence
+
+Design revision **16d452a**, runtime revision **760a644** and correction revision
+**63b478d** passed
+[CI 35833506295](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506295)
+and [restore 35833506298](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506298),
+observed 2026-09-23 Pacific.
+
+- Only a complete nonempty, exact-target `bounded_image_ocr_v1` result may publish.
+  The forced-RLS transaction reconstructs and locks the current parent/inventory/member,
+  writes deterministic child evidence/document/chunks, and records a separate immutable
+  image receipt plus provenance binding both sandbox contracts, processor digest,
+  format, dimensions, mode, frame policy, truncation, chunking and code revision.
+- Exact, fresh equivalent-key and concurrent replay converge without duplicate derived
+  data. New equivalent keys cross the current-parent fence; changed keys/requests,
+  stale parents, cross-tenant targets and row mutation fail closed. A later processor
+  may create a new derivative without changing raw child source identity. Blank,
+  deferred and failed OCR create no rows.
+- Local verification passed **2,248 tests** with 392 explicit PostgreSQL/container
+  skips, 31 focused wrapper/composition cases, strict typing, lint, documentation and
+  deployment gates. Hosted CI and deployment each passed **2,640 Python tests** with
+  PostgreSQL and no skips, **134 browser contracts**, and every restricted-container
+  gate including the four-case real archive-plus-image chain.
+- The first hosted runtime run failed at the intended boundary because the new table
+  was absent from the explicit runtime grants. Correction `63b478d` added only its
+  SELECT/INSERT grants. Parallel review also found and corrected stale fresh-key replay,
+  processor-dependent child metadata and missing explicit image-contract/policy
+  provenance before acceptance.
+- Documentation before this receipt covered **170 Markdown files / 902 local paths
+  and fragments**. Populated PostgreSQL 17 restore verified **72 tables / 238 rows /
+  two tenants / four encrypted objects / two identity bindings** with equal hashes,
+  forced RLS and revocation state.
+
+No raw image/member byte, pixels or EXIF are stored. No private command, current
+search, preview, batch, scheduler, automatic fan-out, source effect or FOS-Master
+cutover is authorized. The next gate is one private explicit-target operator.
+
 ## Verified one-member archive image OCR composition
 
 Design revision **6029240** and runtime revision **b17541d** passed

@@ -165,8 +165,10 @@ mean hosted, live-source accepted, or production ready.
   archive reader and separate image worker. It preserves exact member identity,
   suffix/signature agreement, sibling exclusion and source immutability; maps blank,
   policy and failure outcomes explicitly; and returns only bounded in-memory text and
-  metadata. Real immutable containers are green. It adds no selection, persistence,
-  search, command, batch or automatic fan-out.
+  metadata. Complete nonempty results may enter a separate append-only, forced-RLS
+  retained-history derivative with exact replay/current fencing and image-specific
+  receipt/provenance. Real immutable containers, PostgreSQL and restore are green. It
+  adds no automatic selection, current search, command, batch or fan-out.
 
 ## Designed, not implemented
 
@@ -174,9 +176,9 @@ mean hosted, live-source accepted, or production ready.
   source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild and
-  generation scheduling/global-search cutover. Archive-member image/OCR persistence,
-  private operator, search, batches and automatic archive fan-out remain follow-on
-  gates and are prohibited by the in-memory composition.
+  generation scheduling/global-search cutover. Archive-member image/OCR private
+  operator, current search, previews, batches and automatic archive fan-out remain
+  follow-on gates and are prohibited by the persistence tranche.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

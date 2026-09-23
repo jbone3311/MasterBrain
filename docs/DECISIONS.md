@@ -12,8 +12,8 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-089](adr/089_archive_member_image_persistence.md) defines append-only publication
 for one explicit, nonempty, successful archive-image OCR result with a separate forced-
-RLS receipt, exact current-parent/member fence and image-specific provenance. Runtime
-is not implemented; selector, command, search, batch and fan-out remain prohibited.
+RLS receipt, exact current-parent/member fence and image-specific provenance.
+Implemented through `63b478d`; command, search, batch and fan-out remain prohibited.
 
 [ADR-088](adr/088_archive_member_image_ocr.md) composes only one explicit current,
 hash-bound archive member with the separate image worker, returns a bounded in-memory

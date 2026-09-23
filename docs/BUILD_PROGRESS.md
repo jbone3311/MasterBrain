@@ -2,11 +2,11 @@
 
 ## Active checkpoint
 
-**Checkpoint 5B — archive-image derivative persistence design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define append-only publication for one
-explicitly selected successful 5A result, with deterministic child identity,
-parent/inventory/member/image-processor provenance, transaction-time current fencing
-and forced RLS. Authorize no selector, command, search, batch, automatic fan-out or
+**Checkpoint 5C — private archive-image operator design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define one owner-private command for an
+explicit inventory/member/key that reuses both immutable worker images and the
+accepted 5B transaction, with non-consuming check mode and repeated authorization.
+Authorize no preview, batch, current search, scheduling, automatic fan-out or
 FOS-Master cutover.
 
 ## Completed gates
@@ -207,16 +207,24 @@ FOS-Master cutover.
   and [restore 35829325907](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829325907)
   are green. Exact nested selection, 64-sibling exclusion, source preservation,
   blank OCR, animation policy and hash substitution refusal are proven.
+- Checkpoint 5B archive-image persistence design `16d452a`, runtime `760a644` and
+  grant/freshness/provenance correction `63b478d` passed 2,640 hosted Python tests,
+  134 browser contracts, every restricted-container gate and populated restore;
+  hosted [CI 35833506295](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506295)
+  and [restore 35833506298](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506298)
+  are green. The restore verified 72 tables / 238 rows. Exact, equivalent and
+  concurrent replay, processor evolution, tenant/current fences, append-only RLS and
+  image-specific provenance are proven.
 
 ## Current work
 
-- Define append-only publication for one explicit successful archive-image OCR result
-  without selection, command, search, batch or automatic fan-out.
+- Define a private one-member archive-image command without preview, batch, search,
+  scheduling or automatic fan-out.
 
 ## Deferred by design
 
-- Archive-image/OCR persistence, operator, search and batch scheduling until the
-  one-member composition and later persistence contracts are accepted.
+- Archive-image/OCR operator, current search and batch scheduling until each separate
+  contract is accepted.
 - Automatic archive-document fan-out and scheduling.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.
