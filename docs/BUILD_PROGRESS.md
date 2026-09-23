@@ -16,7 +16,10 @@ repair. On a disposable PostgreSQL 17 server, the focused tests passed 4/4 and t
 full PostgreSQL-marked suite passed 397 tests; the historical forced-RLS omission was
 reproduced. Hosted restore passed in
 [run 35839369275](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839369275);
-hosted CI and integration review remain pending. FOS-Master remains unchanged.
+hosted [CI 35839648723](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839648723)
+passed 2,656 PostgreSQL-backed Python tests and all browser, deployment and
+restricted-worker gates. Independent review and integration remain pending.
+FOS-Master remains unchanged.
 
 ## Completed gates
 

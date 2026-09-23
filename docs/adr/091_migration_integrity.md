@@ -1,6 +1,7 @@
 # ADR-091 — Verify migration visibility and repair the legacy Email ledger
 
-Status: implemented on migration-integrity branch; hosted verification pending.
+Status: implemented and hosted gates green on migration-integrity branch;
+independent review and integration pending.
 
 ## Context
 

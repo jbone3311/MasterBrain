@@ -2,6 +2,28 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified migration-integrity repair proposal
+
+Design commit **16b0de3** and runtime commit **fc2a329**, followed by validation
+note **bea8c5e**, passed [CI 35839648723](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839648723)
+and [restore 35839648689](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35839648689)
+on the separate [PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12)
+branch. Hosted CI passed **2,656 PostgreSQL-backed Python tests**, browser contracts,
+deployment/document checks and every restricted worker/container gate. The populated
+PostgreSQL 17 restore passed. Locally, four focused disposable-PostgreSQL tests and
+the full 397-test PostgreSQL-marked suite passed.
+
+- A non-superuser, non-`BYPASSRLS` owner is rejected before any migration ledger or
+  schema write. The focused corpus reproduces the historical 0006 silent omission
+  under forced RLS.
+- Forward-only migration 0029 repeats the parser-provenance mismatch guard and
+  repairs only missing sync-state keys across tenants; existing states and event
+  pointers remain untouched. A mismatch rolls the migration back with no receipt.
+- Previously applied migration checksums, runtime privileges and the pinned
+  FOS-Master donor are unchanged. This is a reviewed-branch proposal, not a
+  production database repair or FileOS cutover. Independent review and integration
+  into the foundation remain pending.
+
 ## Verified private archive-image OCR command
 
 Checkpoint 5C design revision **3d9b9b9** and runtime revision **f658ace** passed
