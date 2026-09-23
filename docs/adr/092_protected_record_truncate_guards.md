@@ -1,7 +1,7 @@
 # ADR-092 — Refuse whole-table truncation of protected records
 
-Status: implemented on protected-record branch; focused disposable-PostgreSQL
-verification green; full and hosted gates pending.
+Status: implemented on protected-record PR #13; focused disposable-PostgreSQL,
+hosted CI and populated restore green. Independent review/integration pending.
 
 ## Context
 

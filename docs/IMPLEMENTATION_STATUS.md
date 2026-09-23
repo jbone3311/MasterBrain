@@ -176,7 +176,9 @@ mean hosted, live-source accepted, or production ready.
 - Forward-only protected-record TRUNCATE guards on the 56 direct append-only tables,
   protected recovery/document jobs and audited external identity bindings. Focused
   disposable-PostgreSQL catalog, direct/cascade, runtime-privilege, row-transition and
-  replay tests passed; full and hosted gates remain pending on a separate branch.
+  replay tests passed. Hosted CI (2,669 Python tests, browser and restricted-worker
+  gates) and populated restore passed on separate PR #13; review and integration
+  remain pending.
 
 ## Designed, not implemented
 

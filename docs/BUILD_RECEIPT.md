@@ -2,6 +2,28 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified protected-record truncation guards proposal
+
+Design **f2756b3**, runtime/tests **99d5783** and test correction **02052da**
+passed [CI 35844322327](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35844322327)
+and [restore 35844322318](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35844322318)
+on separate [PR #13](https://github.com/jbone3311/CW-EmailBrain/pull/13), stacked
+on PR #12. Hosted CI passed **2,669 Python tests** with two upstream warnings,
+browser contracts, documentation/deployment checks and restricted worker/container
+gates. The populated restore passed. Thirteen focused disposable-PostgreSQL 17 tests
+passed locally.
+
+- Forward-only migration 0030 refuses direct and foreign-key-cascaded `TRUNCATE` on
+  the 56 directly row-guarded append-only tables, two protected approval-job tables
+  and audited external identities. Catalog coverage is exact for this baseline.
+- Tests reproduced the pre-0030 gap on disposable data, checked all 59 protected
+  targets with `CASCADE`, retained synthetic rows/history, runtime privilege denial,
+  legitimate row transitions and replay. No real evidence or production database
+  was touched.
+- This guards accidental privileged bulk erasure, not malicious table owners who
+  can disable triggers. PR review and integration remain pending; FOS-Master is
+  unchanged.
+
 ## Verified migration-integrity repair proposal
 
 Design commit **16b0de3** and runtime commit **fc2a329**, followed by validation
