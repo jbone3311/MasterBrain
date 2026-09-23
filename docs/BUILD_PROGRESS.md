@@ -2,11 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 5A — one-member archive image composition design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define one explicit current archive-member
-handoff from the existing hash-bound reader to the proven image worker. Preserve exact
-member hash/size/suffix identity, sibling exclusion and source immutability. Authorize
-no persistence, search, public command, batch, automatic fan-out or FOS-Master cutover.
+**Checkpoint 5B — archive-image derivative persistence design.** Work occurs on
+`codex/masterbrain-foundation` in PR #4. Define append-only publication for one
+explicitly selected successful 5A result, with deterministic child identity,
+parent/inventory/member/image-processor provenance, transaction-time current fencing
+and forced RLS. Authorize no selector, command, search, batch, automatic fan-out or
+FOS-Master cutover.
 
 ## Completed gates
 
@@ -199,11 +200,18 @@ no persistence, search, public command, batch, automatic fan-out or FOS-Master c
   and [restore 35826212333](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35826212333)
   are green. The clean pinned donor passed 149 focused tests, 12 six-format golden
   cases and 120 generated parity stress cases; animated GIF is deliberately safer.
+- Checkpoint 5A one-member archive-image design `6029240` and runtime `b17541d`
+  passed 2,620 hosted Python tests, 134 browser contracts and the new four-case real
+  archive-plus-image container chain; hosted
+  [CI 35829326066](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829326066)
+  and [restore 35829325907](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829325907)
+  are green. Exact nested selection, 64-sibling exclusion, source preservation,
+  blank OCR, animation policy and hash substitution refusal are proven.
 
 ## Current work
 
-- Define and test one explicit archive-member-to-image-worker composition without
-  persistence or automatic selection.
+- Define append-only publication for one explicit successful archive-image OCR result
+  without selection, command, search, batch or automatic fan-out.
 
 ## Deferred by design
 

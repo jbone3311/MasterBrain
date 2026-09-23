@@ -12,7 +12,9 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 [ADR-088](adr/088_archive_member_image_ocr.md) composes only one explicit current,
 hash-bound archive member with the separate image worker, returns a bounded in-memory
-result and grants no persistence, command, batch or fan-out. Runtime is not implemented.
+result and grants no persistence, command, batch or fan-out. Implemented in `b17541d`;
+real two-image acceptance is
+[CI 35829326066](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829326066).
 
 [ADR-087](adr/087_archive_image_ocr_boundary.md) requires a separate immutable,
 non-networked image worker with exact byte/format binding, full decode, single-frame

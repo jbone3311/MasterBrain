@@ -1,6 +1,7 @@
 # One-member archive image/OCR composition
 
-Status: checkpoint 5A design; runtime not implemented.
+Status: checkpoint 5A implemented and accepted at runtime revision `b17541d`;
+publication remains prohibited.
 
 ## Purpose
 
@@ -65,6 +66,13 @@ worker/container detail or sibling content enters the result.
 - no sibling is read, no raw member/image byte is persisted, and no DataCore/search/
   KnowledgeCore row or source effect occurs; and
 - all prior donor parity, PostgreSQL, restore and restricted-container gates stay green.
+
+The accepted runtime has 14 focused composition tests and a four-case real
+two-container gate. Hosted CI passed 2,620 Python tests plus all browser and restricted
+container gates in
+[run 35829326066](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829326066);
+the independent populated restore passed in
+[run 35829325907](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829325907).
 
 ## Non-goals
 

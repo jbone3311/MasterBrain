@@ -67,6 +67,7 @@ FileOS sources ┘       │              │                │
 | Current archive-document search | Implemented as a separate exact-current layer; PostgreSQL/restore gates green |
 | Private archive-document preview | Implemented; metadata-only PostgreSQL/restore gates green |
 | Sealed archive-document batches | Implemented; fail-stop exact-retry PostgreSQL/restore gates green |
+| Exact archive-contained image OCR | Implemented in memory; chained-container/restore gates green, no publication |
 | Current-only bridged Email Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Email attachment occurrence/text bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Approved Email PDF derivative bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |

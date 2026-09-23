@@ -1,6 +1,6 @@
 # ADR-088 — Compose one archive member with isolated image OCR
 
-Status: accepted design; runtime not implemented.
+Status: accepted and implemented in `b17541d`; persistence remains prohibited.
 
 ## Context
 

@@ -10,9 +10,11 @@ exact retained-history PDF/Office derivative command chained across two restrict
 images, plus a separately ranked current-only archive-document layer with an exact
 parent/member/receipt fence. Private document preview and sealed document batches are
 implemented. The image/OCR donor inventory, closed protocol, isolated worker, real
-container and golden parity gate are also implemented. The next package is an explicit
-one-member archive-reader-to-image-worker composition with no publication. Automatic
-fan-out, KnowledgeCore projection and all source effects remain later packages.
+container, golden parity gate and explicit one-member archive composition are also
+implemented. The next package is append-only persistence for an explicitly selected
+successful archive-image derivative, with transaction-time current fencing and no
+automatic selection. Automatic fan-out, KnowledgeCore projection and all source effects
+remain later packages.
 
 ## Phase 0 — Identity and baseline (current)
 

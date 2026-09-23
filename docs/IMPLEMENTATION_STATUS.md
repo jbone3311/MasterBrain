@@ -161,6 +161,12 @@ mean hosted, live-source accepted, or production ready.
   exact reads, change feed, forced RLS and append-only enforcement.
 - Grouped dual-scope search across DataCore evidence and KnowledgeCore assertions,
   with independent limits/ranks and evidence IDs for progressive drill-down.
+- Explicit one-member archive image OCR composition across the existing hash-bound
+  archive reader and separate image worker. It preserves exact member identity,
+  suffix/signature agreement, sibling exclusion and source immutability; maps blank,
+  policy and failure outcomes explicitly; and returns only bounded in-memory text and
+  metadata. Real immutable containers are green. It adds no selection, persistence,
+  search, command, batch or automatic fan-out.
 
 ## Designed, not implemented
 
@@ -168,9 +174,9 @@ mean hosted, live-source accepted, or production ready.
   source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild and
-  generation scheduling/global-search cutover. Archive-member image/OCR composition,
-  persistence, private operator, search, batches and automatic archive fan-out remain
-  follow-on gates and are prohibited by the isolated worker.
+  generation scheduling/global-search cutover. Archive-member image/OCR persistence,
+  private operator, search, batches and automatic archive fan-out remain follow-on
+  gates and are prohibited by the in-memory composition.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.

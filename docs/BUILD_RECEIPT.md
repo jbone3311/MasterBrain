@@ -1,6 +1,38 @@
 # Build and validation receipt
 
-Updated 2026-09-22 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+
+## Verified one-member archive image OCR composition
+
+Design revision **6029240** and runtime revision **b17541d** passed
+[CI 35829326066](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829326066)
+and [restore 35829325907](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829325907),
+observed 2026-09-23 Pacific.
+
+- The parent accepts one explicit persisted image member, reopens the current archive
+  through the existing no-follow/hash-bound reader, derives the canonical format from
+  the validated suffix and sends only the selected bytes to the separate image worker.
+  It revalidates the full worker result and immutable processor identity before
+  returning bounded in-memory text and metadata.
+- Fourteen focused composition tests cover all eight suffix aliases across six static
+  formats, nested selection, exact metadata, blank OCR, unsupported/oversize refusal
+  before workers, missing source, worker crash, response substitution, format
+  masquerade, invalid processor identity and animation policy. The local full suite
+  passed **2,231 tests** with 389 explicit PostgreSQL/container skips.
+- Hosted CI and deployment each passed **2,620 Python tests** with PostgreSQL and no
+  skips, **134 browser contracts**, every prior restricted-container gate and the new
+  four-case real two-image chain. The chain proved OCR text, a blank image, animated
+  GIF refusal, nested locator, 64 unrelated siblings, source byte/timestamp
+  preservation and member-hash substitution refusal.
+- Documentation before this receipt covered **168 Markdown files / 897 local paths
+  and fragments**. The 29 restore safety tests passed; the unchanged PostgreSQL 17
+  shape remains **71 tables / 237 rows / two tenants / four encrypted objects / two
+  identity bindings**.
+
+No raw member/image byte or OCR result is persisted or searched. No selector,
+operator, batch, scheduler, scanner verdict, automatic fan-out, source effect or
+FOS-Master cutover is authorized. The next gate is separately reviewed append-only
+publication for one explicit successful result.
 
 ## Verified isolated image/OCR worker and donor parity
 
@@ -36,9 +68,9 @@ observed 2026-09-22 Pacific.
 - The 29 restore safety tests passed; the unchanged PostgreSQL 17 shape remains **71
   tables / 237 rows / two tenants / four encrypted objects / two identity bindings**.
 
-No archive member is selected, no raw byte or OCR result is persisted, and no search,
-operator, batch, scheduler, scanner verdict, external vision, source effect or FileOS
-cutover is authorized. The next gate is a separately reviewed one-member composition.
+No raw byte or OCR result is persisted, and no search, operator, batch, scheduler,
+scanner verdict, external vision, source effect or FileOS cutover is authorized. The
+later 5A receipt above supersedes this section's former composition limitation.
 
 ## Verified sealed archive-document batches
 
