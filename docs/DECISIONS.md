@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-094](adr/094_fileos_completion_coverage.md) requires a fail-closed snapshot
+error ledger before FileOS completion and absence inference. It permits only an
+explicit no-follow symlink skip; policy-version and mass-loss guards remain later
+decisions. Implementation and hosted gates are pending.
+
 [ADR-093](adr/093_fileos_inventory_shadow.md) authorizes only a pinned,
 synthetic-database FileOS scanner-vs-snapshot shadow comparator. It requires exact,
 reason-coded policy divergences and no source or publication effects; a later ADR
