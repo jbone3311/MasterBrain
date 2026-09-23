@@ -61,12 +61,17 @@ def scratch_database() -> Iterator[tuple[str, str]]:
             conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(role_name)))
 
 
-def _migrate_before_repair(dsn: str, tmp_path: Path) -> None:
-    earlier = tmp_path / "earlier_migrations"
+def _migrations_before(tmp_path: Path, limit: int) -> Path:
+    earlier = tmp_path / f"migrations_before_{limit}"
     earlier.mkdir()
     for path in MIGRATIONS.glob("[0-9][0-9][0-9][0-9]_*.sql"):
-        if int(path.name[:4]) < 29:
+        if int(path.name[:4]) < limit:
             (earlier / path.name).symlink_to(path)
+    return earlier
+
+
+def _migrate_before_repair(dsn: str, tmp_path: Path) -> None:
+    earlier = _migrations_before(tmp_path, 29)
     assert len(migrate(dsn, earlier)) == 28
 
 
@@ -233,7 +238,8 @@ def test_forward_repair_adds_only_missing_states_and_preserves_existing(
             (tenant_id, account_id),
         ).fetchone()
 
-    assert migrate(admin_dsn, MIGRATIONS) == ["0029_migration_integrity_repair.sql"]
+    through_repair = _migrations_before(tmp_path, 30)
+    assert migrate(admin_dsn, through_repair) == ["0029_migration_integrity_repair.sql"]
     with psycopg.connect(admin_dsn) as conn:
         rows = conn.execute(
             "SELECT provider_id,event_key,status,updated_at FROM message_sync_state "
@@ -257,7 +263,7 @@ def test_forward_repair_adds_only_missing_states_and_preserves_existing(
     assert by_provider["missing-deleted"][0:2] == (None, "deleted")
     assert by_provider["missing-quarantined"][0:2] == (None, "quarantined")
     assert other_rows == [("missing-ready", None, "deleted")]
-    assert migrate(admin_dsn, MIGRATIONS) == []
+    assert migrate(admin_dsn, through_repair) == []
 
 
 def test_forward_repair_refuses_parser_mismatch_without_partial_write(
