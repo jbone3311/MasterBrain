@@ -1,11 +1,14 @@
 # Private archive-image OCR operator contract
 
-Status: checkpoint 5C design only. No `archive-image` command is implemented yet.
+Status: checkpoint 5C implemented and accepted at runtime revision `f658ace`;
+[CI 35836198307](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198307)
+and [restore 35836198414](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198414)
+are green.
 
 ## Purpose and invocation
 
 Publish the nonempty OCR text of one explicitly selected current image member from an
-already persisted archive inventory. The proposed private command is:
+already persisted archive inventory. The private command is:
 
 ```sh
 MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
@@ -81,3 +84,7 @@ retrieval; this command does not add a current archive-image search layer.
 
 This checkpoint authorizes no preview, batch, automatic archive traversal, scanner
 decision, scheduler, public route, current search, source effect or FOS-Master cutover.
+
+The accepted hosted run passed 2,652 PostgreSQL-backed Python tests, 134 browser
+contracts and all restricted worker/container gates. The populated restore passed.
+These gates do not establish live-source or production acceptance.

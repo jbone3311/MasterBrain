@@ -2,6 +2,29 @@
 
 Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
 
+## Verified private archive-image OCR command
+
+Checkpoint 5C design revision **3d9b9b9** and runtime revision **f658ace** passed
+[CI 35836198307](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198307)
+and [restore 35836198414](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198414),
+observed 2026-09-23 Pacific. Hosted CI passed **2,652 PostgreSQL-backed Python tests**,
+**134 browser contracts** and every restricted worker/container gate. The populated
+restore passed. These results do not establish live-source or production acceptance.
+
+- The private `masterbrain fileos archive-image` command requires one explicit
+  inventory/member/key, a distinct pinned OCR image, exact worker scopes,
+  non-consuming check mode, current forced-RLS selection and reauthentication around
+  the existing two-worker composition and 5B publication.
+- Normal output is limited to opaque identities, chunk count and replay state.
+  Blank, deferred, failed and unsupported OCR do not publish. Controller, CLI and
+  PostgreSQL regression tests cover the command; hosted restricted worker/container
+  gates remain green.
+- FOS-Master remains pinned at
+  `218d5caec2f20b9047fd3eb8e027dc671acf0c15`. The separate
+  [Claude 5D issue](https://github.com/jbone3311/CW-EmailBrain/issues/10) requests an
+  independent review of 5B persistence and a proposed current-only OCR search layer.
+  The issue is open; Claude has not submitted a branch or PR yet.
+
 ## Verified archive-member image OCR persistence
 
 Design revision **16d452a**, runtime revision **760a644** and correction revision
@@ -35,9 +58,10 @@ observed 2026-09-23 Pacific.
   two tenants / four encrypted objects / two identity bindings** with equal hashes,
   forced RLS and revocation state.
 
-No raw image/member byte, pixels or EXIF are stored. No private command, current
-search, preview, batch, scheduler, automatic fan-out, source effect or FOS-Master
-cutover is authorized. The next gate is one private explicit-target operator.
+No raw image/member byte, pixels or EXIF are stored. At the 5B checkpoint, no private
+command, current search, preview, batch, scheduler, automatic fan-out, source effect
+or FOS-Master cutover was authorized. The accepted 5C command above supersedes only
+that historical command limit.
 
 ## Verified one-member archive image OCR composition
 

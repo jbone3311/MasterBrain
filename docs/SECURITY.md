@@ -113,6 +113,17 @@ a completed approval job and the existing current attachment bridge. It publishe
 only bounded legacy page text, records the exact result digest and processor/policy,
 and never opens attachment bytes or grants document-approval authority.
 
+The private archive-image OCR command uses the existing exact-scope worker identity,
+private configuration and least-privileged database preflight. One current archive
+member is selected through forced RLS, then separately restricted archive and image
+workers process only that hash-bound member. Check mode does not select or read it.
+The controller reauthenticates around execution and the 5B publication transaction
+rechecks current parent/member identity, processor provenance and idempotency. Only
+complete nonempty OCR text may publish; normal output contains opaque identities and
+counts, never source locators, OCR content, image metadata, raw faults or credentials.
+The command passed hosted CI/container and populated restore at revision `f658ace`;
+live-source and production acceptance remain separate gates.
+
 ## Dedupe and file safety
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

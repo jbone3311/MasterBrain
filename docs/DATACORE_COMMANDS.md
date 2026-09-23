@@ -290,6 +290,38 @@ persisted. The derivative is retained-history-only: this command grants no curre
 search, preview, batch, recursion, automatic sibling continuation, scheduler, public
 route or source effect.
 
+## Publish one selected archive image OCR member
+
+Checkpoint 5C implements the accepted private command. Hosted
+[CI 35836198307](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198307)
+and [restore 35836198414](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198414)
+are green. For one current image member already named by its inventory
+and virtual locator, run:
+
+```sh
+MASTERBRAIN_DSN='postgresql://least-privileged-runtime/...' \
+  masterbrain fileos archive-image \
+  --config /private/operator/archive-member.json \
+  --inventory-id archive_inventory_0123456789abcdef0123456789abcdef \
+  --member-locator images/receipt.png \
+  --idempotency-key 93c5a004-81ab-45b6-8652-e8ced2b40e47 \
+  --check
+```
+
+The same closed version-1 archive config must additionally bind a separate immutable
+`image_ocr_image_id` digest. Check mode validates the private configuration, exact
+worker identity and database role without selecting a member, constructing either
+worker, reading source bytes or consuming the key. Remove `--check` only for the
+explicit reviewed selection. The archive reader releases one hash-bound member in
+memory; the separate image worker fully decodes and OCRs it. Only complete nonempty
+text is published through the current-parent/member and idempotency fences.
+
+Output is limited to opaque identities, chunk count, replay state and false source
+effects. Empty, deferred, failed, unsupported or stale selections receive a generic
+refusal without a partial derivative. Reuse the exact key after an uncertain result.
+No path, locator, OCR text, image dimensions, EXIF, bytes, worker fault or credential
+is returned. See the [operator contract](ARCHIVE_MEMBER_IMAGE_OPERATOR.md).
+
 ## Execute a sealed archive-member text batch
 
 After reviewing a preview, create an owner-private plan containing one current

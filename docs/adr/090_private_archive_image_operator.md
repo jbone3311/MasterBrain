@@ -1,6 +1,9 @@
 # ADR-090 — Private one-member archive-image OCR operator
 
-Status: proposed for checkpoint 5C; design only, with no command authority yet.
+Status: checkpoint 5C accepted and implemented in `f658ace`;
+[CI 35836198307](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198307)
+and [restore 35836198414](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198414)
+are green.
 
 ## Context
 
@@ -58,3 +61,9 @@ Rollback removes the command and controller. Existing 5A composition, 5B append-
 receipts and retained evidence remain valid. This decision grants no preview, batch,
 current-search activation, fan-out, scheduler, public mutation, source write or
 FOS-Master cutover.
+
+## Implementation
+
+The accepted hosted run passed 2,652 PostgreSQL-backed Python tests, 134 browser
+contracts and all restricted worker/container gates. Populated restore passed. No
+live-source or production acceptance is implied.

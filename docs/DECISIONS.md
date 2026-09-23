@@ -8,19 +8,18 @@ The documentation refresh changes explanations/navigation, not runtime privilege
 ADR-035 now defines the separate approved PDF source-to-search channel for ready
 mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion.
 
-## Proposed
-
-[ADR-090](adr/090_private_archive_image_operator.md) designs one private,
-authenticated archive-image OCR command using the accepted 5A composition and 5B
-publication contracts. It grants no runtime authority until checkpoint 5C is
-implemented and verified.
-
 ## Accepted
+
+[ADR-090](adr/090_private_archive_image_operator.md) defines the private,
+authenticated one-member archive-image OCR command using the accepted 5A composition
+and 5B publication contracts. Implemented in `f658ace`; hosted CI and populated
+restore are green. Current search remains a separate 5D proposal.
 
 [ADR-089](adr/089_archive_member_image_persistence.md) defines append-only publication
 for one explicit, nonempty, successful archive-image OCR result with a separate forced-
 RLS receipt, exact current-parent/member fence and image-specific provenance.
-Implemented through `63b478d`; command, search, batch and fan-out remain prohibited.
+Implemented through `63b478d`; that checkpoint did not yet authorize a command,
+search, batch or fan-out. ADR-090 later authorized one private command.
 
 [ADR-088](adr/088_archive_member_image_ocr.md) composes only one explicit current,
 hash-bound archive member with the separate image worker, returns a bounded in-memory
@@ -32,7 +31,8 @@ real two-image acceptance is
 non-networked image worker with exact byte/format binding, full decode, single-frame
 policy, 25-megapixel/20-second/5,000-character limits and no EXIF, database, command
 or external-vision effects. The isolated worker is implemented through `512185b`;
-archive composition and publication remain unimplemented.
+archive composition and publication were deferred at that checkpoint and are covered
+by later ADRs.
 
 [ADR-086](adr/086_sealed_archive_document_batch.md) requires a private canonical plan
 of explicit locator/expected-format/key triples, sequential execution through both

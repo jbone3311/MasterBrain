@@ -11,10 +11,14 @@ images, plus a separately ranked current-only archive-document layer with an exa
 parent/member/receipt fence. Private document preview and sealed document batches are
 implemented. The image/OCR donor inventory, closed protocol, isolated worker, real
 container, golden parity gate, explicit one-member archive composition and append-only
-retained-history image derivative are also implemented. The next package is a private
-operator for one explicit inventory/member/key using both immutable worker images and
-the accepted transaction. Automatic selection, current search, fan-out, KnowledgeCore
-projection and all source effects remain later packages.
+retained-history image derivative are also implemented. The private operator for one
+explicit inventory/member/key using both immutable worker images and the accepted
+transaction is accepted at revision `f658ace` with hosted
+CI/container and populated restore green. The next package is 5D current-only
+archive-image OCR search. [GitHub issue #10](https://github.com/jbone3311/CW-EmailBrain/issues/10)
+prepares an independent 5B review and 5D proposal for Claude on a separate branch and
+PR; no Claude branch or PR has been submitted yet. Automatic selection, fan-out,
+KnowledgeCore projection and all source effects remain later packages.
 
 ## Phase 0 — Identity and baseline (current)
 

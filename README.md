@@ -68,13 +68,13 @@ FileOS sources ┘       │              │                │
 | Private archive-document preview | Implemented; metadata-only PostgreSQL/restore gates green |
 | Sealed archive-document batches | Implemented; fail-stop exact-retry PostgreSQL/restore gates green |
 | Exact archive-contained image OCR | Implemented through retained-history persistence; chained-container/PostgreSQL/restore gates green |
+| Private archive-image OCR command | Implemented; hosted CI/container and populated restore gates green |
 | Current-only bridged Email Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Email attachment occurrence/text bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Approved Email PDF derivative bridge | Implemented additive library path; hosted PostgreSQL and restore gates green |
 | Current-only layered Email-family Brain API search | Implemented; hosted PostgreSQL and restore gates green |
 | Grouped current FileOS + Email-family + KnowledgeCore search | Implemented; hosted PostgreSQL and restore gates green |
 | Current-source coverage/readiness status | Implemented; hosted PostgreSQL and restore gates green |
-| Archive images and OCR | Isolated worker and donor parity proven; archive integration/persistence not implemented |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |
 | Hosted identity, operations, live sources | Not accepted |
@@ -118,6 +118,7 @@ roadmap item is not an implementation claim.
 - [Archive image/OCR donor inventory and closed contract](docs/ARCHIVE_IMAGE_OCR.md)
 - [One-member archive image/OCR composition](docs/ARCHIVE_MEMBER_IMAGE_OCR.md)
 - [Archive-member image OCR persistence](docs/ARCHIVE_MEMBER_IMAGE_PERSISTENCE.md)
+- [Private archive-image OCR operator](docs/ARCHIVE_MEMBER_IMAGE_OPERATOR.md)
 - [KnowledgeCore reviewed assertions](docs/KNOWLEDGECORE.md)
 - [Acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)

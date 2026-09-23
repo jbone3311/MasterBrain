@@ -2,12 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 5C — private archive-image operator design.** Work occurs on
-`codex/masterbrain-foundation` in PR #4. Define one owner-private command for an
-explicit inventory/member/key that reuses both immutable worker images and the
-accepted 5B transaction, with non-consuming check mode and repeated authorization.
-Authorize no preview, batch, current search, scheduling, automatic fan-out or
-FOS-Master cutover.
+**Checkpoint 5D — current-only archive-image OCR search proposal.** Work is tracked in
+[GitHub issue #10](https://github.com/jbone3311/CW-EmailBrain/issues/10): the Claude
+handoff requests an independent review of 5B persistence and a current search layer
+on a separate branch and PR. The issue exists; Claude has not submitted a branch or
+PR. Checkpoint 5C is accepted on `codex/masterbrain-foundation` in PR #4. Any 5D
+implementation requires its own review and hosted gates before integration.
 
 ## Completed gates
 
@@ -215,16 +215,24 @@ FOS-Master cutover.
   are green. The restore verified 72 tables / 238 rows. Exact, equivalent and
   concurrent replay, processor evolution, tenant/current fences, append-only RLS and
   image-specific provenance are proven.
+- Checkpoint 5C private archive-image operator runtime `f658ace` passed 2,652 hosted
+  PostgreSQL-backed Python tests, 134 browser contracts, every restricted
+  worker/container gate and populated restore; hosted
+  [CI 35836198307](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198307)
+  and [restore 35836198414](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198414)
+  are green. This accepts one explicit image member/key command, not live-source or
+  production operation.
 
 ## Current work
 
-- Define a private one-member archive-image command without preview, batch, search,
-  scheduling or automatic fan-out.
+- Track the separate [Claude 5D workstream](https://github.com/jbone3311/CW-EmailBrain/issues/10)
+  for independent review of 5B persistence and a proposed current-only OCR search
+  layer. No Claude branch or PR has been submitted yet.
 
 ## Deferred by design
 
-- Archive-image/OCR operator, current search and batch scheduling until each separate
-  contract is accepted.
+- Archive-image/OCR current search and batch scheduling until each separate contract
+  is accepted.
 - Automatic archive-document fan-out and scheduling.
 - Automatic knowledge extraction, graph traversal and synthesis until reviewed
   known-answer evaluation exists.

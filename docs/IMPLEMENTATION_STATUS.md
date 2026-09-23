@@ -168,7 +168,11 @@ mean hosted, live-source accepted, or production ready.
   metadata. Complete nonempty results may enter a separate append-only, forced-RLS
   retained-history derivative with exact replay/current fencing and image-specific
   receipt/provenance. Real immutable containers, PostgreSQL and restore are green. It
-  adds no automatic selection, current search, command, batch or fan-out.
+  adds no automatic selection, current search, batch or fan-out.
+- Private `masterbrain fileos archive-image` one-member command with distinct pinned
+  OCR image, exact worker scopes, non-consuming check, reauthentication and
+  content-free output. Hosted CI/container and populated restore accepted in
+  `f658ace`; no live-source or production acceptance is claimed.
 
 ## Designed, not implemented
 
@@ -176,9 +180,8 @@ mean hosted, live-source accepted, or production ready.
   source coverage
   accounting and any redirect of legacy Email search.
 - Scheduled/incremental FileOS scanning, source cursors, automatic rebuild and
-  generation scheduling/global-search cutover. Archive-member image/OCR private
-  operator, current search, previews, batches and automatic archive fan-out remain
-  follow-on gates and are prohibited by the persistence tranche.
+  generation scheduling/global-search cutover. Archive-member image/OCR current
+  search, previews, batches and automatic archive fan-out remain follow-on gates.
 - Automatic KnowledgeCore extraction, known-answer quality evaluation, graph traversal,
   semantic ranking and Email/FOS knowledge migration.
 - Unified cross-source synthesis and external LLM client integrations.
