@@ -2,11 +2,12 @@
 
 ## Active checkpoint
 
-**Checkpoint 4V — archive-contained non-text derivative design.** Work occurs on
+**Checkpoint 4V — archive-contained non-text derivative runtime.** Work occurs on
 `codex/masterbrain-foundation` in PR #4. Define how one explicitly selected current
 archive member may enter the existing PDF/Office extraction path without publishing
 raw bytes, bypassing member/parent hash fences, weakening isolated-worker limits or
-creating automatic archive fan-out. Design and hostile-format gates precede runtime.
+creating automatic archive fan-out. ADR-083 and the closed contract are accepted;
+implement the one-member orchestration, separate receipt, private command and gates.
 
 ## Completed gates
 
@@ -159,8 +160,8 @@ creating automatic archive fan-out. Design and hostile-format gates precede runt
 
 ## Current work
 
-- Specify one hash-bound archive-member PDF/Office derivative path that reuses existing
-  isolated document contracts without raw-byte persistence or automatic fan-out.
+- Implement the accepted hash-bound archive-member PDF/Office derivative path with a
+  separate receipt, exact retry and two isolated worker boundaries.
 
 ## Deferred by design
 
