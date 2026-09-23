@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-096](adr/096_fileos_inventory_policy_identity.md) binds new FileOS completion
+receipts to a validated versioned inventory-policy digest and refuses absence
+inference across unknown or changed policies. It does not authorize automatic
+rebaselining or donor cutover. Implementation and hosted verification are pending.
+
 [ADR-095](adr/095_fileos_mass_loss_guard.md) refuses a new FileOS completion when
 at least 10 prior items and at least half the prior inventory disappear. It does
 not authorize a bypass, policy switch or donor cutover. Implemented; hosted CI
