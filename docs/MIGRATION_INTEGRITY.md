@@ -2,8 +2,7 @@
 
 This contract closes [issue #5](https://github.com/jbone3311/CW-EmailBrain/issues/5)
 without changing the checksums of migrations already applied. The design is
-[ADR-091](adr/091_migration_integrity.md); implementation and hosted verification
-are pending.
+[ADR-091](adr/091_migration_integrity.md); hosted verification is pending.
 
 ## Identities and visibility
 

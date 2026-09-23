@@ -43,6 +43,15 @@ one schema-validated result. Production must preserve or strengthen that boundar
 
 ## Release and rollback
 
+Schema migrations use a dedicated administrative credential whose effective role
+has `BYPASSRLS` or superuser visibility as well as the needed DDL permissions. The
+migrator rejects any other role before creating its ledger or changing schema;
+runtime and worker credentials must never inherit this privilege. In particular,
+older 0006/0008 receipts made under a non-bypass table owner do not prove that their
+cross-tenant reads ran. Before applying 0029, audit missing sync-state keys and
+parser mismatches with the actual migration identity. A mismatch stops the rollout
+for reviewed evidence repair. See the [migration-integrity contract](MIGRATION_INTEGRITY.md).
+
 Build immutable artifacts with dependency locks, SBOM/provenance, schema compatibility
 checks, migrations with rollback/forward recovery, and staged health gates. Deploy
 additively, backfill from immutable evidence, compare counts/digests/query answers,
