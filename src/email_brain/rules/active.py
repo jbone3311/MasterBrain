@@ -19,9 +19,11 @@ def current_rules(conn: psycopg.Connection[dict[str, Any]]) -> dict[str, Any]:
 
 def classify(rules: list[dict[str, Any]], revision: int, sender: str) -> dict[str, Any]:
     # Malformed/ambiguous sender headers fail closed; domain matching is not sender auth.
+    # Runtime capability is checked at package startup. TypeError is a defect,
+    # never an ordinary malformed sender or a successful empty classification.
     try:
         address = parseaddr(sender, strict=True)[1]
-    except (ValueError, TypeError):
+    except ValueError:
         address = ""
     domain = address.rsplit("@", 1)[1].lower() if address.count("@") == 1 else ""
     compiled = []
