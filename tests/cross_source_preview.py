@@ -101,6 +101,8 @@ def new_tenant(admin: str) -> tuple[TenantContext, UUID]:
 
 def publish_files(store: Store, ctx: TenantContext, root: Path, files: dict[str, str]) -> None:
     root.mkdir()
+    # Match the private controller: canonicalize our newly created synthetic root.
+    root = root.resolve(strict=True)
     for name, text in files.items():
         (root / name).write_text(text, encoding="utf-8")
     core = DataCoreStore(store)
