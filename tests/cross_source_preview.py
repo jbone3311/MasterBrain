@@ -27,6 +27,7 @@ import psycopg
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -110,7 +111,8 @@ def publish_files(store: Store, ctx: TenantContext, root: Path, files: dict[str,
     published = FileOSAdapter(core).publish_snapshot(
         ctx, root, manifest, key, code_revision=REVISION
     )
-    assert published.counts == {"extracted": len(files)}
+    if published.counts != {"extracted": len(files)}:
+        raise RuntimeError("Synthetic file publication did not complete")
     ids = {item["version_id"]: item["item_id"] for item in manifest["items"]}
     receipt = core.complete_fileos_run(
         ctx, manifest, key, outcomes=published.counts,
@@ -156,7 +158,9 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
         )
         for n, (subject, body) in enumerate(MAIL)
     ]
-    assert store.ingest_page(ctx, account, None, "trial-page-1", messages) == len(MAIL)
+    count = store.ingest_page(ctx, account, None, "trial-page-1", messages)
+    if count != len(MAIL):
+        raise RuntimeError("Synthetic email ingestion did not complete")
     core = DataCoreStore(store)
     for query in ("Cedar Harbor", "Juniper Plaza"):
         for hit in store.search(ctx, SearchRequest(query=query)):
@@ -199,6 +203,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--synthetic-preview", action="store_true", required=True)
     parser.add_argument("--port", type=int, default=8766)
+    parser.add_argument(
+        "--self-test", action="store_true", help="validate then clean up without a browser"
+    )
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535:
         parser.error("port must be 1024..65535")
@@ -242,6 +249,30 @@ def main() -> int:
         stage = "seeding and validating fictional evidence"
         with tempfile.TemporaryDirectory(prefix="masterbrain-fictional-") as folder:
             preview = build_preview(Store(runtime), admin, Path(folder))
+            if args.self_test:
+                with TestClient(
+                    preview.app, base_url="http://127.0.0.1",
+                    headers={"Authorization": "Bearer " + preview.token},
+                ) as client:
+                    response = client.post(
+                        "/v1/brain/current-search", json={"query": "Cedar Harbor"}
+                    )
+                    data = response.json()
+                    if response.status_code != 200 or any(
+                        len(data["layers"][key]) != 2 for key in ("email_messages", "fileos")
+                    ):
+                        raise RuntimeError("Synthetic startup search failed")
+                    for key in ("email_messages", "fileos"):
+                        evidence_id = data["layers"][key][0]["evidence_id"]
+                        content = client.post(
+                            f"/v1/brain/evidence/{evidence_id}/content", json={"max_chars": 4000}
+                        )
+                        if content.status_code != 200:
+                            raise RuntimeError("Synthetic startup citation failed")
+                    if client.get("/v1/brain/current-coverage").status_code != 200:
+                        raise RuntimeError("Synthetic startup coverage failed")
+                print("Synthetic browser-trial self-test passed: 2 emails, 2 files, cited content.")
+                return 0
             url = f"http://127.0.0.1:{args.port}/trial#{preview.token}"
             listener = socket.create_server(("127.0.0.1", args.port))
             opener = threading.Timer(1.5, webbrowser.open, args=(url,))

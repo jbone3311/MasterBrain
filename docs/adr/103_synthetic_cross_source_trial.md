@@ -37,9 +37,13 @@ Run deterministic PostgreSQL tests using the same setup helper and real API:
 exact email/file counts, no-match behavior, bounded cited source text, freshness,
 coverage, unchanged fixture hashes, two nonempty tenants, missing/insufficient
 scopes, Host rejection and non-test/remote database refusal. Static asset checks
-cover no source HTML execution or credential persistence. Full repository CI and
-populated restore remain required. Browser interaction on the owner's actual Mac
-is an acceptance step, not implied by API/static tests.
+cover no source HTML execution or credential persistence. A Docker-backed self-test
+executes the actual launcher setup/cleanup without opening a browser; Node tests
+exercise the actual browser script with a controlled DOM/fetch harness. The restore
+workflow now runs for every PR and main push so documentation-only release heads
+receive their own restore receipt, without changing permissions or drill behavior.
+Full repository CI and populated restore remain required. Browser interaction on
+the owner's actual Mac is an acceptance step, not implied by API/static tests.
 
 Stop with Ctrl-C to remove only the created container and fictional temp root.
 Forced termination may require removing that named trial container through Docker

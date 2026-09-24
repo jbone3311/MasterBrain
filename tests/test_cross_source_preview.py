@@ -1,6 +1,10 @@
 """Known-answer, authorization and source-integrity acceptance for the browser trial."""
 
 import hashlib
+import os
+import shutil
+import subprocess
+import sys
 from dataclasses import replace
 
 import pytest
@@ -149,3 +153,29 @@ def test_browser_assets_do_not_embed_credentials_or_execute_source_text():
 def test_preview_refuses_non_test_or_remote_database_before_any_write(dsn, tmp_path):
     with pytest.raises(ValueError, match="disposable loopback"):
         build_preview(Store(dsn), dsn, tmp_path)
+
+
+@pytest.mark.postgres
+def test_actual_disposable_docker_launcher():
+    if not shutil.which("docker"):
+        if os.environ.get("CI"):
+            pytest.fail("CI must run the actual Docker-backed trial startup")
+        pytest.skip("Docker required for the disposable launcher smoke test")
+    result = subprocess.run(
+        [sys.executable, str(ASSETS.parent / "cross_source_preview.py"),
+         "--synthetic-preview", "--self-test"],
+        capture_output=True, text=True, timeout=240, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Synthetic browser-trial self-test passed" in result.stdout
+
+
+def test_browser_javascript_behaviors():
+    if not shutil.which("node"):
+        if os.environ.get("CI"):
+            pytest.fail("CI must run browser-script behavior tests")
+        pytest.skip("Node required for browser-script tests")
+    subprocess.run(
+        ["node", "--test", str(ASSETS.parent / "cross_source_trial.test.cjs")],
+        capture_output=True, text=True, timeout=30, check=True,
+    )
