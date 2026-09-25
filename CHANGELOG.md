@@ -2,6 +2,9 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Added an opt-in DBA-bound, one-tenant PostgreSQL login fence with restrictive
+  policies over existing forced-RLS tables (ADR-108, migration 0037). The shared
+  runtime credential is unchanged; issue #7 and hosted isolation remain open.
 - Added independently ranked current archive-image OCR search through exact
   receipt/parent/member fencing (ADR-107, migration 0036). Retained history and
   FileOS source behavior are unchanged; no hosted or cutover claim.

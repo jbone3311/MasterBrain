@@ -67,6 +67,12 @@ privileged-administrator monitoring or restorable backups.
 Migration 0036 adds a transactionally built archive-image receipt index. It is
 verified on disposable synthetic data only; a populated live table requires a
 reviewed lock budget or online-index migration path before rollout (issue #9).
+Migration 0037 adds restrictive policies to every existing forced-RLS tenant
+table. Apply only after a reviewed DDL lock budget and inventory check. Its
+tenant-specific login is opt-in through a superuser provisioning helper; never
+serve multiple tenants with one scoped DSN. The current shared runtime login is
+still vulnerable under arbitrary SQL, so issue #7 remains open. See the
+[staging/rollback contract](TENANT_LOGIN_FENCE.md).
 
 Build immutable artifacts with dependency locks, SBOM/provenance, schema compatibility
 checks, migrations with rollback/forward recovery, and staged health gates. Deploy

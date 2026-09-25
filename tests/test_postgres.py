@@ -32,7 +32,7 @@ from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
 from email_brain.connectors.fastmail import MAIL, FastmailReadClient
 from email_brain.domain.models import TenantContext
-from email_brain.migrate import grant_runtime, migrate
+from email_brain.migrate import grant_runtime, grant_tenant_runtime, migrate
 from email_brain.schemas import FeaturePayload, ProposalRequest, ReviewRequest, SearchRequest
 from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError, NotFound, Store
 from email_brain.sync import Checkpoint, ReadWorker
@@ -138,6 +138,245 @@ def tenant(database: tuple[Store, str]) -> tuple[TenantContext, UUID]:
         ),
         uuid4(),
     ), account_id
+
+
+def test_tenant_login_fence_contains_forged_sql_context(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    """A stolen single-tenant DSN cannot turn caller-settable GUCs into another tenant."""
+    _, admin = database
+    ctx, own_account = tenant
+    other_tenant, other_actor = uuid4(), uuid4()
+    other_account, own_binding, other_binding = uuid4(), uuid4(), uuid4()
+    issuer = "fence-issuer-" + uuid4().hex
+    role = "test_tenant_runtime_" + uuid4().hex[:12]
+    auxiliary_role = "test_tenant_aux_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Other fictional tenant')",
+            (other_tenant,),
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+        conn.execute(
+            "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+            "VALUES (%s,'fence_other','email','Other fictional source')",
+            (other_tenant,),
+        )
+        conn.execute(
+            "INSERT INTO mail_accounts(id,tenant_id,provider,address,secret_ref) "
+            "VALUES (%s,%s,'fastmail','other@example.invalid','synthetic:none')",
+            (other_account, other_tenant),
+        )
+        for binding_id, tenant_id, actor_id, subject in (
+            (own_binding, ctx.tenant_id, ctx.actor_id, "fence-own"),
+            (other_binding, other_tenant, other_actor, "fence-other"),
+        ):
+            conn.execute(
+                "INSERT INTO external_identities(id,tenant_id,actor_id,issuer,subject,"
+                "client_id,scopes,client_kind) VALUES (%s,%s,%s,%s,%s,"
+                "'fence-client',ARRAY['email.search'],'human')",
+                (binding_id, tenant_id, actor_id, issuer, subject),
+            )
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                sql.Identifier(role), sql.Literal(password)
+            )
+        )
+        grant_tenant_runtime(conn, role, ctx.tenant_id)
+        conn.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(sql.Identifier(auxiliary_role)))
+        conn.execute(
+            sql.SQL("GRANT {} TO {} WITH ADMIN FALSE, INHERIT FALSE, SET TRUE").format(
+                sql.Identifier(auxiliary_role), sql.Identifier(role)
+            )
+        )
+        assert conn.execute(
+            "SELECT tenant_id FROM masterbrain_tenant_login_bindings WHERE role_name=%s",
+            (role,),
+        ).fetchone() == (ctx.tenant_id,)
+        assert conn.execute(
+            "SELECT count(*) FROM audit_events WHERE event_type='tenant_login.insert' "
+            "AND resource_type='database_role' AND resource_id=%s",
+            (role,),
+        ).fetchone() == (1,)
+        with pytest.raises(psycopg.errors.RaiseException), conn.transaction():
+            conn.execute(
+                "UPDATE masterbrain_tenant_login_bindings SET tenant_id=%s "
+                "WHERE role_name=%s",
+                (other_tenant, role),
+            )
+        assert conn.execute(
+            "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+            "WHERE n.nspname='public' AND c.relkind='r' AND "
+            "(c.relname='tenants' OR EXISTS (SELECT 1 FROM pg_attribute a "
+            "WHERE a.attrelid=c.oid AND a.attname='tenant_id' AND a.attnum>0)) "
+            "AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity "
+            "OR NOT EXISTS (SELECT 1 FROM pg_policy p "
+            "WHERE p.polrelid=c.oid AND p.polname='tenant_login_fence' "
+            "AND NOT p.polpermissive))"
+        ).fetchall() == []
+        with pytest.raises(ValueError, match="already bound"):
+            grant_tenant_runtime(conn, role, other_tenant)
+    runtime_dsn = make_conninfo(admin, user=role, password=password)
+    with Store(runtime_dsn).transaction(ctx) as conn:
+        assert conn.execute("SELECT id FROM tenants").fetchall() == [{"id": ctx.tenant_id}]
+        assert conn.execute(
+            "SELECT public.masterbrain_tenant_login_allows(%s) AS allowed",
+            (other_tenant,),
+        ).fetchone() == {"allowed": False}
+        conn.execute(
+            "INSERT INTO audit_events(tenant_id,actor_id,request_id,event_type,"
+            "resource_type,outcome) VALUES (%s,%s,%s,'allowed','tenant','ok')",
+            (ctx.tenant_id, ctx.actor_id, uuid4()),
+        )
+        conn.execute(
+            "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+            "VALUES (%s,'fence_own','email','Own fictional source')",
+            (ctx.tenant_id,),
+        )
+    with psycopg.connect(runtime_dsn) as conn:
+        conn.execute("SELECT set_config('email_brain.tenant_id', %s, true)", (str(other_tenant),))
+        conn.execute("SELECT set_config('email_brain.actor_id', %s, true)", (str(other_actor),))
+        for setting, forged_value in (
+            ("email_brain.auth_issuer", "forged-issuer"),
+            ("email_brain.auth_subject", "forged-subject"),
+            ("email_brain.auth_client", "forged-client"),
+        ):
+            conn.execute("SELECT set_config(%s,%s,true)", (setting, forged_value))
+        assert conn.execute(
+            "SELECT id FROM public.resolve_external_identity(%s,'fence-other','fence-client')",
+            (issuer,),
+        ).fetchall() == []
+        assert conn.execute(
+            "SELECT id FROM public.resolve_external_identity(%s,'fence-own','fence-client')",
+            (issuer,),
+        ).fetchone() == (own_binding,)
+        assert conn.execute(
+            "SELECT public.lock_recovery_owners(%s,%s,%s)",
+            (other_account, other_actor, other_actor),
+        ).fetchone() == (False,)
+        assert conn.execute("SELECT id FROM tenants WHERE id=%s", (other_tenant,)).fetchall() == []
+        assert conn.execute(
+            "SELECT tenant_id,user_id FROM tenant_memberships WHERE tenant_id=%s",
+            (other_tenant,),
+        ).fetchall() == []
+        assert conn.execute(
+            "SELECT id FROM brain_sources WHERE tenant_id=%s", (other_tenant,)
+        ).fetchall() == []
+        assert conn.execute(
+            "UPDATE brain_sources SET status='paused' WHERE tenant_id=%s "
+            "AND id='fence_other'",
+            (other_tenant,),
+        ).rowcount == 0
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,'fence_forged','email','Forged source')",
+                (other_tenant,),
+            )
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute(
+                "INSERT INTO audit_events(tenant_id,actor_id,request_id,event_type,"
+                "resource_type,outcome) VALUES (%s,%s,%s,'forged','tenant','ok')",
+                (other_tenant, other_actor, uuid4()),
+            )
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute("SELECT * FROM masterbrain_tenant_login_bindings")
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute("SET ROLE masterbrain_identity_admin")
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute("SET SESSION AUTHORIZATION masterbrain_identity_admin")
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute("SET ROLE masterbrain_tenant_runtime")
+        conn.execute("SELECT set_config('email_brain.tenant_id', %s, true)", (str(ctx.tenant_id),))
+        assert conn.execute(
+            "SELECT public.lock_recovery_owners(%s,%s,%s)",
+            (own_account, ctx.actor_id, ctx.actor_id),
+        ).fetchone() == (True,)
+        conn.execute(sql.SQL("SET ROLE {}").format(sql.Identifier(auxiliary_role)))
+        assert conn.execute("SELECT session_user <> current_user").fetchone() == (True,)
+        assert conn.execute(
+            "SELECT public.masterbrain_tenant_login_allows(%s)", (other_tenant,)
+        ).fetchone() == (False,)
+        conn.execute("RESET ROLE")
+    # Even an administrator accidentally removing a mapping leaves a marker member
+    # fail-closed instead of silently reverting to the shared-login behavior.
+    with psycopg.connect(admin) as conn:
+        conn.execute("DELETE FROM masterbrain_tenant_login_bindings WHERE role_name=%s", (role,))
+        assert conn.execute(
+            "SELECT count(*) FROM audit_events WHERE event_type='tenant_login.delete' "
+            "AND resource_type='database_role' AND resource_id=%s",
+            (role,),
+        ).fetchone() == (1,)
+        with pytest.raises(ValueError, match="cannot be reused"):
+            grant_tenant_runtime(conn, role, other_tenant)
+    with psycopg.connect(runtime_dsn) as conn:
+        conn.execute("SELECT set_config('email_brain.tenant_id', %s, true)", (str(ctx.tenant_id),))
+        assert conn.execute("SELECT id FROM tenants WHERE id=%s", (ctx.tenant_id,)).fetchall() == []
+
+
+def test_tenant_runtime_enrollment_refuses_new_unfenced_table(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    _, admin = database
+    ctx, _ = tenant
+    role = "test_unfenced_runtime_" + uuid4().hex[:12]
+    table = "test_unfenced_" + uuid4().hex[:12]
+    with psycopg.connect(admin) as conn:
+        conn.execute(sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS").format(
+            sql.Identifier(role)
+        ))
+        conn.execute(sql.SQL("CREATE TABLE public.{} (tenant_id uuid)").format(
+            sql.Identifier(table)
+        ))
+        conn.execute(sql.SQL("ALTER TABLE public.{} ENABLE ROW LEVEL SECURITY").format(
+            sql.Identifier(table)
+        ))
+        conn.execute(sql.SQL("ALTER TABLE public.{} FORCE ROW LEVEL SECURITY").format(
+            sql.Identifier(table)
+        ))
+        with pytest.raises(ValueError, match="inventory is incomplete"):
+            grant_tenant_runtime(conn, role, ctx.tenant_id)
+        assert conn.execute(
+            "SELECT 1 FROM masterbrain_tenant_login_bindings WHERE role_name=%s",
+            (role,),
+        ).fetchone() is None
+        conn.execute(sql.SQL("DROP TABLE public.{}").format(sql.Identifier(table)))
+
+
+def test_tenant_runtime_enrollment_refuses_inherited_table_owner(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    _, admin = database
+    ctx, _ = tenant
+    role = "test_owner_member_" + uuid4().hex[:12]
+    owner = "test_table_owner_" + uuid4().hex[:12]
+    table = "test_owned_" + uuid4().hex[:12]
+    with psycopg.connect(admin) as conn:
+        conn.execute(sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS").format(
+            sql.Identifier(role)
+        ))
+        conn.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(sql.Identifier(owner)))
+        conn.execute(sql.SQL("CREATE TABLE public.{} (tenant_id uuid)").format(
+            sql.Identifier(table)
+        ))
+        conn.execute(sql.SQL("ALTER TABLE public.{} OWNER TO {}").format(
+            sql.Identifier(table), sql.Identifier(owner)
+        ))
+        conn.execute(sql.SQL("GRANT {} TO {}").format(
+            sql.Identifier(owner), sql.Identifier(role)
+        ))
+        with pytest.raises(ValueError, match="inherits unsafe authority"):
+            grant_tenant_runtime(conn, role, ctx.tenant_id)
+        conn.execute(sql.SQL("REVOKE {} FROM {}").format(
+            sql.Identifier(owner), sql.Identifier(role)
+        ))
+        conn.execute(sql.SQL("DROP TABLE public.{}").format(sql.Identifier(table)))
+        conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(owner)))
+        conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(role)))
 
 
 def item(key: str = "e1", body: str = "Melron investment briefing") -> IngestItem:

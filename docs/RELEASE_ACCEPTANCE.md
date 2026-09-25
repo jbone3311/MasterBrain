@@ -72,6 +72,11 @@ production or FileOS cutover gates below.
 
 - Threat model, least-privilege identities, RLS, network isolation, key rotation,
   dependency/container scans and parser sandbox review are accepted.
+- No shared data credential serves multiple tenants. Tenant-specific database
+  logins are bound to one tenant independently of caller-settable GUCs; an
+  arbitrary-SQL/stolen-DSN two-tenant test, API/worker routing, rotation and
+  restore drill prove containment before issue #7 can close. ADR-108's opt-in
+  synthetic login fence alone is insufficient.
 - Retention, export, purge and legal hold cover originals, derivatives, indexes,
   summaries, caches, logs and backups.
 - Privacy-safe request/error events have stable correlation IDs and codes without
