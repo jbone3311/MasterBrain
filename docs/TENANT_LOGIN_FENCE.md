@@ -4,6 +4,18 @@ Status: synthetic opt-in containment primitive under [ADR-108](adr/108_tenant_lo
 Migration 0037 does **not** change the existing shared runtime login or close
 [issue #7](https://github.com/jbone3311/MasterBrain/issues/7).
 
+[ADR-109](adr/109_tenant_database_routing.md) adds an opt-in `email-brain serve
+--tenant-db-config /absolute/private/routes.json` path. Its version-1 JSON has
+`identity_dsn` and a `tenants` object keyed by canonical UUID, each value a
+distinct explicit PostgreSQL DSN on the same database. The owner-only file must
+be regular, no-follow, mode `0600` under a mode-`0700` owner directory outside
+the checkout/synchronized folders. The lookup login has no public-table grants;
+the DBA provisions it with `grant_identity_lookup(conn, role)`. That helper
+explicitly grants only the exact resolver; ordinary PUBLIC function/catalog
+privileges still apply. The service selects a tenant DSN *after* verified-token
+identity resolution and checks its immutable login binding before tenant SQL.
+Missing/wrong/shared routes fail closed. Never put these DSNs in Git or logs.
+
 ## Contract
 
 `masterbrain_tenant_login_bindings` records one database login to one tenant. Only a
@@ -36,8 +48,9 @@ Apply 0037 with the dedicated migrator during a reviewed lock window: adding a
 policy to every forced-RLS table takes DDL locks and is not an online production
 rollout claim. Create a unique login per fictional/staging tenant with no
 `SUPERUSER`, `BYPASSRLS`, `CREATEROLE`, ownership or privileged membership; assign
-one tenant through the provisioning helper. Keep its DSN private. Test the API and
-workers with tenant-specific DSNs before routing any real traffic. Never reuse one
+one tenant through the provisioning helper. Keep its DSN private. Test the opt-in
+API route and private workers with tenant-specific DSNs before routing any real
+traffic. Never reuse one
 scoped DSN across tenants. Review credential creation, rotation, pooling, identity
 bootstrap and a two-tenant restore before considering hosted use.
 
@@ -50,11 +63,11 @@ interpret their synthetic CI as hosted containment.
 
 ## Evidence and remaining work
 
-The synthetic PostgreSQL regression uses a real non-superuser login with two
+The synthetic PostgreSQL regression uses real non-superuser logins with two
 fictional tenants. It proves own-tenant read/write, wrong-tenant read/write
 denial under forged GUCs, identity-admin/session-role switch denial, stable
 `session_user` under an allowed harmless role switch, mapping removal failure
-closed, and policy inventory coverage. This does not prove an API SQL-injection
-path exists or is absent. Tenant-aware DSN routing, credential lifecycle,
-independent security review, operational isolation and live rollout evidence
-remain open under issue #7.
+closed, policy inventory coverage, two-tenant API search and wrong/missing/shared
+route refusal. This does not prove an API SQL-injection path exists or is absent.
+Worker routing, credential lifecycle, independent security review, operational
+isolation and live rollout evidence remain open under issue #7.

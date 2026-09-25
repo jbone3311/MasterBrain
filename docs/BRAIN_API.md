@@ -130,6 +130,13 @@ mapped administratively; source content cannot request scopes. Effects require a
 proposal, current authorization, policy evaluation, idempotency key, preview, approval
 where required, and an audit receipt. Initial release is read-only.
 
+An opt-in local service configuration resolves a verified identity through a
+table-blind lookup login and routes its tenant to a distinct DBA-bound data login.
+The route is server-owned; API fields cannot select a DSN. The older single-DSN
+prototype remains available but is not hosted multi-tenant containment. See
+[ADR-109](adr/109_tenant_database_routing.md) and
+[the tenant-login contract](TENANT_LOGIN_FENCE.md).
+
 ## Client guidance
 
 There is no deployed MCP server or certified Claude, Grok or ChatGPT adapter yet.

@@ -53,6 +53,7 @@ FileOS sources ┘       │              │                │
 | Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
 | Fictional Email/FileOS browser trial with citation drill-down | Merged and hosted-test verified; interactive Mac acceptance pending |
 | Privacy-safe API failure correlation | Implemented; production log collection and alerting pending |
+| Opt-in tenant-routed API database access | Synthetic two-tenant API path with separate exact-lookup and bound data logins; private workers, credential lifecycle and hosted acceptance pending |
 | Typed reviewed travel/bill memory | Working narrow prototype |
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
 | FileOS scanner/reconciler inventory classifier | Behavior-identical donor extraction; 3,000-path parity, not yet wired into snapshots |

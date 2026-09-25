@@ -73,6 +73,13 @@ tenant-specific login is opt-in through a superuser provisioning helper; never
 serve multiple tenants with one scoped DSN. The current shared runtime login is
 still vulnerable under arbitrary SQL, so issue #7 remains open. See the
 [staging/rollback contract](TENANT_LOGIN_FENCE.md).
+ADR-109 adds an opt-in `serve --tenant-db-config` path using an exact-lookup-only
+login plus distinct DBA-bound tenant logins. The private owner-only route file
+contains explicit DSNs and is never passed to a client; the service refuses a
+missing route, a wrong binding and a shared/unbound runtime DSN before tenant
+queries. This synthetic path does not rotate/revoke credentials, route the
+separate worker commands, or establish hosted safety. Keep the old single-DSN
+mode local-only; do not deploy it as multi-tenant service access.
 
 Build immutable artifacts with dependency locks, SBOM/provenance, schema compatibility
 checks, migrations with rollback/forward recovery, and staged health gates. Deploy

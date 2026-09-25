@@ -1,10 +1,11 @@
 # MasterBrain Implementation Status
 
 Updated 2026-09-25. **Implemented** means executable in this repository; it does not
-mean hosted, live-source accepted, or production ready. The cumulative stack is on
-`main` through PR #28 (`2dd4a85`), strict-runtime PR #31 (`20bfc1f`), privacy-safe
-API logging PR #33 (`c605e64`), fictional cross-source trial PR #32 (`77192f5`)
-and reconciled documentation PR #30 (`1e081ea`). Exact baseline `main` CI,
+mean hosted, live-source accepted, or production ready. The cumulative stack first
+landed on `main` through PR #28 (`2dd4a85`), followed by strict-runtime PR #31
+(`20bfc1f`), privacy-safe API logging PR #33 (`c605e64`), fictional cross-source
+trial PR #32 (`77192f5`) and reconciled documentation PR #30 (`1e081ea`).
+Exact baseline `main` CI,
 strict-runtime and populated restore passed. See [current functions](CURRENT_FUNCTIONS.md)
 for callable paths. The individual PR receipts below are historical verification,
 not still-open integration work. Interactive Mac acceptance, issues #7/#9,
@@ -12,12 +13,18 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-109 adds opt-in `serve --tenant-db-config` routing through a table-blind
+  exact-identity login and separately fenced tenant logins. Real disposable
+  PostgreSQL tests cover two-tenant API search and missing/wrong/shared-route
+  refusal; private-file tests cover malformed, duplicate, symlink and broad-mode
+  configuration. Existing private workers still use explicit shared DSNs and
+  credential lifecycle/hosted acceptance are not implemented. Issue #7 stays open.
 - ADR-108/migration 0037 add an opt-in restrictive RLS fence for a DBA-bound
   one-tenant PostgreSQL login. Synthetic arbitrary-SQL tests cover forged GUCs,
-  wrong-tenant read/write, role switching and mapping loss. No tenant-aware API or
-  worker DSN router, production credential lifecycle, live rollout or closure of
-  issue #7 is claimed; the older shared login remains vulnerable under arbitrary
-  SQL. See [the contract](TENANT_LOGIN_FENCE.md).
+  wrong-tenant read/write, role switching and mapping loss. No worker DSN router,
+  production credential lifecycle, live rollout or closure of issue #7 is
+  claimed; the older shared login remains vulnerable under arbitrary SQL. See
+  [the contract](TENANT_LOGIN_FENCE.md).
 - Existing `email_brain` capability: Fastmail/JMAP read worker, raw/evidence storage,
   MIME/attachment accounting, PostgreSQL FTS, owner search/read, reviewed rules,
   recovery/quarantine, synthetic mailbox, PDF approval path, and narrow reviewed

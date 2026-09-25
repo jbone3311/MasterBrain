@@ -2,6 +2,10 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Added opt-in two-stage API database routing: a table-blind exact-identity login
+  resolves verified claims, then one tenant-bound login performs tenant SQL
+  (ADR-109). Synthetic two-tenant API tests and private-file validation pass;
+  private workers, credential lifecycle and hosted acceptance remain open.
 - Added an opt-in DBA-bound, one-tenant PostgreSQL login fence with restrictive
   policies over existing forced-RLS tables (ADR-108, migration 0037). The shared
   runtime credential is unchanged; issue #7 and hosted isolation remain open.

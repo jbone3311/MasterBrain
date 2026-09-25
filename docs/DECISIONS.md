@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-109](adr/109_tenant_database_routing.md) adds an opt-in API service path
+with an identity-only lookup DSN and one database-fenced login per configured
+tenant. Private workers, credential lifecycle and hosted acceptance remain open.
+
 [ADR-108](adr/108_tenant_login_rls_fence.md) adds an opt-in restrictive RLS
 fence for DBA-bound one-tenant PostgreSQL logins. Existing shared logins retain
 their risk; issue #7 remains open pending DSN routing and hosted acceptance.
