@@ -1,5 +1,7 @@
 """Verified-token -> real SQL/API authority, including stale saved contexts."""
 
+import secrets
+from collections.abc import Iterator
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
@@ -10,6 +12,7 @@ import test_oidc as oidc
 import test_postgres as pg
 from fastapi.testclient import TestClient
 from psycopg import sql
+from psycopg.conninfo import make_conninfo
 
 from email_brain.api import create_app
 from email_brain.auth import AuthenticationUnavailable
@@ -198,6 +201,86 @@ def test_runtime_cannot_manage_identity_bindings(setup, operation):
     with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
         conn.execute(command)
     assert auth.authenticate(raw).context.identity.binding_id == binding
+
+
+@pytest.fixture
+def identity_admin_login(database) -> Iterator[tuple[str, str]]:
+    _, admin = database
+    role = "test_identity_admin_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL(
+                "CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE "
+                "NOREPLICATION PASSWORD {}"
+            ).format(sql.Identifier(role), sql.Literal(password))
+        )
+        conn.execute(
+            sql.SQL("GRANT masterbrain_identity_admin TO {}").format(sql.Identifier(role))
+        )
+    try:
+        yield make_conninfo(admin, user=role, password=password), role
+    finally:
+        with psycopg.connect(admin, autocommit=True) as conn:
+            conn.execute(
+                sql.SQL("REVOKE masterbrain_identity_admin FROM {}").format(
+                    sql.Identifier(role)
+                )
+            )
+            conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(role)))
+
+
+def test_non_superuser_identity_admin_can_manage_binding_without_audit_grant(
+    database, tenant, identity_admin_login
+):
+    _, admin = database
+    ctx, _ = tenant
+    dsn, role = identity_admin_login
+    binding = uuid4()
+    with psycopg.connect(dsn) as conn:
+        assert conn.execute(
+            "SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user"
+        ).fetchone() == (False, False)
+        assert conn.execute(
+            "INSERT INTO external_identities(id,tenant_id,actor_id,issuer,subject,"
+            "client_id,scopes,client_kind) VALUES (%s,%s,%s,%s,%s,%s,%s,'human') "
+            "RETURNING revision",
+            (
+                binding,
+                ctx.tenant_id,
+                ctx.actor_id,
+                "https://issuer.example.invalid",
+                "fictional-" + binding.hex,
+                "owner-client",
+                ["email.search"],
+            ),
+        ).fetchone() == (1,)
+        assert conn.execute(
+            "UPDATE external_identities SET active=false WHERE id=%s RETURNING revision",
+            (binding,),
+        ).fetchone() == (2,)
+        assert conn.execute(
+            "DELETE FROM external_identities WHERE id=%s RETURNING revision", (binding,)
+        ).fetchone() == (2,)
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), psycopg.connect(dsn) as conn:
+        conn.execute("SELECT 1 FROM audit_events")
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), psycopg.connect(dsn) as conn:
+        conn.execute(
+            "INSERT INTO audit_events(tenant_id,request_id,event_type,resource_type,outcome) "
+            "VALUES (%s,%s,'identity.insert','external_identity','ok')",
+            (ctx.tenant_id, uuid4()),
+        )
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), psycopg.connect(dsn) as conn:
+        conn.execute("SELECT 1 FROM messages")
+    with psycopg.connect(admin) as conn:
+        rows = conn.execute(
+            "SELECT event_type,metadata->>'database_role' FROM audit_events "
+            "WHERE resource_id=%s ORDER BY occurred_at,id",
+            (str(binding),),
+        ).fetchall()
+    assert sorted(rows) == sorted(
+        [("identity.insert", role), ("identity.update", role), ("identity.delete", role)]
+    )
 
 
 @pytest.mark.parametrize(

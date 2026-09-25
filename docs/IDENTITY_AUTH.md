@@ -49,9 +49,12 @@ requirements on every identity provider.
 ## Configuration and startup
 
 First apply additive [migration 0013](../migrations/0013_external_identities.sql)
-with the migration administrator and refresh `grant-runtime` for the existing
-non-owner/non-BYPASSRLS runtime role. Existing bootstrap workers keep their own
-credentials; do not merge human and worker registries.
+and forward-only [migration 0034](../migrations/0034_identity_admin_enrollment.sql)
+with the migration administrator, then refresh `grant-runtime` for the existing
+non-owner/non-BYPASSRLS runtime role. Migration 0034 adds a narrow, non-login
+identity-administration role; it does not enroll a human or grant that role to
+runtime. Existing bootstrap workers keep their own credentials; do not merge
+human and worker registries.
 
 Prepare the configuration in an owner-only `0700` directory, file `0600`, outside
 the checkout/Dropbox. Existing private-file checks reject symlinks, hard links,
@@ -90,7 +93,9 @@ Current UI credential entry remains memory-only manual testing, not browser logi
 
 ## Administrator-managed bindings
 
-`external_identities` requires an existing tenant membership. An administrator
+`external_identities` requires an existing tenant membership. A dedicated
+non-superuser administrator login, granted membership in the `NOLOGIN`
+`masterbrain_identity_admin` role by a DBA after reviewing existing memberships,
 inserts an explicit UUID, `tenant_id`, `actor_id`, `issuer`, `subject`, `client_id`,
 allowlisted `scopes` and `client_kind` (`human` or `assistant`). There is no public
 enrollment/mapping endpoint or automatic matching. The administrator must establish
@@ -103,11 +108,16 @@ One verified triple maps to one tenant; workspace selection and granular sharing
 need a later explicit design, not request-supplied tenant IDs.
 
 Runtime can only SELECT bindings. RLS requires the verified identity context even
-when a tenant context already exists. Binding IDs, tenant/actor and external identity
-are immutable. Administrator updates to active/scopes/kind increment a revision;
-disable/re-enable cannot revive an old saved context. Insert/update/delete emits an
-append-only audit event with database role and local binding state, no subject or
-token. This identifies the DB administrator role, not an invented end-user actor.
+when a tenant context already exists. The separate administrator role can manage
+bindings across tenants, but has no direct `audit_events` write grant, table
+ownership, `BYPASSRLS`, or access to unrelated evidence tables. Binding IDs,
+tenant/actor and external identity are immutable. Administrator updates to
+active/scopes/kind increment a revision; disable/re-enable cannot revive an old
+saved context. Insert/update/delete emits an append-only audit event with the
+connecting database login and local binding state, no subject or token. This
+identifies the DB administrator login, not an invented end-user actor. See
+[ADR-105](adr/105_identity_admin_enrollment.md). Issue #7's caller-settable
+lookup context remains a separate open security question.
 
 ## Revocation and outages
 

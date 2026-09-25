@@ -12,6 +12,10 @@ implemented remain logical targets.
   content, original evidence, administration, proposal, approval, execution.
 - Every tenant-owned row includes `tenant_id`; access is enforced in application logic
   and storage policy.
+- Migration 0034 adds a dedicated, non-login `masterbrain_identity_admin` database
+  role with a forced-RLS identity-binding management policy. It grants no runtime
+  identity writes, table ownership or direct audit-event insertion; a named
+  administrator login must be enrolled separately by a DBA.
 
 ## Source and evidence
 

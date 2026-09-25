@@ -46,7 +46,12 @@ one schema-validated result. Production must preserve or strengthen that boundar
 Schema migrations use a dedicated administrative credential whose effective role
 has `BYPASSRLS` or superuser visibility as well as the needed DDL permissions. The
 migrator rejects any other role before creating its ledger or changing schema;
-runtime and worker credentials must never inherit this privilege. In particular,
+runtime and worker credentials must never inherit this privilege. Migration
+0034 also needs `CREATEROLE` to create the cluster-global, non-login identity-admin
+group if it does not already exist. A DBA may pre-provision that group with the
+attributes in [ADR-105](adr/105_identity_admin_enrollment.md) and no members;
+review membership before applying 0034 or granting a named administrator login.
+In particular,
 older 0006/0008 receipts made under a non-bypass table owner do not prove that their
 cross-tenant reads ran. Before applying 0029, audit missing sync-state keys and
 parser mismatches with the actual migration identity. A mismatch stops the rollout

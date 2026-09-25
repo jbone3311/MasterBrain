@@ -41,6 +41,11 @@ monitoring remain release gates. See [ADR-104](adr/104_privacy_safe_error_observ
 
 - Strong human/service identity, short-lived credentials, explicit enrollment and
   current authorization checks.
+- Identity binding administration uses a separate non-login role with a
+  non-superuser login granted membership by a DBA; runtime cannot mutate bindings.
+  The audit trigger records the connecting login without granting it direct audit
+  writes. This closes the forced-RLS enrollment gap in issue #6, not issue #7's
+  arbitrary-SQL/session-context threat. See [ADR-105](adr/105_identity_admin_enrollment.md).
 - Tenant/source isolation in application code and forced database RLS.
 - Encryption in transit and at rest; managed key rotation and recovery procedures.
 - Network isolation for databases/object storage; no public administrative endpoints.
