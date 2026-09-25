@@ -5,7 +5,12 @@ combines Email and FileOS source capabilities behind shared ingestion and knowle
 layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compact,
 progressive access with drill-down to original evidence.
 
-**Status:** `0.2.0a1` synthetic alpha candidate, not yet a tagged release. The
+**Status:** `0.2.0a1` synthetic alpha candidate, not yet a tagged release.
+The latest verified `main` checkpoint is `1e081ea` (2026-09-25): full CI,
+strict-runtime and populated restore passed. The fictional cross-source browser
+trial is merged, but interactive Mac acceptance is still pending. See
+[current functions](docs/CURRENT_FUNCTIONS.md) and the
+[exact-commit receipt](docs/BUILD_RECEIPT.md). The
 Email capability has executable read-only ingestion, evidence storage, search,
 review, recovery, and narrow structured-memory functions. Shared DataCore also
 has read-only FileOS intake, extraction, archive derivatives, lexical retrieval,
@@ -45,6 +50,8 @@ FileOS sources ┘       │              │                │
 | Capability | State |
 |---|---|
 | Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
+| Fictional Email/FileOS browser trial with citation drill-down | Merged and hosted-test verified; interactive Mac acceptance pending |
+| Privacy-safe API failure correlation | Implemented; production log collection and alerting pending |
 | Typed reviewed travel/bill memory | Working narrow prototype |
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
 | FileOS scanner/reconciler inventory classifier | Behavior-identical donor extraction; 3,000-path parity, not yet wired into snapshots |
@@ -91,6 +98,7 @@ roadmap item is not an implementation claim.
 ## Documentation map
 
 - [Product contract](PRODUCT.md)
+- [Current callable functions and limits](docs/CURRENT_FUNCTIONS.md)
 - [Complete feature inventory](docs/MASTERBRAIN_FEATURE_INVENTORY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Data model](docs/DATA_MODEL.md)
@@ -105,6 +113,7 @@ roadmap item is not an implementation claim.
 - [Incremental execution plan](docs/EXECUTION_PLAN.md)
 - [Current build progress](docs/BUILD_PROGRESS.md)
 - [Synthetic alpha test guide](docs/ALPHA_TESTING.md)
+- [Fictional cross-source browser trial](docs/CROSS_SOURCE_TRIAL.md)
 - [Shared DataCore/FileOS commands](docs/DATACORE_COMMANDS.md)
 - [Source and provenance contract](docs/SOURCE_PROVENANCE.md)
 - [DataCore persistence and lexical retrieval](docs/DATACORE_PERSISTENCE.md)

@@ -2,6 +2,17 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Merged the cumulative MasterBrain synthetic baseline (#28), fail-loud strict
+  sender-parser runtime gate (#31), privacy-safe API failure correlation (#33),
+  disposable fictional Email/FileOS browser trial (#32), and reconciled build
+  receipts (#30). The exact documentation-merge `main` commit `1e081ea` passed
+  full CI, strict-runtime and populated restore. The tag, interactive Mac trial,
+  live sources and production acceptance remain open.
+- Added a current callable-function map and recast the roadmap around unresolved
+  security/migration findings, user trial, operational quality and donor cutover
+  gates. This documentation update does not add API routes, source effects or
+  assistant integrations.
+
 - Consolidates the tested MasterBrain Email/FileOS stack into a test-only release
   boundary. The version is not a release until the cumulative `main` commit passes
   CI and populated restore and is tagged `v0.2.0a1`.
