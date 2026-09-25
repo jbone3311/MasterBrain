@@ -25,6 +25,18 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
 - Telemetry excludes content by default; logs use opaque IDs, states, counts, timings,
   and bounded sanitized errors.
 
+## Privacy-safe failure observability
+
+The REST boundary records a server-generated request ID, fixed route template,
+status, stable error code and exception *class* for infrastructure and unexpected
+failures. It never logs URL parameters, request bodies, source paths, exception
+messages, tracebacks, SQL diagnostics, credentials or original evidence. A generic
+500 response retains the request ID and security/cache headers for operator
+correlation. Expected authorization and validation refusals retain their bounded
+status codes without exposing inputs. These local process logs are not a durable
+centralized incident trail; protected collection, retention, alerts and production
+monitoring remain release gates. See [ADR-104](adr/104_privacy_safe_error_observability.md).
+
 ## Required controls
 
 - Strong human/service identity, short-lived credentials, explicit enrollment and

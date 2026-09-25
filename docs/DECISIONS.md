@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-104](adr/104_privacy_safe_error_observability.md) adds content-free
+request-failure categories and a sanitized 500 response with a server-generated
+request ID. It does not claim production log retention, alerting or incident response.
+
 [ADR-101](adr/101_synthetic_alpha_release.md) defines the test-only `0.2.0a1`
 checkpoint and the branch/PR/test/merge/tag cadence. It does not authorize live
 sources, production deployment, FileOS cutover or FOS-Master retirement.
