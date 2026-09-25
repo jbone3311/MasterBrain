@@ -430,7 +430,8 @@ class Store:
             role = conn.execute(
                 "SELECT rolsuper, rolbypassrls, rolcreatedb, rolcreaterole, rolreplication, "
                 "EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
-                "WHERE c.relowner=r.oid AND n.nspname='public' AND c.relkind='r') AS owns "
+                "WHERE c.relowner=r.oid AND n.nspname='public' "
+                "AND c.relkind IN ('r','p','v','m','f')) AS owns "
                 "FROM pg_roles r WHERE rolname=current_user"
             ).fetchone()
             if not role or any(
@@ -448,11 +449,12 @@ class Store:
             if self.tenant_dsns is not None:
                 if tenant_id is None:
                     unsafe_lookup = conn.execute(
-                        "SELECT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n "
+                        "SELECT current_user<>session_user OR "
+                        "EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n "
                         "ON n.oid=c.relnamespace WHERE n.nspname='public' "
                         "AND c.relkind IN ('r','p','v','m','f') "
                         "AND has_table_privilege(session_user,c.oid,"
-                        "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')) "
+                        "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')) "
                         "OR EXISTS(SELECT 1 FROM pg_auth_members m JOIN pg_roles r "
                         "ON r.oid=m.member WHERE r.rolname=session_user) AS unsafe"
                     ).fetchone()

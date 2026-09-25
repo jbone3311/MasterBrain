@@ -372,7 +372,7 @@ def grant_identity_lookup(conn: psycopg.Connection[tuple[object, ...]], role: st
             "ON n.oid=c.relnamespace WHERE n.nspname='public' "
             "AND c.relkind IN ('r','p','v','m','f') "
             "AND has_table_privilege(%s,c.oid,"
-            "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))",
+            "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN'))",
             (role, role, role),
         ).fetchone() != (False,):
             raise ValueError("identity lookup role has table or inherited authority")
