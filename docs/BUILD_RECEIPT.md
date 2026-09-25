@@ -2,7 +2,38 @@
 
 Updated 2026-09-25 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Latest verified `main`: opt-in tenant-bound runtime login fence
+## Latest verified `main`: opt-in tenant-routed API database access
+
+[PR #43](https://github.com/jbone3311/MasterBrain/pull/43) merged at
+`dacc97bd7a6220b92e6672628066441c0dd2d02c`. Its final head
+`f0436a00cd56c6d039cdabe809f2144b7b98fd99` passed
+[full CI 36196588405](https://github.com/jbone3311/MasterBrain/actions/runs/36196588405),
+[strict runtime 36196588456](https://github.com/jbone3311/MasterBrain/actions/runs/36196588456),
+and [populated restore 36196588431](https://github.com/jbone3311/MasterBrain/actions/runs/36196588431).
+The exact merged `main` SHA independently passed
+[full CI 36197334436](https://github.com/jbone3311/MasterBrain/actions/runs/36197334436),
+[strict runtime 36197334382](https://github.com/jbone3311/MasterBrain/actions/runs/36197334382),
+and [populated restore 36197334408](https://github.com/jbone3311/MasterBrain/actions/runs/36197334408).
+
+Local final-head evidence: 2,829 Python passed, one Docker-only skipped, with
+444 PostgreSQL-marked tests executed on a fresh disposable PostgreSQL 17.11
+database; 134 browser tests passed. The separate local deployment gate passed
+2,384 non-PostgreSQL tests while skipping its 445 database-marked tests; that
+gate is **not** counted as database evidence. Ruff, mypy, documentation inventory
+(202 Markdown files and 1,096 local paths/fragments) and diff checks passed.
+Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15` DataCore
+parity passed on 3,000 stress files plus edge cases; the donor checkout is clean.
+
+ADR-109 adds an opt-in, private-file API route from exact identity lookup to
+distinct tenant-bound data logins. Synthetic two-tenant API search, no-table
+lookup authority and missing/wrong/shared-route refusal passed in real
+PostgreSQL. The legacy shared-DSN API mode and separate private worker commands
+are not tenant-routed by this change. Credential creation/rotation, two-tenant
+restore, hosted adversarial review, issue #7 and populated live-upgrade issue #9
+remain open. No production multi-tenant, live-source or FOS-Master cutover claim
+follows from these gates.
+
+## Previous verified `main`: opt-in tenant-bound runtime login fence
 
 [PR #41](https://github.com/jbone3311/MasterBrain/pull/41) merged at
 `ce12933d1b064403e07ce1cdb3efd239cf25f244`. Its head
