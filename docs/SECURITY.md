@@ -50,6 +50,13 @@ monitoring remain release gates. See [ADR-104](adr/104_privacy_safe_error_observ
   identity-table SELECT or caller-settable lookup policy. A compromised runtime DSN
   can still set tenant-context GUCs protecting other tables; issue #7 remains open
   and hosted containment is not claimed. See [ADR-106](adr/106_identity_resolver_boundary.md).
+- Migration 0037 adds an opt-in one-tenant database-login fence: a DBA-owned
+  mapping keyed by `session_user` and restrictive policies on every existing
+  forced-RLS tenant table. Forged GUCs cannot widen an enrolled login's rows.
+  Existing shared runtime logins remain GUC-driven, and tenant-aware DSN routing,
+  credential operations and a hosted adversarial run are not implemented. See
+  [ADR-108](adr/108_tenant_login_rls_fence.md) and the
+  [tenant-login contract](TENANT_LOGIN_FENCE.md); issue #7 remains open.
 - Tenant/source isolation in application code and forced database RLS.
 - Encryption in transit and at rest; managed key rotation and recovery procedures.
 - Network isolation for databases/object storage; no public administrative endpoints.

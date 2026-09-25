@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-108](adr/108_tenant_login_rls_fence.md) adds an opt-in restrictive RLS
+fence for DBA-bound one-tenant PostgreSQL logins. Existing shared logins retain
+their risk; issue #7 remains open pending DSN routing and hosted acceptance.
+
 [ADR-107](adr/107_current_archive_image_search.md) adds a distinct current-only
 archive-image OCR layer with exact receipt, sealed-member and parent freshness
 fences. It grants no OCR execution, automatic selection or FileOS cutover.

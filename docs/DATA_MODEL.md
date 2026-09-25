@@ -19,6 +19,10 @@ implemented remain logical targets.
 - Migration 0035 removes the caller-settable identity-lookup policy and grants
   runtime only the exact, active-only resolver function, not table-wide SELECT.
   Other tenant-context RLS settings still need a separate compromised-SQL design.
+- Migration 0037 adds DBA-owned `masterbrain_tenant_login_bindings`, one login to
+  one tenant, and a restrictive policy on every existing forced-RLS tenant table.
+  The opted-in login is fenced by `session_user` in addition to the older GUC
+  policy; unregistered shared logins retain their existing behavior and risk.
 
 ## Source and evidence
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from uuid import UUID
 
 import psycopg
 from psycopg import sql
@@ -258,4 +259,81 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
                 sql.SQL(",").join(map(sql.Identifier, tables)),
                 sql.Identifier(role),
             )
+        )
+
+
+def grant_tenant_runtime(
+    conn: psycopg.Connection[tuple[object, ...]], role: str, tenant_id: UUID
+) -> None:
+    """DBA-only, atomic opt-in to one-login/one-tenant RLS containment."""
+    if not isinstance(role, str) or not role or not isinstance(tenant_id, UUID):
+        raise ValueError("invalid tenant runtime enrollment")
+    with conn.transaction():
+        operator = conn.execute(
+            "SELECT rolsuper FROM pg_roles WHERE rolname=current_user"
+        ).fetchone()
+        candidate = conn.execute(
+            "SELECT rolcanlogin,rolsuper,rolbypassrls,rolcreatedb,rolcreaterole,"
+            "rolreplication FROM pg_roles WHERE rolname=%s",
+            (role,),
+        ).fetchone()
+        if not operator or not operator[0] or not candidate or candidate != (
+            True, False, False, False, False, False
+        ):
+            raise ValueError("unsafe tenant runtime database role")
+        if conn.execute(
+            "SELECT EXISTS(SELECT 1 FROM pg_roles r WHERE "
+            "pg_has_role((SELECT oid FROM pg_roles WHERE rolname=%s),r.oid,'member') "
+            "AND (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole "
+            "OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n "
+            "ON n.oid=c.relnamespace WHERE c.relowner=r.oid "
+            "AND n.nspname='public' AND c.relkind='r'))) ",
+            (role,),
+        ).fetchone() != (False,):
+            raise ValueError("tenant runtime role inherits unsafe authority")
+        if conn.execute(
+            "SELECT pg_has_role(%s,'masterbrain_identity_admin','member')",
+            (role,),
+        ).fetchone() != (False,):
+            raise ValueError("tenant runtime role has identity administration")
+        if conn.execute(
+            "SELECT to_regprocedure('public.masterbrain_tenant_login_allows(uuid)') "
+            "IS NOT NULL"
+        ).fetchone() != (True,):
+            raise ValueError("tenant-login fence migration is missing")
+        uncovered = conn.execute(
+            "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+            "WHERE n.nspname='public' AND c.relkind='r' AND "
+            "(c.relname='tenants' OR EXISTS (SELECT 1 FROM pg_attribute a "
+            "WHERE a.attrelid=c.oid AND a.attname='tenant_id' AND a.attnum>0)) "
+            "AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity "
+            "OR NOT EXISTS (SELECT 1 FROM pg_policy p "
+            "WHERE p.polrelid=c.oid AND p.polname='tenant_login_fence' "
+            "AND NOT p.polpermissive)) LIMIT 1"
+        ).fetchone()
+        if uncovered:
+            raise ValueError("tenant-login RLS fence inventory is incomplete")
+        existing = conn.execute(
+            "SELECT tenant_id FROM public.masterbrain_tenant_login_bindings "
+            "WHERE role_name=%s",
+            (role,),
+        ).fetchone()
+        if existing and existing[0] != tenant_id:
+            raise ValueError("tenant runtime role is already bound")
+        if not existing and conn.execute(
+            "SELECT 1 FROM public.audit_events WHERE event_type='tenant_login.insert' "
+            "AND resource_type='database_role' AND resource_id=%s LIMIT 1",
+            (role,),
+        ).fetchone():
+            raise ValueError("previously bound runtime role cannot be reused")
+        grant_runtime(conn, role)
+        if not existing:
+            conn.execute(
+                "INSERT INTO public.masterbrain_tenant_login_bindings(role_name,tenant_id) "
+                "VALUES (%s,%s)",
+                (role, tenant_id),
+            )
+        conn.execute(
+            sql.SQL("GRANT masterbrain_tenant_runtime TO {} "
+                    "WITH ADMIN FALSE, INHERIT FALSE, SET FALSE").format(sql.Identifier(role))
         )

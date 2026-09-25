@@ -22,10 +22,13 @@ def test_archive_member_image_receipt_schema_is_private_immutable_and_bounded(
         assert table == (True, True)
 
         policies = conn.execute(
-            "SELECT policyname FROM pg_policies "
+            "SELECT policyname,permissive FROM pg_policies "
             "WHERE schemaname='public' AND tablename='brain_archive_member_image_receipts'"
         ).fetchall()
-        assert policies == [("tenant_isolation",)]
+        assert set(policies) == {
+            ("tenant_isolation", "PERMISSIVE"),
+            ("tenant_login_fence", "RESTRICTIVE"),
+        }
 
         triggers = conn.execute(
             "SELECT tgname FROM pg_trigger "

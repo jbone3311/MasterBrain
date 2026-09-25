@@ -54,6 +54,11 @@ tools or API routes.
 | `masterbrain email` | One-message/attachment/approved-document bridges; cursor-bounded message/part plans and sealed batches | Explicit migration of current eligible evidence into shared DataCore. It does not ingest from a provider, change mailbox state or automatically bridge an account. |
 | `email-brain` compatibility CLI | Local synthetic seed, migration, loopback service and bounded Email worker/processing commands | Retained Email capability, not the final product name or a production deployment command. |
 
+A DBA-only Python helper, `grant_tenant_runtime(conn, role, tenant_id)`, can
+opt one existing database login into the [tenant-login fence](TENANT_LOGIN_FENCE.md)
+on a disposable/staging database. It is not a public CLI, API route, credential
+manager or tenant-aware DSN router; the shared runtime login remains unfenced.
+
 Under these interfaces, DataCore has source-bound hashes, immutable evidence and
 provenance, deterministic text chunks, lexical index generations, isolated
 PDF/DOCX/XLSX and ZIP/TAR processing, and exact selected archive-image OCR
