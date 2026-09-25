@@ -9,7 +9,10 @@ The launcher creates its own randomly named ephemeral PostgreSQL 17 container,
 random credentials, loopback-only database port and temporary fictional files.
 It accepts no existing database, account, token, source-root or upload argument.
 Setup helpers additionally refuse non-test, remote or mismatched databases before
-writing. Only the returned container identity may be removed during cleanup.
+writing. Cleanup inspects only this run's unpredictable container name, verifies its per-run
+marker, and removes the verified container ID. This also covers a Docker startup
+timeout after container creation but before its ID is returned. A failed inspection
+or marker mismatch warns the operator and never triggers broad Docker cleanup.
 
 The seeder uses existing Store ingestion, explicit current Email bridges, confined
 FileOS extraction/publication, complete-run receipts, immutable index build and
