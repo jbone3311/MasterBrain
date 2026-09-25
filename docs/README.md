@@ -1,7 +1,10 @@
 # MasterBrain Documentation
 
 Status: target architecture plus a `0.2.0a1` synthetic alpha candidate;
-not a production or live-source release. Exact tested revisions are in the build receipt.
+not a production or live-source release. The functional baseline reviewed here is
+`1e081ea` (2026-09-25), with full CI, strict-runtime and populated restore
+passed. Exact results are in the build receipt; the fictional cross-source
+browser trial still needs the owner's interactive Mac acceptance.
 Source health measurements and historical validation retain their own dates.
 
 MasterBrain is the final product: a private, multi-user intelligence layer across
@@ -27,7 +30,10 @@ selection/approval/history/cancellation and cited pages; live acceptance is pend
 - **Trips/bills and assistant change polling:** [structured memory](STRUCTURED_MEMORY.md).
 
 - **Try the latest reader:** [user testing](USER_TESTING.md), [reading and download limits](MESSAGE_READER.md).
-- **Try the synthetic alpha:** [alpha testing](ALPHA_TESTING.md), [exact-commit build receipts](BUILD_RECEIPT.md).
+- **Try the synthetic alpha:** [cross-source browser trial](CROSS_SOURCE_TRIAL.md),
+  [alpha testing](ALPHA_TESTING.md), [exact-commit build receipts](BUILD_RECEIPT.md).
+- **What works now:** [current functions](CURRENT_FUNCTIONS.md),
+  [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md), [status](IMPLEMENTATION_STATUS.md).
 
 - **Current build:** [browser session backend](BROWSER_AUTH.md) and explicit
   private TLS/operator startup are implemented; owner UI and browser acceptance come next.
@@ -57,7 +63,7 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 | Question | Authoritative starting point |
 |---|---|
 | What will this product ultimately do? | [Product contract](../PRODUCT.md), [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md), then [PRD](PRD.md) |
-| What actually works, and how? | [Features/methods](FEATURES_AND_METHODS.md), [status](IMPLEMENTATION_STATUS.md), [code map](CODE_MAP.md) |
+| What actually works, and how? | [Current functions](CURRENT_FUNCTIONS.md), [status](IMPLEMENTATION_STATUS.md), [code map](CODE_MAP.md); [features/methods](FEATURES_AND_METHODS.md) details Email |
 | What do the technical methods mean for me? | [Methods guide](METHODS_GUIDE.md): evidence, retries, search, corrections and permission boundaries |
 | Where will it run and what stays local? | [Hosting decision](HOSTING_DECISION.md), [deployment](DEPLOYMENT.md) |
 | What is the team building next? | [Roadmap](ROADMAP.md), [FOS migration](FOS_MIGRATION.md), then capability-specific [backlog](BACKLOG.md) |
@@ -67,18 +73,17 @@ an SDK contract is not live acceptance, and an approved proposal is not executio
 | What must pass before a release? | [Release acceptance/evidence](RELEASE_ACCEPTANCE.md), [security](SECURITY.md) |
 | Which decisions still need Jim? | [Open questions](OPEN_QUESTIONS.md); safe synthetic work can continue |
 
-The documentation review explains the owner scenario, methods, attachment coverage,
-failure behavior and dependency-ordered delivery plan. The latest consistency pass
-aligns current claims through ADR-041, explains the methods in plain language,
-and checks contribution/release guides and GitHub review templates automatically.
-It separates completed synthetic PDF/read-operator and API token/mapping work from
-browser identity lifecycle, hosted operation and live acceptance. The
-[configured identity foundation](IDENTITY_AUTH.md) is executable, but does not
-implement browser login/MFA or certify a real issuer. Bootstrap remains a separate mode.
-[Documentation ownership/status terms](DOCUMENTATION_STANDARD.md)
-keep future changes traceable. Browser/accessibility and live/scanner policy remain
-pending for the document channel. Research counts retain their actual observation dates; no hosted
-deployment or Factory audit is claimed.
+The current function map and roadmap separate merged synthetic capabilities from
+remaining security, migration, user-acceptance and production gates. Earlier
+editorial reviews and their dated receipts remain historical; they do not define
+the current branch/PR state.
+
+The [configured identity foundation](IDENTITY_AUTH.md) and optional
+[browser session backend](BROWSER_AUTH.md) are executable, but owner-screen login,
+MFA/enrollment policy, a real issuer and hosted operation are not accepted.
+[Documentation ownership/status terms](DOCUMENTATION_STANDARD.md) keep changes
+traceable. Research counts retain their original observation dates; this pass does
+not claim a hosted deployment or Factory audit.
 
 ## Executive architecture review
 

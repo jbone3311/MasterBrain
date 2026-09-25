@@ -9,9 +9,9 @@ permission, deployment or Factory-policy change.
 |---|---|
 | What should the ultimate product do? | [PRD](PRD.md) |
 | How does it work for an owner? | [Worked walkthrough](PRODUCT_WALKTHROUGH.md), [features/methods](FEATURES_AND_METHODS.md), [methods guide](METHODS_GUIDE.md) |
-| What is executable now? | [Implementation status](IMPLEMENTATION_STATUS.md), linked source/contracts |
+| What is executable now? | [Current functions](CURRENT_FUNCTIONS.md), [implementation status](IMPLEMENTATION_STATUS.md), linked source/contracts |
 | What passed, at which revision? | [Build receipt](BUILD_RECEIPT.md), linked exact-commit CI/restore runs |
-| What comes next and why? | [Roadmap](ROADMAP.md), [backlog](BACKLOG.md), [Factory handoff](FACTORY_HANDOFF.md) |
+| What comes next and why? | [Roadmap](ROADMAP.md), [Email backlog](BACKLOG.md), [Factory handoff](FACTORY_HANDOFF.md) |
 | How should changes be contributed and accepted? | [Contributor guide](../CONTRIBUTING.md), [release acceptance](RELEASE_ACCEPTANCE.md) |
 | Why was a boundary chosen? | [Accepted decisions](DECISIONS.md) and applicable ADR |
 | What still needs the owner? | [Open questions](OPEN_QUESTIONS.md) |

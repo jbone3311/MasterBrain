@@ -1,95 +1,90 @@
 # MasterBrain Roadmap
 
-Roadmap entries are targets, not implementation claims. Gates are dependency-ordered.
+Updated 2026-09-25. This is a dependency-ordered plan, not a release claim.
+[Current functions](CURRENT_FUNCTIONS.md) and
+[implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
+[build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
+functional baseline for this review is `1e081ea`: full CI, strict-runtime and populated
+restore passed. No live-source, production or FileOS cutover acceptance is implied.
+
+## Where we are
+
+| Milestone | Current position | What is still missing |
+|---|---|---|
+| Product identity and donor baseline | MasterBrain identity, source-layer boundaries, pinned FOS-Master provenance, first hash/dedupe parity and synthetic shadow corpus are in the repo | Full semantic and operational parity, owner cutover decision |
+| DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
+| KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work | Automatic candidate pipeline, evaluated resolution, complete project/commitment reducers, rebuild and freshness proof |
+| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; fictional browser trial is merged | Cited answer synthesis, common client adapter/conformance, full byte/token budgets and revocation proof across caches |
+| Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
+| FileOS replacement and effects | No cutover or source effects | Sustained donor shadow, bounded rollback-ready cohort, owner sign-off; effects require a separate later approval |
 
 ## Next build packages
 
-DC-004C now has accepted isolated ZIP/TAR inventory, append-only manifests,
-persisted-hash-bound member reads, explicit text publication/search/batches and an
-exact retained-history PDF/Office derivative command chained across two restricted
-images, plus a separately ranked current-only archive-document layer with an exact
-parent/member/receipt fence. Private document preview and sealed document batches are
-implemented. The image/OCR donor inventory, closed protocol, isolated worker, real
-container, golden parity gate, explicit one-member archive composition and append-only
-retained-history image derivative are also implemented. The private operator for one
-explicit inventory/member/key using both immutable worker images and the accepted
-transaction is accepted at revision `f658ace` with hosted
-CI/container and populated restore green. The next package is 5D current-only
-archive-image OCR search. [GitHub issue #10](https://github.com/jbone3311/CW-EmailBrain/issues/10)
-prepares an independent 5B review and 5D proposal for Claude on a separate branch and
-PR; no Claude branch or PR has been submitted yet. Automatic selection, fan-out,
-KnowledgeCore projection and all source effects remain later packages.
+These are small PRs with their own tests, documentation and exact-head CI/restore.
+Security and data-integrity blockers take priority over adding more surface area.
 
-In parallel, ADR-093 establishes a synthetic full-inventory FileOS shadow gate.
-It must be extended across unreadable, dataless, oversize and race cases
-before a separate policy ADR can change snapshots. Consecutive completed-run,
-absence and index-visibility tests are required before any FileOS cutover.
+1. **Finish the fictional user trial.** Run the
+   [cross-source walkthrough](CROSS_SOURCE_TRIAL.md) interactively on the owner's
+   Mac, record commit, expected/actual known answers, citations, coverage and
+   browser behavior. Fix any failure on a branch; do not interpret hosted API
+   tests as browser acceptance.
+2. **Resolve security and upgrade findings.** Independently reproduce and close or
+   explicitly accept [identity enrollment #6](https://github.com/jbone3311/CW-EmailBrain/issues/6),
+   [caller-settable lookup context #7](https://github.com/jbone3311/CW-EmailBrain/issues/7),
+   and [populated migration lock/rewrite risk #9](https://github.com/jbone3311/CW-EmailBrain/issues/9).
+   Require exploit/lock evidence, regression tests, restore and an operational
+   rollout/rollback receipt. Green synthetic CI alone does not close them.
+3. **Complete the engineering-quality gate.** Follow
+   [#34](https://github.com/jbone3311/CW-EmailBrain/issues/34): package/API version
+   identity, content-safe application **and PostgreSQL server** logging, bounded
+   failure paths, supply chain, operations and exact release evidence. PR #33 is
+   only the API-error first tranche.
+4. **Complete the next bounded FileOS derivative.** Current-only archive-image
+   OCR search (5D) remains absent even though exact selected OCR persistence and
+   the private one-member command exist. Review the existing 5B contract, add
+   current-parent/receipt fencing, authorization and known-answer tests before
+   exposing it. [Issue #10](https://github.com/jbone3311/CW-EmailBrain/issues/10)
+   is the Claude handoff; its old branch/base notes are historical.
+5. **Measure donor policy parity before any switch.** The extracted inventory
+   classifier matches the pinned donor on the synthetic corpus but is not wired
+   into MasterBrain snapshots. Resolve six documented policy differences and
+   fault/race/cloud-placeholder behavior through
+   [FOS migration](FOS_MIGRATION.md), then run read-only shadow and rollback
+   rehearsals. Do not change FOS-Master or silently adopt donor exclusions.
 
-## Phase 0 — Identity and baseline (current)
+The first three tranches can be reviewed independently of 5D implementation.
+None authorizes a real account, live root, paid hosting or a release tag.
 
-- Establish MasterBrain product identity and layer ownership.
-- Preserve EmailBrain as the Email capability and FOS-Master as untouched donor.
-- Inventory Email implementation, FOS tools/tests/schema, and migration candidates.
-- Pin donor provenance and create a synthetic parity framework.
-- Extract the first read-only hash/dedupe tranche.
+## Later product milestones
 
-Exit: documentation is internally consistent; baseline commits are recorded; CI runs
-DataCore unit tests and the live-donor parity command is reproducible.
+- **Knowledge quality:** migrate narrow Email memory and donor fact lessons only
+  through evidence-backed, versioned projections. Evaluate aliases, temporal
+  correction, contradictions, project state and commitments on held-out cases.
+- **Client-neutral access:** implement an MCP/other adapter only after identity
+  scopes, prompt-injection isolation, compactness, citation, revocation and one
+  common Claude/Grok/ChatGPT conformance suite are specified and tested. The
+  REST Brain API is the current source of truth; no assistant integration is
+  certified today.
+- **Hosted read-only acceptance:** choose region/budget, retention, enrollment,
+  sharing and first source with the owner; deploy private storage/keys, supervised
+  workers, protected telemetry and real backup/restore. Pilot one disposable
+  Email account and one bounded FileOS root only after authorization.
+- **FileOS cutover:** shadow the unchanged FOS-Master, compare inventories,
+  hashes, derivatives, query answers, failures and performance, then switch one
+  reversible cohort with owner sign-off. Rename or retirement is a separate
+  later decision.
+- **Reviewed effects:** design typed preview, policy, approval, idempotent
+  execution, quarantine and rollback for selected actions. No autonomous send,
+  permanent deletion or mass file movement is in the initial release.
 
-## Phase 1 — DataCore read path
+## Checkpoint discipline
 
-- Define source/evidence/provenance contracts and additive schema.
-- Add read-only FileOS scanning in shadow mode.
-- Consolidate file/attachment type detection, extraction, metadata, OCR policy,
-  normalization, deterministic chunks and lexical indexing.
-- Unify jobs, leases, receipts, freshness and reconciliation.
-
-Exit: Email and synthetic FileOS items traverse one source-neutral DataCore path with
-no evidence loss; golden and shadow parity meet documented tolerances.
-
-## Phase 2 — KnowledgeCore
-
-- Build evidence-backed entities, aliases, relationships, claims, contradictions,
-  events/timeline, projects and commitments.
-- Migrate narrow Email memory and FOS fact lessons into versioned projections.
-- Add evaluation sets for identity resolution, temporal correction and retrieval.
-
-Exit: representative cross-source questions are answered from deterministic retrieval
-with correct citations, conflict handling, freshness and rebuild proof.
-
-## Phase 3 — Brain API and clients
-
-- Implement progressive search/expand/evidence/change-feed contracts.
-- Add client-neutral authentication/scopes and adapters for Claude, Grok, ChatGPT and
-  other approved clients.
-- Enforce budgets, redaction, revocation and content-safe audit.
-
-Exit: each client passes the same authorization, compactness, citation, revocation and
-prompt-injection suites; no client has general storage/source authority.
-
-## Phase 4 — Hosted read-only acceptance
-
-- Complete browser identity lifecycle, managed storage/keys, supervision, alerts,
-  backups/restores and incident runbooks.
-- Enroll one disposable Email account and one bounded FileOS root, then expand only
-  after acceptance.
-
-Exit: all [release acceptance](RELEASE_ACCEPTANCE.md) read-only gates pass.
-
-## Phase 5 — FileOS cutover
-
-- Shadow FOS-Master in production-like operation; compare inventory, hashes, metadata,
-  extraction, index, queries, errors and performance.
-- Cut over a bounded cohort with rollback, then broaden gradually.
-
-Exit: sustained accepted parity and owner sign-off. Only then consider folding or
-renaming FOS-Master; deletion/retirement remains a separate decision.
-
-## Phase 6 — Reviewed actions
-
-- Add typed proposals, policy, preview/approval and narrowly scoped executors for
-  selected mailbox/file actions.
-- Migrate quarantine/move/dedupe brokers only after adversarial safety tests.
-
-Exit: idempotency, audit, rollback, legal hold, batch caps and human control are proven.
-Automatic sending and permanent deletion remain out of scope unless separately approved.
+For each tranche: pin the starting commit and donor revision if applicable;
+write/update its ADR and testable acceptance; build on a branch; run unit, fault,
+PostgreSQL, browser, restricted-worker and parity checks as applicable; update
+the [status](IMPLEMENTATION_STATUS.md), [functions](CURRENT_FUNCTIONS.md),
+[code map](CODE_MAP.md), [changelog](../CHANGELOG.md) and
+[receipt](BUILD_RECEIPT.md); obtain review; merge without rewriting history;
+verify the resulting `main` commit. A tag is a separate decision after all
+[synthetic-alpha gates](RELEASE_ACCEPTANCE.md#synthetic-alpha-checkpoint-not-production-acceptance)
+and exact-commit evidence pass. Production and cutover use their stricter gates.

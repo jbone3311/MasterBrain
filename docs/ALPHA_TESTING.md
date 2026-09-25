@@ -18,7 +18,8 @@ FileOS cutover. The complete production gates remain in
 
 ## Trial A — read-only FileOS and donor parity
 
-From this checkout, with `uv` and Python 3.11+ installed:
+From this checkout, with `uv` and a supported security-patched Python runtime
+(see [strict-runtime requirements](STRICT_RUNTIME.md)):
 
 ```sh
 uv sync --locked --extra dev
@@ -55,9 +56,19 @@ an existing personal/production database. The full hosted CI and populated resto
 results are recorded in [build receipts](BUILD_RECEIPT.md); a local run without
 PostgreSQL skips marked database tests and is not an equivalent pass.
 
+## Trial D — fictional Email/FileOS together
+
+Use the [cross-source browser walkthrough](CROSS_SOURCE_TRIAL.md) after a locked
+install and Docker Desktop setup. It starts its own disposable PostgreSQL 17
+container, seeds only fictional Email and file evidence, and opens the loopback
+browser. Check the five known-answer queries, citations, separate source layers
+and partial coverage. The exact merged code passed hosted CI, but the owner's
+interactive Mac acceptance is not recorded yet. Stop with Ctrl-C and verify the
+run-specific container is removed; follow the guide if cleanup warns.
+
 ## Report a test result
 
-Include the tag or full commit, trial A/B/C, operating system and Python version,
+Include the tag or full commit, trial A/B/C/D, operating system and Python version,
 exact command, passed/failed/skipped counts, generic error or reason-coded diff,
 and whether files were changed. Report unexpected source mutation immediately and
 stop. Do not attach real paths, contents, mailbox data, credentials, database dumps

@@ -1,11 +1,13 @@
 # Test coverage and limits
 
-Updated 2026-09-23. These are executable behavior checks, not a claim of 100% line
+Updated 2026-09-25. These are executable behavior checks, not a claim of 100% line
 coverage or production readiness. All message content is synthetic. Exact results
 and tested commits belong in [BUILD_RECEIPT.md](BUILD_RECEIPT.md).
 
 | Area | Executable tests | Still needed before production |
 |---|---|---|
+| Fictional Email/FileOS browser trial | Real disposable PostgreSQL launcher, known-answer Email/FileOS counts, citations, two nonempty tenants, scope denials, source hashes, Host/CSP controls, Node browser-script tests, Docker cleanup fault injection and exact CI/restore | Owner's interactive Mac/browser and accessibility walkthrough; no live-source acceptance |
+| Privacy-safe API failures | Fictional canary injection for generic 500 and bounded infrastructure 503, request correlation/security headers and content-free local log event | PostgreSQL server-log policy, protected collection, retention and alert drills |
 | Browser session backend | Fake code endpoint with genuine RSA access verification, PKCE/state/replay, cookie/Origin/CSRF and fetch metadata, races/cancellation/logout, finite capacity/expiry, private config redaction and real SQL isolation/revocation tests | Operator/TLS and owner UI integration, actual browser/accessibility acceptance, authorized issuer/MFA, distributed availability and rate limits |
 | Response streaming | Sixteen fake-stream cases across Fastmail/Gmail/Graph/Ollama: slow bytes, delayed empty EOF, fragmented success, overflow and closure; five regression failures proved against the old implementation | Real network fault/soak tests and hosted supervision; cooperative checks are not hard process deadlines |
 | API identity | Generated RSA keys/fake RFC and Entra issuer, closed profiles, algorithm/audience/claim denials, bounded key cache/rotation/outages, real SQL/API mapping/RLS/revocation/admin audit and populated identity restore | Browser/session, real issuer registration/MFA policy, enrollment/admin UX, service identities, rate limits and independent security acceptance |

@@ -27,7 +27,7 @@ and actual browser acceptance are next; the screen is not yet a complete sign-in
 | Recover held mail | Owner retry; parser versions; isolated jobs bound to receipt/parser/expiry | API/UI, worker library and explicit bounded operator CLI; no hosted supervision |
 | Organize senders | Declarative match, review, bounded simulation, activation and immutable rollback | Narrow exact-domain persisted rules; virtual search labels only |
 | Send feedback | Typed evidence-linked proposals with idempotency and review state | REST works; most approved proposal types apply nothing; MCP absent |
-| Track people/projects | Relational entities/aliases, evidence-linked facts, reversible merges, valid/recorded time | Planned; project proposal is not a created project |
+| Track people/projects | Reviewed, evidence-backed KnowledgeCore base assertions exist; automated Email-to-project extraction, resolution and full project state remain planned | Shared base record exists; a generic Email proposal is not a created project |
 | Track promises/replies | Evidence-backed open/closed/reopened obligations and uncertainty | Planned; no measured Needs Reply classifier |
 | Use local AI | Code first; bounded model input/output, digest and schema/grounding checks | Optional Ollama library, fake-response tested, not automatically invoked |
 | Escalate hard cases | Minimum authorized evidence, disclosure policy, retention review, budget caps | Planned; no remote calls or silent fallback |

@@ -1,12 +1,14 @@
 # MasterBrain Implementation Status
 
-Updated 2026-09-24. **Implemented** means executable in this repository; it does not
-mean hosted, live-source accepted, or production ready. The cumulative stack was
-integrated into `main` via PR #28 at `2dd4a85`; PR #31 then fixed the strict
-sender-parser runtime gate at `20bfc1f`. Exact `main` CI and populated restore
-passed for both checkpoints. The individual PR receipts below are historical
-verification, not still-open integration work. No production or FileOS cutover is
-accepted.
+Updated 2026-09-25. **Implemented** means executable in this repository; it does not
+mean hosted, live-source accepted, or production ready. The cumulative stack is on
+`main` through PR #28 (`2dd4a85`), strict-runtime PR #31 (`20bfc1f`), privacy-safe
+API logging PR #33 (`c605e64`), fictional cross-source trial PR #32 (`77192f5`)
+and reconciled documentation PR #30 (`1e081ea`). Exact baseline `main` CI,
+strict-runtime and populated restore passed. See [current functions](CURRENT_FUNCTIONS.md)
+for callable paths. The individual PR receipts below are historical verification,
+not still-open integration work. Interactive Mac acceptance, issues #6/#7/#9,
+production and FileOS cutover remain open.
 
 ## Implemented
 

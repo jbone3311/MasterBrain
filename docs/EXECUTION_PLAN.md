@@ -1,8 +1,23 @@
 # MasterBrain Incremental Execution Plan
 
-This is the active build plan. Every checkpoint follows: implement → unit/fault/stress
-test → compare with pinned donor where applicable → update documentation/status →
-commit → push → require green CI/restore before beginning the next checkpoint.
+Updated 2026-09-25. Checkpoints 1–5 below describe the original build sequence;
+their bounded synthetic slices now exist on `main`, but their production-level exit
+criteria are **not** all met. Do not assign them again as blank-slate work. The active
+queue is [roadmap next packages](ROADMAP.md#next-build-packages): interactive
+cross-source acceptance, security/upgrade issues #6/#7/#9, engineering-quality
+gate #34, then the next bounded FileOS derivative and donor shadow work. The
+[current function map](CURRENT_FUNCTIONS.md) separates implemented routes from
+designs.
+
+Every new checkpoint follows: implement → unit/fault/stress test → compare with the
+pinned donor where applicable → update documentation/status → commit → push →
+require green exact-head CI/restore before beginning the next checkpoint.
+
+## Historical checkpoints and remaining exit gates
+
+The bullets below retain target requirements. Completing an isolated function does
+not close the whole checkpoint; use the roadmap and release criteria for current
+priorities.
 
 ## Checkpoint 1 — Shared commands and contracts
 

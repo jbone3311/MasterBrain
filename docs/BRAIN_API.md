@@ -12,7 +12,8 @@ publish/read slice lives under `/v1/knowledge`. Synthesis remains a target contr
 2. **Expand:** retrieve only selected fields, related objects, timeline windows, or
    evidence-backed chunks.
 3. **Verify:** resolve a citation to bounded extracted text, then—only with the
-   required scope—to a verified original message, attachment, or file.
+   required scope—to a verified original Email message or attachment. Original
+   FileOS-byte access is not exposed by the current Brain API.
 
 No endpoint exposes provider tokens, storage keys, unrestricted paths, arbitrary
 objects, general SQL, or an unbounded corpus dump.
@@ -59,7 +60,8 @@ objects, general SQL, or an unbounded corpus dump.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change feed.
 - `POST /v1/search` — retained Email capability search during compatibility migration.
-- `POST /v1/answers` — bounded synthesis from retrieved evidence; returns citations.
+- Future `POST /v1/answers` — bounded synthesis from retrieved evidence with citations;
+  **not implemented** as a route.
 - Future graph traversal — related objects and cited attributes beyond exact lookup.
 - `GET /v1/projects/{id}` — project state, members, commitments, events, evidence.
 - `GET /v1/claims/{id}` — claim versions, support, contradictions, and supersession.
@@ -68,12 +70,16 @@ objects, general SQL, or an unbounded corpus dump.
   only after their evidence identities share a proven migration path.
 - `POST /v1/proposals` — typed proposed change; never direct provider/filesystem access.
 
-Resource names may evolve through an ADR before implementation. IDs are opaque and
-tenant-scoped. Requests include explicit `limit`, `fields`, and optional byte/token
-budgets. Responses include `next_cursor`, truncation reasons, freshness, and policy
-decisions.
+Resource names may evolve through an ADR before implementation. Current IDs are
+opaque and tenant-scoped; individual implemented routes enforce their documented
+bounds, scopes and pagination. Uniform `fields`, token budgets, response envelopes,
+and synthesis are target contracts, not guarantees of every current route.
 
 ## Common response envelope
+
+The JSON below is a **target design**, not a promise that every implemented route
+already emits this uniform envelope. The individual route schemas and tests govern
+current responses; common field selection and token budgets remain planned.
 
 ```json
 {
@@ -124,6 +130,10 @@ proposal, current authorization, policy evaluation, idempotency key, preview, ap
 where required, and an audit receipt. Initial release is read-only.
 
 ## Client guidance
+
+There is no deployed MCP server or certified Claude, Grok or ChatGPT adapter yet.
+Use the existing REST route contract only with a separately authorized client;
+passing local API tests does not establish assistant integration.
 
 Clients should search first, expand the smallest useful set, cite evidence IDs in
 their answer, and request originals only when needed. They must treat returned content

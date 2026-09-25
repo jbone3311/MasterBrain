@@ -1,6 +1,6 @@
 # Current MasterBrain code map
 
-Updated 2026-09-23. Existing files, not a proposed directory tree. Python modular
+Updated 2026-09-25. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without
@@ -11,7 +11,7 @@ redirecting Email ingestion or search.
 | MasterBrain command surface | [cli.py](../src/masterbrain/cli.py); read-only hash/compare/duplicates/FileOS snapshot and explicit publication |
 | DataCore contracts | [contracts.py](../src/masterbrain/datacore/contracts.py); immutable source/version/evidence/provenance types |
 | Read-only FileOS inventory | [fileos.py](../src/masterbrain/datacore/fileos.py); deterministic bounded snapshot, no source effects |
-| Confined FileOS source reads | [descriptor reader](../src/masterbrain/datacore/confined_files.py), [snapshot](../src/masterbrain/datacore/fileos.py), [text/document extraction](../src/masterbrain/datacore/extraction.py), [adversarial tests](../tests/test_fileos_confined_reads.py), [ADR-100](adr/100_confined_fileos_reads.md); hosted gate/restore green on `6e2eb8e`, review pending |
+| Confined FileOS source reads | [descriptor reader](../src/masterbrain/datacore/confined_files.py), [snapshot](../src/masterbrain/datacore/fileos.py), [text/document extraction](../src/masterbrain/datacore/extraction.py), [adversarial tests](../tests/test_fileos_confined_reads.py), [ADR-100](adr/100_confined_fileos_reads.md); integrated via PR #28; hosted gate/restore green on `6e2eb8e` |
 | Extracted FileOS inventory classifier | [fileos_junk_filter.py](../src/masterbrain/datacore/fileos_junk_filter.py); [3,000-path donor parity](../scripts/fileos_junk_parity.py), [contract](FILEOS_JUNK_POLICY.md); not yet integrated into snapshots |
 | Synthetic FileOS whole-inventory shadow | [comparator](../scripts/fileos_inventory_shadow.py), [tests](../tests/test_fileos_inventory_shadow.py), [contract](FILEOS_INVENTORY_SHADOW.md), [ADR-093](adr/093_fileos_inventory_shadow.md); no runtime publication |
 | FileOS completion coverage gate | [DataCore validation](../src/masterbrain/datacore/persistence.py), [private publisher preflight](../src/masterbrain/fileos_controller.py), [unit tests](../tests/test_fileos_completion_coverage.py), [PostgreSQL tests](../tests/test_postgres.py), [ADR-094](adr/094_fileos_completion_coverage.md) |
@@ -22,7 +22,7 @@ redirecting Email ingestion or search.
 | Isolated FileOS documents | [document contract](../src/masterbrain/datacore/document_contract.py), [worker](../src/masterbrain/datacore/document_worker.py), [parent](../src/masterbrain/datacore/document_processor.py), [image](../Dockerfile.documents), [guide](FILEOS_DOCUMENT_EXTRACTION.md) |
 | Isolated FileOS archive inventory | [contract](../src/masterbrain/datacore/archive_contract.py), [worker](../src/masterbrain/datacore/archive_worker.py), [parent](../src/masterbrain/datacore/archive_processor.py), [image](../Dockerfile.archives), [live donor parity](../scripts/archive_parity.py), [guide](FILEOS_ARCHIVE_EXTRACTION.md) |
 | Archive hash-manifest persistence | [DataCore store](../src/masterbrain/datacore/persistence.py), [migration 0023](../migrations/0023_archive_manifests.sql), [contract](ARCHIVE_MANIFEST_PERSISTENCE.md) |
-| Archive ledger and parent integrity | [migration 0033](../migrations/0033_archive_ledger_parent_integrity.sql), [PostgreSQL regressions](../tests/test_postgres.py), [populated upgrade](../tests/test_recovery.py), [ADR-099](adr/099_archive_ledger_and_parent_integrity.md); hosted CI/restore green, review pending |
+| Archive ledger and parent integrity | [migration 0033](../migrations/0033_archive_ledger_parent_integrity.sql), [PostgreSQL regressions](../tests/test_postgres.py), [populated upgrade](../tests/test_recovery.py), [ADR-099](adr/099_archive_ledger_and_parent_integrity.md); integrated via PR #28; hosted CI/restore green |
 | Hash-bound archive member read | [contract](../src/masterbrain/datacore/archive_member_contract.py), [worker](../src/masterbrain/datacore/archive_member_worker.py), [parent](../src/masterbrain/datacore/archive_member_processor.py), [root revalidation](../src/masterbrain/datacore/archive_member.py), [guide](ARCHIVE_MEMBER_READ.md) |
 | Archive member text derivative | [orchestration](../src/masterbrain/datacore/archive_member_text.py), [DataCore store](../src/masterbrain/datacore/persistence.py), [migration 0024](../migrations/0024_archive_member_text_derivatives.sql), [contract](ARCHIVE_MEMBER_TEXT.md) |
 | Private archive-member text operator | [archive_member_controller.py](../src/masterbrain/archive_member_controller.py), [CLI](../src/masterbrain/cli.py), [contract](ARCHIVE_MEMBER_OPERATOR.md), [ADR-079](adr/079_private_archive_member_text_operator.md) |
@@ -43,6 +43,9 @@ redirecting Email ingestion or search.
 | Structured travel/bill memory | [memory.py](../src/email_brain/memory.py), [memory_schema.py](../src/email_brain/memory_schema.py), [memory_extract.py](../src/email_brain/memory_extract.py), [memory.js](../src/email_brain/web/memory.js), [migration 0014](../migrations/0014_structured_memory.sql) |
 | Shared DataCore persistence | [persistence.py](../src/masterbrain/datacore/persistence.py), [migration 0015](../migrations/0015_datacore_persistence.sql), [run receipts 0017](../migrations/0017_fileos_run_receipts.sql), [inventory reconciliation 0018](../migrations/0018_fileos_inventory_reconciliation.sql), [index generations 0019](../migrations/0019_datacore_index_generations.sql), [Email bridge 0020](../migrations/0020_email_datacore_bridge.sql), [attachment bridge 0021](../migrations/0021_email_attachment_bridge.sql), [approved-PDF derivative bridge 0022](../migrations/0022_email_document_extraction_bridge.sql), [contract](DATACORE_PERSISTENCE.md) |
 | Reviewed KnowledgeCore | [knowledge.py](../src/masterbrain/knowledge.py), [knowledge_schema.py](../src/masterbrain/knowledge_schema.py), [migration 0016](../migrations/0016_knowledgecore.sql), [contract](KNOWLEDGECORE.md) |
+| Fictional cross-source browser trial | [launcher](../tests/cross_source_preview.py), [known-answer/tenant tests](../tests/test_cross_source_preview.py), [browser script](../tests/cross_source_assets/trial.js), [guide](CROSS_SOURCE_TRIAL.md); local PostgreSQL/Docker and fictional data only |
+| Privacy-safe API failure correlation | [request boundary](../src/email_brain/api.py), [failure tests](../tests/test_request_failure_logging.py), [ADR-104](adr/104_privacy_safe_error_observability.md); production log collection remains open |
+| Current callable-function summary | [CURRENT_FUNCTIONS.md](CURRENT_FUNCTIONS.md); this code map lists owners, not release acceptance |
 | Demo/migrate/serve | [cli.py](../src/email_brain/cli.py) |
 | REST/request boundary | [api.py](../src/email_brain/api.py), [schemas.py](../src/email_brain/schemas.py) |
 | Bootstrap identity | [auth.py](../src/email_brain/auth.py) |
