@@ -17,13 +17,18 @@ tenant predicate to that lookup would not solve the bootstrapping problem.
 Migration 0035 replaces the lookup policy with an exact-key, active-only,
 `SECURITY DEFINER` resolver. The resolver returns only binding ID, tenant, actor,
 scopes, kind and revision; it never returns the external subject or issuer. It has
-a fixed search path, schema-qualified table, no dynamic SQL and no mutation. Public
+a fixed trusted search path (`pg_catalog, pg_temp`), schema-qualified table,
+no dynamic SQL and no mutation. Public
 execution is revoked; `grant-runtime` grants execute to the selected non-owner
 runtime role and revokes its direct identity-table SELECT. Grant refresh and runtime
 connection preflight both refuse identity-table SELECT inherited through another
 role, including an accidental administrator membership. The application calls it
 only after verifying the access token and again for every authorized transaction.
 The separate administrator policy from ADR-105 is unchanged.
+The function follows PostgreSQL's
+[SECURITY DEFINER guidance](https://www.postgresql.org/docs/17/sql-createfunction.html#SQL-CREATEFUNCTION-SECURITY):
+exclude untrusted schemas from the search path and revoke default public execution
+in the same migration transaction.
 
 Historical pre-0035 schemas remain supported by `grant-runtime` for upgrade tests;
 production must apply 0035 and refresh grants before starting the new runtime.

@@ -435,7 +435,7 @@ class Store:
     ) -> dict[str, Any] | None:
         """Exact binding lookup after caller-side token verification; no table SELECT."""
         return conn.execute(
-            "SELECT * FROM resolve_external_identity(%s,%s,%s)",
+            "SELECT * FROM public.resolve_external_identity(%s,%s,%s)",
             (issuer, subject, client_id),
         ).fetchone()
 

@@ -209,7 +209,7 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
     has_resolver = bool(resolver_row[0])
     if has_resolver:
         conn.execute(
-            sql.SQL("REVOKE SELECT ON external_identities FROM {}").format(
+            sql.SQL("REVOKE SELECT ON public.external_identities FROM {}").format(
                 sql.Identifier(role)
             )
         )
@@ -220,7 +220,7 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
             raise ValueError("runtime identity-table SELECT remains inherited")
         conn.execute(
             sql.SQL("GRANT EXECUTE ON FUNCTION "
-                    "resolve_external_identity(text,text,text) TO {}").format(
+                    "public.resolve_external_identity(text,text,text) TO {}").format(
                 sql.Identifier(role)
             )
         )
