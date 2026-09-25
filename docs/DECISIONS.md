@@ -10,6 +10,14 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-104](adr/104_privacy_safe_error_observability.md) adds content-free
+request-failure categories and a sanitized 500 response with a server-generated
+request ID. It does not claim production log retention, alerting or incident response.
+
+[ADR-102](adr/102_strict_sender_runtime.md) requires a security-patched
+strict sender parser at startup and keeps unsupported Python patches from silently
+losing rule effects. PR #31 is merged on `main`; this is not sender authentication.
+
 [ADR-101](adr/101_synthetic_alpha_release.md) defines the test-only `0.2.0a1`
 checkpoint and the branch/PR/test/merge/tag cadence. It does not authorize live
 sources, production deployment, FileOS cutover or FOS-Master retirement.
@@ -17,33 +25,33 @@ sources, production deployment, FileOS cutover or FOS-Master retirement.
 [ADR-100](adr/100_confined_fileos_reads.md) requires descriptor-relative,
 no-follow, bounded FileOS snapshot and extraction reads before bytes are hashed or
 parsed. The isolated implementation and adversarial regressions passed hosted CI,
-donor shadow and populated restore on PR #25's tested head. Integration is pending;
-the donor policy and FOS-Master remain unchanged.
+donor shadow and populated restore on PR #25's tested head. Integrated into
+`main` via cumulative PR #28; donor policy and FOS-Master remain unchanged.
 
 [ADR-099](adr/099_archive_ledger_and_parent_integrity.md) requires archive child
 inserts to keep sealed inventory counts/bytes balanced at commit, binds provenance
 outputs to normalized documents and binds text/document/image receipt parent
 versions to their exact inventory. Forward-only migration 0033 passed hosted
-PostgreSQL CI and populated restore on PR #24's runtime head. Review and
-integration remain pending.
+PostgreSQL CI and populated restore on PR #24's runtime head. Integrated into
+`main` via cumulative PR #28.
 
 [ADR-098](adr/098_fileos_root_binding.md) binds FileOS intake and completion to a
 versioned physical-root digest. Historical unknown roots are not silently claimed.
 Implemented in isolated PR #22; hosted CI and populated restore passed on the
-runtime head. Review and integration remain; this is not a donor-policy switch
+runtime head. Integrated into `main` via PR #28; this is not a donor-policy switch
 or cutover.
 
 [ADR-097](adr/097_fileos_exclusion_ledger.md) requires a bounded, exact FileOS
 snapshot exclusion ledger and refuses absence inference when a previously indexed
 locator is now excluded or intentionally skipped. It leaves donor policy and
 FOS-Master unchanged. Implemented; hosted CI and populated restore are green on
-PR #21's runtime head. Review and integration remain pending.
+PR #21's runtime head. Integrated into `main` via PR #28.
 
 [ADR-096](adr/096_fileos_inventory_policy_identity.md) binds new FileOS completion
 receipts to a validated versioned inventory-policy digest and refuses absence
 inference across unknown or changed policies. It does not authorize automatic
 rebaselining or donor cutover. Implemented; hosted CI and populated restore are green
-on PR #20's runtime head. Review and integration remain pending.
+on PR #20's runtime head. Integrated into `main` via PR #28.
 
 [ADR-095](adr/095_fileos_mass_loss_guard.md) refuses a new FileOS completion when
 at least 10 prior items and at least half the prior inventory disappear. It does
@@ -69,8 +77,9 @@ grants unchanged. See the [truncation contract](EVIDENCE_TRUNCATE_GUARDS.md).
 migration-role preflight and a forward-only audit/repair of legacy Email
 `message_sync_state` gaps. It preserves applied checksums and current evidence;
 runtime roles retain forced RLS. Implementation and hosted gates are green in
-[PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12); independent review
-and integration remain pending. See the [migration integrity contract](MIGRATION_INTEGRITY.md).
+[PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12); the implementation
+was integrated via PR #28, and issue #5 closed after direct PostgreSQL regression
+coverage. See the [migration integrity contract](MIGRATION_INTEGRITY.md).
 
 [ADR-090](adr/090_private_archive_image_operator.md) defines the private,
 authenticated one-member archive-image OCR command using the accepted 5A composition

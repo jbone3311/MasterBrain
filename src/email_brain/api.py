@@ -54,6 +54,19 @@ log = logging.getLogger("email_brain.requests")
 WEB = Path(__file__).parent / "web"
 
 
+def _safe_request_failure(request: Request, status: int, code: str, exc: Exception) -> None:
+    """Log diagnostic categories only; exception text can contain private evidence."""
+    route = getattr(request.scope.get("route"), "path", "unmatched")
+    log.error(
+        "request_failure id=%s route=%s status=%d code=%s error_type=%s",
+        getattr(request.state, "request_id", "missing"),
+        route,
+        status,
+        code,
+        type(exc).__name__,
+    )
+
+
 class BodyLimit:
     """Bound streamed request bodies before JSON decoding, including chunked requests."""
 
@@ -165,7 +178,11 @@ def create_app(
         started = time.monotonic()
         request_id = str(uuid4())
         request.state.request_id = request_id
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            _safe_request_failure(request, 500, "internal_error", exc)
+            response = JSONResponse({"error": "internal_error"}, status_code=500)
         content_policy = response.headers.get("Content-Security-Policy")
         response.headers.update(
             {
@@ -193,12 +210,14 @@ def create_app(
 
     @app.exception_handler(BlobError)
     async def storage_handler(request: Request, exc: BlobError) -> JSONResponse:
+        _safe_request_failure(request, 503, "evidence_storage_unavailable", exc)
         return JSONResponse(status_code=503, content={"error": "evidence_storage_unavailable"})
 
     @app.exception_handler(AuthenticationUnavailable)
     async def authentication_handler(
         request: Request, exc: AuthenticationUnavailable
     ) -> JSONResponse:
+        _safe_request_failure(request, 503, "authentication_unavailable", exc)
         return JSONResponse(status_code=503, content={"error": "authentication_unavailable"})
 
     @app.exception_handler(BrowserDenied)
@@ -207,10 +226,12 @@ def create_app(
 
     @app.exception_handler(RecoveryUnavailable)
     async def recovery_handler(request: Request, exc: RecoveryUnavailable) -> JSONResponse:
+        _safe_request_failure(request, 503, "recovery_unavailable", exc)
         return JSONResponse(status_code=503, content={"error": "recovery_unavailable"})
 
     @app.exception_handler(ReaderUnavailable)
     async def reader_handler(request: Request, exc: ReaderUnavailable) -> JSONResponse:
+        _safe_request_failure(request, 503, "message_reader_unavailable", exc)
         return JSONResponse(status_code=503, content={"error": "message_reader_unavailable"})
 
     @app.exception_handler(Conflict)
@@ -227,7 +248,8 @@ def create_app(
 
     @app.exception_handler(psycopg.Error)
     async def database_handler(request: Request, exc: psycopg.Error) -> JSONResponse:
-        # Database diagnostics may contain data/DSNs. Deliberately do not log exc.
+        # Database diagnostics may contain data/DSNs. Log only a fixed code and class.
+        _safe_request_failure(request, 503, "database_unavailable", exc)
         return JSONResponse({"error": "database_unavailable", "retryable": True}, status_code=503)
 
     @app.exception_handler(RequestValidationError)
