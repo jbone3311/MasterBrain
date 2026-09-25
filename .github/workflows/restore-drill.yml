@@ -3,22 +3,8 @@ name: Synthetic PostgreSQL restore drill
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - "migrations/**"
-      - "src/email_brain/**"
-      - "src/masterbrain/**"
-      - "scripts/restore_drill.py"
-      - "tests/test_restore_drill.py"
-      - ".github/workflows/restore-drill.yml"
   push:
     branches: [main]
-    paths:
-      - "migrations/**"
-      - "src/email_brain/**"
-      - "src/masterbrain/**"
-      - "scripts/restore_drill.py"
-      - "tests/test_restore_drill.py"
-      - ".github/workflows/restore-drill.yml"
 
 permissions:
   contents: read
