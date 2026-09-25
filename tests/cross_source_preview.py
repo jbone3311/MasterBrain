@@ -201,6 +201,23 @@ def docker(*args: str, env: dict[str, str] | None = None) -> str:
     ).strip()
 
 
+def cleanup_trial_container(name: str, marker: str) -> None:
+    """Remove only the container with this run's unpredictable name and marker."""
+    try:
+        inspected = docker(
+            "inspect", "--format", '{{ index .Config.Labels "masterbrain.trial" }} {{.Id}}',
+            name,
+        )
+        found_marker, separator, container_id = inspected.partition(" ")
+        if found_marker != marker or not separator or not container_id:
+            raise ValueError("trial container identity mismatch")
+        docker("rm", "--force", container_id)
+    except (subprocess.SubprocessError, OSError, ValueError):
+        print(
+            f"Check Docker Desktop for temporary trial container {name}.", file=sys.stderr
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--synthetic-preview", action="store_true", required=True)
@@ -215,12 +232,13 @@ def main() -> int:
         parser.error("Docker Desktop must be installed and running for this disposable trial")
     name = "masterbrain-trial-" + secrets.token_hex(6)
     password = secrets.token_urlsafe(32)
-    container_id: str | None = None
+    marker = secrets.token_hex(16)
     stage = "starting disposable PostgreSQL"
     try:
         print("Creating fictional-data trial. No live accounts or source folders are used.")
-        container_id = docker(
+        docker(
             "run", "--detach", "--rm", "--name", name,
+            "--label", f"masterbrain.trial={marker}",
             "--publish", "127.0.0.1::5432", "--tmpfs", "/var/lib/postgresql/data",
             "--env", "POSTGRES_PASSWORD", "--env", "POSTGRES_DB=email_brain_test_preview",
             "postgres:17", env={**os.environ, "POSTGRES_PASSWORD": password},
@@ -302,13 +320,7 @@ def main() -> int:
         )
         return 1
     finally:
-        if container_id is not None:
-            try:
-                docker("rm", "--force", container_id)
-            except (subprocess.SubprocessError, OSError):
-                print(
-                    f"Check Docker Desktop for temporary trial container {name}.", file=sys.stderr
-                )
+        cleanup_trial_container(name, marker)
 
 
 if __name__ == "__main__":
