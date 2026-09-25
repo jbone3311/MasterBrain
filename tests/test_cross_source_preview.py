@@ -132,6 +132,49 @@ def test_read_only_credential_no_unauthorized_content_or_review(preview, databas
     assert preview.context == replace(preview.context, scopes=READ_SCOPES)
 
 
+def test_trial_cleanup_recovers_after_docker_run_loses_its_id(monkeypatch):
+    import cross_source_preview as trial
+
+    calls = []
+
+    def fake_docker(*args, env=None):
+        calls.append(args)
+        if args[0] == "inspect":
+            assert args[-1] == "masterbrain-trial-fixture"
+            return "expected-marker verified-container-id"
+        return ""
+
+    monkeypatch.setattr(trial, "docker", fake_docker)
+    trial.cleanup_trial_container("masterbrain-trial-fixture", "expected-marker")
+    assert calls[-1] == ("rm", "--force", "verified-container-id")
+
+
+def test_trial_cleanup_refuses_a_container_with_wrong_marker(monkeypatch, capsys):
+    import cross_source_preview as trial
+
+    calls = []
+
+    def fake_docker(*args, env=None):
+        calls.append(args)
+        return "someone-elses-marker other-container-id"
+
+    monkeypatch.setattr(trial, "docker", fake_docker)
+    trial.cleanup_trial_container("masterbrain-trial-fixture", "expected-marker")
+    assert [args[0] for args in calls] == ["inspect"]
+    assert "Check Docker Desktop for temporary trial container" in capsys.readouterr().err
+
+
+def test_trial_cleanup_warns_when_docker_cannot_inspect(monkeypatch, capsys):
+    import cross_source_preview as trial
+
+    def unavailable(*args, env=None):
+        raise subprocess.TimeoutExpired(["docker", *args], 180)
+
+    monkeypatch.setattr(trial, "docker", unavailable)
+    trial.cleanup_trial_container("masterbrain-trial-fixture", "expected-marker")
+    assert "Check Docker Desktop for temporary trial container" in capsys.readouterr().err
+
+
 def test_browser_assets_do_not_embed_credentials_or_execute_source_text():
     script = (ASSETS / "trial.js").read_text()
     assert "innerHTML" not in script
