@@ -2,7 +2,29 @@
 
 Updated 2026-09-25 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Latest verified `main` before archive-image search tranche
+## Latest verified `main`: current-only archive-image OCR search
+
+[PR #39](https://github.com/jbone3311/MasterBrain/pull/39) merged at
+`d2a418d217333605f9aa4a15d4b7c73819b84c9c`, then that exact `main` SHA
+passed [full CI 36187693715](https://github.com/jbone3311/MasterBrain/actions/runs/36187693715),
+[strict runtime 36187693520](https://github.com/jbone3311/MasterBrain/actions/runs/36187693520),
+and [populated restore 36187693702](https://github.com/jbone3311/MasterBrain/actions/runs/36187693702).
+The PR head `5a9543700ca913d72dd9769bcd636db1469720b5` independently passed
+[full CI 36186992023](https://github.com/jbone3311/MasterBrain/actions/runs/36186992023),
+[strict runtime 36186991911](https://github.com/jbone3311/MasterBrain/actions/runs/36186991911),
+and [restore 36186991839](https://github.com/jbone3311/MasterBrain/actions/runs/36186991839).
+
+Local synthetic evidence: 2,815 passed, one Docker-only skipped, with 440
+PostgreSQL-marked tests executed; 134 browser tests passed. The eight image-suffix
+receipt mappings passed against disposable PostgreSQL 17.11. Pinned FOS-Master
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` archive, image OCR (100 stress
+images), and DataCore (3,000 stress files) parity passed. ADR-107 and migration
+0036 add only current-image read visibility and a tenant-leading receipt index.
+Neither FOS-Master nor active FileOS generations changed. Issues #7 and #9 remain
+open; no live-source, populated-index lock-budget, production, or donor-cutover
+claim follows from these synthetic gates.
+
+## Previous verified `main` before archive-image search tranche
 
 PR #37 added least-privilege identity administration and merged at `e07bc55`;
 PR #38 narrowed runtime identity reads to an exact resolver and merged at
@@ -12,8 +34,8 @@ PR #38 narrowed runtime identity reads to an exact resolver and merged at
 and [populated restore 36184292905](https://github.com/jbone3311/MasterBrain/actions/runs/36184292905).
 Issue #6 is closed. Confirmed issue #7 (caller-settable tenant authority) and
 populated-upgrade issue #9 remain open; no hosted security or production claim is
-made. The archive-image search tranche is a later candidate until its own exact
-head and merge-commit checks are recorded.
+made. The archive-image search tranche is recorded above on its exact head and
+merge commit.
 
 ## Repository consolidation (2026-09-25)
 
