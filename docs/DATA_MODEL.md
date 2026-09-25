@@ -16,6 +16,9 @@ implemented remain logical targets.
   role with a forced-RLS identity-binding management policy. It grants no runtime
   identity writes, table ownership or direct audit-event insertion; a named
   administrator login must be enrolled separately by a DBA.
+- Migration 0035 removes the caller-settable identity-lookup policy and grants
+  runtime only the exact, active-only resolver function, not table-wide SELECT.
+  Other tenant-context RLS settings still need a separate compromised-SQL design.
 
 ## Source and evidence
 

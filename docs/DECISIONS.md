@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-106](adr/106_identity_resolver_boundary.md) moves runtime identity reads
+behind an exact-key definer function and removes direct table SELECT. It reduces
+the caller-settable lookup surface but does not close issue #7's arbitrary-SQL
+tenant-context threat.
+
 [ADR-105](adr/105_identity_admin_enrollment.md) provides a dedicated
 non-superuser identity-administration role under forced RLS and a protected audit
 trigger. It addresses issue #6 without granting runtime writes or resolving the

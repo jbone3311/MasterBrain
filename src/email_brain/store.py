@@ -414,39 +414,52 @@ class Store:
             ).fetchone()
             if not role or role["rolsuper"] or role["rolbypassrls"] or role["owns"]:
                 raise AccessDenied("unsafe runtime database role")
+            resolver = conn.execute(
+                "SELECT to_regprocedure('public.resolve_external_identity(text,text,text)') "
+                "IS NOT NULL AS present"
+            ).fetchone()
+            if resolver and resolver["present"]:
+                direct_identity_read = conn.execute(
+                    "SELECT has_table_privilege(current_user,"
+                    "'public.external_identities','SELECT') AS allowed"
+                ).fetchone()
+                if not direct_identity_read or direct_identity_read["allowed"]:
+                    raise AccessDenied("unsafe runtime identity-table grant")
             conn.execute("SELECT set_config('statement_timeout', '5000', true)")
             conn.execute("SELECT set_config('lock_timeout', '2000', true)")
             yield conn
 
     @staticmethod
-    def identity_context(
+    def resolve_identity(
         conn: psycopg.Connection[dict[str, Any]], issuer: str, subject: str, client_id: str
-    ) -> None:
-        # Only verified identity resolution and contexts created by it call this.
-        conn.execute("SELECT set_config('email_brain.auth_issuer', %s, true)", (issuer,))
-        conn.execute("SELECT set_config('email_brain.auth_subject', %s, true)", (subject,))
-        conn.execute("SELECT set_config('email_brain.auth_client', %s, true)", (client_id,))
+    ) -> dict[str, Any] | None:
+        """Exact binding lookup after caller-side token verification; no table SELECT."""
+        return conn.execute(
+            "SELECT * FROM public.resolve_external_identity(%s,%s,%s)",
+            (issuer, subject, client_id),
+        ).fetchone()
 
     @contextmanager
     def transaction(self, ctx: TenantContext) -> Iterator[psycopg.Connection[dict[str, Any]]]:
         with self.connection() as conn:
             if identity := ctx.identity:
-                self.identity_context(conn, identity.issuer, identity.subject, identity.client_id)
-                binding = conn.execute(
-                    "SELECT 1 FROM external_identities WHERE id=%s AND tenant_id=%s "
-                    "AND actor_id=%s AND revision=%s AND active AND client_kind=%s "
-                    "AND scopes @> %s::text[] AND clock_timestamp() < %s",
-                    (
-                        identity.binding_id,
-                        ctx.tenant_id,
-                        ctx.actor_id,
-                        identity.revision,
-                        identity.client_kind,
-                        sorted(ctx.scopes),
-                        identity.expires_at,
-                    ),
+                binding = self.resolve_identity(
+                    conn, identity.issuer, identity.subject, identity.client_id
+                )
+                expiry_check = conn.execute(
+                    "SELECT clock_timestamp() < %s AS valid", (identity.expires_at,)
                 ).fetchone()
-                if not binding:
+                if (
+                    not binding
+                    or binding["id"] != identity.binding_id
+                    or binding["tenant_id"] != ctx.tenant_id
+                    or binding["actor_id"] != ctx.actor_id
+                    or binding["revision"] != identity.revision
+                    or binding["client_kind"] != identity.client_kind
+                    or not set(ctx.scopes).issubset(binding["scopes"])
+                    or not expiry_check
+                    or not expiry_check["valid"]
+                ):
                     raise AccessDenied("external identity is no longer authorized")
             conn.execute(
                 "SELECT set_config('email_brain.tenant_id', %s, true)", (str(ctx.tenant_id),)

@@ -46,6 +46,10 @@ monitoring remain release gates. See [ADR-104](adr/104_privacy_safe_error_observ
   The audit trigger records the connecting login without granting it direct audit
   writes. This closes the forced-RLS enrollment gap in issue #6, not issue #7's
   arbitrary-SQL/session-context threat. See [ADR-105](adr/105_identity_admin_enrollment.md).
+- Runtime identity resolution uses an exact-key definer function instead of direct
+  identity-table SELECT or caller-settable lookup policy. A compromised runtime DSN
+  can still set tenant-context GUCs protecting other tables; issue #7 remains open
+  and hosted containment is not claimed. See [ADR-106](adr/106_identity_resolver_boundary.md).
 - Tenant/source isolation in application code and forced database RLS.
 - Encryption in transit and at rest; managed key rotation and recovery procedures.
 - Network isolation for databases/object storage; no public administrative endpoints.

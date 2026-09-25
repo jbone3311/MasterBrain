@@ -51,8 +51,11 @@ runtime and worker credentials must never inherit this privilege. Migration
 group if it does not already exist. A DBA may pre-provision that group with the
 attributes in [ADR-105](adr/105_identity_admin_enrollment.md) and no members;
 review membership before applying 0034 or granting a named administrator login.
-In particular,
-older 0006/0008 receipts made under a non-bypass table owner do not prove that their
+Apply 0035 and rerun `grant-runtime` before starting the new API binary: it removes
+direct runtime identity-table SELECT and grants the exact resolver instead. An old
+API binary fails closed after 0035; rollback must restore compatible code and
+grants under an operator-reviewed plan, not re-enable the lookup GUC policy.
+Older 0006/0008 receipts made under a non-bypass table owner do not prove that their
 cross-tenant reads ran. Before applying 0029, audit missing sync-state keys and
 parser mismatches with the actual migration identity. A mismatch stops the rollout
 for reviewed evidence repair. See the [migration-integrity contract](MIGRATION_INTEGRITY.md).

@@ -2,6 +2,10 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Removed direct runtime SELECT on identity bindings and the caller-settable
+  identity-lookup RLS policy; an exact, active-only resolver now supplies the
+  verified-token path (ADR-106, migration 0035). Arbitrary-SQL/tenant-context
+  containment remains open in issue #7.
 - Added a separate non-superuser identity-administration role under forced RLS
   (ADR-105, migration 0034) with a protected audit trigger and real PostgreSQL
   regression. Runtime still cannot manage bindings; live enrollment remains gated.

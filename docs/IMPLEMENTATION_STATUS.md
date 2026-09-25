@@ -238,6 +238,11 @@ production and FileOS cutover remain open.
   replay tests passed. Hosted CI (2,669 Python tests, browser and restricted-worker
   gates) and populated restore passed on separate PR #13; the implementation is
   integrated on `main` via PR #28.
+- A dedicated non-superuser identity-administration role and exact-key runtime
+  resolver replace the former caller-settable identity lookup policy. The runtime
+  has no direct identity-table SELECT after migration 0035 and refreshed grants.
+  This does not contain arbitrary SQL or a stolen runtime credential because other
+  tenant RLS settings remain caller-settable; issue #7 is still open.
 
 ## Designed, not implemented
 

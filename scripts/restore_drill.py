@@ -707,16 +707,20 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             "restored identity crosses tenant",
         )
         with store.transaction(mapped.context) as conn:
-            identities = conn.execute("SELECT id FROM external_identities").fetchall()
-            require(
-                [r["id"] for r in identities] == [current.identity_id],
-                "restored identity lookup RLS failed",
+            identity = store.resolve_identity(
+                conn, verified.issuer, verified.subject, verified.client_id
             )
-        with store.transaction(ctx) as conn:
             require(
-                not conn.execute("SELECT id FROM external_identities").fetchall(),
-                "unverified context exposed identity mappings",
+                identity is not None and identity["id"] == current.identity_id,
+                "restored exact identity lookup failed",
             )
+        try:
+            with store.transaction(ctx) as conn:
+                conn.execute("SELECT id FROM external_identities")
+        except psycopg.errors.InsufficientPrivilege:
+            pass
+        else:
+            raise DrillFailure("runtime can directly read identity mappings")
         with psycopg.connect(admin) as conn:
             conn.execute(
                 "UPDATE external_identities SET active=false WHERE id=%s", (current.identity_id,)
