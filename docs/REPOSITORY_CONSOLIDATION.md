@@ -34,9 +34,22 @@ Two divergent branches were deliberately retained; neither was force-merged:
 | `review/factory-pass` (`91a9282`) | One commit ahead of `main`, 77 behind; closed, unmerged [PR #11](https://github.com/jbone3311/MasterBrain/pull/11) | Historical external review and migration proposal. Reconcile each finding against current migrations and tests before extracting any still-missing fix. Do not merge the stale branch wholesale. |
 | `codex/strict-runtime-lock-prep-20260924` (`619e1c1`) | One commit ahead of `main`, 22 behind; old preparation workflow and ADR | Compare with the later strict sender-runtime gate and decide whether any workflow or ADR detail is still needed. Do not merge a potentially superseded workflow without review. |
 
-Current branch set after cleanup: `main` plus those two retained branches. There
-are no open PRs at this checkpoint. This consolidation does not establish product
-acceptance, tag `v0.2.0a1`, authorize live sources, or permit FileOS cutover.
+Branch set at that cleanup checkpoint: `main` plus those two retained branches.
+There were no open PRs at that checkpoint.
+
+## Later disposition (2026-09-25)
+
+The strict-runtime preparation branch at `619e1c1` was inspected. Its ADR-102
+content is byte-identical to `main`; its only remaining distinct file was a
+one-shot lock-blob workflow intentionally excluded from the runtime fix. PR #31
+already delivered the strict-runtime implementation and hosted matrix. The
+obsolete preparation branch pointer was removed; no `main` commit or FOS-Master
+state changed. `review/factory-pass` remains because its closed PR #11 still has
+distinct migration findings requiring item-by-item reconciliation. The remote
+branch set is now `main` plus `review/factory-pass`.
+
+This consolidation does not establish product acceptance, tag `v0.2.0a1`,
+authorize live sources, or permit FileOS cutover.
 
 For a local checkout, point `origin` to the canonical address:
 
