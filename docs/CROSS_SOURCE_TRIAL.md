@@ -48,8 +48,10 @@ layers are not populated in this walkthrough. Ranks are not compared across laye
 
 ## Stop and report
 
-Press Ctrl-C in the terminal. The created container and temporary fictional files
-are removed; no existing Docker container, database or source folder is deleted.
+Press Ctrl-C in the terminal. The launcher verifies its run-specific container
+marker before removing that container; temporary fictional files are also removed.
+If verification or Docker cleanup fails, the terminal names the trial container to
+check manually. No existing Docker container, database or source folder is deleted.
 After a forced termination, remove only the `masterbrain-trial-*` container created
 for this run through Docker Desktop. It has no persistent source-volume mount.
 
