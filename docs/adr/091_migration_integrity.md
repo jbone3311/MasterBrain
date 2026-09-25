@@ -5,7 +5,7 @@ independent review and integration pending.
 
 ## Context
 
-[Issue #5](https://github.com/jbone3311/CW-EmailBrain/issues/5) identified two
+[Issue #5](https://github.com/jbone3311/MasterBrain/issues/5) identified two
 data-dependent migrations that assume unrestricted visibility. Migration 0006
 backfills `message_sync_state` from `messages`; migration 0008 checks current
 `messages` against `message_versions` for parser-provenance mismatches. Both source

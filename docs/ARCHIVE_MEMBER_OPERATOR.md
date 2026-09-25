@@ -3,8 +3,8 @@
 Status: implemented in checkpoints `257ab30` and `d66de6e`; FOS-Master remains
 unchanged at pinned donor commit `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
 The hardened revision passed 2,556 hosted Python tests and the real restricted-image
-member checks in [CI 35795580456](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35795580456),
-plus [restore 35795580548](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35795580548).
+member checks in [CI 35795580456](https://github.com/jbone3311/MasterBrain/actions/runs/35795580456),
+plus [restore 35795580548](https://github.com/jbone3311/MasterBrain/actions/runs/35795580548).
 
 ## Purpose
 

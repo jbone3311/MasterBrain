@@ -41,7 +41,7 @@ is retained unless a separately authorized data-retention operation is designed.
 ## Implementation
 
 Implemented in design `16d452a`, runtime `760a644` and correction `63b478d`. Hosted
-[CI 35833506295](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506295)
-and [restore 35833506298](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506298)
+[CI 35833506295](https://github.com/jbone3311/MasterBrain/actions/runs/35833506295)
+and [restore 35833506298](https://github.com/jbone3311/MasterBrain/actions/runs/35833506298)
 are green. Private command, current search, preview, batch and fan-out remain separate
 decisions.

@@ -1,6 +1,6 @@
 # Current MasterBrain functions
 
-Verified against `main` at `1e081ea881779796f5b7db185c0906d165837caf`
+Verified against `main` at `c8c428bc61c17021394b67b489700123de2e3ea6`
 (2026-09-25). “Available” below means executable in this repository with
 synthetic/disposable inputs; it does **not** mean hosted, connected to real accounts,
 approved for private data, or production accepted. The exact-commit gates are in

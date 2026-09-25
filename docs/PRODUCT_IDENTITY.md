@@ -1,9 +1,11 @@
 # Product Identity
 
-The final product name is **MasterBrain**. The current GitHub repository remains
-`jbone3311/CW-EmailBrain` during migration to preserve links, automation, history and
-rollback. Renaming the repository is a later administrative change after dependent
-systems have been inventoried.
+The final product name is **MasterBrain**. The GitHub repository is
+[`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain). It was renamed
+from `jbone3311/CW-EmailBrain` on 2026-09-25. The rename did not change commits,
+the `main` branch, release status, or the FileOS donor. Update local Git remotes,
+automation settings, and bookmarks that still use the old address; historical
+references remain meaningful. See [the consolidation receipt](REPOSITORY_CONSOLIDATION.md).
 
 `email_brain`, `email-brain`, EmailBrain and Email Brain are compatibility/internal
 names for the Email source capability. They may remain in imports, commands, database

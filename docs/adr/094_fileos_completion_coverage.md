@@ -1,8 +1,8 @@
 # ADR-094 — Refuse FileOS completion after incomplete snapshot coverage
 
 Status: implemented and verified in an isolated tranche. Hosted
-[CI 35863559605](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35863559605)
-and [restore 35863559359](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35863559359)
+[CI 35863559605](https://github.com/jbone3311/MasterBrain/actions/runs/35863559605)
+and [restore 35863559359](https://github.com/jbone3311/MasterBrain/actions/runs/35863559359)
 passed on PR #18's runtime head `d7e698e`; review remains pending. This is not an
 inventory-policy switch or cutover.
 

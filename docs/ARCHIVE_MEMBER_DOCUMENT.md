@@ -81,9 +81,9 @@ state—never locator, path, bytes, text, document properties, Docker details or
 Checkpoint 4V is implemented in design revision `ea6fd29`, orchestration `6680218`,
 selector/receipt migration `0210ad1` with assertion correction `a4af448`, publication
 `4d098fa`, private command `5bb1aa1` and real two-image chain gate `49b8383`. Final-head
-[CI 35810970182](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970182)
+[CI 35810970182](https://github.com/jbone3311/MasterBrain/actions/runs/35810970182)
 passed 2,582 Python tests and the four-case real chained-image gate; populated
-[restore 35810970151](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35810970151)
+[restore 35810970151](https://github.com/jbone3311/MasterBrain/actions/runs/35810970151)
 also passed.
 
 The implemented tranche intentionally remains retained-history-only. Current archive

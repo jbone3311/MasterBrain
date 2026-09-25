@@ -1,8 +1,8 @@
 # ADR-090 — Private one-member archive-image OCR operator
 
 Status: checkpoint 5C accepted and implemented in `f658ace`;
-[CI 35836198307](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198307)
-and [restore 35836198414](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198414)
+[CI 35836198307](https://github.com/jbone3311/MasterBrain/actions/runs/35836198307)
+and [restore 35836198414](https://github.com/jbone3311/MasterBrain/actions/runs/35836198414)
 are green.
 
 ## Context

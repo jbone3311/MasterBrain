@@ -1,9 +1,9 @@
 # Protected-record truncation contract
 
-ADR-092 addresses [issue #8](https://github.com/jbone3311/CW-EmailBrain/issues/8)
+ADR-092 addresses [issue #8](https://github.com/jbone3311/MasterBrain/issues/8)
 without claiming that triggers make privileged database administrators powerless.
 Focused disposable-PostgreSQL verification, hosted CI and populated restore passed
-on [PR #13](https://github.com/jbone3311/CW-EmailBrain/pull/13); independent review
+on [PR #13](https://github.com/jbone3311/MasterBrain/pull/13); independent review
 and integration are pending.
 
 ## Scope

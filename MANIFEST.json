@@ -5,8 +5,8 @@
     "name": "MasterBrain",
     "version": "0.2.0a1",
     "status": "synthetic-alpha",
-    "repository": "jbone3311/CW-EmailBrain",
-    "repository_rename": "deferred"
+    "repository": "jbone3311/MasterBrain",
+    "repository_rename": "completed-2026-09-25"
   },
   "capabilities": {
     "email": {

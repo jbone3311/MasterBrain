@@ -62,7 +62,7 @@ REQUIRED = (
     ".github/ISSUE_TEMPLATE/decision.md",
     ".github/PULL_REQUEST_TEMPLATE.md",
 )
-REPOSITORY_DOC_URL = "https://github.com/jbone3311/CW-EmailBrain/blob/main/"
+REPOSITORY_DOC_URL = "https://github.com/jbone3311/MasterBrain/blob/main/"
 DESTINATION = r"(<[^>\n]+>|[^\s()]+(?:\([^()\n]*\)[^\s()]*)*)"
 INLINE_LINK = re.compile(r"!?\[[^\]\n]*\]\(\s*" + DESTINATION + r'(?:\s+"[^"\n]*")?\s*\)')
 REFERENCE = re.compile(r"^ {0,3}\[([^\]\n]+)\]:\s*" + DESTINATION, re.MULTILINE)

@@ -61,5 +61,5 @@ remain green. Rollback removes only the preview method and command; existing one
 bridges and message batch behavior remain unchanged.
 
 Runtime revision `e3c0ee5` plus checkpoint-tracking revision `0c687e8` passed
-[CI 35763636718](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636718)
-and [restore 35763636696](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35763636696).
+[CI 35763636718](https://github.com/jbone3311/MasterBrain/actions/runs/35763636718)
+and [restore 35763636696](https://github.com/jbone3311/MasterBrain/actions/runs/35763636696).

@@ -60,6 +60,6 @@ Acceptance was recorded for runtime revision `0fd8c35` plus compatibility correc
 moved the legacy one-item target lookup ahead of idempotency-receipt lookup. The
 correction retains the new account fence only for batch calls and restores the
 existing one-item replay/conflict ordering. Corrected
-[CI 35759175176](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175176)
-and [restore 35759175355](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35759175355)
+[CI 35759175176](https://github.com/jbone3311/MasterBrain/actions/runs/35759175176)
+and [restore 35759175355](https://github.com/jbone3311/MasterBrain/actions/runs/35759175355)
 are green.

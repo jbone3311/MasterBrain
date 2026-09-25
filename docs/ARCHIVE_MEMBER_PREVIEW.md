@@ -2,8 +2,8 @@
 
 Status: implemented in `0a8c430`, with the non-bomb oversized fixture correction in
 `5befc42`. The corrected runtime passed 2,560 hosted Python tests and all restricted
-worker gates in [CI 35799779137](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35799779137),
-plus [restore 35799779396](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35799779396).
+worker gates in [CI 35799779137](https://github.com/jbone3311/MasterBrain/actions/runs/35799779137),
+plus [restore 35799779396](https://github.com/jbone3311/MasterBrain/actions/runs/35799779396).
 
 ## Purpose
 

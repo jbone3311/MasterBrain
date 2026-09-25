@@ -6,7 +6,7 @@ layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compac
 progressive access with drill-down to original evidence.
 
 **Status:** `0.2.0a1` synthetic alpha candidate, not yet a tagged release.
-The functional baseline reviewed here is `main` commit `1e081ea` (2026-09-25): full CI,
+The functional baseline reviewed here is `main` commit `c8c428b` (2026-09-25): full CI,
 strict-runtime and populated restore passed. The fictional cross-source browser
 trial is merged, but interactive Mac acceptance is still pending. See
 [current functions](docs/CURRENT_FUNCTIONS.md) and the
@@ -19,10 +19,11 @@ disposable PostgreSQL; MasterBrain is not a hosted or live-source product, and
 FOS-Master has not been replaced, renamed, or modified. See the
 [alpha test guide](docs/ALPHA_TESTING.md) for the precise trial boundary.
 
-The repository name and the internal `email_brain` package remain temporarily for
-Git history and compatibility. They identify the original Email capability, not the
-final product. New source-neutral code enters through `masterbrain.datacore`,
-`masterbrain.knowledge`, and the Brain API boundaries.
+The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
+The internal `email_brain` package remains for compatibility and identifies the
+original Email capability, not the final product. New source-neutral code enters
+through `masterbrain.datacore`, `masterbrain.knowledge`, and the Brain API
+boundaries.
 
 ## Product shape
 
@@ -98,6 +99,7 @@ roadmap item is not an implementation claim.
 ## Documentation map
 
 - [Product contract](PRODUCT.md)
+- [Repository rename and branch consolidation](docs/REPOSITORY_CONSOLIDATION.md)
 - [Current callable functions and limits](docs/CURRENT_FUNCTIONS.md)
 - [Complete feature inventory](docs/MASTERBRAIN_FEATURE_INVENTORY.md)
 - [Architecture](docs/ARCHITECTURE.md)

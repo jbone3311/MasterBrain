@@ -7,7 +7,7 @@ by the tested 0030 protected-record guard and FileOS migrations 0031–0032. Its
 corrected head `9790b80` passed hosted CI 35893316583 and populated restore
 35893316454. It preserves original branch history and does not rewrite already
 applied SQL.
-Factory review [PR #11](https://github.com/jbone3311/CW-EmailBrain/pull/11)
+Factory review [PR #11](https://github.com/jbone3311/MasterBrain/pull/11)
 proposes a different migration 0029 and therefore cannot be merged unchanged.
 Its truncate concern is covered more comprehensively by ADR-092/0030; its archive
 ledger and provenance/parent-version foreign-key proposals are not included in
@@ -19,7 +19,7 @@ timeout/concurrency and restore path-filter proposals also remain unadopted for
 separate review. This is a collision disposition, not a claim that all PR #11
 findings are closed.
 
-This contract addresses [issue #5](https://github.com/jbone3311/CW-EmailBrain/issues/5)
+This contract addresses [issue #5](https://github.com/jbone3311/MasterBrain/issues/5)
 without changing the checksums of migrations already applied. The design is
 [ADR-091](adr/091_migration_integrity.md). Hosted CI and the populated restore
 drill passed on branch commit `bea8c5e`; independent review and integration
