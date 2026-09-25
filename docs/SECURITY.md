@@ -61,8 +61,9 @@ ADR-100 requires FileOS snapshot hashing and text/PDF/Office extraction to read
 through the authorized root with no-follow directory/file descriptors. Pathname
 prechecks and digest mismatch alone do not prevent an outside-root read after a
 symlink swap. The new reader bounds bytes and verifies open-file plus locator
-identity before publication. This isolated change is pending hosted and donor
-verification; it adds no source effect or FOS-Master cutover authority.
+identity before publication. The bounded reader is integrated on `main` through
+PR #28, with hosted and donor verification on its exact baseline; it adds no source
+effect or FOS-Master cutover authority.
 
 PDF, DOCX and XLSX are accepted only when suffix and declared media type agree. The
 adapter reopens and hashes the source immediately before processing. A dedicated image
@@ -175,8 +176,8 @@ late member/skip inserts must preserve the sealed count/byte ledger, provenance
 outputs must name an existing normalized document, and each archive derivative
 receipt must name its own inventory's parent source version. Migration preflight
 refuses historical inconsistencies rather than silently rewriting evidence.
-Hosted PostgreSQL and populated restore passed on PR #24's runtime head; review
-and integration remain. This is not
+Hosted PostgreSQL and populated restore passed on PR #24's runtime head; the
+change is integrated on `main` via PR #28. This is not
 a substitute for parser containment, backup/audit or live FileOS acceptance.
 
 Duplicate detection is read-only in DataCore. A matching hash does not authorize

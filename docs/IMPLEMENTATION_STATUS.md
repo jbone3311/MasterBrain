@@ -1,7 +1,12 @@
 # MasterBrain Implementation Status
 
-Updated 2026-09-23. **Implemented** means executable in this repository; it does not
-mean hosted, live-source accepted, or production ready.
+Updated 2026-09-24. **Implemented** means executable in this repository; it does not
+mean hosted, live-source accepted, or production ready. The cumulative stack was
+integrated into `main` via PR #28 at `2dd4a85`; PR #31 then fixed the strict
+sender-parser runtime gate at `20bfc1f`. Exact `main` CI and populated restore
+passed for both checkpoints. The individual PR receipts below are historical
+verification, not still-open integration work. No production or FileOS cutover is
+accepted.
 
 ## Implemented
 
@@ -48,17 +53,17 @@ mean hosted, live-source accepted, or production ready.
   does not protect smaller unexplained losses.
   Hosted PostgreSQL, full CI and populated restore passed on PR #18's runtime head.
   Hosted CI and populated restore passed for the mass-loss guard on PR #19's
-  runtime head; review remains pending.
+  runtime head; the implementation is now on `main` via PR #28.
 - New FileOS completion receipts carry a versioned inventory-policy digest and
   refuse consecutive-run absence inference across changed or unknown policies.
   Legacy receipts remain immutable with unknown policy; a reviewed baseline path
-  and PR review/integration are still pending. Hosted CI and
+  remains pending, while the implementation is on `main` via PR #28. Hosted CI and
   populated restore passed on PR #20's corrected runtime head. This does not
   switch to the donor scanner's exclusions or authorize cutover.
 - ADR-097 adds bounded per-locator exclusion accounting and refuses absence
   when a prior indexed file is still present but excluded, or intentionally skipped
   as a no-follow symlink. Hosted CI and populated restore passed on PR #21's
-  runtime head; review/integration remain pending. It does not prove a live scanner;
+  runtime head; the implementation is on `main` via PR #28. It does not prove a live scanner;
   root binding is separately guarded by ADR-098.
 - ADR-098 root binding is implemented in isolated PR #22, with hosted CI and
   populated restore green on the runtime head. New FileOS sources and receipts carry
@@ -81,7 +86,7 @@ mean hosted, live-source accepted, or production ready.
   but migration 0023 alone does not reject a later child insert. ADR-099 and
   migration 0033 add deferred child-side checks and exact receipt/provenance links.
   Hosted PostgreSQL and populated restore passed on PR #24's runtime head;
-  review and integration remain.
+  the implementation is on `main` via PR #28.
 - Hash-bound read of exactly one persisted non-container archive member through a
   separate fixed restricted-image command. Forced-RLS selection requires the current
   FileOS source version; the parent reopens it through no-follow descriptors, verifies
@@ -229,8 +234,8 @@ mean hosted, live-source accepted, or production ready.
   protected recovery/document jobs and audited external identity bindings. Focused
   disposable-PostgreSQL catalog, direct/cascade, runtime-privilege, row-transition and
   replay tests passed. Hosted CI (2,669 Python tests, browser and restricted-worker
-  gates) and populated restore passed on separate PR #13; review and integration
-  remain pending.
+  gates) and populated restore passed on separate PR #13; the implementation is
+  integrated on `main` via PR #28.
 
 ## Designed, not implemented
 
