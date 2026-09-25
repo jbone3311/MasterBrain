@@ -1,17 +1,12 @@
 # MasterBrain Build Progress
 
-## Current baseline on `main`
+## Current `main` checkpoint (2026-09-24)
 
-MasterBrain's synthetic alpha candidate reached `main` in merge commit
-`2dd4a8549f29fe56514e1bfa831e9a8b24821b35` via PR #28. The exact
-`main` push passed
-[CI 35930140690](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35930140690)
-and [populated restore 35930140723](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35930140723).
-The `v0.2.0a1` tag remains uncreated; see
-[handoff issue #29](https://github.com/jbone3311/CW-EmailBrain/issues/29).
-Next: a synthetic cross-source Email/FileOS walkthrough with citation drill-down,
-coverage status and tenant-isolation tests on a short branch. No live-source
-operation, production deployment or FileOS cutover is accepted.
+The cumulative synthetic-alpha stack merged through [PR #28](https://github.com/jbone3311/CW-EmailBrain/pull/28) at `2dd4a85`. The strict sender-runtime guard merged through [PR #31](https://github.com/jbone3311/CW-EmailBrain/pull/31) at `20bfc1f`. Privacy-safe API failure correlation and status corrections merged through [PR #33](https://github.com/jbone3311/CW-EmailBrain/pull/33) at `c605e64`. The fictional-data Email/FileOS browser trial, including verified Docker cleanup, merged through [PR #32](https://github.com/jbone3311/CW-EmailBrain/pull/32) at `77192f5`.
+
+The exact latest `main` commit passed [full CI](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402051), [strict-runtime checks](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402009), and [populated restore](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402006). These prove a testable, synthetic-only checkpoint; the owner's interactive Mac walkthrough is still pending. The `v0.2.0a1` tag has not been created. No live source, production deployment, FileOS cutover, or FOS-Master retirement is accepted. See [checkpoint issue #29](https://github.com/jbone3311/CW-EmailBrain/issues/29) and [hardening gate #34](https://github.com/jbone3311/CW-EmailBrain/issues/34).
+
+The sections below preserve point-in-time branch receipts. Descriptions such as “review” or “integration pending” belong to those historical checkpoints; they do not override the current `main` status above.
 
 ## Synthetic alpha integration
 

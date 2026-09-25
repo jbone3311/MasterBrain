@@ -1,6 +1,14 @@
 # Build and validation receipt
 
-Updated 2026-09-23 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+Updated 2026-09-24 Pacific. Product: `jbone3311/CW-EmailBrain`, verified **private**.
+
+## Latest `main` synthetic checkpoint
+
+The cumulative alpha merge `2dd4a85` (PR #28) and strict sender-runtime merge `20bfc1f` (PR #31) precede two further tested changes: privacy-safe API failure observability in [PR #33](https://github.com/jbone3311/CW-EmailBrain/pull/33), merged at `c605e6446df2c305a757a388f084605f4e8031cd`, and the disposable cross-source browser trial in [PR #32](https://github.com/jbone3311/CW-EmailBrain/pull/32), merged at `77192f52e15139fba1fad72264cc54982095f928`. The trial's Docker startup-timeout cleanup finding was fixed before merge with run-specific marker verification and fault tests.
+
+The exact latest `main` commit `77192f52e15139fba1fad72264cc54982095f928` passed [full CI 36099402051](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402051), [strict sender-runtime 36099402009](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402009), and [populated restore 36099402006](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402006). The preceding `c605e64` merge also passed its exact `main` [full CI 36098702369](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36098702369), [strict runtime 36098702407](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36098702407), and [restore 36098702434](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36098702434). The historical receipts below preserve earlier point-in-time evidence; older “pending integration” wording is not the current `main` state.
+
+This is a fictional-data, test-only alpha candidate. Interactive Mac/browser acceptance, issues #6/#7/#9, production operations and donor cutover remain open. FOS-Master is unchanged, and `v0.2.0a1` remains untagged.
 
 ## `main` synthetic alpha integration checkpoint
 
