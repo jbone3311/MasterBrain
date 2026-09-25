@@ -1,8 +1,8 @@
 # ADR-095 — Refuse unreviewed mass loss in FileOS inventory
 
 Status: implemented and verified in an isolated tranche. Hosted
-[CI 35869402539](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402539)
-and [restore 35869402685](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35869402685)
+[CI 35869402539](https://github.com/jbone3311/MasterBrain/actions/runs/35869402539)
+and [restore 35869402685](https://github.com/jbone3311/MasterBrain/actions/runs/35869402685)
 passed on PR #19's runtime head `c10a9a0`; review remains pending. This is not an
 inventory-policy switch or cutover.
 

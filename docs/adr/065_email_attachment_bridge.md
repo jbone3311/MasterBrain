@@ -59,8 +59,8 @@ invocation; immutable shared rows remain auditable and existing Email behavior i
 unchanged.
 
 This gate passed hosted
-[CI 35740735789](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740735789)
-and [restore 35740736075](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35740736075)
+[CI 35740735789](https://github.com/jbone3311/MasterBrain/actions/runs/35740735789)
+and [restore 35740736075](https://github.com/jbone3311/MasterBrain/actions/runs/35740736075)
 on 2026-09-22 Pacific. CI and deployment each passed 2,432 Python tests; the
 PostgreSQL 17 restore verified 64 tables and 231 rows. The first restore attempt
 failed during disposable Docker-cluster startup before migration; its failed job was

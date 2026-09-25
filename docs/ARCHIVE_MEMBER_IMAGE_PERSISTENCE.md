@@ -87,10 +87,10 @@ KnowledgeCore projection or FOS-Master cutover is authorized.
 
 Design revision `16d452a`, runtime revision `760a644` and grant/freshness/provenance
 correction `63b478d` passed
-[CI 35833506295](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506295)
+[CI 35833506295](https://github.com/jbone3311/MasterBrain/actions/runs/35833506295)
 with 2,640 PostgreSQL-backed Python tests and every restricted-container gate. The
 independent populated [restore
-35833506298](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35833506298)
+35833506298](https://github.com/jbone3311/MasterBrain/actions/runs/35833506298)
 verified 72 tables and 238 rows with content hashes, forced RLS and identity state
 preserved. The first hosted runtime attempt correctly exposed the omitted runtime-table
 grant; independent review also moved fresh equivalent-key replay behind the current

@@ -2,8 +2,8 @@
 
 Status: accepted and verified for the additive prototype tranche on 2026-09-22.
 Revision `8bada56` passed hosted
-[CI 35731669724](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35731669724)
-and [restore 35731669604](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35731669604).
+[CI 35731669724](https://github.com/jbone3311/MasterBrain/actions/runs/35731669724)
+and [restore 35731669604](https://github.com/jbone3311/MasterBrain/actions/runs/35731669604).
 
 ## Decision
 

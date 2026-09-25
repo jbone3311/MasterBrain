@@ -60,5 +60,5 @@ without changing legacy evidence. Hosted CI and populated restore must remain gr
 Rollback removes only the plan model and batch controller/command.
 
 Design revision `2825529` and runtime revision `c143e0c` passed
-[CI 35774641187](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641187)
-and [restore 35774641102](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35774641102).
+[CI 35774641187](https://github.com/jbone3311/MasterBrain/actions/runs/35774641187)
+and [restore 35774641102](https://github.com/jbone3311/MasterBrain/actions/runs/35774641102).

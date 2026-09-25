@@ -4,7 +4,7 @@ Updated 2026-09-25. This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
-functional baseline for this review is `1e081ea`: full CI, strict-runtime and populated
+functional baseline for this review is `c8c428b`: full CI, strict-runtime and populated
 restore passed. No live-source, production or FileOS cutover acceptance is implied.
 
 ## Where we are
@@ -29,13 +29,13 @@ Security and data-integrity blockers take priority over adding more surface area
    browser behavior. Fix any failure on a branch; do not interpret hosted API
    tests as browser acceptance.
 2. **Resolve security and upgrade findings.** Independently reproduce and close or
-   explicitly accept [identity enrollment #6](https://github.com/jbone3311/CW-EmailBrain/issues/6),
-   [caller-settable lookup context #7](https://github.com/jbone3311/CW-EmailBrain/issues/7),
-   and [populated migration lock/rewrite risk #9](https://github.com/jbone3311/CW-EmailBrain/issues/9).
+   explicitly accept [identity enrollment #6](https://github.com/jbone3311/MasterBrain/issues/6),
+   [caller-settable lookup context #7](https://github.com/jbone3311/MasterBrain/issues/7),
+   and [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).
    Require exploit/lock evidence, regression tests, restore and an operational
    rollout/rollback receipt. Green synthetic CI alone does not close them.
 3. **Complete the engineering-quality gate.** Follow
-   [#34](https://github.com/jbone3311/CW-EmailBrain/issues/34): package/API version
+   [#34](https://github.com/jbone3311/MasterBrain/issues/34): package/API version
    identity, content-safe application **and PostgreSQL server** logging, bounded
    failure paths, supply chain, operations and exact release evidence. PR #33 is
    only the API-error first tranche.
@@ -43,7 +43,7 @@ Security and data-integrity blockers take priority over adding more surface area
    OCR search (5D) remains absent even though exact selected OCR persistence and
    the private one-member command exist. Review the existing 5B contract, add
    current-parent/receipt fencing, authorization and known-answer tests before
-   exposing it. [Issue #10](https://github.com/jbone3311/CW-EmailBrain/issues/10)
+   exposing it. [Issue #10](https://github.com/jbone3311/MasterBrain/issues/10)
    is the Claude handoff; its old branch/base notes are historical.
 5. **Measure donor policy parity before any switch.** The extracted inventory
    classifier matches the pinned donor on the synthetic corpus but is not wired

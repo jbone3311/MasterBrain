@@ -6,7 +6,7 @@
   "repo": {
     "name": "CW-EmailBrain",
     "path": "../CW-EmailBrain",
-    "remote": "https://github.com/jbone3311/CW-EmailBrain.git"
+    "remote": "https://github.com/jbone3311/MasterBrain.git"
   },
   "lifecycle": "building",
   "factory_contract_version": 2,

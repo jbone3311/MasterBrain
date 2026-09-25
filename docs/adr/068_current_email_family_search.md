@@ -41,8 +41,8 @@ All existing suites and populated restore must remain green. Rollback removes on
 new endpoint/method; immutable evidence and existing reads are unchanged.
 
 This gate passed hosted
-[CI 35749176559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176559)
-and [restore 35749176556](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35749176556)
+[CI 35749176559](https://github.com/jbone3311/MasterBrain/actions/runs/35749176559)
+and [restore 35749176556](https://github.com/jbone3311/MasterBrain/actions/runs/35749176556)
 on 2026-09-22 Pacific. CI and deployment each passed 2,440 Python tests; PostgreSQL
 17 restore verified 65 tables and 232 rows. See `docs/BUILD_RECEIPT.md` for complete
 measured totals.

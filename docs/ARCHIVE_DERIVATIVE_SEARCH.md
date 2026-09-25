@@ -1,8 +1,8 @@
 # Current archive-derivative search design
 
 Status: implemented in `6c7b043`. The runtime passed 2,556 hosted Python tests and all
-restricted worker gates in [CI 35796920249](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35796920249),
-plus the populated [restore 35796920235](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35796920235).
+restricted worker gates in [CI 35796920249](https://github.com/jbone3311/MasterBrain/actions/runs/35796920249),
+plus the populated [restore 35796920235](https://github.com/jbone3311/MasterBrain/actions/runs/35796920235).
 
 ## Purpose
 

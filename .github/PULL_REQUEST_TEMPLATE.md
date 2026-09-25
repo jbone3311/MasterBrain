@@ -40,7 +40,7 @@ acceptance or reuse an older run as proof of changed behavior.
 - [ ] Status, feature/method explanation, roadmap/backlog and Factory next task agree
 - [ ] Operations/configuration/rollback notes match the implemented behavior
 - [ ] Dependency/license/advisory/SBOM impact assessed; unfinished gates named
-- [ ] Relevant [release gates](https://github.com/jbone3311/CW-EmailBrain/blob/main/docs/RELEASE_ACCEPTANCE.md) addressed or explicitly pending
+- [ ] Relevant [release gates](https://github.com/jbone3311/MasterBrain/blob/main/docs/RELEASE_ACCEPTANCE.md) addressed or explicitly pending
 
-See [contributing](https://github.com/jbone3311/CW-EmailBrain/blob/main/CONTRIBUTING.md). No checkbox authorizes real mail, spending,
+See [contributing](https://github.com/jbone3311/MasterBrain/blob/main/CONTRIBUTING.md). No checkbox authorizes real mail, spending,
 remote disclosure, new mailbox privileges or changes to Factory-owned configuration.

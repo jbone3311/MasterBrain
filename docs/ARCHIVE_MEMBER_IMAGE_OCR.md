@@ -70,9 +70,9 @@ worker/container detail or sibling content enters the result.
 The accepted runtime has 14 focused composition tests and a four-case real
 two-container gate. Hosted CI passed 2,620 Python tests plus all browser and restricted
 container gates in
-[run 35829326066](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829326066);
+[run 35829326066](https://github.com/jbone3311/MasterBrain/actions/runs/35829326066);
 the independent populated restore passed in
-[run 35829325907](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829325907).
+[run 35829325907](https://github.com/jbone3311/MasterBrain/actions/runs/35829325907).
 
 ## Non-goals
 

@@ -37,8 +37,8 @@ and does not authorize a source write. Automated scheduling, live root enrollmen
 cursoring and a durable whole-run completion receipt remain later work.
 
 Runtime revision `e7f319c` plus tenant-isolated assertion correction `aaaf156` passed
-[CI 35713893737](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893737)
-and [restore 35713893769](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35713893769).
+[CI 35713893737](https://github.com/jbone3311/MasterBrain/actions/runs/35713893737)
+and [restore 35713893769](https://github.com/jbone3311/MasterBrain/actions/runs/35713893769).
 The hosted cases cover successful publication/replay/no-mutation, privileged-role
 refusal and revoked-local-worker refusal.
 

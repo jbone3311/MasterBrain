@@ -77,7 +77,7 @@ grants unchanged. See the [truncation contract](EVIDENCE_TRUNCATE_GUARDS.md).
 migration-role preflight and a forward-only audit/repair of legacy Email
 `message_sync_state` gaps. It preserves applied checksums and current evidence;
 runtime roles retain forced RLS. Implementation and hosted gates are green in
-[PR #12](https://github.com/jbone3311/CW-EmailBrain/pull/12); the implementation
+[PR #12](https://github.com/jbone3311/MasterBrain/pull/12); the implementation
 was integrated via PR #28, and issue #5 closed after direct PostgreSQL regression
 coverage. See the [migration integrity contract](MIGRATION_INTEGRITY.md).
 
@@ -96,7 +96,7 @@ search, batch or fan-out. ADR-090 later authorized one private command.
 hash-bound archive member with the separate image worker, returns a bounded in-memory
 result and grants no persistence, command, batch or fan-out. Implemented in `b17541d`;
 real two-image acceptance is
-[CI 35829326066](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35829326066).
+[CI 35829326066](https://github.com/jbone3311/MasterBrain/actions/runs/35829326066).
 
 [ADR-087](adr/087_archive_image_ocr_boundary.md) requires a separate immutable,
 non-networked image worker with exact byte/format binding, full decode, single-frame

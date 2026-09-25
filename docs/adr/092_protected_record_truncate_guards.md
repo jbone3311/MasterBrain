@@ -5,7 +5,7 @@ hosted CI and populated restore green. Independent review/integration pending.
 
 ## Context
 
-[Issue #8](https://github.com/jbone3311/CW-EmailBrain/issues/8) identifies a gap in
+[Issue #8](https://github.com/jbone3311/MasterBrain/issues/8) identifies a gap in
 the existing row-level `BEFORE UPDATE OR DELETE` protection. PostgreSQL `TRUNCATE`
 does not fire row triggers or use tenant RLS. At the migration 0028 baseline, 56
 tables have a direct `deny_evidence_mutation()` row trigger, yet a table owner with

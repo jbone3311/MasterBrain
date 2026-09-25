@@ -49,10 +49,10 @@ run all formats through the real container and publish them through PostgreSQL t
 shared search without modifying their source files.
 
 Revision `a6488c6` passed that gate in
-[CI 35711403192](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403192):
+[CI 35711403192](https://github.com/jbone3311/MasterBrain/actions/runs/35711403192):
 five real-container cases covered all three formats, hostile/source-binding behavior
 and PostgreSQL publication. The populated restore passed separately in
-[run 35711403138](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35711403138).
+[run 35711403138](https://github.com/jbone3311/MasterBrain/actions/runs/35711403138).
 
 Rollback removes the processor image/configuration and constructs `FileOSAdapter`
 without a document processor. PDF/DOCX/XLSX then return the earlier unsupported

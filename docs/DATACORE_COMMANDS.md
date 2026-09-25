@@ -293,8 +293,8 @@ route or source effect.
 ## Publish one selected archive image OCR member
 
 Checkpoint 5C implements the accepted private command. Hosted
-[CI 35836198307](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198307)
-and [restore 35836198414](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35836198414)
+[CI 35836198307](https://github.com/jbone3311/MasterBrain/actions/runs/35836198307)
+and [restore 35836198414](https://github.com/jbone3311/MasterBrain/actions/runs/35836198414)
 are green. For one current image member already named by its inventory
 and virtual locator, run:
 

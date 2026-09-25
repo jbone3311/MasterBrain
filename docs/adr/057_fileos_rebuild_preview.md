@@ -2,8 +2,8 @@
 
 Status: accepted and verified for the additive prototype tranche on 2026-09-22.
 Revision `0653a35` passed hosted
-[CI 35720358559](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358559)
-and [restore 35720358811](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35720358811).
+[CI 35720358559](https://github.com/jbone3311/MasterBrain/actions/runs/35720358559)
+and [restore 35720358811](https://github.com/jbone3311/MasterBrain/actions/runs/35720358811).
 
 ## Decision
 

@@ -22,11 +22,11 @@ in-memory SQLite connection. It invokes `scan_domain` directly; never the donor 
 or its configured database/registry. MasterBrain only runs `snapshot_tree`; it does
 not import, complete, activate or publish the manifest.
 
-Hosted [CI 35852211467](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852211467)
+Hosted [CI 35852211467](https://github.com/jbone3311/MasterBrain/actions/runs/35852211467)
 passed on PR #15. Its two donor-checkout skips are expected: CI does not include
 FOS-Master, so the pinned-donor comparison was run locally. PR #15 did not trigger
 a restore drill under the workflow's path filters; PR #14's underlying restore
-[passed](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35852112586).
+[passed](https://github.com/jbone3311/MasterBrain/actions/runs/35852112586).
 
 ## Measured baseline
 
@@ -83,7 +83,7 @@ MasterBrain `symlink_skipped` error but no donor row, while neither scanner desc
 through the synthetic directory symlink. These tests use only temporary roots and
 an in-memory donor database. They do not authorize treating a retained donor row as
 proof that the file was successfully read on the latest run.
-Hosted [CI 35855259654](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35855259654)
+Hosted [CI 35855259654](https://github.com/jbone3311/MasterBrain/actions/runs/35855259654)
 passed on the fault-test commit in PR #16; the live pinned-donor tests passed
 locally and skip in hosted CI because that runner has no donor checkout.
 
@@ -104,7 +104,7 @@ a later stable MasterBrain snapshot exposes a `common_size_mismatch`. These are
 measured safety gaps, not accepted parity. Four unusual but valid names (leading
 space, Unicode accent, emoji, embedded newline) retain exact locators through both
 inventories and JSON serialization on the local test filesystem.
-Hosted [CI 35857585834](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35857585834)
+Hosted [CI 35857585834](https://github.com/jbone3311/MasterBrain/actions/runs/35857585834)
 passed on PR #17's code head; donor-specific tests skip on hosted CI without a
 FOS-Master checkout.
 

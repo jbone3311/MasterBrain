@@ -40,8 +40,8 @@ unchanged legacy evidence. Existing suites and populated restore must remain gre
 Rollback removes command routing; immutable receipts already created remain auditable.
 
 This gate passed hosted
-[CI 35745615962](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615962)
-and [restore 35745615958](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35745615958)
+[CI 35745615962](https://github.com/jbone3311/MasterBrain/actions/runs/35745615962)
+and [restore 35745615958](https://github.com/jbone3311/MasterBrain/actions/runs/35745615958)
 on 2026-09-22 Pacific. CI and deployment each passed 2,439 Python tests; PostgreSQL
 17 restore verified 65 tables and 232 rows. See `docs/BUILD_RECEIPT.md` for complete
 measured totals.

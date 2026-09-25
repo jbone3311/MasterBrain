@@ -7,7 +7,7 @@ SQL authority proof, not a real issuer handshake; signatures have separate fake-
 tests.
 
 Latest verified runtime: **98a334c47253d7e1af74a948837d2c40e9ff9c95**,
-[run 35624876390](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35624876390),
+[run 35624876390](https://github.com/jbone3311/MasterBrain/actions/runs/35624876390),
 passed 2026-09-21: **27 tables, 147 rows, two tenants, four encrypted objects,
 two identity bindings**, matching hashes, RLS, revoked-context denial and
 database-only refusal. **29 safety cases** passed; **14.35 seconds** includes
@@ -16,7 +16,7 @@ changes parser/sender provenance without a SQL migration; historical evidence
 remains immutable. Receipt-only edits are not another runtime drill.
 
 Previously verified runtime: **69e52e037c7d842f010e417d3f3e57466b55a2a7**,
-[run 35616709609](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35616709609),
+[run 35616709609](https://github.com/jbone3311/MasterBrain/actions/runs/35616709609),
 passed 2026-09-21 with **27 tables, 147 rows, two tenants, four encrypted objects
 and two identity bindings**. Content hashes, RLS, identity revocation and
 database-only refusal passed; 29 safety cases passed. **14.79 seconds** includes
@@ -24,7 +24,7 @@ disposable startup, not production RTO/PITR or hosted key-loss recovery. ADR-043
 introduces no durable-state change. Receipt-only edits are not another runtime drill.
 
 Previously verified runtime: **5c0114a4be6351931791834942cf3d6ba7306f7d**,
-[run 35599565086](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35599565086),
+[run 35599565086](https://github.com/jbone3311/MasterBrain/actions/runs/35599565086),
 passed 2026-09-21 with the unchanged populated fixture: **27 tables, 147 rows,
 two tenants, four encrypted objects and two identity bindings**. Content hashes,
 RLS, identity revocation and database-only refusal passed; 29 safety cases passed.
@@ -33,7 +33,7 @@ acceptance or hosted key-loss recovery. ADR-042's ephemeral sessions deliberatel
 do not survive process restart or database restore.
 
 Previously verified runtime: **88af6332012af820eedcede9ae78adff34a930df**,
-[run 35596528021](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35596528021),
+[run 35596528021](https://github.com/jbone3311/MasterBrain/actions/runs/35596528021),
 passed 2026-09-21: **27 tables, 147 rows, two tenants, four encrypted objects and
 two identity bindings**. Hash equality, tenant/identity RLS, revoked-context denial
 and database-only restore refusal passed. The 29 restore-safety tests also passed.
@@ -42,7 +42,7 @@ managed PITR, real issuer acceptance or hosted key-loss recovery. Receipt-only
 documentation changes do not change that runtime or turn it into a new drill.
 
 Previously verified runtime recheck: **0b4f0d3**,
-[run 35590968376](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35590968376),
+[run 35590968376](https://github.com/jbone3311/MasterBrain/actions/runs/35590968376),
 passed 2026-09-21 after the bounded read controller/shared identity changes.
 The unchanged synthetic fixture verified **26 tables, 142 rows, two tenants, four
 encrypted objects**, matching hashes, RLS and refusal of database-only restore.
@@ -50,7 +50,7 @@ encrypted objects**, matching hashes, RLS and refusal of database-only restore.
 This does not prove live-provider operation, cloud durability or production RTO.
 
 Historical runtime recheck: **f73c235**,
-[run 35589125878](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35589125878),
+[run 35589125878](https://github.com/jbone3311/MasterBrain/actions/runs/35589125878),
 passed 2026-09-21 after the owner PDF screen and attachment-contract correction.
 The unchanged fixture verified **26 tables, 142 rows, two tenants and four encrypted
 objects**, matching hashes, RLS and database-only refusal. **14.37 seconds** includes
@@ -59,7 +59,7 @@ safety tests also passed. This is not browser or real-PDF extraction proof; thos
 have separate acceptance paths in the [build receipt](BUILD_RECEIPT.md).
 
 Historical runtime recheck: **73a8459**,
-[run 35584256115](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35584256115),
+[run 35584256115](https://github.com/jbone3311/MasterBrain/actions/runs/35584256115),
 passed 2026-09-21 after the separate PDF operator command/shared-controller changes.
 **26 tables, 142 rows, two tenants and four encrypted objects**, matching hashes,
 RLS and database-only refusal passed. Elapsed **18.24 seconds** includes disposable
@@ -67,7 +67,7 @@ startup; this is not managed PITR, a key-loss recovery drill or production RTO.
 The restore fixture is unchanged; actual CLI/PDF-container acceptance runs separately.
 
 Historical verified restore implementation: **a2c5957**,
-[run 35579931717](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35579931717),
+[run 35579931717](https://github.com/jbone3311/MasterBrain/actions/runs/35579931717),
 passed 2026-09-21: **26 tables, 142 rows, two tenants and four encrypted objects**.
 It adds completed/cancelled/pending document jobs, immutable page evidence and
 authorized document FTS. All table/raw hashes and RLS checks passed; SQL-only and
@@ -75,7 +75,7 @@ missing-object restores were refused. Elapsed 19.71 seconds includes disposable
 startup, not a production RTO. The known-answer synthetic result adapter proves
 restoration, not actual extraction; restricted-container checks run separately.
 
-Historical verified implementation: **814197a**, [run 35568746120](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35568746120),
+Historical verified implementation: **814197a**, [run 35568746120](https://github.com/jbone3311/MasterBrain/actions/runs/35568746120),
 passed 2026-09-20 Pacific. Mixed inline/external evidence: **24 tables, 119 rows,
 two tenants, four encrypted objects**, equal hashes and restored authorization.
 Completed, cancelled and queued processing grants retained their exact state and
@@ -89,7 +89,7 @@ The following test-only correction (`98bb6f2`) changes no runtime, schema or res
 code. This restore receipt applies to its unchanged implementation, not a new run.
 
 Historical verification: code `e3695d8`,
-[restore run 35560344225](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35560344225),
+[restore run 35560344225](https://github.com/jbone3311/MasterBrain/actions/runs/35560344225),
 passed on 2026-09-20 Pacific. The expanded fixture includes searchable calendar
 attachments: 22 tables, 77 rows, two tenants, equal hashes and recovered search/RLS.
 Elapsed 20.52 seconds includes container startup; not a production RTO. The owned
@@ -97,7 +97,7 @@ test container and temporary archive were removed. The earlier receipt below is
 historical and covers the previous smaller fixture.
 
 Verified 2026-09-20 Pacific at code commit `d5f8f47`:
-[restore run 35556627775](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35556627775)
+[restore run 35556627775](https://github.com/jbone3311/MasterBrain/actions/runs/35556627775)
 passed with 22 tables, 73 rows and two synthetic tenants. Content hashes matched;
 recovered evidence, attachments, rules, search and row-level authorization checks
 passed. Elapsed drill time was 23.82 seconds including container startup—not a
@@ -184,8 +184,8 @@ No cloud/mail/database secrets are required. The dedicated GitHub workflow
 dispatched manually from Actions. CLI dispatch after the workflow is published:
 
 ```bash
-gh workflow run restore-drill.yml --repo jbone3311/CW-EmailBrain
-gh run list --workflow restore-drill.yml --repo jbone3311/CW-EmailBrain
+gh workflow run restore-drill.yml --repo jbone3311/MasterBrain
+gh run list --workflow restore-drill.yml --repo jbone3311/MasterBrain
 ```
 
 Offline guard tests run with `pytest -q tests/test_restore_drill.py`. Those tests
