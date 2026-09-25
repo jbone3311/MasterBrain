@@ -53,9 +53,12 @@ monitoring remain release gates. See [ADR-104](adr/104_privacy_safe_error_observ
 - Migration 0037 adds an opt-in one-tenant database-login fence: a DBA-owned
   mapping keyed by `session_user` and restrictive policies on every existing
   forced-RLS tenant table. Forged GUCs cannot widen an enrolled login's rows.
-  Existing shared runtime logins remain GUC-driven, and tenant-aware DSN routing,
-  credential operations and a hosted adversarial run are not implemented. See
-  [ADR-108](adr/108_tenant_login_rls_fence.md) and the
+  ADR-109 adds opt-in API routing through an identity-only login and distinct
+  tenant-bound data logins, with per-connection binding checks and a private
+  configuration file. Existing shared runtime and private worker DSNs remain
+  GUC-driven; credential operations and a hosted adversarial run are not
+  implemented. See [ADR-108](adr/108_tenant_login_rls_fence.md),
+  [ADR-109](adr/109_tenant_database_routing.md) and the
   [tenant-login contract](TENANT_LOGIN_FENCE.md); issue #7 remains open.
 - Tenant/source isolation in application code and forced database RLS.
 - Encryption in transit and at rest; managed key rotation and recovery procedures.

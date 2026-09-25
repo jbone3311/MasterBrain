@@ -111,6 +111,10 @@ not a destructive overwrite of history.
 Brain API performs authorization and progressive disclosure. Search results are
 compact; expansions are explicit; original evidence requires a stronger permission.
 LLM clients never receive database, object-store, provider, or filesystem authority.
+The opt-in service path resolves a verified identity through a table-blind lookup
+login, then routes its tenant to a separately bound database login. The route is
+private server configuration, never request-controlled. This synthetic API path
+does not yet route separate worker commands or prove hosted containment (ADR-109).
 
 ## Core flows
 

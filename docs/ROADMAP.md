@@ -33,7 +33,8 @@ Security and data-integrity blockers take priority over adding more surface area
    [#6](https://github.com/jbone3311/MasterBrain/issues/6) is fixed on `main` by
    ADR-105; the exact resolver of ADR-106 narrows but does not close the confirmed
    [tenant-context authority bug #7](https://github.com/jbone3311/MasterBrain/issues/7).
-   ADR-108 adds an opt-in one-tenant database-login fence; tenant-aware API/worker
+   ADR-108 adds an opt-in one-tenant database-login fence. ADR-109 adds a
+   synthetic API route through separate lookup and tenant logins; private-worker
    routing, credential lifecycle and hosted adversarial acceptance remain next.
    Independently close or explicitly accept that risk and the
    [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).

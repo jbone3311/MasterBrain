@@ -29,6 +29,7 @@ from email_brain.read_controller import run_read_controller
 from email_brain.store import IngestItem, Store
 from email_brain.synthetic import fake_email
 from email_brain.synthetic_mailbox import MailboxSpec, export_mailbox, seed_mailbox
+from email_brain.tenant_db import TenantDbRoutes
 
 
 def _env(name: str) -> str:
@@ -203,6 +204,7 @@ def main() -> None:
     serve.add_argument("--port", type=int, default=8080)
     serve.add_argument("--oidc-config", type=Path, default=None)
     serve.add_argument("--browser-config", type=Path, default=None)
+    serve.add_argument("--tenant-db-config", type=Path, default=None)
     serve.add_argument("--tls-cert", type=Path, default=None)
     serve.add_argument("--tls-key", type=Path, default=None)
     serve.add_argument(
@@ -306,7 +308,16 @@ def main() -> None:
                 )
             print(json.dumps(result, sort_keys=True))
         else:
-            store = Store(_env("EMAIL_BRAIN_DSN"))
+            routes = (
+                TenantDbRoutes.from_file(args.tenant_db_config)
+                if args.tenant_db_config is not None
+                else None
+            )
+            store = (
+                Store(routes.identity_dsn, tenant_dsns=routes.tenant_dsns)
+                if routes is not None
+                else Store(_env("EMAIL_BRAIN_DSN"))
+            )
             registry: Authenticator
             browser_auth = None
             tls = {}

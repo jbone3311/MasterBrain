@@ -76,7 +76,8 @@ production or FileOS cutover gates below.
   logins are bound to one tenant independently of caller-settable GUCs; an
   arbitrary-SQL/stolen-DSN two-tenant test, API/worker routing, rotation and
   restore drill prove containment before issue #7 can close. ADR-108's opt-in
-  synthetic login fence alone is insufficient.
+  login fence and ADR-109's synthetic API route do not yet satisfy the worker,
+  credential-lifecycle or hosted gates.
 - Retention, export, purge and legal hold cover originals, derivatives, indexes,
   summaries, caches, logs and backups.
 - Privacy-safe request/error events have stable correlation IDs and codes without

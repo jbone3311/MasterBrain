@@ -5,11 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from email.errors import MessageError
+from types import MappingProxyType
 from typing import Any
 from uuid import UUID
 
@@ -113,9 +114,20 @@ class IngestItem:
 
 
 class Store:
-    def __init__(self, dsn: str, *, blobs: EncryptedBlobStore | None = None) -> None:
+    def __init__(
+        self,
+        dsn: str,
+        *,
+        blobs: EncryptedBlobStore | None = None,
+        tenant_dsns: Mapping[UUID, str] | None = None,
+    ) -> None:
         self.dsn = dsn
         self.blobs = blobs
+        self.tenant_dsns = (
+            MappingProxyType(dict(tenant_dsns)) if tenant_dsns is not None else None
+        )
+        if self.tenant_dsns is not None and not self.tenant_dsns:
+            raise ValueError("tenant database routing requires at least one tenant")
 
     @property
     def max_raw_bytes(self) -> int:
@@ -403,17 +415,58 @@ class Store:
         return UUID(str(version["id"]))
 
     @contextmanager
-    def connection(self) -> Iterator[psycopg.Connection[dict[str, Any]]]:
-        """Least-privileged transaction, before tenant/verified-identity resolution."""
-        with psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=5) as conn:
+    def connection(
+        self, tenant_id: UUID | None = None
+    ) -> Iterator[psycopg.Connection[dict[str, Any]]]:
+        """Least-privileged connection; routed data use requires a bound tenant login."""
+        if tenant_id is not None and self.tenant_dsns is None:
+            raise AccessDenied("tenant database routing is not configured")
+        dsn = self.dsn
+        if self.tenant_dsns is not None and tenant_id is not None:
+            if tenant_id not in self.tenant_dsns:
+                raise AccessDenied("tenant database route unavailable")
+            dsn = self.tenant_dsns[tenant_id]
+        with psycopg.connect(dsn, row_factory=dict_row, connect_timeout=5) as conn:
             role = conn.execute(
-                "SELECT rolsuper, rolbypassrls, "
+                "SELECT rolsuper, rolbypassrls, rolcreatedb, rolcreaterole, rolreplication, "
                 "EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
                 "WHERE c.relowner=r.oid AND n.nspname='public' AND c.relkind='r') AS owns "
                 "FROM pg_roles r WHERE rolname=current_user"
             ).fetchone()
-            if not role or role["rolsuper"] or role["rolbypassrls"] or role["owns"]:
+            if not role or any(
+                role[key]
+                for key in (
+                    "rolsuper",
+                    "rolbypassrls",
+                    "rolcreatedb",
+                    "rolcreaterole",
+                    "rolreplication",
+                    "owns",
+                )
+            ):
                 raise AccessDenied("unsafe runtime database role")
+            if self.tenant_dsns is not None:
+                if tenant_id is None:
+                    unsafe_lookup = conn.execute(
+                        "SELECT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n "
+                        "ON n.oid=c.relnamespace WHERE n.nspname='public' "
+                        "AND c.relkind IN ('r','p','v','m','f') "
+                        "AND has_table_privilege(session_user,c.oid,"
+                        "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')) "
+                        "OR EXISTS(SELECT 1 FROM pg_auth_members m JOIN pg_roles r "
+                        "ON r.oid=m.member WHERE r.rolname=session_user) AS unsafe"
+                    ).fetchone()
+                    if not unsafe_lookup or unsafe_lookup["unsafe"]:
+                        raise AccessDenied("unsafe identity lookup database role")
+                else:
+                    bound = conn.execute(
+                        "SELECT current_user=session_user "
+                        "AND pg_has_role(session_user,'masterbrain_tenant_runtime','member') "
+                        "AND public.masterbrain_tenant_login_allows(%s) AS allowed",
+                        (tenant_id,),
+                    ).fetchone()
+                    if not bound or not bound["allowed"]:
+                        raise AccessDenied("tenant database login is not bound")
             resolver = conn.execute(
                 "SELECT to_regprocedure('public.resolve_external_identity(text,text,text)') "
                 "IS NOT NULL AS present"
@@ -441,7 +494,7 @@ class Store:
 
     @contextmanager
     def transaction(self, ctx: TenantContext) -> Iterator[psycopg.Connection[dict[str, Any]]]:
-        with self.connection() as conn:
+        with self.connection(ctx.tenant_id if self.tenant_dsns is not None else None) as conn:
             if identity := ctx.identity:
                 binding = self.resolve_identity(
                     conn, identity.issuer, identity.subject, identity.client_id

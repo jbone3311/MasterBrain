@@ -32,7 +32,8 @@ from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
 from email_brain.connectors.fastmail import MAIL, FastmailReadClient
 from email_brain.domain.models import TenantContext
-from email_brain.migrate import grant_runtime, grant_tenant_runtime, migrate
+from email_brain.migrate import grant_identity_lookup, grant_runtime, grant_tenant_runtime, migrate
+from email_brain.oidc import OIDCAuthenticator, VerifiedToken
 from email_brain.schemas import FeaturePayload, ProposalRequest, ReviewRequest, SearchRequest
 from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError, NotFound, Store
 from email_brain.sync import Checkpoint, ReadWorker
@@ -204,20 +205,22 @@ def test_tenant_login_fence_contains_forged_sql_context(
         ).fetchone() == (1,)
         with pytest.raises(psycopg.errors.RaiseException), conn.transaction():
             conn.execute(
-                "UPDATE masterbrain_tenant_login_bindings SET tenant_id=%s "
-                "WHERE role_name=%s",
+                "UPDATE masterbrain_tenant_login_bindings SET tenant_id=%s WHERE role_name=%s",
                 (other_tenant, role),
             )
-        assert conn.execute(
-            "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
-            "WHERE n.nspname='public' AND c.relkind='r' AND "
-            "(c.relname='tenants' OR EXISTS (SELECT 1 FROM pg_attribute a "
-            "WHERE a.attrelid=c.oid AND a.attname='tenant_id' AND a.attnum>0)) "
-            "AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity "
-            "OR NOT EXISTS (SELECT 1 FROM pg_policy p "
-            "WHERE p.polrelid=c.oid AND p.polname='tenant_login_fence' "
-            "AND NOT p.polpermissive))"
-        ).fetchall() == []
+        assert (
+            conn.execute(
+                "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+                "WHERE n.nspname='public' AND c.relkind='r' AND "
+                "(c.relname='tenants' OR EXISTS (SELECT 1 FROM pg_attribute a "
+                "WHERE a.attrelid=c.oid AND a.attname='tenant_id' AND a.attnum>0)) "
+                "AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity "
+                "OR NOT EXISTS (SELECT 1 FROM pg_policy p "
+                "WHERE p.polrelid=c.oid AND p.polname='tenant_login_fence' "
+                "AND NOT p.polpermissive))"
+            ).fetchall()
+            == []
+        )
         with pytest.raises(ValueError, match="already bound"):
             grant_tenant_runtime(conn, role, other_tenant)
     runtime_dsn = make_conninfo(admin, user=role, password=password)
@@ -246,10 +249,13 @@ def test_tenant_login_fence_contains_forged_sql_context(
             ("email_brain.auth_client", "forged-client"),
         ):
             conn.execute("SELECT set_config(%s,%s,true)", (setting, forged_value))
-        assert conn.execute(
-            "SELECT id FROM public.resolve_external_identity(%s,'fence-other','fence-client')",
-            (issuer,),
-        ).fetchall() == []
+        assert (
+            conn.execute(
+                "SELECT id FROM public.resolve_external_identity(%s,'fence-other','fence-client')",
+                (issuer,),
+            ).fetchall()
+            == []
+        )
         assert conn.execute(
             "SELECT id FROM public.resolve_external_identity(%s,'fence-own','fence-client')",
             (issuer,),
@@ -259,18 +265,26 @@ def test_tenant_login_fence_contains_forged_sql_context(
             (other_account, other_actor, other_actor),
         ).fetchone() == (False,)
         assert conn.execute("SELECT id FROM tenants WHERE id=%s", (other_tenant,)).fetchall() == []
-        assert conn.execute(
-            "SELECT tenant_id,user_id FROM tenant_memberships WHERE tenant_id=%s",
-            (other_tenant,),
-        ).fetchall() == []
-        assert conn.execute(
-            "SELECT id FROM brain_sources WHERE tenant_id=%s", (other_tenant,)
-        ).fetchall() == []
-        assert conn.execute(
-            "UPDATE brain_sources SET status='paused' WHERE tenant_id=%s "
-            "AND id='fence_other'",
-            (other_tenant,),
-        ).rowcount == 0
+        assert (
+            conn.execute(
+                "SELECT tenant_id,user_id FROM tenant_memberships WHERE tenant_id=%s",
+                (other_tenant,),
+            ).fetchall()
+            == []
+        )
+        assert (
+            conn.execute(
+                "SELECT id FROM brain_sources WHERE tenant_id=%s", (other_tenant,)
+            ).fetchall()
+            == []
+        )
+        assert (
+            conn.execute(
+                "UPDATE brain_sources SET status='paused' WHERE tenant_id=%s AND id='fence_other'",
+                (other_tenant,),
+            ).rowcount
+            == 0
+        )
         with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
             conn.execute(
                 "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
@@ -318,6 +332,136 @@ def test_tenant_login_fence_contains_forged_sql_context(
         assert conn.execute("SELECT id FROM tenants WHERE id=%s", (ctx.tenant_id,)).fetchall() == []
 
 
+def test_tenant_database_routing_two_tenant_api_and_fail_closed_routes(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
+) -> None:
+    """One exact lookup credential and two bound data logins back real API searches."""
+    shared, admin = database
+    first_ctx, first_account = tenant
+    second_tenant, second_actor, second_account = uuid4(), uuid4(), uuid4()
+    issuer = "route-issuer-" + uuid4().hex
+    client_id = "route-client"
+    subjects = ("route-first", "route-second")
+    roles = ["test_route_" + uuid4().hex[:12] for _ in range(3)]
+    passwords = [secrets.token_urlsafe(32) for _ in roles]
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Second route tenant')", (second_tenant,)
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (second_tenant, second_actor),
+        )
+        conn.execute(
+            "INSERT INTO mail_accounts(id,tenant_id,provider,address,secret_ref) "
+            "VALUES (%s,%s,'fastmail','second-route@example.invalid','synthetic:none')",
+            (second_account, second_tenant),
+        )
+        for tenant_id, actor_id, subject in (
+            (first_ctx.tenant_id, first_ctx.actor_id, subjects[0]),
+            (second_tenant, second_actor, subjects[1]),
+        ):
+            conn.execute(
+                "INSERT INTO external_identities(id,tenant_id,actor_id,issuer,subject,"
+                "client_id,scopes,client_kind) VALUES (%s,%s,%s,%s,%s,%s,"
+                "ARRAY['email.search'],'human')",
+                (uuid4(), tenant_id, actor_id, issuer, subject, client_id),
+            )
+        for role, password in zip(roles, passwords, strict=True):
+            conn.execute(
+                sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                    sql.Identifier(role), sql.Literal(password)
+                )
+            )
+        grant_identity_lookup(conn, roles[0])
+        grant_tenant_runtime(conn, roles[1], first_ctx.tenant_id)
+        grant_tenant_runtime(conn, roles[2], second_tenant)
+        with pytest.raises(ValueError, match="table or inherited authority"):
+            grant_identity_lookup(conn, roles[1])
+    lookup_dsn, first_dsn, second_dsn = (
+        make_conninfo(admin, user=role, password=password)
+        for role, password in zip(roles, passwords, strict=True)
+    )
+    routed = Store(
+        lookup_dsn,
+        tenant_dsns={first_ctx.tenant_id: first_dsn, second_tenant: second_dsn},
+    )
+    with routed.connection() as conn:
+        assert conn.execute("SELECT session_user").fetchone() == {"session_user": roles[0]}
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute("SELECT id FROM tenants")
+        assert conn.execute(
+            "SELECT has_function_privilege(session_user,"
+            "'public.lock_recovery_owners(uuid,uuid,uuid)','EXECUTE') AS allowed"
+        ).fetchone() == {"allowed": False}
+    with pytest.raises(AccessDenied, match="unsafe identity lookup"):
+        with Store(shared.dsn, tenant_dsns={first_ctx.tenant_id: first_dsn}).connection():
+            pass
+    second_ctx = TenantContext(
+        second_tenant,
+        second_actor,
+        frozenset({"email.ingest", "email.search"}),
+        uuid4(),
+    )
+    for dsn, ctx, account, marker in (
+        (first_dsn, first_ctx, first_account, "Violet constellation route"),
+        (second_dsn, second_ctx, second_account, "Copper harbor route"),
+    ):
+        Store(dsn).ingest_page(
+            ctx,
+            account,
+            None,
+            "route-v1",
+            [
+                IngestItem(
+                    "route-v1",
+                    "route-message",
+                    "v1",
+                    datetime(2026, 9, 25, tzinfo=UTC),
+                    f"From: route@example.invalid\r\nSubject: {marker}\r\n\r\n{marker}".encode(),
+                )
+            ],
+            synthetic_only=True,
+        )
+    verified = {
+        "first": VerifiedToken(
+            issuer, subjects[0], client_id, datetime.now(UTC) + timedelta(hours=1)
+        ),
+        "second": VerifiedToken(
+            issuer, subjects[1], client_id, datetime.now(UTC) + timedelta(hours=1)
+        ),
+    }
+    verifier = Mock()
+    verifier.verify.side_effect = verified.get
+    registry = OIDCAuthenticator(routed, verifier)
+    client = TestClient(create_app(routed, registry))
+    for token, own, foreign in (
+        ("first", "Violet", "Copper"),
+        ("second", "Copper", "Violet"),
+    ):
+        for query, expected in ((own, 1), (foreign, 0)):
+            response = client.post(
+                "/v1/search", json={"query": query}, headers={"Authorization": f"Bearer {token}"}
+            )
+            assert response.status_code == 200, response.text
+            assert len(response.json()["results"]) == expected
+    with pytest.raises(AccessDenied, match="route unavailable"):
+        with Store(lookup_dsn, tenant_dsns={first_ctx.tenant_id: first_dsn}).transaction(
+            second_ctx
+        ):
+            pass
+    with pytest.raises(AccessDenied, match="not bound"):
+        with Store(lookup_dsn, tenant_dsns={first_ctx.tenant_id: second_dsn}).transaction(
+            first_ctx
+        ):
+            pass
+    with pytest.raises(AccessDenied, match="not bound"):
+        with Store(lookup_dsn, tenant_dsns={first_ctx.tenant_id: shared.dsn}).transaction(
+            first_ctx
+        ):
+            pass
+
+
 def test_tenant_runtime_enrollment_refuses_new_unfenced_table(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
 ) -> None:
@@ -326,24 +470,27 @@ def test_tenant_runtime_enrollment_refuses_new_unfenced_table(
     role = "test_unfenced_runtime_" + uuid4().hex[:12]
     table = "test_unfenced_" + uuid4().hex[:12]
     with psycopg.connect(admin) as conn:
-        conn.execute(sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS").format(
-            sql.Identifier(role)
-        ))
-        conn.execute(sql.SQL("CREATE TABLE public.{} (tenant_id uuid)").format(
-            sql.Identifier(table)
-        ))
-        conn.execute(sql.SQL("ALTER TABLE public.{} ENABLE ROW LEVEL SECURITY").format(
-            sql.Identifier(table)
-        ))
-        conn.execute(sql.SQL("ALTER TABLE public.{} FORCE ROW LEVEL SECURITY").format(
-            sql.Identifier(table)
-        ))
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS").format(sql.Identifier(role))
+        )
+        conn.execute(
+            sql.SQL("CREATE TABLE public.{} (tenant_id uuid)").format(sql.Identifier(table))
+        )
+        conn.execute(
+            sql.SQL("ALTER TABLE public.{} ENABLE ROW LEVEL SECURITY").format(sql.Identifier(table))
+        )
+        conn.execute(
+            sql.SQL("ALTER TABLE public.{} FORCE ROW LEVEL SECURITY").format(sql.Identifier(table))
+        )
         with pytest.raises(ValueError, match="inventory is incomplete"):
             grant_tenant_runtime(conn, role, ctx.tenant_id)
-        assert conn.execute(
-            "SELECT 1 FROM masterbrain_tenant_login_bindings WHERE role_name=%s",
-            (role,),
-        ).fetchone() is None
+        assert (
+            conn.execute(
+                "SELECT 1 FROM masterbrain_tenant_login_bindings WHERE role_name=%s",
+                (role,),
+            ).fetchone()
+            is None
+        )
         conn.execute(sql.SQL("DROP TABLE public.{}").format(sql.Identifier(table)))
 
 
@@ -356,24 +503,24 @@ def test_tenant_runtime_enrollment_refuses_inherited_table_owner(
     owner = "test_table_owner_" + uuid4().hex[:12]
     table = "test_owned_" + uuid4().hex[:12]
     with psycopg.connect(admin) as conn:
-        conn.execute(sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS").format(
-            sql.Identifier(role)
-        ))
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS").format(sql.Identifier(role))
+        )
         conn.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(sql.Identifier(owner)))
-        conn.execute(sql.SQL("CREATE TABLE public.{} (tenant_id uuid)").format(
-            sql.Identifier(table)
-        ))
-        conn.execute(sql.SQL("ALTER TABLE public.{} OWNER TO {}").format(
-            sql.Identifier(table), sql.Identifier(owner)
-        ))
-        conn.execute(sql.SQL("GRANT {} TO {}").format(
-            sql.Identifier(owner), sql.Identifier(role)
-        ))
+        conn.execute(
+            sql.SQL("CREATE TABLE public.{} (tenant_id uuid)").format(sql.Identifier(table))
+        )
+        conn.execute(
+            sql.SQL("ALTER TABLE public.{} OWNER TO {}").format(
+                sql.Identifier(table), sql.Identifier(owner)
+            )
+        )
+        conn.execute(sql.SQL("GRANT {} TO {}").format(sql.Identifier(owner), sql.Identifier(role)))
         with pytest.raises(ValueError, match="inherits unsafe authority"):
             grant_tenant_runtime(conn, role, ctx.tenant_id)
-        conn.execute(sql.SQL("REVOKE {} FROM {}").format(
-            sql.Identifier(owner), sql.Identifier(role)
-        ))
+        conn.execute(
+            sql.SQL("REVOKE {} FROM {}").format(sql.Identifier(owner), sql.Identifier(role))
+        )
         conn.execute(sql.SQL("DROP TABLE public.{}").format(sql.Identifier(table)))
         conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(owner)))
         conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(role)))
@@ -2032,9 +2179,12 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
     assert not {"width", "height", "image_processor", "member_locator"} & set(
         grouped["layers"]["archive_images"][0]
     )
-    assert core.search_current_archive_images(ctx, "alternate processor archive OCR proof")[
-        0
-    ].evidence_id == alternate_processor.evidence_id
+    assert (
+        core.search_current_archive_images(ctx, "alternate processor archive OCR proof")[
+            0
+        ].evidence_id
+        == alternate_processor.evidence_id
+    )
     with pytest.raises(ValueError, match="invalid current archive-image search"):
         core.search_current_archive_images(ctx, " ")
     with pytest.raises(ValueError, match="invalid current archive-image search"):
@@ -2212,8 +2362,7 @@ def test_archive_member_image_ocr_publication_converges_and_rechecks_current_par
     )
     assert core.search_current_archive_images(ctx, "concurrent archive image proof") == []
     assert (
-        core.search(ctx, "concurrent archive image proof")[0].evidence_id
-        == results[0].evidence_id
+        core.search(ctx, "concurrent archive image proof")[0].evidence_id == results[0].evidence_id
     )
     with pytest.raises(Conflict, match="no longer current"):
         publish(uuid4())

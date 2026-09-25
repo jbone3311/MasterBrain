@@ -202,8 +202,7 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
     """Administrator operation; no ownership or role membership is granted."""
     conn.execute(sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role)))
     resolver_row = conn.execute(
-        "SELECT to_regprocedure('public.resolve_external_identity(text,text,text)') "
-        "IS NOT NULL"
+        "SELECT to_regprocedure('public.resolve_external_identity(text,text,text)') IS NOT NULL"
     ).fetchone()
     if resolver_row is None:
         raise ValueError("cannot inspect identity resolver migration")
@@ -220,10 +219,9 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
         ).fetchone() == (True,):
             raise ValueError("runtime identity-table SELECT remains inherited")
         conn.execute(
-            sql.SQL("GRANT EXECUTE ON FUNCTION "
-                    "public.resolve_external_identity(text,text,text) TO {}").format(
-                sql.Identifier(role)
-            )
+            sql.SQL(
+                "GRANT EXECUTE ON FUNCTION public.resolve_external_identity(text,text,text) TO {}"
+            ).format(sql.Identifier(role))
         )
     conn.execute(
         sql.SQL("GRANT EXECUTE ON FUNCTION lock_recovery_owners(uuid,uuid,uuid) TO {}").format(
@@ -234,7 +232,8 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
         (
             "SELECT",
             tuple(t for t in RUNTIME_SELECT if t != "external_identities")
-            if has_resolver else RUNTIME_SELECT,
+            if has_resolver
+            else RUNTIME_SELECT,
         ),
         ("INSERT", RUNTIME_INSERT),
         (
@@ -277,8 +276,11 @@ def grant_tenant_runtime(
             "rolreplication FROM pg_roles WHERE rolname=%s",
             (role,),
         ).fetchone()
-        if not operator or not operator[0] or not candidate or candidate != (
-            True, False, False, False, False, False
+        if (
+            not operator
+            or not operator[0]
+            or not candidate
+            or candidate != (True, False, False, False, False, False)
         ):
             raise ValueError("unsafe tenant runtime database role")
         if conn.execute(
@@ -297,8 +299,7 @@ def grant_tenant_runtime(
         ).fetchone() != (False,):
             raise ValueError("tenant runtime role has identity administration")
         if conn.execute(
-            "SELECT to_regprocedure('public.masterbrain_tenant_login_allows(uuid)') "
-            "IS NOT NULL"
+            "SELECT to_regprocedure('public.masterbrain_tenant_login_allows(uuid)') IS NOT NULL"
         ).fetchone() != (True,):
             raise ValueError("tenant-login fence migration is missing")
         uncovered = conn.execute(
@@ -314,17 +315,19 @@ def grant_tenant_runtime(
         if uncovered:
             raise ValueError("tenant-login RLS fence inventory is incomplete")
         existing = conn.execute(
-            "SELECT tenant_id FROM public.masterbrain_tenant_login_bindings "
-            "WHERE role_name=%s",
+            "SELECT tenant_id FROM public.masterbrain_tenant_login_bindings WHERE role_name=%s",
             (role,),
         ).fetchone()
         if existing and existing[0] != tenant_id:
             raise ValueError("tenant runtime role is already bound")
-        if not existing and conn.execute(
-            "SELECT 1 FROM public.audit_events WHERE event_type='tenant_login.insert' "
-            "AND resource_type='database_role' AND resource_id=%s LIMIT 1",
-            (role,),
-        ).fetchone():
+        if (
+            not existing
+            and conn.execute(
+                "SELECT 1 FROM public.audit_events WHERE event_type='tenant_login.insert' "
+                "AND resource_type='database_role' AND resource_id=%s LIMIT 1",
+                (role,),
+            ).fetchone()
+        ):
             raise ValueError("previously bound runtime role cannot be reused")
         grant_runtime(conn, role)
         if not existing:
@@ -334,6 +337,52 @@ def grant_tenant_runtime(
                 (role, tenant_id),
             )
         conn.execute(
-            sql.SQL("GRANT masterbrain_tenant_runtime TO {} "
-                    "WITH ADMIN FALSE, INHERIT FALSE, SET FALSE").format(sql.Identifier(role))
+            sql.SQL(
+                "GRANT masterbrain_tenant_runtime TO {} WITH ADMIN FALSE, INHERIT FALSE, SET FALSE"
+            ).format(sql.Identifier(role))
+        )
+
+
+def grant_identity_lookup(conn: psycopg.Connection[tuple[object, ...]], role: str) -> None:
+    """DBA-only provisioning of a clean login with exact identity lookup authority."""
+    if not isinstance(role, str) or not role:
+        raise ValueError("invalid identity lookup role")
+    with conn.transaction():
+        operator = conn.execute(
+            "SELECT rolsuper FROM pg_roles WHERE rolname=current_user"
+        ).fetchone()
+        candidate = conn.execute(
+            "SELECT rolcanlogin,rolsuper,rolbypassrls,rolcreatedb,rolcreaterole,"
+            "rolreplication FROM pg_roles WHERE rolname=%s",
+            (role,),
+        ).fetchone()
+        if (
+            not operator
+            or not operator[0]
+            or candidate != (True, False, False, False, False, False)
+        ):
+            raise ValueError("unsafe identity lookup database role")
+        if conn.execute(
+            "SELECT EXISTS(SELECT 1 FROM pg_auth_members m JOIN pg_roles r "
+            "ON r.oid=m.member WHERE r.rolname=%s) "
+            "OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_roles r ON r.oid=c.relowner "
+            "JOIN pg_namespace n ON n.oid=c.relnamespace "
+            "WHERE r.rolname=%s AND n.nspname='public') "
+            "OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n "
+            "ON n.oid=c.relnamespace WHERE n.nspname='public' "
+            "AND c.relkind IN ('r','p','v','m','f') "
+            "AND has_table_privilege(%s,c.oid,"
+            "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))",
+            (role, role, role),
+        ).fetchone() != (False,):
+            raise ValueError("identity lookup role has table or inherited authority")
+        if conn.execute(
+            "SELECT to_regprocedure('public.resolve_external_identity(text,text,text)') IS NOT NULL"
+        ).fetchone() != (True,):
+            raise ValueError("identity resolver migration is missing")
+        conn.execute(sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role)))
+        conn.execute(
+            sql.SQL(
+                "GRANT EXECUTE ON FUNCTION public.resolve_external_identity(text,text,text) TO {}"
+            ).format(sql.Identifier(role))
         )
