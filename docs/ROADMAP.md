@@ -3,8 +3,8 @@
 Updated 2026-09-25. This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
-[build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The latest
-documentation checkpoint is `1e081ea`: full CI, strict-runtime and populated
+[build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
+functional baseline for this review is `1e081ea`: full CI, strict-runtime and populated
 restore passed. No live-source, production or FileOS cutover acceptance is implied.
 
 ## Where we are

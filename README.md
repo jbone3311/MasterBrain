@@ -6,7 +6,7 @@ layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compac
 progressive access with drill-down to original evidence.
 
 **Status:** `0.2.0a1` synthetic alpha candidate, not yet a tagged release.
-The latest verified `main` checkpoint is `1e081ea` (2026-09-25): full CI,
+The functional baseline reviewed here is `main` commit `1e081ea` (2026-09-25): full CI,
 strict-runtime and populated restore passed. The fictional cross-source browser
 trial is merged, but interactive Mac acceptance is still pending. See
 [current functions](docs/CURRENT_FUNCTIONS.md) and the
