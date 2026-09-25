@@ -1,5 +1,13 @@
 # MasterBrain Build Progress
 
+## Current `main` checkpoint (2026-09-24)
+
+The cumulative synthetic-alpha stack merged through [PR #28](https://github.com/jbone3311/CW-EmailBrain/pull/28) at `2dd4a85`. The strict sender-runtime guard merged through [PR #31](https://github.com/jbone3311/CW-EmailBrain/pull/31) at `20bfc1f`. Privacy-safe API failure correlation and status corrections merged through [PR #33](https://github.com/jbone3311/CW-EmailBrain/pull/33) at `c605e64`. The fictional-data Email/FileOS browser trial, including verified Docker cleanup, merged through [PR #32](https://github.com/jbone3311/CW-EmailBrain/pull/32) at `77192f5`.
+
+The exact latest `main` commit passed [full CI](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402051), [strict-runtime checks](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402009), and [populated restore](https://github.com/jbone3311/CW-EmailBrain/actions/runs/36099402006). These prove a testable, synthetic-only checkpoint; the owner's interactive Mac walkthrough is still pending. The `v0.2.0a1` tag has not been created. No live source, production deployment, FileOS cutover, or FOS-Master retirement is accepted. See [checkpoint issue #29](https://github.com/jbone3311/CW-EmailBrain/issues/29) and [hardening gate #34](https://github.com/jbone3311/CW-EmailBrain/issues/34).
+
+The sections below preserve point-in-time branch receipts. Descriptions such as “review” or “integration pending” belong to those historical checkpoints; they do not override the current `main` status above.
+
 ## Synthetic alpha integration
 
 ADR-101 defines `0.2.0a1` as a test-only candidate, not a production release.
@@ -9,12 +17,11 @@ the tested PR #25 branch. Its exact code head
 `9b1b0e0eb71291290ab30c418c9bd8e12e05a8b8` passed
 [CI 35927108260](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108260)
 and [populated restore 35927108311](https://github.com/jbone3311/CW-EmailBrain/actions/runs/35927108311).
-The local 3,000-file pinned-donor parity run passed. The next gates are a
-documentation-receipt head check, branch integration, a cumulative PR against
-`main`, and exact-head CI/restore before any alpha tag. Live use and FileOS
+The local 3,000-file pinned-donor parity run passed. Those integration gates are
+now complete and recorded above. The tag remains pending. Live use and FileOS
 cutover remain prohibited.
 
-## Active checkpoint
+## Historical checkpoint detail
 
 **Confined FileOS source reads (isolated, hosted-verified).** ADR-100 addresses a
 pathname check/open race in snapshot hashing and text/PDF/Office extraction.
