@@ -131,6 +131,11 @@ references for text, document and image archive receipts. It deliberately leaves
 polymorphic provenance inputs unbound to any single evidence table. Existing ledger
 drift or bad references stop migration for reviewed repair; no rows are rewritten.
 
+Migration `0036_current_archive_image_search.sql` adds only a tenant-leading lookup
+index on existing immutable image OCR receipts. Current-image retrieval rejoins
+the receipt to sealed member, derivative and still-current archive parent; it does
+not rewrite evidence, activate a generation or change receipt semantics.
+
 - **job**, **lease**, **checkpoint**, **inbox**, **outbox**, **idempotency_record**
 - **audit_event**, **policy_decision**, **change_feed**, **retention_action**
 - **schema_version**, **extractor_version**, **model_version**, **restore_receipt**

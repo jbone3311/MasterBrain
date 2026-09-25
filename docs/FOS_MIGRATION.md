@@ -63,6 +63,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
+| DC-004C selected archive/image OCR | FOS-Master `218d5cae`, `archive_unpack.py`/`image_triage.py` as references; no donor edit | isolated archive/image workers, exact selected OCR receipts/operator and ADR-107 current read | bounded worker corpora, exact member/parent/receipt fencing, tenant/limit tests, image parity harness | Explicit synthetic path implemented; automatic selection, broad donor shadow and cutover unaccepted |
 | DC-005A explicit operation | Existing DataCore contracts; donor remains reference | `fileos_controller.py`, `masterbrain fileos publish` | closed config/auth/replay/source-integrity/SQL corpus | Complete; hosted PostgreSQL and restore gates green |
 | DC-005B completion/freshness | Shared intake/publication contracts | migration 0017 + DataCore/Brain freshness | exact binding/counts/replay/immutability/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
 | DC-005C inventory reconciliation evidence | FOS-Master `218d5cae`, `corpus_reconcile.py` lessons | migration 0018 + completed-run item/absence ledgers | exact ledger balance/stale-run refusal/absence/RLS/restore | Complete; hosted PostgreSQL and restore gates green |
@@ -89,8 +90,9 @@ switch requires a separate decision and consecutive-run acceptance tests.
 
 ## Proposed next tranches
 
-1. **DC-004C archives/images/OCR:** separate opt-in workers with format-specific
-   corpora, expansion/page budgets and containment.
+1. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
+   implemented. Extend format-specific corpora, containment, donor shadow and
+   reviewed selection before any automatic fan-out or cutover.
 2. **DC-005G retrieval policy:** private generation operation and initial query parity
    are complete; expand the corpus and define deliberate global current/historical
    visibility before redirecting existing DataCore or unified search.

@@ -300,10 +300,12 @@ def archive_image_fixture(
     *,
     source_id: str,
     hour: int = 1,
+    image_suffix: str = ".png",
 ) -> tuple[bytes, ArchiveMemberTargetRecord]:
+    member_locator = f"nested/proof{image_suffix}"
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w") as archive:
-        archive.writestr("nested/proof.png", b"\x89PNG\r\n\x1a\nsynthetic-image-body")
+        archive.writestr(member_locator, b"\x89PNG\r\n\x1a\nsynthetic-image-body")
         archive.writestr("sibling.txt", b"must never enter image OCR text")
     raw = output.getvalue()
     (root / "fixture.zip").write_bytes(raw)
@@ -319,7 +321,7 @@ def archive_image_fixture(
     )
     inventory = inventory_archive(raw, source)
     recorded = core.record_archive_inventory(ctx, inventory, ARCHIVE_PROCESSOR, uuid4())
-    target = core.archive_member_target(ctx, recorded.inventory_id, "nested/proof.png")
+    target = core.archive_member_target(ctx, recorded.inventory_id, member_locator)
     return raw, target
 
 
@@ -1627,6 +1629,58 @@ def test_current_archive_document_search_is_exact_replay_safe_and_parent_fenced(
     assert core.search(ctx, marker)[0].evidence_id == first.evidence_id
 
 
+@pytest.mark.parametrize(
+    ("suffix", "image_format"),
+    [
+        (".jpg", "jpeg"),
+        (".jpeg", "jpeg"),
+        (".png", "png"),
+        (".tif", "tiff"),
+        (".tiff", "tiff"),
+        (".bmp", "bmp"),
+        (".gif", "gif"),
+        (".webp", "webp"),
+    ],
+)
+def test_current_archive_image_search_receipt_suffix_mapping(
+    database: tuple[Store, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    suffix: str,
+    image_format: str,
+) -> None:
+    """Exercise every permitted receipt suffix; worker image bytes have separate parity tests."""
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    _, target = archive_image_fixture(
+        core,
+        ctx,
+        tmp_path,
+        source_id="files_archive_image_suffix",
+        image_suffix=suffix,
+    )
+    marker = "archive suffix mapping proof " + image_format
+    published = core.publish_archive_member_image_ocr(
+        ctx,
+        target,
+        marker,
+        "sandbox-fileos-image-ocr-v1-" + "c" * 64,
+        image_format,
+        image_format,
+        30,
+        20,
+        "RGB",
+        1,
+        False,
+        "archive-image-suffix-test-v1",
+        uuid4(),
+    )
+    hits = core.search_current_archive_images(ctx, marker)
+    assert [hit.evidence_id for hit in hits] == [published.evidence_id]
+
+
 def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanced(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:
@@ -1652,6 +1706,25 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
         False,
         "archive-image-test-v1",
     )
+
+    assert core.search_current_archive_images(ctx, marker) == []
+    with pytest.raises(ValueError, match="invalid archive member image OCR publication"):
+        core.publish_archive_member_image_ocr(
+            ctx,
+            target,
+            marker,
+            processor,
+            "jpeg",
+            "jpeg",
+            1200,
+            260,
+            "RGB",
+            1,
+            False,
+            "archive-image-test-v1",
+            uuid4(),
+        )
+    assert core.search_current_archive_images(ctx, marker) == []
 
     first = core.publish_archive_member_image_ocr(*arguments, key)
     same_key = core.publish_archive_member_image_ocr(*arguments, key)
@@ -1681,6 +1754,52 @@ def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanc
     assert core.search_current_archive_members(ctx, marker) == []
     assert core.search_current_archive_documents(ctx, marker) == []
     assert core.search_current_fileos(ctx, marker) == []
+    current_ocr = core.search_current_archive_images(ctx, marker)
+    assert [hit.evidence_id for hit in current_ocr] == [first.evidence_id]
+    assert current_ocr[0].locator.startswith("archive-member/archiveitem_")
+    assert target.member_locator not in current_ocr[0].locator
+    token = secrets.token_urlsafe(40)
+    api = TestClient(
+        create_app(
+            store,
+            TokenRegistry(
+                [
+                    Credential(
+                        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+                        tenant_id=ctx.tenant_id,
+                        actor_id=ctx.actor_id,
+                        scopes={"brain.search", "knowledge.search"},
+                        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+                        client_kind="human",
+                    )
+                ]
+            ),
+        )
+    )
+    response = api.post(
+        "/v1/brain/current-search",
+        json={"query": marker, "archive_image_limit": 3},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    grouped = response.json()
+    assert grouped["layers"]["archive_images"][0]["evidence_id"] == first.evidence_id
+    assert grouped["limits"]["archive_images"] == 3
+    assert grouped["coverage"]["archive_images"] == (
+        "explicitly_published_current_archive_images_only"
+    )
+    assert target.member_locator not in response.text
+    assert processor not in response.text
+    assert not {"width", "height", "image_processor", "member_locator"} & set(
+        grouped["layers"]["archive_images"][0]
+    )
+    assert core.search_current_archive_images(ctx, "alternate processor archive OCR proof")[
+        0
+    ].evidence_id == alternate_processor.evidence_id
+    with pytest.raises(ValueError, match="invalid current archive-image search"):
+        core.search_current_archive_images(ctx, " ")
+    with pytest.raises(ValueError, match="invalid current archive-image search"):
+        core.search_current_archive_images(ctx, marker, limit=21)
     with store.transaction(ctx) as conn:
         receipt = conn.execute(
             "SELECT image_processor,image_format,detected_format,width,height,mode,"
@@ -1816,6 +1935,7 @@ def test_archive_member_image_ocr_publication_converges_and_rechecks_current_par
         results = list(pool.map(publish, (uuid4(), uuid4())))
     assert sorted(result.changed for result in results) == [False, True]
     assert len({result.document_id for result in results}) == 1
+    assert len(core.search_current_archive_images(ctx, "concurrent archive image proof")) == 1
 
     other_tenant, other_actor = uuid4(), uuid4()
     with psycopg.connect(admin) as conn:
@@ -1827,6 +1947,7 @@ def test_archive_member_image_ocr_publication_converges_and_rechecks_current_par
             (other_tenant, other_actor),
         )
     other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
+    assert core.search_current_archive_images(other, "concurrent archive image proof") == []
     with pytest.raises(NotFound):
         core.publish_archive_member_image_ocr(
             other,
@@ -1849,6 +1970,11 @@ def test_archive_member_image_ocr_publication_converges_and_rechecks_current_par
         ctx,
         fileos_manifest(tmp_path, source_id="files_archive_image_fence", hour=2),
         uuid4(),
+    )
+    assert core.search_current_archive_images(ctx, "concurrent archive image proof") == []
+    assert (
+        core.search(ctx, "concurrent archive image proof")[0].evidence_id
+        == results[0].evidence_id
     )
     with pytest.raises(Conflict, match="no longer current"):
         publish(uuid4())
@@ -2929,6 +3055,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert grouped["layers"]["fileos"][0]["evidence_id"] == evidence_id
     assert grouped["layers"]["archive_members"] == []
     assert grouped["layers"]["archive_documents"] == []
+    assert grouped["layers"]["archive_images"] == []
     assert grouped["layers"]["email_messages"][0]["evidence_id"] == current_email.evidence_id
     assert grouped["layers"]["email_attachments"] == []
     assert grouped["layers"]["email_documents"] == []

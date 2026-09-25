@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-107](adr/107_current_archive_image_search.md) adds a distinct current-only
+archive-image OCR layer with exact receipt, sealed-member and parent freshness
+fences. It grants no OCR execution, automatic selection or FileOS cutover.
+
 [ADR-106](adr/106_identity_resolver_boundary.md) moves runtime identity reads
 behind an exact-key definer function and removes direct table SELECT. It reduces
 the caller-settable lookup surface but does not close issue #7's arbitrary-SQL

@@ -233,6 +233,7 @@ def protected_database(
             "0033_archive_ledger_parent_integrity.sql",
             "0034_identity_admin_enrollment.sql",
             "0035_identity_resolver.sql",
+            "0036_current_archive_image_search.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:

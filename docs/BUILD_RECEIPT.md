@@ -2,6 +2,19 @@
 
 Updated 2026-09-25 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Latest verified `main` before archive-image search tranche
+
+PR #37 added least-privilege identity administration and merged at `e07bc55`;
+PR #38 narrowed runtime identity reads to an exact resolver and merged at
+`384d53d38704c38fc9cbef87c0397a51e0c60b6d`. That exact `main` commit passed
+[full CI 36184292801](https://github.com/jbone3311/MasterBrain/actions/runs/36184292801),
+[strict runtime 36184292780](https://github.com/jbone3311/MasterBrain/actions/runs/36184292780),
+and [populated restore 36184292905](https://github.com/jbone3311/MasterBrain/actions/runs/36184292905).
+Issue #6 is closed. Confirmed issue #7 (caller-settable tenant authority) and
+populated-upgrade issue #9 remain open; no hosted security or production claim is
+made. The archive-image search tranche is a later candidate until its own exact
+head and merge-commit checks are recorded.
+
 ## Repository consolidation (2026-09-25)
 
 The repository was renamed from `jbone3311/CW-EmailBrain` to
@@ -21,7 +34,10 @@ The cumulative alpha merge `2dd4a85` (PR #28) and strict sender-runtime merge `2
 
 That exact `main` commit `77192f52e15139fba1fad72264cc54982095f928` passed [full CI 36099402051](https://github.com/jbone3311/MasterBrain/actions/runs/36099402051), [strict sender-runtime 36099402009](https://github.com/jbone3311/MasterBrain/actions/runs/36099402009), and [populated restore 36099402006](https://github.com/jbone3311/MasterBrain/actions/runs/36099402006). The preceding `c605e64` merge also passed its exact `main` [full CI 36098702369](https://github.com/jbone3311/MasterBrain/actions/runs/36098702369), [strict runtime 36098702407](https://github.com/jbone3311/MasterBrain/actions/runs/36098702407), and [restore 36098702434](https://github.com/jbone3311/MasterBrain/actions/runs/36098702434). The historical receipts below preserve earlier point-in-time evidence; older “pending integration” wording is not the current `main` state.
 
-This is a fictional-data, test-only alpha candidate. Interactive Mac/browser acceptance, issues #6/#7/#9, production operations and donor cutover remain open. FOS-Master is unchanged, and `v0.2.0a1` remains untagged.
+At that older checkpoint, this was a fictional-data, test-only alpha candidate.
+Interactive Mac/browser acceptance, the then-open issues #6/#7/#9, production
+operations and donor cutover were not satisfied. Issue #6 has since closed as
+recorded above. FOS-Master is unchanged, and `v0.2.0a1` remains untagged.
 
 ## `main` synthetic alpha integration checkpoint
 

@@ -227,11 +227,16 @@ production and FileOS cutover remain open.
   metadata. Complete nonempty results may enter a separate append-only, forced-RLS
   retained-history derivative with exact replay/current fencing and image-specific
   receipt/provenance. Real immutable containers, PostgreSQL and restore are green. It
-  adds no automatic selection, current search, batch or fan-out.
+  added no automatic selection, current search, batch or fan-out at that checkpoint.
 - Private `masterbrain fileos archive-image` one-member command with distinct pinned
   OCR image, exact worker scopes, non-consuming check, reauthentication and
   content-free output. Hosted CI/container and populated restore accepted in
   `f658ace`; no live-source or production acceptance is claimed.
+- Current-only archive-image OCR lexical search is a separate Brain API layer under
+  ADR-107. It rejoins exact image receipt, sealed member, child derivative and
+  still-current parent without changing retained history or active generations.
+  It has its own bounded limit, within-layer rank and partial-coverage label;
+  automatic fan-out and live-source acceptance remain absent.
 - Forward-only protected-record TRUNCATE guards on the 56 direct append-only tables,
   protected recovery/document jobs and audited external identity bindings. Focused
   disposable-PostgreSQL catalog, direct/cascade, runtime-privilege, row-transition and

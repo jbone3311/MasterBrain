@@ -2,6 +2,9 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Added independently ranked current archive-image OCR search through exact
+  receipt/parent/member fencing (ADR-107, migration 0036). Retained history and
+  FileOS source behavior are unchanged; no hosted or cutover claim.
 - Removed direct runtime SELECT on identity bindings and the caller-settable
   identity-lookup RLS policy; an exact, active-only resolver now supplies the
   verified-token path (ADR-106, migration 0035). Arbitrary-SQL/tenant-context

@@ -64,6 +64,9 @@ inventory and enabled statement triggers under that same migrator, then exercise
 direct and FK-cascaded truncation refusal in staging. See the
 [protected-record contract](EVIDENCE_TRUNCATE_GUARDS.md). Neither guard replaces
 privileged-administrator monitoring or restorable backups.
+Migration 0036 adds a transactionally built archive-image receipt index. It is
+verified on disposable synthetic data only; a populated live table requires a
+reviewed lock budget or online-index migration path before rollout (issue #9).
 
 Build immutable artifacts with dependency locks, SBOM/provenance, schema compatibility
 checks, migrations with rollback/forward recovery, and staged health gates. Deploy

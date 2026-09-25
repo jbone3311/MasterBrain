@@ -492,6 +492,9 @@ def create_app(
         archive_document_hits = brain.search_current_archive_documents(
             principal.context, body.query, limit=body.archive_document_limit
         )
+        archive_image_hits = brain.search_current_archive_images(
+            principal.context, body.query, limit=body.archive_image_limit
+        )
         email_hits = brain.search_current_email_family(
             principal.context,
             body.query,
@@ -528,6 +531,7 @@ def create_app(
                 "fileos": "sources_with_active_generation_only",
                 "archive_members": "explicitly_published_current_archive_members_only",
                 "archive_documents": ("explicitly_published_current_archive_documents_only"),
+                "archive_images": "explicitly_published_current_archive_images_only",
                 "email": "explicitly_bridged_current_only",
                 "knowledge": "reviewed_retained_assertions",
                 "complete": False,
@@ -536,6 +540,7 @@ def create_app(
                 "fileos": evidence(fileos_hits),
                 "archive_members": evidence(archive_member_hits),
                 "archive_documents": evidence(archive_document_hits),
+                "archive_images": evidence(archive_image_hits),
                 "email_messages": evidence(email_hits.messages),
                 "email_attachments": evidence(email_hits.attachments),
                 "email_documents": evidence(email_hits.documents),
@@ -555,6 +560,7 @@ def create_app(
                 "fileos": body.fileos_limit,
                 "archive_members": body.archive_member_limit,
                 "archive_documents": body.archive_document_limit,
+                "archive_images": body.archive_image_limit,
                 "email_messages": body.email_message_limit,
                 "email_attachments": body.email_attachment_limit,
                 "email_documents": body.email_document_limit,

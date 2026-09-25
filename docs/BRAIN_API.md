@@ -43,10 +43,11 @@ objects, general SQL, or an unbounded corpus dump.
   bounded message/attachment/approved-document layers with within-layer ranks;
   requires `brain.search`.
 - `POST /v1/brain/current-search` — implemented grouped active-FileOS, explicitly
-  published current archive-member, current-Email-family and reviewed-KnowledgeCore
+  published current archive-text, archive-document and archive-image OCR,
+  current-Email-family and reviewed-KnowledgeCore
   lexical read with independent limits/ranks, explicit partial coverage and
   independent-layer consistency; requires both search scopes. `archive_member_limit`
-  is 1–20 and the archive result locator is opaque.
+  and `archive_image_limit` are independently 1–20; archive result locators are opaque.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
   `brain.changes.read`, is cursor-bounded and does not enumerate providers or paths.
