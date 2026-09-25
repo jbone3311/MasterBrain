@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-105](adr/105_identity_admin_enrollment.md) provides a dedicated
+non-superuser identity-administration role under forced RLS and a protected audit
+trigger. It addresses issue #6 without granting runtime writes or resolving the
+separate caller-settable lookup-context concern in issue #7.
+
 [ADR-104](adr/104_privacy_safe_error_observability.md) adds content-free
 request-failure categories and a sanitized 500 response with a server-generated
 request ID. It does not claim production log retention, alerting or incident response.

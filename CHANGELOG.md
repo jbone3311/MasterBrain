@@ -2,6 +2,9 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Added a separate non-superuser identity-administration role under forced RLS
+  (ADR-105, migration 0034) with a protected audit trigger and real PostgreSQL
+  regression. Runtime still cannot manage bindings; live enrollment remains gated.
 - Merged the cumulative MasterBrain synthetic baseline (#28), fail-loud strict
   sender-parser runtime gate (#31), privacy-safe API failure correlation (#33),
   disposable fictional Email/FileOS browser trial (#32), and reconciled build

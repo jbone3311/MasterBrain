@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import replace
+from datetime import UTC, datetime
 
 import pytest
 import test_postgres as pg
@@ -75,7 +76,8 @@ def test_citations_content_coverage_and_no_source_mutation(preview, tmp_path):
         freshness = client.get("/v1/brain/sources/trial_files/freshness")
         assert freshness.status_code == 200
         assert "no_completed_run" not in freshness.text
-        assert "2026-09-24" in freshness.text
+        observed_at = freshness.json()["latest_complete_run"]["observed_at"]
+        assert datetime.fromisoformat(observed_at) == datetime(2026, 9, 24, tzinfo=UTC)
         assert client.get("/trial").status_code == 200
         assert "script-src 'self'" in client.get("/trial").headers["content-security-policy"]
         assert client.get("/trial", headers={"Host": "attacker.invalid"}).status_code == 400
