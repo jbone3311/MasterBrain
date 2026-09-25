@@ -74,6 +74,9 @@ production or FileOS cutover gates below.
   dependency/container scans and parser sandbox review are accepted.
 - Retention, export, purge and legal hold cover originals, derivatives, indexes,
   summaries, caches, logs and backups.
+- Privacy-safe request/error events have stable correlation IDs and codes without
+  content, paths, credentials or raw diagnostics; protected collection, retention,
+  access review and actionable alert drills pass.
 - Telemetry/content leakage tests pass; remote-model disclosure/consent is verified.
 - Backup/restore, disaster recovery, worker crash, cursor expiry, queue replay,
   rate-limit and dependency outage drills meet RPO/RTO targets.
