@@ -200,13 +200,41 @@ def migrate(dsn: str, directory: Path) -> list[str]:
 def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> None:
     """Administrator operation; no ownership or role membership is granted."""
     conn.execute(sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role)))
+    resolver_row = conn.execute(
+        "SELECT to_regprocedure('public.resolve_external_identity(text,text,text)') "
+        "IS NOT NULL"
+    ).fetchone()
+    if resolver_row is None:
+        raise ValueError("cannot inspect identity resolver migration")
+    has_resolver = bool(resolver_row[0])
+    if has_resolver:
+        conn.execute(
+            sql.SQL("REVOKE SELECT ON external_identities FROM {}").format(
+                sql.Identifier(role)
+            )
+        )
+        if conn.execute(
+            "SELECT has_table_privilege(%s,'public.external_identities','SELECT')",
+            (role,),
+        ).fetchone() == (True,):
+            raise ValueError("runtime identity-table SELECT remains inherited")
+        conn.execute(
+            sql.SQL("GRANT EXECUTE ON FUNCTION "
+                    "resolve_external_identity(text,text,text) TO {}").format(
+                sql.Identifier(role)
+            )
+        )
     conn.execute(
         sql.SQL("GRANT EXECUTE ON FUNCTION lock_recovery_owners(uuid,uuid,uuid) TO {}").format(
             sql.Identifier(role)
         )
     )
     for privilege, tables in (
-        ("SELECT", RUNTIME_SELECT),
+        (
+            "SELECT",
+            tuple(t for t in RUNTIME_SELECT if t != "external_identities")
+            if has_resolver else RUNTIME_SELECT,
+        ),
         ("INSERT", RUNTIME_INSERT),
         (
             "UPDATE",

@@ -12,10 +12,11 @@ import test_oidc as oidc
 import test_postgres as pg
 from fastapi.testclient import TestClient
 from psycopg import sql
-from psycopg.conninfo import make_conninfo
+from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from email_brain.api import create_app
 from email_brain.auth import AuthenticationUnavailable
+from email_brain.migrate import grant_runtime
 from email_brain.oidc import OIDCAuthenticator
 from email_brain.schemas import SearchRequest
 from email_brain.store import AccessDenied, Store
@@ -173,20 +174,47 @@ def test_current_mapping_still_denies_other_tenant_evidence(setup, database):
     assert store.search(auth.authenticate(raw).context, SearchRequest(query="Melron")) == []
 
 
-def test_identity_rls_without_verified_context_and_exact_lookup(setup):
+def test_identity_resolver_denies_direct_select_even_with_forged_context(setup):
     store, _, ctx, _, fake, binding, raw, auth = setup
     verified = auth.verifier.verify(raw)
-    with store.transaction(ctx) as conn:
-        assert conn.execute("SELECT * FROM external_identities").fetchall() == []
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), store.transaction(ctx) as conn:
+        conn.execute("SELECT * FROM external_identities")
     with store.connection() as conn:
-        assert conn.execute("SELECT * FROM external_identities").fetchall() == []
-        store.identity_context(conn, fake.config.issuer, verified.subject, oidc.CLIENT)
-        assert [row["id"] for row in conn.execute("SELECT * FROM external_identities")] == [binding]
-        store.identity_context(conn, fake.config.issuer, verified.subject, "different-client")
-        assert conn.execute("SELECT * FROM external_identities").fetchall() == []
-    # Transaction-local settings cannot survive into a subsequent connection.
+        assert store.resolve_identity(conn, fake.config.issuer, verified.subject, oidc.CLIENT)[
+            "id"
+        ] == binding
+        assert (
+            store.resolve_identity(conn, fake.config.issuer, verified.subject, "different-client")
+            is None
+        )
+        conn.execute("SELECT set_config('email_brain.auth_issuer',%s,true)", (fake.config.issuer,))
+        conn.execute("SELECT set_config('email_brain.auth_subject',%s,true)", (verified.subject,))
+        conn.execute("SELECT set_config('email_brain.auth_client',%s,true)", (oidc.CLIENT,))
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            conn.execute("SELECT * FROM external_identities").fetchall()
     with store.connection() as conn:
-        assert conn.execute("SELECT * FROM external_identities").fetchall() == []
+        assert store.resolve_identity(conn, fake.config.issuer, "unknown", oidc.CLIENT) is None
+
+
+def test_runtime_refuses_inherited_identity_administrator_grant(database):
+    store, admin = database
+    role = conninfo_to_dict(store.dsn)["user"]
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL("GRANT masterbrain_identity_admin TO {}").format(sql.Identifier(role))
+        )
+    try:
+        with psycopg.connect(admin) as conn, pytest.raises(ValueError, match="inherited"):
+            grant_runtime(conn, role)
+        with pytest.raises(AccessDenied, match="identity-table grant"), store.connection():
+            pass
+    finally:
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                sql.SQL("REVOKE masterbrain_identity_admin FROM {}").format(
+                    sql.Identifier(role)
+                )
+            )
 
 
 @pytest.mark.parametrize("operation", ["INSERT", "UPDATE", "DELETE"])

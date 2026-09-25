@@ -380,14 +380,9 @@ class OIDCAuthenticator:
         """Trusted-service entry point only; no API accepts a VerifiedToken object."""
         try:
             with self.store.connection() as conn:
-                self.store.identity_context(
+                binding = self.store.resolve_identity(
                     conn, verified.issuer, verified.subject, verified.client_id
                 )
-                binding = conn.execute(
-                    "SELECT * FROM external_identities WHERE active "
-                    "AND issuer=%s AND subject=%s AND client_id=%s",
-                    (verified.issuer, verified.subject, verified.client_id),
-                ).fetchone()
             if binding is None:
                 return None
             identity = ExternalIdentity(

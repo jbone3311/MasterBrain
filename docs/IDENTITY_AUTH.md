@@ -50,11 +50,14 @@ requirements on every identity provider.
 
 First apply additive [migration 0013](../migrations/0013_external_identities.sql)
 and forward-only [migration 0034](../migrations/0034_identity_admin_enrollment.sql)
-with the migration administrator, then refresh `grant-runtime` for the existing
+and [migration 0035](../migrations/0035_identity_resolver.sql) with the migration
+administrator, then refresh `grant-runtime` for the existing
 non-owner/non-BYPASSRLS runtime role. Migration 0034 adds a narrow, non-login
 identity-administration role; it does not enroll a human or grant that role to
-runtime. Existing bootstrap workers keep their own credentials; do not merge
-human and worker registries.
+runtime. Migration 0035 removes direct runtime identity-table SELECT and its
+caller-settable lookup policy; old binaries querying the table fail closed.
+Existing bootstrap workers keep their own credentials; do not merge human and
+worker registries.
 
 Prepare the configuration in an owner-only `0700` directory, file `0600`, outside
 the checkout/Dropbox. Existing private-file checks reject symlinks, hard links,
@@ -107,8 +110,9 @@ Bindings remain owner-only: member/reviewer/operator memberships are not yet ser
 One verified triple maps to one tenant; workspace selection and granular sharing
 need a later explicit design, not request-supplied tenant IDs.
 
-Runtime can only SELECT bindings. RLS requires the verified identity context even
-when a tenant context already exists. The separate administrator role can manage
+Runtime can invoke only an exact-key, active-only resolver after token verification;
+it cannot directly SELECT bindings or enumerate the table by setting lookup GUCs.
+The separate administrator role can manage
 bindings across tenants, but has no direct `audit_events` write grant, table
 ownership, `BYPASSRLS`, or access to unrelated evidence tables. Binding IDs,
 tenant/actor and external identity are immutable. Administrator updates to
@@ -116,8 +120,10 @@ active/scopes/kind increment a revision; disable/re-enable cannot revive an old
 saved context. Insert/update/delete emits an append-only audit event with the
 connecting database login and local binding state, no subject or token. This
 identifies the DB administrator login, not an invented end-user actor. See
-[ADR-105](adr/105_identity_admin_enrollment.md). Issue #7's caller-settable
-lookup context remains a separate open security question.
+[ADR-105](adr/105_identity_admin_enrollment.md) and
+[ADR-106](adr/106_identity_resolver_boundary.md). Issue #7 remains open: a
+compromised runtime credential or arbitrary SQL could still set tenant-context
+GUCs for other evidence tables. The resolver does not establish hosted containment.
 
 ## Revocation and outages
 
