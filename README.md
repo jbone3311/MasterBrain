@@ -21,8 +21,9 @@ FOS-Master has not been replaced, renamed, or modified. See the
 
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 The internal `email_brain` package remains for compatibility and identifies the
-original Email capability, not the final product. New source-neutral code enters through `masterbrain.datacore`,
-`masterbrain.knowledge`, and the Brain API boundaries.
+original Email capability, not the final product. New source-neutral code enters
+through `masterbrain.datacore`, `masterbrain.knowledge`, and the Brain API
+boundaries.
 
 ## Product shape
 
