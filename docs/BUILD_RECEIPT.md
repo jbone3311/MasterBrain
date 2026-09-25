@@ -2,7 +2,32 @@
 
 Updated 2026-09-25 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Latest verified `main`: current-only archive-image OCR search
+## Latest verified `main`: opt-in tenant-bound runtime login fence
+
+[PR #41](https://github.com/jbone3311/MasterBrain/pull/41) merged at
+`ce12933d1b064403e07ce1cdb3efd239cf25f244`. Its head
+`5c38c67b83f5ca3580ca61bcc7a7eeb6b3d1d3aa` passed
+[full CI 36192548076](https://github.com/jbone3311/MasterBrain/actions/runs/36192548076),
+[strict runtime 36192548112](https://github.com/jbone3311/MasterBrain/actions/runs/36192548112),
+and [populated restore 36192548136](https://github.com/jbone3311/MasterBrain/actions/runs/36192548136).
+The exact merged `main` SHA passed
+[full CI 36193250984](https://github.com/jbone3311/MasterBrain/actions/runs/36193250984),
+[strict runtime 36193251054](https://github.com/jbone3311/MasterBrain/actions/runs/36193251054),
+and [populated restore 36193251021](https://github.com/jbone3311/MasterBrain/actions/runs/36193251021).
+
+Local synthetic evidence: 2,818 Python passed, one Docker-only skipped, with
+443 PostgreSQL-marked tests executed on disposable PostgreSQL 17.11; 134 browser
+tests passed. The pinned FOS-Master donor at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` passed DataCore parity on
+3,000 stress files and edge cases. Migration 0037 and ADR-108 introduce an
+**opt-in** tenant-bound PostgreSQL login fence, test arbitrary SQL with forged
+request-context GUCs, and cover security-definer identity and recovery helpers.
+The existing shared global runtime login remains unbound; issue #7 remains open
+until tenant-aware API/worker routing and credential lifecycle are implemented
+and tested. Populated live-upgrade lock risk in issue #9 also remains open.
+This is not a production multi-tenant, live-source, or FOS-Master cutover receipt.
+
+## Previous verified `main`: current-only archive-image OCR search
 
 [PR #39](https://github.com/jbone3311/MasterBrain/pull/39) merged at
 `d2a418d217333605f9aa4a15d4b7c73819b84c9c`, then that exact `main` SHA
