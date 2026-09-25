@@ -77,6 +77,10 @@ and synthesis are target contracts, not guarantees of every current route.
 
 ## Common response envelope
 
+The JSON below is a **target design**, not a promise that every implemented route
+already emits this uniform envelope. The individual route schemas and tests govern
+current responses; common field selection and token budgets remain planned.
+
 ```json
 {
   "data": [],
