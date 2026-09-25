@@ -4,8 +4,9 @@ Updated 2026-09-25. This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
-functional baseline for this review is `c8c428b`: full CI, strict-runtime and populated
-restore passed. No live-source, production or FileOS cutover acceptance is implied.
+original functions-review baseline was `c8c428b`; later exact-commit evidence is
+recorded in the build receipt and GitHub PR checks. No live-source, production or
+FileOS cutover acceptance is implied.
 
 ## Where we are
 
@@ -28,10 +29,12 @@ Security and data-integrity blockers take priority over adding more surface area
    Mac, record commit, expected/actual known answers, citations, coverage and
    browser behavior. Fix any failure on a branch; do not interpret hosted API
    tests as browser acceptance.
-2. **Resolve security and upgrade findings.** Independently reproduce and close or
-   explicitly accept [identity enrollment #6](https://github.com/jbone3311/MasterBrain/issues/6),
-   [caller-settable lookup context #7](https://github.com/jbone3311/MasterBrain/issues/7),
-   and [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).
+2. **Resolve security and upgrade findings.** Identity enrollment
+   [#6](https://github.com/jbone3311/MasterBrain/issues/6) is fixed on `main` by
+   ADR-105; the exact resolver of ADR-106 narrows but does not close the confirmed
+   [tenant-context authority bug #7](https://github.com/jbone3311/MasterBrain/issues/7).
+   Independently close or explicitly accept that risk and the
+   [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).
    Require exploit/lock evidence, regression tests, restore and an operational
    rollout/rollback receipt. Green synthetic CI alone does not close them.
 3. **Complete the engineering-quality gate.** Follow
@@ -39,12 +42,11 @@ Security and data-integrity blockers take priority over adding more surface area
    identity, content-safe application **and PostgreSQL server** logging, bounded
    failure paths, supply chain, operations and exact release evidence. PR #33 is
    only the API-error first tranche.
-4. **Complete the next bounded FileOS derivative.** Current-only archive-image
-   OCR search (5D) remains absent even though exact selected OCR persistence and
-   the private one-member command exist. Review the existing 5B contract, add
-   current-parent/receipt fencing, authorization and known-answer tests before
-   exposing it. [Issue #10](https://github.com/jbone3311/MasterBrain/issues/10)
-   is the Claude handoff; its old branch/base notes are historical.
+4. **Extend bounded FileOS derivatives only after review.** Current-only archive-image
+   OCR search is implemented under ADR-107 with exact parent/receipt fencing and
+   independent Brain API coverage. Automatic selection, fan-out and live-source
+   acceptance remain separate gates. [Issue #10](https://github.com/jbone3311/MasterBrain/issues/10)
+   is the historical Claude handoff; its old branch/base notes are not current work.
 5. **Measure donor policy parity before any switch.** The extracted inventory
    classifier matches the pinned donor on the synthetic corpus but is not wired
    into MasterBrain snapshots. Resolve six documented policy differences and

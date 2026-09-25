@@ -1,7 +1,7 @@
 # Current MasterBrain functions
 
-Verified against `main` at `c8c428bc61c17021394b67b489700123de2e3ea6`
-(2026-09-25). “Available” below means executable in this repository with
+Updated 2026-09-25; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
+verification. “Available” below means executable in this repository with
 synthetic/disposable inputs; it does **not** mean hosted, connected to real accounts,
 approved for private data, or production accepted. The exact-commit gates are in
 [BUILD_RECEIPT.md](BUILD_RECEIPT.md); current limitations are in
@@ -58,8 +58,8 @@ Under these interfaces, DataCore has source-bound hashes, immutable evidence and
 provenance, deterministic text chunks, lexical index generations, isolated
 PDF/DOCX/XLSX and ZIP/TAR processing, and exact selected archive-image OCR
 derivatives. The donor inventory classifier is parity-tested but **not** adopted as
-the live snapshot policy. Current-only archive-image OCR search and automatic
-archive fan-out are not implemented. See the
+the live snapshot policy. Current-only archive-image OCR search is a separate
+bounded layer; automatic archive fan-out is not implemented. See the
 [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md) and
 [FOS migration ledger](FOS_MIGRATION.md) for tranche-level limits.
 
