@@ -21,7 +21,7 @@ The local 3,000-file pinned-donor parity run passed. Those integration gates are
 now complete and recorded above. The tag remains pending. Live use and FileOS
 cutover remain prohibited.
 
-## Active checkpoint
+## Historical checkpoint detail
 
 **Confined FileOS source reads (isolated, hosted-verified).** ADR-100 addresses a
 pathname check/open race in snapshot hashing and text/PDF/Office extraction.
