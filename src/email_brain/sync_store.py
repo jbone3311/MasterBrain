@@ -55,6 +55,15 @@ class SyncStore:
             ).fetchall()
             return tuple(row["provider_id"] for row in rows)
 
+    def retained_blobs(
+        self, ctx: TenantContext, account_id: UUID, provider_ids: tuple[str, ...]
+    ) -> dict[str, tuple[str, str]]:
+        """Blob identity and digest already retained for these messages, if any."""
+        return self.store.retained_blobs(ctx, account_id, provider_ids)
+
+    def retained_raw(self, ctx: TenantContext, account_id: UUID, sha: str) -> bytes:
+        return self.store.retained_raw_for_ingest(ctx, account_id, sha)
+
     def acquire(self, ctx: TenantContext, account_id: UUID) -> Lease | None:
         self.store.require(ctx, "email.ingest")
         with self.store.transaction(ctx) as conn:

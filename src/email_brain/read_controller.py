@@ -15,7 +15,7 @@ from pydantic import ConfigDict, Field, field_validator, model_validator
 from email_brain.auth import Principal
 from email_brain.blobs import EncryptedBlobStore
 from email_brain.connectors.fastmail import MAX_BLOB_BYTES, FastmailReadClient
-from email_brain.connectors.jmap import identifier
+from email_brain.connectors.jmap import ProtocolError, identifier
 from email_brain.normalize import MAX_RAW_BYTES
 from email_brain.processing_controller import (
     ControllerError,
@@ -173,9 +173,10 @@ class _GuardedFastmail(FastmailReadClient):
         payload: dict[str, Any] | None = None,
         *,
         byte_limit: int = MAX_RAW_BYTES,
+        too_large: type[ProtocolError] = ProtocolError,
     ) -> bytes:
         self.guard()
-        result = super()._request(method, url, payload, byte_limit=byte_limit)
+        result = super()._request(method, url, payload, byte_limit=byte_limit, too_large=too_large)
         self.guard()
         return result
 
@@ -220,6 +221,7 @@ def run_read_controller(
                 "caught_up",
                 "retry",
                 "not_due",
+                "lease_lost",
                 "paused",
                 "auth_required",
                 "protocol_error",

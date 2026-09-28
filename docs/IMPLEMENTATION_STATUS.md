@@ -25,6 +25,12 @@ production and FileOS cutover remain open.
   production credential lifecycle, live rollout or closure of issue #7 is
   claimed; the older shared login remains vulnerable under arbitrary SQL. See
   [the contract](TENANT_LOGIN_FENCE.md).
+- Fastmail read worker resilience (ADR-110, migration 0038): anchored, byte- and
+  time-bounded listing that survives mailbox churn; oversized mail held as
+  accounted `source_too_large` receipts without pausing the account; retained-blob
+  reuse for flag-only updates; tolerant `Retry-After`; `lease_lost` outcome.
+  Verified with unit and disposable-PostgreSQL tests on synthetic transports; no
+  live mailbox has been enrolled.
 - Existing `email_brain` capability: Fastmail/JMAP read worker, raw/evidence storage,
   MIME/attachment accounting, PostgreSQL FTS, owner search/read, reviewed rules,
   recovery/quarantine, synthetic mailbox, PDF approval path, and narrow reviewed

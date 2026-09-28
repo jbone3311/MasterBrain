@@ -2,6 +2,13 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Fixed the Fastmail read worker so a real mailbox cannot stall it (ADR-110,
+  migration 0038): listing pages by JMAP anchor with an explicit sort instead of
+  restarting on every query-state change; oversized messages become accounted
+  `source_too_large` quarantine receipts and advance the cursor instead of pausing
+  the account; flag-only updates reuse retained bytes for an unchanged blob; a
+  non-ASCII `Retry-After` is ignored; a lost lease is a `lease_lost` outcome. Still
+  synthetic-only: no live account, scheduler or mailbox write is added.
 - Added opt-in two-stage API database routing: a table-blind exact-identity login
   resolves verified claims, then one tenant-bound login performs tenant SQL
   (ADR-109). Synthetic two-tenant API tests and private-file validation pass;

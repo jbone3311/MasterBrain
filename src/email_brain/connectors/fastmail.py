@@ -32,6 +32,17 @@ class ProviderThrottled(Exception):
         self.retry_after_seconds = retry_after_seconds
 
 
+class BlobTooLarge(ProtocolError):
+    """A message blob exceeds the configured download budget; hold it, do not pause."""
+
+
+def retry_after_seconds(value: str) -> int | None:
+    """Delay-seconds only; HTTP-date forms and non-ASCII digits are ignored, never errors."""
+    if not 1 <= len(value) <= 8 or not value.isascii() or not value.isdigit():
+        return None
+    return min(int(value), 3600)
+
+
 def _safe_url(url: str) -> str:
     try:
         parts = urlsplit(url)
@@ -87,6 +98,7 @@ class FastmailReadClient:
         payload: dict[str, Any] | None = None,
         *,
         byte_limit: int = MAX_RAW_BYTES,
+        too_large: type[ProtocolError] = ProtocolError,
     ) -> bytes:
         safe = _safe_url(url)
         started = time.monotonic()
@@ -95,9 +107,9 @@ class FastmailReadClient:
                 if response.status_code in {401, 403}:
                     raise ProviderAuthRequired("provider authorization required")
                 if response.status_code == 429:
-                    retry = response.headers.get("Retry-After", "")
-                    delay = min(int(retry), 3600) if retry.isdigit() and len(retry) <= 8 else None
-                    raise ProviderThrottled(delay)
+                    raise ProviderThrottled(
+                        retry_after_seconds(response.headers.get("Retry-After", ""))
+                    )
                 if response.status_code != 200:
                     raise ProviderUnavailable("provider returned non-success status")
                 if response.headers.get("Content-Encoding", "identity").lower() != "identity":
@@ -109,7 +121,7 @@ class FastmailReadClient:
                         raise ProviderUnavailable("provider response deadline exceeded")
                     count += len(chunk)
                     if count > byte_limit:
-                        raise ProtocolError("provider response exceeds prototype byte limit")
+                        raise too_large("provider response exceeds prototype byte limit")
                     body.extend(chunk)
                 if time.monotonic() - started > 30:
                     raise ProviderUnavailable("provider response deadline exceeded")
@@ -186,7 +198,15 @@ class FastmailReadClient:
             "Email/get",
             {
                 "ids": ids,
-                "properties": ["id", "blobId", "threadId", "receivedAt", "mailboxIds", "keywords"],
+                "properties": [
+                    "id",
+                    "blobId",
+                    "threadId",
+                    "receivedAt",
+                    "size",
+                    "mailboxIds",
+                    "keywords",
+                ],
             },
         )
 
@@ -204,4 +224,4 @@ class FastmailReadClient:
             url = url.replace("{" + key + "}", quote(value, safe=""))
         if "{" in url or "}" in url:
             raise ProtocolError("unsupported download template")
-        return self._request("GET", url, byte_limit=self._max_raw_bytes)
+        return self._request("GET", url, byte_limit=self._max_raw_bytes, too_large=BlobTooLarge)

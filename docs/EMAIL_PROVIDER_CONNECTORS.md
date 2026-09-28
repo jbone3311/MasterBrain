@@ -51,8 +51,12 @@ actually available. Distributed OAuth apps need Fastmail client registration;
 personal API-token testing is a separate path.
 
 Never substitute `queryState` for an `Email/changes` state. Capture a baseline
-Email state before full listing and validate query-state stability during paging;
-ordinary positional paging can miss untouched items when earlier items are deleted.
+Email state before full listing and page by `anchor` with an explicit sort;
+ordinary positional paging can miss untouched items when earlier items are deleted,
+and restarting on every query-state change never finishes on a busy mailbox
+([ADR-110](adr/110_fastmail_sync_resilience.md)). Mail larger than the storage
+budget is held as an accounted receipt without bytes rather than pausing the
+account; an unchanged blob is not downloaded again for a flag-only update.
 
 Use Fastmail JMAP for Email, Thread, Mailbox, SearchSnippet, and submission/drafts; Fastmail documents its JMAP session endpoint and supported mail types ([API docs](https://www.fastmail.com/dev/)). Follow `Email/changes`, `Mailbox/changes`, or query-state change methods defined by JMAP; RFC 8621 specifies mail synchronization and `Email/queryChanges` ([RFC](https://www.rfc-editor.org/rfc/rfc8621)).
 

@@ -1,13 +1,17 @@
+import json
+
 import httpx
 import pytest
 
 from email_brain.connectors.fastmail import (
     MAIL,
     MAX_BLOB_BYTES,
+    BlobTooLarge,
     FastmailReadClient,
     ProviderAuthRequired,
     ProviderThrottled,
     ProviderUnavailable,
+    retry_after_seconds,
 )
 from email_brain.connectors.jmap import ProtocolError
 from email_brain.normalize import MAX_RAW_BYTES
@@ -154,9 +158,7 @@ def test_configured_blob_download_budget(limit, size, accepted):
             return httpx.Response(200, json=session())
         return httpx.Response(200, content=raw)
 
-    client = FastmailReadClient(
-        TOKEN, max_raw_bytes=limit, transport=httpx.MockTransport(handler)
-    )
+    client = FastmailReadClient(TOKEN, max_raw_bytes=limit, transport=httpx.MockTransport(handler))
     try:
         client.discover()
         if accepted:
@@ -197,5 +199,95 @@ def test_default_blob_download_stays_small():
         client.discover()
         with pytest.raises(ProtocolError, match="byte limit"):
             client.download_blob("blob")
+    finally:
+        client.close()
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("120", 120),
+        ("0", 0),
+        ("99999", 3600),
+        ("999999999", None),
+        ("", None),
+        ("²", None),  # Unicode digits are not delay-seconds.
+        ("٣٠", None),
+        ("Wed, 21 Oct 2026 07:28:00 GMT", None),
+        ("12 ", None),
+    ],
+)
+def test_retry_after_only_accepts_ascii_delay_seconds(value, expected):
+    assert retry_after_seconds(value) == expected
+
+
+def test_unicode_retry_after_throttles_instead_of_failing():
+    client = FastmailReadClient(
+        TOKEN,
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(429, headers=[(b"Retry-After", "²".encode())])
+        ),
+    )
+    try:
+        with pytest.raises(ProviderThrottled) as raised:
+            client.discover()
+        assert raised.value.retry_after_seconds is None
+    finally:
+        client.close()
+
+
+def test_oversized_blob_is_distinct_from_control_response_overflow():
+    def handler(request):
+        if request.url.path.endswith("session"):
+            return httpx.Response(200, json=session())
+        return httpx.Response(200, content=b"x" * (MAX_RAW_BYTES + 1))
+
+    client = FastmailReadClient(TOKEN, transport=httpx.MockTransport(handler))
+    try:
+        client.discover()
+        with pytest.raises(BlobTooLarge):
+            client.download_blob("blob")
+        assert issubclass(BlobTooLarge, ProtocolError)
+    finally:
+        client.close()
+    oversized = FastmailReadClient(
+        TOKEN,
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, content=b" " * (MAX_RAW_BYTES + 1))
+        ),
+    )
+    try:
+        with pytest.raises(ProtocolError) as raised:
+            oversized.discover()
+        assert not isinstance(raised.value, BlobTooLarge)
+    finally:
+        oversized.close()
+
+
+def test_metadata_requests_the_message_size():
+    seen = []
+
+    def handler(request):
+        if request.url.path.endswith("session"):
+            return httpx.Response(200, json=session())
+        seen.append(json.loads(request.content)["methodCalls"][0])
+        return httpx.Response(
+            200,
+            json={
+                "methodResponses": [
+                    [
+                        "Email/get",
+                        {"accountId": "a", "list": [], "state": "s", "notFound": ["m"]},
+                        "r0",
+                    ]
+                ]
+            },
+        )
+
+    client = FastmailReadClient(TOKEN, transport=httpx.MockTransport(handler))
+    try:
+        client.discover()
+        client.metadata(["m"])
+        assert "size" in seen[0][1]["properties"]
     finally:
         client.close()

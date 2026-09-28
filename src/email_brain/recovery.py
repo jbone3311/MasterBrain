@@ -135,6 +135,9 @@ class Recovery:
                 return self.result(cached)
             self.current(row)
 
+        if row["raw_sha256"] is None:
+            # Held without bytes: the source exceeded the retained storage budget.
+            raise Conflict("no retained bytes exist for this receipt")
         # No open SQL transaction while processing untrusted data. Revalidate below.
         raw = self.store.load_raw(ctx, account_id, row["raw_sha256"])
         limit = self._processor_limit if self.processor else persistence.MAX_RAW_BYTES

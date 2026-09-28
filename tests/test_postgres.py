@@ -29,11 +29,13 @@ from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from email_brain.api import create_app
-from email_brain.auth import Credential, TokenRegistry
+from email_brain.auth import Credential, Principal, TokenRegistry
 from email_brain.connectors.fastmail import MAIL, FastmailReadClient
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_identity_lookup, grant_runtime, grant_tenant_runtime, migrate
+from email_brain.normalize import PARSER_VERSION
 from email_brain.oidc import OIDCAuthenticator, VerifiedToken
+from email_brain.recovery import Recovery
 from email_brain.schemas import FeaturePayload, ProposalRequest, ReviewRequest, SearchRequest
 from email_brain.store import AccessDenied, Conflict, IngestItem, InventoryError, NotFound, Store
 from email_brain.sync import Checkpoint, ReadWorker
@@ -3711,6 +3713,8 @@ class SyntheticMailbox:
         self.calls: list[str] = []
         self.keywords: dict[str, bool] = {}
         self.page_size = 1
+        self.blob_ids: dict[str, str] = {}  # Provider blob identity when it differs from the ID.
+        self.downloads: list[str] = []
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         import json
@@ -3729,13 +3733,27 @@ class SyntheticMailbox:
                 },
             )
         if request.method == "GET":
-            return httpx.Response(200, content=self.mail[request.url.path.rsplit("/", 1)[1]])
+            blob = request.url.path.rsplit("/", 1)[1]
+            key = next((k for k, v in self.blob_ids.items() if v == blob), blob)
+            self.downloads.append(key)
+            return httpx.Response(200, content=self.mail[key])
         method, args, call_id = json.loads(request.content)["methodCalls"][0]
         assert args["accountId"] == self.account
         result: dict[str, Any] = {"accountId": self.account}
         if method == "Email/query":
-            position = args["position"]
-            ids = sorted(self.mail)[position : position + min(self.page_size, args["limit"])]
+            assert args["sort"] == [{"property": "receivedAt", "isAscending": True}]
+            ordered = sorted(self.mail)
+            if "anchor" in args:
+                assert "position" not in args and args["anchorOffset"] == 1
+                if args["anchor"] not in self.mail:
+                    return httpx.Response(
+                        200,
+                        json={"methodResponses": [["error", {"type": "anchorNotFound"}, call_id]]},
+                    )
+                position = ordered.index(args["anchor"]) + 1
+            else:
+                position = args["position"]
+            ids = ordered[position : position + min(self.page_size, args["limit"])]
             result.update(
                 ids=ids, total=len(self.mail), queryState=self.query_state, position=position
             )
@@ -3745,9 +3763,10 @@ class SyntheticMailbox:
                 list=[
                     {
                         "id": key,
-                        "blobId": key,
+                        "blobId": self.blob_ids.get(key, key),
                         "threadId": "thread-1",
                         "receivedAt": "2026-09-19T00:00:00Z",
+                        "size": len(self.mail[key]),
                         "mailboxIds": {"inbox": True},
                         "keywords": self.keywords,
                     }
@@ -3805,7 +3824,11 @@ def test_worker_http_to_database_search_and_metadata(database, tenant):
         assert len(hits) == 1
         with worker.store.transaction(ctx) as conn:
             state = conn.execute("SELECT provider_metadata FROM messages").fetchone()
-            assert state["provider_metadata"] == {"mailbox_ids": ["inbox"], "keywords": ["$seen"]}
+            assert state["provider_metadata"] == {
+                "mailbox_ids": ["inbox"],
+                "keywords": ["$seen"],
+                "blob_id": "m1",
+            }
             assert conn.execute("SELECT count(*) AS n FROM sync_runs").fetchone()["n"] == 4
         before = len(mail.calls)
         assert worker.step(ctx, account) == "not_due"
@@ -3817,28 +3840,167 @@ def test_worker_http_to_database_search_and_metadata(database, tenant):
 def test_worker_restart_and_query_churn_preserve_baseline(database, tenant):
     worker, mail, client = bind_synthetic(database, tenant)
     ctx, account = tenant
-    mail.mail["m2"] = b"Subject: Survives\r\n\r\nStill present"
+    mail.mail = {
+        "m0": b"Subject: Melron\r\n\r\nSynthetic investment",
+        "m1": b"Subject: Vanishes\r\n\r\nDeleted during listing",
+        "m2": b"Subject: Third\r\n\r\nStill present",
+    }
     try:
         assert worker.step(ctx, account) == "progress"
-        assert worker.step(ctx, account) == "progress"  # First of two listing pages.
+        assert worker.step(ctx, account) == "progress"  # First listing page: m0.
+        # The mailbox changes mid-listing: an unlisted message disappears and a new
+        # one arrives. Anchored paging neither restarts nor skips; the provider's
+        # deletion is replayed from the preserved Email baseline after the seal.
         del mail.mail["m1"]
         mail.deleted = ["m1"]
+        mail.mail["m4"] = b"Subject: Arrived\r\n\r\nDuring listing"
+        mail.created = ["m4"]
         mail.query_state = "q2"
         mail.email_state = "later-state-do-not-replace-baseline"
         restarted = ReadWorker(worker.store, client)
-        assert restarted.step(ctx, account) == "progress"  # Discard stale query position.
+        assert restarted.step(ctx, account) == "progress"  # Continues after anchor m0.
         with worker.store.transaction(ctx) as conn:
             cursor = conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()[
                 "opaque_cursor"
             ]
             checkpoint = Checkpoint.model_validate_json(cursor)
-            assert checkpoint.position == 0 and checkpoint.email_state == "e0"
-        assert restarted.step(ctx, account) == "progress"
-        assert restarted.step(ctx, account) == "progress"  # Remove absent m1 locally.
-        assert restarted.step(ctx, account) == "progress"  # Finish reconciliation.
-        assert restarted.step(ctx, account) == "caught_up"
+            assert checkpoint.phase == "listing" and checkpoint.email_state == "e0"
+            assert checkpoint.anchor == "m2" and checkpoint.listed == 2
+        assert restarted.step(ctx, account) == "progress"  # m4, sealed at three IDs.
+        with worker.store.transaction(ctx) as conn:
+            assert conn.execute("SELECT total FROM sync_inventory_seals").fetchone()["total"] == 3
+        assert restarted.step(ctx, account) == "progress"  # Nothing absent locally.
+        assert restarted.step(ctx, account) == "caught_up"  # Baseline replay: m1 gone, m4 seen.
+        assert worker.store.sync_status(ctx, account)["message_counts"] == {
+            "ready": 3,
+            "quarantined": 0,
+            "deleted": 1,
+        }
+        assert len(worker.store.search(ctx, SearchRequest(query="Melron"))) == 1
+        assert worker.store.search(ctx, SearchRequest(query="Vanishes")) == []
+        assert len(worker.store.search(ctx, SearchRequest(query="Third"))) == 1
+        assert len(worker.store.search(ctx, SearchRequest(query="Arrived"))) == 1
+    finally:
+        client.close()
+
+
+def test_worker_anchor_deleted_mid_listing_restarts_generation_only(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    mail.mail["m2"] = b"Subject: Survives\r\n\r\nStill present"
+    try:
+        assert worker.step(ctx, account) == "progress"
+        assert worker.step(ctx, account) == "progress"  # Anchor is m1.
+        del mail.mail["m1"]
+        mail.deleted = ["m1"]
+        mail.email_state = "later"
+        assert worker.step(ctx, account) == "progress"  # anchorNotFound: new generation.
+        with worker.store.transaction(ctx) as conn:
+            cursor = conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()[
+                "opaque_cursor"
+            ]
+            checkpoint = Checkpoint.model_validate_json(cursor)
+            assert checkpoint.phase == "listing" and checkpoint.anchor is None
+            assert checkpoint.email_state == "e0" and checkpoint.listed == 0
+        assert worker.step(ctx, account) == "progress"  # m2 sealed as the whole inventory.
+        assert worker.step(ctx, account) == "progress"  # m1 absent from the inventory.
         assert worker.store.search(ctx, SearchRequest(query="Melron")) == []
+        assert worker.step(ctx, account) == "progress"
+        assert worker.step(ctx, account) == "caught_up"
         assert len(worker.store.search(ctx, SearchRequest(query="Survives"))) == 1
+    finally:
+        client.close()
+
+
+def test_worker_oversized_source_is_held_and_never_pauses(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    mail.mail["m0-large"] = b"Subject: Too big\r\n\r\n" + b"x" * (1024**2)
+    mail.page_size = 8
+    try:
+        assert worker.step(ctx, account) == "progress"
+        assert worker.step(ctx, account) == "progress"  # Held and healthy in one page.
+        assert worker.step(ctx, account) == "progress"
+        assert worker.step(ctx, account) == "caught_up"
+        assert mail.downloads == ["m1"], "the oversized source is never downloaded"
+        assert worker.store.sync_status(ctx, account)["message_counts"] == {
+            "ready": 1,
+            "quarantined": 1,
+            "deleted": 0,
+        }
+        held = worker.store.quarantines(ctx, account)["results"]
+        assert len(held) == 1 and held[0]["reason"] == "source_too_large"
+        assert held[0]["raw_sha256"] is None and held[0]["provider_id"] == "m0-large"
+        with worker.store.transaction(ctx) as conn:
+            assert conn.execute("SELECT count(*) AS n FROM raw_objects").fetchone()["n"] == 1
+            receipt = conn.execute("SELECT source_metadata FROM quarantine_receipts").fetchone()
+            assert receipt["source_metadata"]["source_size"] == 1024**2 + 20
+            assert conn.execute("SELECT paused FROM sync_workers").fetchone()["paused"] is False
+        with pytest.raises(Conflict, match="no retained bytes"):
+            Recovery(worker.store).retry(
+                Principal(
+                    replace(ctx, scopes=frozenset({"email.review", "email.evidence.read"})),
+                    "human",
+                ),
+                account,
+                held[0]["id"],
+                PARSER_VERSION,
+            )
+        # A provider that misreports size still cannot pause the account.
+        mail.mail["m5-lying"] = b"Subject: Lies\r\n\r\n" + b"y" * (1024**2)
+        mail.created = ["m5-lying"]
+        mail.change_state = "e3"
+        original = mail.handle
+
+        def understated(request: httpx.Request) -> httpx.Response:
+            response = original(request)
+            if request.method == "POST" and b"Email/get" in request.content:
+                body = response.json()
+                for row in body["methodResponses"][0][1]["list"]:
+                    row["size"] = 10
+                return httpx.Response(200, json=body)
+            return response
+
+        mail.handle = understated
+        with psycopg.connect(database[1]) as conn:
+            conn.execute(
+                "UPDATE sync_workers SET next_attempt_at=now() WHERE account_id=%s", (account,)
+            )
+        assert worker.step(ctx, account) == "caught_up"
+        assert worker.store.sync_status(ctx, account)["message_counts"]["quarantined"] == 2
+    finally:
+        client.close()
+
+
+def test_worker_reuses_retained_bytes_for_flag_only_updates(database, tenant):
+    worker, mail, client = bind_synthetic(database, tenant)
+    ctx, account = tenant
+    mail.blob_ids["m1"] = "blob-m1"
+    try:
+        for _ in range(3):
+            assert worker.step(ctx, account) == "progress"
+        assert mail.downloads == ["m1"]
+        mail.keywords = {"$seen": True}
+        mail.updated = ["m1"]
+        mail.change_state = "e2"
+        assert worker.step(ctx, account) == "caught_up"
+        assert mail.downloads == ["m1"], "unchanged blob is not downloaded again"
+        with worker.store.transaction(ctx) as conn:
+            message = conn.execute("SELECT provider_metadata FROM messages").fetchone()
+            assert message["provider_metadata"]["keywords"] == ["$seen"]
+            assert message["provider_metadata"]["blob_id"] == "blob-m1"
+        # A changed blob identity is downloaded and re-verified.
+        mail.blob_ids["m1"] = "blob-m1-v2"
+        mail.mail["m1"] = b"Subject: Melron\r\n\r\nSynthetic investment revised"
+        mail.change_state = "e3"
+        with psycopg.connect(database[1]) as conn:
+            conn.execute(
+                "UPDATE sync_workers SET next_attempt_at=now() WHERE account_id=%s", (account,)
+            )
+        assert worker.step(ctx, account) == "caught_up"
+        assert mail.downloads == ["m1", "m1"]
+        hits = worker.store.search(ctx, SearchRequest(query="revised"))
+        assert len(hits) == 1
     finally:
         client.close()
 
@@ -4178,7 +4340,7 @@ def test_legacy_checkpoint_restarts_full_inventory_without_hiding_mail(database,
             checkpoint = Checkpoint.model_validate_json(
                 conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()["opaque_cursor"]
             )
-            assert checkpoint.schema_version == 2 and checkpoint.phase == "listing"
+            assert checkpoint.schema_version == 3 and checkpoint.phase == "listing"
             assert checkpoint.generation != old.generation
         assert len(store.search(ctx, SearchRequest(query="Melron"))) == 1
     finally:
@@ -4232,6 +4394,9 @@ def test_synthetic_256_mailbox_import_search_attachments_and_restart(database, t
         for index in (0, 4, 256, 257):
             mail.mail[f"m{index:05d}"] = fake_email(index + 1000)
         mail.mail["m00005"] = b""
+        # JMAP blob identities are immutable: changed bytes carry a new blob ID.
+        for key in mail.updated:
+            mail.blob_ids[key] = f"{key}-v2"
         assert worker.step(ctx, account) == "caught_up"
         assert worker.store.sync_status(ctx, account)["message_counts"] == {
             "ready": 255,

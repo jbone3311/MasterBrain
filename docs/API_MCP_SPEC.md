@@ -123,7 +123,8 @@ transport is enabled by this addition.
 
 `GET /v1/accounts/{account_id}/quarantine?limit=50&after={receipt_uuid}` requires
 `email.evidence.read` and current owner membership. Returns only current unresolved
-receipt metadata: ID, provider ID, SHA-256, fixed reason, parser version and time.
+receipt metadata: ID, provider ID, SHA-256 (null for `source_too_large` receipts,
+which retain no bytes), fixed reason, parser version and time.
 `results` has at most 50 entries; `next_after` is null or a receipt UUID. This is
 a live UUID-keyset list, not a stable export snapshot. New receipts can appear
 before an existing cursor; refresh from the first page after changes. Unknown or

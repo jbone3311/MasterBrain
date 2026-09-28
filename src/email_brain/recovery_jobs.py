@@ -219,6 +219,8 @@ class RecoveryJobs:
                     return _public(previous)
                 source = Recovery.receipt(conn, account, receipt)
                 Recovery.current(source)
+                if source["raw_sha256"] is None:
+                    raise Conflict("no retained bytes exist for this receipt")
                 count = conn.execute(
                     "SELECT count(*) AS n FROM recovery_jobs WHERE account_id=%s "
                     "AND status IN ('queued','running','retry_wait')",

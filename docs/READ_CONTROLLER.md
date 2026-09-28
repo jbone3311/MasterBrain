@@ -88,7 +88,9 @@ SIGINT/SIGTERM stop subsequent steps; the in-flight cooperative bounded page can
 finish. This is neither a forever-running supervisor nor a hard network kill.
 
 Output contains fixed counts only: `progress`, `caught_up`, `retry`, `not_due`,
-`paused`, `auth_required`, `protocol_error`, `parse_error`, `resync_required`, plus
+`lease_lost` (another worker replaced this lease mid-step; nothing was published
+or recorded), `paused`, `auth_required`, `protocol_error`, `parse_error`,
+`resync_required`, plus
 poll count, stop and attention flags and `mailbox_effects: false`. An already paused
 account increments `paused` without executing a step, so that count is separate
 from `polls`. No bodies, IDs, tokens, paths, DSNs or exception strings are printed.

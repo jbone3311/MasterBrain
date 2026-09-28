@@ -14,14 +14,24 @@ tenant/owner context with `email.ingest`. No provider write method exists.
    Fastmail account must have an administrator-set `provider_account_id`.
 2. Load the versioned checkpoint and discover the session; reject account mismatch
    before fetching mail. Missing binding is not automatically populated from a token.
-3. First step stores an Email-state baseline. Subsequent steps query at most 8
-   IDs, fetch metadata/raw MIME, normalize/index and commit evidence plus checkpoint.
-4. Every query page must have the same query state and total. If changed, restart
-   listing in a fresh inventory generation **without replacing the original Email baseline**. This prevents
-   a deletion during listing from falling outside the later change replay window.
-5. Seal the inventory only when the unique ID count matches the stable query total.
+3. First step stores an Email-state baseline. Subsequent steps list up to 50 IDs
+   in explicit ascending `receivedAt` order, paged by `anchor` from the last
+   committed ID, fetch metadata and raw MIME, normalize/index and commit evidence
+   plus checkpoint. A page commits the prefix it fetched once the 16 MiB byte
+   budget or a 40-second fetch budget would be exceeded; the next step continues
+   from the last committed ID.
+4. Mail created or destroyed elsewhere in the mailbox does not move the anchor, so
+   listing neither restarts nor skips. Only a deleted anchor (`anchorNotFound`)
+   restarts listing in a fresh inventory generation **without replacing the
+   original Email baseline**; deletions during listing are replayed from that
+   baseline afterwards. A stored positional (version 2) listing checkpoint is
+   relisted the same way. See [ADR-110](adr/110_fastmail_sync_resilience.md).
+5. Seal the inventory with the worker's own durable count of listed IDs; the
+   provider total is advisory because it moves while the mailbox changes.
    Reconcile absent local IDs in batches of eight; then replay changes from the
    original baseline. Provider mail and historical evidence are never deleted.
+   An update naming an unchanged blob with a matching reported size reuses the
+   retained bytes instead of downloading; ingestion still verifies the digest.
    `caught_up` means that
    page reported no further changes at that instant, not permanent consistency.
 6. Record content-free outcomes and release the lease. Caught-up accounts wait at
@@ -51,18 +61,24 @@ and can be absent after such a crash. Do not treat run counts as ingestion truth
 
 ## Limits and explicit unfinished behavior
 
-- Default raw MIME ≤1 MiB each; cumulative downloaded page ≤16 MiB; worker batches
-  ≤8 IDs. Explicit encrypted Store plus separately configured Fastmail download
-  supports ≤16 MiB per message, with one-ID pages and unchanged control JSON limit.
-  Above the 1 MiB parser bound is preserved/held, not parsed. See
-  [large evidence](LARGE_EVIDENCE_STORAGE.md). Binary attachments remain deferred.
+- Default raw MIME ≤1 MiB each; cumulative page ≤16 MiB; listing pages ≤50 IDs
+  split by bytes and time; change pages ≤16 IDs (1 with the 16 MiB encrypted
+  store, because a change page cannot be split). Explicit encrypted Store plus
+  separately configured Fastmail download supports ≤16 MiB per message with an
+  unchanged control JSON limit. Above the 1 MiB parser bound is preserved/held,
+  not parsed. See [large evidence](LARGE_EVIDENCE_STORAGE.md). Binary attachments
+  remain deferred.
 - Auth errors pause as `auth_required`; invalid protocol pauses as `protocol_error`;
   known MIME parser rejections within the byte bound are retained byte-for-byte in
   quarantine and advance the checkpoint. Invalid updates hide old searchable
   projections but retain historical evidence; later valid input resolves current
-  quarantine status without erasing receipts. Beyond configured storage/download
-  limits still pauses. Blob/key/disk failures use bounded retry without cursor
-  advancement. Failure telemetry omits bodies, tokens and exception text.
+  quarantine status without erasing receipts. A message whose reported or
+  streamed size exceeds the configured storage/download budget is held as a
+  `source_too_large` receipt with no retained bytes and advances the checkpoint;
+  it is revisited under a larger budget at the next full listing. Blob/key/disk
+  failures use bounded retry without cursor advancement. A replaced or expired
+  lease returns `lease_lost` without recording an outcome. Failure telemetry omits
+  bodies, tokens and exception text.
 - Expired history starts a new baseline/full inventory. No missing-ID inference
   occurs until that inventory is certified complete. v1 checkpoints similarly
   restart; corrupt/unknown checkpoints fail closed. Never manually advance cursors.

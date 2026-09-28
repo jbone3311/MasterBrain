@@ -15,7 +15,8 @@ automatically enabled CLI option. See [ADR-028](adr/028_encrypted_large_evidence
 | Store raw MIME | 1 MiB inline PostgreSQL | 16 MiB encrypted filesystem objects |
 | Fastmail blob download | 1 MiB | Caller sets `max_raw_bytes`, at most 16 MiB |
 | Fastmail control JSON | 1 MiB | Unchanged |
-| Worker listing/change page | 8 IDs | 1 ID |
+| Worker listing page | ≤50 IDs, split by bytes/time | ≤50 IDs, split by bytes/time |
+| Worker change page | 16 IDs | 1 ID |
 | Aggregate ingestion bytes | 16 MiB | 16 MiB |
 | MIME parser | 1 MiB | Unchanged; larger mail is held |
 
@@ -63,6 +64,13 @@ the parser budget is insufficient, without creating a cached failed attempt.
 Missing keys/backend/files or corrupt encrypted evidence yield scrubbed API 503
 `evidence_storage_unavailable`; recovery can retry after storage is restored.
 The worker records bounded `retry` for storage failures without advancing cursor.
+
+A message larger than the configured storage budget itself (1 MiB inline, up to
+16 MiB encrypted) is not downloaded. It is held as a `source_too_large` receipt
+with its provider metadata and reported size but no retained bytes (migration
+**0038**), the cursor advances and the account is not paused. Retry and isolated
+recovery return 409 for such a receipt; a larger budget applies at the next full
+listing. See [ADR-110](adr/110_fastmail_sync_resilience.md).
 
 ## Backup, inventory and rollback
 
