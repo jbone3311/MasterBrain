@@ -39,6 +39,10 @@ has two additional hashed items that v1 did not publish. These six policy gaps
 are explicit and blocked, not silently normalized away. Focused tests also
 cover changed content, new/unobserved items, metadata-only rows, directory
 errors, symlink errors, source/root/time mismatch and no source effects.
+The same comparison passes at the largest valid synthetic v1 inventory:
+9,994 stress files plus six fixed v1 items, exactly the 10,000-item manifest
+bound. A request for 9,995 stress files is refused before scanning the donor;
+the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 

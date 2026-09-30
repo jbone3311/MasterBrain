@@ -272,6 +272,12 @@ def test_live_pinned_donor_policy_parity() -> None:
     assert result["transition_policy_gaps"] == 6
 
 
+def test_transition_stress_bound_fails_before_donor_load(tmp_path: Path) -> None:
+    module = _comparator_module()
+    with pytest.raises(ValueError, match="v1 manifest capacity"):
+        module.run_shadow(tmp_path / "not-a-donor", 9995)
+
+
 def _comparator_module():
     script = Path(__file__).resolve().parents[1] / "scripts" / "fileos_donor_policy_shadow.py"
     spec = importlib.util.spec_from_file_location("fileos_donor_policy_shadow", script)

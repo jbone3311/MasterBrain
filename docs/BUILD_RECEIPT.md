@@ -12,7 +12,8 @@ source/root and a newer observation time. It never publishes, persists, or
 infers absence. The pinned FOS-Master fictional 3,000-file harness reports
 3,006 prior v1 items: 3,002 unchanged, four donor-excluded and two donor-only
 hashed items. The six policy gaps are blocked for review. Focused, full local
-verification passes: locked dependency sync, 2,425 Python tests with 445
+verification passes: locked dependency sync and, with a normal local wheel
+install, 2,427 Python tests with 445
 PostgreSQL-marked tests skipped in the no-database run; 134 browser tests;
 Ruff; mypy over 88 source
 files; 207 Markdown files and 1,119 local links/fragments; and the repository
@@ -30,6 +31,17 @@ commit as a normal wheel into the disposable virtual environment, all three
 passed with no repository code change. The cluster was stopped and removed.
 This local database result is additional evidence, not a substitute for hosted
 PostgreSQL, restricted-worker containers or populated restore on the PR head.
+The pinned donor transition harness also passed with 9,994 synthetic stress
+files plus six fixed v1 items: 10,000 prior-v1 classifications, 9,998 exact
+donor hashed and metadata-only matches, six explicit policy gaps and zero
+unexplained membership differences (41.83 seconds elapsed locally). A 10,000
+stress-file attempt correctly hit the 10,000-item v1 manifest bound because
+the fixed corpus adds six prior items. The harness now refuses 9,995 or more
+stress files before loading the donor; the 10,000-item safety limit remains.
+The two new bound tests passed; the current harness reports an argparse error
+for an over-limit command instead of a late traceback. The full no-database
+suite was rerun after this harness change, while the disposable PostgreSQL run
+above predates these two test-only additions.
 
 At the base commit, new `main` GitHub Actions jobs did not start: CI
 [36776977739](https://github.com/jbone3311/MasterBrain/actions/runs/36776977739),

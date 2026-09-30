@@ -22,8 +22,11 @@ from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.fileos_donor_candidate import build_fileos_donor_candidate
 from masterbrain.datacore.fileos_donor_shadow import scan_donor_policy_shadow
 from masterbrain.datacore.fileos_donor_transition import preview_fileos_donor_transition
+from masterbrain.datacore.persistence import MAX_MANIFEST_ITEMS
 
 OBSERVED_AT = datetime(2026, 9, 30, tzinfo=UTC)
+# The pinned synthetic fixture has six fixed items under snapshot v1 policy.
+FIXED_V1_ITEMS = 6
 
 
 def compare_candidate(
@@ -93,6 +96,8 @@ def compare_rows(
 
 
 def run_shadow(repo: Path, stress_files: int = 3000) -> dict[str, int]:
+    if not 100 <= stress_files <= MAX_MANIFEST_ITEMS - FIXED_V1_ITEMS:
+        raise ValueError("stress_files exceeds v1 manifest capacity (100..9994)")
     scanner = load_pinned_scanner(repo)
     with tempfile.TemporaryDirectory(prefix="masterbrain-donor-policy-shadow-") as tmp:
         root = Path(tmp) / "synthetic_root"
@@ -185,6 +190,8 @@ def main() -> int:
     parser.add_argument("--fos-repo", required=True, type=Path)
     parser.add_argument("--stress-files", type=int, default=3000)
     args = parser.parse_args()
+    if not 100 <= args.stress_files <= MAX_MANIFEST_ITEMS - FIXED_V1_ITEMS:
+        parser.error("--stress-files must be 100..9994 for the v1 transition corpus")
     print(json.dumps(run_shadow(args.fos_repo, args.stress_files), sort_keys=True))
     return 0
 

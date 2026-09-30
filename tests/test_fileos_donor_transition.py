@@ -11,6 +11,7 @@ from masterbrain.datacore import fileos_donor_candidate as candidate_module
 from masterbrain.datacore import fileos_donor_shadow as shadow_module
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.fileos_donor_transition import preview_fileos_donor_transition
+from masterbrain.datacore.persistence import MAX_MANIFEST_ITEMS
 
 OBSERVED = datetime(2026, 9, 30, tzinfo=UTC)
 POLICY = {
@@ -149,3 +150,17 @@ def test_source_and_root_mismatch_refuse_before_scan(
         )
     with pytest.raises(ValueError, match="root mismatch"):
         _preview(second, prior)
+
+
+def test_oversized_prior_manifest_refuses_before_donor_scan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional proof")
+    prior = _v1(tmp_path)
+    prior["items"] = prior["items"] * (MAX_MANIFEST_ITEMS + 1)
+    monkeypatch.setattr(
+        "masterbrain.datacore.fileos_donor_transition.build_fileos_donor_candidate",
+        lambda *_args, **_kwargs: pytest.fail("candidate scan started"),
+    )
+    with pytest.raises(ValueError, match="snapshot item bound exceeded"):
+        _preview(tmp_path, prior)
