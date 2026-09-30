@@ -2,14 +2,23 @@
 
 Updated 2026-09-30 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002G donor-policy shadow branch (not yet merged)
+## DC-002G donor-policy shadow integration
 
-Local branch `codex/dc-002g-donor-policy-shadow` began at verified `main`
+The branch `codex/dc-002g-donor-policy-shadow` began at verified `main`
 `d334c5c85403d30abb6fdbbbbad7e43163fc5eea`. That exact main SHA passed
 [full CI 36198583494](https://github.com/jbone3311/MasterBrain/actions/runs/36198583494),
 [strict runtime 36198583420](https://github.com/jbone3311/MasterBrain/actions/runs/36198583420),
 and [populated restore 36198583568](https://github.com/jbone3311/MasterBrain/actions/runs/36198583568).
-Those are **base** checks, not checks of DC-002G.
+Those are **base** checks, not checks of DC-002G. [PR #46](https://github.com/jbone3311/MasterBrain/pull/46)
+merged exact head `fa06a2ffca660ba773ec2dfb3757dc29b492ecc2` into `main` at
+`dd03e0cf306a52d461558e467214f0dcbbe4977a`. The head passed
+[full CI 36764355022](https://github.com/jbone3311/MasterBrain/actions/runs/36764355022),
+[strict runtime 36764355037](https://github.com/jbone3311/MasterBrain/actions/runs/36764355037),
+and [populated restore 36764354788](https://github.com/jbone3311/MasterBrain/actions/runs/36764354788).
+The exact merged `main` SHA then independently passed
+[full CI 36765312397](https://github.com/jbone3311/MasterBrain/actions/runs/36765312397),
+[strict runtime 36765312617](https://github.com/jbone3311/MasterBrain/actions/runs/36765312617),
+and [populated restore 36765312599](https://github.com/jbone3311/MasterBrain/actions/runs/36765312599).
 
 ADR-111 adds a standalone, nonpublishing donor-policy scanner and synthetic pinned-
 donor comparator. On the local code head, 40 focused inventory/classifier tests
@@ -23,8 +32,8 @@ The unchanged snapshot-v1 comparator still reported its exact six known policy
 differences and 3,002 common hashes. FOS-Master stayed clean at
 `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
 
-This is local synthetic evidence only; new-head hosted PostgreSQL, CI and restore
-checks remain pending. No snapshot-v1 policy switch, production FileOS operation,
+These are synthetic/local and hosted test gates, not live-source acceptance. No
+snapshot-v1 policy switch, production FileOS operation,
 live-source acceptance or cutover is claimed.
 
 ## Latest verified `main`: opt-in tenant-routed API database access

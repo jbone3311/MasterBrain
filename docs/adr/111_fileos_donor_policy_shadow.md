@@ -1,6 +1,6 @@
 # ADR-111 — Nonpublishing FileOS donor-policy inventory shadow
 
-Status: proposed; isolated DC-002G implementation pending review.
+Status: accepted for synthetic, nonpublishing comparison; merged in PR #46.
 
 ## Context
 
