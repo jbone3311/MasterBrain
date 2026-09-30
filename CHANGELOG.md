@@ -2,6 +2,10 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Added a source-bound, nonpublishing FileOS donor-policy candidate ledger
+  (ADR-112). Hashed observations carry candidate item/version identities;
+  hashless and dataless rows are deferred without invented evidence. The v1
+  importer rejects this ledger; no donor-policy switch or FOS-Master edit.
 - Bound FileOS donor-policy shadow metadata observations to no-follow directory
   descriptors and the initial root identity; root/ancestor/leaf swaps fail closed
   without opening placeholder bytes. This is nonpublishing and changes neither

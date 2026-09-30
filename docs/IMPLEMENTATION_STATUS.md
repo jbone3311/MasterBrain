@@ -1,6 +1,6 @@
 # MasterBrain Implementation Status
 
-Updated 2026-09-25. **Implemented** means executable in this repository; it does not
+Updated 2026-09-30. **Implemented** means executable in this repository; it does not
 mean hosted, live-source accepted, or production ready. The cumulative stack first
 landed on `main` through PR #28 (`2dd4a85`), followed by strict-runtime PR #31
 (`20bfc1f`), privacy-safe API logging PR #33 (`c605e64`), fictional cross-source
@@ -52,6 +52,12 @@ production and FileOS cutover remain open.
   bytes. Synthetic root/ancestor/leaf-swap tests and local 3,000-file pinned-donor
   parity pass; exact-head and merged-main CI/restore are green. Real cloud-
   placeholder acceptance remains pending.
+- DC-002I adds a source-bound, nonpublishing donor-policy candidate ledger under
+  ADR-112. Hashed rows gain stable candidate item/version identities; `no_hash`,
+  `dataless` and `oversize` rows remain deferred with no version or digest. The
+  v1 importer rejects the candidate. Focused tests and a local pinned-donor
+  3,000-file comparison pass with 3,004 exact hashed and metadata-only matches;
+  hosted branch checks and any publishable v2 transition remain pending.
 - Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
   database and temporary fictional root. It verifies common hashes/sizes, six current
   policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;

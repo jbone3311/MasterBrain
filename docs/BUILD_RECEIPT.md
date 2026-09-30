@@ -2,6 +2,23 @@
 
 Updated 2026-09-30 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002I donor candidate branch verification
+
+Branch `codex/dc-002i-donor-candidate-ledger` starts from verified `main`
+`b261356e8664527cbd5c4f7ec85fd7877cdad26b`. Local focused tests pass:
+30 candidate/shadow cases, including v1 importer rejection, malformed and
+overlapping ledgers, no-follow metadata-only observations and root drift. Full
+local Python: 2,418 passed, 445 PostgreSQL-marked skipped (not executed); 134
+browser tests passed. Ruff, mypy over 87 source files, documentation inventory
+(205 Markdown files, 1,111 links/fragments), and the repository deployment-quality
+gate passed. The pinned FOS-Master synthetic 3,000-file
+comparison matches 3,004 hashed and 3,004 metadata-only candidate rows exactly,
+with zero unexplained membership differences. Full local and hosted checks are
+not equivalent: hosted PostgreSQL, container and restore checks remain pending
+at this branch checkpoint. The donor checkout remains unchanged at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`. No live-source, publishable
+v2, or FileOS cutover claim follows from this result.
+
 ## DC-002H confined metadata shadow integration
 
 Branch `codex/dc-002h-confined-metadata-shadow` starts from `main`

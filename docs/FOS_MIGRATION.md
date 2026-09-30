@@ -62,6 +62,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002F root-confined FileOS source reads | Same pinned scanner; its outside-root symlink read is intentionally not adopted | `confined_files.py`, snapshot and text/document extraction | synthetic file/ancestor swap below and above root, read/locator stability, ordinary pinned-donor SHA/size shadow | Isolated ADR-100 implementation; 3,000-file local donor shadow passed (3,002 ordinary matches, six policy and two symlink differences); hosted gate and restore green on `6e2eb8e`; no policy switch or cutover |
 | DC-002G donor-policy shadow profile | Same pinned scanner/classifier, no donor edit | `fileos_donor_shadow.py`, `scripts/fileos_donor_policy_shadow.py` | isolated synthetic pinned-donor path/size/SHA comparison, metadata-only and sparse-boundary tests | Merged via PR #46 with exact-head and main CI/restore green; 3,004 ordinary rows match on 3,000-file corpus; no publishable manifest, policy switch or live-source claim |
 | DC-002H confined shadow metadata | Same pinned scanner; no donor edit | `confined_files.py`, `fileos_donor_shadow.py` | no-follow descriptor metadata stat, root/ancestor/leaf swap tests, 3,000-file pinned-donor replay | Merged via PR #48; exact-head and main CI/restore green; shadow-only, no publishable policy switch |
+| DC-002I source-bound donor candidate | Same pinned scanner; no donor edit | `fileos_donor_candidate.py`, ADR-112 | hashed/deferred separation, v1 rejection, malformed/root-drift tests, 3,000-file pinned-donor comparison | Branch verification in progress; nonpublishing candidate only, not a v2 manifest or policy switch |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
@@ -95,12 +96,15 @@ but does not replace snapshot v1 or authorize metadata-only publication.
 DC-002H makes even that shadow profile's metadata-only observation root-bound
 without opening placeholder bytes. It does not prove real cloud-placeholder
 behavior or change the donor's pathname-based scanner.
+DC-002I gives that observation a [source-bound candidate ledger](FILEOS_DONOR_CANDIDATE.md).
+Null-digest donor rows remain deferred without version or evidence identities;
+the current v1 importer intentionally refuses the ledger.
 
 ## Proposed next tranches
 
-1. **DC-002G donor inventory policy:** review the isolated shadow profile and
-   extend fault/platform acceptance. A separate ADR is required for publishable
-   v2 semantics, prior-v1 transition and rollback.
+1. **DC-002 donor inventory policy:** review the isolated shadow profile and
+   source-bound candidate, then extend fault/platform acceptance. A separate
+   ADR is required for publishable v2 semantics, prior-v1 transition and rollback.
 2. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
    implemented. Extend format-specific corpora, containment, donor shadow and
    reviewed selection before any automatic fan-out or cutover.
