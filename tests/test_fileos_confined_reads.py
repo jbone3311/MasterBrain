@@ -14,6 +14,7 @@ from masterbrain.datacore.confined_files import (
     ConfinedFileTooLarge,
     ConfinedFileUnavailable,
     read_confined_file,
+    stat_confined_leaf,
 )
 from masterbrain.datacore.extraction import (
     ExtractionStatus,
@@ -45,6 +46,59 @@ def test_confined_reader_hashes_nested_and_empty_files(tmp_path: Path) -> None:
     assert captured.raw == b"" and captured.size_bytes == 0
     with pytest.raises(ConfinedFileTooLarge):
         read_confined_file(tmp_path, "nested/proof.txt", max_bytes=14, capture_bytes=False)
+
+
+def test_confined_stat_does_not_open_file_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    nested = tmp_path / "nested"
+    nested.mkdir()
+    (nested / "placeholder.txt").write_bytes(b"fictional placeholder")
+    original_open = confined_files.os.open
+
+    def directory_only(path: str, flags: int, *args: object, **kwargs: object) -> int:
+        assert path != "placeholder.txt"
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(confined_files.os, "open", directory_only)
+    root_info = tmp_path.stat()
+    info = stat_confined_leaf(
+        tmp_path, "nested/placeholder.txt", root_identity=(root_info.st_dev, root_info.st_ino)
+    )
+    assert info.st_size == len(b"fictional placeholder")
+
+
+def test_confined_stat_rejects_ancestor_swap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    nested = root / "nested"
+    nested.mkdir(parents=True)
+    (nested / "proof.txt").write_bytes(b"fictional proof")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "proof.txt").write_bytes(b"outside metadata")
+    root_info = root.stat()
+    original_open = confined_files.os.open
+
+    def swapped(path: str, flags: int, *args: object, **kwargs: object) -> int:
+        if path == "nested":
+            nested.rename(root / "moved")
+            nested.symlink_to(outside, target_is_directory=True)
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(confined_files.os, "open", swapped)
+    with pytest.raises(ConfinedFileUnavailable):
+        stat_confined_leaf(
+            root, "nested/proof.txt", root_identity=(root_info.st_dev, root_info.st_ino)
+        )
+
+
+def test_confined_stat_rejects_changed_root(tmp_path: Path) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional")
+    info = tmp_path.stat()
+    with pytest.raises(ConfinedFileChanged):
+        stat_confined_leaf(tmp_path, "proof.txt", root_identity=(info.st_dev, info.st_ino + 1))
 
 
 @pytest.mark.parametrize("locator", ["../outside.txt", "/absolute.txt", "a//b", "a/./b", "a\\b"])

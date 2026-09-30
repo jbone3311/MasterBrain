@@ -2,6 +2,10 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Bound FileOS donor-policy shadow metadata observations to no-follow directory
+  descriptors and the initial root identity; root/ancestor/leaf swaps fail closed
+  without opening placeholder bytes. This is nonpublishing and changes neither
+  snapshot v1 nor FOS-Master.
 - Added a separate, nonpublishing FileOS donor-policy shadow inventory (ADR-111).
   A pinned synthetic FOS-Master comparison now matches 3,004 ordinary file rows
   without changing snapshot v1, completion, search, or the donor repository.

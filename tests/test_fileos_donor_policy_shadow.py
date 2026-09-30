@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -10,6 +11,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from masterbrain.datacore import confined_files
 from masterbrain.datacore import fileos_donor_shadow as shadow
 from masterbrain.datacore.fileos import INVENTORY_POLICY_VERSION, snapshot_tree
 from masterbrain.datacore.persistence import validate_fileos_manifest
@@ -85,6 +87,17 @@ def test_symlinks_are_skipped_without_outside_read(tmp_path: Path) -> None:
     assert {entry["reason"] for entry in result["exclusions"]} == {"symlink_directory"}
 
 
+def test_special_leaf_keeps_nonregular_exclusion_without_open(tmp_path: Path) -> None:
+    special = tmp_path / "named-pipe"
+    os.mkfifo(special)
+    result = shadow.scan_donor_policy_shadow(tmp_path, metadata_only=True)
+    assert result["rows"] == []
+    assert result["errors"] == []
+    assert result["exclusions"] == [
+        {"locator": "named-pipe", "reason": "not_regular"}
+    ]
+
+
 def test_oversize_sparse_file_is_not_read(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     path = tmp_path / "over.bin"
     with path.open("wb") as out:
@@ -130,19 +143,21 @@ def test_metadata_only_symlink_swap_never_follows_outside(
     path.write_bytes(b"original")
     outside = tmp_path / "outside.txt"
     outside.write_bytes(b"outside")
-    original_lstat = Path.lstat
+    original_stat = os.stat
     observations = 0
 
-    def swap_before_recheck(candidate: Path):
+    def swap_before_recheck(
+        candidate: str | bytes | os.PathLike[str] | os.PathLike[bytes], *args, **kwargs
+    ):
         nonlocal observations
-        if candidate == path:
+        if candidate == "report.txt" and kwargs.get("dir_fd") is not None:
             observations += 1
-            if observations == 3:
+            if observations == 2:
                 path.unlink()
                 path.symlink_to(outside)
-        return original_lstat(candidate)
+        return original_stat(candidate, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "lstat", swap_before_recheck)
+    monkeypatch.setattr(confined_files.os, "stat", swap_before_recheck)
     result = shadow.scan_donor_policy_shadow(root, metadata_only=True)
     assert result["rows"] == []
     assert result["errors"] == [{"locator": "report.txt", "code": "changed_during_scan"}]
@@ -167,6 +182,28 @@ def test_root_identity_swap_is_reported(tmp_path: Path, monkeypatch: pytest.Monk
     monkeypatch.setattr(Path, "lstat", changed_root_stat)
     result = shadow.scan_donor_policy_shadow(tmp_path)
     assert {error["code"] for error in result["errors"]} == {"root_changed_during_scan"}
+
+
+def test_metadata_shadow_does_not_catalog_swapped_outside_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    (root / "inside.txt").write_bytes(b"fictional")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "external.txt").write_bytes(b"outside metadata")
+
+    def swapped_walk(_root: Path, *, topdown: bool, onerror):
+        assert topdown is True
+        root.rename(tmp_path / "moved")
+        root.symlink_to(outside, target_is_directory=True)
+        yield str(root), [], ["external.txt"]
+
+    monkeypatch.setattr(shadow.os, "walk", swapped_walk)
+    result = shadow.scan_donor_policy_shadow(root, metadata_only=True)
+    assert result["rows"] == []
+    assert result["errors"] == [{"locator": ".", "code": "root_changed_during_scan"}]
 
 
 def test_unreadable_directory_is_a_coverage_error(

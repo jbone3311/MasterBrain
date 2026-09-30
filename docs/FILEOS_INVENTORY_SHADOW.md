@@ -134,6 +134,16 @@ real cloud placeholders, unreadable directories, platform filename collisions,
 source-root races and mass-loss behavior remain separate acceptance gates. This
 does not change the six-difference snapshot-v1 baseline above or FOS-Master.
 
+DC-002H tightens this nonpublishing profile: metadata-only and ordinary leaf
+observations now use a descriptor-relative, no-follow stat bound to the root's
+initial device/inode, without opening file bytes. A second traversal refuses
+locator replacement. A root changed before a walk iteration stops the scan and
+records an error instead of cataloging outside metadata. Special nonregular
+leaves retain their prior exclusion outcome. Synthetic ancestor,
+leaf and root-swap regressions pass; the pinned 3,000-file comparator still has
+3,004 ordinary/replay/change and metadata-only matches. These checks do not
+prove real Dropbox/OneDrive placeholder behavior or make a scan publishable.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,
