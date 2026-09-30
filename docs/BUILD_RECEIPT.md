@@ -2,10 +2,21 @@
 
 Updated 2026-09-30 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002H confined metadata shadow candidate
+## DC-002H confined metadata shadow integration
 
 Branch `codex/dc-002h-confined-metadata-shadow` starts from `main`
-`e2f323d68b5839708d2f71520d37ed9ff82a2e6f`. It adds a no-follow,
+`e2f323d68b5839708d2f71520d37ed9ff82a2e6f`. [PR #48](https://github.com/jbone3311/MasterBrain/pull/48)
+merged exact head `706a9de3c312f4368de23d8920486e5cbcc0263c` at
+`553b2e5a3ec936cb181e8a67f2e04eff95c496a4`. The head passed
+[full CI 36769463528](https://github.com/jbone3311/MasterBrain/actions/runs/36769463528),
+[strict runtime 36769463544](https://github.com/jbone3311/MasterBrain/actions/runs/36769463544)
+and [populated restore 36769463527](https://github.com/jbone3311/MasterBrain/actions/runs/36769463527).
+The exact merged `main` SHA independently passed
+[full CI 36770297142](https://github.com/jbone3311/MasterBrain/actions/runs/36770297142),
+[strict runtime 36770297170](https://github.com/jbone3311/MasterBrain/actions/runs/36770297170)
+and [populated restore 36770297109](https://github.com/jbone3311/MasterBrain/actions/runs/36770297109).
+
+The tranche adds a no-follow,
 root-bound metadata stat to the nonpublishing donor-policy scanner, without
 opening leaf bytes or changing publishable snapshot v1. Local focused tests:
 34 passed, including unchanged special-file exclusion. Full local Python on the
@@ -16,8 +27,7 @@ repository deployment-quality gate passed. The pinned FOS-Master synthetic
 3,000-file comparison still matches 3,004 ordinary, replay, changed-file and
 metadata-only rows, with zero unexplained membership differences. The donor
 checkout remains clean at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
-Hosted PostgreSQL, strict-runtime and populated-restore checks for this branch
-are pending; this is not live-source or cutover evidence.
+These synthetic and hosted checks are not live-source or cutover evidence.
 
 ## DC-002G donor-policy shadow integration
 
