@@ -2,6 +2,10 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Added a separate, nonpublishing FileOS donor-policy shadow inventory (ADR-111).
+  A pinned synthetic FOS-Master comparison now matches 3,004 ordinary file rows
+  without changing snapshot v1, completion, search, or the donor repository.
+  Metadata-only and fault outcomes remain explicit; no FileOS cutover is implied.
 - Added opt-in two-stage API database routing: a table-blind exact-identity login
   resolves verified claims, then one tenant-bound login performs tenant SQL
   (ADR-109). Synthetic two-tenant API tests and private-file validation pass;

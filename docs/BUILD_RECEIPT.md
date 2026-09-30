@@ -1,6 +1,31 @@
 # Build and validation receipt
 
-Updated 2026-09-25 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-09-30 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
+
+## DC-002G donor-policy shadow branch (not yet merged)
+
+Local branch `codex/dc-002g-donor-policy-shadow` began at verified `main`
+`d334c5c85403d30abb6fdbbbbad7e43163fc5eea`. That exact main SHA passed
+[full CI 36198583494](https://github.com/jbone3311/MasterBrain/actions/runs/36198583494),
+[strict runtime 36198583420](https://github.com/jbone3311/MasterBrain/actions/runs/36198583420),
+and [populated restore 36198583568](https://github.com/jbone3311/MasterBrain/actions/runs/36198583568).
+Those are **base** checks, not checks of DC-002G.
+
+ADR-111 adds a standalone, nonpublishing donor-policy scanner and synthetic pinned-
+donor comparator. On the local code head, 40 focused inventory/classifier tests
+passed, including coverage-error regressions. Independent full Python validation
+passed 2,399 tests
+with 445 PostgreSQL-marked tests **skipped**, not executed. Ruff, mypy over 86
+source files and documentation inventory (203 Markdown files, 1,102 local links)
+passed. The pinned FOS-Master comparison matched 3,004 ordinary/replay/change
+rows and 3,004 explicit no-hash metadata rows with zero membership differences.
+The unchanged snapshot-v1 comparator still reported its exact six known policy
+differences and 3,002 common hashes. FOS-Master stayed clean at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
+
+This is local synthetic evidence only; new-head hosted PostgreSQL, CI and restore
+checks remain pending. No snapshot-v1 policy switch, production FileOS operation,
+live-source acceptance or cutover is claimed.
 
 ## Latest verified `main`: opt-in tenant-routed API database access
 

@@ -51,9 +51,10 @@ Security and data-integrity blockers take priority over adding more surface area
    acceptance remain separate gates. [Issue #10](https://github.com/jbone3311/MasterBrain/issues/10)
    is the historical Claude handoff; its old branch/base notes are not current work.
 5. **Measure donor policy parity before any switch.** The extracted inventory
-   classifier matches the pinned donor on the synthetic corpus but is not wired
-   into MasterBrain snapshots. Resolve six documented policy differences and
-   fault/race/cloud-placeholder behavior through
+   classifier and an isolated, nonpublishing donor-policy shadow profile match the
+   pinned donor on the synthetic corpus; neither is wired into publishable
+   MasterBrain snapshots. Resolve fault/race/cloud-placeholder behavior, define
+   versioned v2 publication and transition from v1 through
    [FOS migration](FOS_MIGRATION.md), then run read-only shadow and rollback
    rehearsals. Do not change FOS-Master or silently adopt donor exclusions.
 

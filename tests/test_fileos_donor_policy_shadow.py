@@ -169,6 +169,37 @@ def test_root_identity_swap_is_reported(tmp_path: Path, monkeypatch: pytest.Monk
     assert {error["code"] for error in result["errors"]} == {"root_changed_during_scan"}
 
 
+def test_unreadable_directory_is_a_coverage_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    unreadable = root / "unreadable"
+    unreadable.mkdir()
+
+    def failed_walk(_root: Path, *, topdown: bool, onerror):
+        assert topdown is True
+        onerror(PermissionError(13, "synthetic refusal", str(unreadable)))
+        yield str(root), [], []
+
+    monkeypatch.setattr(shadow.os, "walk", failed_walk)
+    result = shadow.scan_donor_policy_shadow(root)
+    assert result["rows"] == []
+    assert result["errors"] == [
+        {"locator": "unreadable", "code": "directory_unreadable"}
+    ]
+    assert result["publishable"] is False
+
+
+def test_comparator_does_not_hide_shadow_coverage_error(tmp_path: Path) -> None:
+    module = _comparator_module()
+    result = shadow.scan_donor_policy_shadow(tmp_path)
+    result["errors"].append({"locator": "unreadable", "code": "directory_unreadable"})
+    assert module.compare_rows({}, result) == [
+        {"locator": "unreadable", "code": "shadow_directory_unreadable"}
+    ]
+
+
 def test_invalid_mode_and_record_budget_fail_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

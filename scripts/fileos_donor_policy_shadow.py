@@ -29,7 +29,10 @@ def compare_rows(
 ) -> list[dict[str, str]]:
     """Require matching membership/size/hash and explicit metadata-only state."""
     shared = {row["locator"]: row for row in shadow["rows"]}
-    differences: list[dict[str, str]] = []
+    differences: list[dict[str, str]] = [
+        {"locator": error["locator"], "code": f"shadow_{error['code']}"}
+        for error in shadow["errors"]
+    ]
     for locator in sorted(donor.keys() | shared.keys()):
         original = donor.get(locator)
         candidate = shared.get(locator)
