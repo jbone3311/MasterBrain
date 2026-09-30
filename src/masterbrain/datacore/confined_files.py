@@ -78,6 +78,61 @@ def _open_confined_descriptor(root: Path, locator: str) -> int:
             os.close(descriptor)
 
 
+def stat_confined_file(
+    root: Path, locator: str, *, root_identity: tuple[int, int]
+) -> os.stat_result:
+    """Stat a regular leaf through no-follow directories without opening its bytes.
+
+    This is for metadata-only inventory, including cloud placeholders that must not
+    be materialized by opening the file. The root identity is bound to the scan's
+    initial observation, and a second traversal rejects locator replacement.
+    """
+    parts = _parts(locator)
+    if not root.is_absolute() or any(part in {"", ".", ".."} for part in root.parts[1:]):
+        raise ConfinedFileUnavailable()
+    directory_flag = getattr(os, "O_DIRECTORY", None)
+    nofollow_flag = getattr(os, "O_NOFOLLOW", None)
+    if directory_flag is None or nofollow_flag is None:
+        raise ConfinedFileUnavailable()
+
+    def observe() -> os.stat_result:
+        opened: list[int] = []
+        try:
+            directory = os.open(root.anchor, os.O_RDONLY | directory_flag | nofollow_flag)
+            opened.append(directory)
+            for part in root.parts[1:]:
+                directory = os.open(
+                    part, os.O_RDONLY | directory_flag | nofollow_flag, dir_fd=directory
+                )
+                opened.append(directory)
+            root_info = os.fstat(directory)
+            if (root_info.st_dev, root_info.st_ino) != root_identity:
+                raise ConfinedFileChanged()
+            for part in parts[:-1]:
+                directory = os.open(
+                    part, os.O_RDONLY | directory_flag | nofollow_flag, dir_fd=directory
+                )
+                opened.append(directory)
+            info = os.stat(parts[-1], dir_fd=directory, follow_symlinks=False)
+            if not stat.S_ISREG(info.st_mode):
+                raise ConfinedFileUnavailable()
+            return info
+        except (OSError, ValueError) as exc:
+            raise ConfinedFileUnavailable() from exc
+        finally:
+            for descriptor in reversed(opened):
+                os.close(descriptor)
+
+    before = observe()
+    try:
+        after = observe()
+    except ConfinedFileUnavailable as exc:
+        raise ConfinedFileChanged() from exc
+    if _identity(before) != _identity(after):
+        raise ConfinedFileChanged()
+    return after
+
+
 def _identity(info: os.stat_result) -> tuple[int, int, int, int]:
     return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns
 

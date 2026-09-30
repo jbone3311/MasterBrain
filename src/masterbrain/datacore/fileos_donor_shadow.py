@@ -16,6 +16,7 @@ from masterbrain.datacore.confined_files import (
     ConfinedFileTooLarge,
     ConfinedFileUnavailable,
     read_confined_file,
+    stat_confined_file,
 )
 from masterbrain.datacore.fileos_junk_filter import classify_dir, is_junk_file
 
@@ -46,6 +47,7 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
     if not root.is_dir():
         raise ValueError("FileOS shadow root must be a directory")
     root_stat = root.lstat()
+    root_identity = (root_stat.st_dev, root_stat.st_ino)
     rows: list[dict[str, Any]] = []
     exclusions: list[dict[str, str]] = []
     errors: list[dict[str, str]] = []
@@ -67,6 +69,15 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
         record(errors, {"locator": relative, "code": "directory_unreadable"})
 
     for directory, dirnames, filenames in os.walk(root, topdown=True, onerror=onerror):
+        try:
+            current_root = root.lstat()
+            if not stat.S_ISDIR(current_root.st_mode) or (
+                current_root.st_dev, current_root.st_ino
+            ) != root_identity:
+                raise ConfinedFileChanged()
+        except (OSError, ConfinedFileChanged):
+            record(errors, {"locator": ".", "code": "root_changed_during_scan"})
+            break
         current = Path(directory)
         kept_dirs: list[str] = []
         for name in sorted(dirnames):
@@ -90,10 +101,7 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
                 record(errors, {"locator": relative, "code": "symlink_skipped"})
                 continue
             try:
-                before = path.lstat()
-                if not stat.S_ISREG(before.st_mode):
-                    record(exclusions, {"locator": relative, "reason": "not_regular"})
-                    continue
+                before = stat_confined_file(root, relative, root_identity=root_identity)
                 if metadata_only or _is_dataless(before) or before.st_size > DONOR_HASH_LIMIT:
                     state = (
                         "no_hash"
@@ -103,8 +111,8 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
                         else "oversize"
                     )
                     # Metadata-only records must still have a stable locator/size.
-                    after = path.lstat()
-                    if not stat.S_ISREG(after.st_mode) or _identity(after) != _identity(before):
+                    after = stat_confined_file(root, relative, root_identity=root_identity)
+                    if _identity(after) != _identity(before):
                         raise ConfinedFileChanged()
                     record(
                         rows,
@@ -119,10 +127,9 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
                 read = read_confined_file(
                     root, relative, max_bytes=DONOR_HASH_LIMIT, capture_bytes=False
                 )
-                after = path.lstat()
+                after = stat_confined_file(root, relative, root_identity=root_identity)
                 if (
-                    not stat.S_ISREG(after.st_mode)
-                    or _identity(before) != _identity(after)
+                    _identity(before) != _identity(after)
                     or _identity(before)
                     != (read.device, read.inode, read.size_bytes, read.mtime_ns)
                 ):
@@ -143,13 +150,14 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
 
     try:
         after_root = root.lstat()
-        if not stat.S_ISDIR(after_root.st_mode) or (root_stat.st_dev, root_stat.st_ino) != (
-            after_root.st_dev,
-            after_root.st_ino,
+        if not stat.S_ISDIR(after_root.st_mode) or root_identity != (
+            after_root.st_dev, after_root.st_ino
         ):
-            record(errors, {"locator": ".", "code": "root_changed_during_scan"})
+            if not any(error["code"] == "root_changed_during_scan" for error in errors):
+                record(errors, {"locator": ".", "code": "root_changed_during_scan"})
     except OSError:
-        record(errors, {"locator": ".", "code": "root_changed_during_scan"})
+        if not any(error["code"] == "root_changed_during_scan" for error in errors):
+            record(errors, {"locator": ".", "code": "root_changed_during_scan"})
     rows.sort(key=lambda row: row["locator"])
     exclusions.sort(key=lambda row: (row["locator"], row["reason"]))
     errors.sort(key=lambda row: (row["locator"], row["code"]))

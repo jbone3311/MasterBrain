@@ -47,6 +47,10 @@ production and FileOS cutover remain open.
   no-hash metadata rows and sparse 100 MiB/2 GiB boundary tests. It changes no
   snapshot v1, completion, search or FileOS operation. Exact-head and merged-main
   CI/restore are green; hosted product and live-source acceptance are not claimed.
+- DC-002H's nonpublishing follow-up binds metadata-only and ordinary shadow stats
+  to a no-follow descriptor walk and initial root identity, without opening leaf
+  bytes. Synthetic root/ancestor/leaf-swap tests and local 3,000-file pinned-donor
+  parity pass; hosted checks and real cloud-placeholder acceptance are pending.
 - Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
   database and temporary fictional root. It verifies common hashes/sizes, six current
   policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;

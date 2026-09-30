@@ -2,6 +2,22 @@
 
 Updated 2026-09-30 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002H confined metadata shadow candidate
+
+Branch `codex/dc-002h-confined-metadata-shadow` starts from `main`
+`e2f323d68b5839708d2f71520d37ed9ff82a2e6f`. It adds a no-follow,
+root-bound metadata stat to the nonpublishing donor-policy scanner, without
+opening leaf bytes or changing publishable snapshot v1. Local focused tests:
+33 passed. Full local Python: 2,403 passed, 445 PostgreSQL-marked skipped
+(not executed); 134 browser tests passed. Ruff, mypy over 86 source files,
+documentation inventory (203 Markdown files, 1,103 local links), and the
+repository deployment-quality gate passed. The pinned FOS-Master synthetic
+3,000-file comparison still matches 3,004 ordinary, replay, changed-file and
+metadata-only rows, with zero unexplained membership differences. The donor
+checkout remains clean at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
+Hosted PostgreSQL, strict-runtime and populated-restore checks for this branch
+are pending; this is not live-source or cutover evidence.
+
 ## DC-002G donor-policy shadow integration
 
 The branch `codex/dc-002g-donor-policy-shadow` began at verified `main`
