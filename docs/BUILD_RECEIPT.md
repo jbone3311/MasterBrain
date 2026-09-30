@@ -8,7 +8,8 @@ Branch `codex/dc-002h-confined-metadata-shadow` starts from `main`
 `e2f323d68b5839708d2f71520d37ed9ff82a2e6f`. It adds a no-follow,
 root-bound metadata stat to the nonpublishing donor-policy scanner, without
 opening leaf bytes or changing publishable snapshot v1. Local focused tests:
-33 passed. Full local Python: 2,403 passed, 445 PostgreSQL-marked skipped
+34 passed, including unchanged special-file exclusion. Full local Python on the
+corrected branch head: 2,404 passed, 445 PostgreSQL-marked skipped
 (not executed); 134 browser tests passed. Ruff, mypy over 86 source files,
 documentation inventory (203 Markdown files, 1,103 local links), and the
 repository deployment-quality gate passed. The pinned FOS-Master synthetic

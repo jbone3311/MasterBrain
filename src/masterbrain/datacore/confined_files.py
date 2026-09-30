@@ -78,10 +78,10 @@ def _open_confined_descriptor(root: Path, locator: str) -> int:
             os.close(descriptor)
 
 
-def stat_confined_file(
+def stat_confined_leaf(
     root: Path, locator: str, *, root_identity: tuple[int, int]
 ) -> os.stat_result:
-    """Stat a regular leaf through no-follow directories without opening its bytes.
+    """Stat a leaf through no-follow directories without opening its bytes.
 
     This is for metadata-only inventory, including cloud placeholders that must not
     be materialized by opening the file. The root identity is bound to the scan's
@@ -114,8 +114,6 @@ def stat_confined_file(
                 )
                 opened.append(directory)
             info = os.stat(parts[-1], dir_fd=directory, follow_symlinks=False)
-            if not stat.S_ISREG(info.st_mode):
-                raise ConfinedFileUnavailable()
             return info
         except (OSError, ValueError) as exc:
             raise ConfinedFileUnavailable() from exc

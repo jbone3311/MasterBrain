@@ -16,7 +16,7 @@ from masterbrain.datacore.confined_files import (
     ConfinedFileTooLarge,
     ConfinedFileUnavailable,
     read_confined_file,
-    stat_confined_file,
+    stat_confined_leaf,
 )
 from masterbrain.datacore.fileos_junk_filter import classify_dir, is_junk_file
 
@@ -101,7 +101,13 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
                 record(errors, {"locator": relative, "code": "symlink_skipped"})
                 continue
             try:
-                before = stat_confined_file(root, relative, root_identity=root_identity)
+                before = stat_confined_leaf(root, relative, root_identity=root_identity)
+                if not stat.S_ISREG(before.st_mode):
+                    if stat.S_ISLNK(before.st_mode):
+                        record(errors, {"locator": relative, "code": "symlink_skipped"})
+                    else:
+                        record(exclusions, {"locator": relative, "reason": "not_regular"})
+                    continue
                 if metadata_only or _is_dataless(before) or before.st_size > DONOR_HASH_LIMIT:
                     state = (
                         "no_hash"
@@ -111,8 +117,8 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
                         else "oversize"
                     )
                     # Metadata-only records must still have a stable locator/size.
-                    after = stat_confined_file(root, relative, root_identity=root_identity)
-                    if _identity(after) != _identity(before):
+                    after = stat_confined_leaf(root, relative, root_identity=root_identity)
+                    if not stat.S_ISREG(after.st_mode) or _identity(after) != _identity(before):
                         raise ConfinedFileChanged()
                     record(
                         rows,
@@ -127,9 +133,10 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
                 read = read_confined_file(
                     root, relative, max_bytes=DONOR_HASH_LIMIT, capture_bytes=False
                 )
-                after = stat_confined_file(root, relative, root_identity=root_identity)
+                after = stat_confined_leaf(root, relative, root_identity=root_identity)
                 if (
-                    _identity(before) != _identity(after)
+                    not stat.S_ISREG(after.st_mode)
+                    or _identity(before) != _identity(after)
                     or _identity(before)
                     != (read.device, read.inode, read.size_bytes, read.mtime_ns)
                 ):

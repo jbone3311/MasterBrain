@@ -87,6 +87,17 @@ def test_symlinks_are_skipped_without_outside_read(tmp_path: Path) -> None:
     assert {entry["reason"] for entry in result["exclusions"]} == {"symlink_directory"}
 
 
+def test_special_leaf_keeps_nonregular_exclusion_without_open(tmp_path: Path) -> None:
+    special = tmp_path / "named-pipe"
+    os.mkfifo(special)
+    result = shadow.scan_donor_policy_shadow(tmp_path, metadata_only=True)
+    assert result["rows"] == []
+    assert result["errors"] == []
+    assert result["exclusions"] == [
+        {"locator": "named-pipe", "reason": "not_regular"}
+    ]
+
+
 def test_oversize_sparse_file_is_not_read(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     path = tmp_path / "over.bin"
     with path.open("wb") as out:

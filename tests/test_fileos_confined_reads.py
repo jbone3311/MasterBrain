@@ -14,7 +14,7 @@ from masterbrain.datacore.confined_files import (
     ConfinedFileTooLarge,
     ConfinedFileUnavailable,
     read_confined_file,
-    stat_confined_file,
+    stat_confined_leaf,
 )
 from masterbrain.datacore.extraction import (
     ExtractionStatus,
@@ -62,7 +62,7 @@ def test_confined_stat_does_not_open_file_bytes(
 
     monkeypatch.setattr(confined_files.os, "open", directory_only)
     root_info = tmp_path.stat()
-    info = stat_confined_file(
+    info = stat_confined_leaf(
         tmp_path, "nested/placeholder.txt", root_identity=(root_info.st_dev, root_info.st_ino)
     )
     assert info.st_size == len(b"fictional placeholder")
@@ -89,7 +89,7 @@ def test_confined_stat_rejects_ancestor_swap(
 
     monkeypatch.setattr(confined_files.os, "open", swapped)
     with pytest.raises(ConfinedFileUnavailable):
-        stat_confined_file(
+        stat_confined_leaf(
             root, "nested/proof.txt", root_identity=(root_info.st_dev, root_info.st_ino)
         )
 
@@ -98,7 +98,7 @@ def test_confined_stat_rejects_changed_root(tmp_path: Path) -> None:
     (tmp_path / "proof.txt").write_bytes(b"fictional")
     info = tmp_path.stat()
     with pytest.raises(ConfinedFileChanged):
-        stat_confined_file(tmp_path, "proof.txt", root_identity=(info.st_dev, info.st_ino + 1))
+        stat_confined_leaf(tmp_path, "proof.txt", root_identity=(info.st_dev, info.st_ino + 1))
 
 
 @pytest.mark.parametrize("locator", ["../outside.txt", "/absolute.txt", "a//b", "a/./b", "a\\b"])
