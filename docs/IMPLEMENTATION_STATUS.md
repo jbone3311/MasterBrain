@@ -63,9 +63,11 @@ production and FileOS cutover remain open.
   ADR-113. On the pinned 3,000-file fictional corpus it accounts for 3,006
   prior v1 items: 3,002 unchanged, four donor-excluded, plus two donor-only
   hashed items. All six policy gaps are explicit; none creates absence evidence.
-  This remains isolated pending hosted branch checks, currently prevented from
-  starting by the GitHub account billing/spending-limit gate. No persisted v2
-  baseline, completion or FileOS switch is claimed.
+  Local PostgreSQL 17 ran 444 database-marked tests with the full suite at
+  2,862 passed and one skipped. This remains isolated pending hosted branch
+  checks, currently prevented from starting by the GitHub account
+  billing/spending-limit gate. No persisted v2 baseline, completion or FileOS
+  switch is claimed.
 - Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
   database and temporary fictional root. It verifies common hashes/sizes, six current
   policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;

@@ -5,20 +5,31 @@ Updated 2026-09-30 Pacific. Product: `jbone3311/MasterBrain`, verified **private
 ## DC-002J v1-to-donor transition branch checkpoint
 
 Branch `codex/dc-002j-policy-transition-preview` begins from `main`
-`7d388b1c44cc2236a87a8ecd79750e565dda1a9f`. Its new library compares a
+`7d388b1c44cc2236a87a8ecd79750e565dda1a9f`; its tested code head is
+`fc6c9611562e8caee2b05c3e34d43f736bc7838a`. Its new library compares a
 validated, complete-shape v1 snapshot with a fresh donor candidate at the same
 source/root and a newer observation time. It never publishes, persists, or
 infers absence. The pinned FOS-Master fictional 3,000-file harness reports
 3,006 prior v1 items: 3,002 unchanged, four donor-excluded and two donor-only
 hashed items. The six policy gaps are blocked for review. Focused, full local
-verification passes: locked dependency sync, 2,425 Python tests, with 445 PostgreSQL-marked tests
-skipped rather than executed; 134 browser tests; Ruff; mypy over 88 source
+verification passes: locked dependency sync, 2,425 Python tests with 445
+PostgreSQL-marked tests skipped in the no-database run; 134 browser tests;
+Ruff; mypy over 88 source
 files; 207 Markdown files and 1,119 local links/fragments; and the repository
 deployment-quality gate. The pinned donor harness passes on 3,000 fictional
 files with 3,004 exact hashed and metadata-only donor-candidate matches, 3,006
 prior-v1 classifications and six explicit policy gaps. Hosted branch validation
 is unavailable while account billing blocks Actions. This paragraph is not a
 release or cutover receipt.
+
+A separate disposable local PostgreSQL 17 cluster executed the broader suite:
+2,862 passed, one skipped; 444 of 445 PostgreSQL-marked tests executed. An
+initial run had three subprocess `ModuleNotFoundError` failures because this
+local Python skips the editable-install `.pth` file; after installing the same
+commit as a normal wheel into the disposable virtual environment, all three
+passed with no repository code change. The cluster was stopped and removed.
+This local database result is additional evidence, not a substitute for hosted
+PostgreSQL, restricted-worker containers or populated restore on the PR head.
 
 At the base commit, new `main` GitHub Actions jobs did not start: CI
 [36776977739](https://github.com/jbone3311/MasterBrain/actions/runs/36776977739),
