@@ -110,7 +110,7 @@ FOS-Master checkout.
 
 ## DC-002G isolated donor-policy profile
 
-ADR-111 proposes a second, **nonpublishing** DataCore comparison path. It uses the
+ADR-111 adds a second, **nonpublishing** DataCore comparison path. It uses the
 extracted donor classifier to prune junk/operational directories and junk files,
 retains hidden content and `.db` files, hashes ordinary files within the donor's
 2 GiB limit through DataCore's no-follow confined reader, and labels oversize,

@@ -45,8 +45,8 @@ production and FileOS cutover remain open.
   a publishable manifest. Local pinned-donor comparison matches 3,004 ordinary
   rows on a 3,000-file synthetic corpus, plus replay, one change, explicit
   no-hash metadata rows and sparse 100 MiB/2 GiB boundary tests. It changes no
-  snapshot v1, completion, search or FileOS operation; hosted and live-source
-  acceptance are not claimed.
+  snapshot v1, completion, search or FileOS operation. Exact-head and merged-main
+  CI/restore are green; hosted product and live-source acceptance are not claimed.
 - Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
   database and temporary fictional root. It verifies common hashes/sizes, six current
   policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;
