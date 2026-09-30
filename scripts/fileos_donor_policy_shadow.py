@@ -7,6 +7,7 @@ import argparse
 import json
 import sqlite3
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,38 @@ from fileos_inventory_shadow import (
     make_synthetic_tree,
 )
 
+from masterbrain.datacore.fileos_donor_candidate import build_fileos_donor_candidate
 from masterbrain.datacore.fileos_donor_shadow import scan_donor_policy_shadow
+
+OBSERVED_AT = datetime(2026, 9, 30, tzinfo=UTC)
+
+
+def compare_candidate(
+    donor: dict[str, dict[str, Any]], candidate: dict[str, Any], *, metadata_only: bool = False
+) -> None:
+    """Require exact donor path/size/SHA without treating hashless rows as evidence."""
+    if candidate["publishable"] is not False or candidate["errors"]:
+        raise AssertionError("donor candidate is not a clean nonpublishing observation")
+    if metadata_only:
+        if candidate["hashed"] or set(donor) != {row["locator"] for row in candidate["deferred"]}:
+            raise AssertionError("donor candidate metadata membership diverged")
+        for row in candidate["deferred"]:
+            if (
+                row["reason"] != "no_hash"
+                or set(row) != {"item_id", "locator", "size_bytes", "reason"}
+                or donor[row["locator"]]["sha256"] is not None
+                or donor[row["locator"]]["size_bytes"] != row["size_bytes"]
+            ):
+                raise AssertionError("donor candidate metadata row diverged")
+    else:
+        if candidate["deferred"] or set(donor) != {row["locator"] for row in candidate["hashed"]}:
+            raise AssertionError("donor candidate hashed membership diverged")
+        for row in candidate["hashed"]:
+            if (
+                donor[row["locator"]]["size_bytes"] != row["size_bytes"]
+                or donor[row["locator"]]["sha256"] != row["digest"]["value"]
+            ):
+                raise AssertionError("donor candidate hashed row diverged")
 
 
 def compare_rows(
@@ -74,6 +106,10 @@ def run_shadow(repo: Path, stress_files: int = 3000) -> dict[str, int]:
             expected = stress_files + 4
             if len(shared["rows"]) != expected or first["scanned"] != expected:
                 raise AssertionError("pinned donor-policy membership count changed")
+            candidate = build_fileos_donor_candidate(
+                root, source_id="synthetic_fos", observed_at=OBSERVED_AT
+            )
+            compare_candidate(donor_rows(conn), candidate)
             replay = donor_scan(scanner, root, conn)
             if replay["unchanged"] != expected or compare_rows(
                 donor_rows(conn), scan_donor_policy_shadow(root)
@@ -86,18 +122,36 @@ def run_shadow(repo: Path, stress_files: int = 3000) -> dict[str, int]:
                 donor_rows(conn), scan_donor_policy_shadow(root)
             ):
                 raise AssertionError("pinned donor-policy changed file diverged")
+            compare_candidate(
+                donor_rows(conn),
+                build_fileos_donor_candidate(
+                    root, source_id="synthetic_fos", observed_at=OBSERVED_AT
+                ),
+            )
             with sqlite3.connect(":memory:") as no_hash_conn:
                 scanner.ensure_schema(no_hash_conn)
                 donor_scan(scanner, root, no_hash_conn, no_hash=True)
                 deferred = scan_donor_policy_shadow(root, metadata_only=True)
                 if compare_rows(donor_rows(no_hash_conn), deferred, metadata_only=True):
                     raise AssertionError("pinned donor-policy metadata-only rows diverged")
+                compare_candidate(
+                    donor_rows(no_hash_conn),
+                    build_fileos_donor_candidate(
+                        root,
+                        source_id="synthetic_fos",
+                        observed_at=OBSERVED_AT,
+                        metadata_only=True,
+                    ),
+                    metadata_only=True,
+                )
             return {
                 "ordinary_matches": expected,
                 "known_membership_differences": 0,
                 "replay_matches": expected,
                 "changed_matches": expected,
                 "metadata_only_matches": expected,
+                "candidate_hashed_matches": expected,
+                "candidate_metadata_only_matches": expected,
                 "excluded_locators": len(shared["exclusions"]),
             }
 

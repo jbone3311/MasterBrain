@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-112](adr/112_fileos_donor_candidate_ledger.md) defines a source-bound,
+nonpublishing donor-policy candidate. Hashless donor rows remain deferred without
+invented versions or evidence; v1 intake and FileOS completion remain unchanged.
+
 [ADR-111](adr/111_fileos_donor_policy_shadow.md) adds an isolated read-only
 FOS scanner-policy shadow profile. It changes no publishable FileOS snapshot,
 completion policy, operator, or FOS-Master behavior; donor-policy adoption and

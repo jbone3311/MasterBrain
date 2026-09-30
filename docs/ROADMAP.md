@@ -1,6 +1,6 @@
 # MasterBrain Roadmap
 
-Updated 2026-09-25. This is a dependency-ordered plan, not a release claim.
+Updated 2026-09-30. This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
@@ -58,7 +58,9 @@ Security and data-integrity blockers take priority over adding more surface area
    [FOS migration](FOS_MIGRATION.md), then run read-only shadow and rollback
    rehearsals. Do not change FOS-Master or silently adopt donor exclusions.
    DC-002H now confines shadow metadata-only observations against root/ancestor
-   swaps; it does not settle cloud-placeholder behavior or authorize v2.
+   swaps. DC-002I adds a source-bound, nonpublishing candidate ledger that keeps
+   hashless rows deferred; neither settles cloud-placeholder behavior nor
+   authorizes v2 publication.
 
 The first three tranches can be reviewed independently of 5D implementation.
 None authorizes a real account, live root, paid hosting or a release tag.

@@ -264,7 +264,10 @@ def test_live_pinned_donor_policy_parity() -> None:
     if not repo.is_dir():
         pytest.skip("pinned donor checkout is not present on this runner")
     module = _comparator_module()
-    assert module.run_shadow(repo, 100)["ordinary_matches"] == 104
+    result = module.run_shadow(repo, 100)
+    assert result["ordinary_matches"] == 104
+    assert result["candidate_hashed_matches"] == 104
+    assert result["candidate_metadata_only_matches"] == 104
 
 
 def _comparator_module():
