@@ -2,6 +2,34 @@
 
 Updated 2026-09-30 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002J v1-to-donor transition branch checkpoint
+
+Branch `codex/dc-002j-policy-transition-preview` begins from `main`
+`7d388b1c44cc2236a87a8ecd79750e565dda1a9f`. Its new library compares a
+validated, complete-shape v1 snapshot with a fresh donor candidate at the same
+source/root and a newer observation time. It never publishes, persists, or
+infers absence. The pinned FOS-Master fictional 3,000-file harness reports
+3,006 prior v1 items: 3,002 unchanged, four donor-excluded and two donor-only
+hashed items. The six policy gaps are blocked for review. Focused, full local
+verification passes: locked dependency sync, 2,425 Python tests, with 445 PostgreSQL-marked tests
+skipped rather than executed; 134 browser tests; Ruff; mypy over 88 source
+files; 207 Markdown files and 1,119 local links/fragments; and the repository
+deployment-quality gate. The pinned donor harness passes on 3,000 fictional
+files with 3,004 exact hashed and metadata-only donor-candidate matches, 3,006
+prior-v1 classifications and six explicit policy gaps. Hosted branch validation
+is unavailable while account billing blocks Actions. This paragraph is not a
+release or cutover receipt.
+
+At the base commit, new `main` GitHub Actions jobs did not start: CI
+[36776977739](https://github.com/jbone3311/MasterBrain/actions/runs/36776977739),
+strict runtime [36776977859](https://github.com/jbone3311/MasterBrain/actions/runs/36776977859),
+and restore [36776977920](https://github.com/jbone3311/MasterBrain/actions/runs/36776977920)
+all have zero-step failures annotated with an account payment/spending-limit
+message. A CI retry (attempt 2) had the same annotation. This is not a test
+failure and does not supersede the green exact-head and merged-main PR #50
+receipts or the green PR #51 head. No subsequent branch may be merged on a
+claim that hosted validation passed until Actions can execute again.
+
 ## DC-002I donor candidate integration
 
 Branch `codex/dc-002i-donor-candidate-ledger` starts from verified `main`

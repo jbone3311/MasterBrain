@@ -2,6 +2,10 @@
 
 ## 0.2.0a1 — synthetic alpha candidate (unreleased)
 
+- Added a private, nonpublishing v1-to-donor FileOS policy transition preview
+  (ADR-113). It classifies stable/changed hashes, deferred or excluded prior
+  items, scan errors, donor-only items and unobserved prior locators without
+  creating deletion evidence or changing v1 completion.
 - Added a source-bound, nonpublishing FileOS donor-policy candidate ledger
   (ADR-112). Hashed observations carry candidate item/version identities;
   hashless and dataless rows are deferred without invented evidence. The v1

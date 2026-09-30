@@ -268,6 +268,8 @@ def test_live_pinned_donor_policy_parity() -> None:
     assert result["ordinary_matches"] == 104
     assert result["candidate_hashed_matches"] == 104
     assert result["candidate_metadata_only_matches"] == 104
+    assert result["transition_prior_matches"] == 106
+    assert result["transition_policy_gaps"] == 6
 
 
 def _comparator_module():

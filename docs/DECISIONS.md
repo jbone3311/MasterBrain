@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-113](adr/113_fileos_policy_transition_preview.md) permits only a private,
+nonpublishing v1-to-donor policy comparison. It never infers deletion or
+authorizes v2 publication; baseline persistence and owner acceptance remain open.
+
 [ADR-112](adr/112_fileos_donor_candidate_ledger.md) defines a source-bound,
 nonpublishing donor-policy candidate. Hashless donor rows remain deferred without
 invented versions or evidence; v1 intake and FileOS completion remain unchanged.
