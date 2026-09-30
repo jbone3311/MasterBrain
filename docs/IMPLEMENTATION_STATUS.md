@@ -41,6 +41,12 @@ production and FileOS cutover remain open.
 - Behavior-identical FOS scanner/reconciler inventory classifier with 3,000-path live-donor
   parity. It is not yet wired into FileOS snapshots or dedupe; their different
   exclusion policies require an explicit integration decision.
+- Isolated ADR-111 donor-policy shadow scanner uses that classifier without creating
+  a publishable manifest. Local pinned-donor comparison matches 3,004 ordinary
+  rows on a 3,000-file synthetic corpus, plus replay, one change, explicit
+  no-hash metadata rows and sparse 100 MiB/2 GiB boundary tests. It changes no
+  snapshot v1, completion, search or FileOS operation; hosted and live-source
+  acceptance are not claimed.
 - Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
   database and temporary fictional root. It verifies common hashes/sizes, six current
   policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;

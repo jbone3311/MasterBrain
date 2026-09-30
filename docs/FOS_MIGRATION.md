@@ -60,6 +60,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002D scanner fault/size boundaries | Same pinned scanner, isolated in-memory SQLite | `tests/test_fileos_inventory_shadow.py` | sparse 100 MiB + 1 and 2 GiB + 1, retained row after read failure, changed-during-hash, broken and directory symlinks | Local donor tests and hosted CI green; policy integration pending |
 | DC-002E scanner edge safety | Same pinned scanner, isolated in-memory SQLite | `tests/test_fileos_inventory_shadow.py` | simulated dataless branch, unreadable-directory omission, donor hash-time mutation, unusual valid names | Local donor tests and hosted CI green; policy integration pending |
 | DC-002F root-confined FileOS source reads | Same pinned scanner; its outside-root symlink read is intentionally not adopted | `confined_files.py`, snapshot and text/document extraction | synthetic file/ancestor swap below and above root, read/locator stability, ordinary pinned-donor SHA/size shadow | Isolated ADR-100 implementation; 3,000-file local donor shadow passed (3,002 ordinary matches, six policy and two symlink differences); hosted gate and restore green on `6e2eb8e`; no policy switch or cutover |
+| DC-002G donor-policy shadow profile | Same pinned scanner/classifier, no donor edit | `fileos_donor_shadow.py`, `scripts/fileos_donor_policy_shadow.py` | isolated synthetic pinned-donor path/size/SHA comparison, metadata-only and sparse-boundary tests | Local branch under ADR-111 review; 3,004 ordinary rows match on 3,000-file corpus; no publishable manifest, policy switch or hosted gate claim |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
@@ -87,18 +88,24 @@ used for snapshots or a FileOS cutover.
 DC-002C measures [whole-inventory shadow differences](FILEOS_INVENTORY_SHADOW.md)
 without publishing a manifest or touching the donor database. The scanner policy
 switch requires a separate decision and consecutive-run acceptance tests.
+DC-002G consumes the extracted classifier only in an isolated, nonpublishing
+inventory profile. It narrows the known membership gap in synthetic comparison,
+but does not replace snapshot v1 or authorize metadata-only publication.
 
 ## Proposed next tranches
 
-1. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
+1. **DC-002G donor inventory policy:** review the isolated shadow profile and
+   extend fault/platform acceptance. A separate ADR is required for publishable
+   v2 semantics, prior-v1 transition and rollback.
+2. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
    implemented. Extend format-specific corpora, containment, donor shadow and
    reviewed selection before any automatic fan-out or cutover.
-2. **DC-005G retrieval policy:** private generation operation and initial query parity
+3. **DC-005G retrieval policy:** private generation operation and initial query parity
    are complete; expand the corpus and define deliberate global current/historical
    visibility before redirecting existing DataCore or unified search.
-3. **KC-001 claim/entity projection:** import donor lessons without treating model
+4. **KC-001 claim/entity projection:** import donor lessons without treating model
    output as truth.
-4. **FileOS effect broker:** last, after read-side parity and explicit safety ADRs.
+5. **FileOS effect broker:** last, after read-side parity and explicit safety ADRs.
 
 ## Cutover and rollback
 

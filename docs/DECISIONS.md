@@ -8,6 +8,13 @@ The documentation refresh changes explanations/navigation, not runtime privilege
 ADR-035 now defines the separate approved PDF source-to-search channel for ready
 mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion.
 
+## Proposed for review
+
+[ADR-111](adr/111_fileos_donor_policy_shadow.md) adds an isolated read-only
+FOS scanner-policy shadow profile. It changes no publishable FileOS snapshot,
+completion policy, operator, or FOS-Master behavior; donor-policy adoption and
+live-source acceptance remain separate decisions.
+
 ## Accepted
 
 [ADR-109](adr/109_tenant_database_routing.md) adds an opt-in API service path
