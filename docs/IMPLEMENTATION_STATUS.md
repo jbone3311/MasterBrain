@@ -57,7 +57,8 @@ production and FileOS cutover remain open.
   `dataless` and `oversize` rows remain deferred with no version or digest. The
   v1 importer rejects the candidate. Focused tests and a local pinned-donor
   3,000-file comparison pass with 3,004 exact hashed and metadata-only matches;
-  hosted branch checks and any publishable v2 transition remain pending.
+  exact-head and merged-main CI/restore pass via PR #50. Any publishable v2
+  transition remains pending.
 - Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
   database and temporary fictional root. It verifies common hashes/sizes, six current
   policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;
