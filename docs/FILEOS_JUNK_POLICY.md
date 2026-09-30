@@ -16,8 +16,10 @@ The live-donor loader suppresses Python bytecode-cache writes while importing th
 pinned module, so comparison does not create cache files in the donor checkout.
 
 This is **extracted and parity-tested, not integrated** into `snapshot_tree`,
-`dedup`, reconciliation or publication. The copied function classifies names and
-relative paths in memory; it does not read or change files or databases. The live
+`dedup`, reconciliation or publication. ADR-111's separate, nonpublishing
+donor-policy shadow inventory now consumes the classifier for comparison only.
+The copied function classifies names and relative paths in memory; it does not
+read or change files or databases. The live
 donor harness compares all public classifications and directory pruning over 3,000
 deterministic synthetic paths. Run it with:
 

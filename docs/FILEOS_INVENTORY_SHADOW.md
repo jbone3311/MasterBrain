@@ -108,6 +108,32 @@ Hosted [CI 35857585834](https://github.com/jbone3311/MasterBrain/actions/runs/35
 passed on PR #17's code head; donor-specific tests skip on hosted CI without a
 FOS-Master checkout.
 
+## DC-002G isolated donor-policy profile
+
+ADR-111 proposes a second, **nonpublishing** DataCore comparison path. It uses the
+extracted donor classifier to prune junk/operational directories and junk files,
+retains hidden content and `.db` files, hashes ordinary files within the donor's
+2 GiB limit through DataCore's no-follow confined reader, and labels oversize,
+simulated dataless and explicit no-hash rows as metadata-only. Its output has a
+`shadow_profile` marker and `publishable: false`; it is not a `snapshot_tree`
+manifest and cannot be completed or indexed.
+
+Run only against a synthetic temporary root and a pinned donor checkout:
+
+```sh
+PYTHONPATH=src python3 scripts/fileos_donor_policy_shadow.py \
+  --fos-repo ../FOS-Master --stress-files 3000
+```
+
+The local comparison matched 3,004 ordinary path/size/SHA rows (3,000 generated,
+four fixed), 3,004 replay rows, one changed-file replay, and 3,004 explicitly
+metadata-only no-hash rows. Six excluded locators are accounted separately. A
+100 MiB + 1 sparse file is hashed by both scanners; a 2 GiB + 1 sparse file is
+metadata-only and **not** counted as hash parity. The intentional symlink refusal,
+real cloud placeholders, unreadable directories, platform filename collisions,
+source-root races and mass-loss behavior remain separate acceptance gates. This
+does not change the six-difference snapshot-v1 baseline above or FOS-Master.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,
