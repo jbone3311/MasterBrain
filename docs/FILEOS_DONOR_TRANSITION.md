@@ -83,6 +83,19 @@ operation. Its immutable receipt records historical verification, not a v2
 completed run: v1 freshness, absence, search and policy remain unchanged.
 There is no API/CLI route or live-source/cutover acceptance.
 
+DC-002Q adds a private `FileOSV2EvidencePreparer.prepare(worker, stage_id,
+approval_id, verification_id, preparation_id, root)` under
+[ADR-121](adr/121_fileos_v2_prepared_evidence.md). It rechecks the current v1
+receipt and historical review/verification, then performs another exact
+source-bound donor scan under the source lock. Only hashed rows receive
+policy-scoped shared DataCore versions and source-bound evidence. An immutable
+mapping retains each donor candidate version ID; it does not reuse that ID
+because v1's immutable version metadata includes mtime. Deferred, excluded
+and error rows receive no invented evidence. The preparation receipt does
+not update a current pointer, complete v2, create absence, activate an index,
+change search or authorize a FileOS switch. No API/CLI or live-source use is
+accepted.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |
@@ -115,8 +128,8 @@ the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 
-The staged row model solves the metadata-only database shape, but not v2
-freshness or publication. Before any switch, define and test an explicit
+The staged row model and hashed-evidence preparation solve part of v2 intake,
+but not v2 freshness or publication. Before any switch, define and test an explicit
 owner-reviewed v1-to-v2 baseline transaction, absence suppression across the
 policy boundary, rollback, PostgreSQL/RLS/restore behavior, broader platform
 and cloud-placeholder parity, authorized read-only live shadow, and bounded

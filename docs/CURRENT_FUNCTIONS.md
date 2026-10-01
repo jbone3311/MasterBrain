@@ -51,6 +51,10 @@ Brain API/CLI route, no live-source acceptance and no v2 publication consumer.
 `FileOSV2BaselineVerifier` separately rechecks that approval against a fresh
 bounded root scan and records an immutable verification receipt. It is worker-
 only, has no API/CLI route, and leaves current v1 reads and policy untouched.
+`FileOSV2EvidencePreparer` takes a third exact scan under the source lock and
+prepares only hashed observations as policy-scoped DataCore versions/evidence,
+with an immutable donor-to-prepared mapping. It is private and worker-only;
+hashless rows stay hashless, and no completed v2 or current search state changes.
 
 ## Operator and shared processing functions
 

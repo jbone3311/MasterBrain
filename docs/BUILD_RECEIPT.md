@@ -2,6 +2,43 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002Q FileOS v2 hashed-evidence preparation — branch validation
+
+Branch `codex/fileos-v2-evidence-preparation` starts from merged `main`
+`91f3e33f6617f8fe791f84d4a041c4fe1f8f701c`, whose full CI, strict
+runtime and populated restore passed. ADR-121 and migration 0042 add a
+worker-only third exact source scan and a policy-scoped mapping from donor
+candidate versions to shared DataCore versions/evidence. A local regression
+caught that reusing candidate IDs would conflict with v1's immutable mtime
+metadata; the final mapping preserves both v1 import compatibility and donor
+provenance. Hashless rows gain no fabricated evidence. The operation does not
+complete v2 or change current v1 pointers, search, freshness, absence, source
+files or FOS-Master.
+
+Disposable local PostgreSQL 17.11 final full suite: **2,893 passed, one skipped**
+in 127.62 seconds (456 PostgreSQL-marked cases collected, 455 executed). The
+3,000-hashed-row end-to-end preparation stress test passed separately in
+24.53 seconds and again in that full suite. An earlier fixture completed all
+3,000 rows through the legacy v1 receipt before testing the new v2 path; in
+module/full-suite runs that fixture intermittently hit the 5-second statement
+budget in the prior-ledger review query. In isolation the query measured about
+25 ms. The final fixture keeps one completed v1 item and adds 2,999 donor-only
+hashed candidates, still stressing 3,000 prepared evidence rows without
+conflating this tranche with legacy v1 completion load. No runtime timeout was
+increased. The older v1 large-completion performance remains a separate issue
+to investigate. Ruff and strict mypy over 91 source
+files, 134 browser tests, deployment gate and offline documentation inventory
+passed. The pinned FOS-Master donor remains clean at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`; 3,000-file donor-policy
+shadow had 3,004 ordinary/hashless matches, 3,006 prior-v1 classifications,
+six explicit policy gaps and zero unexplained membership differences. The
+3,000-file shared hash/extraction parity harness also passed. The first full
+local suite exposed a macOS-specific hidden editable-install `.pth` flag in
+three isolated subprocess tests; a non-editable local package install restored
+those tests, and the final full suite passed. This branch has no hosted CI,
+container or populated-restore claim yet; no version tag is warranted for
+this internal preparation step.
+
 ## ADR-120 isolated-controller failure diagnostics — merged verification
 
 Branch `codex/mime-sandbox-failure-diagnostics` starts from merged `main`

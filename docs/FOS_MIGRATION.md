@@ -70,6 +70,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002N nonpublishing v2 inventory staging | Same pinned scanner; no donor edit | migration 0039, `persistence.py`, ADR-117 | hashed/deferred/excluded/error SQL shape, locked packet binding, 3,000 hashless row stress, count balance, replay, RLS and nonpublication | Merged via PR #61; exact-head and merged-main CI/strict/restore green; no v2 completion or switch |
 | DC-002O human transition review receipt | Same pinned scanner; no donor edit | migration 0040, `fileos_transition_approval.py`, ADR-118 | exact plan/row/digest/count recheck, human owner scope, blocker and stale-run refusal, immutable/RLS receipt, no publication | Merged via PR #63; exact-head and merged-main CI/strict/restore green after one intermittent container rerun (issue #64); no v2 baseline transaction or switch |
 | DC-002P approved-stage fresh verification | Same pinned scanner; no donor edit | migration 0041, `fileos_v2_baseline.py`, ADR-119 | worker scope, fresh exact row/root/policy match, stale-run and changed-source refusal, immutable/RLS receipt, no publication | Merged via PR #66; local full suite, 3,000-file pinned-donor shadow and PR CI/strict/restore green; merged-main full CI passed on attempt 2 after issue #64 MIME recurrence on attempt 1; no v2 importer, completion or switch |
+| DC-002Q v2 evidence preparation | Same pinned scanner; no donor edit | migration 0042, `fileos_v2_preparation.py`, ADR-121 | third fresh scan, policy-scoped candidate-to-DataCore version map, hashed evidence, hashless preservation, v1-import compatibility, replay/lock/RLS/nonpublication | Branch validation in progress; no v2 completion, current-read switch or FileOS cutover |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
@@ -128,14 +129,20 @@ completed v2 baseline, deletion evidence, live-root attestation or cutover.
 DC-002P rechecks that approval and performs a fresh source scan while holding
 the source lock. Exact staged-row parity produces a historical verification
 receipt, still not a completed v2 run, continuing root attestation or cutover.
+DC-002Q rechecks the historical artifacts and performs another exact, bounded
+source scan under that lock. Hashed rows become policy-scoped shared evidence
+with an immutable candidate-to-prepared mapping. This avoids colliding with
+v1's mtime-bearing immutable version while keeping hashless rows hashless.
+It changes no current pointer, v1 run, absence or search result.
 
 ## Proposed next tranches
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then
    extend fault/platform acceptance. ADR-119 adds fresh approval-bound source
-   verification but no publishable v2 state. A separate ADR is still required
-   for v2 evidence intake, completion, visibility, rollback and cutover.
+   verification, and ADR-121 prepares hashed evidence without publishing it.
+   Separate ADRs are still required for v2 completion, owner publication
+   authority, visibility, absence suppression, rollback and cutover.
 2. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
    implemented. Extend format-specific corpora, containment, donor shadow and
    reviewed selection before any automatic fan-out or cutover.

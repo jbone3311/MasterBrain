@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added a private, worker-scoped FileOS v2 hashed-evidence preparation path
+  (ADR-121, migration 0042). It rescans the approved stage, maps donor IDs
+  to policy-scoped DataCore versions and preserves hashless rows without
+  changing v1 current state, search, freshness or absence. A test caught and
+  prevented v1 version-metadata collision; v2 completion and publication
+  remain separate.
 - Added fixed-code failure-stage warnings for the trusted restricted-container
   controller (ADR-120) and secret-scrubbing regressions. `MimeUnavailable`,
   isolation limits and retry policy remain unchanged; issue #64 stays open.

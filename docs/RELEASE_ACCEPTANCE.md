@@ -90,6 +90,10 @@ production or FileOS cutover gates below.
 
 ## FileOS cutover gates
 
+- Donor-policy v2 hashed evidence has an exact candidate-to-prepared mapping;
+  hashless rows remain without invented versions. A separately owner-authorized
+  v2 completion/visibility transaction proves current-state and absence
+  semantics across the policy boundary; ADR-121 preparation alone does not.
 - Pinned donor provenance and inventory are complete.
 - Golden, fault-injection, scale and read-only shadow comparisons pass.
 - Safe-effect broker equivalence is proven separately if effects are in scope.

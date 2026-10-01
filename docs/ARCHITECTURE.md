@@ -74,6 +74,12 @@ rechecks its physical root, source intake records an immutable digest, and
 completion requires it to match the source and prior receipt. Old sources with
 evidence and unknown roots need a reviewed baseline transition. The digest is
 private metadata, not a Brain API field (ADR-098).
+The donor-policy v2 transition is separate from v1 completion. After exact
+owner review and historical verification, ADR-121 permits a worker-only,
+locked fresh rescan to prepare policy-scoped source versions and source-bound
+evidence. A sealed mapping retains each donor candidate identity; the v1
+current pointer and completed-run ledger remain unchanged. Preparation is not
+v2 completion, current visibility or cutover.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for
