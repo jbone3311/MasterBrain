@@ -96,6 +96,16 @@ not update a current pointer, complete v2, create absence, activate an index,
 change search or authorize a FileOS switch. No API/CLI or live-source use is
 accepted.
 
+DC-002R adds a private `FileOSV2BaselineAuthorizer.authorize(human, stage_id,
+approval_id, preparation_id, authorization_id, ...)` under
+[ADR-123](adr/123_fileos_v2_baseline_authorization.md). A human owner with a
+distinct authorization scope and evidence-read permission binds the exact
+reviewed plan, count maps and prepared evidence digest after a latest-v1
+recheck. The immutable receipt authorizes a future baseline completion attempt,
+not publication by itself. It makes no fresh filesystem claim and changes no
+current pointer, search, freshness, absence or FileOS operation. There is no
+API/CLI route or live-source acceptance.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |
@@ -128,9 +138,10 @@ the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 
-The staged row model and hashed-evidence preparation solve part of v2 intake,
-but not v2 freshness or publication. Before any switch, define and test an explicit
-owner-reviewed v1-to-v2 baseline transaction, absence suppression across the
+The staged row model, hashed-evidence preparation and owner authorization solve
+part of v2 intake, but not v2 freshness or publication. Before any switch,
+define and test a fresh, source-locked v1-to-v2 baseline completion transaction,
+absence suppression across the
 policy boundary, rollback, PostgreSQL/RLS/restore behavior, broader platform
 and cloud-placeholder parity, authorized read-only live shadow, and bounded
 cohort acceptance. A green synthetic preview alone cannot satisfy those gates.

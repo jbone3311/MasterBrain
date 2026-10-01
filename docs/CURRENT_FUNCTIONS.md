@@ -55,6 +55,9 @@ only, has no API/CLI route, and leaves current v1 reads and policy untouched.
 prepares only hashed observations as policy-scoped DataCore versions/evidence,
 with an immutable donor-to-prepared mapping. It is private and worker-only;
 hashless rows stay hashless, and no completed v2 or current search state changes.
+`FileOSV2BaselineAuthorizer` separately lets a human owner bind one exact
+prepared stage to a future baseline attempt. It has no API/CLI route or
+live-source acceptance and does not publish v2 or change current reads.
 
 ## Operator and shared processing functions
 

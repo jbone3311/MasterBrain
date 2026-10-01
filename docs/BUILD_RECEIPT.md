@@ -2,6 +2,31 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002R FileOS v2 owner baseline authorization — branch verification
+
+ADR-123, migration 0044 and the private `FileOSV2BaselineAuthorizer` add a
+separate human-owner decision bound to the exact reviewed plan, preparation
+digest and count maps. A PostgreSQL source-lock trigger refuses a stale v1
+baseline even for direct SQL inserts, and composite foreign keys bind the
+preparation and acknowledged counts. Forced RLS, tenant-login fencing,
+immutability and protected truncation apply. This is an authorization for a
+future completion attempt, **not** v2 completion, current search, absence,
+live-root acceptance or FOS-Master cutover.
+
+On a fresh disposable local PostgreSQL 17.11 database, the focused
+authorization regression passed, including wrong scope/client/digest,
+idempotent replay, changed identity, wrong tenant, stale v1 and no-current-
+publication checks. The populated upgrade/restore and protected-truncation
+suite passed after its catalog-count expectation was updated for the new
+table. The complete local suite passed **2,894 tests, one skipped** in
+285.62 seconds, with 456 of 457 PostgreSQL-marked tests executed. Locked
+dependency synchronization, Ruff, strict mypy over 92 source files, 134
+browser tests, documentation inventory and the local deployment quality gate
+passed. Hosted exact-head CI, strict runtime and populated restore are
+pending; this section must be updated with their exact links and merge commit
+before treating the tranche as landed. No version tag is warranted for an
+internal nonpublishing authority receipt.
+
 ## DC-005N linear FileOS v1 completion ledger — merged verification
 
 PR [#73](https://github.com/jbone3311/MasterBrain/pull/73) merged at

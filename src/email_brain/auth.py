@@ -36,6 +36,7 @@ SCOPES = frozenset(
         "brain.fileos.transition.review",
         "brain.fileos.transition.verify",
         "brain.fileos.transition.prepare",
+        "brain.fileos.transition.authorize",
         "knowledge.search",
         "knowledge.read",
         "knowledge.changes.read",
@@ -89,7 +90,12 @@ class TokenRegistry:
             raise ValueError("duplicate credential digest")
         if any(
             c.client_kind != "human"
-            and {"email.review", "knowledge.review", "brain.fileos.transition.review"}
+            and {
+                "email.review",
+                "knowledge.review",
+                "brain.fileos.transition.review",
+                "brain.fileos.transition.authorize",
+            }
             & c.scopes
             for c in credentials
         ):

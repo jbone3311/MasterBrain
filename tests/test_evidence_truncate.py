@@ -241,6 +241,7 @@ def protected_database(
             "0041_fileos_v2_baseline_verification.sql",
             "0042_fileos_v2_prepared_evidence.sql",
             "0043_fileos_run_ledger_linear_validation.sql",
+            "0044_fileos_v2_baseline_authorizations.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:
@@ -263,13 +264,13 @@ def test_historical_owner_gap_reproduced_only_inside_rollback(
     assert _record_counts(dsn, tenant_id) == before
 
 
-def test_catalog_has_exact_63_plus_three_statement_guards(
+def test_catalog_has_exact_64_plus_three_statement_guards(
     protected_database: tuple[str, str, dict[str, UUID | int]],
 ) -> None:
     admin_dsn, _, _ = protected_database
     with psycopg.connect(admin_dsn) as conn:
         row_guarded = _guarded_tables(conn)
-        assert len(row_guarded) == 63
+        assert len(row_guarded) == 64
         assert not (row_guarded & SPECIAL)
         rows = conn.execute(
             "SELECT c.relname,t.tgname,t.tgenabled,t.tgisinternal,t.tgtype,"
@@ -278,7 +279,7 @@ def test_catalog_has_exact_63_plus_three_statement_guards(
             "JOIN pg_namespace n ON n.oid=c.relnamespace "
             "WHERE n.nspname='public' AND (t.tgtype & 32)=32"
         ).fetchall()
-    assert len(rows) == 66
+    assert len(rows) == 67
     assert {row[0] for row in rows} == row_guarded | SPECIAL
     assert all(
         name == "protected_no_truncate"
@@ -319,7 +320,7 @@ def test_every_protected_table_refuses_cascaded_truncate(
     before = _record_counts(admin_dsn, tenant_id)
     with psycopg.connect(admin_dsn) as conn:
         targets = sorted(_guarded_tables(conn) | SPECIAL)
-    assert len(targets) == 66
+    assert len(targets) == 67
     with psycopg.connect(admin_dsn, autocommit=True) as conn:
         for table in targets:
             with pytest.raises(psycopg.errors.RaiseException, match=REJECTION):

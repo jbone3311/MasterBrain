@@ -186,6 +186,13 @@ mapping receipt. No current pointer, v1 completion, change feed, index, search,
 absence or source effect is written. Prepared source-bound evidence is not an
 original byte copy or permission to publish a v2 baseline.
 
+ADR-123 adds a separate human-only `brain.fileos.transition.authorize` scope
+plus evidence-read permission. Under the source lock it rechecks the exact
+latest v1 receipt, reviewed stage and prepared evidence digest before sealing
+one immutable, forced-RLS, tenant-login-fenced owner receipt. This is authority
+for a future explicitly designed baseline attempt only; it does not attest
+current root bytes, complete v2, change reads or infer deletion.
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.
