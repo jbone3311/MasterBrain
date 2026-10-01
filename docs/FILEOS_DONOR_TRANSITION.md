@@ -60,6 +60,19 @@ counts at commit. One packet stages once, with idempotent same-ID replay. This
 is a nonpublishing staging shape, not a v2 completion or transition approval;
 v1 freshness, absence, indexes and search remain unchanged.
 
+DC-002O adds an internal `FileOSV2TransitionReview.plan(ctx, stage_id)` and
+`approve(human_principal, stage_id, approval_id, ...)` under
+[ADR-118](adr/118_fileos_v2_transition_review_approval.md). The compact plan
+revalidates the sealed packet, candidate, staged rows, prior item ledger,
+latest v1 receipt and root binding. It exposes counts and fixed blocker codes,
+not locators. Approval requires a human owner with the separate transition
+review and evidence scopes, the exact canonical plan digest and both count
+maps. Prior snapshot/scan errors, unobserved and error-covered prior items
+block approval; deferred and excluded observations are visible and explicitly
+acknowledged, never interpreted as deletion. One immutable receipt records
+the decision. This remains synthetic/disposable, private and nonpublishing;
+it is not the future v1-to-v2 baseline transaction or a live-root attestation.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |

@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added a private FileOS v2 transition review plan and immutable human-owner
+  approval receipt (ADR-118, migration 0040), bound to the exact staged
+  packet, latest completed v1 receipt, plan digest and acknowledged counts.
+  Hard blockers refuse approval. This is not a v2 publication, deletion
+  inference, live-source approval or donor cutover.
 - Added an immutable, nonpublishing FileOS v2 staging ledger (ADR-117,
   migration 0039). It retains hashed, metadata-only deferred, excluded and
   error observations separately without fabricating versions or changing v1

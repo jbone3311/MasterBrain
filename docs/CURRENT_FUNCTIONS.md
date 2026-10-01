@@ -1,6 +1,6 @@
 # Current MasterBrain functions
 
-Updated 2026-09-25; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
+Updated 2026-10-01; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
 verification. “Available” below means executable in this repository with
 synthetic/disposable inputs; it does **not** mean hosted, connected to real accounts,
 approved for private data, or production accepted. The exact-commit gates are in
@@ -45,6 +45,9 @@ The private DataCore library also supports `stage_fileos_v2_inventory` for one
 sealed donor transition packet. It stores a nonpublishing v2 row ledger with
 hashless observations kept distinct from evidence versions. It has no CLI or
 Brain API route and does not alter any current FileOS read.
+`FileOSV2TransitionReview` can also produce a locator-free, exact staged plan
+and record one synthetic/disposable human-owner approval receipt. This has no
+Brain API/CLI route, no live-source acceptance and no v2 publication consumer.
 
 ## Operator and shared processing functions
 

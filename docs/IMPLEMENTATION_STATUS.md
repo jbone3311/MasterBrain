@@ -16,6 +16,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002O adds a private, nonpublishing FileOS v2 transition plan and an
+  immutable, human-owner approval receipt under ADR-118 and migration 0040.
+  It rechecks the stage and exact latest v1 receipt, binds the decision to a
+  plan digest and complete count maps, and refuses hard blockers or stale
+  baselines. It is synthetic/disposable only; no v2 completion, freshness,
+  absence, search, API, live-root attestation or cutover consumes approval.
 - DC-002N adds private, nonpublishing v2 inventory staging under ADR-117 and
   migration 0039. It projects one sealed transition packet into immutable
   hashed, hashless deferred, exclusion and error rows, with SQL count balance
