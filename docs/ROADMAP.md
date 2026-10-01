@@ -16,6 +16,7 @@ FileOS cutover acceptance is implied.
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
 | KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work | Automatic candidate pipeline, evaluated resolution, complete project/commitment reducers, rebuild and freshness proof |
 | Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; fictional browser trial is merged | Cited answer synthesis, common client adapter/conformance, full byte/token budgets and revocation proof across caches |
+| Owner chat and external assistants | The same Brain API is the intended boundary; no certified assistant connection or conversational workspace exists | Build one first-party chat and at least one external client against identical scoped read contracts; verify citations, freshness, denial and revocation |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
 | FileOS replacement and effects | No cutover or source effects | Sustained donor shadow, bounded rollback-ready cohort, owner sign-off; effects require a separate later approval |
 
@@ -88,12 +89,12 @@ Security and data-integrity blockers take priority over adding more surface area
    to the exact preparation and plan. DC-002S now seals a fresh,
    source-locked private completion ledger with a compact inspection.
    DC-002T publishes and accounts for normalized documents on the prepared
-   v2 evidence without activating them as current. ADR-126 defines the next
-   private tranche: an exact v2 generation in shared DataCore index tables
-   with database-enforced activation refusal. DC-002U now implements that
-   private builder on a verification branch; current visibility, later v2-run
-   behavior, absence suppression,
-   rollback and live acceptance remain separate decisions before any switch.
+   v2 evidence without activating them as current. DC-002U (ADR-126) adds an
+   exact private v2 generation in shared DataCore index tables with
+   database-enforced activation refusal. PR #81 merged with exact-head and
+   merged-main gates green. Current visibility, later v2-run behavior, absence
+   suppression, rollback and live acceptance remain separate decisions before
+   any switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container
@@ -113,6 +114,11 @@ FileOS cutover. The separate `v0.2.0a1` tag is synthetic-only.
   common Claude/Grok/ChatGPT conformance suite are specified and tested. The
   REST Brain API is the current source of truth; no assistant integration is
   certified today.
+- **Owner conversational workspace:** put natural-language Email, FileOS and
+  KnowledgeCore questions in a first-party MasterBrain chat that calls the same
+  scoped API as external clients. Make search and evidence expansion useful without
+  a model, then add cited synthesis with visible freshness/coverage and a path to
+  the original. Prove the native and external surfaces agree on a shared corpus.
 - **Hosted read-only acceptance:** choose region/budget, retention, enrollment,
   sharing and first source with the owner; deploy private storage/keys, supervised
   workers, protected telemetry and real backup/restore. Pilot one disposable
@@ -122,8 +128,10 @@ FileOS cutover. The separate `v0.2.0a1` tag is synthetic-only.
   reversible cohort with owner sign-off. Rename or retirement is a separate
   later decision.
 - **Reviewed effects:** design typed preview, policy, approval, idempotent
-  execution, quarantine and rollback for selected actions. No autonomous send,
-  permanent deletion or mass file movement is in the initial release.
+  execution, quarantine and rollback for selected Email and FileOS actions. Both
+  chat and external clients may propose actions, but only separately scoped
+  executors can change a source. No autonomous send, permanent deletion or mass
+  file movement is in the initial release. See [the interface contract](USER_INTERFACES.md).
 
 ## Checkpoint discipline
 

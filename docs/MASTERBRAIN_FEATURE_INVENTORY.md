@@ -1,9 +1,9 @@
 # MasterBrain Feature Inventory
 
-Updated 2026-09-25. The latest verified `main` checkpoint is `1e081ea`; see
-[current callable functions](CURRENT_FUNCTIONS.md) and the
-[exact-commit receipt](BUILD_RECEIPT.md). This inventory is broader than a user
-workflow: a separately available library or operator is not a hosted product.
+Updated 2026-10-01. See [current callable functions](CURRENT_FUNCTIONS.md) and
+the [exact-commit receipt](BUILD_RECEIPT.md) for verified checkpoints. This
+inventory is broader than a user workflow: a separately available library or
+operator is not a hosted product.
 
 Status vocabulary: **implemented** means executable in this repository;
 **parity-proven** means identical observable results against a pinned donor corpus;
@@ -35,6 +35,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Archive-contained image OCR | Isolated worker, exact member composition, retained-history derivative, private one-member command and distinct current-only OCR search implemented; no automatic fan-out | DataCore + Brain API |
 | FileOS | Authenticated idempotent snapshot publication | Explicit one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Explicit index generation and rollback | Private one-shot command; hosted SQL/restore green | DataCore operator |
+| FileOS | Private v2 generation in shared index tables | Merged historical builder; exact-head/merged-main gates green; v2 activation and current reads refused | DataCore |
 | FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
 
 ## DataCore
@@ -78,8 +79,10 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |
 | Change feeds | Cursor-based non-consuming updates by layer | DataCore and KnowledgeCore feeds implemented |
 | Client neutrality | Same typed contract for Claude, Grok, ChatGPT, other LLMs | Model-neutral REST routes implemented; no certified MCP/client adapter or cross-client conformance yet |
+| First-party chat | Ask across Email, FileOS and KnowledgeCore through the same scoped Brain API, with cited answers and evidence drill-down | Planned; the fictional browser search trial is not a conversational product |
+| External assistant access | Separately authorized API/adapter with the same grants, freshness and evidence behavior as first-party chat | REST prototype only; no certified Grok/Claude/ChatGPT connection or hosted access |
 | Budget controls | max results/bytes/tokens, field selection, continuation | Selected result/text/page bounds implemented; common token/field-budget contract planned |
-| Effects | Typed proposal → policy → preview → approval → executor | Designed; no broad effects enabled |
+| Effects | Typed proposal → policy → preview → approval → separate executor, with receipts and recovery | Designed; no source-write authority enabled for chat or external assistants |
 
 ## Platform, privacy, and operations
 
