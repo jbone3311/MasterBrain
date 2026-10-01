@@ -43,6 +43,7 @@ from email_brain.synthetic import fake_email
 from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain import archive_member_controller as archive_controller
 from masterbrain.datacore import fileos_donor_transition as transition_module
+from masterbrain.datacore import fileos_v2_document_publication as document_publication_module
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
 from masterbrain.datacore.archive_member_contract import decode_result as decode_member_result
 from masterbrain.datacore.archive_member_contract import encode_request as encode_member_request
@@ -63,6 +64,7 @@ from masterbrain.datacore.fileos_transition_approval import FileOSV2TransitionRe
 from masterbrain.datacore.fileos_v2_authorization import FileOSV2BaselineAuthorizer
 from masterbrain.datacore.fileos_v2_baseline import FileOSV2BaselineVerifier
 from masterbrain.datacore.fileos_v2_completion import FileOSV2BaselineCompleter
+from masterbrain.datacore.fileos_v2_document_publication import FileOSV2DocumentPublisher
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
@@ -5804,7 +5806,8 @@ def test_fileos_v2_baseline_verification_keeps_metadata_only_hashless(
 
 
 def test_fileos_v2_preparation_adds_evidence_without_current_publication(
-    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store, admin = database
     ctx = datacore_context(tenant[0])
@@ -6119,7 +6122,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             conn.execute("TRUNCATE brain_fileos_v2_baseline_authorizations CASCADE")
     with psycopg.connect(admin) as conn:
         with pytest.raises(psycopg.Error, match="protected record"):
-            conn.execute("TRUNCATE brain_fileos_v2_baseline_completions")
+            conn.execute("TRUNCATE brain_fileos_v2_baseline_completions CASCADE")
     with pytest.raises(psycopg.Error):
         with store.transaction(ctx) as conn:
             conn.execute(
@@ -6185,6 +6188,122 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             ), stage_id, approval_id, preparation_id,
             authorization_id, uuid4(), tmp_path,
         )
+    publisher = FileOSV2DocumentPublisher(core)
+    publication_worker = Principal(
+        replace(completion_worker.context, scopes=completion_worker.context.scopes | frozenset({
+            "brain.fileos.transition.publish", "brain.document.publish",
+        })),
+        "worker",
+    )
+    attempt_id = uuid4()
+    with pytest.raises(AccessDenied, match="worker required"):
+        publisher.publish(authorizing_human, completion_id, attempt_id, tmp_path,
+                          code_revision="test-v2-documents")
+    with pytest.raises(AccessDenied, match="scope denied"):
+        publisher.publish(completion_worker, completion_id, attempt_id, tmp_path,
+                          code_revision="test-v2-documents")
+    changed.write_bytes(b"synthetic publication drift")
+    with pytest.raises(Conflict, match="source changed"):
+        publisher.publish(publication_worker, completion_id, attempt_id, tmp_path,
+                          code_revision="test-v2-documents")
+    changed.write_bytes(b"synthetic changed proof")
+    original_extract = document_publication_module.extract_source_version
+
+    def failed_second(root: Path, item: dict[str, Any]) -> ExtractionResult:
+        if item["locator"] == "new.txt":
+            return ExtractionResult(item["version_id"], item["locator"], ExtractionStatus.FAILED)
+        return original_extract(root, item)
+
+    monkeypatch.setattr(document_publication_module, "extract_source_version", failed_second)
+    blocked_id = uuid4()
+    blocked = publisher.publish(publication_worker, completion_id, blocked_id, tmp_path,
+                                code_revision="test-v2-documents")
+    assert blocked.ready is False
+    assert blocked.counts["extracted"] == 1
+    assert blocked.counts["failed"] == 1
+    assert publisher.publish(publication_worker, completion_id, blocked_id, tmp_path,
+                             code_revision="test-v2-documents") == replace(blocked, recorded=False)
+    with pytest.raises(psycopg.errors.RaiseException, match="document attempt counts"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_document_attempts(tenant_id,id,actor_id,"
+                "completion_id,stage_id,source_id,prior_run_id,root_binding_sha256,"
+                "completion_sha256,hashed_count,code_revision,text_extractor_version,"
+                "document_processor_version,counts,ready,observed_at,attempt_sha256) "
+                "SELECT tenant_id,%s,actor_id,completion_id,stage_id,source_id,prior_run_id,"
+                "root_binding_sha256,completion_sha256,hashed_count,code_revision,"
+                "text_extractor_version,document_processor_version,counts,ready,observed_at,"
+                "attempt_sha256 FROM brain_fileos_v2_document_attempts WHERE id=%s",
+                (uuid4(), blocked_id),
+            )
+    monkeypatch.setattr(
+        document_publication_module, "extract_source_version", original_extract,
+    )
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [
+            pool.submit(
+                publisher.publish, publication_worker, completion_id, attempt_id,
+                tmp_path, code_revision="test-v2-documents",
+            )
+            for _ in range(2)
+        ]
+        completed_attempts = [future.result(timeout=30) for future in futures]
+    assert sorted(attempt.recorded for attempt in completed_attempts) == [False, True]
+    published = next(attempt for attempt in completed_attempts if attempt.recorded)
+    assert published.recorded is True
+    assert published.ready is True
+    assert published.counts["extracted"] == 2
+    assert publisher.publish(
+        publication_worker, completion_id, attempt_id, tmp_path,
+        code_revision="test-v2-documents",
+    ) == replace(published, recorded=False)
+    with pytest.raises(Conflict, match="identity changed"):
+        publisher.publish(publication_worker, completion_id, attempt_id, tmp_path,
+                          code_revision="changed-revision")
+    with pytest.raises(Conflict, match="already ready"):
+        publisher.publish(publication_worker, completion_id, uuid4(), tmp_path,
+                          code_revision="test-v2-documents")
+    with pytest.raises(psycopg.errors.RaiseException, match="sealed FileOS"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_document_attempt_items "
+                "SELECT * FROM brain_fileos_v2_document_attempt_items "
+                "WHERE attempt_id=%s AND locator='new.txt'", (attempt_id,),
+            )
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_document_attempt_items "
+            "WHERE attempt_id=%s AND outcome='extracted'", (attempt_id,),
+        ).fetchone()["n"] == 2
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_index_activations WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 0
+        assert conn.execute(
+            "SELECT current_version_id FROM brain_source_items WHERE source_id=%s "
+            "AND locator='changed.txt'", (source_id,),
+        ).fetchone()["current_version_id"] == prior_version
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 0
+    assert len(core.search(ctx, "synthetic changed proof")) >= 1
+    assert core.fileos_index_status(ctx, source_id)["status"] == "no_active_generation"
+    with pytest.raises(NotFound):
+        publisher.publish(
+            Principal(replace(publication_worker.context, tenant_id=other_tenant,
+                              actor_id=other_actor), "worker"),
+            completion_id, uuid4(), tmp_path, code_revision="test-v2-documents",
+        )
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.Error, match="protected record"):
+            conn.execute("TRUNCATE brain_fileos_v2_document_attempts CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_document_attempt_items SET outcome='failed' "
+                "WHERE attempt_id=%s", (attempt_id,),
+            )
     next_manifest = snapshot_tree(
         tmp_path,
         source_id=source_id,
@@ -6223,6 +6342,12 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             completion_worker, stage_id, approval_id, preparation_id,
             authorization_id, completion_id, tmp_path,
         )
+    with pytest.raises(Conflict, match="identity changed"):
+        publisher.publish(publication_worker, completion_id, attempt_id, tmp_path,
+                          code_revision="changed-revision")
+    with pytest.raises(Conflict, match="requires review"):
+        publisher.publish(publication_worker, completion_id, uuid4(), tmp_path,
+                          code_revision="test-v2-documents")
     with pytest.raises(psycopg.errors.RaiseException, match="stale FileOS"):
         with store.transaction(ctx) as conn:
             conn.execute(
@@ -6362,6 +6487,18 @@ def test_fileos_v2_preparation_keeps_metadata_only_rows_hashless(
     )
     assert completed.counts["hashed"] == 0
     assert completed.counts["deferred"] == 1
+    document_worker = Principal(
+        replace(worker.context, scopes=worker.context.scopes | frozenset({
+            "brain.fileos.transition.publish", "brain.document.publish",
+        })),
+        "worker",
+    )
+    attempt = FileOSV2DocumentPublisher(core).publish(
+        document_worker, completed.completion_id, uuid4(), tmp_path,
+        code_revision="test-v2-metadata-documents",
+    )
+    assert attempt.ready is True
+    assert sum(attempt.counts.values()) == 0
     with store.transaction(ctx) as conn:
         assert (
             conn.execute(
@@ -6386,6 +6523,10 @@ def test_fileos_v2_preparation_keeps_metadata_only_rows_hashless(
             ).fetchone()["n"]
             == 0
         )
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_document_attempt_items "
+            "WHERE attempt_id=%s", (attempt.attempt_id,),
+        ).fetchone()["n"] == 0
 
 
 def test_fileos_v2_preparation_three_thousand_hashed_rows(
@@ -6512,6 +6653,18 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
         tmp_path,
     )
     assert completed.counts["hashed"] == 3000
+    publication_worker = Principal(
+        replace(worker.context, scopes=worker.context.scopes | frozenset({
+            "brain.fileos.transition.publish", "brain.document.publish",
+        })),
+        "worker",
+    )
+    attempt = FileOSV2DocumentPublisher(core).publish(
+        publication_worker, completed.completion_id, uuid4(), tmp_path,
+        code_revision="test-v2-publication-stress",
+    )
+    assert attempt.ready is True
+    assert attempt.counts["extracted"] == 3000
     with store.transaction(ctx) as conn:
         assert (
             conn.execute(
@@ -6535,6 +6688,10 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
             ).fetchone()["n"]
             == 1
         )
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_document_attempt_items "
+            "WHERE attempt_id=%s AND document_id IS NOT NULL", (attempt.attempt_id,),
+        ).fetchone()["n"] == 3000
 
 
 def test_fileos_v2_staging_three_thousand_hashless_rows(

@@ -87,7 +87,9 @@ Security and data-integrity blockers take priority over adding more surface area
    DC-002R adds separately scoped, synthetic-only owner authorization bound
    to the exact preparation and plan. DC-002S now seals a fresh,
    source-locked private completion ledger with a compact inspection.
-   The next tranche must define explicit current visibility and later v2-run
+   DC-002T publishes and accounts for normalized documents on the prepared
+   v2 evidence without activating them as current. The next tranche must
+   define exact v2 index-generation/current visibility and later v2-run
    behavior; absence suppression, rollback and live acceptance remain separate
    decisions before any policy switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict

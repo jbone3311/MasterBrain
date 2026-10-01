@@ -38,6 +38,7 @@ SCOPES = frozenset(
         "brain.fileos.transition.prepare",
         "brain.fileos.transition.authorize",
         "brain.fileos.transition.complete",
+        "brain.fileos.transition.publish",
         "knowledge.search",
         "knowledge.read",
         "knowledge.changes.read",
@@ -112,6 +113,7 @@ class TokenRegistry:
                 "brain.fileos.transition.verify",
                 "brain.fileos.transition.prepare",
                 "brain.fileos.transition.complete",
+                "brain.fileos.transition.publish",
             }
             & c.scopes
             for c in credentials
