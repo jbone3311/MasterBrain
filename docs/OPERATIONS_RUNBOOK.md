@@ -126,6 +126,13 @@ output or failed ownership-checked cleanup leave mail held with no cached attemp
 Do not raise limits silently. Verify no owned orphan remains after a killed host
 process; never prune or delete unrelated containers. A successful recovery does
 not mean binary attachments were extracted or scanned: inspect receipt accounting.
+On a sandbox failure, the trusted controller may emit only
+`isolated_processor_failure` with fixed `profile`, `stage` and `reason` codes
+(ADR-120). Correlate those with the existing job/request ID outside the parser;
+do not log the MIME, path, Docker command/output, image/container ID or raw
+exception. A `deadline` or `cli_exit` code is a starting point for synthetic
+reproduction, not permission to raise budgets or auto-retry. Preserve the
+failed CI attempt and investigate issue #64 before closing it.
 
 If an ordinary searchable message has a deferred PDF/Office attachment, this is
 an unsupported extraction capability, not necessarily a stalled recovery job.

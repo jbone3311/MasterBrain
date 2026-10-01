@@ -16,6 +16,10 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-120 adds content-safe fixed-stage diagnostics to the trusted isolated
+  processor controller while preserving fail-closed `MimeUnavailable` and
+  exact-owned cleanup. This instruments, but does not resolve, intermittent
+  hosted large-MIME failure issue #64; no automatic retry or budget change.
 - DC-002P adds a private, worker-scoped fresh-root verification of one approved
   FileOS v2 stage under ADR-119 and migration 0041. It rechecks the current
   v1 receipt, scans with the pinned donor policy, and requires exact staged-row

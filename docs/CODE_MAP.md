@@ -74,6 +74,7 @@ redirecting Email ingestion or search.
 | Recovery/jobs | [recovery.py](../src/email_brain/recovery.py), [recovery_jobs.py](../src/email_brain/recovery_jobs.py) |
 | Approved document jobs/results | [document_jobs.py](../src/email_brain/document_jobs.py), [migration 0012](../migrations/0012_document_jobs.sql); opt-in search/evidence in Store |
 | Restricted processor/controller | [mime_sandbox.py](../src/email_brain/mime_sandbox.py), [sandbox_runner.py](../src/email_brain/sandbox_runner.py) |
+| Isolated-controller failure diagnostics | [fixed-code stage warnings](../src/email_brain/sandbox_runner.py), [scrubbing tests](../tests/test_sandbox_runner.py), [ADR-120](adr/120_sandbox_failure_stage_diagnostics.md); public failure contract unchanged |
 | Approved-processing operator CLI | [processing_controller.py](../src/email_brain/processing_controller.py) |
 | Separate PDF operator CLI | [document_controller.py](../src/email_brain/document_controller.py); shares private file/identity/storage/polling primitives, not MIME jobs |
 | Separate restricted PDF reader | [pdf_contract.py](../src/email_brain/pdf_contract.py), [pdf_worker.py](../src/email_brain/pdf_worker.py), [pdf_processor.py](../src/email_brain/pdf_processor.py), [Dockerfile.pdf](../Dockerfile.pdf) |

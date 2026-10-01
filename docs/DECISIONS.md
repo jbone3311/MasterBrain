@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-120](adr/120_sandbox_failure_stage_diagnostics.md) permits fixed-code,
+content-safe failure-stage warnings from the trusted isolated-processing
+controller. Public failures remain scrubbed and fail closed; the diagnostic
+does not claim issue #64's intermittent root cause is solved.
+
 [ADR-119](adr/119_fileos_v2_baseline_verification.md) requires a worker-scoped,
 fresh donor-policy scan to match an approved staged inventory exactly before
 recording an immutable verification receipt. It does not publish v2 or switch

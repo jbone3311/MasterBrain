@@ -44,7 +44,11 @@ Security and data-integrity blockers take priority over adding more surface area
    [#34](https://github.com/jbone3311/MasterBrain/issues/34): package/API version
    identity, content-safe application **and PostgreSQL server** logging, bounded
    failure paths, supply chain, operations and exact release evidence. PR #33 is
-   only the API-error first tranche.
+   only the API-error first tranche. ADR-120 instruments the trusted
+   isolated-controller failure stage without changing its scrubbed public
+   outcome; use the next synthetic recurrence to diagnose and resolve
+   [issue #64](https://github.com/jbone3311/MasterBrain/issues/64) before
+   claiming stable hosted container acceptance.
 4. **Extend bounded FileOS derivatives only after review.** Current-only archive-image
    OCR search is implemented under ADR-107 with exact parent/receipt fencing and
    independent Brain API coverage. Automatic selection, fan-out and live-source

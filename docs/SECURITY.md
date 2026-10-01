@@ -37,6 +37,12 @@ status codes without exposing inputs. These local process logs are not a durable
 centralized incident trail; protected collection, retention, alerts and production
 monitoring remain release gates. See [ADR-104](adr/104_privacy_safe_error_observability.md).
 
+ADR-120 adds a warning from the trusted isolated-processing controller with
+only fixed profile/stage/reason codes. Raw MIME, filesystem paths, container
+or image IDs, commands, stdout/stderr, exception messages and tracebacks remain
+excluded. The public `MimeUnavailable` response is unchanged; a warning is
+diagnostic evidence, not proof of a safe retry or a resolved failure.
+
 ## Required controls
 
 - Strong human/service identity, short-lived credentials, explicit enrollment and

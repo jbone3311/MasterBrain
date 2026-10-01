@@ -2,6 +2,25 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-120 isolated-controller failure diagnostics — local validation
+
+Branch `codex/mime-sandbox-failure-diagnostics` starts from merged `main`
+`6f71a7a09ac53a913191214f58b3da656b65f2b2`. The prior `main` full CI,
+strict runtime and restore passed. This change keeps the public fail-closed
+`MimeUnavailable` behavior but emits only fixed profile/stage/reason warnings
+from the trusted controller. Offline tests inject pipe deadline, output limit,
+CLI exit, OOM/nonzero worker exit, invalid response and cleanup faults and
+assert that source text, private exception messages and container IDs are not
+logged. The cause of intermittent issue #64 remains unknown until a new
+instrumented recurrence. Local PostgreSQL 17.11 full suite: **2,890 passed,
+one skipped** (453 PostgreSQL-marked cases collected, 452 executed); 58
+focused controller tests pass. Ruff, formatting, mypy over 90 source files,
+the repository quality gate, 134 browser tests and offline documentation
+inventory (214 Markdown files, 1,164 local paths/fragments) pass. No local
+Docker is installed, so the real-container proof must come from hosted CI.
+No version tag is warranted for this diagnostic-only increment; issue #64
+remains open and this is not a release.
+
 ## DC-002P approved-stage fresh verification — merged verification
 
 Branch `codex/dc-002p-v2-baseline-verification` starts from merged `main`
