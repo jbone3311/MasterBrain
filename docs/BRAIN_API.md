@@ -8,6 +8,8 @@ The first-party read-only workspace at `/brain` uses these same scoped resources
 it is not a second, privileged retrieval or action backend. It displays lexical
 search results in conversation form, not generated answers. Full chat synthesis
 and external-client acceptance remain targets [documented separately](USER_INTERFACES.md).
+ADR-128's FileOS v2 search comparison is an internal, human-review method, not
+a Brain API route or evidence of current v2 visibility.
 
 ## Progressive access
 

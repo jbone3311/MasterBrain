@@ -75,6 +75,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002S private v2 baseline completion | Same pinned scanner; no donor edit | migration 0045, `fileos_v2_completion.py`, ADR-124 | fresh exact scan, authorization/preparation/stage binding, hashless preservation, 3,000-row stress, RLS/replay/nonactivation | Merged via PR #77; exact-head CI/strict/restore and local full suite green; no current-read switch or cutover |
 | DC-002T v2 document publication readiness | Same pinned scanner/extraction references; no donor edit | migration 0046, `fileos_v2_document_publication.py`, ADR-125 | source-bound text/document processing, exact ready/blocked hashed-row ledger, no current activation | Merged via PR #79; exact-head and merged-main CI/strict/restore green; no v2 current index, absence or cutover |
 | DC-002U private shared v2 generation | Existing DataCore generation/chunk contracts; no donor edit | migration 0047, `fileos_v2_index_generation.py`, ADR-126 | exact ready-attempt item/chunk closure, replay/stale/direct-SQL refusal, 3,000-row stress and v1 regression | Merged in PR #81 with exact-head and merged-main CI/strict/restore green; SQL bars v2 activation, so no current-read switch, absence or cutover |
+| DC-002V private v2 search comparison | Existing DataCore lexical query; no donor edit | `fileos_v2_index_generation.py`, `persistence.py`, ADR-128 | human-only exact-generation preview, stale/tenant/scope refusal, active-v1 separation and 3,000-row bounded query | Branch implementation under verification; no public route, activation, absence or donor cutover |
 | DC-005N linear v1 completed ledger | Existing v1 FileOS run semantics; no donor edit | migration 0043, `persistence.py`, ADR-122 | items-before-receipt, one deferred whole-run check, source-locked item and receipt triggers, replay/direct SQL/3,000-item stress | Merged via PR #73; exact-head CI/strict/restore green; controlled performance comparison remains issue #71; no v2 publication or FileOS cutover |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
@@ -159,7 +160,8 @@ dependency of v2 indexing, not a current-read or policy switch.
    ADR-123 adds owner authorization for an exact prepared baseline attempt.
    ADR-124 adds a private completed baseline. ADR-125 adds document readiness.
    ADR-126's private shared-table v2 generation readiness is merged;
-   activation remains barred. Separate ADRs are still
+   ADR-128 compares its historical search with active v1 under human-only
+   review; activation remains barred. Separate ADRs are still
    required for current visibility, later v2 runs, absence suppression,
    rollback and cutover.
 2. **DC-004C archives/images/OCR:** explicit isolated workers and current read are

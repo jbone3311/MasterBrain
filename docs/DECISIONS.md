@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-128](adr/128_private_fileos_v2_search_preview.md) permits a scoped,
+human-only comparison of one ready historical FileOS v2 generation with the
+active v1 generation. It does not add a public route, activate v2 or attest
+live-root freshness.
+
 [ADR-127](adr/127_first_party_read_workspace.md) defines a first-party,
 read-only conversation-shaped search workspace over the existing scoped Brain
 API. It adds no model synthesis, source effects, stored history or privilege.

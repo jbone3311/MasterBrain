@@ -38,6 +38,13 @@ has no model call, source-effect control, stored transcript, direct SQL or
 provider credential. These controls do not establish hosted identity,
 revocation across future derived caches or live-source acceptance.
 
+ADR-128's FileOS v2 search comparison is not in that workspace or the public
+Brain API. It requires a human transition reviewer plus search and evidence
+grants, binds one ready historical generation to the latest v1 baseline under
+the source lock, emits a content-free audit event, and labels v2 results as a
+preview. It cannot activate v2 or give an external assistant an alternate
+route around current-search policy.
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,
