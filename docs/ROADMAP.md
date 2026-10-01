@@ -73,7 +73,7 @@ Security and data-integrity blockers take priority over adding more surface area
    hashless deferred, excluded and error observations. It does not change
    current FileOS state; owner-reviewed transition, v2 freshness/absence,
    rollback and live shadow remain separate gates.
-   PRs #52, #55, #57 and #59 are merged with final-head and merged-main CI, strict
+   PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green; v2 publication remains a separate step.
 
 The first three tranches can be reviewed independently of 5D implementation.
