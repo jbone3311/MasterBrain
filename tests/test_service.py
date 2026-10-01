@@ -59,7 +59,13 @@ def test_search_and_headers(client: TestClient) -> None:
     assert "frame-ancestors 'none'" in response.headers["Content-Security-Policy"]
 
 
-@pytest.mark.parametrize("path", ["/", "/app.js", "/document_review.js", "/style.css"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/", "/app.js", "/document_review.js", "/style.css",
+        "/brain", "/brain.js", "/brain.css",
+    ],
+)
 def test_owner_assets_remain_fixed_same_origin_and_noncacheable(client: TestClient, path: str):
     response = client.get(path)
     assert response.status_code == 200
@@ -70,6 +76,11 @@ def test_owner_assets_remain_fixed_same_origin_and_noncacheable(client: TestClie
         assert 'id="include-documents" type="checkbox"' in response.text
         assert 'id="document-selection" aria-live="polite"' in response.text
         assert 'id="documents-health" role="status"' in response.text
+    elif path == "/brain":
+        assert 'src="/brain.js"' in response.text
+        assert 'id="brain-token" type="password"' in response.text
+        assert "does not generate answers" in response.text
+        assert "/v1/brain/current-search" not in response.text
     elif path.endswith(".js"):
         assert response.headers["Content-Type"].startswith("text/javascript")
 

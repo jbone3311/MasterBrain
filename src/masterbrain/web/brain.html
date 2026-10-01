@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ask MasterBrain · Read-only workspace</title>
+  <link rel="stylesheet" href="/brain.css">
+  <script src="/brain.js" defer></script>
+</head>
+<body>
+<main class="shell">
+  <header>
+    <p class="eyebrow">MASTERBRAIN · PRIVATE PREVIEW</p>
+    <h1>Ask across your email and files.</h1>
+    <p>Search current indexed evidence and open what supports it. This workspace
+      does not generate answers, contact a model, or change a source.</p>
+  </header>
+
+  <section class="access" aria-labelledby="access-heading">
+    <h2 id="access-heading">Your access</h2>
+    <div class="access-row">
+      <label for="brain-token">Brain API bearer credential</label>
+      <input id="brain-token" type="password" autocomplete="off" spellcheck="false"
+        placeholder="Held in this page's memory only">
+      <button id="clear-session" type="button">Clear session</button>
+    </div>
+    <p class="hint">Use only an owner-authorized credential. It is not saved in the URL,
+      browser storage, or chat history. Read permissions still apply separately to
+      search, evidence metadata, and content.</p>
+  </section>
+
+  <section class="workspace" aria-labelledby="workspace-heading">
+    <div class="workspace-heading">
+      <div><p class="eyebrow">READ-ONLY CONVERSATION</p><h2 id="workspace-heading">Your questions</h2></div>
+      <button id="clear-turns" type="button">Clear questions</button>
+    </div>
+    <div id="turns" class="turns" aria-live="polite">
+      <p class="empty">Start with a distinctive name, topic, or phrase. Results are
+        grouped by source; they are not an AI-generated answer.</p>
+    </div>
+    <form id="ask-form">
+      <label for="brain-question">Ask MasterBrain</label>
+      <div class="ask-row">
+        <input id="brain-question" maxlength="500" required
+          placeholder="Search a project, email, file, or commitment" autocomplete="off">
+        <button id="ask-button" type="submit" disabled>Search</button>
+      </div>
+    </form>
+    <p id="brain-status" role="status" aria-live="polite">Enter an authorized credential to begin.</p>
+  </section>
+
+  <footer>Current indexed sources only · Partial coverage is shown · No sending,
+    renaming, moving, deleting, or hidden model calls. The original FOS-Master is unchanged.</footer>
+</main>
+</body>
+</html>

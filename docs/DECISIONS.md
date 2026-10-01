@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-127](adr/127_first_party_read_workspace.md) defines a first-party,
+read-only conversation-shaped search workspace over the existing scoped Brain
+API. It adds no model synthesis, source effects, stored history or privilege.
+
 [ADR-126](adr/126_fileos_v2_shared_index_generation.md) extends the common
 DataCore generation contract to an exact v2 completion/document attempt while
 keeping v2 activation forbidden in SQL. It defines a private builder and

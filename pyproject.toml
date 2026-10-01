@@ -55,6 +55,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 email_brain = ["web/*"]
+masterbrain = ["web/*"]
 
 [tool.ruff]
 line-length = 100
