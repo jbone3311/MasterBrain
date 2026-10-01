@@ -59,6 +59,17 @@ production and FileOS cutover remain open.
   3,000-file comparison pass with 3,004 exact hashed and metadata-only matches;
   exact-head and merged-main CI/restore pass via PR #50. Any publishable v2
   transition remains pending.
+- DC-002J adds a private, read-only v1-to-donor transition preview under
+  ADR-113. On the pinned 3,000-file fictional corpus it accounts for 3,006
+  prior v1 items: 3,002 unchanged, four donor-excluded, plus two donor-only
+  hashed items. All six policy gaps are explicit; none creates absence evidence.
+  A near-bound 10,000-item v1 corpus passes; over-bound stress requests refuse
+  before donor loading.
+  Local PostgreSQL 17 ran 444 database-marked tests with the full suite at
+  2,862 passed and one skipped. The PR #52 code head passed hosted CI, strict
+  runtime and populated restore after the account billing gate cleared;
+  integration is pending. No persisted v2 baseline, completion or FileOS
+  switch is claimed.
 - Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
   database and temporary fictional root. It verifies common hashes/sizes, six current
   policy gaps, replay/change/removal, no-hash/rehash and donor mass-prune refusal;

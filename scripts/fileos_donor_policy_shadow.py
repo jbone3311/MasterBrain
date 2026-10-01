@@ -7,7 +7,7 @@ import argparse
 import json
 import sqlite3
 import tempfile
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -18,10 +18,15 @@ from fileos_inventory_shadow import (
     make_synthetic_tree,
 )
 
+from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.fileos_donor_candidate import build_fileos_donor_candidate
 from masterbrain.datacore.fileos_donor_shadow import scan_donor_policy_shadow
+from masterbrain.datacore.fileos_donor_transition import preview_fileos_donor_transition
+from masterbrain.datacore.persistence import MAX_MANIFEST_ITEMS
 
 OBSERVED_AT = datetime(2026, 9, 30, tzinfo=UTC)
+# The pinned synthetic fixture has six fixed items under snapshot v1 policy.
+FIXED_V1_ITEMS = 6
 
 
 def compare_candidate(
@@ -91,6 +96,8 @@ def compare_rows(
 
 
 def run_shadow(repo: Path, stress_files: int = 3000) -> dict[str, int]:
+    if not 100 <= stress_files <= MAX_MANIFEST_ITEMS - FIXED_V1_ITEMS:
+        raise ValueError("stress_files exceeds v1 manifest capacity (100..9994)")
     scanner = load_pinned_scanner(repo)
     with tempfile.TemporaryDirectory(prefix="masterbrain-donor-policy-shadow-") as tmp:
         root = Path(tmp) / "synthetic_root"
@@ -110,6 +117,26 @@ def run_shadow(repo: Path, stress_files: int = 3000) -> dict[str, int]:
                 root, source_id="synthetic_fos", observed_at=OBSERVED_AT
             )
             compare_candidate(donor_rows(conn), candidate)
+            v1 = snapshot_tree(
+                root,
+                source_id="synthetic_fos",
+                observed_at=OBSERVED_AT - timedelta(days=1),
+            )
+            transition = preview_fileos_donor_transition(
+                v1, root, source_id="synthetic_fos", observed_at=OBSERVED_AT
+            )
+            if transition["publishable"] is not False or transition["counts"] != {
+                "unchanged": stress_files + 2,
+                "changed": 0,
+                "deferred_prior": 0,
+                "excluded_prior": 4,
+                "error_covered_prior": 0,
+                "unobserved_prior": 0,
+                "donor_only_hashed": 2,
+            }:
+                raise AssertionError("v1-to-donor policy transition classification diverged")
+            if transition["blockers"] != ["prior_item_not_hashed_under_donor_policy"]:
+                raise AssertionError("v1-to-donor policy gaps were not blocked")
             replay = donor_scan(scanner, root, conn)
             if replay["unchanged"] != expected or compare_rows(
                 donor_rows(conn), scan_donor_policy_shadow(root)
@@ -152,6 +179,8 @@ def run_shadow(repo: Path, stress_files: int = 3000) -> dict[str, int]:
                 "metadata_only_matches": expected,
                 "candidate_hashed_matches": expected,
                 "candidate_metadata_only_matches": expected,
+                "transition_prior_matches": stress_files + 6,
+                "transition_policy_gaps": 6,
                 "excluded_locators": len(shared["exclusions"]),
             }
 
@@ -161,6 +190,8 @@ def main() -> int:
     parser.add_argument("--fos-repo", required=True, type=Path)
     parser.add_argument("--stress-files", type=int, default=3000)
     args = parser.parse_args()
+    if not 100 <= args.stress_files <= MAX_MANIFEST_ITEMS - FIXED_V1_ITEMS:
+        parser.error("--stress-files must be 100..9994 for the v1 transition corpus")
     print(json.dumps(run_shadow(args.fos_repo, args.stress_files), sort_keys=True))
     return 0
 
