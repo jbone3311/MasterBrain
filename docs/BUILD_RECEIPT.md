@@ -2,7 +2,16 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002S FileOS v2 private baseline completion — local verification
+## DC-002S FileOS v2 private baseline completion — merged verification
+
+PR [#77](https://github.com/jbone3311/MasterBrain/pull/77) merged at
+`cf0cc219c06f1da15472cca4e3af897363da1215` from base
+`5fa419314cb3ccae8f8e5b299b884a09fec93cfc`. Its exact head
+`f8ca5ce4ec3792fba800785c0a9428cb278129b7` passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36908899334),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36908899015)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36908899513)
+before merge.
 
 ADR-124, migration 0045 and `FileOSV2BaselineCompleter` add a worker-only,
 source-locked fresh scan that seals one owner-authorized v2 historical baseline.
@@ -25,9 +34,7 @@ rows, zero unexplained membership differences and six explicit policy gaps.
 An initial local full run had nine asset/isolated-command failures after the
 macOS editable package install lost its resource/module path; reinstalling the
 same local package non-editably resolved them, and the complete rerun above
-passed. This receipt is local branch evidence pending exact-head GitHub CI,
-strict runtime and populated restore. No version tag is appropriate for a
-private nonpublishing baseline.
+passed. No version tag was created for a private nonpublishing baseline.
 
 ## DC-002R FileOS v2 owner baseline authorization — merged verification
 
