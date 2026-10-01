@@ -2,7 +2,7 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002N nonpublishing FileOS v2 staging — branch verification
+## DC-002N nonpublishing FileOS v2 staging — merged verification
 
 Branch `codex/dc-002n-v2-inventory-staging` starts at verified `main`
 `f42ed3d49b6c6e79f89c952f4cff5defbea34712`. ADR-117 and migration 0039
@@ -24,8 +24,20 @@ container because this Mac could not inspect Docker; hosted populated restore
 is required before merge. No new product tag is warranted for a nonpublishing
 stage. The final suite staged **3,000 hashless rows** with the header-last,
 single-recount SQL design; count-mismatch and late-insert refusals passed.
-[PR #61](https://github.com/jbone3311/MasterBrain/pull/61) hosts the branch;
-hosted exact-head run links will be recorded after those gates finish.
+
+[PR #61](https://github.com/jbone3311/MasterBrain/pull/61) exact head
+`c06863810d01ea29bbf536785738031766bfc0bb` passed
+[full CI 36857667525](https://github.com/jbone3311/MasterBrain/actions/runs/36857667525),
+[strict runtime 36857667468](https://github.com/jbone3311/MasterBrain/actions/runs/36857667468),
+and [populated restore 36857667543](https://github.com/jbone3311/MasterBrain/actions/runs/36857667543).
+It merged at `d72e03bd0d50379800894ae37e7f9cfdc645cde7`, whose exact
+`main` commit independently passed
+[full CI 36858928315](https://github.com/jbone3311/MasterBrain/actions/runs/36858928315),
+[strict runtime 36858928348](https://github.com/jbone3311/MasterBrain/actions/runs/36858928348),
+and [populated restore 36858928309](https://github.com/jbone3311/MasterBrain/actions/runs/36858928309).
+The short-lived implementation branch was removed after merge; the PR and
+commits retain its history. No product version tag was created for this
+nonpublishing staging checkpoint.
 
 ## DC-002M bounded transition review read — merged verification
 
