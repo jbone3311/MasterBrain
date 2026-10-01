@@ -2,11 +2,20 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Merged a provider-neutral, read-only Brain API client (ADR-129, PR #86)
+  for grouped current search and separately scoped evidence/content reads.
+  Fictional Email/FileOS client-vs-API parity, exact-head and merged-main CI,
+  strict runtime and populated restore passed. This is not a hosted endpoint,
+  named assistant integration, generated answer or source-action permission.
+- Merged the private FileOS v2 active-v1-versus-historical-v2 search comparison
+  (ADR-128, PR #85). Its bounded, human-only result keeps separate rankings;
+  it does not activate v2 or change FOS-Master. Intermittent populated-database
+  readiness latency remains tracked in issue #84.
 - Added a first-party read-only MasterBrain question workspace (ADR-127) over
   the existing scoped current-search and evidence routes. It groups indexed
   Email, FileOS, archive and KnowledgeCore results with partial-coverage
   notice, holds turns/credentials only in browser memory, and has no model
-  answer or source effects. Hosted acceptance and external client parity remain.
+  answer or source effects. Hosted and named-assistant acceptance remain.
 - Merged the private FileOS v2 shared index-generation tranche (ADR-126,
   migration 0047, PR #81). Exact-head and merged-main CI, strict runtime and
   populated restore passed. V2 activation and current reads remain prohibited;
