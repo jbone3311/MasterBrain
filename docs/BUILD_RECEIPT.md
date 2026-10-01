@@ -2,7 +2,20 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002T FileOS v2 private document publication — branch verification
+## DC-002T FileOS v2 private document publication — merged verification
+
+PR [#79](https://github.com/jbone3311/MasterBrain/pull/79) merged at
+`d8a2f2d627bc231769e6d45f2deace68a9c8a334` from base
+`aa1b14752df4aee712c9c0dbb25bb51bdcd98c86`. Its exact head
+`d11dd99c8e7d1a8bd8bccd4a716606a92b710a0a` passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36917025127),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36917025307)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36917025049)
+before merge. The merge commit also passed the
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36918757261)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36918757313);
+its [post-merge CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36918757353)
+also passed, including the full PostgreSQL suite and isolated FileOS worker checks.
 
 ADR-125, migration 0046 and `FileOSV2DocumentPublisher` add a worker-only
 historical publication attempt for the hashed rows of one completed v2
@@ -29,8 +42,7 @@ pinned FOS-Master commit
 hash/extraction parity harness passed. The donor-policy shadow matched 3,004
 hashed and metadata-only candidate rows with zero unexplained membership
 differences; six explicit transition-policy gaps remain. The donor repository
-was not changed. This local receipt is not exact-head CI or merge acceptance;
-no version tag is assigned to the private non-current tranche.
+was not changed. No version tag is assigned to the private non-current tranche.
 
 ## DC-002S FileOS v2 private baseline completion — merged verification
 
