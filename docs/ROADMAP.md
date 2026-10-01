@@ -15,8 +15,8 @@ FileOS cutover acceptance is implied.
 | Product identity and donor baseline | MasterBrain identity, source-layer boundaries, pinned FOS-Master provenance, first hash/dedupe parity and synthetic shadow corpus are in the repo | Full semantic and operational parity, owner cutover decision |
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
 | KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work | Automatic candidate pipeline, evaluated resolution, complete project/commitment reducers, rebuild and freshness proof |
-| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; fictional browser trial is merged | Cited answer synthesis, common client adapter/conformance, full byte/token budgets and revocation proof across caches |
-| Owner chat and external assistants | A first-party read-only question workspace uses the same Brain API and shows grouped current hits/evidence; no answer synthesis or certified external assistant exists | Prove native/external parity on one shared corpus, add grounded cited answers, freshness/revocation tests and hosted acceptance |
+| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; a read-only reference client has fictional API parity | Cited answer synthesis, named-assistant adapter, full byte/token budgets and revocation proof across caches |
+| Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; no answer synthesis or certified assistant exists | Prove a named assistant's identity/citation/revocation behavior, add grounded cited answers, freshness tests and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
 | FileOS replacement and effects | No cutover or source effects | Sustained donor shadow, bounded rollback-ready cohort, owner sign-off; effects require a separate later approval |
 
@@ -116,11 +116,11 @@ FileOS cutover. The separate `v0.2.0a1` tag is synthetic-only.
 - **Knowledge quality:** migrate narrow Email memory and donor fact lessons only
   through evidence-backed, versioned projections. Evaluate aliases, temporal
   correction, contradictions, project state and commitments on held-out cases.
-- **Client-neutral access:** implement an MCP/other adapter only after identity
-  scopes, prompt-injection isolation, compactness, citation, revocation and one
-  common Claude/Grok/ChatGPT conformance suite are specified and tested. The
-  REST Brain API is the current source of truth; no assistant integration is
-  certified today.
+- **Client-neutral access:** the read-only reference client and fictional REST
+  parity are implemented. A named MCP/other assistant adapter still requires
+  identity scopes, prompt-injection isolation, compactness, citation,
+  revocation and cross-assistant conformance. The REST Brain API remains the
+  source of truth; no assistant integration is certified today.
 - **Owner conversational workspace:** the first read-only, conversation-shaped
   search screen uses the existing scoped API for current Email, FileOS and
   KnowledgeCore evidence. It is not an AI answer. Next add grounded cited

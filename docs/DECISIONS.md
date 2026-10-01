@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-129](adr/129_read_only_external_brain_client.md) defines a provider-neutral,
+read-only HTTP reference client over the same current-search and separately
+scoped evidence routes as `/brain`. It is not a hosted or named-assistant adapter.
+
 [ADR-128](adr/128_private_fileos_v2_search_preview.md) permits a scoped,
 human-only comparison of one ready historical FileOS v2 generation with the
 active v1 generation. It does not add a public route, activate v2 or attest

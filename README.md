@@ -55,6 +55,7 @@ FileOS sources ┘       │              │                │
 |---|---|
 | Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
 | Fictional Email/FileOS browser trial with citation drill-down | Merged and hosted-test verified; interactive Mac acceptance pending |
+| Provider-neutral external Brain API read client | Reference transport with fictional current-search/evidence parity; no hosted or named-assistant integration |
 | Privacy-safe API failure correlation | Implemented; production log collection and alerting pending |
 | Opt-in tenant-routed API database access | Synthetic two-tenant API path with separate exact-lookup and bound data logins; private workers, credential lifecycle and hosted acceptance pending |
 | Typed reviewed travel/bill memory | Working narrow prototype |
@@ -113,6 +114,7 @@ roadmap item is not an implementation claim.
 - [Architecture](docs/ARCHITECTURE.md)
 - [Data model](docs/DATA_MODEL.md)
 - [Brain API](docs/BRAIN_API.md)
+- [Read-only external client](docs/EXTERNAL_CLIENT.md)
 - [Chat, external assistants and reviewed actions](docs/USER_INTERFACES.md)
 - [Security and privacy](docs/SECURITY.md)
 - [Deployment](docs/DEPLOYMENT.md)

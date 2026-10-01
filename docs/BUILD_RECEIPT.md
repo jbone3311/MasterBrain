@@ -2,7 +2,43 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002V private FileOS v2 search comparison — branch verification
+## API-CLIENT-001 provider-neutral read-only client — branch verification
+
+ADR-129 adds a deliberately narrow Python client for the existing Brain API:
+grouped current search, selected evidence metadata, and separately authorized
+bounded evidence content. The client requires an explicit bearer credential,
+rejects insecure non-loopback origins, redirects, cookies, ambient proxies,
+malformed responses and oversized responses. A fictional Email/FileOS corpus
+proves that direct API calls and client calls return the same grouped evidence;
+the separate search and evidence grants remain enforced. This is neither a
+deployed Grok, Claude or ChatGPT adapter nor a hosted service, answer generator
+or source-action channel.
+
+On fresh disposable PostgreSQL 17.11 databases, the complete suite passed
+**2,921 tests, one skipped** in 188.11 seconds, including 457 of 458
+PostgreSQL-marked tests. Following a final response-validation change, the
+focused client/cross-source suite passed 39 tests, one skipped, including nine
+PostgreSQL cases. The deployment gate passed 2,464 non-PostgreSQL tests and
+skipped 458 database-marked cases by design. Ruff, strict mypy over 96 source
+files, 140 browser tests, documentation and diff checks passed. The pinned
+FOS-Master 3,000-file DataCore comparison passed; donor-policy shadow matched
+3,004 candidate rows with zero unexplained membership differences and six
+explicit transition-policy gaps. No FOS-Master change, live-source acceptance,
+hosted deployment or version tag is claimed. The branch still requires exact-head
+and post-merge GitHub checks before this section can be marked merged.
+
+## DC-002V private FileOS v2 search comparison — merged verification
+
+PR [#85](https://github.com/jbone3311/MasterBrain/pull/85) merged at
+`b1642def42ebf90a453093bbeb161f5086219847` from exact head
+`c0b686cdbe38cb8714dc0aacdf123ed69f1793eb`. The head passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36936295355),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36936295199)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36936295162).
+The merge commit also passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36937616366),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36937616260)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36937616187).
 
 ADR-128 adds a human-only, scoped comparison of one named ready historical v2
 generation with the same source's active v1 generation. Both use one bounded
@@ -29,9 +65,12 @@ query. A fresh run and the full fresh-suite run passed; the populated-database
 scaling investigation is tracked as
 [#84](https://github.com/jbone3311/MasterBrain/issues/84). The first preview
 query also timed out under that load; it now ranks and limits matching chunks
-before joining evidence, without raising the statement budget. Exact-head
-hosted CI, strict runtime and populated restore remain to be run on the final
-branch head. No version tag is assigned; this is not v2 current visibility,
+before joining evidence, without raising the statement budget. A later
+repeat-load audit ran four retained 3,000-row tenant cases without failure,
+though slower, and measured the reported joins at roughly 20 ms each under a
+disposable forced-RLS login. The intermittent trigger-level cause remains
+unproven; [issue #84](https://github.com/jbone3311/MasterBrain/issues/84)
+stays open. No version tag is assigned; this is not v2 current visibility,
 live-root acceptance or donor cutover.
 
 ## UI-001 first-party read-only question workspace — merged verification
