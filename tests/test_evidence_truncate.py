@@ -240,6 +240,7 @@ def protected_database(
             "0040_fileos_v2_transition_approvals.sql",
             "0041_fileos_v2_baseline_verification.sql",
             "0042_fileos_v2_prepared_evidence.sql",
+            "0043_fileos_run_ledger_linear_validation.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:

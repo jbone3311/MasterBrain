@@ -4475,6 +4475,124 @@ def test_fileos_source_refuses_different_physical_root_before_intake(
         )
 
 
+def test_fileos_run_ledger_single_check_still_refuses_late_and_invalid_rows(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx = datacore_context(tenant[0])
+    core = DataCoreStore(store)
+    source_id = "files_linear_ledger"
+    (tmp_path / "proof.txt").write_bytes(b"fictional completion ledger proof")
+    manifest = fileos_manifest(tmp_path, source_id=source_id)
+    original_run = uuid4()
+    core.import_fileos_snapshot(ctx, manifest, original_run)
+    assert core.complete_fileos_run(
+        ctx,
+        manifest,
+        original_run,
+        outcomes={"unsupported": 1},
+        item_outcomes={manifest["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-linear-ledger",
+        document_processor_version=None,
+    ).recorded
+    assert not core.complete_fileos_run(
+        ctx,
+        manifest,
+        original_run,
+        outcomes={"unsupported": 1},
+        item_outcomes={manifest["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-linear-ledger",
+        document_processor_version=None,
+    ).recorded
+    item = manifest["items"][0]
+    with psycopg.connect(admin) as conn:
+        constraint = conn.execute(
+            "SELECT condeferrable,condeferred FROM pg_constraint "
+            "WHERE conname='brain_fileos_run_items_tenant_id_actor_id_run_id_source_id_fkey'"
+        ).fetchone()
+        assert constraint == (True, True)
+        assert conn.execute(
+            "SELECT tgname FROM pg_trigger WHERE tgrelid='brain_fileos_run_items'::regclass "
+            "AND tgname IN ('fileos_no_late_run_item','fileos_run_item_ledger')"
+        ).fetchall() == [("fileos_no_late_run_item",)]
+    with pytest.raises(psycopg.errors.RaiseException, match="sealed FileOS run item ledger"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_run_items(tenant_id,actor_id,run_id,source_id,"
+                "observed_at,item_id,version_id,outcome) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,'unsupported') "
+                "ON CONFLICT DO NOTHING",
+                (
+                    ctx.tenant_id, ctx.actor_id, original_run, source_id,
+                    datetime(2026, 9, 22, 1, tzinfo=UTC), item["item_id"], item["version_id"],
+                ),
+            )
+
+    def insert_receipt(conn: psycopg.Connection[Any], run_id: UUID) -> None:
+        conn.execute(
+            "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
+            "observed_at,manifest_sha256,policy_sha256,root_binding_sha256,"
+            "code_revision,text_extractor_version,item_count,outcomes,published_documents) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'test-linear-ledger','fileos-text-v1',"
+            "1,%s,0)",
+            (
+                ctx.tenant_id, ctx.actor_id, run_id, source_id,
+                datetime(2026, 9, 22, 2, tzinfo=UTC), "a" * 64,
+                fileos_inventory_policy_sha256(manifest), manifest["root_binding"]["sha256"],
+                json.dumps({"unsupported": 1}),
+            ),
+        )
+
+    with pytest.raises(psycopg.errors.RaiseException, match="invalid FileOS run item ledger"):
+        with store.transaction(ctx) as conn:
+            insert_receipt(conn, uuid4())  # Missing item, checked at commit.
+    with pytest.raises(psycopg.errors.RaiseException, match="invalid FileOS run item ledger"):
+        with store.transaction(ctx) as conn:
+            run_id = uuid4()
+            conn.execute(
+                "INSERT INTO brain_fileos_run_items(tenant_id,actor_id,run_id,source_id,"
+                "observed_at,item_id,version_id,outcome) VALUES (%s,%s,%s,%s,%s,%s,%s,'failed')",
+                (
+                    ctx.tenant_id, ctx.actor_id, run_id, source_id,
+                    datetime(2026, 9, 22, 2, tzinfo=UTC), item["item_id"], item["version_id"],
+                ),
+            )
+            insert_receipt(conn, run_id)  # Wrong outcome, checked at commit.
+    # A second writer cannot observe an unsealed run while the first writer
+    # holds the same source lock that protects receipt insertion.
+    with store.transaction(ctx) as conn:
+        run_id = uuid4()
+        conn.execute(
+            "INSERT INTO brain_fileos_run_items(tenant_id,actor_id,run_id,source_id,"
+            "observed_at,item_id,version_id,outcome) VALUES (%s,%s,%s,%s,%s,%s,%s,'unsupported')",
+            (
+                ctx.tenant_id, ctx.actor_id, run_id, source_id,
+                datetime(2026, 9, 22, 2, tzinfo=UTC), item["item_id"], item["version_id"],
+            ),
+        )
+        with pytest.raises(psycopg.errors.LockNotAvailable):
+            with store.transaction(ctx) as contender:
+                contender.execute("SET LOCAL lock_timeout='100ms'")
+                contender.execute(
+                    "INSERT INTO brain_fileos_run_items(tenant_id,actor_id,run_id,source_id,"
+                    "observed_at,item_id,version_id,outcome) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,'unsupported')",
+                    (
+                        ctx.tenant_id, ctx.actor_id, uuid4(), source_id,
+                        datetime(2026, 9, 22, 2, tzinfo=UTC),
+                        item["item_id"], item["version_id"],
+                    ),
+                )
+        insert_receipt(conn, run_id)
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_run_receipts WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 2
+
+
 def test_fileos_mass_loss_refuses_completion_without_absence(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:

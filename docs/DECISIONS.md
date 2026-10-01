@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-122](adr/122_fileos_run_ledger_linear_validation.md) makes the existing
+FileOS v1 completion ledger check linear in run size while preserving deferred
+whole-run validation, late-insert refusal and source serialization. It changes
+no v2 publication or FileOS cutover authority.
+
 [ADR-121](adr/121_fileos_v2_prepared_evidence.md) permits a private,
 worker-scoped FileOS v2 evidence-preparation transaction after another exact
 fresh scan. It maps donor candidate versions to policy-scoped DataCore versions

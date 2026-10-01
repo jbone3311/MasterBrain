@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Reworked FileOS v1 completion-ledger validation (ADR-122, migration 0043):
+  run items precede the receipt in one transaction, whose deferred check now
+  scans the final ledger once. An immediate source-locked guard rejects late
+  rows; replay, immutability, RLS and absence semantics remain unchanged.
 - Added a private, worker-scoped FileOS v2 hashed-evidence preparation path
   (ADR-121, migration 0042). It rescans the approved stage, maps donor IDs
   to policy-scoped DataCore versions and preserves hashless rows without
