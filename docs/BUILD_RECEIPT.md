@@ -2,10 +2,16 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-005N linear FileOS v1 completion ledger — branch validation
+## DC-005N linear FileOS v1 completion ledger — merged verification
 
-Branch `codex/fileos-ledger-linear-validation` starts from merged `main`
-`4cd680bb3e88646f5e86d9e1caa446be38e7b7a1`. ADR-122 and forward
+PR [#73](https://github.com/jbone3311/MasterBrain/pull/73) merged at
+`8b4880cc60c3d17a0d2a9cec527a764b1ec1dc12` from base
+`4cd680bb3e88646f5e86d9e1caa446be38e7b7a1`. Its final head
+`4f1550ef2362050d30cb5e1c6d8a26d1da249264` passed the exact
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36897964263),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36897964422)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36897964358)
+before merge. ADR-122 and forward
 migration 0043 make the run-item foreign key deferred, insert new items before
 the receipt, retain one deferred full-ledger count/outcome check on that receipt,
 and replace 3,000 repeated full-ledger checks with an immediate, source-locked
@@ -27,9 +33,10 @@ or integrity limit was relaxed. On the final migration checksum, the local
 full suite passed **2,894 tests, one skipped** in 82.24 seconds, with 456 of
 457 PostgreSQL-marked tests executed. Locked dependencies, Ruff, strict mypy
 over 91 source files, 134 browser tests, the deployment quality gate and
-offline documentation inventory passed. Hosted CI, strict runtime and
-populated restore results are pending
-for this branch; no release tag is warranted for a database-integrity fix.
+offline documentation inventory passed. A controlled before/after performance
+comparison and broader platform load remain tracked in
+[issue #71](https://github.com/jbone3311/MasterBrain/issues/71). No release tag
+was created for this database-integrity fix.
 
 ## DC-002Q FileOS v2 hashed-evidence preparation — merged verification
 

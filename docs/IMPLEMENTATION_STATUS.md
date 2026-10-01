@@ -18,10 +18,11 @@ production and FileOS cutover remain open.
 
 - DC-005N changes the private FileOS v1 completion writer to insert run items
   before its receipt; forward migration 0043 keeps the whole-ledger constraint
-  but checks it once per receipt and refuses late items under the source lock
-  (ADR-122). This addresses the measured large-run cost in issue #71 without
-  changing completed-run, absence or FileOS v2 visibility semantics. Branch
-  and hosted validation remain in progress.
+  but checks it once per receipt and serializes both receipt and item inserts
+  under the source lock (ADR-122). PR #73 merged with exact-head CI, strict
+  runtime and populated restore green. It removes the measured repeated-scan
+  mechanism without changing completed-run, absence or v2 visibility semantics;
+  a controlled performance comparison remains in issue #71.
 - DC-002Q adds private, worker-scoped FileOS v2 hashed-evidence preparation
   under ADR-121 and migration 0042, merged in PR #70 with exact-head CI,
   strict runtime and populated restore green. After rechecking the current v1 receipt,
