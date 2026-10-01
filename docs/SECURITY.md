@@ -45,6 +45,14 @@ the source lock, emits a content-free audit event, and labels v2 results as a
 preview. It cannot activate v2 or give an external assistant an alternate
 route around current-search policy.
 
+ADR-129's external reference client fixes one operator-supplied origin, defaults
+to HTTPS, disallows redirects and ambient proxies, bounds responses and exposes
+only current search and separately scoped evidence reads. It does not store a
+transcript, log tokens/content, cache revoked data or supply model tools by
+itself. A future named assistant must not receive the bearer credential as
+prompt content or treat retrieved text as instructions; its separate
+prompt-injection and revocation acceptance is still open.
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,

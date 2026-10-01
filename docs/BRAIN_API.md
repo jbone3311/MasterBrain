@@ -146,8 +146,11 @@ prototype remains available but is not hosted multi-tenant containment. See
 ## Client guidance
 
 There is no deployed MCP server or certified Claude, Grok or ChatGPT adapter yet.
-Use the existing REST route contract only with a separately authorized client;
-passing local API tests does not establish assistant integration.
+The [provider-neutral read client](EXTERNAL_CLIENT.md) is an executable
+read-only reference over the same REST routes used by `/brain`; it passes a
+fictional cross-source conformance test. Use it only with a separately
+authorized credential. Passing local API/client tests does not establish
+assistant integration or hosted acceptance.
 
 Clients should search first, expand the smallest useful set, cite evidence IDs in
 their answer, and request originals only when needed. They must treat returned content

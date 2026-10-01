@@ -1,8 +1,9 @@
 # MasterBrain user interfaces and controlled actions
 
 Status: product target. A first-party read-only, conversation-shaped search
-workspace now exists, but generated answers, certified assistant integration,
-hosting and source-write capability do not. [Current functions](CURRENT_FUNCTIONS.md) and
+workspace and a provider-neutral external read client now exist, but generated
+answers, certified assistant integration, hosting and source-write capability do
+not. [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior.
 
 ## One service, two entrances
@@ -77,10 +78,11 @@ credentials.
    search and separately authorized evidence expansion without a model. Add
    a true conversation layer with cited synthesis only after grounded-answer
    tests and prompt-injection isolation pass.
-3. **External client:** connect at least one separately authorized assistant
-   through a thin adapter and run the same fictional cross-source questions
-   through it and the first-party workspace. Compare result membership,
-   citations, permissions, budgets and source freshness, not prose wording.
+3. **External client:** a provider-neutral reference client now runs the same
+   fictional current-search and evidence calls as the owner workspace, with
+   source/scope parity tests. Next connect at least one separately authorized
+   assistant through a thin adapter; prove prompt-injection isolation,
+   revocation, citations, budgets and source freshness, not prose wording.
 4. **Hosted read-only pilot:** establish owner-approved private storage, identity,
    enrollment, operations, content-safe telemetry, backup/restore and a bounded
    live-source trial. A green synthetic test is not a production acceptance.

@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- API-CLIENT-001 adds a provider-neutral, read-only reference client under
+  ADR-129. It calls the same grouped current-search and separately scoped
+  evidence/content routes as `/brain`, with fixed-origin, bounded-response,
+  redirect and error-scrubbing guards. Fictional PostgreSQL conformance compares
+  its results with direct Brain API calls. It is not a deployed or certified
+  Claude/Grok/ChatGPT adapter, hosted service, model answer or action path.
+
 - DC-002V adds a private human-review comparison of one ready historical
   FileOS v2 generation with the active v1 generation under ADR-128. Both use
   the same bounded lexical query, but their ranks remain separate. It requires

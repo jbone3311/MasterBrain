@@ -9,6 +9,7 @@ redirecting Email ingestion or search.
 | Responsibility | Actual files |
 |---|---|
 | First-party read-only question workspace | [static assets](../src/masterbrain/web/brain.html), [script](../src/masterbrain/web/brain.js), [API static routes](../src/email_brain/api.py), [browser tests](../tests/web_brain.test.cjs), [ADR-127](adr/127_first_party_read_workspace.md); no model answer or source effect |
+| Provider-neutral external read client | [transport](../src/masterbrain/brain_client.py), [contract tests](../tests/test_brain_client.py), [real API parity](../tests/test_cross_source_preview.py), [guide](EXTERNAL_CLIENT.md), [ADR-129](adr/129_read_only_external_brain_client.md); no named assistant or effect method |
 | MasterBrain command surface | [cli.py](../src/masterbrain/cli.py); read-only hash/compare/duplicates/FileOS snapshot and explicit publication |
 | DataCore contracts | [contracts.py](../src/masterbrain/datacore/contracts.py); immutable source/version/evidence/provenance types |
 | Read-only FileOS inventory | [fileos.py](../src/masterbrain/datacore/fileos.py); deterministic bounded snapshot, no source effects |

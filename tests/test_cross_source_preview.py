@@ -8,6 +8,7 @@ import sys
 from dataclasses import replace
 from datetime import UTC, datetime
 
+import httpx
 import pytest
 import test_postgres as pg
 from cross_source_preview import ASSETS, FILES, READ_SCOPES, build_preview, credential
@@ -16,6 +17,7 @@ from fastapi.testclient import TestClient
 from email_brain.api import create_app
 from email_brain.auth import TokenRegistry
 from email_brain.store import Store
+from masterbrain.brain_client import BrainClientError, BrainReadClient
 
 # Reuse the repository's disposable-database preflight and least-privileged role.
 database = pg.database
@@ -32,6 +34,51 @@ def client_for(preview, token=None):
         preview.app, base_url="http://127.0.0.1",
         headers={"Authorization": "Bearer " + (token or preview.token)},
     )
+
+
+def external_transport(app_client: TestClient) -> httpx.MockTransport:
+    """Cross the real FastAPI boundary without opening a network listener."""
+
+    def forward(request: httpx.Request) -> httpx.Response:
+        response = app_client.request(
+            request.method,
+            request.url.path,
+            headers=dict(request.headers),
+            content=request.content,
+        )
+        return httpx.Response(
+            response.status_code, headers=dict(response.headers), content=response.content
+        )
+
+    return httpx.MockTransport(forward)
+
+
+@pytest.mark.postgres
+def test_external_read_client_matches_first_party_api_on_known_answers(preview):
+    with client_for(preview) as direct:
+        transport = external_transport(direct)
+        with BrainReadClient(
+            "http://127.0.0.1", preview.token,
+            allow_insecure_loopback=True, transport=transport,
+        ) as external:
+            for query in ("Cedar Harbor", "insurance", "Juniper Plaza", "nonexistentcanary"):
+                expected = direct.post("/v1/brain/current-search", json={"query": query}).json()
+                assert external.current_search(query) == expected
+            hit = external.current_search("insurance")["layers"]["fileos"][0]
+            evidence_id = hit["evidence_id"]
+            assert external.evidence(evidence_id) == direct.get(
+                f"/v1/brain/evidence/{evidence_id}"
+            ).json()
+            assert external.evidence_content(evidence_id) == direct.post(
+                f"/v1/brain/evidence/{evidence_id}/content", json={"max_chars": 4000}
+            ).json()
+        with BrainReadClient(
+            "http://127.0.0.1", preview.other_token,
+            allow_insecure_loopback=True, transport=transport,
+        ) as other:
+            assert other.current_search("insurance")["layers"]["fileos"] == []
+            with pytest.raises(BrainClientError, match="not_found"):
+                other.evidence(evidence_id)
 
 
 @pytest.mark.postgres
@@ -133,6 +180,15 @@ def test_read_only_credential_no_unauthorized_content_or_review(preview, databas
         response = client.post(path + "/content", json={"max_chars": 100}, headers=headers)
         assert response.status_code == 403
         assert client.get("/v1/brain/current-coverage", headers=headers).status_code == 403
+        with BrainReadClient(
+            "http://127.0.0.1", preview.token,
+            allow_insecure_loopback=True, transport=external_transport(client),
+        ) as external:
+            assert external.current_search("Cedar")["layers"]["fileos"]
+            with pytest.raises(BrainClientError, match="access_denied"):
+                external.evidence(evidence_id)
+            with pytest.raises(BrainClientError, match="access_denied"):
+                external.evidence_content(evidence_id)
     assert not any(
         scope.endswith(("publish", "ingest", "activate", "review")) for scope in READ_SCOPES
     )
