@@ -1,12 +1,17 @@
 # Build and validation receipt
 
-Updated 2026-09-30 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002J v1-to-donor transition branch checkpoint
+## DC-002J v1-to-donor transition branch verification
 
 Branch `codex/dc-002j-policy-transition-preview` begins from `main`
-`7d388b1c44cc2236a87a8ecd79750e565dda1a9f`; its tested code head is
-`fc6c9611562e8caee2b05c3e34d43f736bc7838a`. Its new library compares a
+`7d388b1c44cc2236a87a8ecd79750e565dda1a9f`.
+[PR #52](https://github.com/jbone3311/MasterBrain/pull/52) code head
+`c47108fb368509f091496fe4003559e0d048aef4` passed
+[full CI 36780193102 attempt 2](https://github.com/jbone3311/MasterBrain/actions/runs/36780193102/attempts/2),
+[strict runtime 36780193027 attempt 2](https://github.com/jbone3311/MasterBrain/actions/runs/36780193027/attempts/2),
+and [populated restore 36780193203 attempt 2](https://github.com/jbone3311/MasterBrain/actions/runs/36780193203/attempts/2).
+Its new library compares a
 validated, complete-shape v1 snapshot with a fresh donor candidate at the same
 source/root and a newer observation time. It never publishes, persists, or
 infers absence. The pinned FOS-Master fictional 3,000-file harness reports
@@ -19,9 +24,8 @@ Ruff; mypy over 88 source
 files; 207 Markdown files and 1,119 local links/fragments; and the repository
 deployment-quality gate. The pinned donor harness passes on 3,000 fictional
 files with 3,004 exact hashed and metadata-only donor-candidate matches, 3,006
-prior-v1 classifications and six explicit policy gaps. Hosted branch validation
-is unavailable while account billing blocks Actions. This paragraph is not a
-release or cutover receipt.
+prior-v1 classifications and six explicit policy gaps. This is not a release
+or cutover receipt; no live-source or owner acceptance is claimed.
 
 A separate disposable local PostgreSQL 17 cluster executed the broader suite:
 2,862 passed, one skipped; 444 of 445 PostgreSQL-marked tests executed. An
@@ -29,8 +33,9 @@ initial run had three subprocess `ModuleNotFoundError` failures because this
 local Python skips the editable-install `.pth` file; after installing the same
 commit as a normal wheel into the disposable virtual environment, all three
 passed with no repository code change. The cluster was stopped and removed.
-This local database result is additional evidence, not a substitute for hosted
-PostgreSQL, restricted-worker containers or populated restore on the PR head.
+This local database result is additional evidence; exact-head hosted
+PostgreSQL, restricted-worker containers and populated restore subsequently
+passed as linked above.
 The pinned donor transition harness also passed with 9,994 synthetic stress
 files plus six fixed v1 items: 10,000 prior-v1 classifications, 9,998 exact
 donor hashed and metadata-only matches, six explicit policy gaps and zero
@@ -48,10 +53,10 @@ At the base commit, new `main` GitHub Actions jobs did not start: CI
 strict runtime [36776977859](https://github.com/jbone3311/MasterBrain/actions/runs/36776977859),
 and restore [36776977920](https://github.com/jbone3311/MasterBrain/actions/runs/36776977920)
 all have zero-step failures annotated with an account payment/spending-limit
-message. A CI retry (attempt 2) had the same annotation. This is not a test
-failure and does not supersede the green exact-head and merged-main PR #50
-receipts or the green PR #51 head. No subsequent branch may be merged on a
-claim that hosted validation passed until Actions can execute again.
+message. A CI retry (attempt 2) had the same annotation. This was not a test
+failure and did not supersede the green exact-head and merged-main PR #50
+receipts or the green PR #51 head. On 2026-10-01, Actions resumed executing
+jobs and the exact PR #52 code head passed the three workflows linked above.
 
 ## DC-002I donor candidate integration
 
