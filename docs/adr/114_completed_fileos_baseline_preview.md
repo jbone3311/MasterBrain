@@ -19,7 +19,8 @@ run. Basing a policy transition on an uncommitted or stale file would be unsafe.
   outcome balance against the supplied manifest and completion receipt.
 - Add a separate completed-baseline transition entry point. Verify before the
   donor scan and again afterward. A newer completion during the scan fails
-  closed. Do not hold a database transaction across source I/O.
+  closed. Retain and recheck the exact manifest digest so in-process mutation
+  also fails closed. Do not hold a database transaction across source I/O.
 - Return only a private, nonpublishing preview with the completed run identity,
   completion time and manifest hash. Keep `publishable: false`, require review,
   and never infer deletion across the v1/donor policy boundary.
@@ -29,7 +30,8 @@ run. Basing a policy transition on an uncommitted or stale file would be unsafe.
 
 ## Verification
 
-Unit tests cover the pre/post check order and stale-result refusal. A real
+Unit tests cover the pre/post check order, stale-result and manifest-mutation
+refusal. A real
 PostgreSQL test covers missing completion, imported-only state, exact completed
 receipt/item matching, read-scope enforcement, tampered policy, wrong run,
 newer completion during scan and refusal before scanning a stale baseline.

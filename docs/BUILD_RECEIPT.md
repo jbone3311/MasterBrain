@@ -17,7 +17,7 @@ Local final-code verification on disposable PostgreSQL 17.11: **2,875 passed,
 one skipped**; 445 of 446 PostgreSQL-marked cases executed. The focused
 real-database regression covers imported-but-incomplete state, exact completion,
 wrong run and changed policy, read-scope denial, a newer completion committed
-during scanning, and stale refusal before source scanning. Eleven focused
+during scanning, and stale refusal before source scanning. Twelve focused
 non-database transition tests passed. Ruff, mypy over 88 source files, 134
 browser tests, and documentation inventory (208 Markdown files, 1,125 local
 paths/fragments) passed. The pinned-donor fictional 3,000-file harness matched

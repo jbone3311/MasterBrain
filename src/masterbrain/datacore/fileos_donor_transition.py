@@ -172,6 +172,7 @@ def preview_fileos_completed_donor_transition(
     A second verification rejects a newer completed run during the donor scan.
     No v2 state is persisted or made publishable by this function.
     """
+    prior_hash = fileos_manifest_sha256(prior_manifest)
     completed_at = core.verify_fileos_completed_baseline(ctx, prior_manifest, prior_run_id)
     preview = preview_fileos_donor_transition(
         prior_manifest,
@@ -180,11 +181,14 @@ def preview_fileos_completed_donor_transition(
         observed_at=observed_at,
         metadata_only=metadata_only,
     )
-    if core.verify_fileos_completed_baseline(ctx, prior_manifest, prior_run_id) != completed_at:
+    if (
+        core.verify_fileos_completed_baseline(ctx, prior_manifest, prior_run_id) != completed_at
+        or fileos_manifest_sha256(prior_manifest) != prior_hash
+    ):
         raise ValueError("FileOS completed baseline changed during transition preview")
     preview["completed_baseline"] = {
         "run_id": str(prior_run_id),
         "completed_at": completed_at.isoformat(),
-        "manifest_sha256": fileos_manifest_sha256(prior_manifest),
+        "manifest_sha256": prior_hash,
     }
     return preview

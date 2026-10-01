@@ -218,6 +218,36 @@ def test_completed_wrapper_refuses_stale_baseline_after_scan(tmp_path: Path) -> 
         )
 
 
+def test_completed_wrapper_refuses_mutated_manifest_during_scan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional proof")
+    prior = _v1(tmp_path)
+
+    class Baseline:
+        def verify_fileos_completed_baseline(
+            self, _ctx: object, _manifest: dict, _run: object
+        ) -> datetime:
+            return OBSERVED + timedelta(hours=1)
+
+    original = candidate_module.build_fileos_donor_candidate
+
+    def mutate_after_scan(root: Path, **kwargs: object) -> dict:
+        result = original(root, **kwargs)
+        prior["items"][0]["metadata"]["review_note"] = "changed during scan"
+        return result
+
+    monkeypatch.setattr(
+        "masterbrain.datacore.fileos_donor_transition.build_fileos_donor_candidate",
+        mutate_after_scan,
+    )
+    with pytest.raises(ValueError, match="changed during transition"):
+        preview_fileos_completed_donor_transition(
+            Baseline(), object(), prior, uuid4(), tmp_path,
+            source_id="files_transition", observed_at=OBSERVED + timedelta(days=1),
+        )
+
+
 def test_completed_wrapper_refuses_unverified_baseline_before_scan(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
