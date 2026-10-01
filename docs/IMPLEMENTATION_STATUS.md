@@ -19,8 +19,9 @@ production and FileOS cutover remain open.
 - DC-002U adds a private worker-only FileOS v2 generation builder in shared
   DataCore index tables under ADR-126 and migration 0047. SQL binds it to one
   ready document attempt, closes exact item/chunk membership, and refuses v2
-  activation. This branch is under synthetic/disposable verification; no
-  current-read, absence, live acceptance or FOS-Master cutover is claimed.
+  activation. PR #81 merged with exact-head and merged-main CI, strict-runtime
+  and populated-restore checks green. This remains synthetic/disposable only;
+  no current-read, absence, live acceptance or FOS-Master cutover is claimed.
 
 - DC-002T adds private, worker-scoped FileOS v2 document publication under
   ADR-125 and migration 0046. Bounded source reads recheck the staged digest;
