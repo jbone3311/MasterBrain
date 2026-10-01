@@ -34,6 +34,7 @@ SCOPES = frozenset(
         "brain.document.publish",
         "brain.index.activate",
         "brain.fileos.transition.review",
+        "brain.fileos.transition.verify",
         "knowledge.search",
         "knowledge.read",
         "knowledge.changes.read",
@@ -100,6 +101,7 @@ class TokenRegistry:
                 "brain.source.ingest",
                 "brain.document.publish",
                 "brain.index.activate",
+                "brain.fileos.transition.verify",
             }
             & c.scopes
             for c in credentials

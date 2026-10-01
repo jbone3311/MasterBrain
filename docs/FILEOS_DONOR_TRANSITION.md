@@ -73,6 +73,16 @@ acknowledged, never interpreted as deletion. One immutable receipt records
 the decision. This remains synthetic/disposable, private and nonpublishing;
 it is not the future v1-to-v2 baseline transaction or a live-root attestation.
 
+DC-002P adds a private `FileOSV2BaselineVerifier.verify(worker, stage_id,
+approval_id, verification_id, root)` under
+[ADR-119](adr/119_fileos_v2_baseline_verification.md). It consumes the exact
+human approval only after rechecking the latest v1 receipt and matching a
+fresh donor-policy scan of the specified root to every staged row, including
+hashless deferrals and exclusions. A mismatch or source change refuses the
+operation. Its immutable receipt records historical verification, not a v2
+completed run: v1 freshness, absence, search and policy remain unchanged.
+There is no API/CLI route or live-source/cutover acceptance.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |

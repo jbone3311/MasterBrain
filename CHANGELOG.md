@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added worker-scoped, fresh-root verification of one approved FileOS v2
+  staged inventory (ADR-119, migration 0041). Exact source, policy, count and
+  row matching yields an immutable historical receipt; no v2 publication,
+  current-read change, deletion inference or donor switch follows.
 - Added a private FileOS v2 transition review plan and immutable human-owner
   approval receipt (ADR-118, migration 0040), bound to the exact staged
   packet, latest completed v1 receipt, plan digest and acknowledged counts.

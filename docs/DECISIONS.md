@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-119](adr/119_fileos_v2_baseline_verification.md) requires a worker-scoped,
+fresh donor-policy scan to match an approved staged inventory exactly before
+recording an immutable verification receipt. It does not publish v2 or switch
+current FileOS state.
+
 [ADR-118](adr/118_fileos_v2_transition_review_approval.md) binds one human
 owner's decision to an exact, current FileOS v2 staged plan and count maps.
 The immutable approval receipt is nonpublishing and not cutover authority.

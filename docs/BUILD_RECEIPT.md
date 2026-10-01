@@ -2,6 +2,23 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002P approved-stage fresh verification — local validation
+
+Branch `codex/dc-002p-v2-baseline-verification` starts from merged `main`
+`b39ee4667a6d1bddcf574cf914e5f597f701d363`. ADR-119 and migration 0041
+add worker-scoped, approval-bound verification by a fresh bounded root scan.
+The receipt binds exact staged rows and prior v1 identity but is not a v2
+completion or current-read authority. Disposable PostgreSQL 17.11 full suite:
+**2,886 passed, one skipped** (453 PostgreSQL-marked cases collected, 452
+executed). Ruff, mypy over 90 source files, the deployment gate, 134 browser
+tests and offline documentation inventory (213 Markdown files, 1,160 local
+paths/fragments) pass. Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
+is unchanged; its 3,000-file fictional shadow matches 3,004 ordinary and
+metadata-only rows and 3,006 prior-v1 classifications, with six explicit
+policy gaps and no unexplained membership differences. Local container and
+hosted CI/strict/restore gates are not yet claimed. No version tag is warranted
+for this nonpublishing internal verification step.
+
 ## DC-002O exact FileOS v2 transition approval — merged verification
 
 Branch `codex/dc-002o-transition-approval` starts from merged `main`

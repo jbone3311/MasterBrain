@@ -16,6 +16,11 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002P adds a private, worker-scoped fresh-root verification of one approved
+  FileOS v2 stage under ADR-119 and migration 0041. It rechecks the current
+  v1 receipt, scans with the pinned donor policy, and requires exact staged-row
+  parity before recording an immutable receipt. No v2 importer, completion,
+  freshness, absence, search, API route or cutover consumes that receipt.
 - DC-002O adds a private, nonpublishing FileOS v2 transition plan and an
   immutable, human-owner approval receipt under ADR-118 and migration 0040.
   It rechecks the stage and exact latest v1 receipt, binds the decision to a
