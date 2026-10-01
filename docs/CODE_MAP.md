@@ -1,6 +1,6 @@
 # Current MasterBrain code map
 
-Updated 2026-09-25. Existing files, not a proposed directory tree. Python modular
+Updated 2026-10-01. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without
@@ -8,6 +8,7 @@ redirecting Email ingestion or search.
 
 | Responsibility | Actual files |
 |---|---|
+| First-party read-only question workspace | [static assets](../src/masterbrain/web/brain.html), [script](../src/masterbrain/web/brain.js), [API static routes](../src/email_brain/api.py), [browser tests](../tests/web_brain.test.cjs), [ADR-127](adr/127_first_party_read_workspace.md); no model answer or source effect |
 | MasterBrain command surface | [cli.py](../src/masterbrain/cli.py); read-only hash/compare/duplicates/FileOS snapshot and explicit publication |
 | DataCore contracts | [contracts.py](../src/masterbrain/datacore/contracts.py); immutable source/version/evidence/provenance types |
 | Read-only FileOS inventory | [fileos.py](../src/masterbrain/datacore/fileos.py); deterministic bounded snapshot, no source effects |

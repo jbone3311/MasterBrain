@@ -2,6 +2,26 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## UI-001 first-party read-only question workspace — local branch verification
+
+ADR-127 adds `/brain` and packaged static assets. The page calls only existing
+scoped current-search and evidence routes; it keeps its bearer credential and
+at most eight question/result pairs in browser memory, shows partial coverage,
+and does not synthesize answers or offer source actions. Six browser-contract
+tests cover no unauthenticated request, grouped hostile-text rendering, scoped
+evidence/content denial, stale-response invalidation and malformed results.
+The API static-route suite passed 33 tests; the complete suite passed
+**2,897 tests, one skipped** in 233.05 seconds on a fresh disposable local
+PostgreSQL 17.11 cluster, with 456 of 457 PostgreSQL-marked tests executed.
+The local deployment gate separately passed 2,441 non-PostgreSQL tests and
+skipped 457 PostgreSQL-marked cases by design. Ruff, strict mypy over 95
+source files, 140 browser tests (including the six new workspace cases),
+Node syntax, documentation and diff checks passed. An offline wheel build
+included all three new workspace assets. The temporary cluster was stopped
+and removed after the run. Exact-head CI, restricted packaged-image checks,
+strict runtime and restore remain to be run on the final branch head. This is
+not a hosted chat or a model-generated answer; no version tag is assigned.
+
 ## DC-002U FileOS v2 shared generation — merged verification
 
 PR [#81](https://github.com/jbone3311/MasterBrain/pull/81) merged at

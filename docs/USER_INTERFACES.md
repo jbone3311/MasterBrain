@@ -1,7 +1,8 @@
 # MasterBrain user interfaces and controlled actions
 
-Status: product target, not a claim of deployed chat, assistant integration,
-hosting or source-write capability. [Current functions](CURRENT_FUNCTIONS.md) and
+Status: product target. A first-party read-only, conversation-shaped search
+workspace now exists, but generated answers, certified assistant integration,
+hosting and source-write capability do not. [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior.
 
 ## One service, two entrances
@@ -72,9 +73,10 @@ credentials.
 1. **Common read contract:** make Email, FileOS and KnowledgeCore retrieval
    source-current, bounded and citation-bearing; expose explicit partial
    coverage/freshness. Prove denial and revocation, including derived caches.
-2. **First-party workspace:** implement search and evidence expansion without
-   requiring a model; add a conversation layer with cited synthesis only after
-   grounded-answer tests and prompt-injection isolation pass.
+2. **First-party workspace:** a read-only question screen now groups current
+   search and separately authorized evidence expansion without a model. Add
+   a true conversation layer with cited synthesis only after grounded-answer
+   tests and prompt-injection isolation pass.
 3. **External client:** connect at least one separately authorized assistant
    through a thin adapter and run the same fictional cross-source questions
    through it and the first-party workspace. Compare result membership,

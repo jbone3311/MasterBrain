@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- UI-001 adds a first-party, read-only question workspace at `/brain` under
+  ADR-127. It uses the same scoped current-search and separately authorized
+  evidence routes as external clients, shows independent Email/FileOS/archive/
+  KnowledgeCore groups and partial coverage, and keeps credentials and turns
+  only in browser memory. It provides no generated answer, source effect,
+  hosted/live-source acceptance or certified external assistant connection.
+
 - DC-002U adds a private worker-only FileOS v2 generation builder in shared
   DataCore index tables under ADR-126 and migration 0047. SQL binds it to one
   ready document attempt, closes exact item/chunk membership, and refuses v2

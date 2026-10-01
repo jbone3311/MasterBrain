@@ -121,3 +121,9 @@ and inventory read route; it does not remove immutable receipt or absence histor
 
 The current `compose.yaml` remains a local Email-capability PostgreSQL setup, not a
 production MasterBrain deployment.
+
+The first-party `/brain` workspace is served as static assets by the prototype
+API. It requires the same authorized read scopes as external API clients and
+has no model or effect executor. Serving this shell is not a hosted product
+rollout: production still requires identity, private tenant routing, enrollment,
+TLS, retention, revocation, telemetry, backup/restore and owner acceptance.

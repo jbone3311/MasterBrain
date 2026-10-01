@@ -81,6 +81,11 @@ def test_citations_content_coverage_and_no_source_mutation(preview, tmp_path):
         assert client.get("/trial").status_code == 200
         assert "script-src 'self'" in client.get("/trial").headers["content-security-policy"]
         assert client.get("/trial", headers={"Host": "attacker.invalid"}).status_code == 400
+        workspace = client.get("/brain")
+        assert workspace.status_code == 200
+        assert 'src="/brain.js"' in workspace.text
+        assert "script-src 'self'" in workspace.headers["content-security-policy"]
+        assert client.get("/brain", headers={"Host": "attacker.invalid"}).status_code == 400
     for name, digest in preview.file_hashes.items():
         assert hashlib.sha256((tmp_path / "owner" / name).read_bytes()).hexdigest() == digest
     assert set(path.name for path in (tmp_path / "owner").iterdir()) == set(FILES)

@@ -150,6 +150,7 @@ test("changing the credential clears content and prevents a late response from r
   const inFlight = h.elements["ask-form"].events.submit({preventDefault() {}});
   await flush();
   h.enterToken("second-token");
+  assert.equal(h.elements["brain-question"].value, "");
   release(); await inFlight; await flush();
   assert.equal(h.elements.turns.childElementCount, 1);
   assert.equal(h.elements.turns.firstElementChild.className, "empty");

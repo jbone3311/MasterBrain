@@ -72,6 +72,7 @@ def test_owner_assets_remain_fixed_same_origin_and_noncacheable(client: TestClie
     assert response.headers["Cache-Control"] == "no-store"
     assert "script-src 'self'" in response.headers["Content-Security-Policy"]
     if path == "/":
+        assert 'href="/brain"' in response.text
         assert 'src="/document_review.js"' in response.text
         assert 'id="include-documents" type="checkbox"' in response.text
         assert 'id="document-selection" aria-live="polite"' in response.text

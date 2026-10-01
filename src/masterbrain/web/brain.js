@@ -35,6 +35,7 @@
     pending.clear();
     busy = false;
     if (clearToken) tokenField.value = "";
+    questionField.value = "";
     turns.replaceChildren();
     node("p", "Start with a distinctive name, topic, or phrase. Results are grouped by source; they are not an AI-generated answer.", turns, "empty");
     status.textContent = usable() ? "Ready for a read-only search." : "Enter an authorized credential to begin.";
@@ -101,7 +102,8 @@
     } catch (error) {
       if (epoch === capturedEpoch && tokenField.value === token) {
         target.replaceChildren();
-        node("p", error.message.startsWith("Request refused") ? error.message : "Evidence unavailable.", target, "notice");
+        node("p", Number.isInteger(error?.status) ?
+          `Request refused (${error.status}). Check your access.` : "Evidence unavailable.", target, "notice");
       }
     }
   }
@@ -175,7 +177,8 @@
     } catch (error) {
       if (epoch === capturedEpoch && tokenField.value === token) {
         answer.replaceChildren();
-        node("p", error.message.startsWith("Request refused") ? error.message : "Search unavailable. Please retry.", answer, "notice");
+        node("p", Number.isInteger(error?.status) ?
+          `Request refused (${error.status}). Check your access.` : "Search unavailable. Please retry.", answer, "notice");
         status.textContent = "Search did not complete.";
       }
     } finally {
