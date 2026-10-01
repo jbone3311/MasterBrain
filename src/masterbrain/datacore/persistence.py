@@ -302,6 +302,96 @@ def _parse_time(value: object) -> datetime:
     return parsed.astimezone(UTC)
 
 
+def _fileos_transition_detail(kind: str, raw: object) -> dict[str, Any]:
+    """Project only fixed, bounded private fields from an immutable packet row."""
+    if not isinstance(raw, Mapping):
+        raise Conflict("FileOS transition packet integrity requires review")
+    locator = raw.get("locator")
+    if (
+        not isinstance(locator, str)
+        or not 1 <= len(locator) <= 4000
+        or locator.startswith(("/", "\\"))
+        or "\\" in locator
+        or "\x00" in locator
+        or (locator != "." and any(part in {"", ".", ".."} for part in locator.split("/")))
+        or (locator == "." and kind != "errors")
+    ):
+        raise Conflict("FileOS transition packet integrity requires review")
+    detail: dict[str, Any] = {"ledger": kind, "locator": locator}
+    if kind == "prior":
+        state = raw.get("state")
+        if not isinstance(state, str) or state not in {
+            "unchanged", "changed", "deferred_prior", "excluded_prior",
+            "error_covered_prior", "unobserved_prior",
+        }:
+            raise Conflict("FileOS transition packet integrity requires review")
+        if not isinstance(raw.get("item_id"), str) or not isinstance(
+            raw.get("prior_version_id"), str
+        ):
+            raise Conflict("FileOS transition packet integrity requires review")
+        detail["state"] = state
+        for key in ("item_id", "prior_version_id", "donor_version_id", "reason"):
+            value = raw.get(key)
+            if value is not None:
+                if not isinstance(value, str) or not 1 <= len(value) <= 128:
+                    raise Conflict("FileOS transition packet integrity requires review")
+                detail[key] = value
+    elif kind == "hashed":
+        digest = raw.get("digest")
+        size = raw.get("size_bytes")
+        if (
+            not isinstance(digest, Mapping)
+            or digest.get("algorithm") != "sha256"
+            or not isinstance(digest.get("value"), str)
+            or re.fullmatch(r"[a-f0-9]{64}", digest["value"]) is None
+            or type(size) is not int
+            or not 0 <= size <= 2**63 - 1
+        ):
+            raise Conflict("FileOS transition packet integrity requires review")
+        for key in ("item_id", "version_id"):
+            value = raw.get(key)
+            if not isinstance(value, str) or not 1 <= len(value) <= 128:
+                raise Conflict("FileOS transition packet integrity requires review")
+            detail[key] = value
+        detail["sha256"] = digest["value"]
+        detail["size_bytes"] = size
+    elif kind == "deferred":
+        item_id = raw.get("item_id")
+        size = raw.get("size_bytes")
+        reason = raw.get("reason")
+        if (
+            not isinstance(item_id, str)
+            or not 1 <= len(item_id) <= 128
+            or type(size) is not int
+            or not 0 <= size <= 2**63 - 1
+            or not isinstance(reason, str)
+            or reason not in {"no_hash", "dataless", "oversize"}
+            or "version_id" in raw
+            or "digest" in raw
+        ):
+            raise Conflict("FileOS transition packet integrity requires review")
+        detail.update(item_id=item_id, size_bytes=size, reason=reason)
+    elif kind == "exclusions":
+        reason = raw.get("reason")
+        if not isinstance(reason, str) or reason not in {
+            "donor_junk_dir", "donor_operational_dir", "donor_junk_file",
+            "symlink_directory", "not_regular",
+        }:
+            raise Conflict("FileOS transition packet integrity requires review")
+        detail["reason"] = reason
+    elif kind == "errors":
+        code = raw.get("code")
+        if not isinstance(code, str) or code not in {
+            "directory_unreadable", "root_changed_during_scan", "symlink_skipped",
+            "changed_during_scan", "file_unreadable",
+        }:
+            raise Conflict("FileOS transition packet integrity requires review")
+        detail["code"] = code
+    else:
+        raise Conflict("FileOS transition packet integrity requires review")
+    return detail
+
+
 def _manifest_items(
     manifest: Mapping[str, Any],
 ) -> tuple[SourceRef, datetime, list[SourceItemVersion]]:
@@ -3915,6 +4005,160 @@ class DataCoreStore:
             return FileOSTransitionPacketRecord(
                 packet_id, source.source_id, packet_hash, inserted["recorded_at"], True
             )
+
+    def fileos_transition_review(
+        self,
+        ctx: TenantContext,
+        packet_id: UUID,
+        *,
+        include_details: bool = False,
+        offset: int = 0,
+        limit: int = 25,
+    ) -> dict[str, Any]:
+        """Read a sealed packet without making it a publishable FileOS run.
+
+        The summary omits locators. Detail requires a separate evidence scope
+        and uses stable ordinal pages over the immutable packet.
+        """
+        self.store.require(ctx, "brain.changes.read")
+        if include_details:
+            self.store.require(ctx, "brain.evidence.read")
+        if (
+            not isinstance(packet_id, UUID)
+            or type(include_details) is not bool
+            or type(offset) is not int
+            or offset < 0
+            or type(limit) is not int
+            or not 1 <= limit <= 50
+            or (not include_details and offset != 0)
+        ):
+            raise ValueError("invalid FileOS transition review request")
+        with self.store.transaction(ctx) as conn:
+            saved = conn.execute(
+                "SELECT id,source_id,prior_actor_id,prior_run_id,prior_observed_at,"
+                "donor_observed_at,root_binding_sha256,prior_manifest_sha256,"
+                "packet_sha256,packet,recorded_at FROM brain_fileos_transition_packets "
+                "WHERE id=%s",
+                (packet_id,),
+            ).fetchone()
+            if saved is None:
+                raise NotFound()
+            packet = saved["packet"]
+            try:
+                encoded = json.dumps(
+                    packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+                    allow_nan=False,
+                ).encode()
+                actual_hash = hashlib.sha256(encoded).hexdigest()
+            except (TypeError, ValueError) as exc:
+                raise Conflict("FileOS transition packet integrity requires review") from exc
+            if actual_hash != saved["packet_sha256"] or len(encoded) > 16 * 1024 * 1024:
+                raise Conflict("FileOS transition packet integrity requires review")
+            if not isinstance(packet, Mapping):
+                raise Conflict("FileOS transition packet integrity requires review")
+            candidate = packet.get("candidate")
+            preview = packet.get("preview")
+            if not isinstance(candidate, Mapping) or not isinstance(preview, Mapping):
+                raise Conflict("FileOS transition packet integrity requires review")
+            try:
+                donor_observed = _parse_time(candidate.get("observed_at"))
+            except ValueError as exc:
+                raise Conflict("FileOS transition packet integrity requires review") from exc
+            counts = candidate.get("counts")
+            classifications = preview.get("counts")
+            blockers = preview.get("blockers")
+            ledgers = ("hashed", "deferred", "exclusions", "errors")
+            prior_rows = preview.get("prior_items")
+            allowed_blockers = {
+                "prior_snapshot_errors", "donor_scan_errors",
+                "prior_item_not_hashed_under_donor_policy",
+            }
+            if (
+                packet.get("packet_version") != "masterbrain-fileos-transition-review-packet-v1"
+                or packet.get("publishable") is not False
+                or packet.get("requires_review") is not True
+                or packet.get("source_id") != saved["source_id"]
+                or packet.get("prior_run_id") != str(saved["prior_run_id"])
+                or packet.get("prior_manifest_sha256") != saved["prior_manifest_sha256"]
+                or donor_observed != saved["donor_observed_at"]
+                or not isinstance(counts, Mapping)
+                or not isinstance(classifications, Mapping)
+                or set(counts) != {"hashed", "deferred", "excluded", "errors"}
+                or set(classifications) != {
+                    "unchanged", "changed", "deferred_prior", "excluded_prior",
+                    "error_covered_prior", "unobserved_prior", "donor_only_hashed",
+                }
+                or not isinstance(blockers, list)
+                or any(not isinstance(value, str) or value not in allowed_blockers
+                       for value in blockers)
+                or not isinstance(prior_rows, list)
+                or any(not isinstance(candidate.get(ledger), list) for ledger in ledgers)
+                or counts != {
+                    "hashed": len(candidate["hashed"]),
+                    "deferred": len(candidate["deferred"]),
+                    "excluded": len(candidate["exclusions"]),
+                    "errors": len(candidate["errors"]),
+                }
+                or not all(type(value) is int and value >= 0
+                           for value in classifications.values())
+            ):
+                raise Conflict("FileOS transition packet integrity requires review")
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:fileos-source:{saved['source_id']}",),
+            )
+            latest = conn.execute(
+                "SELECT actor_id,run_id,observed_at,manifest_sha256,"
+                "root_binding_sha256,policy_sha256 FROM brain_fileos_run_receipts "
+                "WHERE source_id=%s ORDER BY observed_at DESC,completed_at DESC,run_id DESC "
+                "LIMIT 1",
+                (saved["source_id"],),
+            ).fetchone()
+            source = conn.execute(
+                "SELECT root_binding_sha256 FROM brain_sources WHERE id=%s AND kind='fileos'",
+                (saved["source_id"],),
+            ).fetchone()
+            latest_matches = bool(
+                latest
+                and source
+                and latest["actor_id"] == saved["prior_actor_id"]
+                and latest["run_id"] == saved["prior_run_id"]
+                and latest["observed_at"] == saved["prior_observed_at"]
+                and latest["manifest_sha256"] == saved["prior_manifest_sha256"]
+                and latest["root_binding_sha256"] == saved["root_binding_sha256"]
+                and source["root_binding_sha256"] == saved["root_binding_sha256"]
+                and latest["policy_sha256"] == preview.get("prior_policy_sha256")
+            )
+            total = len(prior_rows) + sum(len(candidate[ledger]) for ledger in ledgers)
+            result: dict[str, Any] = {
+                "review_version": "masterbrain-fileos-transition-review-v1",
+                "packet_id": packet_id,
+                "source_id": saved["source_id"],
+                "prior_run_id": saved["prior_run_id"],
+                "packet_sha256": saved["packet_sha256"],
+                "recorded_at": saved["recorded_at"],
+                "donor_observed_at": saved["donor_observed_at"],
+                "latest_receipt_matches_packet": latest_matches,
+                "publishable": False,
+                "requires_review": True,
+                "candidate_counts": dict(counts),
+                "classification_counts": dict(classifications),
+                "blockers": list(blockers),
+                "detail_total": total,
+            }
+            if include_details:
+                ordered = [
+                    *(("prior", row) for row in prior_rows),
+                    *((ledger, row) for ledger in ledgers for row in candidate[ledger]),
+                ]
+                page = ordered[offset:offset + limit]
+                result["details"] = [_fileos_transition_detail(kind, row) for kind, row in page]
+                result["next_offset"] = offset + len(page) if offset + len(page) < total else None
+            self.store.audit(
+                conn, ctx, "brain.fileos_transition_review_read",
+                "fileos_transition_packet", str(packet_id),
+            )
+            return result
 
     def fileos_freshness(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
         """Return the latest complete run, never an in-progress or partial prefix."""

@@ -67,6 +67,8 @@ Security and data-integrity blockers take priority over adding more surface area
    DC-002L can retain that candidate and comparison as a private immutable
    review packet after a locked latest-run check. It still does not implement
    v2 persistence, an approved transition or donor-policy publication.
+   DC-002M adds bounded private review of that packet; no review result is
+   treated as transition approval or a live-root attestation.
    PRs #52, #55 and #57 are merged with final-head and merged-main CI, strict
    runtime and restore green; v2 publication remains a separate step.
 

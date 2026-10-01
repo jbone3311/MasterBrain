@@ -38,6 +38,17 @@ export, but a packet is **not** independent attestation of the filesystem.
 No current search, freshness, absence or publication path reads this table.
 The candidate's hashless rows remain deferred without fabricated versions.
 
+DC-002M adds a private `DataCoreStore.fileos_transition_review(ctx, packet_id)`
+read under [ADR-116](adr/116_private_fileos_transition_review_read.md). The
+`brain.changes.read` summary returns only opaque identities, counts, fixed
+blocker codes, timestamps, packet digest and whether the latest completed
+receipt still matches the packet **at read time**. It omits root digests and
+locators. `include_details=True` additionally requires `brain.evidence.read`
+and returns at most 50 fixed-shape locator rows per ordinal page; a deferred
+row still has no version or digest. Canonical-hash mismatch fails closed.
+Historical packets remain reviewable if their v1 run is superseded. This is an
+internal library path, not a Brain API or CLI route, approval or v2 publication.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |
@@ -70,8 +81,9 @@ the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 
-The completed-baseline check and immutable review packet do not solve the v2 database shape. Before any
-switch, define and test metadata-only persistence and freshness, an explicit
+The completed-baseline check and private review path do not solve the v2
+database shape. Before any switch, define and test metadata-only persistence
+and freshness, an explicit
 owner-reviewed v1-to-v2 baseline transaction, absence suppression across the
 policy boundary, rollback, PostgreSQL/RLS/restore behavior, broader platform
 and cloud-placeholder parity, authorized read-only live shadow, and bounded

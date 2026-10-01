@@ -137,6 +137,12 @@ the database refuses a changed source binding or silent legacy claim. This reduc
 accidental root-switch risk but is not malicious-scanner attestation or live donor
 cutover proof. The digest stays within private manifest/database boundaries.
 
+The sealed donor transition packet has a compact, locator-free read requiring
+`brain.changes.read`. Locator-level detail additionally requires
+`brain.evidence.read`, is limited to 50 fixed-shape rows per page, and fails
+closed on a packet-digest mismatch. A read-time latest-receipt match is not
+proof of live root state, approval or FileOS cutover authority (ADR-116).
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.

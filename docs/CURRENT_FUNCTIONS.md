@@ -72,7 +72,8 @@ completed v1 run before and after scanning. Neither variant has CLI/API
 publication or cutover authority. An internal operator function can seal the
 one-scan candidate and comparison as an immutable private review packet after
 an advisory-locked latest-run recheck; it also has no CLI/API or publication
-authority.
+authority. That packet has a compact private library read and a separately
+authorized, paged locator-detail read for review; neither is an approval.
 Current-only archive-image OCR search is a separate
 bounded layer; automatic archive fan-out is not implemented. See the
 [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md) and

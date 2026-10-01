@@ -16,6 +16,10 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002M adds a compact private read of a sealed FileOS transition packet,
+  with separately scoped, at-most-50-row locator pages. It checks the stored
+  digest and reports whether the latest receipt still matches at read time.
+  There is no CLI/API surface, approval, v2 publication or cutover.
 - DC-002L adds a private immutable donor-policy review packet, bound to one
   latest exact completed v1 run with an advisory-locked insert. Candidate and
   preview come from one scan; forced RLS, tenant-login fence, replay and
