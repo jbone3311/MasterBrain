@@ -2,6 +2,9 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added fixed-code failure-stage warnings for the trusted restricted-container
+  controller (ADR-120) and secret-scrubbing regressions. `MimeUnavailable`,
+  isolation limits and retry policy remain unchanged; issue #64 stays open.
 - Added worker-scoped, fresh-root verification of one approved FileOS v2
   staged inventory (ADR-119, migration 0041). Exact source, policy, count and
   row matching yields an immutable historical receipt; no v2 publication,

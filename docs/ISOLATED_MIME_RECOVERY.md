@@ -60,6 +60,11 @@ malformed/oversized output, changed processor configuration or failed cleanup is
 unavailability: no attempt or projection is cached. Existing quarantine remains.
 Errors contain no mail, paths or subprocess output. Do not fix an error by raising
 resource limits or changing image identity silently.
+The trusted controller now emits a fixed profile/stage/reason warning on these
+failures (ADR-120), without the MIME, paths, command/output, exception text or
+container identifiers. The public error stays `MimeUnavailable`; these codes
+help distinguish a pipe deadline or CLI exit from inspection, worker status,
+decode and cleanup faults. They do not diagnose issue #64 retrospectively.
 
 Publication retains the existing account lock and current-event check. Revocation,
 provider deletion or newer mail while parsing prevents stale publication. Repeated

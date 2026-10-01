@@ -7,6 +7,7 @@ pipes after isolation inspection, never through arguments, logs or temporary fil
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import selectors
@@ -55,6 +56,42 @@ _ENV = {
 }
 _COMMAND = ["-I", "-B", "-m", "email_brain.mime_sandbox"]
 _T = TypeVar("_T")
+_LOG = logging.getLogger("email_brain.sandbox")
+_FAILURE_CODES = frozenset(
+    {
+        "spawn",
+        "deadline",
+        "output_limit",
+        "short_input",
+        "cli_exit",
+        "pipe_io",
+        "reap",
+        "worker_oom",
+        "worker_exit",
+        "worker_state",
+        "unexpected",
+    }
+)
+
+
+class _SandboxFailure(MimeUnavailable):
+    """A fixed internal reason; never contains child output or raw input."""
+
+    def __init__(self, code: str) -> None:
+        self.code = code if code in _FAILURE_CODES else "unexpected"
+        super().__init__()
+
+
+def _failure_reason(error: Exception) -> str:
+    if isinstance(error, _SandboxFailure):
+        return error.code
+    if isinstance(error, MimeUnavailable):
+        return "boundary_refused"
+    if isinstance(error, (ValueError, UnicodeError)):
+        return "invalid_response"
+    if isinstance(error, OSError):
+        return "host_io"
+    return "unexpected"
 
 
 @dataclass(frozen=True)
@@ -124,7 +161,7 @@ def _pump(args: list[str], raw: bytes, *, limit: int, timeout: float) -> bytes:
             while selector.get_map():
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
-                    raise MimeUnavailable()
+                    raise _SandboxFailure("deadline")
                 for key, _ in selector.select(min(remaining, 0.1)):
                     if key.fileobj is process.stdin:
                         try:
@@ -132,7 +169,7 @@ def _pump(args: list[str], raw: bytes, *, limit: int, timeout: float) -> bytes:
                         except BlockingIOError:
                             continue
                         if written <= 0:
-                            raise MimeUnavailable()
+                            raise _SandboxFailure("short_input")
                         offset += written
                         if offset == len(raw):
                             selector.unregister(process.stdin)
@@ -148,14 +185,24 @@ def _pump(args: list[str], raw: bytes, *, limit: int, timeout: float) -> bytes:
                         else:
                             size += len(chunk)
                             if size > limit:
-                                raise MimeUnavailable()
+                                raise _SandboxFailure("output_limit")
                             chunks.append(chunk)
             remaining = deadline - time.monotonic()
-            if remaining <= 0 or process.wait(timeout=remaining) != 0 or offset != len(raw):
-                raise MimeUnavailable()
+            if remaining <= 0:
+                raise _SandboxFailure("deadline")
+            if process.wait(timeout=remaining) != 0:
+                raise _SandboxFailure("cli_exit")
+            if offset != len(raw):
+                raise _SandboxFailure("short_input")
         return b"".join(chunks)
+    except _SandboxFailure:
+        raise
+    except subprocess.TimeoutExpired:
+        raise _SandboxFailure("deadline") from None
+    except OSError:
+        raise _SandboxFailure("spawn" if process is None else "pipe_io") from None
     except Exception:
-        raise MimeUnavailable() from None
+        raise _SandboxFailure("unexpected") from None
     finally:
         if process is not None:
             try:
@@ -163,7 +210,7 @@ def _pump(args: list[str], raw: bytes, *, limit: int, timeout: float) -> bytes:
                     process.kill()
                 process.wait(timeout=1)
             except Exception:
-                raise MimeUnavailable() from None
+                raise _SandboxFailure("reap") from None
             finally:
                 for stream in (process.stdin, process.stdout):
                     if stream is not None:
@@ -301,8 +348,7 @@ class _DockerPipe:
             or host.get("PortBindings")
             or host.get("RestartPolicy", {}).get("Name") != "no"
             or (
-                self._profile.shm_size is not None
-                and host.get("ShmSize") != self._profile.shm_size
+                self._profile.shm_size is not None and host.get("ShmSize") != self._profile.shm_size
             )
         ):
             raise MimeUnavailable()
@@ -314,13 +360,16 @@ class _DockerPipe:
             raise MimeUnavailable()
 
     def _run(self, raw: bytes, decode: Callable[[bytes], _T]) -> _T:
+        stage = "input"
         try:
             if not isinstance(raw, bytes) or len(raw) > self._profile.input_bytes:
                 raise MimeUnavailable()
+            stage = "image"
             self._image()
             name = f"eb-{self._profile.name}-" + uuid4().hex
             identifier = None
             try:
+                stage = "create"
                 args = [
                     "container",
                     "create",
@@ -358,29 +407,45 @@ class _DockerPipe:
                 if not _CONTAINER.fullmatch(result):
                     raise MimeUnavailable()
                 identifier = result
+                stage = "inspect_created"
                 state = self._inspect("container", identifier)
                 self._owned(state, name, identifier)
                 self._isolated(state)
+                stage = "start"
                 output = self._invoke(
                     ["container", "start", "--attach", "--interactive", identifier],
                     raw,
                     limit=self._profile.output_bytes,
                     timeout=30,
                 )
+                stage = "inspect_completed"
                 completed = self._inspect("container", identifier)
                 self._owned(completed, name, identifier)
                 status = completed["State"]
-                if (
-                    status.get("Status") != "exited"
-                    or type(status.get("ExitCode")) is not int
-                    or status["ExitCode"] != 0
-                    or status.get("OOMKilled") is not False
-                ):
-                    raise MimeUnavailable()
+                stage = "worker_status"
+                if status.get("OOMKilled") is True:
+                    raise _SandboxFailure("worker_oom")
+                if status.get("Status") != "exited" or type(status.get("ExitCode")) is not int:
+                    raise _SandboxFailure("worker_state")
+                if status["ExitCode"] != 0:
+                    raise _SandboxFailure("worker_exit")
+                if status.get("OOMKilled") is not False:
+                    raise _SandboxFailure("worker_state")
+                stage = "decode"
                 return decode(output)
             finally:
-                self._cleanup(name, identifier)
-        except Exception:
+                try:
+                    self._cleanup(name, identifier)
+                except Exception:
+                    stage = "cleanup"
+                    raise
+        except Exception as error:
+            _LOG.warning(
+                "isolated_processor_failure profile=%s stage=%s reason=%s",
+                self._profile.name,
+                stage,
+                _failure_reason(error),
+            )
             raise MimeUnavailable() from None
 
 
