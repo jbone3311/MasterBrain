@@ -15,7 +15,7 @@ before merge. The merge commit also passed the
 [strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36918757261)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36918757313);
 its [post-merge CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36918757353)
-was still running when this receipt was drafted and is not claimed here as a pass.
+also passed, including the full PostgreSQL suite and isolated FileOS worker checks.
 
 ADR-125, migration 0046 and `FileOSV2DocumentPublisher` add a worker-only
 historical publication attempt for the hashed rows of one completed v2
