@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-126](adr/126_fileos_v2_shared_index_generation.md) extends the common
+DataCore generation contract to an exact v2 completion/document attempt while
+keeping v2 activation forbidden in SQL. It defines a private builder and
+readiness gate, not current visibility, absence or donor cutover.
+
 [ADR-125](adr/125_fileos_v2_baseline_document_publication.md) accounts for
 bounded normalized documents on the exact prepared v2 baseline. A complete
 attempt can be ready or blocked, but neither outcome activates current reads,

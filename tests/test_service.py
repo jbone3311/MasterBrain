@@ -632,6 +632,8 @@ def test_fileos_baseline_verification_scope_is_worker_only() -> None:
             registry({"brain.fileos.transition.prepare"}, kind)
         with pytest.raises(ValueError, match="worker-only"):
             registry({"brain.fileos.transition.publish"}, kind)
+        with pytest.raises(ValueError, match="worker-only"):
+            registry({"brain.fileos.transition.index"}, kind)
 
 
 def test_plain_mime_and_raw_hash() -> None:
