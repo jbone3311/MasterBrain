@@ -2,7 +2,16 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002R FileOS v2 owner baseline authorization — branch verification
+## DC-002R FileOS v2 owner baseline authorization — merged verification
+
+PR [#75](https://github.com/jbone3311/MasterBrain/pull/75) merged at
+`ee397e78ab4036c16da7ec13fec4cf9574e89cc3` from base
+`14c3ef228a463714bd97a8317349e2bac0c06eec`. Its exact head
+`1774f2795e2931df621f9aee8d7459823b26eaae` passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36903503628),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36903503754)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36903503649)
+before merge.
 
 ADR-123, migration 0044 and the private `FileOSV2BaselineAuthorizer` add a
 separate human-owner decision bound to the exact reviewed plan, preparation
@@ -22,10 +31,9 @@ table. The complete local suite passed **2,894 tests, one skipped** in
 285.62 seconds, with 456 of 457 PostgreSQL-marked tests executed. Locked
 dependency synchronization, Ruff, strict mypy over 92 source files, 134
 browser tests, documentation inventory and the local deployment quality gate
-passed. Hosted exact-head CI, strict runtime and populated restore are
-pending; this section must be updated with their exact links and merge commit
-before treating the tranche as landed. No version tag is warranted for an
-internal nonpublishing authority receipt.
+passed. No version tag was created for this internal nonpublishing authority
+receipt; the next tagged milestone requires a tested v2 baseline and explicit
+release acceptance, not merely the presence of an authorization row.
 
 ## DC-005N linear FileOS v1 completion ledger — merged verification
 
