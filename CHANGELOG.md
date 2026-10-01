@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — after v0.2.0a1
+
+- Added a read-scoped, exact completed-v1 baseline verifier and a private
+  before/after database-bound FileOS donor transition preview (ADR-114). A
+  newer completion during scanning invalidates the report. No v2 publication,
+  absence inference, source effects or FOS-Master change.
+
 ## v0.2.0a1 — synthetic-only alpha checkpoint (2026-10-01)
 
 - Tagged exact `main` commit `c0a531d8a7d0991be0a0f1ea717479c07cc20feb`

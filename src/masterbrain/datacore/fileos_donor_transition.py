@@ -10,12 +10,16 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
+from email_brain.domain.models import TenantContext
 from masterbrain.datacore.fileos import fileos_root_binding_sha256
 from masterbrain.datacore.fileos_donor_candidate import build_fileos_donor_candidate
 from masterbrain.datacore.persistence import (
+    DataCoreStore,
     fileos_inventory_policy_sha256,
     fileos_manifest_root_binding_sha256,
+    fileos_manifest_sha256,
     validate_fileos_completion_coverage,
 )
 
@@ -150,3 +154,37 @@ def preview_fileos_donor_transition(
         "donor_errors": list(errors),
         "blockers": blockers,
     }
+
+
+def preview_fileos_completed_donor_transition(
+    core: DataCoreStore,
+    ctx: TenantContext,
+    prior_manifest: Mapping[str, Any],
+    prior_run_id: UUID,
+    root: Path,
+    *,
+    source_id: str,
+    observed_at: datetime,
+    metadata_only: bool = False,
+) -> dict[str, Any]:
+    """Preview only against the latest exact, completed v1 database baseline.
+
+    A second verification rejects a newer completed run during the donor scan.
+    No v2 state is persisted or made publishable by this function.
+    """
+    completed_at = core.verify_fileos_completed_baseline(ctx, prior_manifest, prior_run_id)
+    preview = preview_fileos_donor_transition(
+        prior_manifest,
+        root,
+        source_id=source_id,
+        observed_at=observed_at,
+        metadata_only=metadata_only,
+    )
+    if core.verify_fileos_completed_baseline(ctx, prior_manifest, prior_run_id) != completed_at:
+        raise ValueError("FileOS completed baseline changed during transition preview")
+    preview["completed_baseline"] = {
+        "run_id": str(prior_run_id),
+        "completed_at": completed_at.isoformat(),
+        "manifest_sha256": fileos_manifest_sha256(prior_manifest),
+    }
+    return preview

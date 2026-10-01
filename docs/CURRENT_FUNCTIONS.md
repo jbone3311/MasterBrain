@@ -67,7 +67,9 @@ provenance, deterministic text chunks, lexical index generations, isolated
 PDF/DOCX/XLSX and ZIP/TAR processing, and exact selected archive-image OCR
 derivatives. The donor inventory classifier is parity-tested but **not** adopted as
 the live snapshot policy. An internal read-only library can preview v1-to-donor
-policy differences, but it has no CLI/API publication or cutover authority.
+policy differences; its database-backed variant requires the exact latest
+completed v1 run before and after scanning. Neither variant has CLI/API
+publication or cutover authority.
 Current-only archive-image OCR search is a separate
 bounded layer; automatic archive fan-out is not implemented. See the
 [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md) and

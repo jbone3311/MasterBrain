@@ -1,6 +1,6 @@
 # MasterBrain Roadmap
 
-Updated 2026-09-30. This is a dependency-ordered plan, not a release claim.
+Updated 2026-10-01. This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
@@ -62,7 +62,9 @@ Security and data-integrity blockers take priority over adding more surface area
    hashless rows deferred; neither settles cloud-placeholder behavior nor
    authorizes v2 publication. DC-002J's read-only transition preview classifies
    the v1/donor policy gap; it does not create a persisted v2 baseline or absence
-   authority. PR #52 is merged with final-head and merged-main CI, strict
+   authority. DC-002K also requires the latest exact completed v1 database run
+   before and after scanning; it creates no v2 publication or cutover authority.
+   PR #52 is merged with final-head and merged-main CI, strict
    runtime and restore green; v2 publication remains a separate step.
 
 The first three tranches can be reviewed independently of 5D implementation.

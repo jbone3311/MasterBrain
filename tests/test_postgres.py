@@ -41,6 +41,7 @@ from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
 from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain import archive_member_controller as archive_controller
+from masterbrain.datacore import fileos_donor_transition as transition_module
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
 from masterbrain.datacore.archive_member_contract import decode_result as decode_member_result
 from masterbrain.datacore.archive_member_contract import encode_request as encode_member_request
@@ -52,6 +53,9 @@ from masterbrain.datacore.archive_member_worker import process_request as read_a
 from masterbrain.datacore.archive_worker import inventory_archive
 from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
+from masterbrain.datacore.fileos_donor_transition import (
+    preview_fileos_completed_donor_transition,
+)
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
 from masterbrain.datacore.image_ocr_contract import source_for as image_source_for
@@ -4703,3 +4707,89 @@ def test_fileos_excluded_prior_locator_cannot_become_absence(
     inventory = core.fileos_inventory(ctx, source_id)
     assert inventory["run_id"] == final_run
     assert inventory["newly_absent_items"] == 1
+
+
+def test_fileos_donor_preview_requires_latest_exact_completed_v1_run(
+    database: tuple[Store, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _ = database
+    ctx = datacore_context(tenant[0])
+    core = DataCoreStore(store)
+    source_id = "files_donor_baseline"
+    (tmp_path / "proof.txt").write_bytes(b"fictional completed baseline proof")
+    prior = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    first_run = uuid4()
+
+    with pytest.raises(Conflict, match="completed baseline"):
+        core.verify_fileos_completed_baseline(ctx, prior, first_run)
+    core.import_fileos_snapshot(ctx, prior, first_run)
+    with pytest.raises(Conflict, match="completed baseline"):
+        core.verify_fileos_completed_baseline(ctx, prior, first_run)
+
+    def complete(manifest: dict[str, Any], run_id: UUID) -> None:
+        core.import_fileos_snapshot(ctx, manifest, run_id)
+        core.complete_fileos_run(
+            ctx, manifest, run_id,
+            outcomes={"unsupported": len(manifest["items"])},
+            item_outcomes={item["item_id"]: "unsupported" for item in manifest["items"]},
+            published_documents=0,
+            code_revision="test-donor-baseline-v1",
+            document_processor_version=None,
+        )
+
+    core.complete_fileos_run(
+        ctx, prior, first_run,
+        outcomes={"unsupported": 1},
+        item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-donor-baseline-v1",
+        document_processor_version=None,
+    )
+    completed_at = core.verify_fileos_completed_baseline(ctx, prior, first_run)
+    assert completed_at.tzinfo is not None
+    with pytest.raises(AccessDenied):
+        core.verify_fileos_completed_baseline(replace(ctx, scopes=frozenset()), prior, first_run)
+    report = preview_fileos_completed_donor_transition(
+        core, ctx, prior, first_run, tmp_path,
+        source_id=source_id,
+        observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+    )
+    assert report["publishable"] is False
+    assert report["counts"]["unchanged"] == 1
+    assert report["completed_baseline"]["run_id"] == str(first_run)
+    with pytest.raises(Conflict, match="completed baseline"):
+        core.verify_fileos_completed_baseline(ctx, prior, uuid4())
+    changed_policy = json.loads(json.dumps(prior))
+    changed_policy["policy"]["min_file_size"] = 1
+    with pytest.raises(Conflict, match="completed baseline"):
+        core.verify_fileos_completed_baseline(ctx, changed_policy, first_run)
+
+    second = fileos_manifest(tmp_path, source_id=source_id, hour=2)
+    original_candidate = transition_module.build_fileos_donor_candidate
+
+    def complete_during_scan(root: Path, **kwargs: Any) -> dict[str, Any]:
+        complete(second, uuid4())
+        return original_candidate(root, **kwargs)
+
+    monkeypatch.setattr(transition_module, "build_fileos_donor_candidate", complete_during_scan)
+    with pytest.raises(Conflict, match="completed baseline"):
+        preview_fileos_completed_donor_transition(
+            core, ctx, prior, first_run, tmp_path,
+            source_id=source_id,
+            observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+        )
+    with pytest.raises(Conflict, match="completed baseline"):
+        core.verify_fileos_completed_baseline(ctx, prior, first_run)
+    monkeypatch.setattr(
+        "masterbrain.datacore.fileos_donor_transition.build_fileos_donor_candidate",
+        lambda *_args, **_kwargs: pytest.fail("stale baseline started donor scan"),
+    )
+    with pytest.raises(Conflict, match="completed baseline"):
+        preview_fileos_completed_donor_transition(
+            core, ctx, prior, first_run, tmp_path,
+            source_id=source_id,
+            observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+        )

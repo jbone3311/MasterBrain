@@ -16,6 +16,10 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- On this branch, DC-002K adds a private, read-scoped completed-v1 verifier and a before/after
+  database-bound donor transition preview. It refuses an imported-only,
+  mismatched or stale run, including a newer completion during scanning. It is
+  nonpublishing and does not establish v2 persistence, absence or cutover.
 - ADR-109 adds opt-in `serve --tenant-db-config` routing through a table-blind
   exact-identity login and separately fenced tenant logins. Real disposable
   PostgreSQL tests cover two-tenant API search and missing/wrong/shared-route
