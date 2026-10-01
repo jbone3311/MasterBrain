@@ -26,8 +26,9 @@ production and FileOS cutover remain open.
   ADR-125 and migration 0046. Bounded source reads recheck the staged digest;
   extracted text publishes on the prepared v2 version with existing chunks and
   provenance. A final exact rescan and immutable complete outcome ledger mark
-  an attempt ready or blocked. Hashless rows gain no evidence. This is under
-  branch verification, synthetic/disposable only, with no v2 current index,
+  an attempt ready or blocked. Hashless rows gain no evidence. PR #79 is merged
+  with exact-head and merged-main CI/strict/restore green. This remains
+  synthetic/disposable only, with no v2 current index,
   activation, absence, live acceptance or FOS-Master cutover.
 
 - DC-002S adds a private, worker-scoped FileOS v2 baseline completion under
