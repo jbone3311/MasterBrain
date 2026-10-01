@@ -12,6 +12,7 @@ from pathlib import PurePosixPath
 from typing import Any, Literal, cast
 from uuid import UUID
 
+from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from email_brain.domain.models import TenantContext
@@ -125,6 +126,36 @@ class SearchHit:
     locator: str
     excerpt: str
     rank: float
+
+
+def _search_fileos_generation(
+    conn: Connection[dict[str, Any]],
+    tenant_id: UUID,
+    generation_id: str,
+    query: str,
+    limit: int,
+) -> list[SearchHit]:
+    """One bounded lexical contract for active and private generation reads."""
+    rows = conn.execute(
+        "WITH ranked AS MATERIALIZED ("
+        "SELECT c.tenant_id,c.generation_id,c.id AS chunk_id,c.document_id,c.text,"
+        "ts_rank_cd(c.search_vector,plainto_tsquery('simple',%s)) AS rank "
+        "FROM brain_index_generation_chunks c "
+        "WHERE c.tenant_id=%s AND c.generation_id=%s "
+        "AND c.search_vector @@ plainto_tsquery('simple',%s) "
+        "ORDER BY rank DESC,c.id LIMIT %s) "
+        "SELECT r.chunk_id,r.document_id,i.evidence_id,i.source_id,si.locator,"
+        "ts_headline('simple',r.text,plainto_tsquery('simple',%s),"
+        "'MaxWords=35,MinWords=10') AS excerpt,"
+        "r.rank FROM ranked r "
+        "JOIN brain_index_generation_items i ON i.tenant_id=r.tenant_id "
+        "AND i.generation_id=r.generation_id AND i.document_id=r.document_id "
+        "JOIN brain_source_items si ON si.tenant_id=i.tenant_id "
+        "AND si.source_id=i.source_id AND si.id=i.item_id "
+        "ORDER BY r.rank DESC,r.chunk_id",
+        (query, tenant_id, generation_id, query, limit, query),
+    ).fetchall()
+    return [SearchHit(**row) for row in rows]
 
 
 @dataclass(frozen=True, slots=True)
@@ -5144,23 +5175,11 @@ class DataCoreStore:
             ).fetchone()
             if not active:
                 raise NotFound()
-            rows = conn.execute(
-                "SELECT c.id AS chunk_id,c.document_id,i.evidence_id,i.source_id,si.locator,"
-                "ts_headline('simple',c.text,plainto_tsquery('simple',%s),"
-                "'MaxWords=35,MinWords=10') AS excerpt,"
-                "ts_rank_cd(c.search_vector,plainto_tsquery('simple',%s)) AS rank "
-                "FROM brain_index_generation_chunks c "
-                "JOIN brain_index_generation_items i ON i.tenant_id=c.tenant_id "
-                "AND i.generation_id=c.generation_id AND i.document_id=c.document_id "
-                "JOIN brain_source_items si ON si.tenant_id=i.tenant_id "
-                "AND si.source_id=i.source_id AND si.id=i.item_id "
-                "WHERE c.generation_id=%s "
-                "AND c.search_vector @@ plainto_tsquery('simple',%s) "
-                "ORDER BY rank DESC,c.id LIMIT %s",
-                (query, query, active["generation_id"], query, limit),
-            ).fetchall()
+            hits = _search_fileos_generation(
+                conn, ctx.tenant_id, active["generation_id"], query, limit
+            )
             self.store.audit(conn, ctx, "brain.fileos_active_search", "brain_source", source_id)
-            return [SearchHit(**row) for row in rows]
+            return hits
 
     def search_current_fileos(
         self, ctx: TenantContext, query: str, *, limit: int = 10

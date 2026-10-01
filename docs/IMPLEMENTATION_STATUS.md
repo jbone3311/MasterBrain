@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002V adds a private human-review comparison of one ready historical
+  FileOS v2 generation with the active v1 generation under ADR-128. Both use
+  the same bounded lexical query, but their ranks remain separate. It requires
+  transition-review, search and evidence scopes and refuses a stale v1 basis.
+  This is not exposed in the Brain API or first-party workspace and does not
+  activate v2, infer absence or switch FOS-Master.
+
 - UI-001 adds a first-party, read-only question workspace at `/brain` under
   ADR-127. It uses the same scoped current-search and separately authorized
   evidence routes as external clients, shows independent Email/FileOS/archive/

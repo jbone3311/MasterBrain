@@ -2,7 +2,50 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## UI-001 first-party read-only question workspace — local branch verification
+## DC-002V private FileOS v2 search comparison — branch verification
+
+ADR-128 adds a human-only, scoped comparison of one named ready historical v2
+generation with the same source's active v1 generation. Both use one bounded
+lexical query; results and ranks remain separate, and v2 is labeled
+`historical_preview`. The comparison checks the latest exact v1 baseline and
+root under the FileOS source lock. It adds no public API route, v2 activation,
+absence authority, source effect or FOS-Master change.
+
+On a fresh disposable PostgreSQL 17.11 database, the complete suite passed
+**2,897 tests, one skipped** in 297.21 seconds, including 456 of 457
+PostgreSQL-marked tests. A clean 3,000-hashed-row v2 build and bounded search
+passed separately in 87.35 seconds. After the full-suite collection, the
+additional active-v1-versus-historical-v2 assertion passed separately on a
+fresh database. The deployment gate passed 2,441 non-PostgreSQL tests and
+skipped 457 database-marked cases by design. Ruff, strict mypy over 95 source
+files, 140 browser tests, documentation and diff checks passed. The pinned
+FOS-Master 3,000-file DataCore parity passed; the donor-policy shadow matched
+3,004 candidate rows with zero unexplained membership differences and six
+explicit transition-policy gaps.
+
+Repeated 3,000-row runs retained across several tenants in one disposable
+database exposed a five-second timeout in the existing v2 readiness closure
+query. A fresh run and the full fresh-suite run passed; the populated-database
+scaling investigation is tracked as
+[#84](https://github.com/jbone3311/MasterBrain/issues/84). The first preview
+query also timed out under that load; it now ranks and limits matching chunks
+before joining evidence, without raising the statement budget. Exact-head
+hosted CI, strict runtime and populated restore remain to be run on the final
+branch head. No version tag is assigned; this is not v2 current visibility,
+live-root acceptance or donor cutover.
+
+## UI-001 first-party read-only question workspace — merged verification
+
+PR [#83](https://github.com/jbone3311/MasterBrain/pull/83) merged at
+`3a1b5277ae7351309384fe609c6faf05a9b680a9` from exact head
+`e1dcc3a40fad94e0206d1758c508d2053ab78601`. The head passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36932341977),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36932341964)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36932341942).
+The merge commit also passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36933702507),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36933702470)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36933702396).
 
 ADR-127 adds `/brain` and packaged static assets. The page calls only existing
 scoped current-search and evidence routes; it keeps its bearer credential and
@@ -18,8 +61,8 @@ skipped 457 PostgreSQL-marked cases by design. Ruff, strict mypy over 95
 source files, 140 browser tests (including the six new workspace cases),
 Node syntax, documentation and diff checks passed. An offline wheel build
 included all three new workspace assets. The temporary cluster was stopped
-and removed after the run. Exact-head CI, restricted packaged-image checks,
-strict runtime and restore remain to be run on the final branch head. This is
+and removed after the run. Hosted CI includes the restricted packaged-image,
+strict runtime and populated-restore checks cited above. This is
 not a hosted chat or a model-generated answer; no version tag is assigned.
 
 ## DC-002U FileOS v2 shared generation — merged verification

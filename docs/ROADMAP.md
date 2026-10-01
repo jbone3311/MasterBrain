@@ -92,9 +92,16 @@ Security and data-integrity blockers take priority over adding more surface area
    v2 evidence without activating them as current. DC-002U (ADR-126) adds an
    exact private v2 generation in shared DataCore index tables with
    database-enforced activation refusal. PR #81 merged with exact-head and
-   merged-main gates green. Current visibility, later v2-run behavior, absence
+   merged-main gates green. DC-002V (ADR-128) adds a private human-review
+   comparison of one named v2 generation with active v1 using the same lexical
+   query; it is not a public or current-search route. Current visibility,
+   later v2-run behavior, absence
    suppression, rollback and live acceptance remain separate decisions before
    any switch.
+   Repeated 3,000-row runs against one accumulated disposable database exposed
+   a readiness-query timeout in the existing v2 builder; track the populated-
+   database scaling work in [#84](https://github.com/jbone3311/MasterBrain/issues/84)
+   without relaxing its exact-closure or five-second statement gate.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container

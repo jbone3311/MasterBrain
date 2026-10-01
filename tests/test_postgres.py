@@ -65,7 +65,10 @@ from masterbrain.datacore.fileos_v2_authorization import FileOSV2BaselineAuthori
 from masterbrain.datacore.fileos_v2_baseline import FileOSV2BaselineVerifier
 from masterbrain.datacore.fileos_v2_completion import FileOSV2BaselineCompleter
 from masterbrain.datacore.fileos_v2_document_publication import FileOSV2DocumentPublisher
-from masterbrain.datacore.fileos_v2_index_generation import FileOSV2IndexBuilder
+from masterbrain.datacore.fileos_v2_index_generation import (
+    FileOSV2IndexBuilder,
+    FileOSV2SearchReviewer,
+)
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
@@ -6307,6 +6310,34 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert generation.item_count == 2
     assert generation.document_count == 2
     assert generation.chunk_count >= 2
+    search_reviewer = FileOSV2SearchReviewer(core)
+    preview = search_reviewer.preview(human, source_id, generation.generation_id,
+                                      "synthetic changed proof")
+    assert preview.candidate_visibility == "historical_preview"
+    assert preview.active_v1_generation_id is None
+    assert preview.active_v1_hits == ()
+    assert {hit.locator for hit in preview.candidate_hits} == {"changed.txt"}
+    assert all(hit.source_id == source_id for hit in preview.candidate_hits)
+    with pytest.raises(AccessDenied, match="human FileOS"):
+        search_reviewer.preview(index_worker, source_id, generation.generation_id,
+                                "synthetic changed proof")
+    with pytest.raises(AccessDenied, match="scope denied"):
+        search_reviewer.preview(Principal(ctx, "human"), source_id,
+                                generation.generation_id, "synthetic changed proof")
+    with pytest.raises(NotFound):
+        search_reviewer.preview(human, source_id, "index_generation_v2_" + "0" * 32,
+                                "synthetic changed proof")
+    with pytest.raises(NotFound):
+        search_reviewer.preview(human, "files_wrong_source", generation.generation_id,
+                                "synthetic changed proof")
+    with pytest.raises(NotFound):
+        search_reviewer.preview(
+            Principal(replace(human.context, tenant_id=other_tenant,
+                              actor_id=other_actor), "human"),
+            source_id, generation.generation_id, "synthetic changed proof",
+        )
+    with pytest.raises(ValueError, match="invalid FileOS v2 search preview"):
+        search_reviewer.preview(human, source_id, generation.generation_id, " ")
     assert builder.build(index_worker, completion_id, attempt_id,
                          code_revision="test-v2-index") == replace(generation, recorded=False)
     rebuilt = builder.build(
@@ -6424,6 +6455,16 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "UPDATE brain_fileos_v2_document_attempt_items SET outcome='failed' "
                 "WHERE attempt_id=%s", (attempt_id,),
             )
+    active_v1 = core.build_fileos_index_generation(
+        ctx, source_id, run_id, code_revision="test-v2-search-active-v1",
+    )
+    core.activate_fileos_index_generation(ctx, source_id, active_v1.generation_id, uuid4())
+    compared = search_reviewer.preview(human, source_id, generation.generation_id,
+                                       "synthetic changed proof")
+    assert compared.active_v1_generation_id == active_v1.generation_id
+    assert compared.active_v1_hits == ()
+    assert {hit.locator for hit in compared.candidate_hits} == {"changed.txt"}
+    assert core.search_fileos_active(ctx, source_id, "synthetic changed proof") == []
     next_manifest = snapshot_tree(
         tmp_path,
         source_id=source_id,
@@ -6450,6 +6491,9 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             item["version_id"] for item in next_manifest["items"] if item["locator"] == "new.txt"
         )
     assert completer.inspect(ctx, source_id)["latest_v1_matches"] is False
+    with pytest.raises(Conflict, match="basis requires review"):
+        search_reviewer.preview(human, source_id, generation.generation_id,
+                                "synthetic changed proof")
     with pytest.raises(Conflict, match="requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, tmp_path)
     with pytest.raises(Conflict, match="requires review"):
@@ -6808,6 +6852,19 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
     assert generation.item_count == 3000
     assert generation.document_count == 3000
     assert generation.chunk_count == 3000
+    preview_reviewer = FileOSV2SearchReviewer(core)
+    preview_human = Principal(
+        replace(ctx, scopes=ctx.scopes | frozenset({
+            "brain.fileos.transition.review", "brain.evidence.read",
+        })), "human",
+    )
+    preview = preview_reviewer.preview(
+        preview_human, source_id, generation.generation_id,
+        "fictional prepared evidence", limit=50,
+    )
+    assert preview.candidate_visibility == "historical_preview"
+    assert len(preview.candidate_hits) == 50
+    assert preview.active_v1_hits == ()
     with store.transaction(ctx) as conn:
         assert (
             conn.execute(

@@ -69,6 +69,12 @@ publishes deterministic normalized documents on prepared v2 evidence and
 records a complete ready/blocked attempt after a final exact rescan. Hashless
 rows remain unversioned. It has no CLI/API route; neither it nor its receipt
 activates current v2 FileOS reads or infers absence.
+`FileOSV2IndexBuilder` makes a ready, immutable historical generation in the
+shared DataCore index without activating it. `FileOSV2SearchReviewer` privately
+compares a named ready v2 generation with that source's active v1 generation
+using the same bounded lexical query. It requires a human transition reviewer
+with search and evidence grants, labels v2 results historical, and has no
+CLI/API route, live-source attestation, current-read effect or cutover authority.
 
 ## Operator and shared processing functions
 
