@@ -2,7 +2,7 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002O exact FileOS v2 transition approval — local validation
+## DC-002O exact FileOS v2 transition approval — merged verification
 
 Branch `codex/dc-002o-transition-approval` starts from merged `main`
 `747478b2f493c275293fe38b6f137c0e0c850e04`. ADR-118 and migration 0040
@@ -23,9 +23,25 @@ over 89 source files, 134 browser tests and offline documentation inventory
 and 3,006 prior-v1 classifications, with six explicit policy gaps and zero
 unexplained membership differences. FOS-Master remains at
 `218d5caec2f20b9047fd3eb8e027dc671acf0c15` unchanged. Local container
-and populated restore checks are not claimed; hosted full CI, strict runtime
-and restore are required before merge. No version tag is warranted for this
-nonpublishing internal review step.
+and populated restore checks are not claimed. No version tag is warranted for
+this nonpublishing internal review step.
+
+[PR #63](https://github.com/jbone3311/MasterBrain/pull/63) exact head
+`808ed725c5cb79f9f5f854bb23778313dbd543e0` passed the
+[strict-runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36864787012),
+[populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36864787032),
+and [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36864787285)
+on attempt 2. Full CI attempt 1 failed an existing isolated large-MIME
+container test with a scrubbed `MimeUnavailable`; the same exact-head test
+passed on attempt 2. This intermittent gate is tracked as
+[issue #64](https://github.com/jbone3311/MasterBrain/issues/64), not silently
+discarded. PR #63 merged at `d5b7243f8f7cbb1981ff4283743a704e02baa0c2`.
+That exact merged-main commit passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36867169565),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36867169467)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36867169557).
+The previously intermittent MIME container test also passed on merged main;
+issue #64 remains open to diagnose its original failure.
 
 ## DC-002N nonpublishing FileOS v2 staging — merged verification
 

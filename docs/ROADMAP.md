@@ -78,7 +78,9 @@ Security and data-integrity blockers take priority over adding more surface area
    tranche must define and test the baseline transaction and revalidate the
    source before any policy switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
-   runtime and restore green; v2 publication remains a separate step.
+   runtime and restore green. PR #63 adds the nonpublishing approval receipt;
+   its exact-head and merged-main gates passed after an intermittent container
+   rerun tracked in issue #64. V2 publication remains a separate step.
 
 The first three tranches can be reviewed independently of 5D implementation.
 None authorizes a real account, live root, paid hosting, production release or
