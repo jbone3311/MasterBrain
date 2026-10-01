@@ -82,7 +82,9 @@ Security and data-integrity blockers take priority over adding more surface area
    must match the approved stage exactly and records a historical verification
    receipt. DC-002Q adds a private third exact scan and policy-scoped hashed
    DataCore evidence preparation; it deliberately leaves the v1 current
-   pointer and all search/freshness state unchanged. The next tranche must
+   pointer and all search/freshness state unchanged. DC-005N addresses the
+   separate v1 large-completion ledger cost before broader transition stress.
+   The next v2 tranche must
    design explicit owner publication authority, v2 completion, visibility,
    absence suppression and rollback before any policy switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict

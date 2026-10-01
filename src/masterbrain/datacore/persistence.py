@@ -3777,6 +3777,43 @@ class DataCoreStore:
                     raise Conflict("FileOS inventory policy requires review")
                 if previous and previous["root_binding_sha256"] != root_binding_hash:
                     raise Conflict("FileOS root binding requires review")
+            if recorded:
+                # The deferred item FK allows this order. The receipt's one
+                # deferred ledger check validates all rows at commit, while
+                # the immediate item guard refuses inserts after the receipt.
+                for item_id, outcome in item_results.items():
+                    item = items_by_id[item_id]
+                    conn.execute(
+                        "INSERT INTO brain_fileos_run_items(tenant_id,actor_id,run_id,source_id,"
+                        "observed_at,item_id,version_id,outcome) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) "
+                        "ON CONFLICT DO NOTHING",
+                        (
+                            ctx.tenant_id,
+                            ctx.actor_id,
+                            run_id,
+                            source.source_id,
+                            observed_at,
+                            item_id,
+                            item.version_id,
+                            outcome,
+                        ),
+                    )
+            saved_items = conn.execute(
+                "SELECT item_id,version_id,outcome FROM brain_fileos_run_items "
+                "WHERE actor_id=%s AND run_id=%s ORDER BY item_id",
+                (ctx.actor_id, run_id),
+            ).fetchall()
+            expected_items = [
+                {
+                    "item_id": item_id,
+                    "version_id": items_by_id[item_id].version_id,
+                    "outcome": outcome,
+                }
+                for item_id, outcome in item_results.items()
+            ]
+            if saved_items != expected_items:
+                raise Conflict("FileOS run item ledger changed")
+            if recorded:
                 row = conn.execute(
                     "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
                     "observed_at,manifest_sha256,policy_sha256,root_binding_sha256,"
@@ -3803,38 +3840,6 @@ class DataCoreStore:
                 ).fetchone()
                 assert row is not None
                 completed_at = row["completed_at"]
-            for item_id, outcome in item_results.items():
-                item = items_by_id[item_id]
-                conn.execute(
-                    "INSERT INTO brain_fileos_run_items(tenant_id,actor_id,run_id,source_id,"
-                    "observed_at,item_id,version_id,outcome) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) "
-                    "ON CONFLICT DO NOTHING",
-                    (
-                        ctx.tenant_id,
-                        ctx.actor_id,
-                        run_id,
-                        source.source_id,
-                        observed_at,
-                        item_id,
-                        item.version_id,
-                        outcome,
-                    ),
-                )
-            saved_items = conn.execute(
-                "SELECT item_id,version_id,outcome FROM brain_fileos_run_items "
-                "WHERE actor_id=%s AND run_id=%s ORDER BY item_id",
-                (ctx.actor_id, run_id),
-            ).fetchall()
-            expected_items = [
-                {
-                    "item_id": item_id,
-                    "version_id": items_by_id[item_id].version_id,
-                    "outcome": outcome,
-                }
-                for item_id, outcome in item_results.items()
-            ]
-            if saved_items != expected_items:
-                raise Conflict("FileOS run item ledger changed")
             if previous:
                 missing = conn.execute(
                     "SELECT old.item_id,old.version_id,prior.locator "

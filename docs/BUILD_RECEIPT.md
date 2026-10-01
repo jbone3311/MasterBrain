@@ -2,6 +2,35 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-005N linear FileOS v1 completion ledger — branch validation
+
+Branch `codex/fileos-ledger-linear-validation` starts from merged `main`
+`4cd680bb3e88646f5e86d9e1caa446be38e7b7a1`. ADR-122 and forward
+migration 0043 make the run-item foreign key deferred, insert new items before
+the receipt, retain one deferred full-ledger count/outcome check on that receipt,
+and replace 3,000 repeated full-ledger checks with an immediate, source-locked
+late-insert guard. Exact replay reads and validates saved rows without trying
+to insert into a sealed run. No v1 freshness/absence behavior, v2 visibility,
+FileOS source effect or FOS-Master code changes.
+
+On a disposable local PostgreSQL 17.11 cluster upgraded from migration 0042,
+the focused replay, missing/wrong-outcome, late-insert and competing-writer
+checks passed. Review then caught a direct-SQL receipt race; the migration now
+locks receipt inserts too, and the new receipt-versus-item contention test
+passed on a fresh disposable database with the final migration checksum.
+The earlier migration candidate's **100 PostgreSQL module tests passed** in 43.51 seconds;
+the existing end-to-end 3,000-item v1 completion plus v2 staging stress test
+passed in 7.65 seconds of test-call time. An earlier all-v1 stress fixture had
+shown 14–26-second commit phases under the previous per-item deferred check;
+these are not controlled before/after benchmark results. No production timeout
+or integrity limit was relaxed. On the final migration checksum, the local
+full suite passed **2,894 tests, one skipped** in 82.24 seconds, with 456 of
+457 PostgreSQL-marked tests executed. Locked dependencies, Ruff, strict mypy
+over 91 source files, 134 browser tests, the deployment quality gate and
+offline documentation inventory passed. Hosted CI, strict runtime and
+populated restore results are pending
+for this branch; no release tag is warranted for a database-integrity fix.
+
 ## DC-002Q FileOS v2 hashed-evidence preparation — merged verification
 
 PR [#70](https://github.com/jbone3311/MasterBrain/pull/70) merged at

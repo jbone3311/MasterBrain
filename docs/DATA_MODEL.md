@@ -85,6 +85,10 @@ freshness view; intake and partial document prefixes do not.
 Migration `0018_fileos_inventory_reconciliation.sql` binds every completed receipt to
 an exact immutable item/outcome ledger. Consecutive complete ledgers produce immutable
 absence events without deleting evidence or treating partial work as a full inventory.
+Migration `0043_fileos_run_ledger_linear_validation.sql` makes the item-to-receipt
+foreign key deferred so new items can precede their receipt in one transaction.
+One deferred receipt trigger validates the final ledger; an immediate source-locked
+item guard refuses late inserts after a receipt. No historical row is rewritten.
 ADR-094 adds an application-level coverage precondition before those receipts:
 blocking snapshot errors cannot become a completed inventory or absence evidence.
 Migration `0031_fileos_policy_identity.sql` adds a nullable historical

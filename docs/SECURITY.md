@@ -121,6 +121,12 @@ Completed FileOS inventories are independently balanced in PostgreSQL against th
 receipt counts. Per-source serialization and monotonic observation time prevent stale
 completion from replacing newer state. Absence is inferred only between two completed
 ledgers; it retains evidence and does not authorize hiding, deletion or any file effect.
+ADR-122 keeps this complete-ledger check deferred on the receipt but performs it
+only once per run. New items must precede the receipt in the same transaction;
+a source-locked immediate trigger rejects post-receipt inserts, and the deferred
+foreign key rejects orphan items at commit. A database trigger also locks
+receipt insertion, including direct SQL, so an uncommitted receipt cannot race
+with a competing item writer.
 Completion additionally refuses malformed snapshot error ledgers or uncertain
 directory/file/race coverage before absence inference. A deliberate no-follow
 symlink skip is the sole tolerated snapshot error (ADR-094). ADR-095 refuses the
