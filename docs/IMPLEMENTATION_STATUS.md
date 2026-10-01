@@ -16,6 +16,15 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002S adds a private, worker-scoped FileOS v2 baseline completion under
+  ADR-124 and migration 0045. After a fresh exact scan it seals the owner-
+  authorized stage/prepared evidence as one historical baseline, with a
+  compact locator-free private inspection. Hashless rows remain hashless;
+  3,000 hashed rows and stale/changed-root refusals are exercised locally.
+  No v1 current pointer, public freshness, absence, active index or search is
+  switched. Synthetic/disposable only; live parity and rollback acceptance
+  remain open. Exact-head verification is tracked in the build receipt.
+
 - DC-002R adds private, human-owner FileOS v2 baseline authorization under
   ADR-123 and migration 0044. It binds the exact reviewed plan and prepared
   evidence to an immutable receipt after a latest-v1 check. Synthetic/disposable
@@ -38,8 +47,8 @@ production and FileOS cutover remain open.
   maps donor candidate IDs to policy-scoped DataCore versions and seals an
   immutable receipt. It does not change v1 current pointers, completion,
   freshness, absence, search or FileOS operation. It is synthetic/disposable
-  only; v2 completion and rollback remain open. Separate owner authorization
-  is now implemented by DC-002R, without publication.
+  only; DC-002R supplies owner authorization and DC-002S separately seals a
+  private historical baseline. Current publication and rollback remain open.
   Legacy v1 large-completion performance is tracked separately in issue #71.
 - ADR-120 adds content-safe fixed-stage diagnostics to the trusted isolated
   processor controller while preserving fail-closed `MimeUnavailable` and

@@ -58,6 +58,11 @@ hashless rows stay hashless, and no completed v2 or current search state changes
 `FileOSV2BaselineAuthorizer` separately lets a human owner bind one exact
 prepared stage to a future baseline attempt. It has no API/CLI route or
 live-source acceptance and does not publish v2 or change current reads.
+`FileOSV2BaselineCompleter` performs a fresh exact source scan before sealing
+a private historical completion receipt. Its separate compact inspection
+shows counts and whether the prior v1 run is still latest, not locators or
+content. This does not switch current FileOS search/freshness, create absence
+or grant live-source/cutover authority.
 
 ## Operator and shared processing functions
 

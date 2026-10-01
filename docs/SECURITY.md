@@ -193,6 +193,15 @@ one immutable, forced-RLS, tenant-login-fenced owner receipt. This is authority
 for a future explicitly designed baseline attempt only; it does not attest
 current root bytes, complete v2, change reads or infer deletion.
 
+ADR-124 adds a distinct worker-only `brain.fileos.transition.complete` scope.
+The worker rechecks that exact owner authorization and prepared evidence,
+then performs a new no-follow donor-policy scan under the source lock before
+sealing a private v2 baseline receipt. Composite foreign keys and a locked SQL
+trigger bind the stage, preparation and authorization and reject stale v1 or
+incomplete ledgers. A compact private read exposes counts and read-time v1
+match but no locators or content. Neither receipt nor read grants current
+search, absence, source effects, live-root acceptance or FOS-Master cutover.
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.
