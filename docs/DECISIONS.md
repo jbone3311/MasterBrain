@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-116](adr/116_private_fileos_transition_review_read.md) allows a compact,
+locator-free private summary and separately scoped, bounded detail pages of a
+sealed transition packet. Current-run status is not transition approval.
+
 [ADR-115](adr/115_fileos_transition_review_packet.md) retains one donor-policy
 candidate and its exact completed-v1 comparison in a private immutable review
 packet. It creates no v2 baseline, publication or FileOS cutover authority.

@@ -2,6 +2,28 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002M bounded transition review read — local verification
+
+Branch `codex/dc-002m-transition-review-read` begins at exact verified `main`
+`b1c86e822c39c7d10bf1c714be90062fc3824392`. Pinned FOS-Master
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` is unchanged. ADR-116 adds
+a compact, locator-free read of an immutable transition packet, with a separate
+`brain.evidence.read` scope and at-most-50-row detail pages. It checks the
+canonical digest and reports only whether the latest completed receipt still
+matches at read time. No route, approval, publication or source effect is added.
+
+Local disposable PostgreSQL 17.11 full suite: **2,878 passed, one skipped**;
+447 PostgreSQL-marked cases collected, 446 executed, one skipped. Focused
+review-read PostgreSQL regression and 13 transition unit tests passed. Ruff,
+mypy (88 source files), 134 browser tests, offline documentation inventory
+(210 Markdown files, 1,138 local paths/fragments), and the local deployment
+quality gate passed. The pinned-donor fictional 3,000-file comparison again
+matched 3,004 hashed and metadata-only candidates, 3,006 prior-v1
+classifications and six explicit policy gaps with zero unexplained membership
+differences. Hosted exact-head CI, strict runtime and populated restore are
+pending at this local receipt. No new product version is warranted for this
+private, nonpublishing read tranche.
+
 ## DC-002L immutable FileOS transition review packet — merged verification
 
 Branch `codex/dc-002l-transition-review-packet` begins at `main`

@@ -2,6 +2,9 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added a private, bounded read of sealed FileOS transition packets (ADR-116):
+  locator-free summary, separately authorized detail pages, digest verification
+  and read-time latest-receipt status. No API route, approval or cutover.
 - Added an immutable, nonpublishing FileOS donor-policy transition review
   packet (ADR-115, migration 0038). One donor scan supplies its candidate and
   completed-v1 comparison; a locked latest-run check fences insertion. It has

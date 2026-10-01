@@ -4830,6 +4830,52 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
         source_id=source_id, observed_at=observed,
     )
     assert replay == replace(first, recorded=False)
+    summary = core.fileos_transition_review(ctx, packet_id)
+    assert summary["latest_receipt_matches_packet"] is True
+    assert summary["packet_sha256"] == first.packet_sha256
+    assert summary["detail_total"] == 2
+    assert summary["classification_counts"]["unchanged"] == 1
+    assert "proof.txt" not in json.dumps(summary, default=str)
+    assert "details" not in summary
+    with pytest.raises(AccessDenied):
+        core.fileos_transition_review(ctx, packet_id, include_details=True)
+    detail_ctx = replace(ctx, scopes=ctx.scopes | frozenset({"brain.evidence.read"}))
+    first_page = core.fileos_transition_review(
+        detail_ctx, packet_id, include_details=True, limit=1
+    )
+    assert first_page["details"][0]["ledger"] == "prior"
+    assert first_page["details"][0]["locator"] == "proof.txt"
+    assert first_page["next_offset"] == 1
+    second_page = core.fileos_transition_review(
+        detail_ctx, packet_id, include_details=True, offset=1, limit=1
+    )
+    assert second_page["details"][0]["ledger"] == "hashed"
+    assert second_page["details"][0]["sha256"] == prior["items"][0]["digest"]["value"]
+    assert second_page["next_offset"] is None
+    with psycopg.connect(admin) as conn:
+        audit = conn.execute(
+            "SELECT resource_type,resource_id,metadata FROM audit_events "
+            "WHERE tenant_id=%s AND event_type='brain.fileos_transition_review_read' "
+            "ORDER BY occurred_at DESC,id DESC LIMIT 1",
+            (ctx.tenant_id,),
+        ).fetchone()
+        assert audit == ("fileos_transition_packet", str(packet_id), {})
+    with pytest.raises(ValueError, match="review request"):
+        core.fileos_transition_review(ctx, packet_id, offset=1)
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Other fictional tenant')",
+            (other_tenant,),
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    with pytest.raises(NotFound):
+        core.fileos_transition_review(
+            replace(ctx, tenant_id=other_tenant, actor_id=other_actor), packet_id
+        )
     with store.transaction(ctx) as conn:
         row = conn.execute(
             "SELECT packet,packet_sha256 FROM brain_fileos_transition_packets WHERE id=%s",
@@ -4855,6 +4901,12 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
         ctx, prior, first_run, uuid4(), metadata_packet
     )
     assert metadata_record.recorded is True
+    metadata_detail = core.fileos_transition_review(
+        detail_ctx, metadata_record.packet_id, include_details=True
+    )
+    deferred = [row for row in metadata_detail["details"] if row["ledger"] == "deferred"]
+    assert len(deferred) == 1 and deferred[0]["reason"] == "no_hash"
+    assert "sha256" not in deferred[0] and "version_id" not in deferred[0]
     with pytest.raises(Conflict, match="already recorded"):
         core.stage_fileos_transition_review(ctx, prior, first_run, uuid4(), metadata_packet)
     tampered = dict(metadata_packet)
@@ -4889,7 +4941,17 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
     )
     with pytest.raises(Conflict, match="baseline requires review"):
         core.stage_fileos_transition_review(ctx, prior, first_run, uuid4(), metadata_packet)
+    assert core.fileos_transition_review(ctx, packet_id)["latest_receipt_matches_packet"] is False
     with psycopg.connect(admin) as conn:
         with pytest.raises(psycopg.Error, match="protected record"):
             conn.execute("TRUNCATE brain_fileos_transition_packets")
+    with psycopg.connect(admin) as conn:
+        conn.execute("ALTER TABLE brain_fileos_transition_packets DISABLE TRIGGER immutable")
+        conn.execute(
+            "UPDATE brain_fileos_transition_packets SET packet_sha256=%s WHERE id=%s",
+            ("0" * 64, packet_id),
+        )
+        conn.execute("ALTER TABLE brain_fileos_transition_packets ENABLE TRIGGER immutable")
+    with pytest.raises(Conflict, match="integrity requires review"):
+        core.fileos_transition_review(ctx, packet_id)
     assert proof.read_bytes() == b"fictional immutable packet proof"
