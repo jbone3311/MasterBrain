@@ -25,6 +25,19 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
 - Telemetry excludes content by default; logs use opaque IDs, states, counts, timings,
   and bounded sanitized errors.
 
+## First-party read workspace
+
+ADR-127's `/brain` page is an unauthenticated static shell, not a data grant.
+It calls the same scoped Brain API as other clients: current search requires
+search scopes, evidence metadata and extracted text require separate scopes.
+Its credential, questions and results stay only in page memory and clear when
+the credential changes. Same-origin fetches omit cookies, reject redirects and
+disable caching; strict CSP disallows external scripts. Untrusted excerpts and
+content become text nodes, not HTML. Stale requests are aborted/ignored. It
+has no model call, source-effect control, stored transcript, direct SQL or
+provider credential. These controls do not establish hosted identity,
+revocation across future derived caches or live-source acceptance.
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,

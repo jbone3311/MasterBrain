@@ -44,9 +44,10 @@ FileOS sources ┘       │              │                │
   indexing, and common database primitives.
 - **KnowledgeCore:** evidence-backed entities, relationships, facts/claims, events,
   timelines, projects, commitments, corrections, and unified retrieval.
-- **Brain API:** one scoped service for a future MasterBrain chat/workspace and
-  authorized external assistants; compact summaries first, explicit expansion
-  second, original evidence last. Reviewed effects are a later, separate grant.
+- **Brain API:** one scoped service for the first-party read-only workspace and
+  future authorized external assistants; compact summaries first, explicit
+  expansion second, original evidence last. Reviewed effects are a later,
+  separate grant.
 
 ## Current truth
 
@@ -93,7 +94,8 @@ FileOS sources ┘       │              │                │
 | Current-source coverage/readiness status | Implemented; hosted PostgreSQL and restore gates green |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |
-| MasterBrain conversational workspace and certified external-AI clients | Planned; neither is deployed or accepted |
+| First-party read-only question workspace | Implemented prototype at `/brain`; grouped indexed evidence, not generated answers or live acceptance |
+| Certified external-AI clients and cited answer synthesis | Planned; neither is deployed or accepted |
 | Email/FileOS effects through preview, approval and audited execution | Planned; source-write authority is disabled |
 | Hosted identity, operations, live sources | Not accepted |
 | FOS-Master cutover or retirement | Explicitly prohibited before parity |

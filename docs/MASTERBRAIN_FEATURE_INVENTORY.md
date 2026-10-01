@@ -79,7 +79,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |
 | Change feeds | Cursor-based non-consuming updates by layer | DataCore and KnowledgeCore feeds implemented |
 | Client neutrality | Same typed contract for Claude, Grok, ChatGPT, other LLMs | Model-neutral REST routes implemented; no certified MCP/client adapter or cross-client conformance yet |
-| First-party chat | Ask across Email, FileOS and KnowledgeCore through the same scoped Brain API, with cited answers and evidence drill-down | Planned; the fictional browser search trial is not a conversational product |
+| First-party chat | Ask across Email, FileOS and KnowledgeCore through the same scoped Brain API, with cited answers and evidence drill-down | First read-only question workspace implemented with grouped lexical hits and separately scoped evidence; generated answers and hosted acceptance pending |
 | External assistant access | Separately authorized API/adapter with the same grants, freshness and evidence behavior as first-party chat | REST prototype only; no certified Grok/Claude/ChatGPT connection or hosted access |
 | Budget controls | max results/bytes/tokens, field selection, continuation | Selected result/text/page bounds implemented; common token/field-budget contract planned |
 | Effects | Typed proposal → policy → preview → approval → separate executor, with receipts and recovery | Designed; no source-write authority enabled for chat or external assistants |

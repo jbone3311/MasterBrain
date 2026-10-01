@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added a first-party read-only MasterBrain question workspace (ADR-127) over
+  the existing scoped current-search and evidence routes. It groups indexed
+  Email, FileOS, archive and KnowledgeCore results with partial-coverage
+  notice, holds turns/credentials only in browser memory, and has no model
+  answer or source effects. Hosted acceptance and external client parity remain.
 - Merged the private FileOS v2 shared index-generation tranche (ADR-126,
   migration 0047, PR #81). Exact-head and merged-main CI, strict runtime and
   populated restore passed. V2 activation and current reads remain prohibited;

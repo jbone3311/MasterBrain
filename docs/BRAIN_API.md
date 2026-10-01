@@ -4,9 +4,10 @@ The Brain API is MasterBrain's model-neutral, least-privilege access layer. It s
 humans and authorized clients such as Claude, Grok, ChatGPT, and future assistants.
 Implemented DataCore access lives under `/v1/brain`; the first reviewed KnowledgeCore
 publish/read slice lives under `/v1/knowledge`. Synthesis remains a target contract.
-The planned first-party MasterBrain chat uses these same scoped resources; it is not
-a second, privileged retrieval or action backend. The chat and external-client
-acceptance contract is [documented separately](USER_INTERFACES.md).
+The first-party read-only workspace at `/brain` uses these same scoped resources;
+it is not a second, privileged retrieval or action backend. It displays lexical
+search results in conversation form, not generated answers. Full chat synthesis
+and external-client acceptance remain targets [documented separately](USER_INTERFACES.md).
 
 ## Progressive access
 

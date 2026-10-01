@@ -25,6 +25,15 @@ page or manually opening the address loses it: stop and restart the launcher to
 open a new authenticated tab. Do not enter a real token. A port conflict can be
 resolved with `--port 8767`; binding remains loopback-only.
 
+To try the first-party read-only question workspace against the same fictional
+data, keep the launcher running, open `http://127.0.0.1:8766/brain`, and paste
+the temporary trial credential from the URL printed in the launcher's terminal
+into its access field. The trial page removes that fragment from its own URL;
+the `/brain` workspace never reads a URL fragment or stores the credential.
+This screen groups current indexed results and opens evidence, but does not
+generate AI answers or change files/email. Use the launcher's actual port if
+you selected a nondefault one.
+
 ## Known answers
 
 | Search | Expected Email results | Expected File results | What to inspect |

@@ -52,6 +52,7 @@ from masterbrain.schemas import (
 
 log = logging.getLogger("email_brain.requests")
 WEB = Path(__file__).parent / "web"
+BRAIN_WEB = Path(__file__).parent.parent / "masterbrain" / "web"
 
 
 def _safe_request_failure(request: Request, status: int, code: str, exc: Exception) -> None:
@@ -270,6 +271,18 @@ def create_app(
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:
         return FileResponse(WEB / "index.html")
+
+    @app.get("/brain", include_in_schema=False)
+    def brain_workspace() -> FileResponse:
+        return FileResponse(BRAIN_WEB / "brain.html")
+
+    @app.get("/brain.js", include_in_schema=False)
+    def brain_workspace_script() -> FileResponse:
+        return FileResponse(BRAIN_WEB / "brain.js", media_type="text/javascript")
+
+    @app.get("/brain.css", include_in_schema=False)
+    def brain_workspace_style() -> FileResponse:
+        return FileResponse(BRAIN_WEB / "brain.css", media_type="text/css")
 
     @app.get("/app.js", include_in_schema=False)
     def javascript() -> FileResponse:
