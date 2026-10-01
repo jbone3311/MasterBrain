@@ -11,8 +11,8 @@ and error donor observations. A sealed packet is checked against the latest
 completed v1 receipt under the source lock. Staging has no v2 completion,
 freshness, absence, index, search, API, cutover or source-effect authority.
 
-Local PostgreSQL 17.11 full suite on the final branch code: **2,880 passed,
-one skipped**; 448 PostgreSQL-marked cases collected, 447 executed and one
+Local PostgreSQL 17.11 full suite on the final header-last staging design:
+**2,881 passed, one skipped**; 449 PostgreSQL-marked cases collected, 448 executed and one
 skipped. Ruff, mypy (88 source files), 134 browser tests, 29 restore-drill unit
 tests, deployment quality gate and offline documentation inventory (211 Markdown
 files, 1,146 paths/fragments) passed. The pinned-donor 3,000-file fictional
@@ -22,7 +22,10 @@ differences; FOS-Master remains at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
 and clean. The local container restore attempt stopped before creating a drill
 container because this Mac could not inspect Docker; hosted populated restore
 is required before merge. No new product tag is warranted for a nonpublishing
-stage. Exact PR and hosted run links will be recorded after those gates finish.
+stage. The final suite staged **3,000 hashless rows** with the header-last,
+single-recount SQL design; count-mismatch and late-insert refusals passed.
+[PR #61](https://github.com/jbone3311/MasterBrain/pull/61) hosts the branch;
+hosted exact-head run links will be recorded after those gates finish.
 
 ## DC-002M bounded transition review read — merged verification
 

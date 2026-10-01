@@ -5006,7 +5006,7 @@ def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
         assert hashed["version_id"] == prior["items"][0]["version_id"]
         assert hashed["sha256"] == prior["items"][0]["digest"]["value"]
         assert hashed["reason"] is None
-    with pytest.raises(psycopg.Error, match="invalid FileOS v2 staged ledger"):
+    with pytest.raises(psycopg.Error, match="sealed FileOS v2 staged inventory"):
         with psycopg.connect(admin) as conn:
             conn.execute(
                 "INSERT INTO brain_fileos_v2_staged_rows(tenant_id,stage_id,source_id,"
@@ -5023,6 +5023,19 @@ def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
     )
     metadata_packet_id = uuid4()
     core.stage_fileos_transition_review(ctx, prior, run_id, metadata_packet_id, metadata_packet)
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 staged ledger"):
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_staged_inventories(tenant_id,id,actor_id,"
+                "packet_id,source_id,prior_actor_id,prior_run_id,prior_observed_at,"
+                "donor_observed_at,root_binding_sha256,packet_sha256,candidate_sha256,counts) "
+                "SELECT tenant_id,%s,%s,id,source_id,prior_actor_id,prior_run_id,"
+                "prior_observed_at,donor_observed_at,root_binding_sha256,packet_sha256,"
+                "%s,%s::jsonb FROM brain_fileos_transition_packets WHERE id=%s",
+                (uuid4(), ctx.actor_id, "0" * 64,
+                 json.dumps({"hashed": 0, "deferred": 1, "excluded": 0, "errors": 0}),
+                 metadata_packet_id),
+            )
     metadata_stage_id = uuid4()
     core.stage_fileos_v2_inventory(ctx, metadata_packet_id, metadata_stage_id)
     with store.transaction(ctx) as conn:
@@ -5086,3 +5099,43 @@ def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
     )
     with pytest.raises(Conflict, match="baseline requires review"):
         core.stage_fileos_v2_inventory(ctx, metadata_packet_id, uuid4())
+
+
+def test_fileos_v2_staging_three_thousand_hashless_rows(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx = datacore_context(tenant[0])
+    core = DataCoreStore(store)
+    source_id = "files_v2_stage_stress"
+    for index in range(3000):
+        (tmp_path / f"proof-{index:04d}.txt").write_bytes(f"fictional {index}".encode())
+    prior = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    assert len(prior["items"]) == 3000
+    run_id = uuid4()
+    core.import_fileos_snapshot(ctx, prior, run_id)
+    core.complete_fileos_run(
+        ctx, prior, run_id, outcomes={"unsupported": 3000},
+        item_outcomes={item["item_id"]: "unsupported" for item in prior["items"]},
+        published_documents=0, code_revision="test-v2-stage-stress",
+        document_processor_version=None,
+    )
+    packet_id = uuid4()
+    record_fileos_transition_review(
+        core, ctx, prior, run_id, packet_id, tmp_path,
+        source_id=source_id, observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+        metadata_only=True,
+    )
+    stage_id = uuid4()
+    assert core.stage_fileos_v2_inventory(ctx, packet_id, stage_id).recorded is True
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_staged_rows "
+            "WHERE stage_id=%s AND kind='deferred' AND version_id IS NULL "
+            "AND sha256 IS NULL AND media_type IS NULL",
+            (stage_id,),
+        ).fetchone()["n"] == 3000
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 0

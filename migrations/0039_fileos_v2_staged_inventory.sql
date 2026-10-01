@@ -71,7 +71,8 @@ CREATE TABLE public.brain_fileos_v2_staged_rows (
     reason text,
     PRIMARY KEY (tenant_id,stage_id,locator),
     FOREIGN KEY (tenant_id,stage_id,source_id)
-        REFERENCES public.brain_fileos_v2_staged_inventories(tenant_id,id,source_id),
+        REFERENCES public.brain_fileos_v2_staged_inventories(tenant_id,id,source_id)
+        DEFERRABLE INITIALLY DEFERRED,
     CHECK (
         (kind = 'hashed' AND item_id ~ '^[a-z][a-z0-9_-]{0,127}$'
          AND version_id ~ '^[a-z][a-z0-9_-]{0,127}$'
@@ -95,18 +96,16 @@ CREATE FUNCTION public.enforce_fileos_v2_staged_ledger() RETURNS trigger
 LANGUAGE plpgsql SET search_path=pg_catalog AS $function$
 DECLARE expected jsonb;
 DECLARE actual jsonb;
-DECLARE stage_uuid uuid;
 BEGIN
-    stage_uuid := COALESCE((to_jsonb(NEW)->>'stage_id')::uuid,(to_jsonb(NEW)->>'id')::uuid);
     SELECT counts INTO expected FROM public.brain_fileos_v2_staged_inventories
-    WHERE tenant_id=NEW.tenant_id AND id=stage_uuid;
+    WHERE tenant_id=NEW.tenant_id AND id=NEW.id;
     SELECT pg_catalog.jsonb_build_object(
         'hashed',count(*) FILTER (WHERE kind='hashed'),
         'deferred',count(*) FILTER (WHERE kind='deferred'),
         'excluded',count(*) FILTER (WHERE kind='excluded'),
         'errors',count(*) FILTER (WHERE kind='error'))
     INTO actual FROM public.brain_fileos_v2_staged_rows
-    WHERE tenant_id=NEW.tenant_id AND stage_id=stage_uuid;
+    WHERE tenant_id=NEW.tenant_id AND stage_id=NEW.id;
     IF expected IS NULL OR actual <> expected THEN
         RAISE EXCEPTION 'invalid FileOS v2 staged ledger';
     END IF;
@@ -117,10 +116,27 @@ CREATE CONSTRAINT TRIGGER fileos_v2_stage_ledger
     AFTER INSERT ON public.brain_fileos_v2_staged_inventories
     DEFERRABLE INITIALLY DEFERRED FOR EACH ROW
     EXECUTE FUNCTION public.enforce_fileos_v2_staged_ledger();
-CREATE CONSTRAINT TRIGGER fileos_v2_row_ledger
-    AFTER INSERT ON public.brain_fileos_v2_staged_rows
-    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW
-    EXECUTE FUNCTION public.enforce_fileos_v2_staged_ledger();
+
+-- Rows precede the header in one transaction. A late insert must not alter a
+-- sealed inventory. Use the same source lock as completion/staging so an
+-- insert racing header creation waits and then sees the committed header.
+CREATE FUNCTION public.refuse_late_fileos_v2_staged_row() RETURNS trigger
+LANGUAGE plpgsql SET search_path=pg_catalog AS $function$
+BEGIN
+    PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+        NEW.tenant_id::text || ':fileos-source:' || NEW.source_id,0));
+    IF EXISTS (
+        SELECT 1 FROM public.brain_fileos_v2_staged_inventories
+        WHERE tenant_id=NEW.tenant_id AND id=NEW.stage_id
+    ) THEN
+        RAISE EXCEPTION 'sealed FileOS v2 staged inventory';
+    END IF;
+    RETURN NEW;
+END
+$function$;
+CREATE TRIGGER fileos_v2_no_late_row
+    BEFORE INSERT ON public.brain_fileos_v2_staged_rows FOR EACH ROW
+    EXECUTE FUNCTION public.refuse_late_fileos_v2_staged_row();
 
 DO $block$
 DECLARE table_name text;

@@ -27,7 +27,10 @@ that JSON packet is not a relational inventory model.
   receipt and source root binding still to be latest and exact. One packet can be
   staged once; same-ID replay is idempotent, alternate-ID replay is refused.
 - Force tenant RLS and tenant-login fencing. Deny row mutation and truncation.
-  A deferred SQL constraint checks all four ledger counts at commit. Grant only
+  Insert rows before the header in one transaction; a source-locked trigger
+  refuses inserts after the header exists. One deferred header constraint
+  checks all four ledger counts at commit, avoiding a full recount per row.
+  Grant only
   the existing private runtime SELECT/INSERT surface; no CLI, Brain API or
   assistant route is added. Record only opaque stage IDs in create/replay audit
   events; no locator or source content enters routine telemetry.
@@ -38,7 +41,7 @@ that JSON packet is not a relational inventory model.
 ## Verification and rollback
 
 Disposable PostgreSQL tests cover hashed/deferred/exclusion/error rows, replay,
-stale receipt, wrong tenant, row-shape constraints, ledger balance, immutability
-and nonpublication. Full CI, strict runtime, populated restore and pinned donor
+3,000 hashless rows, stale receipt, wrong tenant, row-shape constraints, ledger
+balance, late-insert refusal, immutability and nonpublication. Full CI, strict runtime, populated restore and pinned donor
 parity gate merge. Rollback stops staging; immutable staged evidence remains for
 provenance and v1 behavior is unchanged.

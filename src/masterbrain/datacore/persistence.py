@@ -4247,6 +4247,14 @@ class DataCoreStore:
                 return FileOSV2StagedInventoryRecord(
                     stage_id, packet_id, source_id, candidate_sha, existing["recorded_at"], False
                 )
+            for kind, locator, item_id, version_id, sha256, size, media, reason in rows:
+                conn.execute(
+                    "INSERT INTO brain_fileos_v2_staged_rows(tenant_id,stage_id,source_id,"
+                    "kind,locator,item_id,version_id,sha256,size_bytes,media_type,reason) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (ctx.tenant_id, stage_id, source_id, kind, locator, item_id,
+                     version_id, sha256, size, media, reason),
+                )
             conn.execute(
                 "INSERT INTO brain_fileos_v2_staged_inventories(tenant_id,id,actor_id,"
                 "packet_id,source_id,prior_actor_id,prior_run_id,prior_observed_at,"
@@ -4258,14 +4266,6 @@ class DataCoreStore:
                  packet_row["root_binding_sha256"], packet_row["packet_sha256"],
                  candidate_sha, Jsonb(dict(candidate["counts"]))),
             )
-            for kind, locator, item_id, version_id, sha256, size, media, reason in rows:
-                conn.execute(
-                    "INSERT INTO brain_fileos_v2_staged_rows(tenant_id,stage_id,source_id,"
-                    "kind,locator,item_id,version_id,sha256,size_bytes,media_type,reason) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                    (ctx.tenant_id, stage_id, source_id, kind, locator, item_id,
-                     version_id, sha256, size, media, reason),
-                )
             recorded = conn.execute(
                 "SELECT recorded_at FROM brain_fileos_v2_staged_inventories WHERE id=%s",
                 (stage_id,),
