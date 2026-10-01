@@ -16,6 +16,14 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002T adds private, worker-scoped FileOS v2 document publication under
+  ADR-125 and migration 0046. Bounded source reads recheck the staged digest;
+  extracted text publishes on the prepared v2 version with existing chunks and
+  provenance. A final exact rescan and immutable complete outcome ledger mark
+  an attempt ready or blocked. Hashless rows gain no evidence. This is under
+  branch verification, synthetic/disposable only, with no v2 current index,
+  activation, absence, live acceptance or FOS-Master cutover.
+
 - DC-002S adds a private, worker-scoped FileOS v2 baseline completion under
   ADR-124 and migration 0045. After a fresh exact scan it seals the owner-
   authorized stage/prepared evidence as one historical baseline, with a

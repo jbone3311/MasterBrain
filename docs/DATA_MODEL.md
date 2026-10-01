@@ -165,6 +165,16 @@ against row mutation and truncation. It does not update current pointers,
 v1 receipts, absence, active indexes or search. See
 [ADR-124](adr/124_fileos_v2_baseline_completion.md).
 
+Migration `0046_fileos_v2_document_publication.sql` adds immutable v2 document
+attempts and one exact hashed-row outcome ledger per attempt. A deferred SQL
+check balances all six terminal outcomes against the completed baseline's
+prepared hashed rows, while a source-locked trigger refuses a superseded v1
+or root. Extracted rows bind to normalized documents on prepared v2 evidence;
+hashless and excluded rows gain no fabricated versions or documents. A ready
+attempt has no changed/failed rows, and only one ready attempt is allowed per
+completion. The tables do not activate v2 current reads or absence. See
+[ADR-125](adr/125_fileos_v2_baseline_document_publication.md).
+
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;

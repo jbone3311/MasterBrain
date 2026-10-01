@@ -91,6 +91,11 @@ ADR-124 implements that private completion transaction: another exact,
 no-follow donor scan seals a receipt over the immutable staged membership and
 prepared hashed evidence. It is a historical baseline, not an activation;
 v1 current pointers, freshness, absence and active search remain authoritative.
+ADR-125 then reuses the confined text and isolated document processors to
+publish normalized derivatives on prepared v2 versions. An exact rescan and
+source-locked outcome ledger seal a ready or blocked historical attempt; a
+crash cannot create partial readiness. Retained-history search may see those
+derivatives, but no v2 current index/activation, absence or cutover follows.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

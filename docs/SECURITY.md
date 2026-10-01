@@ -202,6 +202,16 @@ incomplete ledgers. A compact private read exposes counts and read-time v1
 match but no locators or content. Neither receipt nor read grants current
 search, absence, source effects, live-root acceptance or FOS-Master cutover.
 
+ADR-125 adds worker-only `brain.fileos.transition.publish` to process hashed
+rows of that completed baseline through existing confined/isolated extractors.
+Every opened file is hash-rechecked against staged evidence; a final full
+donor-policy rescan and source-locked SQL outcome ledger prevent drift or a
+partial crash prefix from being labelled ready. Forced RLS, tenant-login
+fencing, immutability and protected truncation apply. Ready/blocked attempts
+are historical; current v1 visibility and absence authority do not change.
+Retained-history search can expose successfully published v2 derivatives under
+its existing authorization, so clients must not present that layer as current.
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.

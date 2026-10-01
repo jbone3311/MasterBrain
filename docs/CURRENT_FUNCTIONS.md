@@ -63,6 +63,12 @@ a private historical completion receipt. Its separate compact inspection
 shows counts and whether the prior v1 run is still latest, not locators or
 content. This does not switch current FileOS search/freshness, create absence
 or grant live-source/cutover authority.
+`FileOSV2DocumentPublisher` processes hashed rows of that completed baseline
+through the existing confined text and optional isolated PDF/Office path,
+publishes deterministic normalized documents on prepared v2 evidence and
+records a complete ready/blocked attempt after a final exact rescan. Hashless
+rows remain unversioned. It has no CLI/API route; neither it nor its receipt
+activates current v2 FileOS reads or infers absence.
 
 ## Operator and shared processing functions
 

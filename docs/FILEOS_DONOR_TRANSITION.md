@@ -117,6 +117,17 @@ read-time latest-v1 match. Hashless observations stay hashless. Neither call
 changes v1 current pointers, freshness, absence, active indexes or search;
 no CLI/API route or live-source acceptance exists.
 
+DC-002T adds `FileOSV2DocumentPublisher.publish(worker, completion_id,
+attempt_id, root, code_revision=...)` under
+[ADR-125](adr/125_fileos_v2_baseline_document_publication.md). It checks a
+fresh exact donor-policy scan, processes only hashed prepared rows through
+the confined text or selected isolated document worker, and publishes
+normalized documents on those prepared versions. A second exact scan under
+the source lock seals all hashed outcomes as a ready or blocked immutable
+attempt. Hashless rows remain without a version, evidence or document. This
+can add retained-history search evidence but does not change v1 current
+pointers, active generations, current-only search, absence or FileOS operation.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |
@@ -149,9 +160,10 @@ the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 
-The staged rows, prepared evidence, owner authorization and private completion
-receipt establish a historical v2 baseline, but not current v2 visibility or
-publication. Before any switch, define and test later v2 runs, explicit read
-activation, absence suppression across the policy boundary, rollback, broader platform
-and cloud-placeholder parity, authorized read-only live shadow, and bounded
-cohort acceptance. A green synthetic preview alone cannot satisfy those gates.
+The staged rows, prepared evidence, owner authorization, private completion
+receipt and document attempt establish historical v2 evidence, but not current
+v2 visibility. Before any switch, define and test a v2 index generation, later
+v2 runs, explicit read activation, absence suppression across the policy
+boundary, rollback, broader platform and cloud-placeholder parity,
+authorized read-only live shadow, and bounded cohort acceptance. A green
+synthetic preview alone cannot satisfy those gates.

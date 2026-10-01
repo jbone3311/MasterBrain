@@ -2,6 +2,36 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002T FileOS v2 private document publication — branch verification
+
+ADR-125, migration 0046 and `FileOSV2DocumentPublisher` add a worker-only
+historical publication attempt for the hashed rows of one completed v2
+baseline. Each file is extracted through the existing confined/isolated
+DataCore path and rechecked against its staged hash; an exact final source
+scan and immutable per-row outcome ledger record a ready or blocked attempt.
+The prepared v2 version owns any published normalized document. Hashless
+rows receive no fabricated content. No v2 current generation, activation,
+absence authority, live-root acceptance or FOS-Master cutover is claimed.
+
+On a disposable local PostgreSQL 17.11 database, the full suite passed
+**2,894 tests, one skipped** in 178.16 seconds, with 456 of 457
+PostgreSQL-marked tests executed. The 3,000-hashed-row end-to-end publication
+stress case passed alone and in the full suite. Its first full-suite run hit
+the fixed five-second statement budget while reading prepared rows; adding
+the explicit tenant key to the indexed join and predicate made the isolated
+stress and subsequent complete suite pass without relaxing that budget.
+Ruff, strict mypy over 94 source files, 134 browser tests, the offline
+documentation inventory and local deployment quality gate passed. The gate
+ran 2,438 non-PostgreSQL tests and skipped the 457 PostgreSQL-marked cases by
+design; it is not a substitute for the complete database run above. Against
+pinned FOS-Master commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`, the 3,000-file shared
+hash/extraction parity harness passed. The donor-policy shadow matched 3,004
+hashed and metadata-only candidate rows with zero unexplained membership
+differences; six explicit transition-policy gaps remain. The donor repository
+was not changed. This local receipt is not exact-head CI or merge acceptance;
+no version tag is assigned to the private non-current tranche.
+
 ## DC-002S FileOS v2 private baseline completion — merged verification
 
 PR [#77](https://github.com/jbone3311/MasterBrain/pull/77) merged at
