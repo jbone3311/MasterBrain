@@ -69,7 +69,10 @@ derivatives. The donor inventory classifier is parity-tested but **not** adopted
 the live snapshot policy. An internal read-only library can preview v1-to-donor
 policy differences; its database-backed variant requires the exact latest
 completed v1 run before and after scanning. Neither variant has CLI/API
-publication or cutover authority.
+publication or cutover authority. An internal operator function can seal the
+one-scan candidate and comparison as an immutable private review packet after
+an advisory-locked latest-run recheck; it also has no CLI/API or publication
+authority.
 Current-only archive-image OCR search is a separate
 bounded layer; automatic archive fan-out is not implemented. See the
 [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md) and

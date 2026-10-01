@@ -65,6 +65,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002I source-bound donor candidate | Same pinned scanner; no donor edit | `fileos_donor_candidate.py`, ADR-112 | hashed/deferred separation, v1 rejection, malformed/root-drift tests, 3,000-file pinned-donor comparison | Merged via PR #50; exact-head and main CI/restore green; nonpublishing candidate only, not a v2 manifest or policy switch |
 | DC-002J v1-to-donor transition preview | Same pinned scanner; no donor edit | `fileos_donor_transition.py`, ADR-113 | complete-shape v1 comparison, six explicit policy gaps on 3,000-file pinned-donor corpus, 10,000-item v1 bound and fault/root/time tests | Merged via PR #52; final head and merged-main CI/strict/restore green; no v2 publication or switch |
 | DC-002K completed v1 baseline preview | Same pinned scanner; no donor edit | `persistence.py`, `fileos_donor_transition.py`, ADR-114 | exact latest completed v1 receipt/intake/items, pre/post-scan check, concurrent newer-run refusal, scope and PostgreSQL tests | Merged via PR #55; final-head and merged-main CI/strict/restore green; nonpublishing, no v2 baseline transaction or switch |
+| DC-002L immutable transition review packet | Same pinned scanner; no donor edit | migration 0038, `fileos_donor_transition.py`, `persistence.py`, ADR-115 | one scan, completed-v1 binding, locked insert, immutable/RLS packet, replay and nonpublication tests | In progress on branch; not a v2 baseline, owner approval or FileOS switch |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
@@ -107,6 +108,9 @@ boundary. It is not a completion receipt or cutover authorization.
 DC-002K binds an opt-in private preview to the latest exact completed v1 run,
 checking again after the donor scan. It does not reserve that run after return,
 persist v2 state or change the FileOS completion/absence path.
+DC-002L can seal one candidate and preview as an immutable, private review
+packet only after an advisory-locked latest-run recheck. It does not change
+the completion/absence path, authorize publication or attest future root state.
 
 ## Proposed next tranches
 

@@ -18,7 +18,7 @@ from test_service import TOKEN, registry
 from email_brain import store as persistence
 from email_brain.api import create_app
 from email_brain.auth import Principal
-from email_brain.migrate import grant_runtime, migrate
+from email_brain.migrate import RUNTIME_INSERT, RUNTIME_SELECT, migrate
 from email_brain.recovery import Recovery, RecoveryUnavailable
 from email_brain.schemas import SearchRequest
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
@@ -466,6 +466,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0035_identity_resolver.sql",
             "0036_current_archive_image_search.sql",
             "0037_tenant_login_fence.sql",
+            "0038_fileos_transition_review_packets.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -498,6 +499,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
                 "0035_identity_resolver.sql",
                 "0036_current_archive_image_search.sql",
                 "0037_tenant_login_fence.sql",
+                "0038_fileos_transition_review_packets.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -527,6 +529,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             "0035_identity_resolver.sql",
             "0036_current_archive_image_search.sql",
             "0037_tenant_login_fence.sql",
+            "0038_fileos_transition_review_packets.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -602,6 +605,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
                 "0035_identity_resolver.sql",
                 "0036_current_archive_image_search.sql",
                 "0037_tenant_login_fence.sql",
+                "0038_fileos_transition_review_packets.sql",
             }:
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)
@@ -611,7 +615,30 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
                     sql.Identifier(role), sql.Literal(password)
                 )
             )
-            grant_runtime(conn, role)
+            # This fixture intentionally stops before 0033. Grant only tables
+            # present at that historical point; the normal grant_runtime()
+            # must continue to fail on an incompletely migrated live schema.
+            present = {
+                row[0] for row in conn.execute(
+                    "SELECT tablename FROM pg_tables WHERE schemaname='public'"
+                )
+            }
+            conn.execute(
+                sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role))
+            )
+            for privilege, tables in (
+                ("SELECT", RUNTIME_SELECT),
+                ("INSERT", RUNTIME_INSERT),
+                ("UPDATE", ("brain_sources", "brain_source_items", "brain_jobs")),
+            ):
+                available = [table for table in tables if table in present]
+                conn.execute(
+                    sql.SQL("GRANT {} ON {} TO {}").format(
+                        sql.SQL(privilege),
+                        sql.SQL(",").join(map(sql.Identifier, available)),
+                        sql.Identifier(role),
+                    )
+                )
         role_created = True
         tenant_id, actor_id = uuid4(), uuid4()
         with psycopg.connect(dsn) as conn:

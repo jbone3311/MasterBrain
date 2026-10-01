@@ -2,6 +2,28 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002L immutable FileOS transition review packet — local verification
+
+Branch `codex/dc-002l-transition-review-packet` begins at `main`
+`d90379d1b2f90f2413b82248a5b661961ce972dc`. Pinned FOS-Master
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` remains unchanged.
+ADR-115 and migration 0038 add one private, immutable packet pairing a single
+donor-policy scan with its exact completed-v1 comparison. The latest-run check
+is repeated under the FileOS source advisory lock before insert; it does not
+publish v2 state or authorize absence, search, FileOS cutover or source effects.
+
+Local disposable PostgreSQL 17.11 full suite: **2,878 passed, one skipped**;
+447 PostgreSQL-marked cases collected, 446 executed, one skipped. Focused
+transition unit suite: 13 passed; 134 browser tests passed. Ruff, mypy (88 source files), and offline
+documentation inventory (209 Markdown files, 1,133 paths/fragments) passed.
+The pinned-donor fictional 3,000-file comparison passed 3,004 hashed and
+metadata-only candidate matches, 3,006 prior-v1 classifications and six
+explicit policy gaps, with zero unexplained membership differences. The first
+full run found historical migration fixtures that omitted 0038; those fixtures
+were corrected and the full suite rerun green. Hosted exact-head CI, strict
+runtime and populated restore are **pending** at this local receipt. No new
+version is tagged for this nonpublishing tranche.
+
 ## DC-002K completed FileOS baseline preview integration
 
 Branch `codex/dc-002k-completed-baseline-preview` starts from verified `main`

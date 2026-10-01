@@ -16,6 +16,11 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002L adds a private immutable donor-policy review packet, bound to one
+  latest exact completed v1 run with an advisory-locked insert. Candidate and
+  preview come from one scan; forced RLS, tenant-login fence, replay and
+  nonpublication tests use disposable PostgreSQL. This is not a v2 baseline,
+  attestation, API route, live-root acceptance or cutover.
 - DC-002K adds a private, read-scoped completed-v1 verifier and a before/after
   database-bound donor transition preview. It refuses an imported-only,
   mismatched or stale run, including a newer completion during scanning. It is

@@ -25,6 +25,19 @@ a completion during the scan invalidates the preview. The operation requires
 has `publishable: false` and no CLI/API or v2 publication authority. The
 checks do not lock future completions after the report returns.
 
+DC-002L adds an internal `record_fileos_transition_review(...)` path governed
+by [ADR-115](adr/115_fileos_transition_review_packet.md). It performs one donor
+scan, pairs that candidate with the completed-v1 preview, and seals the pair in
+an immutable, tenant-scoped PostgreSQL review packet. Recording requires
+`brain.source.ingest` plus `brain.changes.read`; an advisory-locked recheck
+rejects a newer completed run between scanning and insertion. A repeated
+packet ID with identical content is idempotent; a changed identity or duplicate
+content under a different ID is refused. Packets have a 16 MiB bound and no
+CLI/API route. Their stored canonical digest detects content changes in an
+export, but a packet is **not** independent attestation of the filesystem.
+No current search, freshness, absence or publication path reads this table.
+The candidate's hashless rows remain deferred without fabricated versions.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |
@@ -57,7 +70,7 @@ the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 
-The completed-baseline check does not solve the v2 database shape. Before any
+The completed-baseline check and immutable review packet do not solve the v2 database shape. Before any
 switch, define and test metadata-only persistence and freshness, an explicit
 owner-reviewed v1-to-v2 baseline transaction, absence suppression across the
 policy boundary, rollback, PostgreSQL/RLS/restore behavior, broader platform

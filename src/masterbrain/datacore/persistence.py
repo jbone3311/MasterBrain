@@ -147,6 +147,15 @@ class FileOSRunReceipt:
 
 
 @dataclass(frozen=True, slots=True)
+class FileOSTransitionPacketRecord:
+    packet_id: UUID
+    source_id: str
+    packet_sha256: str
+    recorded_at: datetime
+    recorded: bool
+
+
+@dataclass(frozen=True, slots=True)
 class IndexGeneration:
     generation_id: str
     source_id: str
@@ -3728,6 +3737,184 @@ class DataCoreStore:
             ):
                 raise Conflict("FileOS completed baseline requires review")
             return cast(datetime, latest["completed_at"])
+
+    def stage_fileos_transition_review(
+        self,
+        ctx: TenantContext,
+        prior_manifest: Mapping[str, Any],
+        prior_run_id: UUID,
+        packet_id: UUID,
+        packet: Mapping[str, Any],
+    ) -> FileOSTransitionPacketRecord:
+        """Seal one nonpublishing donor-policy packet against a completed v1 run.
+
+        The source advisory lock closes the gap between the caller's scan and
+        insertion. This table is never read by freshness, absence or search.
+        """
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.changes.read")
+        if not isinstance(prior_run_id, UUID) or not isinstance(packet_id, UUID):
+            raise ValueError("invalid FileOS transition packet identity")
+        source, prior_observed, items = validate_fileos_completion_coverage(prior_manifest)
+        prior_hash = fileos_manifest_sha256(prior_manifest)
+        policy_hash = fileos_inventory_policy_sha256(prior_manifest)
+        root_hash = fileos_manifest_root_binding_sha256(prior_manifest)
+        if not isinstance(packet, Mapping) or set(packet) != {
+            "packet_version", "publishable", "requires_review", "source_id",
+            "prior_run_id", "prior_manifest_sha256", "candidate", "preview",
+        }:
+            raise ValueError("invalid FileOS transition packet")
+        candidate = packet["candidate"]
+        preview = packet["preview"]
+        if not isinstance(candidate, Mapping) or not isinstance(preview, Mapping):
+            raise ValueError("invalid FileOS transition packet")
+        baseline = preview.get("completed_baseline")
+        candidate_source = candidate.get("source")
+        candidate_root = candidate.get("root_binding")
+        preview_root = preview.get("root_binding")
+        if (
+            packet["packet_version"] != "masterbrain-fileos-transition-review-packet-v1"
+            or packet["publishable"] is not False
+            or packet["requires_review"] is not True
+            or packet["source_id"] != source.source_id
+            or packet["prior_run_id"] != str(prior_run_id)
+            or packet["prior_manifest_sha256"] != prior_hash
+            or candidate.get("candidate_version") != "masterbrain-fileos-donor-candidate-v1"
+            or candidate.get("publishable") is not False
+            or not isinstance(candidate_source, Mapping)
+            or candidate_source.get("source_id") != source.source_id
+            or candidate_source.get("kind") != "fileos"
+            or not isinstance(candidate_root, Mapping)
+            or candidate_root.get("sha256") != root_hash
+            or not isinstance(preview_root, Mapping)
+            or preview_root != candidate_root
+            or preview.get("publishable") is not False
+            or preview.get("requires_review") is not True
+            or preview.get("source_id") != source.source_id
+            or preview.get("prior_observed_at") != prior_observed.isoformat()
+            or preview.get("donor_observed_at") != candidate.get("observed_at")
+            or preview.get("prior_policy_sha256") != policy_hash
+            or preview.get("candidate_counts") != candidate.get("counts")
+            or not isinstance(baseline, Mapping)
+            or baseline.get("run_id") != str(prior_run_id)
+            or baseline.get("manifest_sha256") != prior_hash
+        ):
+            raise ValueError("invalid FileOS transition packet binding")
+        ledgers = ("hashed", "deferred", "exclusions", "errors")
+        candidate_counts = candidate.get("counts")
+        preview_counts = preview.get("counts")
+        prior_states = (
+            "unchanged", "changed", "deferred_prior", "excluded_prior",
+            "error_covered_prior", "unobserved_prior",
+        )
+        if (
+            not isinstance(candidate_counts, Mapping)
+            or set(candidate_counts) != {"hashed", "deferred", "excluded", "errors"}
+            or any(not isinstance(candidate.get(name), list) for name in ledgers)
+            or candidate_counts != {
+                "hashed": len(candidate["hashed"]),
+                "deferred": len(candidate["deferred"]),
+                "excluded": len(candidate["exclusions"]),
+                "errors": len(candidate["errors"]),
+            }
+            or not isinstance(preview.get("prior_items"), list)
+            or len(preview["prior_items"]) != len(items)
+            or not isinstance(preview_counts, Mapping)
+            or set(preview_counts) != {*prior_states, "donor_only_hashed"}
+            or any(type(preview_counts[state]) is not int or preview_counts[state] < 0
+                   for state in preview_counts)
+            or sum(preview_counts[state] for state in prior_states) != len(items)
+            or not isinstance(preview.get("donor_only_hashed"), list)
+            or preview_counts["donor_only_hashed"] != len(preview["donor_only_hashed"])
+            or any(
+                not isinstance(row, Mapping)
+                or "version_id" in row
+                or "digest" in row
+                for row in candidate["deferred"]
+            )
+        ):
+            raise ValueError("invalid FileOS transition packet ledger")
+        donor_observed = _parse_time(candidate.get("observed_at"))
+        if donor_observed <= prior_observed:
+            raise ValueError("FileOS transition observation is not newer")
+        try:
+            encoded = json.dumps(
+                packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+                allow_nan=False,
+            ).encode()
+        except (TypeError, ValueError) as exc:
+            raise ValueError("invalid FileOS transition packet encoding") from exc
+        if len(encoded) > 16 * 1024 * 1024:
+            raise ValueError("FileOS transition packet byte bound exceeded")
+        packet_hash = hashlib.sha256(encoded).hexdigest()
+        with self.store.transaction(ctx) as conn:
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:fileos-source:{source.source_id}",),
+            )
+            latest = conn.execute(
+                "SELECT actor_id,run_id,observed_at,completed_at,manifest_sha256,"
+                "policy_sha256,root_binding_sha256,item_count "
+                "FROM brain_fileos_run_receipts WHERE source_id=%s "
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
+                (source.source_id,),
+            ).fetchone()
+            bound_source = conn.execute(
+                "SELECT root_binding_sha256 FROM brain_sources WHERE id=%s",
+                (source.source_id,),
+            ).fetchone()
+            if (
+                latest is None
+                or latest["run_id"] != prior_run_id
+                or latest["observed_at"] != prior_observed
+                or latest["manifest_sha256"] != prior_hash
+                or latest["policy_sha256"] != policy_hash
+                or latest["root_binding_sha256"] != root_hash
+                or latest["item_count"] != len(items)
+                or not isinstance(baseline.get("completed_at"), str)
+                or baseline["completed_at"] != latest["completed_at"].isoformat()
+                or bound_source is None
+                or bound_source["root_binding_sha256"] != root_hash
+            ):
+                raise Conflict("FileOS transition baseline requires review")
+            existing = conn.execute(
+                "SELECT source_id,prior_actor_id,prior_run_id,prior_manifest_sha256,"
+                "packet_sha256,recorded_at FROM brain_fileos_transition_packets WHERE id=%s",
+                (packet_id,),
+            ).fetchone()
+            if existing:
+                if (
+                    existing["source_id"] != source.source_id
+                    or existing["prior_actor_id"] != latest["actor_id"]
+                    or existing["prior_run_id"] != prior_run_id
+                    or existing["prior_manifest_sha256"] != prior_hash
+                    or existing["packet_sha256"] != packet_hash
+                ):
+                    raise Conflict("FileOS transition packet identity changed")
+                return FileOSTransitionPacketRecord(
+                    packet_id, source.source_id, packet_hash, existing["recorded_at"], False
+                )
+            if conn.execute(
+                "SELECT 1 FROM brain_fileos_transition_packets WHERE source_id=%s "
+                "AND prior_actor_id=%s AND prior_run_id=%s AND packet_sha256=%s",
+                (source.source_id, latest["actor_id"], prior_run_id, packet_hash),
+            ).fetchone():
+                raise Conflict("FileOS transition packet already recorded")
+            inserted = conn.execute(
+                "INSERT INTO brain_fileos_transition_packets(tenant_id,id,actor_id,source_id,"
+                "prior_actor_id,prior_run_id,prior_observed_at,donor_observed_at,"
+                "root_binding_sha256,prior_manifest_sha256,packet_sha256,packet) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING recorded_at",
+                (
+                    ctx.tenant_id, packet_id, ctx.actor_id, source.source_id,
+                    latest["actor_id"], prior_run_id, prior_observed, donor_observed,
+                    root_hash, prior_hash, packet_hash, Jsonb(dict(packet)),
+                ),
+            ).fetchone()
+            assert inserted is not None
+            return FileOSTransitionPacketRecord(
+                packet_id, source.source_id, packet_hash, inserted["recorded_at"], True
+            )
 
     def fileos_freshness(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
         """Return the latest complete run, never an in-progress or partial prefix."""
