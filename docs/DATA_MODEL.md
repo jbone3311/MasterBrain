@@ -133,6 +133,16 @@ It records a later observation and matching row digest after a fresh root scan.
 This is historical verification, not a v2 completed run or current read
 authority. See [ADR-119](adr/119_fileos_v2_baseline_verification.md).
 
+Migration `0042_fileos_v2_prepared_evidence.sql` adds an immutable preparation
+receipt and per-hashed-row mapping from donor candidate version to a
+policy-scoped shared DataCore version/evidence. The mapping is necessary because
+v1 version metadata includes mtime while the donor candidate does not; reusing
+the same v1-style version ID would break later v1 imports. A deferred database
+check requires exact hashed-row coverage and source-bound evidence. Hashless
+staged rows have no mapping or fabricated evidence. This is not a completed v2
+run or current search/freshness authority. See
+[ADR-121](adr/121_fileos_v2_prepared_evidence.md).
+
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;

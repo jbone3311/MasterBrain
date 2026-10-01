@@ -80,9 +80,11 @@ Security and data-integrity blockers take priority over adding more surface area
    DC-002O adds an exact, locator-free transition plan and synthetic-only
    human-owner approval receipt. DC-002P adds a worker-only fresh scan that
    must match the approved stage exactly and records a historical verification
-   receipt. Neither has a v2 publication consumer. The next tranche must
-   design v2 evidence intake, completion, visibility and rollback before any
-   policy switch.
+   receipt. DC-002Q adds a private third exact scan and policy-scoped hashed
+   DataCore evidence preparation; it deliberately leaves the v1 current
+   pointer and all search/freshness state unchanged. The next tranche must
+   design explicit owner publication authority, v2 completion, visibility,
+   absence suppression and rollback before any policy switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container

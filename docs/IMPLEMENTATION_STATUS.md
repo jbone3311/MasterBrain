@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002Q adds private, worker-scoped FileOS v2 hashed-evidence preparation
+  under ADR-121 and migration 0042. After rechecking the current v1 receipt,
+  review and historical verification, it scans again under the source lock,
+  maps donor candidate IDs to policy-scoped DataCore versions and seals an
+  immutable receipt. It does not change v1 current pointers, completion,
+  freshness, absence, search or FileOS operation. It is synthetic/disposable
+  only; v2 completion, owner publication authority and rollback remain open.
 - ADR-120 adds content-safe fixed-stage diagnostics to the trusted isolated
   processor controller while preserving fail-closed `MimeUnavailable` and
   exact-owned cleanup. This instruments, but does not resolve, intermittent
@@ -23,7 +30,8 @@ production and FileOS cutover remain open.
 - DC-002P adds a private, worker-scoped fresh-root verification of one approved
   FileOS v2 stage under ADR-119 and migration 0041. It rechecks the current
   v1 receipt, scans with the pinned donor policy, and requires exact staged-row
-  parity before recording an immutable receipt. No v2 importer, completion,
+  parity before recording an immutable receipt. No v2 importer at that
+  checkpoint, completion,
   freshness, absence, search, API route or cutover consumes that receipt.
 - DC-002O adds a private, nonpublishing FileOS v2 transition plan and an
   immutable, human-owner approval receipt under ADR-118 and migration 0040.

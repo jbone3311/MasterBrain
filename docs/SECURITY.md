@@ -172,6 +172,14 @@ RLS- and tenant-login-fenced; audit uses opaque identities. A matching scan
 is not continuing root attestation or permission to publish, infer absence,
 switch policy, or expose source bytes through an assistant route.
 
+ADR-121 adds worker-only `brain.fileos.transition.prepare` plus existing
+`brain.source.ingest` and `brain.changes.read` requirements. It rechecks the
+review/verification and scans again under the source lock before inserting
+policy-scoped hashed evidence and an immutable, forced-RLS, tenant-login-fenced
+mapping receipt. No current pointer, v1 completion, change feed, index, search,
+absence or source effect is written. Prepared source-bound evidence is not an
+original byte copy or permission to publish a v2 baseline.
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.

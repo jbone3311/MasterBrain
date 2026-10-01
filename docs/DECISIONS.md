@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-121](adr/121_fileos_v2_prepared_evidence.md) permits a private,
+worker-scoped FileOS v2 evidence-preparation transaction after another exact
+fresh scan. It maps donor candidate versions to policy-scoped DataCore versions
+without changing v1 current state, completion, search, absence or cutover.
+
 [ADR-120](adr/120_sandbox_failure_stage_diagnostics.md) permits fixed-code,
 content-safe failure-stage warnings from the trusted isolated-processing
 controller. Public failures remain scrubbed and fail closed; the diagnostic
