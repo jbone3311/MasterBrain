@@ -2,7 +2,7 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002M bounded transition review read — local verification
+## DC-002M bounded transition review read — merged verification
 
 Branch `codex/dc-002m-transition-review-read` begins at exact verified `main`
 `b1c86e822c39c7d10bf1c714be90062fc3824392`. Pinned FOS-Master
@@ -21,8 +21,19 @@ quality gate passed. The pinned-donor fictional 3,000-file comparison again
 matched 3,004 hashed and metadata-only candidates, 3,006 prior-v1
 classifications and six explicit policy gaps with zero unexplained membership
 differences. Hosted exact-head CI, strict runtime and populated restore are
-pending at this local receipt. No new product version is warranted for this
-private, nonpublishing read tranche.
+green at the exact head and merged `main` commit:
+
+[PR #59](https://github.com/jbone3311/MasterBrain/pull/59) exact head
+`67e7758b018de0339789abf9861c9f9534550e0e` passed
+[full CI 36851543615](https://github.com/jbone3311/MasterBrain/actions/runs/36851543615),
+[strict runtime 36851543630](https://github.com/jbone3311/MasterBrain/actions/runs/36851543630),
+and [populated restore 36851543737](https://github.com/jbone3311/MasterBrain/actions/runs/36851543737).
+It merged at `879425172707899f446c7089e990b7918edd112d`, whose exact
+`main` commit independently passed
+[full CI 36852405786](https://github.com/jbone3311/MasterBrain/actions/runs/36852405786),
+[strict runtime 36852405850](https://github.com/jbone3311/MasterBrain/actions/runs/36852405850),
+and [populated restore 36852406974](https://github.com/jbone3311/MasterBrain/actions/runs/36852406974).
+No new product version is warranted for this private, nonpublishing read tranche.
 
 ## DC-002L immutable FileOS transition review packet — merged verification
 
