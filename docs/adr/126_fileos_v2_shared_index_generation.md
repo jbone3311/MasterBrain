@@ -59,8 +59,8 @@ donor remains unchanged at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
 ## Safety and acceptance
 
 The builder is bounded by the existing 64 MiB normalized-text and 100,000
-chunk limits; extend the item cap to the v2 stage's 20,000-row maximum without
-relaxing those text/chunk limits. A v2 generation with no hashed rows may be
+chunk limits; the v2 item cap is the stage's 20,000-row maximum while the v1
+item cap remains 10,000. A v2 generation with no hashed rows may be
 ready with zero documents but still has no current-read authority. A blocked
 document attempt, missing row, wrong document/evidence, body tampering, stale
 v1 run, wrong tenant, direct-SQL forged readiness, late child insert or

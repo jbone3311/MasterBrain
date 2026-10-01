@@ -13,14 +13,15 @@ FOS-Master remain unchanged. A different code revision produces a distinct
 immutable generation rather than replacing prior history.
 
 On a fresh disposable local PostgreSQL 17.11 database, the full suite passed
-**2,894 tests, one skipped** in 142.64 seconds, with 456 of 457
+**2,894 tests, one skipped** in 203.78 seconds, with 456 of 457
 PostgreSQL-marked tests executed. The end-to-end 3,000-hashed-row publication
-and generation stress case passed separately in 60.86 seconds and again in the
+and generation stress case passed separately in 106.03 seconds and again in the
 full suite. Early stress attempts exposed five-second statement timeouts in
-the v2 readiness anti-join, exact membership join and the earlier publication
-ledger read. The final candidate uses exact set-based ledger comparison and
-separate indexed source/preparation reads; the database statement budget was
-not raised. Focused tests cover zero-hash readiness, same-plan replay,
+the v2 readiness anti-join, exact membership join, the earlier publication
+ledger read, and a large item/document join in the builder. The final
+candidate uses exact set-based ledger comparison, separate indexed
+source/preparation reads and bounded document batches; the database statement
+budget was not raised. Focused tests cover zero-hash readiness, same-plan replay,
 distinct-revision history, concurrent build, forged/missing/chunk rows,
 late-child refusal, wrong tenant/scope/client, stale v1 baseline and no
 current-read effect. Locked dependency sync, Ruff, strict mypy over 95 source

@@ -2839,6 +2839,16 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     assert first_generation.item_count == 3
     assert first_generation.document_count == 1
     assert first_generation.chunk_count == 1
+    with pytest.raises(psycopg.errors.CheckViolation, match="item_count"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,run_actor_id,"
+                "run_id,observed_at,plan_sha256,code_revision,chunker_version,item_count,"
+                "document_count,chunk_count) SELECT tenant_id,'v1_over_limit',source_id,"
+                "run_actor_id,run_id,observed_at,%s,code_revision,chunker_version,10001,"
+                "document_count,chunk_count FROM brain_index_generations WHERE id=%s",
+                ("0" * 64, first_generation.generation_id),
+            )
     assert (
         core.build_fileos_index_generation(
             ctx,

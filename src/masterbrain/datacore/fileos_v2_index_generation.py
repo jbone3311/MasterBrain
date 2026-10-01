@@ -123,16 +123,25 @@ class FileOSV2IndexBuilder:
             ):
                 raise Conflict("FileOS v2 index basis requires review")
             rows = conn.execute(
-                "SELECT i.item_id,i.prepared_version_id,i.evidence_id,i.outcome,"
-                "i.document_id,d.normalizer,d.body_sha256,d.body "
-                "FROM brain_fileos_v2_document_attempt_items i "
-                "LEFT JOIN brain_normalized_documents d ON d.tenant_id=i.tenant_id "
-                "AND d.id=i.document_id AND d.evidence_id=i.evidence_id "
-                "WHERE i.tenant_id=%s AND i.attempt_id=%s ORDER BY i.item_id",
+                "SELECT item_id,prepared_version_id,evidence_id,outcome,document_id "
+                "FROM brain_fileos_v2_document_attempt_items "
+                "WHERE tenant_id=%s AND attempt_id=%s ORDER BY item_id",
                 (ctx.tenant_id, attempt_id),
             ).fetchall()
             if len(rows) != basis["hashed_count"] or basis["hashed_count"] > 20000:
                 raise Conflict("FileOS v2 index item ledger is incomplete")
+            # A many-row RLS join can exceed the bounded statement budget.
+            # Fetch only selected document IDs in fixed batches, then verify
+            # the exact evidence and deterministic identities below.
+            document_ids = [row["document_id"] for row in rows if row["document_id"]]
+            documents: dict[str, dict[str, Any]] = {}
+            for offset in range(0, len(document_ids), 250):
+                page = conn.execute(
+                    "SELECT id,evidence_id,normalizer,body_sha256,body "
+                    "FROM brain_normalized_documents WHERE tenant_id=%s AND id=ANY(%s)",
+                    (ctx.tenant_id, document_ids[offset:offset + 250]),
+                ).fetchall()
+                documents.update((document["id"], document) for document in page)
             plan_items: list[dict[str, Any]] = []
             generated_chunks: list[dict[str, Any]] = []
             text_bytes = 0
@@ -143,18 +152,19 @@ class FileOSV2IndexBuilder:
                 document_id = row["document_id"]
                 body_sha = None
                 if row["outcome"] == "extracted":
-                    if document_id is None or row["body"] is None:
+                    document = documents.get(document_id) if document_id else None
+                    if document is None or document["evidence_id"] != row["evidence_id"]:
                         raise Conflict("FileOS v2 extracted document is missing")
-                    body = row["body"]
+                    body = document["body"]
                     text_bytes += len(body.encode())
                     if text_bytes > MAX_GENERATION_TEXT_BYTES:
                         raise ValueError("FileOS v2 index text bound exceeded")
                     body_sha = hashlib.sha256(body.encode()).hexdigest()
                     if (
-                        row["body_sha256"] != body_sha
+                        document["body_sha256"] != body_sha
                         or document_id != stable_id(
                             "document", row["prepared_version_id"],
-                            row["normalizer"], body_sha,
+                            document["normalizer"], body_sha,
                         )
                     ):
                         raise Conflict("FileOS v2 normalized document identity changed")

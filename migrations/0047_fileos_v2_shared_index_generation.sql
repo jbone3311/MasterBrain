@@ -19,7 +19,10 @@ ALTER TABLE public.brain_index_generations
     ALTER COLUMN run_id DROP NOT NULL,
     DROP CONSTRAINT brain_index_generations_item_count_check,
     ADD CONSTRAINT brain_index_generations_item_count_check
-        CHECK (item_count BETWEEN 0 AND 20000),
+        CHECK (
+            (basis_kind='v1' AND item_count BETWEEN 0 AND 10000)
+            OR (basis_kind='v2' AND item_count BETWEEN 0 AND 20000)
+        ),
     ADD CONSTRAINT brain_index_generations_exact_basis CHECK (
         (basis_kind='v1' AND run_actor_id IS NOT NULL AND run_id IS NOT NULL
          AND v2_stage_id IS NULL AND v2_completion_id IS NULL
