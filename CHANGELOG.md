@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Clarified the final product contract: a first-party MasterBrain chat and
+  approved external assistants use the same scoped Brain API; a central private
+  service holds authoritative state, while later Email/FileOS changes require
+  typed previews, separate execution grants, approval and audit. This is a
+  roadmap/documentation change, not an implemented chat, hosted deployment or
+  source-write capability.
 - Reworked FileOS v1 completion-ledger validation (ADR-122, migration 0043):
   run items precede the receipt in one transaction, whose deferred check now
   scans the final ledger once. An immediate source-locked guard rejects late
