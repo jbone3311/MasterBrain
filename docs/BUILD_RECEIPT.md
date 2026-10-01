@@ -2,7 +2,7 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002P approved-stage fresh verification — local validation
+## DC-002P approved-stage fresh verification — merged verification
 
 Branch `codex/dc-002p-v2-baseline-verification` starts from merged `main`
 `b39ee4667a6d1bddcf574cf914e5f597f701d363`. ADR-119 and migration 0041
@@ -15,9 +15,26 @@ tests and offline documentation inventory (213 Markdown files, 1,160 local
 paths/fragments) pass. Pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
 is unchanged; its 3,000-file fictional shadow matches 3,004 ordinary and
 metadata-only rows and 3,006 prior-v1 classifications, with six explicit
-policy gaps and no unexplained membership differences. Local container and
-hosted CI/strict/restore gates are not yet claimed. No version tag is warranted
+policy gaps and no unexplained membership differences. A separate local container
+run is not claimed; hosted PR CI/strict/restore passed as linked below. No version tag is warranted
 for this nonpublishing internal verification step.
+
+[PR #66](https://github.com/jbone3311/MasterBrain/pull/66) tested exact head
+`77625be7d31f71a1b2b55a0aaa8b0dd2b6a1fc1a`: [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36873836458),
+[strict-runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36873836409),
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36873836443)
+all passed. It merged to `main` at
+`304d070198369d0b6f8aa9583e2d00dedbff402a`. Post-merge
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36874909255)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36874909220)
+passed; the [post-merge full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36874909222)
+failed on attempt 1 in the preexisting isolated large-MIME container check:
+one `MimeUnavailable` from `DockerMimeProcessor.prepare` was scrubbed by the
+worker boundary, so its underlying container failure was not visible. The
+same exact-head PR job passed this check. Attempt 2 on the unchanged merged
+commit passed that MIME check and the remaining CI gate. This recurrence is
+tracked in [issue #64](https://github.com/jbone3311/MasterBrain/issues/64);
+the passing rerun does not erase the failed first attempt or diagnose its cause.
 
 ## DC-002O exact FileOS v2 transition approval — merged verification
 
