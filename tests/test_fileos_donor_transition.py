@@ -10,8 +10,10 @@ import pytest
 
 from masterbrain.datacore import fileos_donor_candidate as candidate_module
 from masterbrain.datacore import fileos_donor_shadow as shadow_module
+from masterbrain.datacore import fileos_donor_transition as transition_module
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.fileos_donor_transition import (
+    build_fileos_transition_review_packet,
     preview_fileos_completed_donor_transition,
     preview_fileos_donor_transition,
 )
@@ -269,3 +271,43 @@ def test_completed_wrapper_refuses_unverified_baseline_before_scan(
             MissingBaseline(), object(), prior, uuid4(), tmp_path,
             source_id="files_transition", observed_at=OBSERVED + timedelta(days=1),
         )
+
+
+def test_review_packet_retains_one_scan_without_making_hashless_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional proof")
+    prior = _v1(tmp_path)
+    run_id = uuid4()
+
+    class Baseline:
+        def verify_fileos_completed_baseline(
+            self, _ctx: object, _manifest: dict, _run: object
+        ) -> datetime:
+            return OBSERVED + timedelta(hours=1)
+
+    original = transition_module.build_fileos_donor_candidate
+    scans = 0
+
+    def counted(root: Path, **kwargs: object) -> dict:
+        nonlocal scans
+        scans += 1
+        return original(root, **kwargs)
+
+    monkeypatch.setattr(transition_module, "build_fileos_donor_candidate", counted)
+    packet = build_fileos_transition_review_packet(
+        Baseline(), object(), prior, run_id, tmp_path,
+        source_id="files_transition", observed_at=OBSERVED + timedelta(days=1),
+        metadata_only=True,
+    )
+    assert scans == 1
+    assert packet["packet_version"] == "masterbrain-fileos-transition-review-packet-v1"
+    assert packet["publishable"] is False
+    assert packet["requires_review"] is True
+    assert packet["candidate"]["counts"] == {
+        "hashed": 0, "deferred": 1, "excluded": 0, "errors": 0
+    }
+    assert packet["candidate"]["deferred"][0]["reason"] == "no_hash"
+    assert "version_id" not in packet["candidate"]["deferred"][0]
+    assert packet["preview"]["completed_baseline"]["run_id"] == str(run_id)
+    assert packet["preview"]["counts"]["deferred_prior"] == 1

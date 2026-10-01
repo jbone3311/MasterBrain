@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-115](adr/115_fileos_transition_review_packet.md) retains one donor-policy
+candidate and its exact completed-v1 comparison in a private immutable review
+packet. It creates no v2 baseline, publication or FileOS cutover authority.
+
 [ADR-114](adr/114_completed_fileos_baseline_preview.md) binds the private
 donor-policy preview to the latest exact completed v1 database run, checking
 before and after source scanning. It creates no v2 baseline or publication.

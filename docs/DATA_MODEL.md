@@ -104,6 +104,13 @@ ADR-098 requires intake and completion to agree on that digest. The populated
 restore and migration regression passed on PR #22's runtime head; the change is
 integrated on `main` via PR #28. Live cutover acceptance remains open.
 
+Migration `0038_fileos_transition_review_packets.sql` adds a separate, immutable,
+forced-RLS and tenant-login-fenced packet for one donor-policy candidate and
+its exact completed-v1 comparison. Its completed-receipt foreign key and
+canonical packet digest support private review and provenance, not v2 current
+state. Search, freshness, absence and publication do not read it. See
+[ADR-115](adr/115_fileos_transition_review_packet.md).
+
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;

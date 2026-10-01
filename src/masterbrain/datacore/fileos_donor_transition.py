@@ -17,6 +17,7 @@ from masterbrain.datacore.fileos import fileos_root_binding_sha256
 from masterbrain.datacore.fileos_donor_candidate import build_fileos_donor_candidate
 from masterbrain.datacore.persistence import (
     DataCoreStore,
+    FileOSTransitionPacketRecord,
     fileos_inventory_policy_sha256,
     fileos_manifest_root_binding_sha256,
     fileos_manifest_sha256,
@@ -24,6 +25,7 @@ from masterbrain.datacore.persistence import (
 )
 
 TRANSITION_PREVIEW_VERSION = "masterbrain-fileos-donor-transition-preview-v1"
+TRANSITION_PACKET_VERSION = "masterbrain-fileos-transition-review-packet-v1"
 _DIRECTORY_EXCLUSIONS = frozenset(
     {"donor_junk_dir", "donor_operational_dir", "symlink_directory"}
 )
@@ -44,14 +46,14 @@ def _covering_entry(
     return None
 
 
-def preview_fileos_donor_transition(
+def _scan_and_preview(
     prior_manifest: Mapping[str, Any],
     root: Path,
     *,
     source_id: str,
     observed_at: datetime,
     metadata_only: bool = False,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], dict[str, Any]]:
     """Compare a completed-shape v1 snapshot with one fresh donor-policy scan.
 
     The preview is a review aid, not a v2 manifest or a completion authorization.
@@ -137,7 +139,7 @@ def preview_fileos_donor_transition(
         blockers.append("donor_scan_errors")
     if any(counts[key] for key in ("deferred_prior", "excluded_prior", "unobserved_prior")):
         blockers.append("prior_item_not_hashed_under_donor_policy")
-    return {
+    return candidate, {
         "preview_version": TRANSITION_PREVIEW_VERSION,
         "publishable": False,
         "requires_review": True,
@@ -156,7 +158,23 @@ def preview_fileos_donor_transition(
     }
 
 
-def preview_fileos_completed_donor_transition(
+def preview_fileos_donor_transition(
+    prior_manifest: Mapping[str, Any],
+    root: Path,
+    *,
+    source_id: str,
+    observed_at: datetime,
+    metadata_only: bool = False,
+) -> dict[str, Any]:
+    """Return the nonpublishing policy comparison without database authority."""
+    _, preview = _scan_and_preview(
+        prior_manifest, root, source_id=source_id,
+        observed_at=observed_at, metadata_only=metadata_only,
+    )
+    return preview
+
+
+def _completed_scan(
     core: DataCoreStore,
     ctx: TenantContext,
     prior_manifest: Mapping[str, Any],
@@ -166,15 +184,15 @@ def preview_fileos_completed_donor_transition(
     source_id: str,
     observed_at: datetime,
     metadata_only: bool = False,
-) -> dict[str, Any]:
-    """Preview only against the latest exact, completed v1 database baseline.
+) -> tuple[dict[str, Any], dict[str, Any], str, datetime]:
+    """Scan once against the latest exact, completed v1 database baseline.
 
     A second verification rejects a newer completed run during the donor scan.
     No v2 state is persisted or made publishable by this function.
     """
     prior_hash = fileos_manifest_sha256(prior_manifest)
     completed_at = core.verify_fileos_completed_baseline(ctx, prior_manifest, prior_run_id)
-    preview = preview_fileos_donor_transition(
+    candidate, preview = _scan_and_preview(
         prior_manifest,
         root,
         source_id=source_id,
@@ -191,4 +209,73 @@ def preview_fileos_completed_donor_transition(
         "completed_at": completed_at.isoformat(),
         "manifest_sha256": prior_hash,
     }
+    return candidate, preview, prior_hash, completed_at
+
+
+def preview_fileos_completed_donor_transition(
+    core: DataCoreStore,
+    ctx: TenantContext,
+    prior_manifest: Mapping[str, Any],
+    prior_run_id: UUID,
+    root: Path,
+    *,
+    source_id: str,
+    observed_at: datetime,
+    metadata_only: bool = False,
+) -> dict[str, Any]:
+    """Return a nonpublishing preview bound to a completed v1 run."""
+    _, preview, _, _ = _completed_scan(
+        core, ctx, prior_manifest, prior_run_id, root,
+        source_id=source_id, observed_at=observed_at, metadata_only=metadata_only,
+    )
     return preview
+
+
+def build_fileos_transition_review_packet(
+    core: DataCoreStore,
+    ctx: TenantContext,
+    prior_manifest: Mapping[str, Any],
+    prior_run_id: UUID,
+    root: Path,
+    *,
+    source_id: str,
+    observed_at: datetime,
+    metadata_only: bool = False,
+) -> dict[str, Any]:
+    """Retain one donor observation and its completed-v1 comparison for review."""
+    candidate, preview, prior_hash, _ = _completed_scan(
+        core, ctx, prior_manifest, prior_run_id, root,
+        source_id=source_id, observed_at=observed_at, metadata_only=metadata_only,
+    )
+    return {
+        "packet_version": TRANSITION_PACKET_VERSION,
+        "publishable": False,
+        "requires_review": True,
+        "source_id": source_id,
+        "prior_run_id": str(prior_run_id),
+        "prior_manifest_sha256": prior_hash,
+        "candidate": candidate,
+        "preview": preview,
+    }
+
+
+def record_fileos_transition_review(
+    core: DataCoreStore,
+    ctx: TenantContext,
+    prior_manifest: Mapping[str, Any],
+    prior_run_id: UUID,
+    packet_id: UUID,
+    root: Path,
+    *,
+    source_id: str,
+    observed_at: datetime,
+    metadata_only: bool = False,
+) -> FileOSTransitionPacketRecord:
+    """Scan once and seal a private review packet; never publish FileOS v2."""
+    packet = build_fileos_transition_review_packet(
+        core, ctx, prior_manifest, prior_run_id, root,
+        source_id=source_id, observed_at=observed_at, metadata_only=metadata_only,
+    )
+    return core.stage_fileos_transition_review(
+        ctx, prior_manifest, prior_run_id, packet_id, packet
+    )

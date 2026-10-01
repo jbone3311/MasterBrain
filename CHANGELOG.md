@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added an immutable, nonpublishing FileOS donor-policy transition review
+  packet (ADR-115, migration 0038). One donor scan supplies its candidate and
+  completed-v1 comparison; a locked latest-run check fences insertion. It has
+  tenant RLS and no v2 publication, FileOS cutover or FOS-Master change.
 - Added a read-scoped, exact completed-v1 baseline verifier and a private
   before/after database-bound FileOS donor transition preview (ADR-114). A
   newer completion during scanning invalidates the report. No v2 publication,

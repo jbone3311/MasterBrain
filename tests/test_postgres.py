@@ -54,7 +54,9 @@ from masterbrain.datacore.archive_worker import inventory_archive
 from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.fileos_donor_transition import (
+    build_fileos_transition_review_packet,
     preview_fileos_completed_donor_transition,
+    record_fileos_transition_review,
 )
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
@@ -4793,3 +4795,101 @@ def test_fileos_donor_preview_requires_latest_exact_completed_v1_run(
             source_id=source_id,
             observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
         )
+
+
+def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_bound(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx = datacore_context(tenant[0])
+    core = DataCoreStore(store)
+    source_id = "files_transition_packet"
+    proof = tmp_path / "proof.txt"
+    proof.write_bytes(b"fictional immutable packet proof")
+    prior = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    first_run = uuid4()
+    core.import_fileos_snapshot(ctx, prior, first_run)
+    core.complete_fileos_run(
+        ctx, prior, first_run,
+        outcomes={"unsupported": 1},
+        item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-packet-v1",
+        document_processor_version=None,
+    )
+    observed = datetime(2026, 9, 22, 3, tzinfo=UTC)
+    packet_id = uuid4()
+    first = record_fileos_transition_review(
+        core, ctx, prior, first_run, packet_id, tmp_path,
+        source_id=source_id, observed_at=observed,
+    )
+    assert first.recorded is True
+    assert len(first.packet_sha256) == 64
+    replay = record_fileos_transition_review(
+        core, ctx, prior, first_run, packet_id, tmp_path,
+        source_id=source_id, observed_at=observed,
+    )
+    assert replay == replace(first, recorded=False)
+    with store.transaction(ctx) as conn:
+        row = conn.execute(
+            "SELECT packet,packet_sha256 FROM brain_fileos_transition_packets WHERE id=%s",
+            (packet_id,),
+        ).fetchone()
+        assert row is not None and row["packet_sha256"] == first.packet_sha256
+        assert row["packet"]["candidate"]["counts"]["hashed"] == 1
+        assert row["packet"]["preview"]["counts"]["unchanged"] == 1
+        assert row["packet"]["publishable"] is False
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 0
+
+    metadata_packet = build_fileos_transition_review_packet(
+        core, ctx, prior, first_run, tmp_path,
+        source_id=source_id, observed_at=observed + timedelta(hours=1),
+        metadata_only=True,
+    )
+    assert metadata_packet["candidate"]["deferred"][0]["reason"] == "no_hash"
+    assert "version_id" not in metadata_packet["candidate"]["deferred"][0]
+    metadata_record = core.stage_fileos_transition_review(
+        ctx, prior, first_run, uuid4(), metadata_packet
+    )
+    assert metadata_record.recorded is True
+    with pytest.raises(Conflict, match="already recorded"):
+        core.stage_fileos_transition_review(ctx, prior, first_run, uuid4(), metadata_packet)
+    tampered = dict(metadata_packet)
+    tampered["publishable"] = True
+    with pytest.raises(ValueError, match="binding"):
+        core.stage_fileos_transition_review(ctx, prior, first_run, uuid4(), tampered)
+    forged_counts = json.loads(json.dumps(metadata_packet))
+    forged_counts["candidate"]["counts"]["deferred"] = 0
+    forged_counts["preview"]["candidate_counts"]["deferred"] = 0
+    with pytest.raises(ValueError, match="ledger"):
+        core.stage_fileos_transition_review(ctx, prior, first_run, uuid4(), forged_counts)
+    invented_digest = json.loads(json.dumps(metadata_packet))
+    invented_digest["candidate"]["deferred"][0]["version_id"] = "invented"
+    with pytest.raises(ValueError, match="ledger"):
+        core.stage_fileos_transition_review(ctx, prior, first_run, uuid4(), invented_digest)
+    oversized = dict(metadata_packet)
+    oversized["candidate"] = dict(metadata_packet["candidate"])
+    oversized["candidate"]["extra"] = "x" * (16 * 1024 * 1024)
+    with pytest.raises(ValueError, match="byte bound"):
+        core.stage_fileos_transition_review(ctx, prior, first_run, uuid4(), oversized)
+
+    second = fileos_manifest(tmp_path, source_id=source_id, hour=2)
+    second_run = uuid4()
+    core.import_fileos_snapshot(ctx, second, second_run)
+    core.complete_fileos_run(
+        ctx, second, second_run,
+        outcomes={"unsupported": 1},
+        item_outcomes={second["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-packet-v1",
+        document_processor_version=None,
+    )
+    with pytest.raises(Conflict, match="baseline requires review"):
+        core.stage_fileos_transition_review(ctx, prior, first_run, uuid4(), metadata_packet)
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.Error, match="protected record"):
+            conn.execute("TRUNCATE brain_fileos_transition_packets")
+    assert proof.read_bytes() == b"fictional immutable packet proof"
