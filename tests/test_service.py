@@ -624,6 +624,12 @@ def test_assistants_cannot_be_reviewers() -> None:
             registry({scope}, "assistant")
 
 
+def test_fileos_baseline_verification_scope_is_worker_only() -> None:
+    for kind in ("human", "assistant"):
+        with pytest.raises(ValueError, match="worker-only"):
+            registry({"brain.fileos.transition.verify"}, kind)
+
+
 def test_plain_mime_and_raw_hash() -> None:
     raw = b"Subject: Hello\r\nFrom: Person <person@example.invalid>\r\n\r\nMelron\r\n"
     result = normalize(raw)

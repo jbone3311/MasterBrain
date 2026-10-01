@@ -69,6 +69,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002M bounded transition review read | Same pinned scanner; no donor edit | `persistence.py`, ADR-116 | content-free summary, evidence-scoped locator pages, stale-run and digest-tamper tests | Merged via PR #59; exact-head and merged-main CI/strict/restore green; private only, no approval, v2 publication or FileOS switch |
 | DC-002N nonpublishing v2 inventory staging | Same pinned scanner; no donor edit | migration 0039, `persistence.py`, ADR-117 | hashed/deferred/excluded/error SQL shape, locked packet binding, 3,000 hashless row stress, count balance, replay, RLS and nonpublication | Merged via PR #61; exact-head and merged-main CI/strict/restore green; no v2 completion or switch |
 | DC-002O human transition review receipt | Same pinned scanner; no donor edit | migration 0040, `fileos_transition_approval.py`, ADR-118 | exact plan/row/digest/count recheck, human owner scope, blocker and stale-run refusal, immutable/RLS receipt, no publication | Merged via PR #63; exact-head and merged-main CI/strict/restore green after one intermittent container rerun (issue #64); no v2 baseline transaction or switch |
+| DC-002P approved-stage fresh verification | Same pinned scanner; no donor edit | migration 0041, `fileos_v2_baseline.py`, ADR-119 | worker scope, fresh exact row/root/policy match, stale-run and changed-source refusal, immutable/RLS receipt, no publication | Local full suite and 3,000-file pinned-donor shadow green; hosted gates pending; no v2 importer, completion or switch |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
@@ -124,14 +125,17 @@ switch the source policy.
 DC-002O can bind a human owner's decision to one exact staged plan after a
 fresh latest-v1 check. The receipt is historical review evidence, not a
 completed v2 baseline, deletion evidence, live-root attestation or cutover.
+DC-002P rechecks that approval and performs a fresh source scan while holding
+the source lock. Exact staged-row parity produces a historical verification
+receipt, still not a completed v2 run, continuing root attestation or cutover.
 
 ## Proposed next tranches
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then
-   extend fault/platform acceptance. A separate ADR is required for publishable
-   v2 semantics, the transaction that consumes an owner-reviewed prior-v1
-   plan, fresh source revalidation and rollback.
+   extend fault/platform acceptance. ADR-119 adds fresh approval-bound source
+   verification but no publishable v2 state. A separate ADR is still required
+   for v2 evidence intake, completion, visibility, rollback and cutover.
 2. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
    implemented. Extend format-specific corpora, containment, donor shadow and
    reviewed selection before any automatic fan-out or cutover.

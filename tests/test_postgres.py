@@ -59,6 +59,7 @@ from masterbrain.datacore.fileos_donor_transition import (
     record_fileos_transition_review,
 )
 from masterbrain.datacore.fileos_transition_approval import FileOSV2TransitionReview
+from masterbrain.datacore.fileos_v2_baseline import FileOSV2BaselineVerifier
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
 from masterbrain.datacore.image_ocr_contract import source_for as image_source_for
@@ -4735,7 +4736,9 @@ def test_fileos_donor_preview_requires_latest_exact_completed_v1_run(
     def complete(manifest: dict[str, Any], run_id: UUID) -> None:
         core.import_fileos_snapshot(ctx, manifest, run_id)
         core.complete_fileos_run(
-            ctx, manifest, run_id,
+            ctx,
+            manifest,
+            run_id,
             outcomes={"unsupported": len(manifest["items"])},
             item_outcomes={item["item_id"]: "unsupported" for item in manifest["items"]},
             published_documents=0,
@@ -4744,7 +4747,9 @@ def test_fileos_donor_preview_requires_latest_exact_completed_v1_run(
         )
 
     core.complete_fileos_run(
-        ctx, prior, first_run,
+        ctx,
+        prior,
+        first_run,
         outcomes={"unsupported": 1},
         item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
         published_documents=0,
@@ -4756,7 +4761,11 @@ def test_fileos_donor_preview_requires_latest_exact_completed_v1_run(
     with pytest.raises(AccessDenied):
         core.verify_fileos_completed_baseline(replace(ctx, scopes=frozenset()), prior, first_run)
     report = preview_fileos_completed_donor_transition(
-        core, ctx, prior, first_run, tmp_path,
+        core,
+        ctx,
+        prior,
+        first_run,
+        tmp_path,
         source_id=source_id,
         observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
     )
@@ -4780,7 +4789,11 @@ def test_fileos_donor_preview_requires_latest_exact_completed_v1_run(
     monkeypatch.setattr(transition_module, "build_fileos_donor_candidate", complete_during_scan)
     with pytest.raises(Conflict, match="completed baseline"):
         preview_fileos_completed_donor_transition(
-            core, ctx, prior, first_run, tmp_path,
+            core,
+            ctx,
+            prior,
+            first_run,
+            tmp_path,
             source_id=source_id,
             observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
         )
@@ -4792,7 +4805,11 @@ def test_fileos_donor_preview_requires_latest_exact_completed_v1_run(
     )
     with pytest.raises(Conflict, match="completed baseline"):
         preview_fileos_completed_donor_transition(
-            core, ctx, prior, first_run, tmp_path,
+            core,
+            ctx,
+            prior,
+            first_run,
+            tmp_path,
             source_id=source_id,
             observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
         )
@@ -4811,7 +4828,9 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
     first_run = uuid4()
     core.import_fileos_snapshot(ctx, prior, first_run)
     core.complete_fileos_run(
-        ctx, prior, first_run,
+        ctx,
+        prior,
+        first_run,
         outcomes={"unsupported": 1},
         item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
         published_documents=0,
@@ -4821,14 +4840,26 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
     observed = datetime(2026, 9, 22, 3, tzinfo=UTC)
     packet_id = uuid4()
     first = record_fileos_transition_review(
-        core, ctx, prior, first_run, packet_id, tmp_path,
-        source_id=source_id, observed_at=observed,
+        core,
+        ctx,
+        prior,
+        first_run,
+        packet_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=observed,
     )
     assert first.recorded is True
     assert len(first.packet_sha256) == 64
     replay = record_fileos_transition_review(
-        core, ctx, prior, first_run, packet_id, tmp_path,
-        source_id=source_id, observed_at=observed,
+        core,
+        ctx,
+        prior,
+        first_run,
+        packet_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=observed,
     )
     assert replay == replace(first, recorded=False)
     summary = core.fileos_transition_review(ctx, packet_id)
@@ -4841,9 +4872,7 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
     with pytest.raises(AccessDenied):
         core.fileos_transition_review(ctx, packet_id, include_details=True)
     detail_ctx = replace(ctx, scopes=ctx.scopes | frozenset({"brain.evidence.read"}))
-    first_page = core.fileos_transition_review(
-        detail_ctx, packet_id, include_details=True, limit=1
-    )
+    first_page = core.fileos_transition_review(detail_ctx, packet_id, include_details=True, limit=1)
     assert first_page["details"][0]["ledger"] == "prior"
     assert first_page["details"][0]["locator"] == "proof.txt"
     assert first_page["next_offset"] == 1
@@ -4886,14 +4915,22 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
         assert row["packet"]["candidate"]["counts"]["hashed"] == 1
         assert row["packet"]["preview"]["counts"]["unchanged"] == 1
         assert row["packet"]["publishable"] is False
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
-            (source_id,),
-        ).fetchone()["n"] == 0
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
 
     metadata_packet = build_fileos_transition_review_packet(
-        core, ctx, prior, first_run, tmp_path,
-        source_id=source_id, observed_at=observed + timedelta(hours=1),
+        core,
+        ctx,
+        prior,
+        first_run,
+        tmp_path,
+        source_id=source_id,
+        observed_at=observed + timedelta(hours=1),
         metadata_only=True,
     )
     assert metadata_packet["candidate"]["deferred"][0]["reason"] == "no_hash"
@@ -4933,7 +4970,9 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
     second_run = uuid4()
     core.import_fileos_snapshot(ctx, second, second_run)
     core.complete_fileos_run(
-        ctx, second, second_run,
+        ctx,
+        second,
+        second_run,
         outcomes={"unsupported": 1},
         item_outcomes={second["items"][0]["item_id"]: "unsupported"},
         published_documents=0,
@@ -4970,15 +5009,26 @@ def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
     run_id = uuid4()
     core.import_fileos_snapshot(ctx, prior, run_id)
     core.complete_fileos_run(
-        ctx, prior, run_id, outcomes={"unsupported": 1},
+        ctx,
+        prior,
+        run_id,
+        outcomes={"unsupported": 1},
         item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
-        published_documents=0, code_revision="test-v2-stage", document_processor_version=None,
+        published_documents=0,
+        code_revision="test-v2-stage",
+        document_processor_version=None,
     )
     observed = datetime(2026, 9, 22, 3, tzinfo=UTC)
     hashed_packet_id = uuid4()
     record_fileos_transition_review(
-        core, ctx, prior, run_id, hashed_packet_id, tmp_path,
-        source_id=source_id, observed_at=observed,
+        core,
+        ctx,
+        prior,
+        run_id,
+        hashed_packet_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=observed,
     )
     stage_id = uuid4()
     staged = core.stage_fileos_v2_inventory(ctx, hashed_packet_id, stage_id)
@@ -5013,13 +5063,24 @@ def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
                 "INSERT INTO brain_fileos_v2_staged_rows(tenant_id,stage_id,source_id,"
                 "kind,locator,item_id,version_id,sha256,size_bytes,media_type) "
                 "VALUES (%s,%s,%s,'hashed','extra.txt',%s,%s,%s,1,'text/plain')",
-                (ctx.tenant_id, stage_id, source_id, hashed["item_id"],
-                 hashed["version_id"], hashed["sha256"]),
+                (
+                    ctx.tenant_id,
+                    stage_id,
+                    source_id,
+                    hashed["item_id"],
+                    hashed["version_id"],
+                    hashed["sha256"],
+                ),
             )
 
     metadata_packet = build_fileos_transition_review_packet(
-        core, ctx, prior, run_id, tmp_path,
-        source_id=source_id, observed_at=observed + timedelta(hours=1),
+        core,
+        ctx,
+        prior,
+        run_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=observed + timedelta(hours=1),
         metadata_only=True,
     )
     metadata_packet_id = uuid4()
@@ -5033,9 +5094,13 @@ def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
                 "SELECT tenant_id,%s,%s,id,source_id,prior_actor_id,prior_run_id,"
                 "prior_observed_at,donor_observed_at,root_binding_sha256,packet_sha256,"
                 "%s,%s::jsonb FROM brain_fileos_transition_packets WHERE id=%s",
-                (uuid4(), ctx.actor_id, "0" * 64,
-                 json.dumps({"hashed": 0, "deferred": 1, "excluded": 0, "errors": 0}),
-                 metadata_packet_id),
+                (
+                    uuid4(),
+                    ctx.actor_id,
+                    "0" * 64,
+                    json.dumps({"hashed": 0, "deferred": 1, "excluded": 0, "errors": 0}),
+                    metadata_packet_id,
+                ),
             )
     metadata_stage_id = uuid4()
     core.stage_fileos_v2_inventory(ctx, metadata_packet_id, metadata_stage_id)
@@ -5050,22 +5115,27 @@ def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
         assert deferred["item_id"] == prior["items"][0]["item_id"]
         assert deferred["version_id"] is None and deferred["sha256"] is None
         assert deferred["media_type"] is None
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
-            (source_id,),
-        ).fetchone()["n"] == 0
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_source_versions WHERE source_id=%s",
-            (source_id,),
-        ).fetchone()["n"] == 1
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_source_versions WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 1
+        )
     with pytest.raises(psycopg.Error):
         with psycopg.connect(admin) as conn:
             conn.execute(
                 "INSERT INTO brain_fileos_v2_staged_rows(tenant_id,stage_id,source_id,"
                 "kind,locator,item_id,version_id,size_bytes,reason) "
                 "VALUES (%s,%s,%s,'deferred','invented.txt',%s,%s,1,'no_hash')",
-                (ctx.tenant_id, metadata_stage_id, source_id,
-                 deferred["item_id"], "invented"),
+                (ctx.tenant_id, metadata_stage_id, source_id, deferred["item_id"], "invented"),
             )
     assert core.fileos_freshness(ctx, source_id)["latest_complete_run"]["run_id"] == run_id
     with psycopg.connect(admin) as conn:
@@ -5094,9 +5164,14 @@ def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
     next_run = uuid4()
     core.import_fileos_snapshot(ctx, next_manifest, next_run)
     core.complete_fileos_run(
-        ctx, next_manifest, next_run, outcomes={"unsupported": 1},
+        ctx,
+        next_manifest,
+        next_run,
+        outcomes={"unsupported": 1},
         item_outcomes={next_manifest["items"][0]["item_id"]: "unsupported"},
-        published_documents=0, code_revision="test-v2-stage", document_processor_version=None,
+        published_documents=0,
+        code_revision="test-v2-stage",
+        document_processor_version=None,
     )
     with pytest.raises(Conflict, match="baseline requires review"):
         core.stage_fileos_v2_inventory(ctx, metadata_packet_id, uuid4())
@@ -5115,15 +5190,25 @@ def test_fileos_v2_transition_approval_is_exact_human_nonpublishing_receipt(
     run_id = uuid4()
     core.import_fileos_snapshot(ctx, prior, run_id)
     core.complete_fileos_run(
-        ctx, prior, run_id, outcomes={"unsupported": 1},
+        ctx,
+        prior,
+        run_id,
+        outcomes={"unsupported": 1},
         item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
-        published_documents=0, code_revision="test-v2-approval",
+        published_documents=0,
+        code_revision="test-v2-approval",
         document_processor_version=None,
     )
     packet_id, stage_id, approval_id = uuid4(), uuid4(), uuid4()
     record_fileos_transition_review(
-        core, ctx, prior, run_id, packet_id, tmp_path,
-        source_id=source_id, observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+        core,
+        ctx,
+        prior,
+        run_id,
+        packet_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
     )
     core.stage_fileos_v2_inventory(ctx, packet_id, stage_id)
     plan = reviewer.plan(ctx, stage_id)
@@ -5134,26 +5219,37 @@ def test_fileos_v2_transition_approval_is_exact_human_nonpublishing_receipt(
     assert "proof.txt" not in json.dumps(plan)
     assert plan["acknowledged_counts"]["candidate_counts"]["hashed"] == 1
     human_ctx = replace(
-        ctx, scopes=ctx.scopes | frozenset({
-            "brain.fileos.transition.review", "brain.evidence.read",
-        }),
+        ctx,
+        scopes=ctx.scopes
+        | frozenset(
+            {
+                "brain.fileos.transition.review",
+                "brain.evidence.read",
+            }
+        ),
     )
     human = Principal(human_ctx, "human")
     with pytest.raises(AccessDenied, match="human FileOS transition review"):
         reviewer.approve(
-            Principal(human_ctx, "worker"), stage_id, uuid4(),
+            Principal(human_ctx, "worker"),
+            stage_id,
+            uuid4(),
             expected_plan_sha256=plan["plan_sha256"],
             acknowledged_counts=plan["acknowledged_counts"],
         )
     with pytest.raises(AccessDenied):
         reviewer.approve(
-            Principal(ctx, "human"), stage_id, uuid4(),
+            Principal(ctx, "human"),
+            stage_id,
+            uuid4(),
             expected_plan_sha256=plan["plan_sha256"],
             acknowledged_counts=plan["acknowledged_counts"],
         )
     with pytest.raises(Conflict, match="requires review"):
         reviewer.approve(
-            human, stage_id, approval_id,
+            human,
+            stage_id,
+            approval_id,
             expected_plan_sha256="0" * 64,
             acknowledged_counts=plan["acknowledged_counts"],
         )
@@ -5161,40 +5257,54 @@ def test_fileos_v2_transition_approval_is_exact_human_nonpublishing_receipt(
     wrong_counts["candidate_counts"]["hashed"] = 2
     with pytest.raises(Conflict, match="requires review"):
         reviewer.approve(
-            human, stage_id, approval_id,
+            human,
+            stage_id,
+            approval_id,
             expected_plan_sha256=plan["plan_sha256"],
             acknowledged_counts=wrong_counts,
         )
     first = reviewer.approve(
-        human, stage_id, approval_id,
+        human,
+        stage_id,
+        approval_id,
         expected_plan_sha256=plan["plan_sha256"],
         acknowledged_counts=plan["acknowledged_counts"],
     )
     assert first.recorded is True
     assert reviewer.approve(
-        human, stage_id, approval_id,
+        human,
+        stage_id,
+        approval_id,
         expected_plan_sha256=plan["plan_sha256"],
         acknowledged_counts=plan["acknowledged_counts"],
     ) == replace(first, recorded=False)
     with pytest.raises(Conflict, match="identity changed"):
         reviewer.approve(
-            human, stage_id, uuid4(),
+            human,
+            stage_id,
+            uuid4(),
             expected_plan_sha256=plan["plan_sha256"],
             acknowledged_counts=plan["acknowledged_counts"],
         )
     with store.transaction(ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_fileos_v2_transition_approvals "
-            "WHERE source_id=%s", (source_id,),
-        ).fetchone()["n"] == 1
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
-            (source_id,),
-        ).fetchone()["n"] == 0
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_v2_transition_approvals WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 1
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
     assert core.fileos_freshness(ctx, source_id)["latest_complete_run"]["run_id"] == run_id
     with psycopg.connect(admin) as conn:
         with pytest.raises(psycopg.Error, match="protected record"):
-            conn.execute("TRUNCATE brain_fileos_v2_transition_approvals")
+            conn.execute("TRUNCATE brain_fileos_v2_transition_approvals CASCADE")
     with pytest.raises(psycopg.Error):
         with store.transaction(ctx) as conn:
             conn.execute(
@@ -5217,15 +5327,21 @@ def test_fileos_v2_transition_approval_is_exact_human_nonpublishing_receipt(
     next_run = uuid4()
     core.import_fileos_snapshot(ctx, next_manifest, next_run)
     core.complete_fileos_run(
-        ctx, next_manifest, next_run, outcomes={"unsupported": 1},
+        ctx,
+        next_manifest,
+        next_run,
+        outcomes={"unsupported": 1},
         item_outcomes={next_manifest["items"][0]["item_id"]: "unsupported"},
-        published_documents=0, code_revision="test-v2-approval",
+        published_documents=0,
+        code_revision="test-v2-approval",
         document_processor_version=None,
     )
     assert reviewer.plan(ctx, stage_id)["reviewable"] is False
     with pytest.raises(Conflict, match="requires review"):
         reviewer.approve(
-            human, stage_id, approval_id,
+            human,
+            stage_id,
+            approval_id,
             expected_plan_sha256=plan["plan_sha256"],
             acknowledged_counts=plan["acknowledged_counts"],
         )
@@ -5244,32 +5360,305 @@ def test_fileos_v2_transition_approval_blocks_donor_scan_errors(
     run_id = uuid4()
     core.import_fileos_snapshot(ctx, prior, run_id)
     core.complete_fileos_run(
-        ctx, prior, run_id, outcomes={"unsupported": 1},
+        ctx,
+        prior,
+        run_id,
+        outcomes={"unsupported": 1},
         item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
-        published_documents=0, code_revision="test-v2-approval-error",
+        published_documents=0,
+        code_revision="test-v2-approval-error",
         document_processor_version=None,
     )
     (tmp_path / "link.txt").symlink_to(tmp_path / "proof.txt")
     packet_id, stage_id = uuid4(), uuid4()
     record_fileos_transition_review(
-        core, ctx, prior, run_id, packet_id, tmp_path,
-        source_id=source_id, observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+        core,
+        ctx,
+        prior,
+        run_id,
+        packet_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
     )
     core.stage_fileos_v2_inventory(ctx, packet_id, stage_id)
     plan = reviewer.plan(ctx, stage_id)
     assert plan["reviewable"] is False
     assert plan["hard_blockers"] == ["donor_scan_errors"]
     assert plan["acknowledged_counts"]["candidate_counts"]["errors"] == 1
-    human = Principal(replace(
-        ctx, scopes=ctx.scopes | frozenset({
-            "brain.fileos.transition.review", "brain.evidence.read",
-        }),
-    ), "human")
+    human = Principal(
+        replace(
+            ctx,
+            scopes=ctx.scopes
+            | frozenset(
+                {
+                    "brain.fileos.transition.review",
+                    "brain.evidence.read",
+                }
+            ),
+        ),
+        "human",
+    )
     with pytest.raises(Conflict, match="requires review"):
         reviewer.approve(
-            human, stage_id, uuid4(),
+            human,
+            stage_id,
+            uuid4(),
             expected_plan_sha256=plan["plan_sha256"],
             acknowledged_counts=plan["acknowledged_counts"],
+        )
+
+
+def test_fileos_v2_baseline_verification_requires_fresh_exact_approved_source(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx = datacore_context(tenant[0])
+    core = DataCoreStore(store)
+    reviewer = FileOSV2TransitionReview(core)
+    verifier = FileOSV2BaselineVerifier(core)
+    source_id = "files_v2_verify"
+    proof = tmp_path / "proof.txt"
+    proof.write_bytes(b"synthetic verified baseline proof")
+    prior = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    run_id = uuid4()
+    core.import_fileos_snapshot(ctx, prior, run_id)
+    core.complete_fileos_run(
+        ctx,
+        prior,
+        run_id,
+        outcomes={"unsupported": 1},
+        item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-v2-verify",
+        document_processor_version=None,
+    )
+    packet_id, stage_id, approval_id, verification_id = uuid4(), uuid4(), uuid4(), uuid4()
+    record_fileos_transition_review(
+        core,
+        ctx,
+        prior,
+        run_id,
+        packet_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+    )
+    core.stage_fileos_v2_inventory(ctx, packet_id, stage_id)
+    plan = reviewer.plan(ctx, stage_id)
+    assert plan["reviewable"] is True
+    human = Principal(
+        replace(
+            ctx,
+            scopes=ctx.scopes
+            | frozenset(
+                {
+                    "brain.fileos.transition.review",
+                    "brain.evidence.read",
+                }
+            ),
+        ),
+        "human",
+    )
+    reviewer.approve(
+        human,
+        stage_id,
+        approval_id,
+        expected_plan_sha256=plan["plan_sha256"],
+        acknowledged_counts=plan["acknowledged_counts"],
+    )
+    worker = Principal(
+        replace(
+            ctx,
+            scopes=ctx.scopes | frozenset({"brain.fileos.transition.verify"}),
+        ),
+        "worker",
+    )
+    with pytest.raises(AccessDenied, match="worker required"):
+        verifier.verify(human, stage_id, approval_id, verification_id, tmp_path)
+    with pytest.raises(AccessDenied):
+        verifier.verify(Principal(ctx, "worker"), stage_id, approval_id, verification_id, tmp_path)
+    with pytest.raises(Conflict, match="approval requires review"):
+        verifier.verify(worker, stage_id, uuid4(), verification_id, tmp_path)
+    wrong_root = tmp_path.parent / f"wrong-root-{uuid4().hex}"
+    wrong_root.mkdir()
+    (wrong_root / "proof.txt").write_bytes(proof.read_bytes())
+    with pytest.raises(Conflict, match="source requires review"):
+        verifier.verify(worker, stage_id, approval_id, verification_id, wrong_root)
+    proof.write_bytes(b"synthetic changed baseline proof")
+    with pytest.raises(Conflict, match="source changed"):
+        verifier.verify(worker, stage_id, approval_id, verification_id, tmp_path)
+    proof.write_bytes(b"synthetic verified baseline proof")
+    extra = tmp_path / "new.txt"
+    extra.write_bytes(b"synthetic new file")
+    with pytest.raises(Conflict, match="source changed"):
+        verifier.verify(worker, stage_id, approval_id, verification_id, tmp_path)
+    extra.unlink()
+    proof.unlink()
+    with pytest.raises(Conflict, match="source changed"):
+        verifier.verify(worker, stage_id, approval_id, verification_id, tmp_path)
+    proof.write_bytes(b"synthetic verified baseline proof")
+    verified = verifier.verify(worker, stage_id, approval_id, verification_id, tmp_path)
+    assert verified.recorded is True
+    assert verified.verification_sha256 != plan["plan_sha256"]
+    assert verifier.verify(worker, stage_id, approval_id, verification_id, tmp_path) == replace(
+        verified,
+        recorded=False,
+    )
+    with pytest.raises(Conflict, match="identity changed"):
+        verifier.verify(worker, stage_id, approval_id, uuid4(), tmp_path)
+    with store.transaction(ctx) as conn:
+        saved = conn.execute(
+            "SELECT verification_sha256,matched_rows_sha256,source_id "
+            "FROM brain_fileos_v2_baseline_verifications WHERE id=%s",
+            (verification_id,),
+        ).fetchone()
+        assert saved["verification_sha256"] == verified.verification_sha256
+        assert saved["matched_rows_sha256"] == plan["staged_rows_sha256"]
+        assert saved["source_id"] == source_id
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_source_versions WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 1
+        )
+    assert core.fileos_freshness(ctx, source_id)["latest_complete_run"]["run_id"] == run_id
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.Error, match="protected record"):
+            conn.execute("TRUNCATE brain_fileos_v2_baseline_verifications")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_baseline_verifications "
+                "SET verification_sha256=%s WHERE id=%s",
+                ("0" * 64, verification_id),
+            )
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Other verify tenant')", (other_tenant,)
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other_worker = Principal(
+        replace(worker.context, tenant_id=other_tenant, actor_id=other_actor), "worker"
+    )
+    with pytest.raises(NotFound):
+        verifier.verify(other_worker, stage_id, approval_id, uuid4(), tmp_path)
+    proof.write_bytes(b"synthetic new v1 snapshot proof")
+    next_manifest = fileos_manifest(tmp_path, source_id=source_id, hour=2)
+    next_run = uuid4()
+    core.import_fileos_snapshot(ctx, next_manifest, next_run)
+    core.complete_fileos_run(
+        ctx,
+        next_manifest,
+        next_run,
+        outcomes={"unsupported": 1},
+        item_outcomes={next_manifest["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-v2-verify",
+        document_processor_version=None,
+    )
+    with pytest.raises(Conflict, match="requires review"):
+        verifier.verify(worker, stage_id, approval_id, verification_id, tmp_path)
+
+
+def test_fileos_v2_baseline_verification_keeps_metadata_only_hashless(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, _ = database
+    ctx = datacore_context(tenant[0])
+    core = DataCoreStore(store)
+    reviewer = FileOSV2TransitionReview(core)
+    verifier = FileOSV2BaselineVerifier(core)
+    source_id = "files_v2_verify_metadata"
+    (tmp_path / "proof.txt").write_bytes(b"synthetic metadata-only proof")
+    prior = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    run_id = uuid4()
+    core.import_fileos_snapshot(ctx, prior, run_id)
+    core.complete_fileos_run(
+        ctx,
+        prior,
+        run_id,
+        outcomes={"unsupported": 1},
+        item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
+        published_documents=0,
+        code_revision="test-v2-verify-metadata",
+        document_processor_version=None,
+    )
+    packet_id, stage_id, approval_id = uuid4(), uuid4(), uuid4()
+    record_fileos_transition_review(
+        core,
+        ctx,
+        prior,
+        run_id,
+        packet_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+        metadata_only=True,
+    )
+    core.stage_fileos_v2_inventory(ctx, packet_id, stage_id)
+    plan = reviewer.plan(ctx, stage_id)
+    assert plan["reviewable"] is True
+    assert plan["acknowledged_counts"]["candidate_counts"]["deferred"] == 1
+    human = Principal(
+        replace(
+            ctx,
+            scopes=ctx.scopes
+            | frozenset(
+                {
+                    "brain.fileos.transition.review",
+                    "brain.evidence.read",
+                }
+            ),
+        ),
+        "human",
+    )
+    reviewer.approve(
+        human,
+        stage_id,
+        approval_id,
+        expected_plan_sha256=plan["plan_sha256"],
+        acknowledged_counts=plan["acknowledged_counts"],
+    )
+    worker = Principal(
+        replace(
+            ctx,
+            scopes=ctx.scopes | frozenset({"brain.fileos.transition.verify"}),
+        ),
+        "worker",
+    )
+    assert verifier.verify(worker, stage_id, approval_id, uuid4(), tmp_path).recorded is True
+    with store.transaction(ctx) as conn:
+        row = conn.execute(
+            "SELECT kind,version_id,sha256,media_type,reason "
+            "FROM brain_fileos_v2_staged_rows WHERE stage_id=%s",
+            (stage_id,),
+        ).fetchone()
+        assert row == {
+            "kind": "deferred",
+            "version_id": None,
+            "sha256": None,
+            "media_type": None,
+            "reason": "no_hash",
+        }
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_source_versions WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 1
         )
 
 
@@ -5287,27 +5676,43 @@ def test_fileos_v2_staging_three_thousand_hashless_rows(
     run_id = uuid4()
     core.import_fileos_snapshot(ctx, prior, run_id)
     core.complete_fileos_run(
-        ctx, prior, run_id, outcomes={"unsupported": 3000},
+        ctx,
+        prior,
+        run_id,
+        outcomes={"unsupported": 3000},
         item_outcomes={item["item_id"]: "unsupported" for item in prior["items"]},
-        published_documents=0, code_revision="test-v2-stage-stress",
+        published_documents=0,
+        code_revision="test-v2-stage-stress",
         document_processor_version=None,
     )
     packet_id = uuid4()
     record_fileos_transition_review(
-        core, ctx, prior, run_id, packet_id, tmp_path,
-        source_id=source_id, observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
+        core,
+        ctx,
+        prior,
+        run_id,
+        packet_id,
+        tmp_path,
+        source_id=source_id,
+        observed_at=datetime(2026, 9, 22, 3, tzinfo=UTC),
         metadata_only=True,
     )
     stage_id = uuid4()
     assert core.stage_fileos_v2_inventory(ctx, packet_id, stage_id).recorded is True
     with store.transaction(ctx) as conn:
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_fileos_v2_staged_rows "
-            "WHERE stage_id=%s AND kind='deferred' AND version_id IS NULL "
-            "AND sha256 IS NULL AND media_type IS NULL",
-            (stage_id,),
-        ).fetchone()["n"] == 3000
-        assert conn.execute(
-            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
-            (source_id,),
-        ).fetchone()["n"] == 0
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_v2_staged_rows "
+                "WHERE stage_id=%s AND kind='deferred' AND version_id IS NULL "
+                "AND sha256 IS NULL AND media_type IS NULL",
+                (stage_id,),
+            ).fetchone()["n"]
+            == 3000
+        )
+        assert (
+            conn.execute(
+                "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+                (source_id,),
+            ).fetchone()["n"]
+            == 0
+        )

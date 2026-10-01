@@ -48,6 +48,9 @@ Brain API route and does not alter any current FileOS read.
 `FileOSV2TransitionReview` can also produce a locator-free, exact staged plan
 and record one synthetic/disposable human-owner approval receipt. This has no
 Brain API/CLI route, no live-source acceptance and no v2 publication consumer.
+`FileOSV2BaselineVerifier` separately rechecks that approval against a fresh
+bounded root scan and records an immutable verification receipt. It is worker-
+only, has no API/CLI route, and leaves current v1 reads and policy untouched.
 
 ## Operator and shared processing functions
 

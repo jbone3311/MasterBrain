@@ -74,9 +74,11 @@ Security and data-integrity blockers take priority over adding more surface area
    current FileOS state; owner-reviewed transition, v2 freshness/absence,
    rollback and live shadow remain separate gates.
    DC-002O adds an exact, locator-free transition plan and synthetic-only
-   human-owner approval receipt. It has no v2 publication consumer; the next
-   tranche must define and test the baseline transaction and revalidate the
-   source before any policy switch.
+   human-owner approval receipt. DC-002P adds a worker-only fresh scan that
+   must match the approved stage exactly and records a historical verification
+   receipt. Neither has a v2 publication consumer. The next tranche must
+   design v2 evidence intake, completion, visibility and rollback before any
+   policy switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container
