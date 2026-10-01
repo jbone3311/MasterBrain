@@ -1,6 +1,9 @@
 # MasterBrain Implementation Status
 
-Updated 2026-09-30. **Implemented** means executable in this repository; it does not
+Updated 2026-10-01. Tagged synthetic checkpoint `v0.2.0a1` is
+`c0a531d8a7d0991be0a0f1ea717479c07cc20feb`; its exact full CI,
+strict-runtime, populated restore and local pinned-donor DataCore parity passed.
+**Implemented** means executable in this repository; it does not
 mean hosted, live-source accepted, or production ready. The cumulative stack first
 landed on `main` through PR #28 (`2dd4a85`), followed by strict-runtime PR #31
 (`20bfc1f`), privacy-safe API logging PR #33 (`c605e64`), fictional cross-source

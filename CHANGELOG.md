@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.2.0a1 — synthetic alpha candidate (unreleased)
+## v0.2.0a1 — synthetic-only alpha checkpoint (2026-10-01)
+
+- Tagged exact `main` commit `c0a531d8a7d0991be0a0f1ea717479c07cc20feb`
+  after full CI, strict-runtime, populated PostgreSQL restore and a local
+  3,000-file pinned-donor DataCore parity run passed. This version is for
+  fictional inputs and disposable PostgreSQL only; interactive Mac acceptance,
+  live sources, production security/operations and FileOS cutover remain open.
 
 - Added a private, nonpublishing v1-to-donor FileOS policy transition preview
   (ADR-113). It classifies stable/changed hashes, deferred or excluded prior
@@ -39,16 +45,17 @@
   sender-parser runtime gate (#31), privacy-safe API failure correlation (#33),
   disposable fictional Email/FileOS browser trial (#32), and reconciled build
   receipts (#30). The exact documentation-merge `main` commit `1e081ea` passed
-  full CI, strict-runtime and populated restore. The tag, interactive Mac trial,
-  live sources and production acceptance remain open.
+  full CI, strict-runtime and populated restore. At that historical checkpoint
+  the tag was pending; the interactive Mac trial, live sources and production
+  acceptance remain open.
 - Added a current callable-function map and recast the roadmap around unresolved
   security/migration findings, user trial, operational quality and donor cutover
   gates. This documentation update does not add API routes, source effects or
   assistant integrations.
 
-- Consolidates the tested MasterBrain Email/FileOS stack into a test-only release
-  boundary. The version is not a release until the cumulative `main` commit passes
-  CI and populated restore and is tagged `v0.2.0a1`.
+- Consolidated the tested MasterBrain Email/FileOS stack into a test-only release
+  boundary. At that earlier point, the version remained a candidate until the
+  cumulative `main` commit passed CI and populated restore and was tagged.
 - Adds a reproducible [alpha test guide](docs/ALPHA_TESTING.md), exact-head
   branch/PR/merge/tag decision (ADR-101), and updated product identity/status.
 - Extends the `main` restore trigger to shared MasterBrain source, bounds CI run

@@ -1,6 +1,16 @@
 # MasterBrain Build Progress
 
-## Current `main` checkpoint (2026-09-25)
+## Current synthetic version checkpoint (2026-10-01)
+
+Annotated tag [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
+points to `main` commit `c0a531d8a7d0991be0a0f1ea717479c07cc20feb`.
+Exact-commit full CI, strict-runtime, populated restore and local 3,000-file
+pinned-donor DataCore parity passed. See the [build receipt](BUILD_RECEIPT.md).
+This is a fictional-data/disposable-database version only. Interactive Mac
+acceptance, live-source and production security/operations, and FileOS cutover
+are not accepted; FOS-Master remains unchanged.
+
+## Historical `main` checkpoint (2026-09-25)
 
 The repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 The functional `main` baseline before this documentation change is `c8c428b`:
@@ -11,13 +21,14 @@ passed. [PR #35](https://github.com/jbone3311/MasterBrain/pull/35) merged the
 current-function inventory and revised roadmap. Twenty-two already-contained
 branches were removed; two divergent historical branches remain unmerged. See
 [the consolidation receipt](REPOSITORY_CONSOLIDATION.md). The synthetic-only,
-untagged alpha boundary and pending interactive acceptance are unchanged.
+synthetic-only boundary and pending interactive acceptance remain; the tag was
+not yet created at this historical checkpoint.
 
 ## Previous `main` checkpoint (2026-09-24)
 
 The cumulative synthetic-alpha stack merged through [PR #28](https://github.com/jbone3311/MasterBrain/pull/28) at `2dd4a85`. The strict sender-runtime guard merged through [PR #31](https://github.com/jbone3311/MasterBrain/pull/31) at `20bfc1f`. Privacy-safe API failure correlation and status corrections merged through [PR #33](https://github.com/jbone3311/MasterBrain/pull/33) at `c605e64`. The fictional-data Email/FileOS browser trial, including verified Docker cleanup, merged through [PR #32](https://github.com/jbone3311/MasterBrain/pull/32) at `77192f5`.
 
-That exact `main` commit passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36099402051), [strict-runtime checks](https://github.com/jbone3311/MasterBrain/actions/runs/36099402009), and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36099402006). These prove a testable, synthetic-only checkpoint; the owner's interactive Mac walkthrough is still pending. The `v0.2.0a1` tag has not been created. No live source, production deployment, FileOS cutover, or FOS-Master retirement is accepted. See [checkpoint issue #29](https://github.com/jbone3311/MasterBrain/issues/29) and [hardening gate #34](https://github.com/jbone3311/MasterBrain/issues/34).
+That exact `main` commit passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36099402051), [strict-runtime checks](https://github.com/jbone3311/MasterBrain/actions/runs/36099402009), and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36099402006). These proved a testable, synthetic-only checkpoint; the owner's interactive Mac walkthrough is still pending. The `v0.2.0a1` tag had not been created at that point. No live source, production deployment, FileOS cutover, or FOS-Master retirement is accepted. See [checkpoint issue #29](https://github.com/jbone3311/MasterBrain/issues/29) and [hardening gate #34](https://github.com/jbone3311/MasterBrain/issues/34).
 
 The sections below preserve point-in-time branch receipts. Descriptions such as “review” or “integration pending” belong to those historical checkpoints; they do not override the current `main` status above.
 
@@ -31,7 +42,7 @@ the tested PR #25 branch. Its exact code head
 [CI 35927108260](https://github.com/jbone3311/MasterBrain/actions/runs/35927108260)
 and [populated restore 35927108311](https://github.com/jbone3311/MasterBrain/actions/runs/35927108311).
 The local 3,000-file pinned-donor parity run passed. Those integration gates are
-now complete and recorded above. The tag remains pending. Live use and FileOS
+now complete and recorded above. The tag was still pending then. Live use and FileOS
 cutover remain prohibited.
 
 ## Historical checkpoint detail

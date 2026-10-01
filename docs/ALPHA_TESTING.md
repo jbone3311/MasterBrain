@@ -1,8 +1,9 @@
-# Test the MasterBrain synthetic alpha candidate
+# Test the MasterBrain synthetic alpha
 
-This guide is for `0.2.0a1` on a tested, merged checkpoint. Until the
-`v0.2.0a1` tag exists, the version is a candidate, not a release. Use fictional
-files and a disposable database only. Do not connect real mail, grant live roots,
+This guide is for tagged `v0.2.0a1` at
+`c0a531d8a7d0991be0a0f1ea717479c07cc20feb`. It is a synthetic-only
+checkpoint, not production acceptance. Use fictional files and a disposable
+database only. Do not connect real mail, grant live roots,
 upload private documents, expose the server, or delete/rename FOS-Master.
 
 ## What this test can prove

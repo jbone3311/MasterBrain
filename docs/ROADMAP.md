@@ -66,7 +66,8 @@ Security and data-integrity blockers take priority over adding more surface area
    runtime and restore green; v2 publication remains a separate step.
 
 The first three tranches can be reviewed independently of 5D implementation.
-None authorizes a real account, live root, paid hosting or a release tag.
+None authorizes a real account, live root, paid hosting, production release or
+FileOS cutover. The separate `v0.2.0a1` tag is synthetic-only.
 
 ## Later product milestones
 
