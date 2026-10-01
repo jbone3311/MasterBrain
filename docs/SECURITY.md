@@ -149,6 +149,15 @@ version, and a deferred database constraint balances all four row kinds.
 Staging requires the exact latest completed-v1 receipt under the source lock;
 it grants no v2 publication, absence, search or source-effect authority.
 
+The FileOS v2 transition review (ADR-118) is a private library operation,
+not an LLM-facing route. A read returns only opaque identities, canonical
+digests, counts and fixed blocker codes. Approval requires a human principal,
+current owner membership, both `brain.fileos.transition.review` and
+`brain.evidence.read`, the exact plan digest and both exact count maps. A
+source lock fences the latest v1 receipt check; forced RLS, a tenant-login
+fence and immutability protect the receipt. The receipt neither attests the
+live filesystem nor authorizes publication, deletion inference or cutover.
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.

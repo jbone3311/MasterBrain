@@ -73,6 +73,10 @@ Security and data-integrity blockers take priority over adding more surface area
    hashless deferred, excluded and error observations. It does not change
    current FileOS state; owner-reviewed transition, v2 freshness/absence,
    rollback and live shadow remain separate gates.
+   DC-002O adds an exact, locator-free transition plan and synthetic-only
+   human-owner approval receipt. It has no v2 publication consumer; the next
+   tranche must define and test the baseline transaction and revalidate the
+   source before any policy switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green; v2 publication remains a separate step.
 

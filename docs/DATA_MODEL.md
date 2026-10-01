@@ -119,6 +119,13 @@ error rows remain explicit. These tables are not a completed v2 run and no
 freshness, absence, index or search query consumes them. See
 [ADR-117](adr/117_fileos_v2_staged_inventory.md).
 
+Migration `0040_fileos_v2_transition_approvals.sql` adds one immutable,
+forced-RLS owner-review receipt per staged FileOS v2 plan. Its composite
+foreign key binds the stage, packet, source, prior run and packet/candidate
+digests; its plan digest and acknowledged count maps bind the human decision.
+The receipt is not a completed run, evidence version, absence event, active
+index or source-effect authorization. See [ADR-118](adr/118_fileos_v2_transition_review_approval.md).
+
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;

@@ -619,7 +619,7 @@ def test_expiry_and_bad_token() -> None:
 
 
 def test_assistants_cannot_be_reviewers() -> None:
-    for scope in ("email.review", "knowledge.review"):
+    for scope in ("email.review", "knowledge.review", "brain.fileos.transition.review"):
         with pytest.raises(ValueError, match="human-only"):
             registry({scope}, "assistant")
 

@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-118](adr/118_fileos_v2_transition_review_approval.md) binds one human
+owner's decision to an exact, current FileOS v2 staged plan and count maps.
+The immutable approval receipt is nonpublishing and not cutover authority.
+
 [ADR-117](adr/117_fileos_v2_staged_inventory.md) adds a relational,
 nonpublishing FileOS v2 staging ledger. Hashless donor observations persist
 without fabricated versions or digests; staging is not freshness or cutover.

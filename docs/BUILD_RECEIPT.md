@@ -2,6 +2,31 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002O exact FileOS v2 transition approval — local validation
+
+Branch `codex/dc-002o-transition-approval` starts from merged `main`
+`747478b2f493c275293fe38b6f137c0e0c850e04`. ADR-118 and migration 0040
+add a private, locator-free plan and immutable human-owner review receipt for
+one staged donor-policy inventory. The plan rechecks canonical packet and
+candidate digests, relational rows, prior item classifications, source root
+binding and latest completed v1 receipt under the source lock. Approval is
+digest/count-bound and refuses scan errors, unobserved/error-covered prior
+items, stale receipts, wrong identities and non-human callers. It changes no
+v1 completion, freshness, absence, search, source files or donor repository.
+No API route or v2 publication transaction consumes the approval.
+
+Local PostgreSQL 17.11 full suite: **2,883 passed, one skipped**; 451
+PostgreSQL-marked cases collected, 450 executed and one skipped. Ruff, mypy
+over 89 source files, 134 browser tests and offline documentation inventory
+(212 Markdown files, 1,153 local paths/fragments) pass. The pinned-donor
+3,000-file fictional comparison matches 3,004 ordinary and metadata-only rows
+and 3,006 prior-v1 classifications, with six explicit policy gaps and zero
+unexplained membership differences. FOS-Master remains at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` unchanged. Local container
+and populated restore checks are not claimed; hosted full CI, strict runtime
+and restore are required before merge. No version tag is warranted for this
+nonpublishing internal review step.
+
 ## DC-002N nonpublishing FileOS v2 staging — merged verification
 
 Branch `codex/dc-002n-v2-inventory-staging` starts at verified `main`
