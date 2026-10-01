@@ -49,6 +49,17 @@ row still has no version or digest. Canonical-hash mismatch fails closed.
 Historical packets remain reviewable if their v1 run is superseded. This is an
 internal library path, not a Brain API or CLI route, approval or v2 publication.
 
+DC-002N adds `DataCoreStore.stage_fileos_v2_inventory(ctx, packet_id, stage_id)`
+under [ADR-117](adr/117_fileos_v2_staged_inventory.md). It projects the sealed
+candidate into a separate, immutable PostgreSQL row ledger after verifying the
+packet digest and latest completed-v1 receipt under the source lock. Hashed
+rows retain real candidate versions and SHA-256; metadata-only deferred rows
+retain size/reason with **NULL** version, digest and media type. Exclusions and
+scan errors are recorded as distinct rows, and the database checks all four
+counts at commit. One packet stages once, with idempotent same-ID replay. This
+is a nonpublishing staging shape, not a v2 completion or transition approval;
+v1 freshness, absence, indexes and search remain unchanged.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |
@@ -81,9 +92,8 @@ the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 
-The completed-baseline check and private review path do not solve the v2
-database shape. Before any switch, define and test metadata-only persistence
-and freshness, an explicit
+The staged row model solves the metadata-only database shape, but not v2
+freshness or publication. Before any switch, define and test an explicit
 owner-reviewed v1-to-v2 baseline transaction, absence suppression across the
 policy boundary, rollback, PostgreSQL/RLS/restore behavior, broader platform
 and cloud-placeholder parity, authorized read-only live shadow, and bounded

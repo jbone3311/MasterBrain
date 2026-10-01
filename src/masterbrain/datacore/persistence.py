@@ -156,6 +156,16 @@ class FileOSTransitionPacketRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class FileOSV2StagedInventoryRecord:
+    stage_id: UUID
+    packet_id: UUID
+    source_id: str
+    candidate_sha256: str
+    recorded_at: datetime
+    recorded: bool
+
+
+@dataclass(frozen=True, slots=True)
 class IndexGeneration:
     generation_id: str
     source_id: str
@@ -300,6 +310,140 @@ def _parse_time(value: object) -> datetime:
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("observed timestamp must be timezone-aware")
     return parsed.astimezone(UTC)
+
+
+def _fileos_v2_staged_rows(
+    candidate: Mapping[str, Any], source_id: str
+) -> list[tuple[str, str, str | None, str | None, str | None, int | None, str | None, str | None]]:
+    """Validate and project the closed donor ledger without inventing versions."""
+    from masterbrain.datacore.fileos_donor_candidate import CANDIDATE_VERSION, DONOR_COMMIT
+    from masterbrain.datacore.fileos_donor_shadow import (
+        DONOR_HASH_LIMIT,
+        MAX_SHADOW_RECORDS,
+        SHADOW_PROFILE,
+    )
+
+    policy = candidate.get("policy")
+    source = candidate.get("source")
+    counts = candidate.get("counts")
+    root = candidate.get("root_binding")
+    ledgers = {
+        "hashed": "hashed", "deferred": "deferred",
+        "exclusions": "excluded", "errors": "error",
+    }
+    if (
+        set(candidate) != {"candidate_version", "publishable", "source", "observed_at",
+                           "root_binding", "policy", "counts", "hashed", "deferred",
+                           "exclusions", "errors"}
+        or candidate.get("candidate_version") != CANDIDATE_VERSION
+        or candidate.get("publishable") is not False
+        or not isinstance(source, Mapping)
+        or source != {"source_id": source_id, "kind": "fileos"}
+        or not isinstance(root, Mapping)
+        or set(root) != {"version", "sha256"}
+        or root.get("version") != ROOT_BINDING_VERSION
+        or not isinstance(root.get("sha256"), str)
+        or re.fullmatch(r"[a-f0-9]{64}", root["sha256"]) is None
+        or not isinstance(policy, Mapping)
+        or set(policy) != {"shadow_profile", "donor_commit", "hash_limit_bytes",
+                           "follow_file_symlinks", "metadata_only"}
+        or policy.get("shadow_profile") != SHADOW_PROFILE
+        or policy.get("donor_commit") != DONOR_COMMIT
+        or policy.get("hash_limit_bytes") != DONOR_HASH_LIMIT
+        or policy.get("follow_file_symlinks") is not False
+        or type(policy.get("metadata_only")) is not bool
+        or not isinstance(counts, Mapping)
+        or set(counts) != {"hashed", "deferred", "excluded", "errors"}
+        or any(type(value) is not int or value < 0 for value in counts.values())
+        or any(not isinstance(candidate.get(name), list) for name in ledgers)
+        or counts != {"hashed": len(candidate["hashed"]),
+                      "deferred": len(candidate["deferred"]),
+                      "excluded": len(candidate["exclusions"]),
+                      "errors": len(candidate["errors"])}
+        or sum(counts.values()) > MAX_SHADOW_RECORDS
+    ):
+        raise ValueError("invalid FileOS v2 candidate ledger")
+    observed = _parse_time(candidate.get("observed_at"))
+    rows: list[
+        tuple[str, str, str | None, str | None, str | None, int | None, str | None, str | None]
+    ] = []
+    occupied: set[str] = set()
+    for ledger, kind in ledgers.items():
+        for raw in candidate[ledger]:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid FileOS v2 candidate row")
+            locator = raw.get("locator")
+            if (
+                not isinstance(locator, str)
+                or not 1 <= len(locator) <= 4000
+                or locator.startswith(("/", "\\"))
+                or "\\" in locator or "\x00" in locator
+                or (locator == "." and kind != "error")
+                or (locator != "." and any(part in {"", ".", ".."}
+                                                for part in locator.split("/")))
+                or locator in occupied
+            ):
+                raise ValueError("invalid FileOS v2 candidate locator")
+            occupied.add(locator)
+            if kind == "hashed":
+                if set(raw) != {"item_id", "version_id", "locator", "observed_at",
+                                "digest", "size_bytes", "media_type"}:
+                    raise ValueError("invalid FileOS v2 hashed row")
+                digest = raw["digest"]
+                size = raw["size_bytes"]
+                media = raw["media_type"]
+                if (
+                    not isinstance(digest, Mapping)
+                    or set(digest) != {"algorithm", "value"}
+                    or digest.get("algorithm") != "sha256"
+                    or not isinstance(digest.get("value"), str)
+                    or re.fullmatch(r"[a-f0-9]{64}", digest["value"]) is None
+                    or type(size) is not int or not 0 <= size <= DONOR_HASH_LIMIT
+                    or not isinstance(media, str) or not 1 <= len(media) <= 200
+                    or _parse_time(raw["observed_at"]) != observed
+                ):
+                    raise ValueError("invalid FileOS v2 hashed row")
+                item_id = stable_id("item", source_id, locator)
+                version_id = stable_id("version", item_id, digest["value"], str(size))
+                if raw["item_id"] != item_id or raw["version_id"] != version_id:
+                    raise ValueError("invalid FileOS v2 hashed identity")
+                rows.append(
+                    (kind, locator, item_id, version_id, digest["value"], size, media, None)
+                )
+            elif kind == "deferred":
+                if (
+                    set(raw) != {"item_id", "locator", "size_bytes", "reason"}
+                    or raw["item_id"] != stable_id("item", source_id, locator)
+                    or type(raw["size_bytes"]) is not int or raw["size_bytes"] < 0
+                    or raw["reason"] not in {"no_hash", "dataless", "oversize"}
+                    or (raw["reason"] == "oversize" and raw["size_bytes"] <= DONOR_HASH_LIMIT)
+                ):
+                    raise ValueError("invalid FileOS v2 deferred row")
+                rows.append((kind, locator, raw["item_id"], None, None,
+                             raw["size_bytes"], None, raw["reason"]))
+            else:
+                reason_key = "reason" if kind == "excluded" else "code"
+                allowed = (
+                    {"donor_junk_dir", "donor_operational_dir", "donor_junk_file",
+                     "symlink_directory", "not_regular"}
+                    if kind == "excluded" else
+                    {"directory_unreadable", "root_changed_during_scan", "symlink_skipped",
+                     "changed_during_scan", "file_unreadable"}
+                )
+                if set(raw) != {"locator", reason_key} or raw[reason_key] not in allowed:
+                    raise ValueError("invalid FileOS v2 coverage row")
+                rows.append((kind, locator, None, None, None, None, None, raw[reason_key]))
+    excluded_directories = {
+        locator for kind, locator, *_, reason in rows
+        if kind == "excluded"
+        and reason in {"donor_junk_dir", "donor_operational_dir", "symlink_directory"}
+    }
+    for locator in occupied:
+        parts = locator.split("/")
+        if any("/".join(parts[:index]) in excluded_directories
+               for index in range(1, len(parts))):
+            raise ValueError("overlapping FileOS v2 candidate directory exclusion")
+    return rows
 
 
 def _fileos_transition_detail(kind: str, raw: object) -> dict[str, Any]:
@@ -4004,6 +4148,135 @@ class DataCoreStore:
             assert inserted is not None
             return FileOSTransitionPacketRecord(
                 packet_id, source.source_id, packet_hash, inserted["recorded_at"], True
+            )
+
+    def stage_fileos_v2_inventory(
+        self, ctx: TenantContext, packet_id: UUID, stage_id: UUID
+    ) -> FileOSV2StagedInventoryRecord:
+        """Persist a donor-shape inventory without publishing or inferring absence."""
+        self.store.require(ctx, "brain.source.ingest")
+        self.store.require(ctx, "brain.changes.read")
+        if not isinstance(packet_id, UUID) or not isinstance(stage_id, UUID):
+            raise ValueError("invalid FileOS v2 stage identity")
+        with self.store.transaction(ctx) as conn:
+            packet_row = conn.execute(
+                "SELECT id,source_id,prior_actor_id,prior_run_id,prior_observed_at,"
+                "donor_observed_at,root_binding_sha256,prior_manifest_sha256,"
+                "packet_sha256,packet FROM brain_fileos_transition_packets WHERE id=%s",
+                (packet_id,),
+            ).fetchone()
+            if packet_row is None:
+                raise NotFound()
+            packet = packet_row["packet"]
+            if (
+                not isinstance(packet, Mapping)
+                or _canonical_digest(packet) != packet_row["packet_sha256"]
+                or packet.get("packet_version") != "masterbrain-fileos-transition-review-packet-v1"
+                or packet.get("publishable") is not False
+                or packet.get("requires_review") is not True
+                or packet.get("source_id") != packet_row["source_id"]
+                or packet.get("prior_run_id") != str(packet_row["prior_run_id"])
+                or packet.get("prior_manifest_sha256") != packet_row["prior_manifest_sha256"]
+            ):
+                raise Conflict("FileOS v2 staging packet integrity requires review")
+            source_id = packet_row["source_id"]
+            candidate = packet.get("candidate")
+            preview = packet.get("preview")
+            if not isinstance(candidate, Mapping) or not isinstance(preview, Mapping):
+                raise Conflict("FileOS v2 staging packet integrity requires review")
+            try:
+                rows = _fileos_v2_staged_rows(candidate, source_id)
+                donor_observed = _parse_time(candidate.get("observed_at"))
+            except (TypeError, ValueError) as exc:
+                raise Conflict("FileOS v2 staging candidate requires review") from exc
+            root = candidate.get("root_binding")
+            baseline = preview.get("completed_baseline")
+            if (
+                not isinstance(root, Mapping)
+                or root.get("sha256") != packet_row["root_binding_sha256"]
+                or donor_observed != packet_row["donor_observed_at"]
+                or not isinstance(baseline, Mapping)
+                or baseline.get("run_id") != str(packet_row["prior_run_id"])
+                or baseline.get("manifest_sha256") != packet_row["prior_manifest_sha256"]
+                or preview.get("candidate_counts") != candidate["counts"]
+            ):
+                raise Conflict("FileOS v2 staging packet binding requires review")
+            candidate_sha = _canonical_digest(candidate)
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:fileos-source:{source_id}",),
+            )
+            latest = conn.execute(
+                "SELECT actor_id,run_id,observed_at,completed_at,manifest_sha256,"
+                "root_binding_sha256 FROM brain_fileos_run_receipts WHERE source_id=%s "
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
+                (source_id,),
+            ).fetchone()
+            source = conn.execute(
+                "SELECT root_binding_sha256 FROM brain_sources WHERE id=%s AND kind='fileos'",
+                (source_id,),
+            ).fetchone()
+            if (
+                latest is None or source is None
+                or latest["actor_id"] != packet_row["prior_actor_id"]
+                or latest["run_id"] != packet_row["prior_run_id"]
+                or latest["observed_at"] != packet_row["prior_observed_at"]
+                or latest["manifest_sha256"] != packet_row["prior_manifest_sha256"]
+                or latest["root_binding_sha256"] != packet_row["root_binding_sha256"]
+                or source["root_binding_sha256"] != packet_row["root_binding_sha256"]
+                or baseline.get("completed_at") != latest["completed_at"].isoformat()
+            ):
+                raise Conflict("FileOS v2 staging baseline requires review")
+            existing = conn.execute(
+                "SELECT id,packet_id,source_id,candidate_sha256,recorded_at "
+                "FROM brain_fileos_v2_staged_inventories WHERE id=%s OR packet_id=%s",
+                (stage_id, packet_id),
+            ).fetchone()
+            if existing:
+                if (
+                    existing["id"] != stage_id
+                    or existing["packet_id"] != packet_id
+                    or existing["source_id"] != source_id
+                    or existing["candidate_sha256"] != candidate_sha
+                ):
+                    raise Conflict("FileOS v2 stage identity changed")
+                self.store.audit(
+                    conn, ctx, "brain.fileos_v2_inventory_stage_replay",
+                    "fileos_v2_stage", str(stage_id),
+                )
+                return FileOSV2StagedInventoryRecord(
+                    stage_id, packet_id, source_id, candidate_sha, existing["recorded_at"], False
+                )
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_staged_inventories(tenant_id,id,actor_id,"
+                "packet_id,source_id,prior_actor_id,prior_run_id,prior_observed_at,"
+                "donor_observed_at,root_binding_sha256,packet_sha256,candidate_sha256,counts) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (ctx.tenant_id, stage_id, ctx.actor_id, packet_id, source_id,
+                 packet_row["prior_actor_id"], packet_row["prior_run_id"],
+                 packet_row["prior_observed_at"], donor_observed,
+                 packet_row["root_binding_sha256"], packet_row["packet_sha256"],
+                 candidate_sha, Jsonb(dict(candidate["counts"]))),
+            )
+            for kind, locator, item_id, version_id, sha256, size, media, reason in rows:
+                conn.execute(
+                    "INSERT INTO brain_fileos_v2_staged_rows(tenant_id,stage_id,source_id,"
+                    "kind,locator,item_id,version_id,sha256,size_bytes,media_type,reason) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (ctx.tenant_id, stage_id, source_id, kind, locator, item_id,
+                     version_id, sha256, size, media, reason),
+                )
+            recorded = conn.execute(
+                "SELECT recorded_at FROM brain_fileos_v2_staged_inventories WHERE id=%s",
+                (stage_id,),
+            ).fetchone()
+            assert recorded is not None
+            self.store.audit(
+                conn, ctx, "brain.fileos_v2_inventory_staged",
+                "fileos_v2_stage", str(stage_id),
+            )
+            return FileOSV2StagedInventoryRecord(
+                stage_id, packet_id, source_id, candidate_sha, recorded["recorded_at"], True
             )
 
     def fileos_transition_review(

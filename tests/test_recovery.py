@@ -467,6 +467,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0036_current_archive_image_search.sql",
             "0037_tenant_login_fence.sql",
             "0038_fileos_transition_review_packets.sql",
+            "0039_fileos_v2_staged_inventory.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -500,6 +501,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
                 "0036_current_archive_image_search.sql",
                 "0037_tenant_login_fence.sql",
                 "0038_fileos_transition_review_packets.sql",
+                "0039_fileos_v2_staged_inventory.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -530,6 +532,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             "0036_current_archive_image_search.sql",
             "0037_tenant_login_fence.sql",
             "0038_fileos_transition_review_packets.sql",
+            "0039_fileos_v2_staged_inventory.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -606,6 +609,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
                 "0036_current_archive_image_search.sql",
                 "0037_tenant_login_fence.sql",
                 "0038_fileos_transition_review_packets.sql",
+                "0039_fileos_v2_staged_inventory.sql",
             }:
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)

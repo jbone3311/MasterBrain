@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -10,7 +11,7 @@ import pytest
 from masterbrain.datacore import fileos_donor_candidate as candidate
 from masterbrain.datacore import fileos_donor_shadow as shadow
 from masterbrain.datacore.fileos import INVENTORY_POLICY_VERSION
-from masterbrain.datacore.persistence import validate_fileos_manifest
+from masterbrain.datacore.persistence import _fileos_v2_staged_rows, validate_fileos_manifest
 
 OBSERVED = datetime(2026, 9, 30, tzinfo=UTC)
 
@@ -105,6 +106,39 @@ def test_symlink_and_coverage_errors_remain_explicit(tmp_path: Path) -> None:
     assert result["counts"]["errors"] == 1
     assert result["errors"] == [{"locator": "link.txt", "code": "symlink_skipped"}]
     assert [row["locator"] for row in result["hashed"]] == ["proof.txt"]
+
+
+def test_v2_stage_projection_keeps_all_donor_ledger_kinds(tmp_path: Path) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional")
+    (tmp_path / "_status.html").write_bytes(b"generated")
+    (tmp_path / "link.txt").symlink_to(tmp_path / "proof.txt")
+    oversized = tmp_path / "oversized.bin"
+    with oversized.open("wb") as handle:
+        handle.truncate(shadow.DONOR_HASH_LIMIT + 1)
+    result = candidate.build_fileos_donor_candidate(
+        tmp_path, source_id="files_candidate", observed_at=OBSERVED
+    )
+    rows = _fileos_v2_staged_rows(result, "files_candidate")
+    assert {row[0] for row in rows} == {"hashed", "deferred", "excluded", "error"}
+    deferred = next(row for row in rows if row[0] == "deferred")
+    assert deferred[3:5] == (None, None)
+    assert deferred[7] == "oversize"
+    forged = deepcopy(result)
+    forged["deferred"][0]["version_id"] = "invented"
+    with pytest.raises(ValueError, match="deferred row"):
+        _fileos_v2_staged_rows(forged, "files_candidate")
+    forged = deepcopy(result)
+    forged["hashed"][0]["version_id"] = "invented"
+    with pytest.raises(ValueError, match="hashed identity"):
+        _fileos_v2_staged_rows(forged, "files_candidate")
+    forged = deepcopy(result)
+    forged["policy"]["donor_commit"] = "unreviewed"
+    with pytest.raises(ValueError, match="candidate ledger"):
+        _fileos_v2_staged_rows(forged, "files_candidate")
+    forged = deepcopy(result)
+    forged["errors"][0]["locator"] = "proof.txt"
+    with pytest.raises(ValueError, match="candidate locator"):
+        _fileos_v2_staged_rows(forged, "files_candidate")
 
 
 def test_root_drift_keeps_candidate_nonpublishing(

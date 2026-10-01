@@ -4944,7 +4944,7 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
     assert core.fileos_transition_review(ctx, packet_id)["latest_receipt_matches_packet"] is False
     with psycopg.connect(admin) as conn:
         with pytest.raises(psycopg.Error, match="protected record"):
-            conn.execute("TRUNCATE brain_fileos_transition_packets")
+            conn.execute("TRUNCATE brain_fileos_transition_packets CASCADE")
     with psycopg.connect(admin) as conn:
         conn.execute("ALTER TABLE brain_fileos_transition_packets DISABLE TRIGGER immutable")
         conn.execute(
@@ -4955,3 +4955,134 @@ def test_fileos_transition_review_packet_is_immutable_nonpublishing_and_run_boun
     with pytest.raises(Conflict, match="integrity requires review"):
         core.fileos_transition_review(ctx, packet_id)
     assert proof.read_bytes() == b"fictional immutable packet proof"
+
+
+def test_fileos_v2_staging_keeps_hashless_rows_out_of_current_fileos(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    store, admin = database
+    ctx = datacore_context(tenant[0])
+    core = DataCoreStore(store)
+    source_id = "files_v2_stage"
+    (tmp_path / "proof.txt").write_bytes(b"fictional v2 staged proof")
+    prior = fileos_manifest(tmp_path, source_id=source_id, hour=1)
+    run_id = uuid4()
+    core.import_fileos_snapshot(ctx, prior, run_id)
+    core.complete_fileos_run(
+        ctx, prior, run_id, outcomes={"unsupported": 1},
+        item_outcomes={prior["items"][0]["item_id"]: "unsupported"},
+        published_documents=0, code_revision="test-v2-stage", document_processor_version=None,
+    )
+    observed = datetime(2026, 9, 22, 3, tzinfo=UTC)
+    hashed_packet_id = uuid4()
+    record_fileos_transition_review(
+        core, ctx, prior, run_id, hashed_packet_id, tmp_path,
+        source_id=source_id, observed_at=observed,
+    )
+    stage_id = uuid4()
+    staged = core.stage_fileos_v2_inventory(ctx, hashed_packet_id, stage_id)
+    assert staged.recorded is True
+    assert core.stage_fileos_v2_inventory(ctx, hashed_packet_id, stage_id) == replace(
+        staged, recorded=False
+    )
+    with psycopg.connect(admin) as conn:
+        audit = conn.execute(
+            "SELECT resource_type,resource_id,metadata FROM audit_events "
+            "WHERE tenant_id=%s AND event_type='brain.fileos_v2_inventory_staged' "
+            "ORDER BY occurred_at DESC,id DESC LIMIT 1",
+            (ctx.tenant_id,),
+        ).fetchone()
+        assert audit == ("fileos_v2_stage", str(stage_id), {})
+    with pytest.raises(Conflict, match="stage identity changed"):
+        core.stage_fileos_v2_inventory(ctx, hashed_packet_id, uuid4())
+    with store.transaction(ctx) as conn:
+        hashed = conn.execute(
+            "SELECT kind,locator,item_id,version_id,sha256,size_bytes,media_type,reason "
+            "FROM brain_fileos_v2_staged_rows WHERE stage_id=%s",
+            (stage_id,),
+        ).fetchone()
+        assert hashed is not None
+        assert hashed["kind"] == "hashed" and hashed["locator"] == "proof.txt"
+        assert hashed["version_id"] == prior["items"][0]["version_id"]
+        assert hashed["sha256"] == prior["items"][0]["digest"]["value"]
+        assert hashed["reason"] is None
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 staged ledger"):
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_staged_rows(tenant_id,stage_id,source_id,"
+                "kind,locator,item_id,version_id,sha256,size_bytes,media_type) "
+                "VALUES (%s,%s,%s,'hashed','extra.txt',%s,%s,%s,1,'text/plain')",
+                (ctx.tenant_id, stage_id, source_id, hashed["item_id"],
+                 hashed["version_id"], hashed["sha256"]),
+            )
+
+    metadata_packet = build_fileos_transition_review_packet(
+        core, ctx, prior, run_id, tmp_path,
+        source_id=source_id, observed_at=observed + timedelta(hours=1),
+        metadata_only=True,
+    )
+    metadata_packet_id = uuid4()
+    core.stage_fileos_transition_review(ctx, prior, run_id, metadata_packet_id, metadata_packet)
+    metadata_stage_id = uuid4()
+    core.stage_fileos_v2_inventory(ctx, metadata_packet_id, metadata_stage_id)
+    with store.transaction(ctx) as conn:
+        deferred = conn.execute(
+            "SELECT kind,item_id,version_id,sha256,size_bytes,media_type,reason "
+            "FROM brain_fileos_v2_staged_rows WHERE stage_id=%s",
+            (metadata_stage_id,),
+        ).fetchone()
+        assert deferred is not None
+        assert deferred["kind"] == "deferred" and deferred["reason"] == "no_hash"
+        assert deferred["item_id"] == prior["items"][0]["item_id"]
+        assert deferred["version_id"] is None and deferred["sha256"] is None
+        assert deferred["media_type"] is None
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 0
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_source_versions WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 1
+    with pytest.raises(psycopg.Error):
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_staged_rows(tenant_id,stage_id,source_id,"
+                "kind,locator,item_id,version_id,size_bytes,reason) "
+                "VALUES (%s,%s,%s,'deferred','invented.txt',%s,%s,1,'no_hash')",
+                (ctx.tenant_id, metadata_stage_id, source_id,
+                 deferred["item_id"], "invented"),
+            )
+    assert core.fileos_freshness(ctx, source_id)["latest_complete_run"]["run_id"] == run_id
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.Error, match="protected record"):
+            conn.execute("TRUNCATE brain_fileos_v2_staged_rows")
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.Error, match="protected record"):
+            conn.execute("TRUNCATE brain_fileos_v2_staged_inventories CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_staged_rows SET reason='dataless' WHERE stage_id=%s",
+                (metadata_stage_id,),
+            )
+    other_tenant, other_actor = uuid4(), uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Other v2 tenant')", (other_tenant,))
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, other_actor),
+        )
+    other_ctx = replace(ctx, tenant_id=other_tenant, actor_id=other_actor)
+    with pytest.raises(NotFound):
+        core.stage_fileos_v2_inventory(other_ctx, hashed_packet_id, uuid4())
+    next_manifest = fileos_manifest(tmp_path, source_id=source_id, hour=2)
+    next_run = uuid4()
+    core.import_fileos_snapshot(ctx, next_manifest, next_run)
+    core.complete_fileos_run(
+        ctx, next_manifest, next_run, outcomes={"unsupported": 1},
+        item_outcomes={next_manifest["items"][0]["item_id"]: "unsupported"},
+        published_documents=0, code_revision="test-v2-stage", document_processor_version=None,
+    )
+    with pytest.raises(Conflict, match="baseline requires review"):
+        core.stage_fileos_v2_inventory(ctx, metadata_packet_id, uuid4())

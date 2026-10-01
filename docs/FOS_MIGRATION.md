@@ -67,6 +67,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002K completed v1 baseline preview | Same pinned scanner; no donor edit | `persistence.py`, `fileos_donor_transition.py`, ADR-114 | exact latest completed v1 receipt/intake/items, pre/post-scan check, concurrent newer-run refusal, scope and PostgreSQL tests | Merged via PR #55; final-head and merged-main CI/strict/restore green; nonpublishing, no v2 baseline transaction or switch |
 | DC-002L immutable transition review packet | Same pinned scanner; no donor edit | migration 0038, `fileos_donor_transition.py`, `persistence.py`, ADR-115 | one scan, completed-v1 binding, locked insert, immutable/RLS packet, replay and nonpublication tests | Merged via PR #57; exact-head and merged-main CI/strict/restore green; not a v2 baseline, owner approval or FileOS switch |
 | DC-002M bounded transition review read | Same pinned scanner; no donor edit | `persistence.py`, ADR-116 | content-free summary, evidence-scoped locator pages, stale-run and digest-tamper tests | Merged via PR #59; exact-head and merged-main CI/strict/restore green; private only, no approval, v2 publication or FileOS switch |
+| DC-002N nonpublishing v2 inventory staging | Same pinned scanner; no donor edit | migration 0039, `persistence.py`, ADR-117 | hashed/deferred/excluded/error SQL shape, locked packet binding, count balance, replay, RLS and nonpublication | Implementation branch; disposable PostgreSQL focused tests pass; full CI/restore and merge pending; no v2 completion or switch |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
@@ -115,13 +116,17 @@ the completion/absence path, authorize publication or attest future root state.
 DC-002M makes that packet inspectable through a compact private summary and
 separately authorized locator pages. Its current-run flag is a read-time status,
 not approval or a baseline reservation.
+DC-002N projects one current sealed packet into a separate relational v2
+staging ledger. Hashless rows stay hashless; SQL balances the four row kinds.
+Staging is not a completed run, freshness or absence authority and does not
+switch the source policy.
 
 ## Proposed next tranches
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
-   source-bound candidate and completed-baseline preview, then extend
-   fault/platform acceptance. A separate ADR is required for publishable v2
-   semantics, prior-v1 transition transaction and rollback.
+   source-bound candidate, completed-baseline preview and staged v2 rows, then
+   extend fault/platform acceptance. A separate ADR is required for publishable
+   v2 semantics, an owner-reviewed prior-v1 transition transaction and rollback.
 2. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
    implemented. Extend format-specific corpora, containment, donor shadow and
    reviewed selection before any automatic fan-out or cutover.

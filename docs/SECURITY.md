@@ -143,6 +143,12 @@ The sealed donor transition packet has a compact, locator-free read requiring
 closed on a packet-digest mismatch. A read-time latest-receipt match is not
 proof of live root state, approval or FileOS cutover authority (ADR-116).
 
+The v2 staging ledger (ADR-117) is private, append-only and forced-RLS with a
+tenant-login fence. Its deferred rows have no fabricated content digest or
+version, and a deferred database constraint balances all four row kinds.
+Staging requires the exact latest completed-v1 receipt under the source lock;
+it grants no v2 publication, absence, search or source-effect authority.
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.
