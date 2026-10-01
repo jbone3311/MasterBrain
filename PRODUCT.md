@@ -11,6 +11,11 @@ Neither source owns shared ingestion, knowledge, or assistant-access concerns.
 MasterBrain turns authorized email and files into durable evidence and useful,
 current knowledge. It lets people and assistants begin with a compact answer, expand
 only the relevant objects, and reach the original evidence for verification.
+The finished product has two first-class entrances to the same Brain API: a
+MasterBrain chat/workspace for the owner and scoped external access for approved
+assistants such as Grok, Claude and ChatGPT. Neither entrance gets a privileged
+shortcut to the database, mail provider or filesystem. See the
+[interface and action contract](docs/USER_INTERFACES.md).
 
 ## Layer ownership
 
@@ -28,6 +33,10 @@ only the relevant objects, and reach the original evidence for verification.
 ## Outcomes
 
 - Search and retrieve across all authorized sources with stable evidence citations.
+- Ask natural-language questions in MasterBrain chat or through an authorized
+  external assistant and receive the same scoped, freshness-aware evidence.
+- Preview and, only with separate authority, approve specific Email or FileOS
+  changes through auditable commands rather than model-generated direct writes.
 - Preserve originals and every material transformation with verifiable provenance.
 - Maintain current people, organizations, projects, commitments, events, and claims
   while retaining temporal history and contradictions.

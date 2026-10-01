@@ -2,7 +2,19 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002U FileOS v2 shared generation — local branch verification
+## DC-002U FileOS v2 shared generation — merged verification
+
+PR [#81](https://github.com/jbone3311/MasterBrain/pull/81) merged at
+`aad195d953eb45a2d844ed9d8d5dc82181fdb985` from base
+`a0b21a6fd8f9e74e736c723a0da39820210cf6aa`. Its exact head
+`07b0654181c41508ea0ad64629cdac1ab8f928a9` passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36926230869),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36926230854)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36926230842).
+The merge commit also passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36927725340),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36927725319)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36927725309).
 
 ADR-126, migration 0047 and `FileOSV2IndexBuilder` extend the existing
 DataCore generation tables with an exact v2 completion/ready-attempt basis.
@@ -28,9 +40,9 @@ current-read effect. Locked dependency sync, Ruff, strict mypy over 95 source
 files, 134 browser tests, the documentation inventory and local deployment
 quality gate passed. The pinned FOS-Master 3,000-file hash/extraction parity
 and donor-policy shadow passed with zero unexplained membership differences;
-six explicit policy gaps remain. The donor repo was not changed. This is local
-verification only, not exact-head CI, production acceptance or v2 activation;
-no version tag is assigned.
+six explicit policy gaps remain. The donor repo was not changed. These checks
+prove a private, non-current generation tranche, not production acceptance or
+v2 activation; no version tag is assigned.
 
 ## DC-002T FileOS v2 private document publication — merged verification
 
