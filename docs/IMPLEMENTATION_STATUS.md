@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002R adds private, human-owner FileOS v2 baseline authorization under
+  ADR-123 and migration 0044. It binds the exact reviewed plan and prepared
+  evidence to an immutable receipt after a latest-v1 check. Synthetic/disposable
+  only: no fresh completion scan, v2 ledger, current read, absence inference,
+  live-root authority or FOS-Master cutover. Verification status is recorded in
+  the build receipt; no version tag is implied by this internal tranche.
+
 - DC-005N changes the private FileOS v1 completion writer to insert run items
   before its receipt; forward migration 0043 keeps the whole-ledger constraint
   but checks it once per receipt and serializes both receipt and item inserts
@@ -30,7 +37,8 @@ production and FileOS cutover remain open.
   maps donor candidate IDs to policy-scoped DataCore versions and seals an
   immutable receipt. It does not change v1 current pointers, completion,
   freshness, absence, search or FileOS operation. It is synthetic/disposable
-  only; v2 completion, owner publication authority and rollback remain open.
+  only; v2 completion and rollback remain open. Separate owner authorization
+  is now implemented by DC-002R, without publication.
   Legacy v1 large-completion performance is tracked separately in issue #71.
 - ADR-120 adds content-safe fixed-stage diagnostics to the trusted isolated
   processor controller while preserving fail-closed `MimeUnavailable` and

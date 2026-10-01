@@ -147,6 +147,14 @@ staged rows have no mapping or fabricated evidence. This is not a completed v2
 run or current search/freshness authority. See
 [ADR-121](adr/121_fileos_v2_prepared_evidence.md).
 
+Migration `0044_fileos_v2_baseline_authorizations.sql` adds one append-only
+owner authorization per prepared stage/source. A composite foreign key binds
+the exact preparation, review, stage, source, prior v1 run and digests; forced
+RLS, tenant-login fencing, source locking, protected truncation and immutable
+rows apply. No current pointer, v2 completion ledger, active index or absence
+row references this receipt. See
+[ADR-123](adr/123_fileos_v2_baseline_authorization.md).
+
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;

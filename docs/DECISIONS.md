@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-123](adr/123_fileos_v2_baseline_authorization.md) requires a distinct,
+human-owner authorization bound to the exact reviewed plan and prepared v2
+evidence. It is synthetic-only and does not complete a v2 run, switch reads,
+infer absence, or authorize FOS-Master cutover.
+
 [ADR-122](adr/122_fileos_run_ledger_linear_validation.md) makes the existing
 FileOS v1 completion ledger check linear in run size while preserving deferred
 whole-run validation, late-insert refusal and source serialization. It changes

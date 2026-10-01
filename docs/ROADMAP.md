@@ -84,9 +84,10 @@ Security and data-integrity blockers take priority over adding more surface area
    DataCore evidence preparation; it deliberately leaves the v1 current
    pointer and all search/freshness state unchanged. DC-005N addresses the
    separate v1 large-completion ledger cost before broader transition stress.
-   The next v2 tranche must
-   design explicit owner publication authority, v2 completion, visibility,
-   absence suppression and rollback before any policy switch.
+   DC-002R adds separately scoped, synthetic-only owner authorization bound
+   to the exact preparation and plan. The next v2 tranche must implement a
+   fresh, source-locked completion ledger; visibility, absence suppression
+   and rollback remain separate decisions before any policy switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container

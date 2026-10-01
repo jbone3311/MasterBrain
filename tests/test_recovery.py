@@ -472,6 +472,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0041_fileos_v2_baseline_verification.sql",
             "0042_fileos_v2_prepared_evidence.sql",
             "0043_fileos_run_ledger_linear_validation.sql",
+            "0044_fileos_v2_baseline_authorizations.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -510,6 +511,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
                 "0041_fileos_v2_baseline_verification.sql",
                 "0042_fileos_v2_prepared_evidence.sql",
                 "0043_fileos_run_ledger_linear_validation.sql",
+                "0044_fileos_v2_baseline_authorizations.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -545,6 +547,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             "0041_fileos_v2_baseline_verification.sql",
             "0042_fileos_v2_prepared_evidence.sql",
             "0043_fileos_run_ledger_linear_validation.sql",
+            "0044_fileos_v2_baseline_authorizations.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -626,6 +629,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
                 "0041_fileos_v2_baseline_verification.sql",
                 "0042_fileos_v2_prepared_evidence.sql",
                 "0043_fileos_run_ledger_linear_validation.sql",
+                "0044_fileos_v2_baseline_authorizations.sql",
             }:
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)

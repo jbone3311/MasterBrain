@@ -84,6 +84,9 @@ locked fresh rescan to prepare policy-scoped source versions and source-bound
 evidence. A sealed mapping retains each donor candidate identity; the v1
 current pointer and completed-run ledger remain unchanged. Preparation is not
 v2 completion, current visibility or cutover.
+ADR-123 adds a separately scoped owner authorization for the exact prepared
+stage. Completion must still be a distinct fresh, source-locked transaction;
+the authorization receipt changes no current FileOS state.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

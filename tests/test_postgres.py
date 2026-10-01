@@ -27,6 +27,7 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
+from psycopg.types.json import Jsonb
 
 from email_brain.api import create_app
 from email_brain.auth import Credential, Principal, TokenRegistry
@@ -59,6 +60,7 @@ from masterbrain.datacore.fileos_donor_transition import (
     record_fileos_transition_review,
 )
 from masterbrain.datacore.fileos_transition_approval import FileOSV2TransitionReview
+from masterbrain.datacore.fileos_v2_authorization import FileOSV2BaselineAuthorizer
 from masterbrain.datacore.fileos_v2_baseline import FileOSV2BaselineVerifier
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
@@ -5809,6 +5811,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     reviewer = FileOSV2TransitionReview(core)
     verifier = FileOSV2BaselineVerifier(core)
     preparer = FileOSV2EvidencePreparer(core)
+    authorizer = FileOSV2BaselineAuthorizer(core)
     source_id = "files_v2_prepare"
     changed = tmp_path / "changed.txt"
     changed.write_bytes(b"synthetic prior proof")
@@ -5920,6 +5923,61 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         preparation_id,
         tmp_path,
     ) == replace(prepared, recorded=False)
+    authorization_id = uuid4()
+    authorizing_human = Principal(
+        replace(human.context, scopes=human.context.scopes | frozenset({
+            "brain.fileos.transition.authorize",
+        })),
+        "human",
+    )
+    authorization_args = {
+        "expected_plan_sha256": plan["plan_sha256"],
+        "expected_preparation_sha256": prepared.preparation_sha256,
+        "acknowledged_counts": plan["acknowledged_counts"],
+    }
+    with pytest.raises(AccessDenied, match="human"):
+        authorizer.authorize(
+            worker, stage_id, approval_id, preparation_id, authorization_id,
+            **authorization_args,
+        )
+    with pytest.raises(AccessDenied, match="scope denied"):
+        authorizer.authorize(
+            human, stage_id, approval_id, preparation_id, authorization_id,
+            **authorization_args,
+        )
+    with pytest.raises(Conflict, match="preparation changed"):
+        authorizer.authorize(
+            authorizing_human, stage_id, approval_id, preparation_id,
+            authorization_id, **{**authorization_args, "expected_preparation_sha256": "0" * 64},
+        )
+    with pytest.raises(psycopg.errors.ForeignKeyViolation):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_baseline_authorizations(tenant_id,id,"
+                "actor_id,preparation_id,approval_id,stage_id,source_id,prior_run_id,"
+                "plan_sha256,preparation_sha256,acknowledged_counts) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id, uuid4(), ctx.actor_id, preparation_id, approval_id,
+                    stage_id, source_id, run_id, plan["plan_sha256"],
+                    prepared.preparation_sha256,
+                    Jsonb({**plan["acknowledged_counts"], "candidate_counts": {}}),
+                ),
+            )
+    authorized = authorizer.authorize(
+        authorizing_human, stage_id, approval_id, preparation_id,
+        authorization_id, **authorization_args,
+    )
+    assert authorized.recorded is True
+    assert authorizer.authorize(
+        authorizing_human, stage_id, approval_id, preparation_id,
+        authorization_id, **authorization_args,
+    ) == replace(authorized, recorded=False)
+    with pytest.raises(Conflict, match="identity changed"):
+        authorizer.authorize(
+            authorizing_human, stage_id, approval_id, preparation_id,
+            uuid4(), **authorization_args,
+        )
     with pytest.raises(Conflict, match="identity changed"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, uuid4(), tmp_path)
     wrong_root = tmp_path.parent / f"wrong-prepare-root-{uuid4().hex}"
@@ -5992,7 +6050,17 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert core.fileos_freshness(ctx, source_id)["latest_complete_run"]["run_id"] == run_id
     with psycopg.connect(admin) as conn:
         with pytest.raises(psycopg.Error, match="protected record"):
-            conn.execute("TRUNCATE brain_fileos_v2_evidence_preparations")
+            conn.execute("TRUNCATE brain_fileos_v2_evidence_preparations CASCADE")
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.Error, match="protected record"):
+            conn.execute("TRUNCATE brain_fileos_v2_baseline_authorizations")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_baseline_authorizations "
+                "SET preparation_sha256=%s WHERE id=%s",
+                ("0" * 64, authorization_id),
+            )
     with pytest.raises(psycopg.Error):
         with store.transaction(ctx) as conn:
             conn.execute(
@@ -6028,6 +6096,14 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             uuid4(),
             tmp_path,
         )
+    with pytest.raises(NotFound):
+        authorizer.authorize(
+            Principal(
+                replace(authorizing_human.context, tenant_id=other_tenant, actor_id=other_actor),
+                "human",
+            ), stage_id, approval_id,
+            preparation_id, uuid4(), **authorization_args,
+        )
     next_manifest = snapshot_tree(
         tmp_path,
         source_id=source_id,
@@ -6055,6 +6131,24 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         )
     with pytest.raises(Conflict, match="requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, tmp_path)
+    with pytest.raises(Conflict, match="requires review"):
+        authorizer.authorize(
+            authorizing_human, stage_id, approval_id, preparation_id,
+            authorization_id, **authorization_args,
+        )
+    with pytest.raises(psycopg.errors.RaiseException, match="stale FileOS"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_baseline_authorizations(tenant_id,id,"
+                "actor_id,preparation_id,approval_id,stage_id,source_id,prior_run_id,"
+                "plan_sha256,preparation_sha256,acknowledged_counts) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id, uuid4(), ctx.actor_id, preparation_id, approval_id,
+                    stage_id, source_id, run_id, plan["plan_sha256"],
+                    prepared.preparation_sha256, Jsonb(plan["acknowledged_counts"]),
+                ),
+            )
 
 
 def test_fileos_v2_preparation_keeps_metadata_only_rows_hashless(
