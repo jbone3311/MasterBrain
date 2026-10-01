@@ -64,7 +64,7 @@ Security and data-integrity blockers take priority over adding more surface area
    the v1/donor policy gap; it does not create a persisted v2 baseline or absence
    authority. DC-002K also requires the latest exact completed v1 database run
    before and after scanning; it creates no v2 publication or cutover authority.
-   PR #52 is merged with final-head and merged-main CI, strict
+   PRs #52 and #55 are merged with final-head and merged-main CI, strict
    runtime and restore green; v2 publication remains a separate step.
 
 The first three tranches can be reviewed independently of 5D implementation.

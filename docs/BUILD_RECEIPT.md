@@ -2,7 +2,7 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002K completed FileOS baseline preview (branch verification)
+## DC-002K completed FileOS baseline preview integration
 
 Branch `codex/dc-002k-completed-baseline-preview` starts from verified `main`
 `dd5a165d6deebd94e18019708a6ed8afc178d47f` and leaves pinned FOS-Master
@@ -13,7 +13,19 @@ and terminal outcome balance. A donor transition preview checks this binding
 before and after scanning; a newer completion during scanning refuses the
 report. There is no v2 persistence, publication or cutover.
 
-Local final-code verification on disposable PostgreSQL 17.11: **2,875 passed,
+[PR #55](https://github.com/jbone3311/MasterBrain/pull/55) final head
+`f173b2c6bfd99a7b0e1790cc880e6ff3d82a8ec1` passed
+[full CI 36841087965](https://github.com/jbone3311/MasterBrain/actions/runs/36841087965),
+[strict runtime 36841087898](https://github.com/jbone3311/MasterBrain/actions/runs/36841087898),
+and [populated restore 36841088014](https://github.com/jbone3311/MasterBrain/actions/runs/36841088014).
+It merged at `28c09478ad9e88614644395b1ff35df85d24b793`, whose exact
+`main` commit independently passed
+[full CI 36842094127](https://github.com/jbone3311/MasterBrain/actions/runs/36842094127),
+[strict runtime 36842094298](https://github.com/jbone3311/MasterBrain/actions/runs/36842094298),
+and [populated restore 36842094105](https://github.com/jbone3311/MasterBrain/actions/runs/36842094105).
+
+Local full-suite verification on the initial code head with disposable
+PostgreSQL 17.11: **2,875 passed,
 one skipped**; 445 of 446 PostgreSQL-marked cases executed. The focused
 real-database regression covers imported-but-incomplete state, exact completion,
 wrong run and changed policy, read-scope denial, a newer completion committed
@@ -24,13 +36,15 @@ paths/fragments) passed. The pinned-donor fictional 3,000-file harness matched
 3,004 hashed and metadata-only candidate rows, 3,006 prior-v1
 classifications and six explicit policy gaps, with zero unexplained membership
 differences. The donor checkout remained clean.
+The final tail added a manifest-mutation fence and a twelfth focused unit
+test; Ruff, mypy and documentation checks passed afterward. Its broader
+PostgreSQL/container suite is the exact-head hosted CI linked above.
 
 An initial local full-suite run had three subprocess import failures because
 this Mac's Python does not expose the editable-install path to isolated or
 environment-scrubbed subprocesses. After installing this branch as a normal
 wheel, the same full suite passed as reported above; no repository fix was
-needed for those three failures. Hosted PR and merged-main CI, strict-runtime
-and populated-restore evidence are still pending. These tests do not establish
+needed for those three failures. These tests do not establish
 metadata-only v2 publication, live-source behavior or owner acceptance.
 
 ## v0.2.0a1 synthetic-only version checkpoint
