@@ -67,7 +67,7 @@ Security and data-integrity blockers take priority over adding more surface area
    DC-002L can retain that candidate and comparison as a private immutable
    review packet after a locked latest-run check. It still does not implement
    v2 persistence, an approved transition or donor-policy publication.
-   PRs #52 and #55 are merged with final-head and merged-main CI, strict
+   PRs #52, #55 and #57 are merged with final-head and merged-main CI, strict
    runtime and restore green; v2 publication remains a separate step.
 
 The first three tranches can be reviewed independently of 5D implementation.

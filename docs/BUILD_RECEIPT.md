@@ -2,7 +2,7 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002L immutable FileOS transition review packet — local verification
+## DC-002L immutable FileOS transition review packet — merged verification
 
 Branch `codex/dc-002l-transition-review-packet` begins at `main`
 `d90379d1b2f90f2413b82248a5b661961ce972dc`. Pinned FOS-Master
@@ -20,9 +20,19 @@ The pinned-donor fictional 3,000-file comparison passed 3,004 hashed and
 metadata-only candidate matches, 3,006 prior-v1 classifications and six
 explicit policy gaps, with zero unexplained membership differences. The first
 full run found historical migration fixtures that omitted 0038; those fixtures
-were corrected and the full suite rerun green. Hosted exact-head CI, strict
-runtime and populated restore are **pending** at this local receipt. No new
-version is tagged for this nonpublishing tranche.
+were corrected and the full suite rerun green.
+
+[PR #57](https://github.com/jbone3311/MasterBrain/pull/57) exact head
+`741187da6b6a2542eff699900212ce3dbb375500` passed
+[full CI 36846667545](https://github.com/jbone3311/MasterBrain/actions/runs/36846667545),
+[strict runtime 36846667659](https://github.com/jbone3311/MasterBrain/actions/runs/36846667659),
+and [populated restore 36846667503](https://github.com/jbone3311/MasterBrain/actions/runs/36846667503).
+It merged at `1003efe7111f7e1edf2c230eb9ebcceea84dd3fc`, whose exact
+`main` commit independently passed
+[full CI 36847578704](https://github.com/jbone3311/MasterBrain/actions/runs/36847578704),
+[strict runtime 36847578889](https://github.com/jbone3311/MasterBrain/actions/runs/36847578889),
+and [populated restore 36847578824](https://github.com/jbone3311/MasterBrain/actions/runs/36847578824).
+No new version is tagged for this nonpublishing tranche.
 
 ## DC-002K completed FileOS baseline preview integration
 
