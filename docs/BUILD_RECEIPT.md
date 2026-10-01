@@ -2,7 +2,7 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002J v1-to-donor transition branch verification
+## DC-002J v1-to-donor transition integration
 
 Branch `codex/dc-002j-policy-transition-preview` begins from `main`
 `7d388b1c44cc2236a87a8ecd79750e565dda1a9f`.
@@ -11,6 +11,15 @@ Branch `codex/dc-002j-policy-transition-preview` begins from `main`
 [full CI 36780193102 attempt 2](https://github.com/jbone3311/MasterBrain/actions/runs/36780193102/attempts/2),
 [strict runtime 36780193027 attempt 2](https://github.com/jbone3311/MasterBrain/actions/runs/36780193027/attempts/2),
 and [populated restore 36780193203 attempt 2](https://github.com/jbone3311/MasterBrain/actions/runs/36780193203/attempts/2).
+The final PR head `489948f4dffb3e784a16973bcae487f5d09a5c4a`
+independently passed [full CI 36829588640](https://github.com/jbone3311/MasterBrain/actions/runs/36829588640),
+[strict runtime 36829588667](https://github.com/jbone3311/MasterBrain/actions/runs/36829588667),
+and [populated restore 36829588607](https://github.com/jbone3311/MasterBrain/actions/runs/36829588607).
+PR #52 merged into `main` at `899acb7c4fcefb374ebe8a71e711509cdf8e77ae`;
+that exact merged commit passed
+[full CI 36830955794](https://github.com/jbone3311/MasterBrain/actions/runs/36830955794),
+[strict runtime 36830955857](https://github.com/jbone3311/MasterBrain/actions/runs/36830955857),
+and [populated restore 36830955947](https://github.com/jbone3311/MasterBrain/actions/runs/36830955947).
 Its new library compares a
 validated, complete-shape v1 snapshot with a fresh donor candidate at the same
 source/root and a newer observation time. It never publishes, persists, or

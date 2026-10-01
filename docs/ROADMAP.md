@@ -62,9 +62,8 @@ Security and data-integrity blockers take priority over adding more surface area
    hashless rows deferred; neither settles cloud-placeholder behavior nor
    authorizes v2 publication. DC-002J's read-only transition preview classifies
    the v1/donor policy gap; it does not create a persisted v2 baseline or absence
-   authority. PR #52 code-head hosted CI, strict runtime and restore passed
-   after the temporary account billing gate cleared; integration and v2
-   publication remain separate steps.
+   authority. PR #52 is merged with final-head and merged-main CI, strict
+   runtime and restore green; v2 publication remains a separate step.
 
 The first three tranches can be reviewed independently of 5D implementation.
 None authorizes a real account, live root, paid hosting or a release tag.

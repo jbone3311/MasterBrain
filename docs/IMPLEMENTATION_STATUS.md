@@ -67,8 +67,9 @@ production and FileOS cutover remain open.
   before donor loading.
   Local PostgreSQL 17 ran 444 database-marked tests with the full suite at
   2,862 passed and one skipped. The PR #52 code head passed hosted CI, strict
-  runtime and populated restore after the account billing gate cleared;
-  integration is pending. No persisted v2 baseline, completion or FileOS
+  runtime and populated restore after the account billing gate cleared; the
+  final PR head and merged `main` independently passed the same gates. The
+  preview is on `main`, but no persisted v2 baseline, completion or FileOS
   switch is claimed.
 - Synthetic whole-inventory scanner shadow comparator on an in-memory donor SQLite
   database and temporary fictional root. It verifies common hashes/sizes, six current
