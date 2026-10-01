@@ -157,8 +157,10 @@ dependency of v2 indexing, not a current-read or policy switch.
    verification, and ADR-121 prepares hashed evidence without publishing it.
    ADR-123 adds owner authorization for an exact prepared baseline attempt.
    ADR-124 adds a private completed baseline. ADR-125 adds document readiness.
-   Separate ADRs are still required for v2 index/current visibility, later v2
-   runs, absence suppression, rollback and cutover.
+   ADR-126 defines private shared-table v2 generation readiness, with
+   implementation still open and activation barred. Separate ADRs are still
+   required for current visibility, later v2 runs, absence suppression,
+   rollback and cutover.
 2. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
    implemented. Extend format-specific corpora, containment, donor shadow and
    reviewed selection before any automatic fan-out or cutover.

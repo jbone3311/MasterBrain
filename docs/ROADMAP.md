@@ -88,10 +88,11 @@ Security and data-integrity blockers take priority over adding more surface area
    to the exact preparation and plan. DC-002S now seals a fresh,
    source-locked private completion ledger with a compact inspection.
    DC-002T publishes and accounts for normalized documents on the prepared
-   v2 evidence without activating them as current. The next tranche must
-   define exact v2 index-generation/current visibility and later v2-run
-   behavior; absence suppression, rollback and live acceptance remain separate
-   decisions before any policy switch.
+   v2 evidence without activating them as current. ADR-126 defines the next
+   private tranche: an exact v2 generation in shared DataCore index tables
+   with database-enforced activation refusal. Implementation and tests remain
+   open; current visibility, later v2-run behavior, absence suppression,
+   rollback and live acceptance remain separate decisions before any switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container
