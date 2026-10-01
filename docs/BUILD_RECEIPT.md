@@ -2,11 +2,15 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002Q FileOS v2 hashed-evidence preparation — branch validation
+## DC-002Q FileOS v2 hashed-evidence preparation — merged verification
 
-Branch `codex/fileos-v2-evidence-preparation` starts from merged `main`
-`91f3e33f6617f8fe791f84d4a041c4fe1f8f701c`, whose full CI, strict
-runtime and populated restore passed. ADR-121 and migration 0042 add a
+PR [#70](https://github.com/jbone3311/MasterBrain/pull/70) merged at
+`f1e665a648c3fb665c577c6d2379aa98a1284a25` from base
+`91f3e33f6617f8fe791f84d4a041c4fe1f8f701c`. Its exact-head
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36892751430),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36892751272)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36892751325)
+passed before merge. ADR-121 and migration 0042 add a
 worker-only third exact source scan and a policy-scoped mapping from donor
 candidate versions to shared DataCore versions/evidence. A local regression
 caught that reusing candidate IDs would conflict with v1's immutable mtime
@@ -25,8 +29,8 @@ budget in the prior-ledger review query. In isolation the query measured about
 25 ms. The final fixture keeps one completed v1 item and adds 2,999 donor-only
 hashed candidates, still stressing 3,000 prepared evidence rows without
 conflating this tranche with legacy v1 completion load. No runtime timeout was
-increased. The older v1 large-completion performance remains a separate issue
-to investigate. Ruff and strict mypy over 91 source
+increased. The older v1 large-completion performance is tracked separately
+in [issue #71](https://github.com/jbone3311/MasterBrain/issues/71). Ruff and strict mypy over 91 source
 files, 134 browser tests, deployment gate and offline documentation inventory
 passed. The pinned FOS-Master donor remains clean at
 `218d5caec2f20b9047fd3eb8e027dc671acf0c15`; 3,000-file donor-policy
@@ -35,9 +39,8 @@ six explicit policy gaps and zero unexplained membership differences. The
 3,000-file shared hash/extraction parity harness also passed. The first full
 local suite exposed a macOS-specific hidden editable-install `.pth` flag in
 three isolated subprocess tests; a non-editable local package install restored
-those tests, and the final full suite passed. This branch has no hosted CI,
-container or populated-restore claim yet; no version tag is warranted for
-this internal preparation step.
+those tests, and the final full suite passed. No version tag was created for
+this internal preparation step; `v0.2.0a1` remains the tagged alpha checkpoint.
 
 ## ADR-120 isolated-controller failure diagnostics — merged verification
 
