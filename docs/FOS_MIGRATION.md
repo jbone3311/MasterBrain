@@ -64,6 +64,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002H confined shadow metadata | Same pinned scanner; no donor edit | `confined_files.py`, `fileos_donor_shadow.py` | no-follow descriptor metadata stat, root/ancestor/leaf swap tests, 3,000-file pinned-donor replay | Merged via PR #48; exact-head and main CI/restore green; shadow-only, no publishable policy switch |
 | DC-002I source-bound donor candidate | Same pinned scanner; no donor edit | `fileos_donor_candidate.py`, ADR-112 | hashed/deferred separation, v1 rejection, malformed/root-drift tests, 3,000-file pinned-donor comparison | Merged via PR #50; exact-head and main CI/restore green; nonpublishing candidate only, not a v2 manifest or policy switch |
 | DC-002J v1-to-donor transition preview | Same pinned scanner; no donor edit | `fileos_donor_transition.py`, ADR-113 | complete-shape v1 comparison, six explicit policy gaps on 3,000-file pinned-donor corpus, 10,000-item v1 bound and fault/root/time tests | Merged via PR #52; final head and merged-main CI/strict/restore green; no v2 publication or switch |
+| DC-002K completed v1 baseline preview | Same pinned scanner; no donor edit | `persistence.py`, `fileos_donor_transition.py`, ADR-114 | exact latest completed v1 receipt/intake/items, pre/post-scan check, concurrent newer-run refusal, scope and PostgreSQL tests | Implemented on a branch; hosted gate pending; nonpublishing, no v2 baseline transaction or switch |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
 | DC-004A bounded text extraction | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | `extraction.py`, `FileOSAdapter` | live UTF/HTML/CSV donor parity; fault and end-to-end publication corpus | Complete; hosted gate and restore green |
 | DC-004B isolated PDF/Office | FOS-Master `218d5cae`, `doc_extract.py` + donor tests | document contract/worker/processor + dedicated image | DOCX/XLSX live-donor tokens; real PDF/DOCX/XLSX faults/container/SQL | Complete; hosted container and restore gates green |
@@ -103,12 +104,16 @@ the current v1 importer intentionally refuses the ledger.
 DC-002J provides a [read-only transition preview](FILEOS_DONOR_TRANSITION.md)
 that classifies each prior v1 item without inferring deletion across the policy
 boundary. It is not a completion receipt or cutover authorization.
+DC-002K binds an opt-in private preview to the latest exact completed v1 run,
+checking again after the donor scan. It does not reserve that run after return,
+persist v2 state or change the FileOS completion/absence path.
 
 ## Proposed next tranches
 
-1. **DC-002 donor inventory policy:** review the isolated shadow profile and
-   source-bound candidate, then extend fault/platform acceptance. A separate
-   ADR is required for publishable v2 semantics, prior-v1 transition and rollback.
+1. **DC-002 donor inventory policy:** review the isolated shadow profile,
+   source-bound candidate and completed-baseline preview, then extend
+   fault/platform acceptance. A separate ADR is required for publishable v2
+   semantics, prior-v1 transition transaction and rollback.
 2. **DC-004C archives/images/OCR:** explicit isolated workers and current read are
    implemented. Extend format-specific corpora, containment, donor shadow and
    reviewed selection before any automatic fan-out or cutover.

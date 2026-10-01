@@ -2,6 +2,37 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002K completed FileOS baseline preview (branch verification)
+
+Branch `codex/dc-002k-completed-baseline-preview` starts from verified `main`
+`dd5a165d6deebd94e18019708a6ed8afc178d47f` and leaves pinned FOS-Master
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` unchanged. ADR-114 adds a
+private read-scoped check that binds a v1 manifest to the latest exact completed
+database run, including its intake receipt, policy/root identity, item versions
+and terminal outcome balance. A donor transition preview checks this binding
+before and after scanning; a newer completion during scanning refuses the
+report. There is no v2 persistence, publication or cutover.
+
+Local final-code verification on disposable PostgreSQL 17.11: **2,875 passed,
+one skipped**; 445 of 446 PostgreSQL-marked cases executed. The focused
+real-database regression covers imported-but-incomplete state, exact completion,
+wrong run and changed policy, read-scope denial, a newer completion committed
+during scanning, and stale refusal before source scanning. Twelve focused
+non-database transition tests passed. Ruff, mypy over 88 source files, 134
+browser tests, and documentation inventory (208 Markdown files, 1,125 local
+paths/fragments) passed. The pinned-donor fictional 3,000-file harness matched
+3,004 hashed and metadata-only candidate rows, 3,006 prior-v1
+classifications and six explicit policy gaps, with zero unexplained membership
+differences. The donor checkout remained clean.
+
+An initial local full-suite run had three subprocess import failures because
+this Mac's Python does not expose the editable-install path to isolated or
+environment-scrubbed subprocesses. After installing this branch as a normal
+wheel, the same full suite passed as reported above; no repository fix was
+needed for those three failures. Hosted PR and merged-main CI, strict-runtime
+and populated-restore evidence are still pending. These tests do not establish
+metadata-only v2 publication, live-source behavior or owner acceptance.
+
 ## v0.2.0a1 synthetic-only version checkpoint
 
 Annotated tag [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)

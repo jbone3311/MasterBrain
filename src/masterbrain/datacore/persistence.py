@@ -3658,6 +3658,77 @@ class DataCoreStore:
                 recorded,
             )
 
+    def verify_fileos_completed_baseline(
+        self, ctx: TenantContext, manifest: Mapping[str, Any], run_id: UUID
+    ) -> datetime:
+        """Bind a private v1 manifest to the latest completed, exact-item run.
+
+        This is a read-only transition precondition, not publication authority.
+        The caller must recheck after any potentially long donor scan.
+        """
+        self.store.require(ctx, "brain.changes.read")
+        if not isinstance(run_id, UUID):
+            raise ValueError("invalid FileOS baseline run")
+        source, observed_at, items = validate_fileos_completion_coverage(manifest)
+        manifest_hash = fileos_manifest_sha256(manifest)
+        policy_hash = fileos_inventory_policy_sha256(manifest)
+        root_hash = fileos_manifest_root_binding_sha256(manifest)
+        expected_items = sorted((item.item_id, item.version_id) for item in items)
+        with self.store.transaction(ctx) as conn:
+            latest = conn.execute(
+                "SELECT actor_id,run_id,observed_at,completed_at,manifest_sha256,"
+                "policy_sha256,root_binding_sha256,item_count,outcomes,published_documents "
+                "FROM brain_fileos_run_receipts WHERE source_id=%s "
+                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
+                (source.source_id,),
+            ).fetchone()
+            if (
+                latest is None
+                or latest["run_id"] != run_id
+                or latest["observed_at"] != observed_at
+                or latest["manifest_sha256"] != manifest_hash
+                or latest["policy_sha256"] != policy_hash
+                or latest["root_binding_sha256"] != root_hash
+                or latest["item_count"] != len(items)
+            ):
+                raise Conflict("FileOS completed baseline requires review")
+            bound_source = conn.execute(
+                "SELECT root_binding_sha256 FROM brain_sources WHERE id=%s",
+                (source.source_id,),
+            ).fetchone()
+            if bound_source is None or bound_source["root_binding_sha256"] != root_hash:
+                raise Conflict("FileOS completed baseline requires review")
+            imported = conn.execute(
+                "SELECT request_hash,result FROM brain_import_receipts "
+                "WHERE actor_id=%s AND idempotency_key=%s",
+                (latest["actor_id"], run_id),
+            ).fetchone()
+            if (
+                imported is None
+                or imported["request_hash"] != manifest_hash
+                or not isinstance(imported["result"], Mapping)
+                or imported["result"].get("source_id") != source.source_id
+                or imported["result"].get("observed_items") != len(items)
+            ):
+                raise Conflict("FileOS completed baseline requires review")
+            recorded_items = conn.execute(
+                "SELECT item_id,version_id,outcome FROM brain_fileos_run_items "
+                "WHERE actor_id=%s AND run_id=%s ORDER BY item_id",
+                (latest["actor_id"], run_id),
+            ).fetchall()
+            if [(row["item_id"], row["version_id"]) for row in recorded_items] != expected_items:
+                raise Conflict("FileOS completed baseline requires review")
+            actual_outcomes: dict[str, int] = {}
+            for row in recorded_items:
+                outcome = row["outcome"]
+                actual_outcomes[outcome] = actual_outcomes.get(outcome, 0) + 1
+            if (
+                actual_outcomes != latest["outcomes"]
+                or latest["published_documents"] != actual_outcomes.get("extracted", 0)
+            ):
+                raise Conflict("FileOS completed baseline requires review")
+            return cast(datetime, latest["completed_at"])
+
     def fileos_freshness(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
         """Return the latest complete run, never an in-progress or partial prefix."""
         self.store.require(ctx, "brain.changes.read")

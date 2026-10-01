@@ -4,13 +4,17 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
 from masterbrain.datacore import fileos_donor_candidate as candidate_module
 from masterbrain.datacore import fileos_donor_shadow as shadow_module
 from masterbrain.datacore.fileos import snapshot_tree
-from masterbrain.datacore.fileos_donor_transition import preview_fileos_donor_transition
+from masterbrain.datacore.fileos_donor_transition import (
+    preview_fileos_completed_donor_transition,
+    preview_fileos_donor_transition,
+)
 from masterbrain.datacore.persistence import MAX_MANIFEST_ITEMS
 
 OBSERVED = datetime(2026, 9, 30, tzinfo=UTC)
@@ -164,3 +168,104 @@ def test_oversized_prior_manifest_refuses_before_donor_scan(
     )
     with pytest.raises(ValueError, match="snapshot item bound exceeded"):
         _preview(tmp_path, prior)
+
+
+def test_completed_wrapper_checks_before_and_after_scan(tmp_path: Path) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional proof")
+    prior = _v1(tmp_path)
+    run_id = uuid4()
+
+    class Baseline:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def verify_fileos_completed_baseline(
+            self, _ctx: object, _manifest: dict, _run: object
+        ) -> datetime:
+            self.calls += 1
+            assert _run == run_id
+            return OBSERVED + timedelta(hours=1)
+
+    baseline = Baseline()
+    preview = preview_fileos_completed_donor_transition(
+        baseline, object(), prior, run_id, tmp_path,
+        source_id="files_transition", observed_at=OBSERVED + timedelta(days=1),
+    )
+    assert baseline.calls == 2
+    assert preview["counts"]["unchanged"] == 1
+    assert preview["completed_baseline"]["run_id"] == str(run_id)
+    assert len(preview["completed_baseline"]["manifest_sha256"]) == 64
+    assert preview["publishable"] is False
+
+
+def test_completed_wrapper_refuses_stale_baseline_after_scan(tmp_path: Path) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional proof")
+    prior = _v1(tmp_path)
+
+    class ChangedBaseline:
+        calls = 0
+
+        def verify_fileos_completed_baseline(
+            self, _ctx: object, _manifest: dict, _run: object
+        ) -> datetime:
+            self.calls += 1
+            return OBSERVED + timedelta(hours=self.calls)
+
+    with pytest.raises(ValueError, match="changed during transition"):
+        preview_fileos_completed_donor_transition(
+            ChangedBaseline(), object(), prior, uuid4(), tmp_path,
+            source_id="files_transition", observed_at=OBSERVED + timedelta(days=1),
+        )
+
+
+def test_completed_wrapper_refuses_mutated_manifest_during_scan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional proof")
+    prior = _v1(tmp_path)
+
+    class Baseline:
+        def verify_fileos_completed_baseline(
+            self, _ctx: object, _manifest: dict, _run: object
+        ) -> datetime:
+            return OBSERVED + timedelta(hours=1)
+
+    original = candidate_module.build_fileos_donor_candidate
+
+    def mutate_after_scan(root: Path, **kwargs: object) -> dict:
+        result = original(root, **kwargs)
+        prior["items"][0]["metadata"]["review_note"] = "changed during scan"
+        return result
+
+    monkeypatch.setattr(
+        "masterbrain.datacore.fileos_donor_transition.build_fileos_donor_candidate",
+        mutate_after_scan,
+    )
+    with pytest.raises(ValueError, match="changed during transition"):
+        preview_fileos_completed_donor_transition(
+            Baseline(), object(), prior, uuid4(), tmp_path,
+            source_id="files_transition", observed_at=OBSERVED + timedelta(days=1),
+        )
+
+
+def test_completed_wrapper_refuses_unverified_baseline_before_scan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "proof.txt").write_bytes(b"fictional proof")
+    prior = _v1(tmp_path)
+
+    class MissingBaseline:
+        def verify_fileos_completed_baseline(
+            self, _ctx: object, _manifest: dict, _run: object
+        ) -> datetime:
+            raise ValueError("unverified baseline")
+
+    monkeypatch.setattr(
+        "masterbrain.datacore.fileos_donor_transition.build_fileos_donor_candidate",
+        lambda *_args, **_kwargs: pytest.fail("candidate scan started"),
+    )
+    with pytest.raises(ValueError, match="unverified baseline"):
+        preview_fileos_completed_donor_transition(
+            MissingBaseline(), object(), prior, uuid4(), tmp_path,
+            source_id="files_transition", observed_at=OBSERVED + timedelta(days=1),
+        )

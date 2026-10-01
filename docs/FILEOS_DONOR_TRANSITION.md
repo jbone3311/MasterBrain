@@ -14,6 +14,17 @@ no-follow donor-policy candidate scan and returns a `publishable: false`,
 `requires_review: true` report. A valid snapshot supplied to the function is
 not, by itself, proof that the snapshot has a database completion receipt.
 
+DC-002K adds `preview_fileos_completed_donor_transition(core, ctx,
+prior_manifest, prior_run_id, root, source_id=..., observed_at=...)` for a
+private database-backed review. [ADR-114](adr/114_completed_fileos_baseline_preview.md)
+requires the exact v1 manifest/run to be the latest completed source run,
+matching its intake receipt, policy and root hashes, every completed
+item/version identity and terminal outcome balance. It checks once before the donor scan and again afterward;
+a completion during the scan invalidates the preview. The operation requires
+`brain.changes.read` and returns a `completed_baseline` identity, but it still
+has `publishable: false` and no CLI/API or v2 publication authority. The
+checks do not lock future completions after the report returns.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |
@@ -46,7 +57,7 @@ the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 
-This preview intentionally does not solve the v2 database shape. Before any
+The completed-baseline check does not solve the v2 database shape. Before any
 switch, define and test metadata-only persistence and freshness, an explicit
 owner-reviewed v1-to-v2 baseline transaction, absence suppression across the
 policy boundary, rollback, PostgreSQL/RLS/restore behavior, broader platform
