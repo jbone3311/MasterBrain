@@ -2,6 +2,22 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## v0.2.0a1 synthetic-only version checkpoint
+
+Annotated tag [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
+dereferences to exact merged `main` commit
+`c0a531d8a7d0991be0a0f1ea717479c07cc20feb` (PR #53).
+That commit independently passed
+[full CI 36835220427](https://github.com/jbone3311/MasterBrain/actions/runs/36835220427),
+[strict runtime 36835220388](https://github.com/jbone3311/MasterBrain/actions/runs/36835220388),
+and [populated restore 36835220436](https://github.com/jbone3311/MasterBrain/actions/runs/36835220436).
+Local pinned FOS-Master `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
+DataCore parity passed 3,000 fictional stress files plus fixture scans, edge
+cases, hashes, duplicate comparisons and text/HTML/CSV/DOCX/XLSX extraction.
+The donor checkout remained clean. The tag is for fictional inputs and
+disposable PostgreSQL only; it does not establish interactive Mac, live-source,
+hosted-production, security/operations or FileOS cutover acceptance.
+
 ## DC-002J v1-to-donor transition integration
 
 Branch `codex/dc-002j-policy-transition-preview` begins from `main`
@@ -269,7 +285,8 @@ That exact `main` commit `77192f52e15139fba1fad72264cc54982095f928` passed [full
 At that older checkpoint, this was a fictional-data, test-only alpha candidate.
 Interactive Mac/browser acceptance, the then-open issues #6/#7/#9, production
 operations and donor cutover were not satisfied. Issue #6 has since closed as
-recorded above. FOS-Master is unchanged, and `v0.2.0a1` remains untagged.
+recorded above. FOS-Master is unchanged; at that older checkpoint,
+`v0.2.0a1` had not yet been tagged.
 
 ## `main` synthetic alpha integration checkpoint
 
@@ -285,8 +302,9 @@ The `main` push itself then passed
 and [populated restore 35930140723](https://github.com/jbone3311/MasterBrain/actions/runs/35930140723)
 on the exact merge SHA. This establishes a testable **synthetic alpha baseline**,
 not live-source, production or FileOS cutover acceptance. FOS-Master remains
-untouched. The `v0.2.0a1` tag has not been created through the available GitHub
-connection; the repository currently carries a versioned, untagged checkpoint.
+untouched. The tag was not yet created at this historical checkpoint; the
+current tagged version and its exact evidence are recorded at the top of this
+receipt.
 
 ## MasterBrain synthetic alpha readiness candidate
 

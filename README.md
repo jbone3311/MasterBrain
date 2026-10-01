@@ -5,10 +5,11 @@ combines Email and FileOS source capabilities behind shared ingestion and knowle
 layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compact,
 progressive access with drill-down to original evidence.
 
-**Status:** `0.2.0a1` synthetic alpha candidate, not yet a tagged release.
-The functional baseline reviewed here is `main` commit `c8c428b` (2026-09-25): full CI,
-strict-runtime and populated restore passed. The fictional cross-source browser
-trial is merged, but interactive Mac acceptance is still pending. See
+**Status:** [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
+is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01).
+That exact `main` commit passed full CI, strict runtime, populated restore and
+local pinned-donor DataCore parity. The fictional cross-source browser trial is
+merged, but interactive Mac acceptance is still pending. See
 [current functions](docs/CURRENT_FUNCTIONS.md) and the
 [exact-commit receipt](docs/BUILD_RECEIPT.md). The
 Email capability has executable read-only ingestion, evidence storage, search,
