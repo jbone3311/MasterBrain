@@ -20,8 +20,9 @@ production and FileOS cutover remain open.
   ADR-123 and migration 0044. It binds the exact reviewed plan and prepared
   evidence to an immutable receipt after a latest-v1 check. Synthetic/disposable
   only: no fresh completion scan, v2 ledger, current read, absence inference,
-  live-root authority or FOS-Master cutover. Verification status is recorded in
-  the build receipt; no version tag is implied by this internal tranche.
+  live-root authority or FOS-Master cutover. PR #75 merged with exact-head CI,
+  strict runtime and populated restore green; details are in the build receipt.
+  No version tag is implied by this internal tranche.
 
 - DC-005N changes the private FileOS v1 completion writer to insert run items
   before its receipt; forward migration 0043 keeps the whole-ledger constraint
