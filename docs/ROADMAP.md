@@ -90,8 +90,9 @@ Security and data-integrity blockers take priority over adding more surface area
    DC-002T publishes and accounts for normalized documents on the prepared
    v2 evidence without activating them as current. ADR-126 defines the next
    private tranche: an exact v2 generation in shared DataCore index tables
-   with database-enforced activation refusal. Implementation and tests remain
-   open; current visibility, later v2-run behavior, absence suppression,
+   with database-enforced activation refusal. DC-002U now implements that
+   private builder on a verification branch; current visibility, later v2-run
+   behavior, absence suppression,
    rollback and live acceptance remain separate decisions before any switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;

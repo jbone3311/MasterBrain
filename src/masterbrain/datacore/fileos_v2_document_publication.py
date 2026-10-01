@@ -146,22 +146,37 @@ class FileOSV2DocumentPublisher:
             or _canonical_digest(policy) != completion["policy_sha256"]
         ):
             raise Conflict("FileOS v2 document policy requires review")
-        rows = conn.execute(
-            "SELECT r.locator,r.item_id,r.version_id AS candidate_version_id,"
-            "r.sha256,r.size_bytes,r.media_type,p.prepared_version_id,p.evidence_id "
-            "FROM brain_fileos_v2_staged_rows r "
-            "LEFT JOIN brain_fileos_v2_prepared_rows p ON p.tenant_id=r.tenant_id "
-            "AND p.stage_id=r.stage_id "
-            "AND p.source_id=r.source_id AND p.locator=r.locator "
-            "AND p.item_id=r.item_id AND p.candidate_version_id=r.version_id "
-            "WHERE r.tenant_id=%s AND r.stage_id=%s AND r.kind='hashed' "
-            "ORDER BY r.locator",
+        staged_rows = conn.execute(
+            "SELECT locator,source_id,item_id,version_id AS candidate_version_id,"
+            "sha256,size_bytes,media_type FROM brain_fileos_v2_staged_rows "
+            "WHERE tenant_id=%s AND stage_id=%s AND kind='hashed' ORDER BY locator",
             (ctx.tenant_id, completion["stage_id"]),
         ).fetchall()
-        if len(rows) != completion["hashed_count"] or any(
-            row["prepared_version_id"] is None or row["evidence_id"] is None for row in rows
+        prepared_rows = conn.execute(
+            "SELECT locator,source_id,item_id,candidate_version_id,"
+            "prepared_version_id,evidence_id FROM brain_fileos_v2_prepared_rows "
+            "WHERE tenant_id=%s AND stage_id=%s ORDER BY locator",
+            (ctx.tenant_id, completion["stage_id"]),
+        ).fetchall()
+        if (
+            len(staged_rows) != completion["hashed_count"]
+            or len(prepared_rows) != completion["hashed_count"]
         ):
             raise Conflict("FileOS v2 document evidence requires review")
+        rows: list[dict[str, Any]] = []
+        for staged, prepared in zip(staged_rows, prepared_rows, strict=True):
+            if (
+                staged["locator"] != prepared["locator"]
+                or staged["source_id"] != prepared["source_id"]
+                or staged["item_id"] != prepared["item_id"]
+                or staged["candidate_version_id"] != prepared["candidate_version_id"]
+            ):
+                raise Conflict("FileOS v2 document evidence requires review")
+            rows.append({
+                **staged,
+                "prepared_version_id": prepared["prepared_version_id"],
+                "evidence_id": prepared["evidence_id"],
+            })
         return completion, policy, rows
 
     @staticmethod

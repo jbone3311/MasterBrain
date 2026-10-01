@@ -37,12 +37,15 @@ donor remains unchanged at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`.
   from the already-published normalized bodies. It does not reopen source
   files, rerun extraction or call a model. Existing document IDs, body digests,
   deterministic chunk IDs and bounds are revalidated. An identical request
-  replays the ready generation; altered code/chunker/plan identity conflicts.
+  replays the ready generation; a different code/chunker plan creates a
+  separately identified immutable generation and cannot replace the first.
 - Extend PostgreSQL readiness validation to close the v2 generation against
   the exact attempt items, documents and immutable `brain_chunks` set, not
   just declared counts.
-  The v1 readiness branch remains unchanged. Source-locked SQL guards reject
-  direct insertion against a stale v1 baseline or unready attempt. Existing
+  The v1 readiness branch remains unchanged. Source locks cover generation
+  children and receipts even if a competing parent is not yet visible, so a
+  late child cannot slip in after readiness. SQL guards reject direct
+  insertion against a stale v1 baseline or unready attempt. Existing
   forced RLS, tenant-login fencing, append-only protection, protected
   truncation and runtime least-privilege grants apply to the expanded common
   tables.

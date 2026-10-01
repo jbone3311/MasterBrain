@@ -65,6 +65,7 @@ from masterbrain.datacore.fileos_v2_authorization import FileOSV2BaselineAuthori
 from masterbrain.datacore.fileos_v2_baseline import FileOSV2BaselineVerifier
 from masterbrain.datacore.fileos_v2_completion import FileOSV2BaselineCompleter
 from masterbrain.datacore.fileos_v2_document_publication import FileOSV2DocumentPublisher
+from masterbrain.datacore.fileos_v2_index_generation import FileOSV2IndexBuilder
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
@@ -6270,6 +6271,111 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "SELECT * FROM brain_fileos_v2_document_attempt_items "
                 "WHERE attempt_id=%s AND locator='new.txt'", (attempt_id,),
             )
+    index_worker = Principal(
+        replace(publication_worker.context, scopes=publication_worker.context.scopes
+                | frozenset({"brain.fileos.transition.index", "brain.index.activate"})),
+        "worker",
+    )
+    builder = FileOSV2IndexBuilder(core)
+    with pytest.raises(AccessDenied, match="worker required"):
+        builder.build(authorizing_human, completion_id, attempt_id,
+                      code_revision="test-v2-index")
+    with pytest.raises(AccessDenied, match="scope denied"):
+        builder.build(publication_worker, completion_id, attempt_id,
+                      code_revision="test-v2-index")
+    with pytest.raises(Conflict, match="requires review"):
+        builder.build(index_worker, completion_id, blocked_id,
+                      code_revision="test-v2-index")
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [
+            pool.submit(builder.build, index_worker, completion_id, attempt_id,
+                        code_revision="test-v2-index") for _ in range(2)
+        ]
+        generations = [future.result(timeout=30) for future in futures]
+    assert sorted(generation.recorded for generation in generations) == [False, True]
+    generation = next(value for value in generations if value.recorded)
+    assert generation.item_count == 2
+    assert generation.document_count == 2
+    assert generation.chunk_count >= 2
+    assert builder.build(index_worker, completion_id, attempt_id,
+                         code_revision="test-v2-index") == replace(generation, recorded=False)
+    rebuilt = builder.build(
+        index_worker, completion_id, attempt_id, code_revision="test-v2-index-rebuild",
+    )
+    assert rebuilt.generation_id != generation.generation_id
+    assert (rebuilt.item_count, rebuilt.document_count, rebuilt.chunk_count) == (
+        generation.item_count, generation.document_count, generation.chunk_count,
+    )
+    with pytest.raises(NotFound):
+        builder.build(
+            Principal(replace(index_worker.context, tenant_id=other_tenant,
+                              actor_id=other_actor), "worker"),
+            completion_id, attempt_id, code_revision="test-v2-index",
+        )
+    with pytest.raises(psycopg.errors.RaiseException, match="ready index generation"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generation_chunks(tenant_id,generation_id,"
+                "source_id,document_id,id,ordinal,start_offset,end_offset,text,sha256) "
+                "SELECT tenant_id,generation_id,source_id,document_id,'v2_late_chunk',"
+                "99,0,1,'x',%s FROM brain_index_generation_chunks "
+                "WHERE generation_id=%s LIMIT 1",
+                (hashlib.sha256(b"x").hexdigest(), generation.generation_id),
+            )
+    with pytest.raises(psycopg.errors.RaiseException, match="not authorized"):
+        core.activate_fileos_index_generation(
+            index_worker.context, source_id, generation.generation_id, uuid4(),
+        )
+    with pytest.raises(psycopg.errors.RaiseException, match="not complete"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,run_actor_id,"
+                "run_id,observed_at,plan_sha256,code_revision,chunker_version,item_count,"
+                "document_count,chunk_count,basis_kind,v2_stage_id,v2_completion_id,"
+                "v2_attempt_id,v2_completion_sha256,v2_attempt_sha256,v2_policy_sha256,"
+                "v2_stage_counts) SELECT tenant_id,'v2_forged_generation',source_id,NULL,"
+                "NULL,observed_at,%s,code_revision,chunker_version,item_count,"
+                "document_count,chunk_count,basis_kind,v2_stage_id,v2_completion_id,"
+                "v2_attempt_id,v2_completion_sha256,v2_attempt_sha256,v2_policy_sha256,"
+                "v2_stage_counts FROM brain_index_generations WHERE id=%s",
+                ("0" * 64, generation.generation_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_receipts(tenant_id,generation_id,source_id) "
+                "VALUES (%s,'v2_forged_generation',%s)", (ctx.tenant_id, source_id),
+            )
+    with pytest.raises(psycopg.errors.RaiseException, match="chunks are not exact"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,run_actor_id,"
+                "run_id,observed_at,plan_sha256,code_revision,chunker_version,item_count,"
+                "document_count,chunk_count,basis_kind,v2_stage_id,v2_completion_id,"
+                "v2_attempt_id,v2_completion_sha256,v2_attempt_sha256,v2_policy_sha256,"
+                "v2_stage_counts) SELECT tenant_id,'v2_forged_chunks',source_id,NULL,"
+                "NULL,observed_at,%s,code_revision,chunker_version,item_count,"
+                "document_count,chunk_count,basis_kind,v2_stage_id,v2_completion_id,"
+                "v2_attempt_id,v2_completion_sha256,v2_attempt_sha256,v2_policy_sha256,"
+                "v2_stage_counts FROM brain_index_generations WHERE id=%s",
+                ("1" * 64, generation.generation_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_items SELECT tenant_id,"
+                "'v2_forged_chunks',source_id,item_id,version_id,outcome,disposition,"
+                "evidence_id,document_id FROM brain_index_generation_items "
+                "WHERE generation_id=%s", (generation.generation_id,),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_chunks(tenant_id,generation_id,"
+                "source_id,document_id,id,ordinal,start_offset,end_offset,text,sha256) "
+                "SELECT tenant_id,'v2_forged_chunks',source_id,document_id,id,ordinal,"
+                "start_offset,end_offset,text || 'x',sha256 "
+                "FROM brain_index_generation_chunks WHERE generation_id=%s",
+                (generation.generation_id,),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_receipts(tenant_id,generation_id,source_id) "
+                "VALUES (%s,'v2_forged_chunks',%s)", (ctx.tenant_id, source_id),
+            )
     with store.transaction(ctx) as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_fileos_v2_document_attempt_items "
@@ -6279,6 +6385,10 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             "SELECT count(*) AS n FROM brain_index_activations WHERE source_id=%s",
             (source_id,),
         ).fetchone()["n"] == 0
+        assert conn.execute(
+            "SELECT basis_kind FROM brain_index_generations WHERE id=%s",
+            (generation.generation_id,),
+        ).fetchone()["basis_kind"] == "v2"
         assert conn.execute(
             "SELECT current_version_id FROM brain_source_items WHERE source_id=%s "
             "AND locator='changed.txt'", (source_id,),
@@ -6348,6 +6458,9 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     with pytest.raises(Conflict, match="requires review"):
         publisher.publish(publication_worker, completion_id, uuid4(), tmp_path,
                           code_revision="test-v2-documents")
+    with pytest.raises(Conflict, match="requires review"):
+        builder.build(index_worker, completion_id, attempt_id,
+                      code_revision="test-v2-index")
     with pytest.raises(psycopg.errors.RaiseException, match="stale FileOS"):
         with store.transaction(ctx) as conn:
             conn.execute(
@@ -6499,6 +6612,16 @@ def test_fileos_v2_preparation_keeps_metadata_only_rows_hashless(
     )
     assert attempt.ready is True
     assert sum(attempt.counts.values()) == 0
+    generation = FileOSV2IndexBuilder(core).build(
+        Principal(replace(document_worker.context, scopes=document_worker.context.scopes
+                          | frozenset({"brain.fileos.transition.index"})), "worker"),
+        completed.completion_id, attempt.attempt_id,
+        code_revision="test-v2-metadata-index",
+    )
+    assert (generation.item_count, generation.document_count, generation.chunk_count) == (
+        0, 0, 0,
+    )
+    assert core.fileos_index_status(ctx, source_id)["status"] == "no_active_generation"
     with store.transaction(ctx) as conn:
         assert (
             conn.execute(
@@ -6665,6 +6788,16 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
     )
     assert attempt.ready is True
     assert attempt.counts["extracted"] == 3000
+    generation = FileOSV2IndexBuilder(core).build(
+        Principal(replace(publication_worker.context,
+                          scopes=publication_worker.context.scopes
+                          | frozenset({"brain.fileos.transition.index"})), "worker"),
+        completed.completion_id, attempt.attempt_id,
+        code_revision="test-v2-index-stress",
+    )
+    assert generation.item_count == 3000
+    assert generation.document_count == 3000
+    assert generation.chunk_count == 3000
     with store.transaction(ctx) as conn:
         assert (
             conn.execute(

@@ -212,6 +212,14 @@ are historical; current v1 visibility and absence authority do not change.
 Retained-history search can expose successfully published v2 derivatives under
 its existing authorization, so clients must not present that layer as current.
 
+ADR-126 adds a worker-only `brain.fileos.transition.index` scope for building
+an exact v2 generation in the existing DataCore index tables. PostgreSQL binds
+it to the ready attempt and source-locked latest-v1 baseline, validates every
+hashed item and published chunk at readiness, and rejects direct-SQL v2
+activation. It does not reopen source files, grant a new read route or infer
+absence. The private builder remains synthetic/disposable until full gates
+pass; FOS-Master remains the unchanged operational donor.
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.

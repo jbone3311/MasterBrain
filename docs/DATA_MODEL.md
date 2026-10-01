@@ -175,6 +175,16 @@ attempt has no changed/failed rows, and only one ready attempt is allowed per
 completion. The tables do not activate v2 current reads or absence. See
 [ADR-125](adr/125_fileos_v2_baseline_document_publication.md).
 
+Migration `0047_fileos_v2_shared_index_generation.sql` extends the existing
+DataCore generation parent with an exactly-one-of-v1-or-v2 basis. A v2 basis
+binds the completed stage and one ready document attempt; its item and chunk
+children reuse the existing immutable generation tables. Readiness validates
+exact hashed attempt membership and published chunk identities against the
+base `brain_chunks` ledger. The stage count map preserves nonindexed hashless
+and excluded observations without inventing items or documents. SQL refuses
+every v2 activation; v1 generations and current reads remain unchanged. See
+[ADR-126](adr/126_fileos_v2_shared_index_generation.md).
+
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;
