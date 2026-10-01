@@ -2,7 +2,7 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-120 isolated-controller failure diagnostics — local validation
+## ADR-120 isolated-controller failure diagnostics — merged verification
 
 Branch `codex/mime-sandbox-failure-diagnostics` starts from merged `main`
 `6f71a7a09ac53a913191214f58b3da656b65f2b2`. The prior `main` full CI,
@@ -20,6 +20,18 @@ inventory (214 Markdown files, 1,164 local paths/fragments) pass. No local
 Docker is installed, so the real-container proof must come from hosted CI.
 No version tag is warranted for this diagnostic-only increment; issue #64
 remains open and this is not a release.
+
+[PR #68](https://github.com/jbone3311/MasterBrain/pull/68) exact head
+`642608d663d12661fc803aa4c73a0a45ff714bab` passed
+[full CI and restricted-container checks](https://github.com/jbone3311/MasterBrain/actions/runs/36881603973),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36881604054)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36881604057).
+It merged to `main` at `dc596dbad5ded95834f5c38e96b19bf955d5d39b`.
+Post-merge [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36883070762),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36883070772)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36883070747)
+all passed, including the real restricted large-MIME check. This does not prove the
+intermittent failure is fixed; no instrumented recurrence occurred.
 
 ## DC-002P approved-stage fresh verification — merged verification
 
