@@ -67,6 +67,7 @@ FileOS sources ┘       │              │                │
 | Completed FileOS inventory and absence reconciliation evidence | Implemented; hosted PostgreSQL and restore gates green |
 | Deterministic FileOS rebuild preview | Implemented; hosted PostgreSQL and restore gates green |
 | Immutable FileOS index generations, activation and rollback | Implemented; hosted PostgreSQL and restore gates green |
+| Private FileOS v2 generation in shared index tables | Merged; exact-head and merged-main gates green; v2 activation/current reads refused |
 | Private FileOS generation/rollback operator | Implemented; hosted PostgreSQL and restore gates green |
 | Cross-source current FileOS search | Implemented; hosted PostgreSQL and restore gates green |
 | Current FileOS + KnowledgeCore grouped retrieval | Implemented; hosted PostgreSQL and restore gates green |

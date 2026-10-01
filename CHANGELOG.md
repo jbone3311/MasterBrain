@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Merged the private FileOS v2 shared index-generation tranche (ADR-126,
+  migration 0047, PR #81). Exact-head and merged-main CI, strict runtime and
+  populated restore passed. V2 activation and current reads remain prohibited;
+  FOS-Master is unchanged.
 - Clarified the final product contract: a first-party MasterBrain chat and
   approved external assistants use the same scoped Brain API; a central private
   service holds authoritative state, while later Email/FileOS changes require
