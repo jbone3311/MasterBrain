@@ -2,6 +2,35 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002U FileOS v2 shared generation — local branch verification
+
+ADR-126, migration 0047 and `FileOSV2IndexBuilder` extend the existing
+DataCore generation tables with an exact v2 completion/ready-attempt basis.
+One generation item is bound to each hashed attempt item, and readiness
+checks exact document and base-chunk closure. A PostgreSQL trigger rejects
+all v2 activation, including direct SQL; v1 current search, absence and
+FOS-Master remain unchanged. A different code revision produces a distinct
+immutable generation rather than replacing prior history.
+
+On a fresh disposable local PostgreSQL 17.11 database, the full suite passed
+**2,894 tests, one skipped** in 142.64 seconds, with 456 of 457
+PostgreSQL-marked tests executed. The end-to-end 3,000-hashed-row publication
+and generation stress case passed separately in 60.86 seconds and again in the
+full suite. Early stress attempts exposed five-second statement timeouts in
+the v2 readiness anti-join, exact membership join and the earlier publication
+ledger read. The final candidate uses exact set-based ledger comparison and
+separate indexed source/preparation reads; the database statement budget was
+not raised. Focused tests cover zero-hash readiness, same-plan replay,
+distinct-revision history, concurrent build, forged/missing/chunk rows,
+late-child refusal, wrong tenant/scope/client, stale v1 baseline and no
+current-read effect. Locked dependency sync, Ruff, strict mypy over 95 source
+files, 134 browser tests, the documentation inventory and local deployment
+quality gate passed. The pinned FOS-Master 3,000-file hash/extraction parity
+and donor-policy shadow passed with zero unexplained membership differences;
+six explicit policy gaps remain. The donor repo was not changed. This is local
+verification only, not exact-head CI, production acceptance or v2 activation;
+no version tag is assigned.
+
 ## DC-002T FileOS v2 private document publication — merged verification
 
 PR [#79](https://github.com/jbone3311/MasterBrain/pull/79) merged at
