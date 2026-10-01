@@ -41,6 +41,11 @@ scopes, limits and response shapes are in [BRAIN_API.md](BRAIN_API.md).
   projects, commitments and corrections; lexical search, exact expansion and
   changes. These are base records, not a finished project-management system.
 
+The private DataCore library also supports `stage_fileos_v2_inventory` for one
+sealed donor transition packet. It stores a nonpublishing v2 row ledger with
+hashless observations kept distinct from evidence versions. It has no CLI or
+Brain API route and does not alter any current FileOS read.
+
 ## Operator and shared processing functions
 
 The preferred `masterbrain` command is defined in

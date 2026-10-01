@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added an immutable, nonpublishing FileOS v2 staging ledger (ADR-117,
+  migration 0039). It retains hashed, metadata-only deferred, excluded and
+  error observations separately without fabricating versions or changing v1
+  freshness, absence, search, source files or FOS-Master.
 - Added a private, bounded read of sealed FileOS transition packets (ADR-116):
   locator-free summary, separately authorized detail pages, digest verification
   and read-time latest-receipt status. No API route, approval or cutover.

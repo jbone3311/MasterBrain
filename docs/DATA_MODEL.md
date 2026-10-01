@@ -111,6 +111,14 @@ canonical packet digest support private review and provenance, not v2 current
 state. Search, freshness, absence and publication do not read it. See
 [ADR-115](adr/115_fileos_transition_review_packet.md).
 
+Migration `0039_fileos_v2_staged_inventory.sql` adds an immutable, forced-RLS
+staging header and exact-count row ledger linked to a sealed transition packet
+and its completed-v1 receipt. Hashed rows carry a candidate version and SHA;
+deferred `no_hash`, `dataless` and `oversize` rows carry neither. Exclusion and
+error rows remain explicit. These tables are not a completed v2 run and no
+freshness, absence, index or search query consumes them. See
+[ADR-117](adr/117_fileos_v2_staged_inventory.md).
+
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;

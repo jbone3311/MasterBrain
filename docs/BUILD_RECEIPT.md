@@ -2,6 +2,31 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002N nonpublishing FileOS v2 staging — branch verification
+
+Branch `codex/dc-002n-v2-inventory-staging` starts at verified `main`
+`f42ed3d49b6c6e79f89c952f4cff5defbea34712`. ADR-117 and migration 0039
+add a private, relational staging shape for hashed, hashless deferred, excluded
+and error donor observations. A sealed packet is checked against the latest
+completed v1 receipt under the source lock. Staging has no v2 completion,
+freshness, absence, index, search, API, cutover or source-effect authority.
+
+Local PostgreSQL 17.11 full suite on the final header-last staging design:
+**2,881 passed, one skipped**; 449 PostgreSQL-marked cases collected, 448 executed and one
+skipped. Ruff, mypy (88 source files), 134 browser tests, 29 restore-drill unit
+tests, deployment quality gate and offline documentation inventory (211 Markdown
+files, 1,146 paths/fragments) passed. The pinned-donor 3,000-file fictional
+comparison matched 3,004 hashed and metadata-only rows, 3,006 prior-v1
+classifications and six explicit policy gaps, with zero unexplained membership
+differences; FOS-Master remains at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
+and clean. The local container restore attempt stopped before creating a drill
+container because this Mac could not inspect Docker; hosted populated restore
+is required before merge. No new product tag is warranted for a nonpublishing
+stage. The final suite staged **3,000 hashless rows** with the header-last,
+single-recount SQL design; count-mismatch and late-insert refusals passed.
+[PR #61](https://github.com/jbone3311/MasterBrain/pull/61) hosts the branch;
+hosted exact-head run links will be recorded after those gates finish.
+
 ## DC-002M bounded transition review read — merged verification
 
 Branch `codex/dc-002m-transition-review-read` begins at exact verified `main`

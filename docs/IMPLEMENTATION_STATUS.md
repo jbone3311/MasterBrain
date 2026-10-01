@@ -16,6 +16,11 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- DC-002N adds private, nonpublishing v2 inventory staging under ADR-117 and
+  migration 0039. It projects one sealed transition packet into immutable
+  hashed, hashless deferred, exclusion and error rows, with SQL count balance
+  and exact latest-v1 binding. No v2 completion, freshness, absence, search,
+  approval or FileOS cutover consumes the stage.
 - DC-002M adds a compact private read of a sealed FileOS transition packet,
   with separately scoped, at-most-50-row locator pages. It checks the stored
   digest and reports whether the latest receipt still matches at read time.

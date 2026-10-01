@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-117](adr/117_fileos_v2_staged_inventory.md) adds a relational,
+nonpublishing FileOS v2 staging ledger. Hashless donor observations persist
+without fabricated versions or digests; staging is not freshness or cutover.
+
 [ADR-116](adr/116_private_fileos_transition_review_read.md) allows a compact,
 locator-free private summary and separately scoped, bounded detail pages of a
 sealed transition packet. Current-run status is not transition approval.
