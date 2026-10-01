@@ -85,9 +85,11 @@ Security and data-integrity blockers take priority over adding more surface area
    pointer and all search/freshness state unchanged. DC-005N addresses the
    separate v1 large-completion ledger cost before broader transition stress.
    DC-002R adds separately scoped, synthetic-only owner authorization bound
-   to the exact preparation and plan. The next v2 tranche must implement a
-   fresh, source-locked completion ledger; visibility, absence suppression
-   and rollback remain separate decisions before any policy switch.
+   to the exact preparation and plan. DC-002S now seals a fresh,
+   source-locked private completion ledger with a compact inspection.
+   The next tranche must define explicit current visibility and later v2-run
+   behavior; absence suppression, rollback and live acceptance remain separate
+   decisions before any policy switch.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container

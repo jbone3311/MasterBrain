@@ -106,6 +106,17 @@ not publication by itself. It makes no fresh filesystem claim and changes no
 current pointer, search, freshness, absence or FileOS operation. There is no
 API/CLI route or live-source acceptance.
 
+DC-002S adds `FileOSV2BaselineCompleter.complete(worker, stage_id,
+approval_id, preparation_id, authorization_id, completion_id, root)` under
+[ADR-124](adr/124_fileos_v2_baseline_completion.md). Under the source lock it
+rechecks the exact owner decision, preparation and latest v1 receipt, then
+scans the root again. An exact policy/count/row match seals a private,
+historically complete baseline over the immutable stage and hashed-evidence
+mapping. `inspect(ctx, source_id)` returns a locator-free receipt summary and
+read-time latest-v1 match. Hashless observations stay hashless. Neither call
+changes v1 current pointers, freshness, absence, active indexes or search;
+no CLI/API route or live-source acceptance exists.
+
 Every prior v1 item gets exactly one state:
 
 | State | Interpretation |
@@ -138,10 +149,9 @@ the bound is not relaxed to make the stress test pass.
 
 ## Remaining publication gate
 
-The staged row model, hashed-evidence preparation and owner authorization solve
-part of v2 intake, but not v2 freshness or publication. Before any switch,
-define and test a fresh, source-locked v1-to-v2 baseline completion transaction,
-absence suppression across the
-policy boundary, rollback, PostgreSQL/RLS/restore behavior, broader platform
+The staged rows, prepared evidence, owner authorization and private completion
+receipt establish a historical v2 baseline, but not current v2 visibility or
+publication. Before any switch, define and test later v2 runs, explicit read
+activation, absence suppression across the policy boundary, rollback, broader platform
 and cloud-placeholder parity, authorized read-only live shadow, and bounded
 cohort acceptance. A green synthetic preview alone cannot satisfy those gates.

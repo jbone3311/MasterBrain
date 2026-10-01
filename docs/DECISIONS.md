@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-124](adr/124_fileos_v2_baseline_completion.md) seals one historically
+complete, owner-authorized FileOS v2 baseline after a fresh exact donor-policy
+scan. Its private receipt reuses the immutable staged membership ledger;
+current reads, absence and FOS-Master cutover remain unchanged.
+
 [ADR-123](adr/123_fileos_v2_baseline_authorization.md) requires a distinct,
 human-owner authorization bound to the exact reviewed plan and prepared v2
 evidence. It is synthetic-only and does not complete a v2 run, switch reads,

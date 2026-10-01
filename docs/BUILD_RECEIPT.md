@@ -2,6 +2,33 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002S FileOS v2 private baseline completion — local verification
+
+ADR-124, migration 0045 and `FileOSV2BaselineCompleter` add a worker-only,
+source-locked fresh scan that seals one owner-authorized v2 historical baseline.
+The immutable staged rows and prepared evidence remain its membership ledger;
+the compact private inspection explicitly reports no current-read or absence
+authority. FOS-Master and v1 reads remain unchanged. This branch is not a
+live-root acceptance, v2 current-search switch or FileOS cutover.
+
+On a fresh disposable PostgreSQL 17.11 database, the full local suite passed
+**2,894 tests, one skipped** in 234.20 seconds, with 456 of 457
+PostgreSQL-marked tests executed. The completion regression covers exact
+success/replay, changed source, wrong client/scope/identity/root/tenant,
+direct-SQL stale refusal, protected mutation/truncation, no v1/current effect,
+metadata-only hashless evidence and 3,000 hashed rows. Locked dependency
+sync, Ruff, strict mypy over 93 source files, 134 browser tests, the offline
+documentation inventory and local deployment quality gate passed. The pinned
+FOS-Master 3,000-file donor-policy shadow returned 3,004 matching candidate
+rows, zero unexplained membership differences and six explicit policy gaps.
+
+An initial local full run had nine asset/isolated-command failures after the
+macOS editable package install lost its resource/module path; reinstalling the
+same local package non-editably resolved them, and the complete rerun above
+passed. This receipt is local branch evidence pending exact-head GitHub CI,
+strict runtime and populated restore. No version tag is appropriate for a
+private nonpublishing baseline.
+
 ## DC-002R FileOS v2 owner baseline authorization — merged verification
 
 PR [#75](https://github.com/jbone3311/MasterBrain/pull/75) merged at

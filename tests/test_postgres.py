@@ -62,6 +62,7 @@ from masterbrain.datacore.fileos_donor_transition import (
 from masterbrain.datacore.fileos_transition_approval import FileOSV2TransitionReview
 from masterbrain.datacore.fileos_v2_authorization import FileOSV2BaselineAuthorizer
 from masterbrain.datacore.fileos_v2_baseline import FileOSV2BaselineVerifier
+from masterbrain.datacore.fileos_v2_completion import FileOSV2BaselineCompleter
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
@@ -5812,6 +5813,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     verifier = FileOSV2BaselineVerifier(core)
     preparer = FileOSV2EvidencePreparer(core)
     authorizer = FileOSV2BaselineAuthorizer(core)
+    completer = FileOSV2BaselineCompleter(core)
     source_id = "files_v2_prepare"
     changed = tmp_path / "changed.txt"
     changed.write_bytes(b"synthetic prior proof")
@@ -5978,6 +5980,57 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             authorizing_human, stage_id, approval_id, preparation_id,
             uuid4(), **authorization_args,
         )
+    completion_id = uuid4()
+    completion_worker = Principal(
+        replace(worker.context, scopes=worker.context.scopes | frozenset({
+            "brain.fileos.transition.complete",
+        })),
+        "worker",
+    )
+    with pytest.raises(AccessDenied, match="worker required"):
+        completer.complete(
+            authorizing_human, stage_id, approval_id, preparation_id,
+            authorization_id, completion_id, tmp_path,
+        )
+    with pytest.raises(AccessDenied, match="scope denied"):
+        completer.complete(
+            worker, stage_id, approval_id, preparation_id,
+            authorization_id, completion_id, tmp_path,
+        )
+    with pytest.raises(Conflict, match="authorization requires review"):
+        completer.complete(
+            completion_worker, stage_id, approval_id, preparation_id,
+            uuid4(), completion_id, tmp_path,
+        )
+    changed.write_bytes(b"synthetic completion drift")
+    with pytest.raises(Conflict, match="source changed"):
+        completer.complete(
+            completion_worker, stage_id, approval_id, preparation_id,
+            authorization_id, completion_id, tmp_path,
+        )
+    changed.write_bytes(b"synthetic changed proof")
+    completed = completer.complete(
+        completion_worker, stage_id, approval_id, preparation_id,
+        authorization_id, completion_id, tmp_path,
+    )
+    assert completed.recorded is True
+    assert completed.counts == plan["acknowledged_counts"]["candidate_counts"]
+    private_baseline = completer.inspect(ctx, source_id)
+    assert private_baseline["completion_id"] == completion_id
+    assert private_baseline["latest_v1_matches"] is True
+    assert private_baseline["current_read_active"] is False
+    assert private_baseline["absence_authorized"] is False
+    with pytest.raises(AccessDenied, match="scope denied"):
+        completer.inspect(replace(ctx, scopes=frozenset()), source_id)
+    assert completer.complete(
+        completion_worker, stage_id, approval_id, preparation_id,
+        authorization_id, completion_id, tmp_path,
+    ) == replace(completed, recorded=False)
+    with pytest.raises(Conflict, match="identity changed"):
+        completer.complete(
+            completion_worker, stage_id, approval_id, preparation_id,
+            authorization_id, uuid4(), tmp_path,
+        )
     with pytest.raises(Conflict, match="identity changed"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, uuid4(), tmp_path)
     wrong_root = tmp_path.parent / f"wrong-prepare-root-{uuid4().hex}"
@@ -5986,6 +6039,11 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     (wrong_root / "new.txt").write_bytes((tmp_path / "new.txt").read_bytes())
     with pytest.raises(Conflict, match="source requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, wrong_root)
+    with pytest.raises(Conflict, match="source requires review"):
+        completer.complete(
+            completion_worker, stage_id, approval_id, preparation_id,
+            authorization_id, completion_id, wrong_root,
+        )
     with store.transaction(ctx) as conn:
         assert (
             conn.execute(
@@ -6040,6 +6098,11 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             ).fetchone()["n"]
             == 0
         )
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_baseline_completions "
+            "WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 1
         assert (
             conn.execute(
                 "SELECT count(*) AS n FROM brain_change_events WHERE source_id=%s",
@@ -6053,7 +6116,17 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             conn.execute("TRUNCATE brain_fileos_v2_evidence_preparations CASCADE")
     with psycopg.connect(admin) as conn:
         with pytest.raises(psycopg.Error, match="protected record"):
-            conn.execute("TRUNCATE brain_fileos_v2_baseline_authorizations")
+            conn.execute("TRUNCATE brain_fileos_v2_baseline_authorizations CASCADE")
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.Error, match="protected record"):
+            conn.execute("TRUNCATE brain_fileos_v2_baseline_completions")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_baseline_completions "
+                "SET completion_sha256=%s WHERE id=%s",
+                ("0" * 64, completion_id),
+            )
     with pytest.raises(psycopg.Error):
         with store.transaction(ctx) as conn:
             conn.execute(
@@ -6104,6 +6177,14 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             ), stage_id, approval_id,
             preparation_id, uuid4(), **authorization_args,
         )
+    with pytest.raises(NotFound):
+        completer.complete(
+            Principal(
+                replace(completion_worker.context, tenant_id=other_tenant, actor_id=other_actor),
+                "worker",
+            ), stage_id, approval_id, preparation_id,
+            authorization_id, uuid4(), tmp_path,
+        )
     next_manifest = snapshot_tree(
         tmp_path,
         source_id=source_id,
@@ -6129,6 +6210,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         ).fetchone()["current_version_id"] == next(
             item["version_id"] for item in next_manifest["items"] if item["locator"] == "new.txt"
         )
+    assert completer.inspect(ctx, source_id)["latest_v1_matches"] is False
     with pytest.raises(Conflict, match="requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, tmp_path)
     with pytest.raises(Conflict, match="requires review"):
@@ -6136,6 +6218,18 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             authorizing_human, stage_id, approval_id, preparation_id,
             authorization_id, **authorization_args,
         )
+    with pytest.raises(Conflict, match="requires review"):
+        completer.complete(
+            completion_worker, stage_id, approval_id, preparation_id,
+            authorization_id, completion_id, tmp_path,
+        )
+    with pytest.raises(psycopg.errors.RaiseException, match="stale FileOS"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_baseline_completions "
+                "SELECT * FROM brain_fileos_v2_baseline_completions WHERE id=%s",
+                (completion_id,),
+            )
     with pytest.raises(psycopg.errors.RaiseException, match="stale FileOS"):
         with store.transaction(ctx) as conn:
             conn.execute(
@@ -6236,6 +6330,38 @@ def test_fileos_v2_preparation_keeps_metadata_only_rows_hashless(
         tmp_path,
     )
     assert prepared.hashed_count == 0
+    authorization_id = uuid4()
+    FileOSV2BaselineAuthorizer(core).authorize(
+        Principal(
+            replace(human.context, scopes=human.context.scopes | frozenset({
+                "brain.fileos.transition.authorize",
+            })),
+            "human",
+        ),
+        stage_id,
+        approval_id,
+        prepared.preparation_id,
+        authorization_id,
+        expected_plan_sha256=plan["plan_sha256"],
+        expected_preparation_sha256=prepared.preparation_sha256,
+        acknowledged_counts=plan["acknowledged_counts"],
+    )
+    completed = FileOSV2BaselineCompleter(core).complete(
+        Principal(
+            replace(worker.context, scopes=worker.context.scopes | frozenset({
+                "brain.fileos.transition.complete",
+            })),
+            "worker",
+        ),
+        stage_id,
+        approval_id,
+        prepared.preparation_id,
+        authorization_id,
+        uuid4(),
+        tmp_path,
+    )
+    assert completed.counts["hashed"] == 0
+    assert completed.counts["deferred"] == 1
     with store.transaction(ctx) as conn:
         assert (
             conn.execute(
@@ -6355,6 +6481,37 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
         tmp_path,
     )
     assert prepared.hashed_count == 3000
+    authorization_id = uuid4()
+    FileOSV2BaselineAuthorizer(core).authorize(
+        Principal(
+            replace(human.context, scopes=human.context.scopes | frozenset({
+                "brain.fileos.transition.authorize",
+            })),
+            "human",
+        ),
+        stage_id,
+        approval_id,
+        prepared.preparation_id,
+        authorization_id,
+        expected_plan_sha256=plan["plan_sha256"],
+        expected_preparation_sha256=prepared.preparation_sha256,
+        acknowledged_counts=plan["acknowledged_counts"],
+    )
+    completed = FileOSV2BaselineCompleter(core).complete(
+        Principal(
+            replace(worker.context, scopes=worker.context.scopes | frozenset({
+                "brain.fileos.transition.complete",
+            })),
+            "worker",
+        ),
+        stage_id,
+        approval_id,
+        prepared.preparation_id,
+        authorization_id,
+        uuid4(),
+        tmp_path,
+    )
+    assert completed.counts["hashed"] == 3000
     with store.transaction(ctx) as conn:
         assert (
             conn.execute(

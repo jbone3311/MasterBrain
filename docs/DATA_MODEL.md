@@ -155,6 +155,16 @@ rows apply. No current pointer, v2 completion ledger, active index or absence
 row references this receipt. See
 [ADR-123](adr/123_fileos_v2_baseline_authorization.md).
 
+Migration `0045_fileos_v2_baseline_completion.sql` adds one immutable private
+completion receipt per owner-authorized FileOS v2 stage. Composite foreign
+keys bind the exact authorization, preparation and staged row/count identities;
+the staged rows and prepared mapping form its membership ledger without a
+second row copy. A source-locked insert trigger rejects stale v1 baselines,
+scan errors and mismatched counts. The receipt is forced-RLS and protected
+against row mutation and truncation. It does not update current pointers,
+v1 receipts, absence, active indexes or search. See
+[ADR-124](adr/124_fileos_v2_baseline_completion.md).
+
 Migration `0019_datacore_index_generations.sql` adds immutable, completion-bound index
 generations, exact item/chunk membership, a database-validated readiness receipt and
 append-only activations. The active FileOS read path follows the latest activation;
