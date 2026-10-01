@@ -15,16 +15,20 @@ FileOS source effect or FOS-Master code changes.
 
 On a disposable local PostgreSQL 17.11 cluster upgraded from migration 0042,
 the focused replay, missing/wrong-outcome, late-insert and competing-writer
-checks passed. All **100 PostgreSQL module tests passed** in 43.51 seconds;
+checks passed. Review then caught a direct-SQL receipt race; the migration now
+locks receipt inserts too, and the new receipt-versus-item contention test
+passed on a fresh disposable database with the final migration checksum.
+The earlier migration candidate's **100 PostgreSQL module tests passed** in 43.51 seconds;
 the existing end-to-end 3,000-item v1 completion plus v2 staging stress test
 passed in 7.65 seconds of test-call time. An earlier all-v1 stress fixture had
 shown 14–26-second commit phases under the previous per-item deferred check;
 these are not controlled before/after benchmark results. No production timeout
-or integrity limit was relaxed. The final local full suite passed **2,894 tests,
-one skipped** in 102.85 seconds, with 456 of 457 PostgreSQL-marked tests
-executed. Locked dependencies, Ruff, strict mypy over 91 source files, 134
-browser tests, the deployment quality gate and offline documentation inventory
-passed. Hosted CI, strict runtime and populated restore results are pending
+or integrity limit was relaxed. On the final migration checksum, the local
+full suite passed **2,894 tests, one skipped** in 82.24 seconds, with 456 of
+457 PostgreSQL-marked tests executed. Locked dependencies, Ruff, strict mypy
+over 91 source files, 134 browser tests, the deployment quality gate and
+offline documentation inventory passed. Hosted CI, strict runtime and
+populated restore results are pending
 for this branch; no release tag is warranted for a database-integrity fix.
 
 ## DC-002Q FileOS v2 hashed-evidence preparation — merged verification

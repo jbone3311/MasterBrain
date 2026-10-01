@@ -4530,18 +4530,20 @@ def test_fileos_run_ledger_single_check_still_refuses_late_and_invalid_rows(
                 ),
             )
 
-    def insert_receipt(conn: psycopg.Connection[Any], run_id: UUID) -> None:
+    def insert_receipt(
+        conn: psycopg.Connection[Any], run_id: UUID, *, item_count: int = 1
+    ) -> None:
         conn.execute(
             "INSERT INTO brain_fileos_run_receipts(tenant_id,actor_id,run_id,source_id,"
             "observed_at,manifest_sha256,policy_sha256,root_binding_sha256,"
             "code_revision,text_extractor_version,item_count,outcomes,published_documents) "
             "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'test-linear-ledger','fileos-text-v1',"
-            "1,%s,0)",
+            "%s,%s,0)",
             (
                 ctx.tenant_id, ctx.actor_id, run_id, source_id,
                 datetime(2026, 9, 22, 2, tzinfo=UTC), "a" * 64,
                 fileos_inventory_policy_sha256(manifest), manifest["root_binding"]["sha256"],
-                json.dumps({"unsupported": 1}),
+                item_count, json.dumps({"unsupported": item_count} if item_count else {}),
             ),
         )
 
@@ -4586,11 +4588,28 @@ def test_fileos_run_ledger_single_check_still_refuses_late_and_invalid_rows(
                     ),
                 )
         insert_receipt(conn, run_id)
+    # A direct SQL receipt without items also takes the source lock, so an
+    # uncommitted receipt cannot race with a different transaction's row.
+    with store.transaction(ctx) as conn:
+        insert_receipt(conn, uuid4(), item_count=0)
+        with pytest.raises(psycopg.errors.LockNotAvailable):
+            with store.transaction(ctx) as contender:
+                contender.execute("SET LOCAL lock_timeout='100ms'")
+                contender.execute(
+                    "INSERT INTO brain_fileos_run_items(tenant_id,actor_id,run_id,source_id,"
+                    "observed_at,item_id,version_id,outcome) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,'unsupported')",
+                    (
+                        ctx.tenant_id, ctx.actor_id, uuid4(), source_id,
+                        datetime(2026, 9, 22, 2, tzinfo=UTC),
+                        item["item_id"], item["version_id"],
+                    ),
+                )
     with store.transaction(ctx) as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_fileos_run_receipts WHERE source_id=%s",
             (source_id,),
-        ).fetchone()["n"] == 2
+        ).fetchone()["n"] == 3
 
 
 def test_fileos_mass_loss_refuses_completion_without_absence(

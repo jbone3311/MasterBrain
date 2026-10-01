@@ -23,8 +23,9 @@ reject missing, extra, late or misclassified rows, including direct SQL writes.
 - Replace the per-item deferred whole-ledger trigger with an immediate guard.
   Before each run-item insert it takes the existing per-source advisory lock
   and refuses any already-inserted receipt for that run identity. A committed
-  receipt cannot gain a late item, and a concurrent writer cannot pass the
-  check while a completion holds the source lock. The deferred foreign key
+  receipt cannot gain a late item. A receipt-insert trigger takes the **same**
+  lock, so even a direct SQL receipt writer cannot race with another item
+  writer through an uncommitted receipt. The deferred foreign key
   prevents orphan items from committing.
 - Keep receipt and item immutability, forced RLS, tenant-login fences, audit,
   absence semantics and public API unchanged. This is a forward migration;
