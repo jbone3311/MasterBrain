@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added a disposable local PostgreSQL 17 backend for the fictional cross-source
+  browser trial (ADR-137). The launcher still supports Docker, accepts no
+  existing database or live source, and runs the same seed and API checks.
+  Local cluster cleanup is confirmed before deleting temporary data.
+
 - Made DataCore and KnowledgeCore search excerpts plain text instead of
   exposing PostgreSQL highlight markers (ADR-136). The fictional trial now
   shows bounded source text directly after verifying the selected evidence

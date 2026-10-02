@@ -16,6 +16,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-137 adds a disposable local PostgreSQL 17 option to the fictional browser
+  trial so an owner Mac without Docker can exercise the same API and seed. It
+  creates no live-source or existing-database access. An actual local self-test
+  passed on Homebrew PostgreSQL 17.11; the owner's interactive walkthrough is
+  still open.
+
 - ADR-136 returns plain search excerpts from shared DataCore and KnowledgeCore
   reads, so the trial and `/brain` do not show PostgreSQL highlight markup.
   The fictional trial displays verified bounded source text, with provenance

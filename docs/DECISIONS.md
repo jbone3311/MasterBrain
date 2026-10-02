@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-137](adr/137_local_disposable_postgres_trial.md) adds a synthetic-only,
+per-run local PostgreSQL 17 alternative to the Docker browser-trial database.
+It never targets an existing cluster or live source.
+
 [ADR-136](adr/136_plain_text_search_excerpts.md) removes generated highlight
 markers from read-only search excerpts and binds the fictional trial's readable
 evidence panel to the selected ID. No ranking, authority or source effect changes.

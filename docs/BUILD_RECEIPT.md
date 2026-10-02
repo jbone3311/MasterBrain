@@ -2,7 +2,28 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-136 plain-text excerpts and fictional browser trial — branch verification pending
+## ADR-137 disposable local PostgreSQL trial — branch verification in progress
+
+The actual `--backend local --self-test` launcher passed on this Mac with
+Homebrew PostgreSQL 17.11: it created a new temporary cluster, seeded two
+fictional Email and two FileOS hits, read citations through the Brain API,
+then stopped and removed the cluster. Focused launcher/cleanup tests passed
+**5 of 5**. The full local suite passed **2,956 tests, one Docker-only skip**
+against a separate disposable PostgreSQL 17.11 cluster; 466 of 467
+PostgreSQL-marked tests executed. All 147 Node browser tests, Ruff, strict
+mypy over 97 source files and documentation links passed. The first full
+attempt had three isolated-subprocess import failures after `uv sync`; repairing
+the local editable package install and rerunning the entire suite cleared all
+three. The separate local deployment gate passed **2,956 tests, one skipped**
+against another disposable cluster. Exact-head hosted CI and independent owner
+browser acceptance are not yet claimed. No existing database or source was used;
+FOS-Master was unchanged.
+
+## ADR-136 plain-text excerpts and fictional browser trial — merged verification
+
+PR [#101](https://github.com/jbone3311/MasterBrain/pull/101) merged at
+`a59a1148b072b1f47101cb37fdb0162a52b3b234`. Its exact head and merged
+`main` passed CI, strict sender runtime and populated restore.
 
 An agent-run local browser pass against disposable PostgreSQL 17.11 reproduced
 raw `<b>` marker text in Email/FileOS result cards on the trial page and `/brain`.
@@ -19,7 +40,7 @@ one skipped** on PostgreSQL 17.11; 466 of 467 PostgreSQL-marked tests executed.
 All 147 browser tests, Ruff, strict mypy over 97 source files, documentation
 links and diff checks passed. The local deployment gate repeated the full
 PostgreSQL suite and passed **2,954 tests, one skipped**. Hosted exact-head,
-strict-runtime and populated-restore checks are pending.
+strict-runtime and populated-restore checks passed.
 No live source, model answer, effect or FOS-Master change is claimed.
 
 ## ADR-135 tenant-bound FileOS publisher — merged verification
