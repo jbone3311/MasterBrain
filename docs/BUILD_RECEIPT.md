@@ -20,8 +20,14 @@ executed. All six browser suites passed **145 tests**; Ruff, strict mypy over
 98 source files, documentation links/inventory and diff checks passed. The
 first full run loaded a stale installed package and returned 404 for the new
 route; reinstalling this branch's package corrected the test environment, and
-the complete rerun passed. The independent deployment gate and exact-head
-GitHub gates remain pending for this branch.
+the complete rerun passed. An independent deployment gate on a second fresh
+disposable PostgreSQL 17.11 database also passed **3,014 tests with one
+intentional skip** and reported `PASS: repository quality gate`. These local
+results are separate from exact-head GitHub checks. On PR #116, all hosted
+jobs failed before their first step (no runner name or job log); one
+strict-gate retry failed the same way. The hosted cause is not yet established,
+and the PR must remain unmerged until exact-head full CI, strict runtime and
+populated-restore gates run and pass.
 
 ## Fictional contradictory-source Ask corpus — merged-main verification
 
