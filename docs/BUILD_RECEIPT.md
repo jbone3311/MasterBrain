@@ -2,6 +2,26 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-137 Mac trial interpreter correction — local verification
+
+The normal `Start-MasterBrain-Trial.command` initially failed before opening a
+browser: its broad `--python 3.12` request selected installed Python 3.12.4,
+which the strict sender runtime correctly excludes. The corrected command
+selected installed Python 3.14.7 and passed its own `--backend local --self-test`
+against a new Homebrew PostgreSQL 17.11 cluster: two fictional Email and two
+FileOS search hits, with citation reads. A normal browser-mode launch started
+the loopback server and shut it down cleanly. The Mac was locked, so no visual
+browser interaction or owner acceptance is claimed. The full Python 3.14.7
+suite passed **2,957 tests, one Docker-only skip** against a separate disposable
+PostgreSQL 17.11 cluster; 466 of 467 PostgreSQL-marked tests executed. All 147
+Node browser tests, Ruff, strict mypy over 97 source files, documentation links
+and diff checks passed. An initial suite had three local isolated-subprocess
+import failures immediately after `uv` rebuilt `.venv`; reinstalling the local
+editable package and rerunning the *whole* suite cleared all three. The
+separate local deployment gate passed **2,957 tests, one skipped** against a
+fresh disposable cluster. Exact-head hosted results belong to the PR checks;
+they are not inferred from this local run. FOS-Master was untouched.
+
 ## ADR-137 disposable local PostgreSQL trial — merged verification
 
 PR [#102](https://github.com/jbone3311/MasterBrain/pull/102) merged at

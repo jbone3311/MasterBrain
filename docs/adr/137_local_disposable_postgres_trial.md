@@ -22,6 +22,14 @@ stop cannot be confirmed, it preserves the cluster and prints the exact
 temporary location for operator inspection rather than deleting possibly live
 data. Secrets and source text are not printed.
 
+The Mac double-click launcher selects an installed or uv-managed Python in the
+supported 3.13–3.14 range before starting either backend. A broad `3.12`
+request can select 3.12.0–3.12.5, which the strict sender runtime intentionally
+rejects; the launcher must not rely on such a request. It forwards only explicit
+trial command options to the synthetic launcher, including `--self-test` for
+repeatable entry-point verification. No interpreter from an existing unrelated
+environment is used merely because it appears first on `PATH`.
+
 This is a developer convenience, not a production database or hosted identity
 boundary. PostgreSQL's data files are unencrypted temporary synthetic data;
 the launcher never points at real data. A forced process kill can leave a
