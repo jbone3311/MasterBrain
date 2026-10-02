@@ -10,6 +10,12 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-142](adr/142_source_scoped_brain_read_routes.md) extends enrolled
+assistant reads to the remaining directly source-checkable Brain search and
+FileOS status routes. SQL filters retained search before limits; exact-source
+reads hide ungranted sources. Knowledge/legacy routes and hosted acceptance
+remain open under issue #88.
+
 [ADR-141](adr/141_tenant_bound_legacy_email_workers.md) extends opt-in
 tenant-bound database access to the three legacy `email-brain` worker commands.
 It leaves credential lifecycle and hosted acceptance open under issue #7.
@@ -46,7 +52,7 @@ enabled by default, and this does not certify hosted or named-assistant use.
 
 [ADR-133](adr/133_source_scoped_brain_status.md) extends enrolled assistant
 reads to source-filtered current coverage and change status. Hidden-source
-cursors fail closed; the other Brain/Knowledge routes remain denied.
+cursors fail closed; ADR-142 later extends further Brain reads.
 
 [ADR-132](adr/132_oidc_brain_source_grants.md) adds administrator-owned,
 revocable source enrollment to verified OIDC Brain read identities on the

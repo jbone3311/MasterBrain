@@ -26,7 +26,9 @@ objects, general SQL, or an unbounded corpus dump.
 
 ## Versioned resources
 
-- `POST /v1/brain/search` — implemented compact DataCore lexical search.
+- `POST /v1/brain/search` — implemented compact retained DataCore lexical
+  search; enrolled assistants are filtered by source in SQL before ranking and
+  limit (ADR-142).
 - `GET /v1/brain/evidence/{id}` — implemented metadata/citation expansion.
 - `POST /v1/brain/evidence/{id}/content` — implemented separately scoped bounded text.
 - `GET /v1/brain/changes` — implemented cursor-bounded DataCore change feed.
@@ -42,14 +44,21 @@ objects, general SQL, or an unbounded corpus dump.
   generation status; requires `brain.changes.read`.
 - `POST /v1/brain/sources/{source_id}/search` — implemented bounded lexical search
   against only that source's active generation; requires `brain.search`.
+
+ADR-142 admits enrolled assistants to the five exact-source FileOS reads above
+and the aggregate/retained Brain searches. An ungranted source is
+indistinguishable from an unknown source (not found); the check occurs after
+transaction-time OIDC revocation validation. It does not grant original bytes,
+source effects or an alternate route through KnowledgeCore.
 - `POST /v1/brain/fileos-search` — implemented current FileOS search across the newest
   activated generation of every authorized source; requires `brain.search`.
+  Enrolled assistants see only granted sources.
 - `POST /v1/brain/email-search` — implemented current-only search across explicitly
   bridged Email versions that remain current and visible in the legacy Email state;
-  requires `brain.search`.
+  requires `brain.search`. Enrolled assistants see only granted sources.
 - `POST /v1/brain/email-family-search` — implemented current-only, independently
   bounded message/attachment/approved-document layers with within-layer ranks;
-  requires `brain.search`.
+  requires `brain.search`. Enrolled assistants see only granted sources.
 - `POST /v1/brain/current-search` — implemented grouped active-FileOS, explicitly
   published current archive-text, archive-document and archive-image OCR,
   current-Email-family and reviewed-KnowledgeCore
@@ -171,11 +180,12 @@ fictional cross-source conformance test. Use it only with a separately
 authorized credential. Passing local API/client tests does not establish
 assistant integration or hosted acceptance.
 ADR-130's bootstrap assistant and ADR-132's OIDC Brain assistant can call the
-source-scoped current-search, evidence/content and ADR-133 coverage/change
-routes, with an explicit source allowlist. ADR-134 also permits bounded
+source-scoped current-search, evidence/content, ADR-133 coverage/change and
+ADR-142 directly source-filtered search/FileOS status routes, with an explicit
+source allowlist. ADR-134 also permits bounded
 extractive answers, subject to all four read scopes and an explicitly configured
-selector; the default is 503. Other Brain and Knowledge routes fail closed for
-those assistants until their source semantics are reviewed. Hosted issuer
+selector; the default is 503. Unified Brain and direct Knowledge routes fail
+closed for those assistants until their source semantics are reviewed. Hosted issuer
 enrollment, legacy Email assistant source filtering and derived-cache revocation
 remain open in [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 

@@ -4475,6 +4475,8 @@ class DataCoreStore:
         if not _IDENTITY.fullmatch(source_id):
             raise NotFound()
         with self.store.transaction(ctx) as conn:
+            if ctx.source_ids is not None and source_id not in ctx.source_ids:
+                raise NotFound()
             if not conn.execute("SELECT 1 FROM brain_sources WHERE id=%s", (source_id,)).fetchone():
                 raise NotFound()
             row = conn.execute(
@@ -4656,6 +4658,8 @@ class DataCoreStore:
         if not _IDENTITY.fullmatch(source_id):
             raise NotFound()
         with self.store.transaction(ctx) as conn:
+            if ctx.source_ids is not None and source_id not in ctx.source_ids:
+                raise NotFound()
             source = conn.execute(
                 "SELECT 1 FROM brain_sources WHERE id=%s AND kind='fileos'", (source_id,)
             ).fetchone()
@@ -4717,6 +4721,8 @@ class DataCoreStore:
         ):
             raise ValueError("invalid FileOS rebuild preview request")
         with self.store.transaction(ctx) as conn:
+            if ctx.source_ids is not None and source_id not in ctx.source_ids:
+                raise NotFound()
             source = conn.execute(
                 "SELECT 1 FROM brain_sources WHERE id=%s AND kind='fileos'", (source_id,)
             ).fetchone()
@@ -5142,6 +5148,8 @@ class DataCoreStore:
         if not _IDENTITY.fullmatch(source_id):
             raise NotFound()
         with self.store.transaction(ctx) as conn:
+            if ctx.source_ids is not None and source_id not in ctx.source_ids:
+                raise NotFound()
             if not conn.execute(
                 "SELECT 1 FROM brain_sources WHERE id=%s AND kind='fileos'", (source_id,)
             ).fetchone():
@@ -5175,6 +5183,8 @@ class DataCoreStore:
         ):
             raise ValueError("invalid active FileOS search")
         with self.store.transaction(ctx) as conn:
+            if ctx.source_ids is not None and source_id not in ctx.source_ids:
+                raise NotFound()
             active = conn.execute(
                 "SELECT generation_id FROM brain_index_activations WHERE source_id=%s "
                 "ORDER BY activated_at DESC,idempotency_key DESC LIMIT 1",
@@ -5623,6 +5633,7 @@ class DataCoreStore:
         self.store.require(ctx, "brain.search")
         if not query.strip() or len(query) > 500 or not 1 <= limit <= 50 or "\x00" in query:
             raise ValueError("invalid search request")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
                 "SELECT c.id AS chunk_id,c.document_id,d.evidence_id,v.source_id,i.locator,"
@@ -5635,9 +5646,10 @@ class DataCoreStore:
                 "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
                 "AND v.id=e.source_version_id JOIN brain_source_items i ON "
                 "i.tenant_id=v.tenant_id AND i.id=v.item_id "
-                "WHERE c.search_vector @@ plainto_tsquery('simple',%s) "
+                "WHERE (%s::text[] IS NULL OR v.source_id=ANY(%s::text[])) "
+                "AND c.search_vector @@ plainto_tsquery('simple',%s) "
                 "ORDER BY rank DESC,c.id LIMIT %s",
-                (query, query, query, limit),
+                (query, query, allowed_sources, allowed_sources, query, limit),
             ).fetchall()
             self.store.audit(conn, ctx, "brain.search", "query")
         return [SearchHit(**row) for row in rows]

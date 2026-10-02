@@ -145,6 +145,24 @@ def test_oidc_brain_assistant_requires_enrollment_and_revokes_every_read(
             f"/v1/brain/evidence/{email_hit['evidence_id']}/content",
             json={"max_chars": 100}, headers=_headers(raw),
         ).status_code == 404
+        retained = client.post(
+            "/v1/brain/search", json={"query": "insurance", "limit": 1},
+            headers=_headers(raw),
+        )
+        assert retained.status_code == 200
+        assert retained.json()["results"]
+        assert all(
+            row["source_id"] == file_hit["source_id"]
+            for row in retained.json()["results"]
+        )
+        assert client.get(
+            f"/v1/brain/sources/{file_hit['source_id']}/freshness",
+            headers=_headers(raw),
+        ).status_code == 200
+        assert client.get(
+            f"/v1/brain/sources/{email_hit['source_id']}/freshness",
+            headers=_headers(raw),
+        ).status_code == 404
         assert client.post(
             "/v1/knowledge/search", json={"query": "insurance"},
             headers=_headers(raw),
@@ -166,6 +184,14 @@ def test_oidc_brain_assistant_requires_enrollment_and_revokes_every_read(
     with TestClient(create_app(store, auth), base_url="http://127.0.0.1") as client:
         assert client.get(
             f"/v1/brain/evidence/{file_hit['evidence_id']}", headers=_headers(raw)
+        ).status_code == 401
+        assert client.get(
+            f"/v1/brain/sources/{file_hit['source_id']}/freshness",
+            headers=_headers(raw),
+        ).status_code == 401
+        assert client.post(
+            "/v1/brain/search", json={"query": "insurance"},
+            headers=_headers(raw),
         ).status_code == 401
     with psycopg.connect(admin) as conn:
         events = conn.execute(

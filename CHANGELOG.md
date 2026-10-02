@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Extended enrolled-assistant access to retained DataCore search, aggregate
+  current Email/FileOS search, and exact-source FileOS status/search reads
+  (ADR-142). Filtering precedes ranking/limits; hidden source IDs return not
+  found. Human reads are unchanged. Unified and direct Knowledge routes,
+  hosted identity acceptance and source effects remain separate gates.
+
 - Added ADR-141's opt-in `--tenant-bound-db` mode to the legacy `email-brain`
   `sync-read`, `process-jobs` and `process-documents` commands. The authenticated
   worker tenant selects one DBA-bound SQL login for preflight, encrypted-object
