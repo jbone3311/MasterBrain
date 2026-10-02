@@ -540,6 +540,14 @@ def test_actual_disposable_local_launcher():
     assert "Check temporary synthetic PostgreSQL cluster" not in result.stderr
 
 
+def test_mac_trial_command_selects_patched_python_and_forwards_test_options():
+    command = ASSETS.parents[1] / "Start-MasterBrain-Trial.command"
+    script = command.read_text(encoding="utf-8")
+    assert "--python '>=3.13,<3.15'" in script
+    assert 'cross_source_preview.py --synthetic-preview "$@"' in script
+    subprocess.run(["bash", "-n", str(command)], check=True, timeout=10)
+
+
 def test_local_backend_refuses_wrong_postgres_version(monkeypatch, tmp_path):
     import cross_source_preview as trial
 

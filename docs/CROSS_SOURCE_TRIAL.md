@@ -6,11 +6,11 @@ mail accounts or scan personal folders. No real token is needed.
 ## Start on your Mac
 
 Prerequisites: a checkout of this repository, `uv`, and either Docker Desktop
-running or local PostgreSQL 17 (`initdb` and `pg_ctl` on `PATH`). Use a current
-patched Python 3.12 environment. From the repository:
+running or local PostgreSQL 17 (`initdb` and `pg_ctl` on `PATH`). Use a supported
+Python 3.13 or 3.14 environment. From the repository:
 
 ```sh
-uv sync --locked --extra dev --python 3.12
+uv sync --locked --extra dev --python '>=3.13,<3.15'
 uv run python tests/cross_source_preview.py --synthetic-preview
 ```
 
@@ -82,7 +82,7 @@ The same seed helper runs through the real Brain API in
 without a browser, run:
 
 ```sh
-uv run python tests/cross_source_preview.py --synthetic-preview --backend local --self-test
+bash Start-MasterBrain-Trial.command --backend local --self-test
 ```
 
 With the existing disposable PostgreSQL test environment configured, run:

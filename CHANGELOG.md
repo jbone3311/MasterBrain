@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Corrected the Mac trial command to choose a supported Python 3.13–3.14
+  interpreter; `--python 3.12` could select unsupported 3.12.4 and stop before
+  the browser opened. The command now forwards explicit trial options so its
+  own synthetic self-test can be run end to end.
+
 - Added a disposable local PostgreSQL 17 backend for the fictional cross-source
   browser trial (ADR-137). The launcher still supports Docker, accepts no
   existing database or live source, and runs the same seed and API checks.

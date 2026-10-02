@@ -18,9 +18,11 @@ production and FileOS cutover remain open.
 
 - ADR-137 adds a disposable local PostgreSQL 17 option to the fictional browser
   trial so an owner Mac without Docker can exercise the same API and seed. It
-  creates no live-source or existing-database access. An actual local self-test
-  passed on Homebrew PostgreSQL 17.11; the owner's interactive walkthrough is
-  still open.
+  creates no live-source or existing-database access. The Mac command now
+  chooses a supported Python 3.13–3.14 patch; its actual self-test passed on
+  Python 3.14.7 and Homebrew PostgreSQL 17.11. The server also started and
+  stopped cleanly, but the Mac was locked during browser inspection. The
+  owner's interactive walkthrough remains open.
 
 - ADR-136 returns plain search excerpts from shared DataCore and KnowledgeCore
   reads, so the trial and `/brain` do not show PostgreSQL highlight markup.
