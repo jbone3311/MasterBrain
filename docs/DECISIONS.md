@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-138](adr/138_tenant_bound_fileos_index_operator.md) adds an opt-in
+single-tenant database-login check to private FileOS index build and rollback.
+It does not route other workers, retire shared local DSNs or close issue #7.
+
 [ADR-137](adr/137_local_disposable_postgres_trial.md) adds a synthetic-only,
 per-run local PostgreSQL 17 alternative to the Docker browser-trial database.
 It never targets an existing cluster or live source.

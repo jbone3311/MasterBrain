@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-138 adds an explicit `--tenant-bound-db` mode to private FileOS index
+  build/activation and activation-only rollback. Both modes require the
+  authenticated worker tenant's DBA-bound login even in check mode; shared,
+  owner and wrong-tenant logins fail. The default local mode and other private
+  workers remain unchanged. This is synthetic/disposable containment, not
+  closure of issue #7, hosted acceptance or FileOS cutover.
+
 - ADR-137 adds a disposable local PostgreSQL 17 option to the fictional browser
   trial so an owner Mac without Docker can exercise the same API and seed. It
   creates no live-source or existing-database access. The Mac command now
@@ -192,7 +199,8 @@ production and FileOS cutover remain open.
   PostgreSQL tests cover two-tenant API search and missing/wrong/shared-route
   refusal; private-file tests cover malformed, duplicate, symlink and broad-mode
   configuration. ADR-135 subsequently adds one opt-in tenant-bound private
-  FileOS publisher; other workers still use explicit shared DSNs. Credential
+  FileOS publisher, and ADR-138 adds index/rollback; remaining workers still
+  use explicit shared DSNs. Credential
   lifecycle/hosted acceptance are not implemented. Issue #7 stays open.
 - ADR-108/migration 0037 add an opt-in restrictive RLS fence for a DBA-bound
   one-tenant PostgreSQL login. Synthetic arbitrary-SQL tests cover forged GUCs,

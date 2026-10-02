@@ -70,8 +70,9 @@ denial under forged GUCs, identity-admin/session-role switch denial, stable
 closed, policy inventory coverage, two-tenant API search and wrong/missing/shared
 route refusal. This does not prove an API SQL-injection path exists or is absent.
 ADR-135 adds an opt-in tenant-bound check to the private `fileos publish`
-operator. Its worker tenant comes from the authenticated private credential;
-the supplied single-tenant DSN is checked through the same database binding on
-every transaction. Other private workers, credential lifecycle, independent
+operator. ADR-138 extends the same check to `fileos index` build/activation
+and activation-only rollback. The worker tenant comes from the authenticated
+private credential; the supplied single-tenant DSN is checked through the
+same database binding on every transaction. Other private workers, credential lifecycle, independent
 security review, operational isolation and live rollout evidence remain open
 under issue #7.

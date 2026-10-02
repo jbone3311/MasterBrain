@@ -118,7 +118,8 @@ diagnostic evidence, not proof of a safe retry or a resolved failure.
   tenant-bound data logins, with per-connection binding checks and a private
   configuration file. ADR-135 adds an explicit tenant-bound mode for one private
   FileOS publisher using the authenticated worker tenant and a single-tenant
-  DSN. Other shared runtime and private worker paths remain GUC-driven;
+  DSN. ADR-138 adds the same opt-in fence for FileOS index build and
+  activation-only rollback. Other shared runtime and private worker paths remain GUC-driven;
   credential operations and a hosted adversarial run are not
   implemented. See [ADR-108](adr/108_tenant_login_rls_fence.md),
   [ADR-109](adr/109_tenant_database_routing.md) and the
@@ -292,6 +293,8 @@ from the runtime environment. Build-and-activate requires exactly the publish an
 activation scopes; rollback requires exactly activation. It reauthenticates between
 build and activation and after completion, returns no paths/content/secrets, and has
 no source, Docker or scheduling authority.
+In `--tenant-bound-db` mode, check and execution require that DSN to be a
+DBA-enrolled login bound to the authenticated worker tenant (ADR-138).
 
 The Email bridge operator uses the same private-file and safe-runtime checks with
 exactly the shared ingest and document-publication scopes. It accepts one explicit

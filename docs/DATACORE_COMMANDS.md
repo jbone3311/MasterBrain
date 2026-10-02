@@ -205,8 +205,8 @@ For a synthetic tenant-bound database login (ADR-135), pass
 `MASTERBRAIN_DSN` to be a DBA-enrolled login bound to the authenticated worker's
 exact tenant; a shared, unbound or wrong-tenant login fails before intake. Do
 not put a DSN on the command line or fall back to the legacy shared login for
-hosted use. This option applies only to `fileos publish`, not the other private
-operators, and is not a hosted release claim.
+hosted use. ADR-138 also permits this option on `fileos index`; it is not
+available to other private operators and is not a hosted release claim.
 
 The expiring credential must be a worker with exactly `brain.source.ingest` and
 `brain.document.publish`. The UUID and exact manifest are reused for an uncertain
@@ -371,6 +371,9 @@ and activate it. The private closed configuration binds `source_id`,
 `credentials_file`, `token_file` and `code_revision`. Its worker must have exactly
 `brain.document.publish` and `brain.index.activate`. A crash after generation readiness
 but before activation is safe: reuse the exact run, code revision and activation key.
+For a synthetic tenant-bound login, add `--tenant-bound-db` to both the check
+and the actual command. The authenticated worker tenant must match the DBA-bound
+`MASTERBRAIN_DSN`; a shared, owner or wrong-tenant login fails before indexing.
 
 Rollback activates an existing ready generation without rebuilding it:
 
@@ -388,6 +391,8 @@ omit `code_revision`. Use a fresh key for each new activation intent and reuse i
 for an uncertain retry of the same generation. Output contains opaque generation IDs,
 counts, digests, receipt times and replay flags only. The command never scans or
 changes source files and does not redirect existing global search.
+The same `--tenant-bound-db` option applies to this rollback mode. This is a
+synthetic/disposable login fence, not hosted acceptance or FileOS cutover.
 
 ## Donor parity
 

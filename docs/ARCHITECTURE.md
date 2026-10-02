@@ -116,6 +116,9 @@ Generation operation is a separate private one-shot command. Build-and-activate 
 an exact two-scope worker; activation-only rollback uses only the activation scope.
 Check mode validates configuration, identity and database role without building or
 activating. No scheduler or public mutation route owns this authority.
+ADR-138 lets both modes opt into a database login bound to that authenticated
+worker's tenant. Shared, owner and wrong-tenant logins fail before check mode
+can succeed. This does not route other private workers or approve hosting.
 
 Current FileOS retrieval is an explicit cross-source read over each source's newest
 activation. Existing compatibility and unified search remain unchanged and may expose

@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -249,3 +249,28 @@ def test_build_requires_code_revision_but_rollback_does_not(
         generation_id="index_generation_abc",
         check=True,
     )["operation"] == "activate_existing"
+
+
+def test_tenant_bound_mode_binds_authenticated_worker_tenant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, credentials = controller_files(
+        tmp_path, ["brain.document.publish", "brain.index.activate"]
+    )
+    store = MagicMock()
+    factory = Mock(return_value=store)
+    monkeypatch.setattr(control, "Store", factory)
+    assert control.run_fileos_index_controller(
+        path, "runtime-dsn", uuid4(), run_id=uuid4(),
+        check=True, tenant_bound_db=True,
+    )["configuration_valid"] is True
+    factory.assert_called_once_with(
+        "runtime-dsn", tenant_dsns={
+            UUID(str(credentials[0]["tenant_id"])): "runtime-dsn"
+        },
+    )
+    with pytest.raises(control.FileOSIndexControllerError):
+        control.run_fileos_index_controller(
+            path, "runtime-dsn", uuid4(), run_id=uuid4(),
+            check=True, tenant_bound_db=1,  # type: ignore[arg-type]
+        )
