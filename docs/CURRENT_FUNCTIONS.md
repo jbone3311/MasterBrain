@@ -11,7 +11,7 @@ approved for private data, or production accepted. The exact-commit gates are in
 
 | Function | Working path | Boundary |
 |---|---|---|
-| Search fictional Email and FileOS together | [cross-source browser trial](CROSS_SOURCE_TRIAL.md) and `POST /v1/brain/current-search` | Real PostgreSQL and Brain API, fictional data; grouped layers have separate ranks and partial coverage. No generated answer. |
+| Search fictional Email and FileOS together | [cross-source browser trial](CROSS_SOURCE_TRIAL.md) and `POST /v1/brain/current-search` | Real PostgreSQL and Brain API, fictional data; plain-text excerpts, grouped layers with separate ranks and partial coverage. No generated answer. |
 | Request verified source quotes for a question | `POST /v1/brain/answers`, `BrainReadClient.answer`, and `/brain` | Optional bounded extractive contract. No selector is configured by default, so the API returns 503 and the workspace shows grouped search. No freeform synthesis or approved remote model. |
 | Open a result and verify its source | `GET /v1/brain/evidence/{id}` then separately scoped `POST /v1/brain/evidence/{id}/content` | Bounded content with opaque provenance; original Email downloads require the distinct human reader permission. |
 | Check what is current or missing | `GET /v1/brain/current-coverage`, source freshness, inventory and index routes | Only completed FileOS runs, activated generations and explicitly bridged Email are represented; a partial result is not whole-source completeness. |

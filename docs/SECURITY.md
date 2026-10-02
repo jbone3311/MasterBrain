@@ -38,6 +38,11 @@ has no direct model call, source-effect control, stored transcript, direct SQL o
 provider credential. These controls do not establish hosted identity,
 revocation across future derived caches or live-source acceptance.
 
+ADR-136 also keeps the fictional trial's excerpts as text nodes, omits generated
+PostgreSQL highlight markup and verifies that both metadata and bounded content
+name the selected evidence before displaying source text. That trial remains
+synthetic and does not establish a production browser identity boundary.
+
 ADR-134 adds an optional read-only answer route. An explicitly configured
 selector receives only bounded, currently authorized excerpts, with no tool or
 effect authority. Server-side checks require exact quoted substrings and

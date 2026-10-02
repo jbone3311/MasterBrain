@@ -1,8 +1,39 @@
 # Build and validation receipt
 
-Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-135 tenant-bound FileOS publisher — branch verification pending
+## ADR-136 plain-text excerpts and fictional browser trial — branch verification pending
+
+An agent-run local browser pass against disposable PostgreSQL 17.11 reproduced
+raw `<b>` marker text in Email/FileOS result cards on the trial page and `/brain`.
+The branch removes generated markers at the shared DataCore/KnowledgeCore SQL
+read boundary. Focused PostgreSQL tests passed **7 of 7 executed**; the browser
+then showed two Email and two FileOS Cedar Harbor results, one of each for
+insurance, zero for a nonexistent query, and readable bounded FileOS source
+text with expandable provenance. The trial now verifies the returned evidence
+identity before displaying that text; its browser regression denies a mismatch.
+The assistant exercised the in-app browser on fictional data, not the owner's
+independent walkthrough or the standard Docker launcher (Docker Desktop is
+not installed in this workspace). The full local suite passed **2,954 tests,
+one skipped** on PostgreSQL 17.11; 466 of 467 PostgreSQL-marked tests executed.
+All 147 browser tests, Ruff, strict mypy over 97 source files, documentation
+links and diff checks passed. The local deployment gate repeated the full
+PostgreSQL suite and passed **2,954 tests, one skipped**. Hosted exact-head,
+strict-runtime and populated-restore checks are pending.
+No live source, model answer, effect or FOS-Master change is claimed.
+
+## ADR-135 tenant-bound FileOS publisher — merged verification
+
+PR [#100](https://github.com/jbone3311/MasterBrain/pull/100) merged at
+`728ac3b0953e696b3563707a05e5f200d587384a` from exact head
+`aed3dd2cab082b40b2708f11b2f29a067173a9da`. The head passed
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36974960962),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36974961066)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36974960988).
+The merge commit passed
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36975899153),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36975899154)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36975899184).
 
 One private publisher now has an explicit single-tenant database-login mode.
 The authenticated worker tenant, not the manifest or request, selects the
@@ -12,9 +43,9 @@ after a forged tenant GUC.
 The local full suite passed **2,954 tests, one skipped** on PostgreSQL 17.11:
 466 of 467 PostgreSQL-marked tests executed. All 146 browser tests, Ruff,
 strict mypy over 97 source files, documentation links and diff checks passed.
-Record the exact branch head and hosted CI/strict-runtime/restore results
-before merge. Other workers and hosted credential operations remain issue #7;
-FOS-Master is unchanged.
+Other workers and hosted credential operations remain issue #7; FOS-Master is
+unchanged. The merged feature branch and its disposable local test database
+were removed.
 
 ## ADR-134 grounded extractive answers — merged verification
 

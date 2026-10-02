@@ -45,7 +45,7 @@ you selected a nondefault one.
 | nonexistentcanary | 0 | 0 | Empty results; no invented answer |
 
 Open evidence on an Email result and on a File result. The separately authorized
-content read should show the supporting source text, while the expandable citation
+content read should show the supporting source text directly, while the expandable citation
 section shows its immutable identity/provenance. The term sheet proposes a fictional
 $8,000,000 loan and a 1.25 debt-service coverage ratio; the checklist lists October
 15, 2026 as a fictional target closing. These are source statements, not advice.

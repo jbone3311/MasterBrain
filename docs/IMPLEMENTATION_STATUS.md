@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-136 returns plain search excerpts from shared DataCore and KnowledgeCore
+  reads, so the trial and `/brain` do not show PostgreSQL highlight markup.
+  The fictional trial displays verified bounded source text, with provenance
+  separately expandable. An agent-run local browser check on synthetic data
+  covered Cedar Harbor, insurance, no match and evidence drill-down; the
+  owner's independent walkthrough and all live/hosted acceptance remain open.
+
 - ADR-135 adds an explicit `--tenant-bound-db` mode to the private FileOS
   publisher. Check, publication and replay use one authenticated worker tenant
   and a DBA-bound single-tenant login; a shared, unbound or wrong-tenant login

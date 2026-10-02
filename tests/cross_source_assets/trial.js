@@ -33,9 +33,14 @@
       const metadata = await api(path);
       const content = await api(`${path}/content`, {max_chars: 4000});
       if (version !== evidenceVersion) return;
+      if (!metadata || metadata.id !== id || !content ||
+          content.evidence_id !== id || typeof content.content !== "string") {
+        throw new Error("Evidence response could not be verified.");
+      }
       evidence.replaceChildren();
       element("h3", "Bounded source text", evidence);
-      element("pre", JSON.stringify(content, null, 2), evidence);
+      element("pre", content.content, evidence);
+      if (content.truncated === true) element("p", "Preview truncated at 4,000 characters.", evidence);
       const details = document.createElement("details");
       evidence.appendChild(details);
       element("summary", "Citation identity and provenance", details);

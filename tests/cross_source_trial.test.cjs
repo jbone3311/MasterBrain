@@ -27,7 +27,9 @@ function harness(token = "a".repeat(54), customFetch) {
     fetch: async (url, options) => {
       calls.push({url, options});
       if (customFetch) return customFetch(url, options, data);
-      const body = url === "/v1/brain/current-search" ? data : {text: "Insurance outstanding", complete: false};
+      const body = url === "/v1/brain/current-search" ? data :
+        url.endsWith("/content") ? {evidence_id: "ev_email", content: "Insurance outstanding", truncated: false} :
+          {id: "ev_email", source_kind: "email"};
       return {ok: true, status: 200, json: async () => body};
     },
   });
@@ -56,7 +58,21 @@ test("search renders untrusted text and uses memory-only non-redirected authoriz
   assert.ok(h.calls.some(call => call.url === "/v1/brain/evidence/ev_email"));
   const content = h.calls.find(call => call.url.endsWith("/content"));
   assert.deepEqual(JSON.parse(content.options.body), {max_chars: 4000});
-  assert.match(h.nodes.evidence.children[1].textContent, /Insurance outstanding/);
+  assert.equal(h.nodes.evidence.children[1].textContent, "Insurance outstanding");
+  assert.equal(h.nodes.evidence.children[2].tag, "details");
+});
+test("mismatched evidence identity cannot be displayed as source text", async () => {
+  const h = harness("a".repeat(54), async (url, _options, data) => {
+    const body = url === "/v1/brain/current-search" ? data :
+      url.endsWith("/content") ? {evidence_id: "another_evidence", content: "Not this source"} :
+        {id: "ev_email", source_kind: "email"};
+    return {ok: true, status: 200, json: async () => body};
+  });
+  await flush();
+  const card = h.nodes.results.children[0].children[1];
+  await card.children[2].events.click(); await flush();
+  assert.match(h.nodes.evidence.children[0].textContent, /could not be verified/);
+  assert.equal(h.nodes.evidence.children.length, 1);
 });
 test("late search responses cannot replace the newer result", async () => {
   let release;

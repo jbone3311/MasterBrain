@@ -370,7 +370,7 @@ class KnowledgeCore:
             rows = conn.execute(
                 "SELECT k.object_kind,k.object_id,k.title,"
                 "ts_headline('simple',k.body,plainto_tsquery('simple',%s),"
-                "'MaxWords=35,MinWords=10') AS excerpt,"
+                "'MaxWords=35,MinWords=10,StartSel=\"\",StopSel=\"\"') AS excerpt,"
                 "ts_rank_cd(k.search_vector,plainto_tsquery('simple',%s)) AS rank "
                 "FROM knowledge_search_documents k WHERE k.search_vector @@ "
                 "plainto_tsquery('simple',%s) "

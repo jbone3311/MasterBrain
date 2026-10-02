@@ -276,6 +276,8 @@ def test_source_scoped_knowledge_excludes_mixed_evidence_before_limit(
     )
     owner_hits = knowledge.search(preview.context, "insurance", limit=2)
     assert {hit.object_id for hit in owner_hits} == {mixed.object_id, file_only.object_id}
+    assert all("insurance" in hit.excerpt.casefold() for hit in owner_hits)
+    assert all("<b>" not in hit.excerpt for hit in owner_hits)
     restricted = replace(preview.context, source_ids=frozenset({"trial_files"}))
     scoped_hits = knowledge.search(restricted, "insurance", limit=1)
     assert [hit.object_id for hit in scoped_hits] == [file_only.object_id]
@@ -340,6 +342,11 @@ def test_known_answers_use_real_current_api(preview, query, emails, files):
         assert data["coverage"]["complete"] is False
         assert len(data["layers"]["email_messages"]) == emails
         assert len(data["layers"]["fileos"]) == files
+        for layer in ("email_messages", "fileos"):
+            for hit in data["layers"][layer]:
+                assert "<b>" not in hit["excerpt"]
+                assert "</b>" not in hit["excerpt"]
+                assert query.split()[0].casefold() in hit["excerpt"].casefold()
         assert data["layers"]["knowledge"] == []
         assert "other-tenant-canary" not in result.text
 

@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-136](adr/136_plain_text_search_excerpts.md) removes generated highlight
+markers from read-only search excerpts and binds the fictional trial's readable
+evidence panel to the selected ID. No ranking, authority or source effect changes.
+
 [ADR-135](adr/135_tenant_bound_fileos_publisher.md) adds an opt-in
 single-tenant database-login check to the private FileOS publisher. It
 does not route other workers, retire shared local DSNs or close issue #7.

@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Made DataCore and KnowledgeCore search excerpts plain text instead of
+  exposing PostgreSQL highlight markers (ADR-136). The fictional trial now
+  shows bounded source text directly after verifying the selected evidence
+  identity, with provenance expandable. Search ranking, grants, original
+  evidence and FOS-Master are unchanged.
+
 - Added ADR-135's explicit `--tenant-bound-db` option to the private FileOS
   publisher. Its authenticated worker tenant selects the only permitted
   database binding; shared, unbound and wrong-tenant logins fail before intake.
