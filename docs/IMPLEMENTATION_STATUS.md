@@ -16,6 +16,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-131 adds a forward-only correction to the private FileOS v2 generation
+  readiness gate. It uses indexed exact chunk comparison and base counting
+  under the existing timeout, without changing SQL activation refusal, current
+  search or FOS-Master. Fresh full-suite and two populated 3,000-row repeats pass
+  locally; exact-head CI, restore and merge gates remain pending (issue #84).
+
 - API-SOURCE-001 applies explicit, bounded source enrollment to synthetic
   bootstrap assistants using the three read-only client routes (ADR-130).
   Current Email/FileOS/archive searches and reviewed Knowledge results filter
