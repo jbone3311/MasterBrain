@@ -8,7 +8,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, Mock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -72,6 +72,37 @@ def test_check_authenticates_runtime_without_publication(tmp_path: Path, monkeyp
     }
     store.transaction.assert_called_once()
     adapter.assert_not_called()
+
+
+def test_tenant_bound_check_uses_only_authenticated_workers_tenant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, credentials = controller_files(tmp_path)
+    store = MagicMock()
+    constructor = Mock(return_value=store)
+    monkeypatch.setattr(control, "Store", constructor)
+    result = control.run_fileos_controller(
+        path, "one-tenant-dsn", uuid4(), check=True, tenant_bound_db=True
+    )
+    assert result["execution_verified"] is False
+    constructor.assert_called_once_with(
+        "one-tenant-dsn",
+        tenant_dsns={UUID(str(credentials[0]["tenant_id"])): "one-tenant-dsn"},
+    )
+    store.transaction.assert_called_once()
+
+
+def test_tenant_bound_mode_rejects_non_boolean(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, _ = controller_files(tmp_path)
+    constructor = Mock()
+    monkeypatch.setattr(control, "Store", constructor)
+    with pytest.raises(control.FileOSControllerError):
+        control.run_fileos_controller(
+            path, "one-tenant-dsn", uuid4(), check=True, tenant_bound_db=1  # type: ignore[arg-type]
+        )
+    constructor.assert_not_called()
 
 
 @pytest.mark.parametrize(

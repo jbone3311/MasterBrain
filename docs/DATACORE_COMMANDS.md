@@ -200,6 +200,14 @@ token and manifest files must be owner-private, outside the source checkout, and
 not be passed through command arguments as secrets. The DSN is read only from
 `MASTERBRAIN_DSN`.
 
+For a synthetic tenant-bound database login (ADR-135), pass
+`--tenant-bound-db` to both check and execution. The command then requires
+`MASTERBRAIN_DSN` to be a DBA-enrolled login bound to the authenticated worker's
+exact tenant; a shared, unbound or wrong-tenant login fails before intake. Do
+not put a DSN on the command line or fall back to the legacy shared login for
+hosted use. This option applies only to `fileos publish`, not the other private
+operators, and is not a hosted release claim.
+
 The expiring credential must be a worker with exactly `brain.source.ingest` and
 `brain.document.publish`. The UUID and exact manifest are reused for an uncertain
 retry; never reuse the key for a different snapshot. Output is compact counts only,

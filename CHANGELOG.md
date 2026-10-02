@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added ADR-135's explicit `--tenant-bound-db` option to the private FileOS
+  publisher. Its authenticated worker tenant selects the only permitted
+  database binding; shared, unbound and wrong-tenant logins fail before intake.
+  The default local mode and other private controllers are unchanged. This
+  does not close issue #7, approve hosting or affect FOS-Master.
+
 - Added an optional, read-only extractive answer route, reference client method
   and first-party workspace display (ADR-134). The server bounds input and
   passages, verifies exact quotes and citations, then rechecks current source
