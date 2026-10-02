@@ -119,6 +119,11 @@ activating. No scheduler or public mutation route owns this authority.
 ADR-138 lets both modes opt into a database login bound to that authenticated
 worker's tenant. Shared, owner and wrong-tenant logins fail before check mode
 can succeed. This does not route other private workers or approve hosting.
+ADR-139 applies that opt-in bound-login rule through a shared DataCore helper to
+all database-backed private `masterbrain` Email bridge and FileOS archive
+operators, including previews and batches. Every item in a batch uses the same
+authenticated worker tenant; a plan cannot select a route. The legacy
+`email-brain` worker surface and hosted credential lifecycle remain separate.
 
 Current FileOS retrieval is an explicit cross-source read over each source's newest
 activation. Existing compatibility and unified search remain unchanged and may expose

@@ -71,8 +71,10 @@ closed, policy inventory coverage, two-tenant API search and wrong/missing/share
 route refusal. This does not prove an API SQL-injection path exists or is absent.
 ADR-135 adds an opt-in tenant-bound check to the private `fileos publish`
 operator. ADR-138 extends the same check to `fileos index` build/activation
-and activation-only rollback. The worker tenant comes from the authenticated
-private credential; the supplied single-tenant DSN is checked through the
-same database binding on every transaction. Other private workers, credential lifecycle, independent
-security review, operational isolation and live rollout evidence remain open
-under issue #7.
+and activation-only rollback. ADR-139 applies it to every database-backed
+private `masterbrain` Email bridge and FileOS archive derivative command,
+including non-consuming previews and sealed batches. The worker tenant comes
+from the authenticated private credential; the supplied single-tenant DSN is
+checked through the same database binding on every transaction. Legacy
+workers, credential lifecycle, independent security review, operational
+isolation and live rollout evidence remain open under issue #7.

@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-139](adr/139_tenant_bound_private_derivative_operators.md) extends the
+opt-in tenant-login fence to every private `masterbrain` Email bridge and
+FileOS archive derivative command, including previews and batches. It leaves
+legacy workers, credential lifecycle and hosted acceptance open under issue #7.
+
 [ADR-138](adr/138_tenant_bound_fileos_index_operator.md) adds an opt-in
 single-tenant database-login check to private FileOS index build and rollback.
 It does not route other workers, retire shared local DSNs or close issue #7.

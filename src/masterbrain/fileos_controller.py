@@ -21,6 +21,7 @@ from masterbrain.datacore.persistence import (
     fileos_manifest_root_binding_sha256,
     validate_fileos_completion_coverage,
 )
+from masterbrain.datacore.worker_db import worker_store
 
 MAX_MANIFEST_BYTES = 16 * 1024 * 1024
 _SOURCE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,127}\Z", re.ASCII)
@@ -113,10 +114,7 @@ def run_fileos_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = (
-            Store(dsn, tenant_dsns={initial.context.tenant_id: dsn})
-            if tenant_bound_db else Store(dsn)
-        )
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)

@@ -119,8 +119,10 @@ diagnostic evidence, not proof of a safe retry or a resolved failure.
   configuration file. ADR-135 adds an explicit tenant-bound mode for one private
   FileOS publisher using the authenticated worker tenant and a single-tenant
   DSN. ADR-138 adds the same opt-in fence for FileOS index build and
-  activation-only rollback. Other shared runtime and private worker paths remain GUC-driven;
-  credential operations and a hosted adversarial run are not
+  activation-only rollback. ADR-139 adds the same opt-in fence to private
+  `masterbrain` Email bridge and FileOS archive derivative commands, including
+  previews and sealed batches. Legacy shared-runtime and other private worker
+  paths remain GUC-driven; credential operations and a hosted adversarial run are not
   implemented. See [ADR-108](adr/108_tenant_login_rls_fence.md),
   [ADR-109](adr/109_tenant_database_routing.md) and the
   [tenant-login contract](TENANT_LOGIN_FENCE.md); issue #7 remains open.
@@ -300,9 +302,14 @@ The Email bridge operator uses the same private-file and safe-runtime checks wit
 exactly the shared ingest and document-publication scopes. It accepts one explicit
 legacy message, attachment or approved-extraction UUID, reauthenticates around the
 transaction and returns only opaque identities/counts/status. It has no Email ingest,
-document approval, provider, original-content, mailbox-write, scan, scheduler or batch
-authority. The bridge transactions share the Email account advisory lock so a current
-version cannot become historical during publication.
+document approval, provider, original-content, mailbox-write, scan, scheduler or
+automatic batch-discovery authority. Separately reviewed sealed batch commands
+exist; they retain the same worker scopes and fail-stop behavior. The bridge
+transactions share the Email account advisory lock so a current version cannot
+become historical during publication.
+ADR-139's `--tenant-bound-db` mode checks the authenticated worker's DBA-bound
+login before check or execution for single-target, preview and sealed-batch
+bridges. A plan or Email content cannot choose a database tenant route.
 Current bridged-Email search independently rejoins the receipt to the legacy current
 message on every query and excludes deleted/quarantined state. It returns bounded
 untrusted excerpts and opaque identities only; it does not expose raw MIME or grant
@@ -330,6 +337,9 @@ complete nonempty OCR text may publish; normal output contains opaque identities
 counts, never source locators, OCR content, image metadata, raw faults or credentials.
 The command passed hosted CI/container and populated restore at revision `f658ace`;
 live-source and production acceptance remain separate gates.
+ADR-139 applies the same opt-in bound-login check to every private archive
+text/document/image command and preview/batch. It does not change the isolated
+parser's lack of database or source authority.
 
 ## Dedupe and file safety
 

@@ -12,10 +12,14 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock
 from uuid import UUID, uuid4
 
+import psycopg
 import pytest
 import test_postgres as pg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 
 from email_brain.domain.models import TenantContext
+from email_brain.migrate import grant_tenant_runtime
 from email_brain.store import Conflict, NotFound
 from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain import archive_member_controller as controller
@@ -133,6 +137,103 @@ def setup_operator(
     path = state / "archive-controller.json"
     private_write(path, config)
     return path, root, inventory.inventory_id, "folder/proof.md", raw
+
+
+def test_tenant_bound_archive_family_refuses_foreign_logins(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    shared, admin = database
+    ctx, _ = tenant
+    path, root, inventory_id, locator, raw = setup_operator(tmp_path, ctx, shared)
+    config = json.loads(path.read_text())
+    config["image_ocr_image_id"] = "sha256:" + "c" * 64
+    private_write(path, config)
+    text_plan, _ = batch_plan(path, inventory_id)
+    document_plan, _ = document_batch_plan(path, inventory_id)
+    other_tenant = uuid4()
+    own_role = "test_bound_archive_" + uuid4().hex[:12]
+    other_role = "test_bound_archive_" + uuid4().hex[:12]
+    own_password, other_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Other fictional archive tenant')",
+            (other_tenant,),
+        )
+        for role, password, tenant_id in (
+            (own_role, own_password, ctx.tenant_id),
+            (other_role, other_password, other_tenant),
+        ):
+            conn.execute(
+                sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                    sql.Identifier(role), sql.Literal(password)
+                )
+            )
+            grant_tenant_runtime(conn, role, tenant_id)
+    own_dsn = make_conninfo(admin, user=own_role, password=own_password)
+    other_dsn = make_conninfo(admin, user=other_role, password=other_password)
+    checks = (
+        lambda dsn: controller.run_archive_member_controller(
+            path, dsn, inventory_id, locator, uuid4(), check=True, tenant_bound_db=True
+        ),
+        lambda dsn: controller.run_archive_member_plan_controller(
+            path, dsn, inventory_id, check=True, tenant_bound_db=True
+        ),
+        lambda dsn: controller.run_archive_document_plan_controller(
+            path, dsn, inventory_id, check=True, tenant_bound_db=True
+        ),
+        lambda dsn: controller.run_archive_member_document_controller(
+            path, dsn, inventory_id, "a.pdf", uuid4(), check=True, tenant_bound_db=True
+        ),
+        lambda dsn: controller.run_archive_member_image_ocr_controller(
+            path, dsn, inventory_id, "a.png", uuid4(), check=True, tenant_bound_db=True
+        ),
+        lambda dsn: controller.run_archive_member_batch_controller(
+            path, text_plan, dsn, check=True, tenant_bound_db=True
+        ),
+        lambda dsn: controller.run_archive_document_batch_controller(
+            path, document_plan, dsn, check=True, tenant_bound_db=True
+        ),
+    )
+    for check in checks:
+        assert check(own_dsn)["configuration_valid"] is True
+        for refused_dsn in (shared.dsn, other_dsn, admin):
+            with pytest.raises(ArchiveMemberControllerError):
+                check(refused_dsn)
+
+    monkeypatch.setattr(controller, "DockerArchiveMemberProcessor", LocalArchiveMemberProcessor)
+    key = uuid4()
+    first = controller.run_archive_member_controller(
+        path, own_dsn, inventory_id, locator, key, tenant_bound_db=True
+    )
+    replay = controller.run_archive_member_controller(
+        path, own_dsn, inventory_id, locator, key, tenant_bound_db=True
+    )
+    assert first["changed"] is True and replay["changed"] is False
+    assert controller.run_archive_member_batch_controller(
+        path, text_plan, own_dsn, tenant_bound_db=True
+    )["complete"] is True
+    assert controller.run_archive_member_plan_controller(
+        path, own_dsn, inventory_id, tenant_bound_db=True
+    )["operation"] == "archive_member_text_plan"
+    assert (root / "bundle.zip").read_bytes() == raw
+    with psycopg.connect(own_dsn) as conn:
+        conn.execute("SELECT set_config('email_brain.tenant_id', %s, true)",
+                     (str(other_tenant),))
+        assert conn.execute("SELECT id FROM tenants WHERE id=%s", (other_tenant,)).fetchall() == []
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,'forged_archive','email','Forged source')",
+                (other_tenant,),
+            )
+    private_write(path.parent / "credentials.json", [])
+    with pytest.raises(ArchiveMemberControllerError):
+        controller.run_archive_member_plan_controller(
+            path, own_dsn, inventory_id, check=True, tenant_bound_db=True
+        )
 
 
 def test_document_selector_is_distinct_and_allows_only_pdf_or_opaque_ooxml(

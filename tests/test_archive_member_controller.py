@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import ANY, MagicMock, Mock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -54,6 +54,50 @@ def controller_files(
     path = state / "archive-controller.json"
     private_write(path, config)
     return path, config, credentials
+
+
+def test_every_archive_operator_can_bind_authenticated_tenant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, config, credentials = controller_files(tmp_path)
+    config["document_image_id"] = "sha256:" + "b" * 64
+    config["image_ocr_image_id"] = "sha256:" + "c" * 64
+    private_write(path, config)
+    text_plan, _, _ = batch_plan_file(tmp_path)
+    document_plan, _, _ = document_batch_plan_file(tmp_path)
+    inventory = "archive_inventory_" + "f" * 32
+    factory = Mock(return_value=MagicMock())
+    monkeypatch.setattr(control, "Store", factory)
+    operations = (
+        (control.run_archive_member_controller, (path, "runtime-dsn", inventory, "a.txt", uuid4())),
+        (control.run_archive_member_plan_controller, (path, "runtime-dsn", inventory)),
+        (control.run_archive_document_plan_controller, (path, "runtime-dsn", inventory)),
+        (
+            control.run_archive_member_document_controller,
+            (path, "runtime-dsn", inventory, "a.pdf", uuid4()),
+        ),
+        (
+            control.run_archive_member_image_ocr_controller,
+            (path, "runtime-dsn", inventory, "a.png", uuid4()),
+        ),
+        (control.run_archive_member_batch_controller, (path, text_plan, "runtime-dsn")),
+        (control.run_archive_document_batch_controller, (path, document_plan, "runtime-dsn")),
+    )
+    expected_tenant = UUID(str(credentials[0]["tenant_id"]))
+    for operation, args in operations:
+        factory.reset_mock()
+        result = operation(*args, check=True, tenant_bound_db=True)
+        assert result["configuration_valid"] is True
+        factory.assert_called_once_with(
+            "runtime-dsn", tenant_dsns={expected_tenant: "runtime-dsn"}
+        )
+    factory.reset_mock()
+    with pytest.raises(control.ArchiveMemberControllerError):
+        control.run_archive_member_plan_controller(
+            path, "runtime-dsn", inventory, check=True,
+            tenant_bound_db=1,  # type: ignore[arg-type]
+        )
+    factory.assert_not_called()
 
 
 def batch_plan_file(

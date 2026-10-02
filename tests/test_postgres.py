@@ -80,12 +80,17 @@ from masterbrain.datacore.persistence import (
 )
 from masterbrain.email_bridge_controller import (
     EmailBridgeBatchItem,
+    EmailBridgeControllerError,
     EmailPartBridgeBatchItem,
     email_bridge_batch_sha256,
     email_part_bridge_batch_sha256,
+    run_email_attachment_bridge_controller,
     run_email_bridge_batch_controller,
     run_email_bridge_controller,
+    run_email_bridge_plan_controller,
+    run_email_document_bridge_controller,
     run_email_part_bridge_batch_controller,
+    run_email_part_bridge_plan_controller,
 )
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
@@ -993,6 +998,109 @@ def test_email_bridge_private_operator_publishes_without_legacy_mutation(
     assert result["source_effects"] is False
     assert DataCoreStore(store).search(datacore_context(ctx), "Operator bridge")
     assert store.evidence(ctx, legacy) == before
+
+
+def test_tenant_bound_email_bridge_family_refuses_foreign_logins(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
+) -> None:
+    shared, admin = database
+    ctx, account = tenant
+    shared.ingest_page(ctx, account, None, "bound-email-bridge", [item(body="Bound bridge proof")])
+    legacy = shared.search(ctx, SearchRequest(query="Bound bridge proof"))[0]["evidence_id"]
+    revision = "bound-email-bridge-v1"
+    config = email_bridge_config(tmp_path, ctx, revision)
+    other_tenant = uuid4()
+    own_role = "test_bound_email_" + uuid4().hex[:12]
+    other_role = "test_bound_email_" + uuid4().hex[:12]
+    own_password, other_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Other fictional bridge tenant')",
+                     (other_tenant,))
+        for role, password, tenant_id in (
+            (own_role, own_password, ctx.tenant_id),
+            (other_role, other_password, other_tenant),
+        ):
+            conn.execute(
+                sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                    sql.Identifier(role), sql.Literal(password)
+                )
+            )
+            grant_tenant_runtime(conn, role, tenant_id)
+    own_dsn = make_conninfo(admin, user=own_role, password=own_password)
+    other_dsn = make_conninfo(admin, user=other_role, password=other_password)
+
+    message_items = [EmailBridgeBatchItem(legacy_version_id=legacy, idempotency_key=uuid4())]
+    message_plan = tmp_path / "bound-message-plan.json"
+    message_plan.write_text(json.dumps({
+        "version": 1, "account_id": str(account), "code_revision": revision,
+        "items": [entry.model_dump(mode="json") for entry in message_items],
+        "plan_sha256": email_bridge_batch_sha256(1, account, revision, message_items),
+    }))
+    message_plan.chmod(0o600)
+    part_items = [EmailPartBridgeBatchItem(legacy_id=uuid4(), idempotency_key=uuid4())]
+    part_plan = tmp_path / "bound-part-plan.json"
+    part_plan.write_text(json.dumps({
+        "version": 1, "account_id": str(account), "kind": "attachment",
+        "code_revision": revision,
+        "items": [entry.model_dump(mode="json") for entry in part_items],
+        "plan_sha256": email_part_bridge_batch_sha256(
+            1, account, "attachment", revision, part_items
+        ),
+    }))
+    part_plan.chmod(0o600)
+    checks = (
+        lambda dsn: run_email_bridge_controller(
+            config, dsn, legacy, uuid4(), check=True, tenant_bound_db=True
+        ),
+        lambda dsn: run_email_bridge_plan_controller(
+            config, dsn, account, check=True, tenant_bound_db=True
+        ),
+        lambda dsn: run_email_part_bridge_plan_controller(
+            config, dsn, account, "attachment", check=True, tenant_bound_db=True
+        ),
+        lambda dsn: run_email_bridge_batch_controller(
+            config, message_plan, dsn, check=True, tenant_bound_db=True
+        ),
+        lambda dsn: run_email_part_bridge_batch_controller(
+            config, part_plan, dsn, check=True, tenant_bound_db=True
+        ),
+        lambda dsn: run_email_attachment_bridge_controller(
+            config, dsn, uuid4(), uuid4(), check=True, tenant_bound_db=True
+        ),
+        lambda dsn: run_email_document_bridge_controller(
+            config, dsn, uuid4(), uuid4(), check=True, tenant_bound_db=True
+        ),
+    )
+    for check in checks:
+        assert check(own_dsn)["configuration_valid"] is True
+        for refused_dsn in (shared.dsn, other_dsn, admin):
+            with pytest.raises(EmailBridgeControllerError):
+                check(refused_dsn)
+
+    before = shared.evidence(ctx, legacy)
+    key = uuid4()
+    first = run_email_bridge_controller(config, own_dsn, legacy, key, tenant_bound_db=True)
+    replay = run_email_bridge_controller(config, own_dsn, legacy, key, tenant_bound_db=True)
+    assert first["recorded"] is True and replay["recorded"] is False
+    assert run_email_bridge_batch_controller(
+        config, message_plan, own_dsn, tenant_bound_db=True
+    )["complete"] is True
+    assert shared.evidence(ctx, legacy) == before
+    with psycopg.connect(own_dsn) as conn:
+        conn.execute("SELECT set_config('email_brain.tenant_id', %s, true)",
+                     (str(other_tenant),))
+        assert conn.execute("SELECT id FROM tenants WHERE id=%s", (other_tenant,)).fetchall() == []
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,'forged_email_bridge','email','Forged source')",
+                (other_tenant,),
+            )
+    (tmp_path / "credentials.json").write_text("[]")
+    with pytest.raises(EmailBridgeControllerError):
+        run_email_bridge_controller(
+            config, own_dsn, legacy, uuid4(), check=True, tenant_bound_db=True
+        )
 
 
 def test_email_bridge_plan_is_stable_bounded_and_labels_existing_bridge(

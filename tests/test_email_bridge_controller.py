@@ -105,6 +105,46 @@ def part_batch_plan_file(
     return plan_path, account, items
 
 
+def test_every_email_bridge_operator_can_bind_authenticated_tenant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path, _, credentials = controller_files(
+        tmp_path, ["brain.source.ingest", "brain.document.publish"]
+    )
+    message_plan, _, _ = batch_plan_file(tmp_path)
+    part_plan, _, _ = part_batch_plan_file(tmp_path)
+    factory = Mock(return_value=MagicMock())
+    monkeypatch.setattr(control, "Store", factory)
+    account = uuid4()
+    operations = (
+        (control.run_email_bridge_controller, (path, "runtime-dsn", uuid4(), uuid4())),
+        (control.run_email_bridge_plan_controller, (path, "runtime-dsn", account)),
+        (
+            control.run_email_part_bridge_plan_controller,
+            (path, "runtime-dsn", account, "attachment"),
+        ),
+        (control.run_email_bridge_batch_controller, (path, message_plan, "runtime-dsn")),
+        (control.run_email_part_bridge_batch_controller, (path, part_plan, "runtime-dsn")),
+        (control.run_email_attachment_bridge_controller, (path, "runtime-dsn", uuid4(), uuid4())),
+        (control.run_email_document_bridge_controller, (path, "runtime-dsn", uuid4(), uuid4())),
+    )
+    expected_tenant = UUID(str(credentials[0]["tenant_id"]))
+    for operation, args in operations:
+        factory.reset_mock()
+        result = operation(*args, check=True, tenant_bound_db=True)
+        assert result["configuration_valid"] is True
+        factory.assert_called_once_with(
+            "runtime-dsn", tenant_dsns={expected_tenant: "runtime-dsn"}
+        )
+    factory.reset_mock()
+    with pytest.raises(control.EmailBridgeControllerError):
+        control.run_email_bridge_plan_controller(
+            path, "runtime-dsn", account, check=True,
+            tenant_bound_db=1,  # type: ignore[arg-type]
+        )
+    factory.assert_not_called()
+
+
 def test_check_authenticates_without_read_or_write(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

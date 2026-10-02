@@ -14,6 +14,7 @@ from email_brain.processing_controller import WorkerIdentity, _json, _path
 from email_brain.schemas import ClosedModel
 from email_brain.store import Store
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.datacore.worker_db import worker_store
 
 _SOURCE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,127}\Z", re.ASCII)
 
@@ -93,10 +94,7 @@ def run_fileos_index_controller(
         )
         identity = WorkerIdentity(config, scope=scopes)
         initial = identity.authenticate()
-        store = (
-            Store(dsn, tenant_dsns={initial.context.tenant_id: dsn})
-            if tenant_bound_db else Store(dsn)
-        )
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
