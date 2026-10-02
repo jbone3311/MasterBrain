@@ -2,7 +2,16 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-137 disposable local PostgreSQL trial — branch verification in progress
+## ADR-137 disposable local PostgreSQL trial — merged verification
+
+PR [#102](https://github.com/jbone3311/MasterBrain/pull/102) merged at
+`5a3ff6b1e63dc8fbde9301e97f6f9ca90af55be8` from exact head
+`ec047e4228de46ec057a3a53e658576edcee12a0`. The head passed
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36983583087),
+[strict sender runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36983582950)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36983582933).
+Hosted CI included the Docker-backed actual launcher test; the owner's
+independent browser walkthrough remains open.
 
 The actual `--backend local --self-test` launcher passed on this Mac with
 Homebrew PostgreSQL 17.11: it created a new temporary cluster, seeded two
@@ -15,8 +24,7 @@ mypy over 97 source files and documentation links passed. The first full
 attempt had three isolated-subprocess import failures after `uv sync`; repairing
 the local editable package install and rerunning the entire suite cleared all
 three. The separate local deployment gate passed **2,956 tests, one skipped**
-against another disposable cluster. Exact-head hosted CI and independent owner
-browser acceptance are not yet claimed. No existing database or source was used;
+against another disposable cluster. No existing database or source was used;
 FOS-Master was unchanged.
 
 ## ADR-136 plain-text excerpts and fictional browser trial — merged verification
