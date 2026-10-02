@@ -55,6 +55,7 @@ class TenantContext:
     scopes: frozenset[str]
     request_id: UUID
     identity: ExternalIdentity | None = None
+    source_ids: frozenset[str] | None = None
 
 
 @dataclass(frozen=True, slots=True)

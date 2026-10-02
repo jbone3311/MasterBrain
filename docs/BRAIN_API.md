@@ -54,6 +54,10 @@ objects, general SQL, or an unbounded corpus dump.
   lexical read with independent limits/ranks, explicit partial coverage and
   independent-layer consistency; requires both search scopes. `archive_member_limit`
   and `archive_image_limit` are independently 1–20; archive result locators are opaque.
+  Synthetic bootstrap assistants require explicit source enrollment: all current
+  layers are filtered before ranking/limit, and `coverage.source_access` reports
+  `enrolled_sources_only` without enumerating hidden sources. Human owners retain
+  tenant-wide bootstrap reads. This is not dynamic hosted grant/revocation.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
   `brain.changes.read`, is cursor-bounded and does not enumerate providers or paths.
@@ -151,6 +155,11 @@ read-only reference over the same REST routes used by `/brain`; it passes a
 fictional cross-source conformance test. Use it only with a separately
 authorized credential. Passing local API/client tests does not establish
 assistant integration or hosted acceptance.
+ADR-130's bootstrap assistant can call only current-search and the separately
+scoped evidence/content routes, with an explicit source allowlist. Other Brain
+and Knowledge routes fail closed for that assistant until their source semantics
+are reviewed. Hosted OIDC source enrollment and immediate revocation are open
+in [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 
 Clients should search first, expand the smallest useful set, cite evidence IDs in
 their answer, and request originals only when needed. They must treat returned content

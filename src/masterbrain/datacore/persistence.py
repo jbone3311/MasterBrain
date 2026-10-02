@@ -5188,6 +5188,7 @@ class DataCoreStore:
         self.store.require(ctx, "brain.search")
         if not query.strip() or len(query) > 500 or "\x00" in query or not 1 <= limit <= 50:
             raise ValueError("invalid current FileOS search")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
                 "WITH active AS (SELECT DISTINCT ON (source_id) source_id,generation_id "
@@ -5203,9 +5204,10 @@ class DataCoreStore:
                 "AND i.generation_id=c.generation_id AND i.document_id=c.document_id "
                 "JOIN brain_source_items si ON si.tenant_id=i.tenant_id "
                 "AND si.source_id=i.source_id AND si.id=i.item_id "
-                "WHERE c.search_vector @@ plainto_tsquery('simple',%s) "
+                "WHERE (%s::text[] IS NULL OR c.source_id=ANY(%s::text[])) "
+                "AND c.search_vector @@ plainto_tsquery('simple',%s) "
                 "ORDER BY rank DESC,c.id LIMIT %s",
-                (query, query, query, limit),
+                (query, query, allowed_sources, allowed_sources, query, limit),
             ).fetchall()
             self.store.audit(
                 conn, ctx, "brain.current_fileos_search", "brain_index", "fileos_active"
@@ -5219,6 +5221,7 @@ class DataCoreStore:
         self.store.require(ctx, "brain.search")
         if not query.strip() or len(query) > 500 or "\x00" in query or not 1 <= limit <= 50:
             raise ValueError("invalid current Email search")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
                 "SELECT c.id AS chunk_id,c.document_id,e.id AS evidence_id,v.source_id,"
@@ -5241,9 +5244,10 @@ class DataCoreStore:
                 "AND m.id=mv.message_id AND m.raw_sha256=mv.raw_sha256 "
                 "AND m.parser_version=mv.parser_version "
                 "WHERE NOT m.deleted AND NOT m.quarantined "
+                "AND (%s::text[] IS NULL OR v.source_id=ANY(%s::text[])) "
                 "AND c.search_vector @@ plainto_tsquery('simple',%s) "
                 "ORDER BY rank DESC,c.id LIMIT %s",
-                (query, query, query, limit),
+                (query, query, allowed_sources, allowed_sources, query, limit),
             ).fetchall()
             self.store.audit(
                 conn, ctx, "brain.current_email_search", "brain_index", "email_bridged"
@@ -5257,6 +5261,7 @@ class DataCoreStore:
         self.store.require(ctx, "brain.search")
         if not query.strip() or len(query) > 500 or "\x00" in query or not 1 <= limit <= 20:
             raise ValueError("invalid current archive-member search")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
                 "SELECT c.id AS chunk_id,c.document_id,e.id AS evidence_id,v.source_id,"
@@ -5286,9 +5291,10 @@ class DataCoreStore:
                 "AND a.source_id=r.source_id AND NOT m.is_container "
                 "AND v.sha256=m.sha256 AND v.size_bytes=m.observed_size "
                 "AND v.media_type=m.media_hint) AND "
+                "(%s::text[] IS NULL OR v.source_id=ANY(%s::text[])) AND "
                 "c.search_vector @@ plainto_tsquery('simple',%s) "
                 "ORDER BY rank DESC,c.id LIMIT %s",
-                (query, query, query, limit),
+                (query, query, allowed_sources, allowed_sources, query, limit),
             ).fetchall()
             self.store.audit(
                 conn,
@@ -5306,6 +5312,7 @@ class DataCoreStore:
         self.store.require(ctx, "brain.search")
         if not query.strip() or len(query) > 500 or "\x00" in query or not 1 <= limit <= 20:
             raise ValueError("invalid current archive-document search")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
                 "SELECT c.id AS chunk_id,c.document_id,e.id AS evidence_id,v.source_id,"
@@ -5345,9 +5352,10 @@ class DataCoreStore:
                 "(r.document_format='xlsx' AND m.is_container "
                 "AND lower(right(m.locator,5))='.xlsx' AND m.media_hint="
                 "'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'))) AND "
+                "(%s::text[] IS NULL OR v.source_id=ANY(%s::text[])) AND "
                 "c.search_vector @@ plainto_tsquery('simple',%s) "
                 "ORDER BY rank DESC,c.id LIMIT %s",
-                (query, query, query, limit),
+                (query, query, allowed_sources, allowed_sources, query, limit),
             ).fetchall()
             self.store.audit(
                 conn,
@@ -5365,6 +5373,7 @@ class DataCoreStore:
         self.store.require(ctx, "brain.search")
         if not query.strip() or len(query) > 500 or "\x00" in query or not 1 <= limit <= 20:
             raise ValueError("invalid current archive-image search")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
                 "SELECT c.id AS chunk_id,c.document_id,e.id AS evidence_id,v.source_id,"
@@ -5405,9 +5414,10 @@ class DataCoreStore:
                 "(r.image_format='bmp' AND right(lower(m.locator),4)='.bmp') OR "
                 "(r.image_format='gif' AND right(lower(m.locator),4)='.gif') OR "
                 "(r.image_format='webp' AND right(lower(m.locator),5)='.webp'))) "
+                "AND (%s::text[] IS NULL OR v.source_id=ANY(%s::text[])) "
                 "AND c.search_vector @@ plainto_tsquery('simple',%s) "
                 "ORDER BY rank DESC,c.id LIMIT %s",
-                (query, query, query, limit),
+                (query, query, allowed_sources, allowed_sources, query, limit),
             ).fetchall()
             self.store.audit(
                 conn,
@@ -5437,6 +5447,7 @@ class DataCoreStore:
             or any(not 1 <= limit <= 25 for limit in limits)
         ):
             raise ValueError("invalid current Email family search")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
                 "WITH current_parents AS ("
@@ -5450,7 +5461,8 @@ class DataCoreStore:
                 "AND m.parser_version=mv.parser_version JOIN brain_source_items pi ON "
                 "pi.tenant_id=eb.tenant_id AND pi.id=eb.item_id "
                 "AND pi.current_version_id=eb.version_id "
-                "WHERE NOT m.deleted AND NOT m.quarantined), family AS ("
+                "WHERE NOT m.deleted AND NOT m.quarantined "
+                "AND (%s::text[] IS NULL OR eb.source_id=ANY(%s::text[]))), family AS ("
                 "SELECT 'message'::text AS result_kind,c.id AS chunk_id,c.document_id,"
                 "p.evidence_id,p.source_id,p.locator,c.text,c.search_vector "
                 "FROM current_parents p JOIN brain_normalized_documents d ON "
@@ -5491,7 +5503,10 @@ class DataCoreStore:
                 "(result_kind='document' AND result_ordinal<=%s) "
                 "ORDER BY CASE result_kind WHEN 'message' THEN 1 WHEN 'attachment' THEN 2 "
                 "ELSE 3 END,rank DESC,chunk_id",
-                (query, query, query, message_limit, attachment_limit, document_limit),
+                (
+                    allowed_sources, allowed_sources, query, query, query,
+                    message_limit, attachment_limit, document_limit,
+                ),
             ).fetchall()
             self.store.audit(
                 conn, ctx, "brain.current_email_family_search", "brain_index", "email_family"
@@ -5624,6 +5639,7 @@ class DataCoreStore:
         self.store.require(ctx, "brain.evidence.read")
         if not _IDENTITY.fullmatch(evidence_id):
             raise NotFound()
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             row = conn.execute(
                 "SELECT e.id,e.sha256,e.storage,e.retained,e.created_at,"
@@ -5639,8 +5655,9 @@ class DataCoreStore:
                 "LEFT JOIN LATERAL (SELECT nd.id,nd.normalizer,nd.created_at "
                 "FROM brain_normalized_documents nd WHERE nd.tenant_id=e.tenant_id "
                 "AND nd.evidence_id=e.id ORDER BY nd.created_at DESC,nd.id DESC LIMIT 1) d "
-                "ON true WHERE e.id=%s",
-                (evidence_id,),
+                "ON true WHERE e.id=%s "
+                "AND (%s::text[] IS NULL OR v.source_id=ANY(%s::text[]))",
+                (evidence_id, allowed_sources, allowed_sources),
             ).fetchone()
             if not row:
                 raise NotFound()
@@ -5653,12 +5670,17 @@ class DataCoreStore:
         self.store.require(ctx, "brain.content.read")
         if not _IDENTITY.fullmatch(evidence_id) or not 1 <= max_chars <= 16_000:
             raise ValueError("invalid evidence content request")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             row = conn.execute(
                 "SELECT d.id AS document_id,d.body,d.body_sha256,d.normalizer,d.created_at "
-                "FROM brain_normalized_documents d WHERE d.evidence_id=%s "
+                "FROM brain_normalized_documents d "
+                "JOIN brain_evidence e ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id WHERE d.evidence_id=%s "
+                "AND (%s::text[] IS NULL OR v.source_id=ANY(%s::text[])) "
                 "ORDER BY d.created_at DESC,d.id DESC LIMIT 1",
-                (evidence_id,),
+                (evidence_id, allowed_sources, allowed_sources),
             ).fetchone()
             if not row:
                 raise NotFound()

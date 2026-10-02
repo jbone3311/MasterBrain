@@ -136,7 +136,9 @@ def create_app(
             raise ValueError("browser and API must share the same Store")
         app.include_router(browser_router(browser_auth))
 
-    def require(scope: str, *, human: bool = False) -> Callable[..., Principal]:
+    def require(
+        scope: str, *, human: bool = False, assistant_source_aware: bool = False
+    ) -> Callable[..., Principal]:
         def dependency(
             request: Request,
             credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
@@ -165,6 +167,9 @@ def create_app(
                 human and principal.client_kind != "human"
             ):
                 raise HTTPException(403, "scope_denied")
+            if principal.client_kind == "assistant" and scope.startswith(("brain.", "knowledge.")):
+                if not assistant_source_aware or not principal.context.source_ids:
+                    raise HTTPException(403, "scope_denied")
             return replace(
                 principal,
                 context=replace(principal.context, request_id=UUID(request.state.request_id)),
@@ -492,7 +497,9 @@ def create_app(
     @app.post("/v1/brain/current-search")
     def current_grouped_search(
         body: CurrentGroupedSearchRequest,
-        principal: Annotated[Principal, Depends(require("brain.search"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.search", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         if "knowledge.search" not in principal.context.scopes:
             raise HTTPException(403, "scope_denied")
@@ -541,6 +548,10 @@ def create_app(
             "ranking": "within_group_only",
             "consistency": "independent_layer_reads",
             "coverage": {
+                "source_access": (
+                    "enrolled_sources_only"
+                    if principal.context.source_ids is not None else "tenant_sources"
+                ),
                 "fileos": "sources_with_active_generation_only",
                 "archive_members": "explicitly_published_current_archive_members_only",
                 "archive_documents": ("explicitly_published_current_archive_documents_only"),
@@ -586,7 +597,9 @@ def create_app(
     @app.get("/v1/brain/evidence/{evidence_id}")
     def brain_evidence(
         evidence_id: str,
-        principal: Annotated[Principal, Depends(require("brain.evidence.read"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.evidence.read", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         return brain.evidence(principal.context, evidence_id)
 
@@ -594,7 +607,9 @@ def create_app(
     def brain_evidence_content(
         evidence_id: str,
         body: EvidenceContentRequest,
-        principal: Annotated[Principal, Depends(require("brain.content.read"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.content.read", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         return brain.evidence_content(principal.context, evidence_id, max_chars=body.max_chars)
 

@@ -365,16 +365,31 @@ class KnowledgeCore:
             raise ValueError("invalid knowledge search")
         if any(kind not in _TABLES for kind in selected) or len(set(selected)) != len(selected):
             raise ValueError("invalid knowledge kinds")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
-                "SELECT object_kind,object_id,title,"
-                "ts_headline('simple',body,plainto_tsquery('simple',%s),'MaxWords=35,MinWords=10') "
-                "AS excerpt,ts_rank_cd(search_vector,plainto_tsquery('simple',%s)) AS rank "
-                "FROM knowledge_search_documents WHERE search_vector @@ "
+                "SELECT k.object_kind,k.object_id,k.title,"
+                "ts_headline('simple',k.body,plainto_tsquery('simple',%s),"
+                "'MaxWords=35,MinWords=10') AS excerpt,"
+                "ts_rank_cd(k.search_vector,plainto_tsquery('simple',%s)) AS rank "
+                "FROM knowledge_search_documents k WHERE k.search_vector @@ "
                 "plainto_tsquery('simple',%s) "
-                "AND (cardinality(%s::text[])=0 OR object_kind=ANY(%s)) "
-                "ORDER BY rank DESC,object_kind,object_id LIMIT %s",
-                (query, query, query, selected, selected, limit),
+                "AND (cardinality(%s::text[])=0 OR k.object_kind=ANY(%s)) "
+                "AND (%s::text[] IS NULL OR ("
+                "EXISTS (SELECT 1 FROM knowledge_evidence ke "
+                "WHERE ke.tenant_id=k.tenant_id AND ke.target_kind=k.object_kind "
+                "AND ke.target_id=k.object_id) AND NOT EXISTS ("
+                "SELECT 1 FROM knowledge_evidence ke "
+                "JOIN brain_evidence e ON e.tenant_id=ke.tenant_id "
+                "AND e.id=ke.evidence_id JOIN brain_source_versions v "
+                "ON v.tenant_id=e.tenant_id AND v.id=e.source_version_id "
+                "WHERE ke.tenant_id=k.tenant_id AND ke.target_kind=k.object_kind "
+                "AND ke.target_id=k.object_id AND v.source_id<>ALL(%s::text[])))) "
+                "ORDER BY rank DESC,k.object_kind,k.object_id LIMIT %s",
+                (
+                    query, query, query, selected, selected, allowed_sources,
+                    allowed_sources, limit,
+                ),
             ).fetchall()
             hits: list[KnowledgeHit] = []
             for row in rows:

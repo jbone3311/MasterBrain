@@ -34,6 +34,9 @@ Extraction workers can read bounded evidence and publish derivatives, not source
 effects. Knowledge workers read DataCore publications and write projections. Brain API
 has scoped retrieval, not provider/filesystem credentials. Effect executors are
 separate, disabled initially, and restricted to approved commands.
+Synthetic bootstrap assistant source allowlists are not a hosted access system:
+administrator-owned OIDC source enrollment, revocation and derived-cache
+invalidation remain release gates (ADR-130 and issue #88).
 
 PDF, DOCX and XLSX use the dedicated `Dockerfile.documents` worker image. The ordinary
 API image intentionally excludes document-reader dependencies. The document worker is

@@ -1227,6 +1227,14 @@ def test_current_email_search_tracks_legacy_update_and_delete(
     first_family = core.search_current_email_family(bridge_ctx, "Amber current")
     assert [hit.evidence_id for hit in first_family.messages] == [first_bridge.evidence_id]
     assert first_family.attachments == () and first_family.documents == ()
+    denied_source = replace(bridge_ctx, source_ids=frozenset({"other_email_source"}))
+    assert core.search_current_email(denied_source, "Amber current") == []
+    assert core.search_current_email_family(denied_source, "Amber current").messages == ()
+    permitted_source = replace(bridge_ctx, source_ids=frozenset({first_bridge.source_id}))
+    permitted_hits = core.search_current_email(permitted_source, "Amber current")
+    assert [hit.evidence_id for hit in permitted_hits] == [
+        first_bridge.evidence_id
+    ]
     first_coverage = next(
         row
         for row in core.current_coverage(bridge_ctx)["results"]
@@ -1871,6 +1879,14 @@ def test_archive_member_text_publication_is_distinct_replayable_and_not_current_
     assert core.search_current_fileos(ctx, "archive derivative searchable") == []
     current = core.search_current_archive_members(ctx, "archive derivative searchable")
     assert [hit.evidence_id for hit in current] == [first.evidence_id]
+    assert core.search_current_archive_members(
+        replace(ctx, source_ids=frozenset({"other_archive"})),
+        "archive derivative searchable",
+    ) == []
+    assert [hit.evidence_id for hit in core.search_current_archive_members(
+        replace(ctx, source_ids=frozenset({current[0].source_id})),
+        "archive derivative searchable",
+    )] == [first.evidence_id]
     assert current[0].locator.startswith("archive-member/archiveitem_")
     assert member.locator not in current[0].locator
     with store.transaction(ctx) as conn:
@@ -2003,6 +2019,12 @@ def test_current_archive_document_search_is_exact_replay_safe_and_parent_fenced(
     assert core.search_current_fileos(ctx, marker) == []
     current = core.search_current_archive_documents(ctx, marker)
     assert [hit.evidence_id for hit in current] == [first.evidence_id]
+    assert core.search_current_archive_documents(
+        replace(ctx, source_ids=frozenset({"other_archive"})), marker
+    ) == []
+    assert [hit.evidence_id for hit in core.search_current_archive_documents(
+        replace(ctx, source_ids=frozenset({"files_archive_document_search"})), marker
+    )] == [first.evidence_id]
     assert current[0].locator.startswith("archive-member/archiveitem_")
     assert target.member_locator not in current[0].locator
     assert core.search(ctx, marker)[0].evidence_id == first.evidence_id
@@ -2083,6 +2105,12 @@ def test_current_archive_image_search_receipt_suffix_mapping(
     )
     hits = core.search_current_archive_images(ctx, marker)
     assert [hit.evidence_id for hit in hits] == [published.evidence_id]
+    assert core.search_current_archive_images(
+        replace(ctx, source_ids=frozenset({"other_archive"})), marker
+    ) == []
+    assert [hit.evidence_id for hit in core.search_current_archive_images(
+        replace(ctx, source_ids=frozenset({"files_archive_image_suffix"})), marker
+    )] == [published.evidence_id]
 
 
 def test_archive_member_image_ocr_publication_is_exact_replay_safe_and_provenanced(
@@ -3035,6 +3063,17 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
     cross_source_hits = core.search_current_fileos(ctx, "MasterBrain searchable")
     assert {hit.source_id for hit in cross_source_hits} == {"files_adapter", "files_other"}
     assert len(core.search_current_fileos(ctx, "MasterBrain searchable", limit=1)) == 1
+    only_other = core.search_current_fileos(
+        replace(ctx, source_ids=frozenset({"files_other"})),
+        "MasterBrain searchable",
+        limit=1,
+    )
+    assert len(only_other) == 1 and only_other[0].source_id == "files_other"
+    assert core.search_current_fileos(
+        replace(ctx, source_ids=frozenset({"not_enrolled_here"})),
+        "MasterBrain searchable",
+        limit=1,
+    ) == []
     stale_run_id = uuid4()
     core.import_fileos_snapshot(ctx, manifest, stale_run_id)
     with pytest.raises(Conflict, match="not newer"):
@@ -3070,7 +3109,7 @@ def test_fileos_adapter_isolates_sibling_failure_and_publishes_searchable_text(
                             "brain.changes.read",
                         },
                         expires_at=datetime.now(UTC) + timedelta(minutes=5),
-                        client_kind="assistant",
+                        client_kind="human",
                     )
                 ]
             ),

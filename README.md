@@ -55,7 +55,7 @@ FileOS sources ┘       │              │                │
 |---|---|
 | Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
 | Fictional Email/FileOS browser trial with citation drill-down | Merged and hosted-test verified; interactive Mac acceptance pending |
-| Provider-neutral external Brain API read client | Reference transport with fictional current-search/evidence parity; no hosted or named-assistant integration |
+| Provider-neutral external Brain API read client | Reference transport with fictional current-search/evidence parity; synthetic assistant credentials require explicit source enrollment. No hosted or named-assistant integration |
 | Privacy-safe API failure correlation | Implemented; production log collection and alerting pending |
 | Opt-in tenant-routed API database access | Synthetic two-tenant API path with separate exact-lookup and bound data logins; private workers, credential lifecycle and hosted acceptance pending |
 | Typed reviewed travel/bill memory | Working narrow prototype |

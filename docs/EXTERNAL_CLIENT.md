@@ -17,7 +17,10 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 | `evidence_content(id, max_chars=4000)` | `POST /v1/brain/evidence/{id}/content` | `brain.content.read` |
 
 The server remains the authority for identity, tenant, scopes, source visibility
-and freshness. A successful search is not a grant to read original evidence.
+and freshness. In the synthetic bootstrap path, an assistant must be enrolled
+for explicit source IDs; its other Brain/Knowledge routes are denied. This is a
+static test credential, not hosted grant issuance or immediate revocation. A
+successful search is not a grant to read original evidence.
 No client method changes a file or mailbox, proposes or approves an action,
 returns provider credentials, or bypasses current-source selection.
 
@@ -46,5 +49,5 @@ The fictional [cross-source trial](CROSS_SOURCE_TRIAL.md) now runs the same
 questions through a direct Brain API request and this client, comparing the
 exact grouped response, evidence expansion, separate content grant and
 cross-tenant denial. This proves the reference transport on a local test
-boundary; it does not certify a named assistant, token issuance/revocation,
+boundary; it does not certify a named assistant, hosted token issuance/revocation,
 private hosting, grounded answer synthesis or live sources.

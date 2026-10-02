@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added synthetic-bootstrap source-scoped assistant reads (ADR-130): explicit
+  source enrollment filters the shared current Email/FileOS/archive and
+  reviewed-Knowledge search before limits, gates evidence expansion and denies
+  unreviewed alternate Brain/Knowledge routes. This does not establish hosted
+  OIDC grants, immediate revocation, a named assistant or source effects.
 - Merged a provider-neutral, read-only Brain API client (ADR-129, PR #86)
   for grouped current search and separately scoped evidence/content reads.
   Fictional Email/FileOS client-vs-API parity, exact-head and merged-main CI,
