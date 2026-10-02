@@ -58,7 +58,7 @@ FileOS sources ┘       │              │                │
 | Provider-neutral external Brain API read client | Reference transport for current-search/evidence and source-scoped coverage/change status; synthetic and administrator-bound OIDC Brain assistants require explicit source enrollment. No hosted or named-assistant integration |
 | First-party and external extractive question answering | Optional ADR-134 API returns server-verified source quotes with citations; no model selector is enabled by default and the browser falls back to search. No freeform synthesis, hosted model or source writes |
 | Privacy-safe API failure correlation | Implemented; production log collection and alerting pending |
-| Opt-in tenant-routed database access | Synthetic two-tenant API path with separate exact-lookup and bound data logins; one private FileOS publisher can require its worker's tenant-bound login. Other workers, credential lifecycle and hosted acceptance pending |
+| Opt-in tenant-routed database access | Synthetic two-tenant API path with separate exact-lookup and bound data logins; private FileOS publication and index/rollback operators can require their worker's tenant-bound login. Other workers, credential lifecycle and hosted acceptance pending |
 | Typed reviewed travel/bill memory | Working narrow prototype |
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
 | FileOS scanner/reconciler inventory classifier | Behavior-identical donor extraction; 3,000-path parity, not yet wired into snapshots |

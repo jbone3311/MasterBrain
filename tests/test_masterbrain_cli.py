@@ -144,6 +144,7 @@ def test_cli_index_uses_masterbrain_dsn_and_explicit_target(
             "run_id": str(options["run_id"]) == run_id,
             "generation_id": options["generation_id"],
             "check": options["check"],
+            "tenant_bound_db": options["tenant_bound_db"],
             "source_effects": False,
         },
     )
@@ -168,9 +169,32 @@ def test_cli_index_uses_masterbrain_dsn_and_explicit_target(
         "generation_id": None,
         "key": True,
         "run_id": True,
+        "tenant_bound_db": False,
         "source_effects": False,
     }
     assert dsn not in output
+
+
+def test_cli_index_forwards_tenant_bound_mode_for_rollback(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("MASTERBRAIN_DSN", "dbname=synthetic user=bound password=secret")
+    monkeypatch.setattr(
+        cli, "run_fileos_index_controller",
+        lambda _path, _dsn, _key, **options: options,
+    )
+    main([
+        "fileos", "index", "--config", str(tmp_path / "index.json"),
+        "--generation-id", "index_generation_abc",
+        "--idempotency-key", "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+        "--tenant-bound-db", "--check",
+    ])
+    assert json.loads(capsys.readouterr().out) == {
+        "run_id": None,
+        "generation_id": "index_generation_abc",
+        "check": True,
+        "tenant_bound_db": True,
+    }
 
 
 def test_cli_archive_text_uses_explicit_member_and_scrubs_dsn(

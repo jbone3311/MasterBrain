@@ -41,7 +41,7 @@ Security and data-integrity blockers take priority over adding more surface area
    [tenant-context authority bug #7](https://github.com/jbone3311/MasterBrain/issues/7).
    ADR-108 adds an opt-in one-tenant database-login fence. ADR-109 adds a
    synthetic API route through separate lookup and tenant logins. ADR-135 adds
-   one opt-in tenant-bound private FileOS publisher; remaining private-worker
+   opt-in tenant-bound private FileOS publication and index/rollback operators; remaining private-worker
    routing, credential lifecycle and hosted adversarial acceptance remain next.
    Independently close or explicitly accept that risk and the
    [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).

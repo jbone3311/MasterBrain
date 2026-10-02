@@ -2,6 +2,13 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added ADR-138's explicit `--tenant-bound-db` option to both private FileOS
+  index build/activation and activation-only rollback. The authenticated
+  worker's tenant must match a DBA-bound PostgreSQL login, including check
+  mode; synthetic two-tenant tests reject shared, wrong and owner logins.
+  Default local behavior, source files and FOS-Master are unchanged. Other
+  private workers and hosted credential operations remain issue #7.
+
 - Corrected the Mac trial command to choose a supported Python 3.13–3.14
   interpreter; `--python 3.12` could select unsupported 3.12.4 and stop before
   the browser opened. The command now forwards explicit trial options so its

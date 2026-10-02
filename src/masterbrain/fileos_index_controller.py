@@ -70,6 +70,7 @@ def run_fileos_index_controller(
     run_id: UUID | None = None,
     generation_id: str | None = None,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Build/activate an exact run, or activate an existing generation as rollback."""
     try:
@@ -79,6 +80,7 @@ def run_fileos_index_controller(
             or (run_id is None) == (generation_id is None)
             or (run_id is not None and not isinstance(run_id, UUID))
             or (generation_id is not None and not _SOURCE_ID.fullmatch(generation_id))
+            or type(tenant_bound_db) is not bool
         ):
             raise FileOSIndexControllerError()
         config = FileOSIndexControllerConfig.model_validate(_json(path))
@@ -91,7 +93,10 @@ def run_fileos_index_controller(
         )
         identity = WorkerIdentity(config, scope=scopes)
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = (
+            Store(dsn, tenant_dsns={initial.context.tenant_id: dsn})
+            if tenant_bound_db else Store(dsn)
+        )
         with store.transaction(initial.context):
             pass
         _current(identity, initial)

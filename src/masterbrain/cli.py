@@ -126,6 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
     target.add_argument("--generation-id")
     index.add_argument("--idempotency-key", type=UUID, required=True)
     index.add_argument("--check", action="store_true")
+    index.add_argument("--tenant-bound-db", action="store_true")
     archive_text = file_commands.add_parser(
         "archive-text", help="Publish one selected archive text member"
     )
@@ -283,6 +284,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         run_id=args.run_id,
                         generation_id=args.generation_id,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )

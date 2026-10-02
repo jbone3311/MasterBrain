@@ -219,6 +219,113 @@ def test_tenant_bound_fileos_publish_contains_shared_and_wrong_login(
         run_fileos_controller(path, own_dsn, uuid4(), check=True, tenant_bound_db=True)
 
 
+def test_tenant_bound_fileos_index_build_replay_and_rollback(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+) -> None:
+    shared, admin = database
+    ctx, _ = tenant
+    publish_path, source, _, _ = setup_controller(tmp_path, ctx)
+    other_tenant = uuid4()
+    own_role = "test_index_bound_" + uuid4().hex[:12]
+    other_role = "test_index_bound_" + uuid4().hex[:12]
+    own_password, other_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Other fictional index tenant')",
+            (other_tenant,),
+        )
+        for role, password, tenant_id in (
+            (own_role, own_password, ctx.tenant_id),
+            (other_role, other_password, other_tenant),
+        ):
+            conn.execute(
+                sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                    sql.Identifier(role), sql.Literal(password)
+                )
+            )
+            grant_tenant_runtime(conn, role, tenant_id)
+    own_dsn = make_conninfo(admin, user=own_role, password=own_password)
+    other_dsn = make_conninfo(admin, user=other_role, password=other_password)
+    before = source.joinpath("brief.txt").read_bytes()
+    run_id = uuid4()
+    assert run_fileos_controller(
+        publish_path, own_dsn, run_id, tenant_bound_db=True
+    )["completion"]["recorded"] is True
+
+    index_path, _ = setup_index_controller(
+        publish_path.parent,
+        ctx,
+        ["brain.document.publish", "brain.index.activate"],
+        revision="bound-index-v1",
+    )
+    build_key = uuid4()
+    for refused_dsn in (shared.dsn, other_dsn, admin):
+        with pytest.raises(FileOSIndexControllerError):
+            run_fileos_index_controller(
+                index_path, refused_dsn, build_key,
+                run_id=run_id, check=True, tenant_bound_db=True,
+            )
+    assert run_fileos_index_controller(
+        index_path, own_dsn, build_key,
+        run_id=run_id, check=True, tenant_bound_db=True,
+    )["data_effects"] is False
+    first = run_fileos_index_controller(
+        index_path, own_dsn, build_key, run_id=run_id, tenant_bound_db=True
+    )
+    assert first["generation"]["recorded"] is True
+    assert first["activation"]["recorded"] is True
+    replay = run_fileos_index_controller(
+        index_path, own_dsn, build_key, run_id=run_id, tenant_bound_db=True
+    )
+    assert replay["generation_id"] == first["generation_id"]
+    assert replay["generation"]["recorded"] is False
+    assert replay["activation"]["recorded"] is False
+
+    config = json.loads(index_path.read_text())
+    config["code_revision"] = "bound-index-v2"
+    private_write(index_path, config)
+    second = run_fileos_index_controller(
+        index_path, own_dsn, uuid4(), run_id=run_id, tenant_bound_db=True
+    )
+    assert second["generation_id"] != first["generation_id"]
+    rollback_path, _ = setup_index_controller(
+        publish_path.parent, ctx, ["brain.index.activate"], revision="bound-index-v2"
+    )
+    for refused_dsn in (shared.dsn, other_dsn, admin):
+        with pytest.raises(FileOSIndexControllerError):
+            run_fileos_index_controller(
+                rollback_path, refused_dsn, uuid4(),
+                generation_id=first["generation_id"], check=True,
+                tenant_bound_db=True,
+            )
+    rollback = run_fileos_index_controller(
+        rollback_path, own_dsn, uuid4(),
+        generation_id=first["generation_id"], tenant_bound_db=True,
+    )
+    assert rollback["activation"]["previous_generation_id"] == second["generation_id"]
+    assert source.joinpath("brief.txt").read_bytes() == before
+
+    with psycopg.connect(own_dsn) as conn:
+        conn.execute("SELECT set_config('email_brain.tenant_id', %s, true)",
+                     (str(other_tenant),))
+        assert conn.execute("SELECT id FROM tenants WHERE id=%s", (other_tenant,)).fetchall() == []
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,'forged_index_source','email','Forged source')",
+                (other_tenant,),
+            )
+    private_write(rollback_path.parent / "index-credentials.json", [])
+    with pytest.raises(FileOSIndexControllerError):
+        run_fileos_index_controller(
+            rollback_path, own_dsn, uuid4(),
+            generation_id=first["generation_id"], check=True,
+            tenant_bound_db=True,
+        )
+
+
 def test_index_build_replay_changed_revision_and_rollback(
     database: tuple[object, str],
     tenant: tuple[TenantContext, UUID],

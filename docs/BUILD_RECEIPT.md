@@ -2,6 +2,31 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+PR [#104](https://github.com/jbone3311/MasterBrain/pull/104) merged at
+`62e55c0a12c9a3d3274feb7974878e9d2699a37c`. Its merged-main
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36989827326),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36989827321)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36989827316)
+all passed. The tagged `v0.2.0a1` checkpoint remains separate from this
+later merged-main state.
+
+## ADR-138 tenant-bound FileOS indexing — local branch verification
+
+The opt-in private index/rollback operator now binds its runtime PostgreSQL
+login to the authenticated worker's exact tenant. A real disposable PostgreSQL
+17.11 two-tenant regression passed bound publication, index build/activation,
+idempotent replay, second generation and activation-only rollback. It refused
+shared, wrong-tenant and owner logins in check mode for both index modes;
+forged tenant GUCs on the bound login could not read/write the other tenant.
+The source file remained unchanged and revoked worker credentials were refused.
+The final-tree full Python 3.14.7 suite passed **2,960 tests, one Docker-only skip**
+against a disposable database; 467 of 468 PostgreSQL-marked tests executed.
+The separate final-tree local deployment gate passed the same count against another
+disposable database. The six required Node browser suites passed **143 tests**;
+Ruff, strict mypy over 97 source files, documentation and diff checks passed.
+The exact branch still requires hosted CI and restore. FOS-Master was not
+changed. This is not hosted acceptance or issue #7 closure.
+
 ## ADR-137 Mac trial interpreter correction — local verification
 
 The normal `Start-MasterBrain-Trial.command` initially failed before opening a
