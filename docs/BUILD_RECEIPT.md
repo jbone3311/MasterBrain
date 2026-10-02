@@ -2,7 +2,18 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## API-CLIENT-001 provider-neutral read-only client — branch verification
+## API-CLIENT-001 provider-neutral read-only client — merged verification
+
+PR [#86](https://github.com/jbone3311/MasterBrain/pull/86) merged at
+`3510f8ccda8972bce3221a12fb7ba74fdd546e86` from exact head
+`c8ef014d2b8bbae1647b0d18ab24e3d65087d20a`. The head passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36940701978),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36940702049)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36940701991).
+The merge commit also passed the
+[CI gate](https://github.com/jbone3311/MasterBrain/actions/runs/36941594096),
+[strict runtime matrix](https://github.com/jbone3311/MasterBrain/actions/runs/36941594090)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36941594072).
 
 ADR-129 adds a deliberately narrow Python client for the existing Brain API:
 grouped current search, selected evidence metadata, and separately authorized
@@ -24,8 +35,8 @@ files, 140 browser tests, documentation and diff checks passed. The pinned
 FOS-Master 3,000-file DataCore comparison passed; donor-policy shadow matched
 3,004 candidate rows with zero unexplained membership differences and six
 explicit transition-policy gaps. No FOS-Master change, live-source acceptance,
-hosted deployment or version tag is claimed. The branch still requires exact-head
-and post-merge GitHub checks before this section can be marked merged.
+hosted deployment or version tag is claimed. The disposable synthetic test
+cluster was stopped and removed after validation.
 
 ## DC-002V private FileOS v2 search comparison — merged verification
 
