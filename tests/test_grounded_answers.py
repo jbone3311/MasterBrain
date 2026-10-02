@@ -49,6 +49,14 @@ def grouped(with_hit: bool = True) -> dict:
     }
 
 
+def reviewed_hit() -> dict:
+    return {
+        "object_kind": "commitment", "object_id": "commitment_" + "d" * 32,
+        "title": "Insurance follow-up", "excerpt": "Insurance certificate is outstanding.",
+        "evidence_ids": [EVIDENCE],
+    }
+
+
 def brain_mock() -> MagicMock:
     brain = MagicMock(spec=DataCoreStore)
     brain.evidence.return_value = {
@@ -178,6 +186,100 @@ def test_no_current_evidence_is_explicit_and_never_calls_model() -> None:
     assert answer["status"] == "no_supported_evidence"
     assert answer["citations"] == []
     assert selector.seen is None
+
+
+def test_reviewed_knowledge_is_separate_from_exact_source_quotes() -> None:
+    selector = Selector()
+    only_knowledge = grouped(False)
+    only_knowledge["layers"]["knowledge"] = [reviewed_hit()]
+    answer = GroundedAnswerService(brain_mock(), selector).answer(
+        context(), "insurance", lambda: only_knowledge
+    )
+    assert selector.seen is None
+    assert answer["status"] == "no_supported_answer"
+    assert answer["citations"] == []
+    assert answer["reviewed_knowledge"] == [{
+        **reviewed_hit(), "linked_evidence_count": 1,
+    }]
+    assert "No exact source quote" in answer["answer"]
+    combined = grouped()
+    combined["layers"]["knowledge"] = [reviewed_hit()]
+    with_quotes = GroundedAnswerService(brain_mock(), Selector()).answer(
+        context(), "insurance", lambda: combined
+    )
+    assert with_quotes["status"] == "quoted_evidence"
+    assert len(with_quotes["citations"]) == 1
+    assert len(with_quotes["reviewed_knowledge"]) == 1
+
+
+def test_reviewed_knowledge_stale_or_malformed_fails_closed() -> None:
+    initial = grouped(False)
+    initial["layers"]["knowledge"] = [reviewed_hit()]
+    calls = 0
+
+    def revoked():
+        nonlocal calls
+        calls += 1
+        return initial if calls == 1 else grouped(False)
+
+    with pytest.raises(AnswerStale):
+        GroundedAnswerService(brain_mock(), Selector()).answer(context(), "insurance", revoked)
+    changed = grouped(False)
+    changed["layers"]["knowledge"] = [{**reviewed_hit(), "title": "Changed assertion"}]
+    calls = 0
+
+    def drifted():
+        nonlocal calls
+        calls += 1
+        return initial if calls == 1 else changed
+
+    with pytest.raises(AnswerStale):
+        GroundedAnswerService(brain_mock(), Selector()).answer(context(), "insurance", drifted)
+    for bad in (
+        {**reviewed_hit(), "object_id": "commitment_" + "0" * 31},
+        {**reviewed_hit(), "title": "x" * 301},
+        {**reviewed_hit(), "evidence_ids": [EVIDENCE] * 2},
+        {**reviewed_hit(), "evidence_ids": [EVIDENCE] * 21},
+        {**reviewed_hit(), "excerpt": "private\x00text"},
+    ):
+        malformed = grouped(False)
+        malformed["layers"]["knowledge"] = [bad]
+        with pytest.raises(AnswerRejected):
+            GroundedAnswerService(brain_mock(), Selector()).answer(
+                context(), "insurance", lambda value=malformed: value
+            )
+
+
+def test_reviewed_knowledge_caps_hits_and_links_but_rechecks_hidden_links() -> None:
+    first = reviewed_hit()
+    links = ["evidence_" + f"{number:032x}" for number in range(20)]
+    first["evidence_ids"] = links
+    initial = grouped(False)
+    initial["layers"]["knowledge"] = [
+        first,
+        *[{**reviewed_hit(), "object_id": "commitment_" + f"{number:032x}"}
+          for number in range(1, 5)],
+    ]
+    answer = GroundedAnswerService(brain_mock(), Selector()).answer(
+        context(), "insurance", lambda: initial
+    )
+    assert len(answer["reviewed_knowledge"]) == 4
+    assert answer["reviewed_knowledge"][0]["evidence_ids"] == links[:5]
+    assert answer["reviewed_knowledge"][0]["linked_evidence_count"] == 20
+    changed = grouped(False)
+    changed["layers"]["knowledge"] = [
+        {**first, "evidence_ids": [*links[:6], "evidence_" + "f" * 32, *links[7:]]},
+        *initial["layers"]["knowledge"][1:],
+    ]
+    calls = 0
+
+    def drifted():
+        nonlocal calls
+        calls += 1
+        return initial if calls == 1 else changed
+
+    with pytest.raises(AnswerStale):
+        GroundedAnswerService(brain_mock(), Selector()).answer(context(), "insurance", drifted)
 
 
 def test_local_selector_is_deterministic_bounded_and_ignores_source_instructions() -> None:

@@ -16,7 +16,7 @@ FileOS cutover acceptance is implied.
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
 | KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work | Automatic candidate pipeline, evaluated resolution, complete project/commitment reducers, rebuild and freshness proof |
 | Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads | Hosted issuer enrollment, legacy Email route and cached revocation, cited answer synthesis, named-assistant adapter and full byte/token budgets |
-| Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; the default local selector returns verified exact quotes, and Ask strips fixed question boilerplate before lexical retrieval | Run the owner's interactive trial, evaluate held-out natural questions and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
+| Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; Ask returns exact quotes and a separate reviewed KnowledgeCore match list, with fixed question boilerplate removed before lexical retrieval | Run the owner's interactive trial, evaluate held-out natural questions, corrections and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
 | FileOS replacement and effects | No cutover or source effects | Sustained donor shadow, bounded rollback-ready cohort, owner sign-off; effects require a separate later approval |
 
@@ -143,9 +143,10 @@ FileOS cutover. The separate `v0.2.0a1` tag is synthetic-only.
   compactness, citations and cross-assistant conformance. The REST Brain API
   remains the source of truth; no assistant integration is certified today.
 - **Owner conversational workspace:** the read-only question screen uses the
-  scoped API for current Email and FileOS quotes plus grouped KnowledgeCore
-  search. It removes fixed question boilerplate, verifies exact citations and
-  exposes partial coverage, but is not AI-written synthesis or a stateful chat.
+  scoped API for current Email and FileOS quotes plus separately labelled,
+  source-scoped reviewed KnowledgeCore matches. It removes fixed question
+  boilerplate, verifies exact citations and exposes partial coverage, but is
+  not AI-written synthesis or a stateful chat.
   Next evaluate held-out questions, contradictions and follow-up context, then
   add separately approved cited synthesis and prove native/external parity.
 - **Hosted read-only acceptance:** choose region/budget, retention, enrollment,

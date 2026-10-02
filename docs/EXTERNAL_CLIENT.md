@@ -28,6 +28,9 @@ a local deterministic default selector and retains explicit disablement.
 ADR-145 removes fixed question boilerplate before answer retrieval, while
 `current_search(query)` remains literal and the selector receives the original
 question. This is lexical cleanup, not synonym search or AI-written synthesis.
+ADR-146 adds a separately bounded, validated `reviewed_knowledge` list to
+`answer(question)`; it is not a list of exact quotations. The client still
+follows selected evidence IDs through the distinct evidence/content grants.
 ADR-132 also lets a separately verified OIDC assistant use administrator-owned,
 same-tenant source grants, rechecked on each database transaction. Neither
 path is certified hosted grant issuance or a named assistant. A

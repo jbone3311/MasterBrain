@@ -19,7 +19,13 @@ MAX_PASSAGES = 8
 MAX_PASSAGE_CHARS = 1200
 MAX_SELECTIONS = 4
 MAX_QUOTE_CHARS = 400
+MAX_REVIEWED_HITS = 4
+MAX_REVIEWED_EVIDENCE_IDS = 5
 _SHA256 = re.compile(r"^[a-f0-9]{64}$")
+_EVIDENCE_ID = re.compile(r"^evidence_[a-f0-9]{32}$")
+_KNOWLEDGE_KINDS = frozenset({
+    "entity", "relationship", "claim", "event", "project", "commitment", "correction"
+})
 _LAYERS = (
     "email_messages", "fileos", "email_attachments", "email_documents",
     "archive_members", "archive_documents", "archive_images",
@@ -155,6 +161,69 @@ class GroundedAnswerService:
                     return candidates
         return candidates
 
+    @staticmethod
+    def _knowledge_hits(
+        grouped: dict[str, Any]
+    ) -> list[tuple[dict[str, Any], tuple[str, ...]]]:
+        layers = grouped.get("layers")
+        if not isinstance(layers, dict) or not isinstance(layers.get("knowledge"), list):
+            raise AnswerRejected()
+        selected: list[tuple[dict[str, Any], tuple[str, ...]]] = []
+        seen: set[str] = set()
+        for hit in layers["knowledge"][:MAX_REVIEWED_HITS]:
+            if not isinstance(hit, dict):
+                raise AnswerRejected()
+            kind = hit.get("object_kind")
+            object_id = hit.get("object_id")
+            title = hit.get("title")
+            excerpt = hit.get("excerpt")
+            evidence_ids = hit.get("evidence_ids")
+            if (
+                not isinstance(kind, str)
+                or kind not in _KNOWLEDGE_KINDS
+                or not isinstance(object_id, str)
+                or not re.fullmatch(kind + r"_[a-f0-9]{32}", object_id)
+                or object_id in seen
+                or not isinstance(title, str)
+                or not 1 <= len(title) <= 300
+                or "\x00" in title
+                or not isinstance(excerpt, str)
+                or not 1 <= len(excerpt) <= 16000
+                or "\x00" in excerpt
+                or not isinstance(evidence_ids, (tuple, list))
+                or not 1 <= len(evidence_ids) <= 20
+                or any(
+                    not isinstance(value, str) or not _EVIDENCE_ID.fullmatch(value)
+                    for value in evidence_ids
+                )
+                or len(set(evidence_ids)) != len(evidence_ids)
+            ):
+                raise AnswerRejected()
+            seen.add(object_id)
+            full_ids = tuple(evidence_ids)
+            selected.append(({
+                "object_kind": kind,
+                "object_id": object_id,
+                "title": title,
+                "excerpt": excerpt[:1200],
+                "evidence_ids": list(full_ids[:MAX_REVIEWED_EVIDENCE_IDS]),
+                "linked_evidence_count": len(full_ids),
+            }, full_ids))
+        return selected
+
+    @classmethod
+    def _recheck_knowledge(
+        cls,
+        selected: list[tuple[dict[str, Any], tuple[str, ...]]],
+        refreshed: dict[str, Any],
+    ) -> None:
+        current = {
+            item["object_id"]: (item, ids)
+            for item, ids in cls._knowledge_hits(refreshed)
+        }
+        if any(current.get(item["object_id"]) != (item, ids) for item, ids in selected):
+            raise AnswerStale()
+
     def answer(
         self,
         ctx: TenantContext,
@@ -167,6 +236,7 @@ class GroundedAnswerService:
         coverage = grouped.get("coverage")
         if not isinstance(coverage, dict) or coverage.get("complete") is not False:
             raise AnswerRejected()
+        reviewed = self._knowledge_hits(grouped)
         passages: list[AnswerPassage] = []
         for hit in self._hits(grouped):
             evidence_id = hit.get("evidence_id")
@@ -203,8 +273,12 @@ class GroundedAnswerService:
                 content["content"], body_sha256,
             ))
         if not passages:
-            search_current()  # Recheck grants and current visibility before answering.
-            return self._response("no_supported_evidence", [], coverage)
+            refreshed_grouped = search_current()
+            self._recheck_knowledge(reviewed, refreshed_grouped)
+            return self._response(
+                "no_supported_answer" if reviewed else "no_supported_evidence",
+                [], coverage, [item for item, _ in reviewed],
+            )
         try:
             selected = self.selector.select(question, tuple(passages))
         except AnswerUnavailable:
@@ -246,32 +320,42 @@ class GroundedAnswerService:
                 "end": start + len(quote),
                 "body_sha256": passage.body_sha256,
             })
-        refreshed = self._hits(search_current())
+        refreshed_grouped = search_current()
+        self._recheck_knowledge(reviewed, refreshed_grouped)
+        refreshed = self._hits(refreshed_grouped)
         current = {
             (hit.get("evidence_id"), hit.get("document_id")) for hit in refreshed
         }
         if any((item["evidence_id"], item["document_id"]) not in current for item in citations):
             raise AnswerStale()
         return self._response(
-            "quoted_evidence" if citations else "no_supported_answer", citations, coverage
+            "quoted_evidence" if citations else "no_supported_answer",
+            citations, coverage, [item for item, _ in reviewed],
         )
 
     @staticmethod
     def _response(
-        status: str, citations: list[dict[str, Any]], coverage: dict[str, Any]
+        status: str,
+        citations: list[dict[str, Any]],
+        coverage: dict[str, Any],
+        reviewed_knowledge: list[dict[str, Any]],
     ) -> dict[str, Any]:
         return {
             "mode": "grounded_extractive_v1",
             "status": status,
             "answer": (
                 "Relevant passages from current indexed evidence are quoted below."
-                if citations else "No supported answer from current indexed evidence."
+                if citations else (
+                    "No exact source quote selected; reviewed knowledge matches are listed below."
+                    if reviewed_knowledge else "No supported answer from current indexed evidence."
+                )
             ),
             "citations": citations,
+            "reviewed_knowledge": reviewed_knowledge,
             "coverage": {
                 "complete": False,
                 "source_access": coverage.get("source_access"),
-                "knowledge": "reviewed_assertions_not_synthesized",
+                "knowledge": "reviewed_assertions_listed_not_synthesized",
             },
             "untrusted_content": True,
         }

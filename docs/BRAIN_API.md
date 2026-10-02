@@ -81,7 +81,11 @@ source effects or an alternate route through KnowledgeCore.
   a local deterministic excerpt selector the default; explicit `None` disables
   it and returns 503. ADR-145 removes fixed question boilerplate before both
   current-search calls; the original question reaches the selector, and Search
-  only retains literal query behavior. It has no effect grant,
+  only retains literal query behavior. ADR-146 adds at most four separately
+  labelled `reviewed_knowledge` matches, each with at most five direct evidence
+  IDs and its full link count. Every assertion and full link set is rechecked
+  against current source grants before disclosure. Reviewed interpretations
+  are not exact source quotes. It has no effect grant,
   freeform model-authored answer or hosted/named-assistant acceptance.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
