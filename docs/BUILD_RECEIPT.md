@@ -10,7 +10,14 @@ and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36
 all passed. The tagged `v0.2.0a1` checkpoint remains separate from this
 later merged-main state.
 
-## ADR-138 tenant-bound FileOS indexing — local branch verification
+## ADR-138 tenant-bound FileOS indexing — merged verification
+
+PR [#105](https://github.com/jbone3311/MasterBrain/pull/105) merged from
+`b375e1ec583a5831495f7e931bcf81d3f08e6f1c` into `main` at
+`7fd659dfbcb38d01dc176db3b3f6b80887fe4a4b`. The exact head passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36992155627),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36992155638)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36992155648).
 
 The opt-in private index/rollback operator now binds its runtime PostgreSQL
 login to the authenticated worker's exact tenant. A real disposable PostgreSQL
@@ -24,8 +31,8 @@ against a disposable database; 467 of 468 PostgreSQL-marked tests executed.
 The separate final-tree local deployment gate passed the same count against another
 disposable database. The six required Node browser suites passed **143 tests**;
 Ruff, strict mypy over 97 source files, documentation and diff checks passed.
-The exact branch still requires hosted CI and restore. FOS-Master was not
-changed. This is not hosted acceptance or issue #7 closure.
+Local verification alone was not used to authorize the merge. FOS-Master was
+not changed. This is not hosted acceptance or issue #7 closure.
 
 ## ADR-137 Mac trial interpreter correction — local verification
 
