@@ -67,11 +67,16 @@ FILES = {
         "The appraisal has been received. Target closing is October 15, 2026."
     ),
     "juniper-note.txt": "Juniper Plaza unrelated fictional project. Budget review is complete.",
+    "maple-closing-memo.txt": (
+        "Maple Arcade closing target is November 12, 2026. "
+        "This fictional memo has not been reconciled with email correspondence."
+    ),
 }
 MAIL = [
     ("Cedar Harbor appraisal", "Cedar Harbor appraisal received. Please review the valuation."),
     ("Cedar Harbor insurance", "Cedar Harbor insurance certificate is still outstanding."),
     ("Juniper Plaza update", "Juniper Plaza budget review is complete."),
+    ("Maple Arcade closing", "Maple Arcade closing target is November 19, 2026."),
 ]
 
 
@@ -192,7 +197,7 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
     if count != len(MAIL):
         raise RuntimeError("Synthetic email ingestion did not complete")
     core = DataCoreStore(store)
-    for query in ("Cedar Harbor", "Juniper Plaza"):
+    for query in ("Cedar Harbor", "Juniper Plaza", "Maple Arcade"):
         for hit in store.search(ctx, SearchRequest(query=query)):
             core.bridge_current_email_version(
                 ctx, hit["evidence_id"], uuid4(), code_revision=REVISION
@@ -442,9 +447,25 @@ def serve_trial(admin: str, port: int, self_test: bool) -> int:
                         or len(knowledge_answer.json().get("reviewed_knowledge", [])) != 1
                     ):
                         raise RuntimeError("Synthetic startup knowledge Ask failed")
+                    conflict = client.post(
+                        "/v1/brain/answers",
+                        json={"question": "When is Maple Arcade closing?"},
+                    )
+                    if conflict.status_code != 200:
+                        raise RuntimeError("Synthetic startup conflict Ask failed")
+                    quotes = {
+                        item["source_kind"]: item["quote"]
+                        for item in conflict.json().get("citations", [])
+                    }
+                    if (
+                        conflict.json().get("status") != "quoted_evidence"
+                        or "November 12, 2026" not in quotes.get("fileos", "")
+                        or "November 19, 2026" not in quotes.get("email", "")
+                    ):
+                        raise RuntimeError("Synthetic startup conflict evidence failed")
                 print(
                     "Synthetic browser-trial self-test passed: "
-                    "2 emails, 2 files, reviewed knowledge."
+                    "Cedar evidence, reviewed knowledge, conflicting Maple evidence."
                 )
                 return 0
             url = f"http://127.0.0.1:{port}/trial#{preview.token}"

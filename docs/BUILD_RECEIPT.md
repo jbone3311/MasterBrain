@@ -2,7 +2,40 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-146 reviewed KnowledgeCore in Ask — local verification
+## Fictional contradictory-source Ask corpus — local verification
+
+The cross-source trial now has a Maple Arcade file and Email stating different
+fictional closing dates. Both are explicitly bridged/indexed. Ask “When is
+Maple Arcade closing?” returns exact source quotes for November 12 and
+November 19, 2026 with independently resolvable citations and a generic
+non-adjudicating answer; the provider-neutral client receives the identical
+response. The trial launcher self-test exercises this conflict. On a fresh
+disposable PostgreSQL 17.11 cluster, the complete cross-source suite passed
+**27 tests with one Docker-only skip**. A FileOS-only assistant returned only
+the file's date and could not read the Email's date. The launcher self-test
+passed. The complete Python 3.14.7 suite and a separate deployment gate on a
+second fresh disposable PostgreSQL 17.11 database each passed **3,014 tests
+with one intentional skip**; 481 of 482 PostgreSQL-marked tests executed.
+All six browser suites passed **145 tests**; Ruff, strict mypy over 98 source
+files, documentation links/inventory and diff checks passed. An initial full
+run launched from a `PYTHONPATH` workaround failed three clean-subprocess
+imports; the locked non-editable installation made those three pass, and both
+subsequent full runs passed. This is evaluation of an unresolved conflict,
+not semantic conflict detection, chronology resolution or hosted/live-source
+acceptance. Exact-head GitHub checks remain pending for this branch.
+
+## ADR-146 reviewed KnowledgeCore in Ask — merged-main verification
+
+PR [#114](https://github.com/jbone3311/MasterBrain/pull/114) merged at
+`f93e1c875ecbb189ba33ad2d37a40b9e604ad47f`. Its exact-head
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37038265234),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37038265817)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37038265289)
+passed. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37040070506),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37040070566)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37040070588)
+also passed. The finished branch was removed.
 
 The answer route now lists at most four reviewed KnowledgeCore matches in a
 separate field beside exact source quotes. Each match shows at most five direct
@@ -27,10 +60,21 @@ The complete Python 3.14.7 suite passed **3,012 tests, one intentional skip**
 on disposable PostgreSQL 17.11; 479 of 480 PostgreSQL-marked tests executed.
 A separate deployment gate passed the same count on a second fresh database.
 All six browser suites passed **145 tests**; Ruff, strict mypy over 98 source
-files, documentation links/inventory and diff checks passed. These are local
-results, not yet exact-head GitHub or merged-main verification.
+files, documentation links/inventory and diff checks passed. These local results
+are separate from the exact-head and merged-main checks above.
 
-## ADR-145 question-term Ask retrieval — local verification
+## ADR-145 question-term Ask retrieval — merged-main verification
+
+PR [#113](https://github.com/jbone3311/MasterBrain/pull/113) merged at
+`3566928c9774954343cfff5ce0dd9dc49ddb778c`. Its exact-head
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37032095337),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37032095469)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37032095568)
+passed. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37033792674),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37033792690)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37033792675)
+also passed. The finished branch was removed.
 
 The extractive answer route now removes only a fixed list of question filler
 words before its first and final current-source searches. It still sends the
@@ -49,8 +93,8 @@ of 479 PostgreSQL-marked tests executed. A separate deployment gate passed
 the same count on a second fresh disposable database. All six browser suites
 passed **143 tests** after their credential-clear test caught and removed a
 fictional project name from static empty-state copy. Ruff, strict mypy over
-98 source files and documentation inventory/link checks passed. These are
-local results, not yet exact-head GitHub or merged-main verification. No real
+98 source files and documentation inventory/link checks passed. These local
+results are separate from the exact-head and merged-main checks above. No real
 account, hosted model, source effect or FOS-Master checkout was involved.
 
 ## ADR-144 default local source quotes — merged-main verification
