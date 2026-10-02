@@ -52,6 +52,11 @@ Ask removes only fixed question boilerplate, not synonyms or temporal intent.
 Then Ask “readiness.” It should show no exact source quote and one fictional
 reviewed commitment linked to both an Email and a File. The commitment is a
 human-reviewed interpretation; opening either link shows underlying evidence.
+Then Ask “When is Maple Arcade closing?” It should show two exact, conflicting
+source quotes: the file says November 12, 2026 and the Email says November 19,
+2026. MasterBrain does not decide which date is correct; the generic answer
+text is not a resolution. This is a deliberate evaluation case, not current
+project advice.
 
 ## Known answers
 
@@ -61,6 +66,7 @@ human-reviewed interpretation; opening either link shows underlying evidence.
 | insurance | 1 | 1 | 0 | Email and checklist both say the certificate is outstanding |
 | appraisal | 1 | 1 | 0 | Email and checklist both say the appraisal was received |
 | Juniper Plaza | 1 | 1 | 0 | A separate fictional project, not Cedar Harbor |
+| Maple Arcade | 1 | 1 | 0 | Conflicting fictional closing dates; inspect both sources |
 | readiness | 0 | 0 | 1 | Reviewed closing follow-up, with two source links; not an exact source quote |
 | nonexistentcanary | 0 | 0 | 0 | Empty results; no invented answer |
 

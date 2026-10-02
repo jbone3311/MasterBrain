@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Expanded the fictional Email/FileOS trial with conflicting Maple Arcade
+  closing dates. A real-PostgreSQL Ask/API/client test requires both exact
+  citations and no invented resolution; the launcher self-test checks the
+  same disagreement. This is evaluation coverage, not conflict resolution.
+
 - Added separately labelled reviewed KnowledgeCore matches to the read-only
   Ask response and first-party page (ADR-146). The server bounds their text
   and displayed evidence IDs, rechecks all direct links and source grants, and

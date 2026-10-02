@@ -565,10 +565,58 @@ def test_default_local_answer_quotes_both_sources_and_client_matches(preview):
 
 
 @pytest.mark.postgres
+def test_ask_preserves_unresolved_cross_source_date_conflict(preview, database):
+    question = "When is Maple Arcade closing?"
+    with client_for(preview) as direct:
+        response = direct.post("/v1/brain/answers", json={"question": question})
+        assert response.status_code == 200, response.text
+        answer = response.json()
+        assert answer["status"] == "quoted_evidence"
+        assert answer["coverage"]["complete"] is False
+        assert answer["reviewed_knowledge"] == []
+        assert {item["source_kind"] for item in answer["citations"]} == {"email", "fileos"}
+        quotes = {item["source_kind"]: item["quote"] for item in answer["citations"]}
+        assert "November 12, 2026" in quotes["fileos"]
+        assert "November 19, 2026" in quotes["email"]
+        assert "November" not in answer["answer"]
+        for citation in answer["citations"]:
+            content = direct.post(
+                f"/v1/brain/evidence/{citation['evidence_id']}/content",
+                json={"max_chars": 1200},
+            )
+            assert content.status_code == 200
+            assert content.json()["content"][citation["start"]:citation["end"]] == (
+                citation["quote"]
+            )
+        with BrainReadClient(
+            "http://127.0.0.1", preview.token,
+            allow_insecure_loopback=True, transport=external_transport(direct),
+        ) as external:
+            assert external.answer(question) == answer
+
+    store, _ = database
+    token = "assistant-maple-conflict-fixture-" + "m" * 32
+    scoped_app = create_app(store, TokenRegistry([
+        assistant_credential(preview, token, {"trial_files"})
+    ]))
+    with TestClient(scoped_app, base_url="http://127.0.0.1") as scoped:
+        limited = scoped.post(
+            "/v1/brain/answers", json={"question": question},
+            headers={"Authorization": "Bearer " + token},
+        )
+        assert limited.status_code == 200, limited.text
+        assert limited.json()["coverage"]["source_access"] == "enrolled_sources_only"
+        assert [item["source_kind"] for item in limited.json()["citations"]] == ["fileos"]
+        assert "November 12, 2026" in limited.json()["citations"][0]["quote"]
+        assert "November 19, 2026" not in limited.text
+
+
+@pytest.mark.postgres
 @pytest.mark.parametrize(
     "query,emails,files,reviewed",
     [("Cedar Harbor", 2, 2, 0), ("insurance", 1, 1, 0),
      ("appraisal", 1, 1, 0), ("Juniper Plaza", 1, 1, 0),
+     ("Maple Arcade", 1, 1, 0),
      ("readiness", 0, 0, 1), ("nonexistentcanary", 0, 0, 0)],
 )
 def test_known_answers_use_real_current_api(preview, query, emails, files, reviewed):

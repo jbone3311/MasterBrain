@@ -36,7 +36,10 @@ Security and data-integrity blockers take priority over adding more surface area
    launcher option for Macs without Docker. ADR-140 makes that one-click path
    use a locked non-editable install after a local `.pth` import failure. Its
    self-test passes on the affected Mac; the owner's interactive acceptance is
-   still required. Exact verification belongs in the build receipt.
+   still required. The fictional corpus also contains a deliberately unresolved
+   Email/FileOS closing-date conflict: Ask must cite both dates without deciding
+   between them. That test does not prove conflict detection or resolution.
+   Exact verification belongs in the build receipt.
 2. **Resolve security and upgrade findings.** Identity enrollment
    [#6](https://github.com/jbone3311/MasterBrain/issues/6) is fixed on `main` by
    ADR-105; the exact resolver of ADR-106 narrows but does not close the confirmed
