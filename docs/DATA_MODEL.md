@@ -23,12 +23,13 @@ implemented remain logical targets.
   one tenant, and a restrictive policy on every existing forced-RLS tenant table.
   The opted-in login is fenced by `session_user` in addition to the older GUC
   policy; unregistered shared logins retain their existing behavior and risk.
-- Migration 0048 adds forced-RLS `external_identity_sources`, keyed by the
+- Migration 0049 adds forced-RLS `external_identity_sources`, keyed by the
   binding and an existing source in the same tenant. A grant insert/removal
   bumps the identity revision and writes an opaque audit event. The exact-key
   v2 resolver returns sorted source IDs; runtime/lookup logins cannot enumerate
-  the grant table. It admits only the three ADR-130 source-aware Brain reads
-  for Brain-scoped assistants, not hosted or all-route authorization.
+  the grant table. Migration 0050/ADR-133 additionally admits source-filtered
+  current coverage and change status for enrolled assistants, not hosted or
+  all-route authorization.
 
 ## Source and evidence
 

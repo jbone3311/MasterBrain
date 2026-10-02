@@ -615,7 +615,9 @@ def create_app(
 
     @app.get("/v1/brain/changes")
     def brain_changes(
-        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.changes.read", assistant_source_aware=True))
+        ],
         after: str | None = None,
         limit: Annotated[int, Query(ge=1, le=50)] = 25,
     ) -> dict[str, Any]:
@@ -623,7 +625,9 @@ def create_app(
 
     @app.get("/v1/brain/current-coverage")
     def brain_current_coverage(
-        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.changes.read", assistant_source_aware=True))
+        ],
         after: str | None = None,
         limit: Annotated[int, Query(ge=1, le=50)] = 25,
     ) -> dict[str, Any]:

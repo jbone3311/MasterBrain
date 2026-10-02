@@ -16,7 +16,7 @@ approved for private data, or production accepted. The exact-commit gates are in
 | Check what is current or missing | `GET /v1/brain/current-coverage`, source freshness, inventory and index routes | Only completed FileOS runs, activated generations and explicitly bridged Email are represented; a partial result is not whole-source completeness. |
 | Search reviewed knowledge | `POST /v1/knowledge/search`, `GET /v1/knowledge/{kind}/{id}` | Human-reviewed, evidence-linked assertions; no automatic entity resolution or model-generated synthesis. |
 | Review Email evidence | Legacy `/v1/search`, selected-message reader, quarantine/retry, approved PDF jobs, narrow virtual sender rules, and travel/bill memory | Local/synthetic prototype; no provider send, move or delete. |
-| Call the same reads from a separately authorized external program | `BrainReadClient.current_search`, `.evidence`, `.evidence_content` | Provider-neutral client; synthetic assistant credentials must enroll source IDs and can call only these three routes. No hosted/dynamic grants, named assistant integration or source effect. |
+| Call the same reads from a separately authorized external program | `BrainReadClient.current_search`, `.evidence`, `.evidence_content`, `.current_coverage`, `.changes` | Provider-neutral client; synthetic and administrator-bound OIDC assistants must enroll source IDs for these five source-aware routes. No hosted issuer enrollment, named assistant integration or source effect. |
 
 The trial is the quickest owner-facing entry point. Its
 [known-answer guide](CROSS_SOURCE_TRIAL.md) states expected counts and how to report

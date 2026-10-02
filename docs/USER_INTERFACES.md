@@ -6,7 +6,8 @@ answers, certified assistant integration, hosting and source-write capability do
 not. [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior.
 Synthetic bootstrap and verified administrator-bound OIDC Brain assistants
-using the three client read routes now require explicit source enrollment.
+using the three original client read routes and two source-scoped status routes
+require explicit source enrollment (ADR-133).
 OIDC grant removal invalidates saved contexts at the next transaction; hosted
 issuer enrollment, all-route enforcement and derived-cache revocation are still
 open ([issue #88](https://github.com/jbone3311/MasterBrain/issues/88)).

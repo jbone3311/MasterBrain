@@ -478,6 +478,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0047_fileos_v2_shared_index_generation.sql",
             "0048_fileos_v2_readiness_indexed_check.sql",
             "0049_oidc_brain_source_grants.sql",
+            "0050_oidc_brain_read_status.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -522,6 +523,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
                 "0047_fileos_v2_shared_index_generation.sql",
                 "0048_fileos_v2_readiness_indexed_check.sql",
                 "0049_oidc_brain_source_grants.sql",
+                "0050_oidc_brain_read_status.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -563,6 +565,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             "0047_fileos_v2_shared_index_generation.sql",
             "0048_fileos_v2_readiness_indexed_check.sql",
             "0049_oidc_brain_source_grants.sql",
+            "0050_oidc_brain_read_status.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -650,6 +653,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
                 "0047_fileos_v2_shared_index_generation.sql",
                 "0048_fileos_v2_readiness_indexed_check.sql",
                 "0049_oidc_brain_source_grants.sql",
+                "0050_oidc_brain_read_status.sql",
             }:
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)

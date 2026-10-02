@@ -30,6 +30,8 @@ objects, general SQL, or an unbounded corpus dump.
 - `GET /v1/brain/evidence/{id}` — implemented metadata/citation expansion.
 - `POST /v1/brain/evidence/{id}/content` — implemented separately scoped bounded text.
 - `GET /v1/brain/changes` — implemented cursor-bounded DataCore change feed.
+  Enrolled assistants with `brain.changes.read` see only granted sources;
+  ungranted event cursors return not found (ADR-133).
 - `GET /v1/brain/sources/{source_id}/freshness` — implemented latest fully accounted
   FileOS run or explicit `no_completed_run`; requires `brain.changes.read`.
 - `GET /v1/brain/sources/{source_id}/inventory` — implemented latest completed
@@ -64,6 +66,8 @@ objects, general SQL, or an unbounded corpus dump.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
   `brain.changes.read`, is cursor-bounded and does not enumerate providers or paths.
+  Enrolled assistants see only granted sources; ungranted source cursors return
+  not found (ADR-133). The reference read client supports both status routes.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes, keeps ranks separate,
   and accepts explicit `retained` or `current_fileos` evidence visibility.

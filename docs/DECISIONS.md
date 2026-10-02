@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-133](adr/133_source_scoped_brain_status.md) extends enrolled assistant
+reads to source-filtered current coverage and change status. Hidden-source
+cursors fail closed; the other Brain/Knowledge routes remain denied.
+
 [ADR-132](adr/132_oidc_brain_source_grants.md) adds administrator-owned,
 revocable source enrollment to verified OIDC Brain read identities on the
 three source-aware routes. It is synthetic/disposable, not hosted or
