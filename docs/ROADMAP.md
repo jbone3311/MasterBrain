@@ -29,7 +29,10 @@ Security and data-integrity blockers take priority over adding more surface area
    [cross-source walkthrough](CROSS_SOURCE_TRIAL.md) interactively on the owner's
    Mac, record commit, expected/actual known answers, citations, coverage and
    browser behavior. Fix any failure on a branch; do not interpret hosted API
-   tests as browser acceptance.
+   tests as browser acceptance. An agent-run local in-app browser pass on
+   fictional PostgreSQL data found and corrected visible highlight markers
+   and an over-technical evidence panel (ADR-136); the owner's independent
+   walkthrough and standard Docker-launcher check remain outstanding.
 2. **Resolve security and upgrade findings.** Identity enrollment
    [#6](https://github.com/jbone3311/MasterBrain/issues/6) is fixed on `main` by
    ADR-105; the exact resolver of ADR-106 narrows but does not close the confirmed
