@@ -12,7 +12,7 @@ approved for private data, or production accepted. The exact-commit gates are in
 | Function | Working path | Boundary |
 |---|---|---|
 | Search fictional Email and FileOS together | [cross-source browser trial](CROSS_SOURCE_TRIAL.md) and `POST /v1/brain/current-search` | Real PostgreSQL and Brain API, fictional data; plain-text excerpts, grouped layers with separate ranks and partial coverage. No generated answer. |
-| Request verified source quotes for a question | `POST /v1/brain/answers`, `BrainReadClient.answer`, and `/brain` | Optional bounded extractive contract. No selector is configured by default, so the API returns 503 and the workspace shows grouped search. No freeform synthesis or approved remote model. |
+| Request verified source quotes for a question | `POST /v1/brain/answers`, `BrainReadClient.answer`, and `/brain` | A local deterministic selector is the default. It returns exact current-source excerpts with verified citations or an explicit unsupported answer, not freeform synthesis. Explicitly disabling selection returns 503 and grouped-search fallback. No remote model. |
 | Open a result and verify its source | `GET /v1/brain/evidence/{id}` then separately scoped `POST /v1/brain/evidence/{id}/content` | Bounded content with opaque provenance; original Email downloads require the distinct human reader permission. |
 | Check what is current or missing | `GET /v1/brain/current-coverage`, source freshness, inventory and index routes | Only completed FileOS runs, activated generations and explicitly bridged Email are represented; a partial result is not whole-source completeness. |
 | Publish or index one approved synthetic FileOS run with a tenant-bound database login | `masterbrain fileos publish --tenant-bound-db --check` or `masterbrain fileos index --tenant-bound-db --check`, then the same command without `--check` | Private worker-only options, including activation-only rollback. Require a DBA-enrolled login for the authenticated worker tenant; hosted credential lifecycle remains open. No file mutation. |
@@ -20,7 +20,7 @@ approved for private data, or production accepted. The exact-commit gates are in
 | Run a legacy Email worker with a tenant-bound database login | Add `--tenant-bound-db` to `email-brain sync-read`, `process-jobs` or `process-documents`, for check and execution | The authenticated worker tenant selects the only SQL login. Provider-read opt-in, exact worker scopes and approved-processing gates remain separate; no hosted/live-source acceptance is implied. |
 | Search reviewed knowledge | `POST /v1/knowledge/search`, `GET /v1/knowledge/{kind}/{id}` | Human-reviewed, evidence-linked assertions; no automatic entity resolution or model-generated synthesis. |
 | Review Email evidence | Legacy `/v1/search`, selected-message reader, quarantine/retry, approved PDF jobs, narrow virtual sender rules, and travel/bill memory | Local/synthetic prototype; no provider send, move or delete. |
-| Call the same reads from a separately authorized external program | `BrainReadClient.current_search`, `.evidence`, `.evidence_content`, `.current_coverage`, `.changes`, `.answer`; direct Brain search and FileOS source status/search routes | Provider-neutral client; synthetic and administrator-bound OIDC assistants must enroll source IDs. Direct routes are source-filtered under ADR-142; the optional answer route requires four read scopes and a selector. No hosted issuer enrollment, named assistant integration or source effect. |
+| Call the same reads from a separately authorized external program | `BrainReadClient.current_search`, `.evidence`, `.evidence_content`, `.current_coverage`, `.changes`, `.answer`; direct Brain search and FileOS source status/search routes | Provider-neutral client; synthetic and administrator-bound OIDC assistants must enroll source IDs. Direct routes are source-filtered under ADR-142; the answer route requires four read scopes and selects local quotes by default. No hosted issuer enrollment, named assistant integration or source effect. |
 
 The trial is the quickest owner-facing entry point. Its
 [known-answer guide](CROSS_SOURCE_TRIAL.md) states expected counts and how to report
@@ -124,8 +124,8 @@ bounded layer; automatic archive fan-out is not implemented. See the
 ## Not yet callable or accepted
 
 - Freeform cited synthesis, graph traversal and broad project/timeline views
-  are designs, not routes in the current API. The extractive
-  `/v1/brain/answers` route is optional and disabled by default.
+  are designs, not routes in the current API. The default extractive
+  `/v1/brain/answers` route selects local source quotes only.
 - No MCP server or certified Claude, Grok or ChatGPT connection exists. Assistants
   can use the documented REST contract only after separate identity, adapter and
   client conformance work.

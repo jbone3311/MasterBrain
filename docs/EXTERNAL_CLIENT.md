@@ -17,14 +17,15 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 | `evidence_content(id, max_chars=4000)` | `POST /v1/brain/evidence/{id}/content` | `brain.content.read` |
 | `current_coverage()` | `GET /v1/brain/current-coverage` | `brain.changes.read` |
 | `changes(...)` | `GET /v1/brain/changes` | `brain.changes.read` |
-| `answer(question)` | `POST /v1/brain/answers` | `brain.search`, `knowledge.search`, `brain.evidence.read`, `brain.content.read`; an owner-configured selector is also required |
+| `answer(question)` | `POST /v1/brain/answers` | `brain.search`, `knowledge.search`, `brain.evidence.read`, `brain.content.read`; local exact-quote selection is the default, and the operator may disable it |
 
 The server remains the authority for identity, tenant, scopes, source visibility
 and freshness. In the synthetic bootstrap path, an assistant must be enrolled
 for explicit source IDs; routes without reviewed source semantics remain denied.
 ADR-133 adds two source-scoped status reads. ADR-134 adds the bounded answer
-read over the same current, separately authorized evidence, disabled without a
-selector. ADR-132 also lets a separately verified OIDC assistant use administrator-owned,
+read over the same current, separately authorized evidence; ADR-144 supplies
+a local deterministic default selector and retains explicit disablement.
+ADR-132 also lets a separately verified OIDC assistant use administrator-owned,
 same-tenant source grants, rechecked on each database transaction. Neither
 path is certified hosted grant issuance or a named assistant. A
 successful search is not a grant to read original evidence.

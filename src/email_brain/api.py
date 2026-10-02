@@ -45,6 +45,7 @@ from masterbrain.answers import (
     AnswerStale,
     AnswerUnavailable,
     GroundedAnswerService,
+    LocalExtractiveSelector,
 )
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.knowledge import KnowledgeCore
@@ -61,6 +62,7 @@ from masterbrain.schemas import (
 log = logging.getLogger("email_brain.requests")
 WEB = Path(__file__).parent / "web"
 BRAIN_WEB = Path(__file__).parent.parent / "masterbrain" / "web"
+_LOCAL_ANSWER_SELECTOR: AnswerSelector = LocalExtractiveSelector()
 
 
 def _safe_request_failure(request: Request, status: int, code: str, exc: Exception) -> None:
@@ -120,7 +122,7 @@ def create_app(
     *,
     brain_store: DataCoreStore | None = None,
     knowledge_store: KnowledgeCore | None = None,
-    answer_selector: AnswerSelector | None = None,
+    answer_selector: AnswerSelector | None = _LOCAL_ANSWER_SELECTOR,
     recovery_parser_version: str | None = None,
     document_processor_version: str | None = None,
     browser_auth: BrowserAuth | None = None,

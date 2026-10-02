@@ -1,9 +1,9 @@
 # MasterBrain user interfaces and controlled actions
 
 Status: product target. A first-party read-only, conversation-shaped search
-workspace and a provider-neutral external read client now exist. An optional
-extractive answer path returns server-verified source quotes when a selector is
-configured; none is enabled by default. Freeform synthesis, certified assistant
+workspace and a provider-neutral external read client now exist. The default
+local extractive path returns server-verified source quotes; it can be explicitly
+disabled. Freeform synthesis, certified assistant
 integration, hosting and source-write capability do not exist. [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior.
 Synthetic bootstrap and verified administrator-bound OIDC Brain assistants
@@ -83,8 +83,8 @@ credentials.
    coverage/freshness. Prove denial and revocation, including derived caches.
 2. **First-party workspace:** a read-only question screen now groups current
    search and separately authorized evidence expansion without a model. It can
-   now request verified extractive quotes through ADR-134; without an approved
-   selector it falls back to grouped search; an explicit Search only control
+   now request verified extractive quotes through ADR-134/144; an explicitly
+   disabled selector falls back to grouped search; an explicit Search only control
    remains available to search-only credentials. True synthesized conversation
    remains gated on further grounded-answer and prompt-injection acceptance.
 3. **External client:** a provider-neutral reference client now runs the same

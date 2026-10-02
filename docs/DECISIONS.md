@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-144](adr/144_local_extractive_answer_selector.md) supplies a local,
+deterministic quote selector for the default Ask path. It makes no semantic
+claim or remote model call; explicitly passing no selector restores the
+ADR-134 unavailable/fallback behavior.
+
 [ADR-143](adr/143_source_scoped_knowledge_reads.md) admits enrolled assistants
 to direct Knowledge search, evidence-linked assertion expansion, filtered
 change feeds and unified Brain search. Forward migration 0051 extends OIDC
