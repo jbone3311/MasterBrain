@@ -230,6 +230,23 @@ def build_parser() -> argparse.ArgumentParser:
     document_bridge.add_argument("--extraction-id", type=UUID, required=True)
     document_bridge.add_argument("--idempotency-key", type=UUID, required=True)
     document_bridge.add_argument("--check", action="store_true")
+    for private_command in (
+        archive_text,
+        archive_document,
+        archive_image,
+        archive_plan,
+        archive_document_plan,
+        archive_batch,
+        archive_document_batch,
+        bridge,
+        bridge_plan,
+        bridge_batch,
+        part_plan,
+        part_batch,
+        attachment_bridge,
+        document_bridge,
+    ):
+        private_command.add_argument("--tenant-bound-db", action="store_true")
     return parser
 
 
@@ -301,6 +318,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.member_locator,
                         args.idempotency_key,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -317,6 +335,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         after=args.after,
                         limit=args.limit,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -333,6 +352,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.member_locator,
                         args.idempotency_key,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -349,6 +369,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.member_locator,
                         args.idempotency_key,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -365,6 +386,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         after=args.after,
                         limit=args.limit,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -379,6 +401,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.plan,
                         dsn,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -393,6 +416,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.plan,
                         dsn,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -408,6 +432,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.evidence_id,
                         args.idempotency_key,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -423,6 +448,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.attachment_id,
                         args.idempotency_key,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -439,6 +465,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         after=args.after,
                         limit=args.limit,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -453,6 +480,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.plan,
                         dsn,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -470,6 +498,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         after=args.after,
                         limit=args.limit,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -484,6 +513,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.plan,
                         dsn,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )
@@ -499,6 +529,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                         args.extraction_id,
                         args.idempotency_key,
                         check=args.check,
+                        tenant_bound_db=args.tenant_bound_db,
                     )
                 )
             )

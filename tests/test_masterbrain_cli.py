@@ -197,6 +197,82 @@ def test_cli_index_forwards_tenant_bound_mode_for_rollback(
     }
 
 
+@pytest.mark.parametrize(
+    ("family", "command", "controller", "target"),
+    [
+        ("fileos", "archive-text", "run_archive_member_controller", [
+            "--inventory-id", "archive_inventory_" + "a" * 32,
+            "--member-locator", "proof.md", "--idempotency-key",
+            "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+        ]),
+        ("fileos", "archive-document", "run_archive_member_document_controller", [
+            "--inventory-id", "archive_inventory_" + "a" * 32,
+            "--member-locator", "proof.pdf", "--idempotency-key",
+            "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+        ]),
+        ("fileos", "archive-image", "run_archive_member_image_ocr_controller", [
+            "--inventory-id", "archive_inventory_" + "a" * 32,
+            "--member-locator", "proof.png", "--idempotency-key",
+            "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+        ]),
+        ("fileos", "archive-text-plan", "run_archive_member_plan_controller", [
+            "--inventory-id", "archive_inventory_" + "a" * 32,
+        ]),
+        ("fileos", "archive-document-plan", "run_archive_document_plan_controller", [
+            "--inventory-id", "archive_inventory_" + "a" * 32,
+        ]),
+        ("fileos", "archive-text-batch", "run_archive_member_batch_controller", [
+            "--plan", "/private/synthetic-plan.json",
+        ]),
+        ("fileos", "archive-document-batch", "run_archive_document_batch_controller", [
+            "--plan", "/private/synthetic-plan.json",
+        ]),
+        ("email", "bridge", "run_email_bridge_controller", [
+            "--evidence-id", "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+            "--idempotency-key", "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+        ]),
+        ("email", "bridge-attachment", "run_email_attachment_bridge_controller", [
+            "--attachment-id", "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+            "--idempotency-key", "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+        ]),
+        ("email", "bridge-document", "run_email_document_bridge_controller", [
+            "--extraction-id", "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+            "--idempotency-key", "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+        ]),
+        ("email", "bridge-plan", "run_email_bridge_plan_controller", [
+            "--account-id", "93c5a004-81ab-45b6-8652-e8ced2b40e47",
+        ]),
+        ("email", "bridge-parts-plan", "run_email_part_bridge_plan_controller", [
+            "--account-id", "93c5a004-81ab-45b6-8652-e8ced2b40e47", "--kind", "attachment",
+        ]),
+        ("email", "bridge-batch", "run_email_bridge_batch_controller", [
+            "--plan", "/private/synthetic-plan.json",
+        ]),
+        ("email", "bridge-parts-batch", "run_email_part_bridge_batch_controller", [
+            "--plan", "/private/synthetic-plan.json",
+        ]),
+    ],
+)
+def test_private_derivative_cli_forwards_tenant_bound_mode(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    family: str,
+    command: str,
+    controller: str,
+    target: list[str],
+) -> None:
+    monkeypatch.setenv("MASTERBRAIN_DSN", "dbname=synthetic user=bound password=secret")
+    monkeypatch.setattr(
+        cli, controller,
+        lambda *_args, **options: {"tenant_bound_db": options["tenant_bound_db"]},
+    )
+    main([
+        family, command, "--config", "/private/synthetic-config.json",
+        *target, "--tenant-bound-db", "--check",
+    ])
+    assert json.loads(capsys.readouterr().out) == {"tenant_bound_db": True}
+
+
 def test_cli_archive_text_uses_explicit_member_and_scrubs_dsn(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -210,7 +286,7 @@ def test_cli_archive_text_uses_explicit_member_and_scrubs_dsn(
     monkeypatch.setattr(
         cli,
         "run_archive_member_controller",
-        lambda path, received_dsn, received_inventory, received_locator, received_key, check: {
+        lambda path, received_dsn, received_inventory, received_locator, received_key, check, **_: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "inventory": received_inventory == inventory,
@@ -259,7 +335,7 @@ def test_cli_archive_text_plan_uses_explicit_inventory_and_bounds(
     monkeypatch.setattr(
         cli,
         "run_archive_member_plan_controller",
-        lambda path, received_dsn, received_inventory, after, limit, check: {
+        lambda path, received_dsn, received_inventory, after, limit, check, **_options: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "inventory": received_inventory == inventory,
@@ -309,7 +385,7 @@ def test_cli_archive_text_batch_uses_private_plan_and_scrubs_dsn(
     monkeypatch.setattr(
         cli,
         "run_archive_member_batch_controller",
-        lambda received_config, received_plan, received_dsn, check: {
+        lambda received_config, received_plan, received_dsn, check, **_options: {
             "config": received_config == config,
             "plan": received_plan == plan,
             "dsn": received_dsn == dsn,
@@ -350,7 +426,7 @@ def test_cli_archive_document_plan_uses_explicit_inventory_and_bounds(
     monkeypatch.setattr(
         cli,
         "run_archive_document_plan_controller",
-        lambda path, received_dsn, received_inventory, after, limit, check: {
+        lambda path, received_dsn, received_inventory, after, limit, check, **_options: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "inventory": received_inventory == inventory,
@@ -400,7 +476,7 @@ def test_cli_archive_document_batch_uses_private_plan_and_scrubs_dsn(
     monkeypatch.setattr(
         cli,
         "run_archive_document_batch_controller",
-        lambda received_config, received_plan, received_dsn, check: {
+        lambda received_config, received_plan, received_dsn, check, **_options: {
             "config": received_config == config,
             "plan": received_plan == plan,
             "dsn": received_dsn == dsn,
@@ -443,7 +519,7 @@ def test_cli_archive_document_uses_exact_selection_and_scrubs_dsn(
     monkeypatch.setattr(
         cli,
         "run_archive_member_document_controller",
-        lambda path, received_dsn, received_inventory, received_locator, received_key, check: {
+        lambda path, received_dsn, received_inventory, received_locator, received_key, check, **_: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "inventory": received_inventory == inventory,
@@ -494,7 +570,7 @@ def test_cli_archive_image_uses_exact_selection_and_scrubs_dsn(
     monkeypatch.setattr(
         cli,
         "run_archive_member_image_ocr_controller",
-        lambda path, received_dsn, received_inventory, received_locator, received_key, check: {
+        lambda path, received_dsn, received_inventory, received_locator, received_key, check, **_: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "inventory": received_inventory == inventory,
@@ -531,7 +607,7 @@ def test_cli_email_bridge_uses_explicit_evidence_and_scrubs_dsn(
     monkeypatch.setattr(
         cli,
         "run_email_bridge_controller",
-        lambda path, received_dsn, received_evidence, received_key, check: {
+        lambda path, received_dsn, received_evidence, received_key, check, **_options: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "evidence": str(received_evidence) == evidence,
@@ -577,7 +653,7 @@ def test_cli_email_bridge_plan_uses_explicit_account_and_bounds(
     monkeypatch.setattr(
         cli,
         "run_email_bridge_plan_controller",
-        lambda path, received_dsn, received_account, after, limit, check: {
+        lambda path, received_dsn, received_account, after, limit, check, **_options: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "account": str(received_account) == account,
@@ -629,7 +705,7 @@ def test_cli_email_part_bridge_plan_uses_explicit_kind_and_bounds(
     monkeypatch.setattr(
         cli,
         "run_email_part_bridge_plan_controller",
-        lambda path, received_dsn, received_account, kind, after, limit, check: {
+        lambda path, received_dsn, received_account, kind, after, limit, check, **_options: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "account": str(received_account) == account,
@@ -685,7 +761,7 @@ def test_cli_email_part_batch_uses_explicit_private_plan(
     monkeypatch.setattr(
         cli,
         "run_email_part_bridge_batch_controller",
-        lambda path, plan_path, received_dsn, check: {
+        lambda path, plan_path, received_dsn, check, **_options: {
             "config": path == config,
             "plan": plan_path == plan,
             "dsn": received_dsn == dsn,
@@ -729,7 +805,7 @@ def test_cli_email_bridge_batch_uses_explicit_private_plan(
     monkeypatch.setattr(
         cli,
         "run_email_bridge_batch_controller",
-        lambda config_path, plan_path, received_dsn, check: {
+        lambda config_path, plan_path, received_dsn, check, **_options: {
             "config": config_path == config,
             "plan": plan_path == plan,
             "dsn": received_dsn == dsn,
@@ -785,7 +861,7 @@ def test_cli_email_part_bridges_use_explicit_targets_and_scrub_dsn(
     monkeypatch.setattr(
         cli,
         attribute,
-        lambda path, received_dsn, received_target, received_key, check: {
+        lambda path, received_dsn, received_target, received_key, check, **_options: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "target": str(received_target) == target,

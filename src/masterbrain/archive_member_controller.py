@@ -32,6 +32,7 @@ from masterbrain.datacore.document_processor import DockerDocumentProcessor
 from masterbrain.datacore.extraction import ExtractionStatus
 from masterbrain.datacore.image_ocr_processor import DockerImageOcrProcessor
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.datacore.worker_db import worker_store
 
 _INVENTORY = re.compile(r"archive_inventory_[a-f0-9]{32}\Z", re.ASCII)
 
@@ -270,6 +271,7 @@ def run_archive_member_controller(
     idempotency_key: UUID,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or publish exactly one selected archive-member text derivative."""
     try:
@@ -284,7 +286,7 @@ def run_archive_member_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -336,6 +338,7 @@ def run_archive_member_plan_controller(
     after: int | None = None,
     limit: int = 25,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or preview eligible text members in one current archive inventory."""
     try:
@@ -355,7 +358,7 @@ def run_archive_member_plan_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -385,6 +388,7 @@ def run_archive_document_plan_controller(
     after: int | None = None,
     limit: int = 25,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or preview eligible documents in one current archive inventory."""
     try:
@@ -406,7 +410,7 @@ def run_archive_document_plan_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -437,6 +441,7 @@ def run_archive_member_document_controller(
     idempotency_key: UUID,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or publish one selected archive-member PDF/Office derivative."""
     try:
@@ -453,7 +458,7 @@ def run_archive_member_document_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -521,6 +526,7 @@ def run_archive_member_image_ocr_controller(
     idempotency_key: UUID,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or publish one explicitly selected archive image OCR derivative."""
     try:
@@ -537,7 +543,7 @@ def run_archive_member_image_ocr_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -596,6 +602,7 @@ def run_archive_member_batch_controller(
     dsn: str,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or execute one sealed archive-member text publication plan."""
     try:
@@ -612,7 +619,7 @@ def run_archive_member_batch_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -700,6 +707,7 @@ def run_archive_document_batch_controller(
     dsn: str,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or execute one sealed archive-member document publication plan."""
     try:
@@ -716,7 +724,7 @@ def run_archive_document_batch_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)

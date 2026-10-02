@@ -15,6 +15,7 @@ from email_brain.processing_controller import WorkerIdentity, _json, _path
 from email_brain.schemas import ClosedModel
 from email_brain.store import Conflict, NotFound, Store
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.datacore.worker_db import worker_store
 
 
 class EmailBridgeControllerError(ValueError):
@@ -183,6 +184,7 @@ def run_email_bridge_controller(
     idempotency_key: UUID,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or bridge one explicitly selected current Email evidence version."""
     return _run_email_bridge_controller(
@@ -192,6 +194,7 @@ def run_email_bridge_controller(
         idempotency_key,
         operation="bridge_current_email_version",
         check=check,
+        tenant_bound_db=tenant_bound_db,
     )
 
 
@@ -203,6 +206,7 @@ def run_email_bridge_plan_controller(
     after: UUID | None = None,
     limit: int = 25,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or preview current Email versions for explicit bridge operation."""
     try:
@@ -218,7 +222,7 @@ def run_email_bridge_plan_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -249,6 +253,7 @@ def run_email_part_bridge_plan_controller(
     after: UUID | None = None,
     limit: int = 25,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or preview current Email attachment/document bridge candidates."""
     try:
@@ -265,7 +270,7 @@ def run_email_part_bridge_plan_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -294,6 +299,7 @@ def run_email_bridge_batch_controller(
     dsn: str,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or execute one sealed, explicit Email message bridge batch."""
     try:
@@ -307,7 +313,7 @@ def run_email_bridge_batch_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -381,6 +387,7 @@ def run_email_part_bridge_batch_controller(
     dsn: str,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or execute one sealed attachment or approved-document batch."""
     try:
@@ -394,7 +401,7 @@ def run_email_part_bridge_batch_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)
@@ -473,6 +480,7 @@ def run_email_attachment_bridge_controller(
     idempotency_key: UUID,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or bridge one explicitly selected Email attachment occurrence."""
     return _run_email_bridge_controller(
@@ -482,6 +490,7 @@ def run_email_attachment_bridge_controller(
         idempotency_key,
         operation="bridge_email_attachment",
         check=check,
+        tenant_bound_db=tenant_bound_db,
     )
 
 
@@ -492,6 +501,7 @@ def run_email_document_bridge_controller(
     idempotency_key: UUID,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or bridge one explicitly selected approved Email PDF extraction."""
     return _run_email_bridge_controller(
@@ -501,6 +511,7 @@ def run_email_document_bridge_controller(
         idempotency_key,
         operation="bridge_email_document_extraction",
         check=check,
+        tenant_bound_db=tenant_bound_db,
     )
 
 
@@ -516,6 +527,7 @@ def _run_email_bridge_controller(
         "bridge_email_document_extraction",
     ],
     check: bool,
+    tenant_bound_db: bool,
 ) -> dict[str, Any]:
     try:
         if not dsn or not isinstance(legacy_id, UUID) or not isinstance(idempotency_key, UUID):
@@ -525,7 +537,7 @@ def _run_email_bridge_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = worker_store(Store, dsn, initial.context.tenant_id, tenant_bound_db)
         with store.transaction(initial.context):
             pass
         _current(identity, initial)

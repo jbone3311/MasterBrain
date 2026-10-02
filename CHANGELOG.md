@@ -2,6 +2,14 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added ADR-139's opt-in `--tenant-bound-db` mode to every private
+  `masterbrain email bridge*` and `masterbrain fileos archive-*` command,
+  including previews and sealed batches. A shared DataCore worker-store
+  primitive binds each authenticated worker tenant to one runtime login.
+  Two-tenant PostgreSQL tests refuse shared, owner and wrong-tenant logins;
+  bound Email and archive publication/replay leave originals unchanged.
+  Legacy workers, hosted credential operations and issue #7 remain open.
+
 - Added ADR-138's explicit `--tenant-bound-db` option to both private FileOS
   index build/activation and activation-only rollback. The authenticated
   worker's tenant must match a DBA-bound PostgreSQL login, including check

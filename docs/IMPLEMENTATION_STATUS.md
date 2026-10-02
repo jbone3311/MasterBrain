@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-139 extends opt-in `--tenant-bound-db` to every private `masterbrain`
+  Email bridge and FileOS archive derivative command, including previews and
+  sealed batches. A shared DataCore helper binds the authenticated worker
+  tenant to one login; synthetic two-tenant PostgreSQL tests cover all check
+  modes plus selected Email/archive publication and replay. Legacy workers,
+  credential lifecycle, hosted adversarial acceptance and issue #7 remain open.
+
 - ADR-138 adds an explicit `--tenant-bound-db` mode to private FileOS index
   build/activation and activation-only rollback. Both modes require the
   authenticated worker tenant's DBA-bound login even in check mode; shared,

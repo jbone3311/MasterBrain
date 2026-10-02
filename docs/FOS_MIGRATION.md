@@ -154,7 +154,9 @@ dependency of v2 indexing, not a current-read or policy switch.
 ADR-135 adds an opt-in tenant-bound database login to the private v1 FileOS
 publisher. It changes neither donor policy nor v2 activation and is not a
 cutover gate by itself. ADR-138 extends that opt-in fence to FileOS indexing
-and rollback; remaining private workers still need tenant-bound routing.
+and rollback; ADR-139 extends it to the private archive derivative commands.
+Legacy workers, private v2 library callers and hosted credential operations
+still need separate tenant-bound routing and acceptance.
 
 ## Proposed next tranches
 

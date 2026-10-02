@@ -6,6 +6,15 @@ commands. The legacy `email-brain` command remains the Email capability surface.
 shared command moves, renames, quarantines, deletes or modifies a source file or
 mailbox.
 
+Every database-backed private `masterbrain` command below accepts
+`--tenant-bound-db` on both `--check` and execution (ADRs 135, 138 and 139).
+With this opt-in, `MASTERBRAIN_DSN` must be a DBA-enrolled login bound to the
+authenticated worker's exact tenant; shared, owner and wrong-tenant logins
+fail before check mode succeeds. Keep the DSN out of arguments, plans and
+source content. This is synthetic/disposable containment, not hosted
+credential management or acceptance. The legacy `email-brain` command is not
+covered by this option.
+
 ## Bridge one current Email evidence version
 
 ```sh
@@ -205,8 +214,9 @@ For a synthetic tenant-bound database login (ADR-135), pass
 `MASTERBRAIN_DSN` to be a DBA-enrolled login bound to the authenticated worker's
 exact tenant; a shared, unbound or wrong-tenant login fails before intake. Do
 not put a DSN on the command line or fall back to the legacy shared login for
-hosted use. ADR-138 also permits this option on `fileos index`; it is not
-available to other private operators and is not a hosted release claim.
+hosted use. ADR-138 also permits this option on `fileos index`, and ADR-139
+extends it to the Email bridge and archive derivative commands; none of these
+is a hosted release claim.
 
 The expiring credential must be a worker with exactly `brain.source.ingest` and
 `brain.document.publish`. The UUID and exact manifest are reused for an uncertain

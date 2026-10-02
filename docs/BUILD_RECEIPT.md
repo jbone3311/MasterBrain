@@ -2,6 +2,30 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-139 private derivative worker login — local verification
+
+The opt-in `--tenant-bound-db` option covers every database-backed private
+`masterbrain` Email bridge and FileOS archive derivative command, including
+previews and sealed batches. Unit dispatch tests cover all 14 command forms.
+Real PostgreSQL 17.11 two-tenant tests prove own-login preflight for every
+form, shared/wrong/owner-login refusal, bound Email and archive publication,
+batch execution and replay, forged-GUC foreign read/write denial, worker
+revocation and unchanged originals. The prior FileOS publish/index paths use
+the same shared DataCore worker-store helper and retain their regressions.
+The final-tree Python 3.14.7 suite and separate deployment gate each passed
+**2,978 tests, one Docker-only skip** against distinct disposable databases;
+469 of 470 PostgreSQL-marked tests executed. The six required Node browser
+suites passed **143 tests**. Locked dependency sync, Ruff, strict mypy over
+98 source files, documentation and diff checks passed. This is local/synthetic
+evidence, not hosted acceptance, legacy-worker routing or issue #7 closure.
+FOS-Master was not changed.
+
+PR [#106](https://github.com/jbone3311/MasterBrain/pull/106) merged its
+documentation receipt at `b1f3b058f34813db3d7a49547228ecc451f03691`.
+That merge commit passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36995421597),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36995421571)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36995421564).
+
 PR [#104](https://github.com/jbone3311/MasterBrain/pull/104) merged at
 `62e55c0a12c9a3d3274feb7974878e9d2699a37c`. Its merged-main
 [CI](https://github.com/jbone3311/MasterBrain/actions/runs/36989827326),
