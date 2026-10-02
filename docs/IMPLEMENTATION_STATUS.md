@@ -1,6 +1,6 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-01. Tagged synthetic checkpoint `v0.2.0a1` is
+Updated 2026-10-02. Tagged synthetic checkpoint `v0.2.0a1` is
 `c0a531d8a7d0991be0a0f1ea717479c07cc20feb`; its exact full CI,
 strict-runtime, populated restore and local pinned-donor DataCore parity passed.
 **Implemented** means executable in this repository; it does not
@@ -15,6 +15,11 @@ not still-open integration work. Interactive Mac acceptance, issues #7/#9,
 production and FileOS cutover remain open.
 
 ## Implemented
+
+- ADR-140 makes the fictional Mac trial launcher install non-editably and run
+  without a second implicit sync. Its actual local PostgreSQL 17.11 self-test
+  passed on the affected Mac after the editable `.pth` import failure; this is
+  not the owner's browser acceptance or a hosted/live-source product claim.
 
 - ADR-139 extends opt-in `--tenant-bound-db` to every private `masterbrain`
   Email bridge and FileOS archive derivative command, including previews and

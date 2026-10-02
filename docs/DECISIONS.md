@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-140](adr/140_noneditable_synthetic_trial_launcher.md) makes only the
+fictional Mac trial launcher use a locked non-editable package install. It
+does not change the ordinary developer install or source authority.
+
 [ADR-139](adr/139_tenant_bound_private_derivative_operators.md) extends the
 opt-in tenant-login fence to every private `masterbrain` Email bridge and
 FileOS archive derivative command, including previews and batches. It leaves

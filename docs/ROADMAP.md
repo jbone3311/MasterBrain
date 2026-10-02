@@ -1,6 +1,6 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-01. This is a dependency-ordered plan, not a release claim.
+Updated 2026-10-02. This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
@@ -33,8 +33,10 @@ Security and data-integrity blockers take priority over adding more surface area
    fictional PostgreSQL data found and corrected visible highlight markers
    and an over-technical evidence panel (ADR-136); the owner's independent
    walkthrough remains outstanding. ADR-137 adds a disposable local PostgreSQL
-   launcher option for Macs without Docker; its exact-head acceptance is tracked
-   in the build receipt.
+   launcher option for Macs without Docker. ADR-140 makes that one-click path
+   use a locked non-editable install after a local `.pth` import failure. Its
+   self-test passes on the affected Mac; the owner's interactive acceptance is
+   still required. Exact verification belongs in the build receipt.
 2. **Resolve security and upgrade findings.** Identity enrollment
    [#6](https://github.com/jbone3311/MasterBrain/issues/6) is fixed on `main` by
    ADR-105; the exact resolver of ADR-106 narrows but does not close the confirmed

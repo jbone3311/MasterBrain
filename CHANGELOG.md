@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Corrected the fictional Mac trial launcher to install the locked project
+  non-editably and run without a second implicit sync (ADR-140). On this Mac,
+  a hidden editable `.pth` file caused imports to fail despite a successful
+  dependency sync. The database, fictional seed and Brain API are unchanged.
+
 - Added ADR-139's opt-in `--tenant-bound-db` mode to every private
   `masterbrain email bridge*` and `masterbrain fileos archive-*` command,
   including previews and sealed batches. A shared DataCore worker-store

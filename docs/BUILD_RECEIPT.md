@@ -2,6 +2,39 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-140 fictional Mac trial launcher — local verification
+
+On this Mac, a fresh editable `uv sync` left its generated `.pth` file with the
+macOS hidden flag. Python 3.14 skipped the file and the one-click trial failed
+to import `email_brain.api`. A separate restricted-sandbox run could not start
+PostgreSQL because shared memory was denied. The corrected launcher uses a
+locked non-editable install followed by `uv run --no-sync`; its actual
+`--backend local --self-test` passed outside the restricted sandbox on
+PostgreSQL 17.11, returning two fictional Email hits, two FileOS hits and cited
+content. No real source was read or changed. The focused launcher contract
+test, Ruff, strict mypy over 98 source files, all 143 required Node browser
+tests, documentation and diff checks passed. The full local suite on a fresh
+disposable PostgreSQL 17.11 cluster passed **2,978 tests, one Docker-only
+skip**, with 469 of 470 PostgreSQL-marked tests executed. The separate
+deployment gate passed the same count against another fresh disposable
+PostgreSQL cluster. Hosted exact-head and merged-main results must be recorded
+separately. FOS-Master is unchanged.
+
+## ADR-139 private derivative worker login — merged verification
+
+PR [#107](https://github.com/jbone3311/MasterBrain/pull/107) merged from
+`a99aa2294ff7ba2a65f4287afb112227591a25bf` into `main` at
+`eb3dbf0924ce094561b283920089044645940442`. Its exact head passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36998536832),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36998536984)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36998536788).
+The exact merge commit passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36999682611),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36999682706)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36999682591).
+The feature branch was deleted after merge. Issue #7 remains open for legacy
+workers, credential operations and hosted multi-tenant acceptance.
+
 ## ADR-139 private derivative worker login — local verification
 
 The opt-in `--tenant-bound-db` option covers every database-backed private
