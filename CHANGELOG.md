@@ -7,8 +7,10 @@
   grant changes bump the binding revision, are audited, and invalidate saved
   contexts at the next transaction. Only the three already source-aware Brain
   read routes are admitted for assistants; the legacy identity resolver refuses
-  Brain-scoped assistants during a rolling upgrade. Hosted/named-assistant acceptance,
-  legacy Email assistant source filtering and derived-cache revocation remain open.
+  Brain-scoped assistants during a rolling upgrade. PR #91 passed exact-head
+  and merged-main CI, strict runtime and populated restore. Hosted/named-assistant
+  acceptance, legacy Email assistant source filtering and derived-cache
+  revocation remain open.
 - Added a forward-only FileOS v2 readiness-query correction (ADR-131,
   migration 0048): exact generation/base chunk comparisons and the reverse
   base count now use indexed probes under the existing five-second database

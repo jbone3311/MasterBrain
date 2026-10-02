@@ -24,6 +24,8 @@ production and FileOS cutover remain open.
   transaction. It admits only ADR-130's three source-aware routes. This is a
   synthetic/disposable implementation, not hosted issuer enrollment, a
   named-assistant connection, cache revocation or full assistant route coverage.
+  PR #91's exact-head and merged-main CI, strict runtime and populated restore
+  passed; issue #88 remains open for the hosted and broader-route gates.
 
 - ADR-131 adds a forward-only correction to the private FileOS v2 generation
   readiness gate. It uses indexed exact chunk comparison and base counting
