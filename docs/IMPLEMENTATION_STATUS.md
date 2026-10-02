@@ -16,6 +16,15 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- API-SOURCE-002 adds an administrator-owned OIDC source-grant table, exact-key
+  source-aware resolver and transaction-time revision/source checks under ADR-132
+  and migration 0049. An assistant binding with Brain read scopes cannot mix
+  legacy Email scopes or authenticate without an enrolled same-tenant source.
+  Grant add/remove is audited and invalidates saved contexts at the next
+  transaction. It admits only ADR-130's three source-aware routes. This is a
+  synthetic/disposable implementation, not hosted issuer enrollment, a
+  named-assistant connection, cache revocation or full assistant route coverage.
+
 - ADR-131 adds a forward-only correction to the private FileOS v2 generation
   readiness gate. It uses indexed exact chunk comparison and base counting
   under the existing timeout, without changing SQL activation refusal, current
@@ -27,8 +36,8 @@ production and FileOS cutover remain open.
   Current Email/FileOS/archive searches and reviewed Knowledge results filter
   before limits; evidence metadata/content enforce the same allowlist, and
   alternate Brain/Knowledge routes are denied. Human reads are unchanged.
-  Hosted OIDC source grants, immediate revocation, derived-cache invalidation
-  and full route coverage remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
+  Hosted issuer enrollment, derived-cache invalidation and full route coverage
+  remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 
 - API-CLIENT-001 adds a provider-neutral, read-only reference client under
   ADR-129. It calls the same grouped current-search and separately scoped

@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added administrator-owned OIDC Brain source grants (ADR-132, migration 0049):
+  an exact identity binding may enroll up to 20 existing same-tenant sources;
+  grant changes bump the binding revision, are audited, and invalidate saved
+  contexts at the next transaction. Only the three already source-aware Brain
+  read routes are admitted for assistants. Hosted/named-assistant acceptance,
+  legacy Email assistant source filtering and derived-cache revocation remain open.
 - Added a forward-only FileOS v2 readiness-query correction (ADR-131,
   migration 0048): exact generation/base chunk comparisons and the reverse
   base count now use indexed probes under the existing five-second database
@@ -11,8 +17,8 @@
 - Added synthetic-bootstrap source-scoped assistant reads (ADR-130): explicit
   source enrollment filters the shared current Email/FileOS/archive and
   reviewed-Knowledge search before limits, gates evidence expansion and denies
-  unreviewed alternate Brain/Knowledge routes. This does not establish hosted
-  OIDC grants, immediate revocation, a named assistant or source effects.
+  unreviewed alternate Brain/Knowledge routes. This does not itself establish
+  hosted OIDC grants, a named assistant or source effects.
 - Merged a provider-neutral, read-only Brain API client (ADR-129, PR #86)
   for grouped current search and separately scoped evidence/content reads.
   Fictional Email/FileOS client-vs-API parity, exact-head and merged-main CI,

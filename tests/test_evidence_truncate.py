@@ -246,6 +246,7 @@ def protected_database(
             "0046_fileos_v2_document_publication.sql",
             "0047_fileos_v2_shared_index_generation.sql",
             "0048_fileos_v2_readiness_indexed_check.sql",
+            "0049_oidc_brain_source_grants.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:
@@ -304,9 +305,9 @@ def test_direct_truncate_rejected_without_row_loss(
     assert isinstance(tenant_id, UUID)
     before = _record_counts(admin_dsn, tenant_id)
     with psycopg.connect(admin_dsn, autocommit=True) as conn:
-        if table == "document_jobs":
-            # Its bridge receipt FK is checked before statement triggers. CASCADE
-            # is covered separately and must reach the rejecting guard.
+        if table in {"document_jobs", "external_identities"}:
+            # Their bridge/source-grant FKs are checked before statement triggers.
+            # CASCADE is covered separately and must reach the rejecting guard.
             with pytest.raises(psycopg.errors.FeatureNotSupported):
                 conn.execute(sql.SQL("TRUNCATE {}").format(sql.Identifier(table)))
         else:

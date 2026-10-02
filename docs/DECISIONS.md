@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-132](adr/132_oidc_brain_source_grants.md) adds administrator-owned,
+revocable source enrollment to verified OIDC Brain read identities on the
+three source-aware routes. It is synthetic/disposable, not hosted or
+named-assistant acceptance.
+
 [ADR-131](adr/131_fileos_v2_readiness_set_check.md) changes only the exact
 FileOS v2 readiness chunk-closure and base-count queries to indexed per-row
 checks under the same statement budget. It grants no v2 activation, current

@@ -245,6 +245,16 @@ def grant_runtime(conn: psycopg.Connection[tuple[object, ...]], role: str) -> No
                 "GRANT EXECUTE ON FUNCTION public.resolve_external_identity(text,text,text) TO {}"
             ).format(sql.Identifier(role))
         )
+        if conn.execute(
+            "SELECT to_regprocedure('public.resolve_external_identity_v2(text,text,text)') "
+            "IS NOT NULL"
+        ).fetchone() == (True,):
+            conn.execute(
+                sql.SQL(
+                    "GRANT EXECUTE ON FUNCTION "
+                    "public.resolve_external_identity_v2(text,text,text) TO {}"
+                ).format(sql.Identifier(role))
+            )
     conn.execute(
         sql.SQL("GRANT EXECUTE ON FUNCTION lock_recovery_owners(uuid,uuid,uuid) TO {}").format(
             sql.Identifier(role)
@@ -399,12 +409,19 @@ def grant_identity_lookup(conn: psycopg.Connection[tuple[object, ...]], role: st
         ).fetchone() != (False,):
             raise ValueError("identity lookup role has table or inherited authority")
         if conn.execute(
-            "SELECT to_regprocedure('public.resolve_external_identity(text,text,text)') IS NOT NULL"
+            "SELECT to_regprocedure('public.resolve_external_identity_v2(text,text,text)') "
+            "IS NOT NULL"
         ).fetchone() != (True,):
-            raise ValueError("identity resolver migration is missing")
+            raise ValueError("source-aware identity resolver migration is missing")
         conn.execute(sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role)))
         conn.execute(
             sql.SQL(
                 "GRANT EXECUTE ON FUNCTION public.resolve_external_identity(text,text,text) TO {}"
+            ).format(sql.Identifier(role))
+        )
+        conn.execute(
+            sql.SQL(
+                "GRANT EXECUTE ON FUNCTION "
+                "public.resolve_external_identity_v2(text,text,text) TO {}"
             ).format(sql.Identifier(role))
         )
