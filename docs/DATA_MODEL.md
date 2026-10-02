@@ -30,6 +30,11 @@ implemented remain logical targets.
   the grant table. Migration 0050/ADR-133 additionally admits source-filtered
   current coverage and change status for enrolled assistants, not hosted or
   all-route authorization.
+- Migration 0051 admits `knowledge.read` and `knowledge.changes.read` in the
+  administrator-owned OIDC scope constraint and every assistant/source-grant
+  fence. The old exact-key resolver still refuses assistants carrying Brain or
+  Knowledge reads; new binaries use the source-aware resolver. No historical
+  identity or grant row is rewritten.
 
 ## Source and evidence
 

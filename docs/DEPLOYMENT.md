@@ -38,7 +38,9 @@ Synthetic bootstrap assistant source allowlists are not a hosted access system.
 ADR-132 adds administrator-owned OIDC Brain grants on the initial three
 source-aware routes; ADR-133 adds filtered coverage and change status, and
 ADR-142 adds directly source-checkable search and FileOS status routes, all
-with transaction-time OIDC revocation. Hosted issuer enrollment, legacy Email
+with transaction-time OIDC revocation. ADR-143 adds source-filtered direct
+Knowledge and unified Brain reads plus the corresponding OIDC scope migration.
+Hosted issuer enrollment, legacy Email
 assistant filtering, derived-cache invalidation and remaining route coverage remain
 release gates (issue #88).
 

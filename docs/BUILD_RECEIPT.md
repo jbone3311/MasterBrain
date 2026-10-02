@@ -2,6 +2,33 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-143 source-scoped Knowledge reads — local verification
+
+Forward migration 0051 admits `knowledge.read` and
+`knowledge.changes.read` to administrator-bound OIDC assistants while keeping
+the old exact-key resolver closed to Brain/Knowledge assistants. The API now
+admits enrolled assistants to direct Knowledge search, assertion expansion,
+Knowledge changes and unified Brain search. Fictional PostgreSQL tests used
+nonempty Email and FileOS evidence in one tenant plus an independent second
+tenant with the same FileOS source ID. File-only, Email-only and mixed-source
+assertions tested all-direct-evidence filtering before a `LIMIT 1` result;
+hidden/unknown assertion and change cursor reads return not found. Knowledge-
+only OIDC credentials require enrollment, and grant removal invalidates saved
+contexts. No source effect, real account, remote model or FOS-Master change was
+involved.
+
+The first complete local run exposed exact migration-list expectations in
+upgrade/protected-record tests that omitted the new forward migration. Those
+expectations were updated; the exact affected files passed, then the **whole
+final-tree Python 3.14.7 suite passed 2,998 tests with one Docker-only skip**
+on disposable PostgreSQL 17.11. A separate deployment gate passed the same
+count on a fresh second database; 477 of 478 PostgreSQL-marked tests executed.
+Six required Node suites passed **143 tests**. Locked non-editable package
+rebuild, Ruff, strict mypy over 98 source files, documentation links and diff
+checks passed. Exact-head GitHub CI and merged-main checks are separate gates;
+this local receipt does not close hosted issue #88 or establish semantic
+information-flow safety of reviewer-written assertion text.
+
 ## ADR-142 source-scoped Brain read expansion — local verification
 
 Enrolled synthetic-bootstrap and administrator-bound OIDC assistants now use

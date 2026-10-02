@@ -21,6 +21,7 @@ from email_brain.auth import Credential, TokenRegistry
 from email_brain.store import Store
 from masterbrain.answers import QuoteSelection
 from masterbrain.brain_client import BrainClientError, BrainReadClient
+from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import EntityWrite
 
@@ -58,12 +59,14 @@ def external_transport(app_client: TestClient) -> httpx.MockTransport:
     return httpx.MockTransport(forward)
 
 
-def assistant_credential(preview, token: str, sources: set[str]) -> Credential:
+def assistant_credential(
+    preview, token: str, sources: set[str], scopes: frozenset[str] = READ_SCOPES
+) -> Credential:
     return Credential(
         token_sha256=hashlib.sha256(token.encode()).hexdigest(),
         tenant_id=preview.context.tenant_id,
         actor_id=preview.context.actor_id,
-        scopes=set(READ_SCOPES),
+        scopes=set(scopes),
         expires_at=datetime.now(UTC) + timedelta(hours=1),
         client_kind="assistant",
         source_ids=sources,
@@ -196,8 +199,8 @@ def test_source_scoped_assistant_cannot_read_other_sources_or_alternate_routes(
         for path in ("/v1/knowledge/changes",):
             assert client.get(path, headers=headers).status_code == 403
         for path in ("/v1/brain/unified-search", "/v1/knowledge/search"):
-            denied = client.post(path, json={"query": "insurance"}, headers=headers)
-            assert denied.status_code == 403
+            permitted = client.post(path, json={"query": "insurance"}, headers=headers)
+            assert permitted.status_code == 200, permitted.text
         for path in ("/v1/brain/search", "/v1/brain/fileos-search"):
             scoped_read = client.post(
                 path, json={"query": "insurance", "limit": 1}, headers=headers
@@ -324,27 +327,115 @@ def test_source_scoped_knowledge_excludes_mixed_evidence_before_limit(
         EntityWrite(**common, name="insurance", evidence_ids=[file_id]),
         uuid4(),
     )
-    owner_hits = knowledge.search(preview.context, "insurance", limit=2)
-    assert {hit.object_id for hit in owner_hits} == {mixed.object_id, file_only.object_id}
+    email_only = knowledge.publish(
+        reviewer,
+        EntityWrite(**common, name="insurance email", evidence_ids=[email_id]),
+        uuid4(),
+    )
+    other_evidence = DataCoreStore(store).search(
+        preview.other_context, "other-tenant-canary", limit=1
+    )[0].evidence_id
+    other_reviewer = replace(
+        preview.other_context,
+        scopes=preview.other_context.scopes | frozenset({"knowledge.review"}),
+    )
+    other_tenant = knowledge.publish(
+        other_reviewer,
+        EntityWrite(**common, name="insurance outsider", evidence_ids=[other_evidence]),
+        uuid4(),
+    )
+    owner_hits = knowledge.search(preview.context, "insurance", limit=3)
+    assert {hit.object_id for hit in owner_hits} == {
+        mixed.object_id, file_only.object_id, email_only.object_id
+    }
     assert all("insurance" in hit.excerpt.casefold() for hit in owner_hits)
     assert all("<b>" not in hit.excerpt for hit in owner_hits)
     restricted = replace(preview.context, source_ids=frozenset({"trial_files"}))
     scoped_hits = knowledge.search(restricted, "insurance", limit=1)
     assert [hit.object_id for hit in scoped_hits] == [file_only.object_id]
     token = "assistant-knowledge-fixture-token-" + "y" * 32
+    knowledge_scopes = READ_SCOPES | frozenset({"knowledge.read", "knowledge.changes.read"})
     app = create_app(store, TokenRegistry([
-        assistant_credential(preview, token, {"trial_files"})
+        assistant_credential(preview, token, {"trial_files"}, knowledge_scopes)
     ]))
     with TestClient(app, base_url="http://127.0.0.1") as client:
+        headers = {"Authorization": "Bearer " + token}
         response = client.post(
             "/v1/brain/current-search", json={"query": "insurance", "knowledge_limit": 1},
-            headers={"Authorization": "Bearer " + token},
+            headers=headers,
         )
         assert response.status_code == 200
         assert [hit["object_id"] for hit in response.json()["layers"]["knowledge"]] == [
             file_only.object_id
         ]
         assert mixed.object_id not in response.text
+        direct = client.post(
+            "/v1/knowledge/search", json={"query": "insurance", "limit": 1},
+            headers=headers,
+        )
+        assert direct.status_code == 200, direct.text
+        assert [hit["object_id"] for hit in direct.json()["results"]] == [
+            file_only.object_id
+        ]
+        for visibility in ("retained", "current_fileos"):
+            unified = client.post(
+                "/v1/brain/unified-search",
+                json={"query": "insurance", "knowledge_limit": 1,
+                      "evidence_limit": 1, "evidence_visibility": visibility},
+                headers=headers,
+            )
+            assert unified.status_code == 200, unified.text
+            assert [hit["object_id"] for hit in unified.json()["layers"]["knowledge"]] == [
+                file_only.object_id
+            ]
+            assert all(
+                hit["source_id"] == "trial_files"
+                for hit in unified.json()["layers"]["evidence"]
+            )
+        visible = client.get(f"/v1/knowledge/entity/{file_only.object_id}", headers=headers)
+        assert visible.status_code == 200
+        assert [item["evidence_id"] for item in visible.json()["evidence"]] == [file_id]
+        for hidden_id in (mixed.object_id, email_only.object_id, other_tenant.object_id):
+            assert client.get(
+                f"/v1/knowledge/entity/{hidden_id}", headers=headers
+            ).status_code == 404
+        feed = client.get("/v1/knowledge/changes?limit=1", headers=headers)
+        assert feed.status_code == 200, feed.text
+        assert [item["object_id"] for item in feed.json()["results"]] == [
+            file_only.object_id
+        ]
+        assert feed.json()["next_cursor"] is None
+        owner_changes = knowledge.changes(
+            replace(
+                preview.context,
+                scopes=preview.context.scopes | frozenset({"knowledge.changes.read"}),
+            ),
+            limit=50,
+        )["results"]
+        hidden_cursor = next(
+            item["id"] for item in owner_changes if item["object_id"] == mixed.object_id
+        )
+        assert client.get(
+            f"/v1/knowledge/changes?after={hidden_cursor}", headers=headers
+        ).status_code == 404
+        assert client.get(
+            "/v1/knowledge/changes?after=kchange_" + "0" * 32, headers=headers
+        ).status_code == 404
+
+    dual_token = "assistant-knowledge-dual-fixture-" + "d" * 32
+    email_source = results["layers"]["email_messages"][0]["source_id"]
+    dual_app = create_app(store, TokenRegistry([
+        assistant_credential(
+            preview, dual_token, {"trial_files", email_source},
+            knowledge_scopes,
+        )
+    ]))
+    with TestClient(dual_app, base_url="http://127.0.0.1") as client:
+        both = client.get(
+            f"/v1/knowledge/entity/{mixed.object_id}",
+            headers={"Authorization": "Bearer " + dual_token},
+        )
+        assert both.status_code == 200
 
 
 @pytest.mark.postgres

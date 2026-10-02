@@ -23,6 +23,12 @@ Email or FileOS source.
   include evidence IDs; object expansion includes the full evidence link.
 - A cursor-bounded append-only change feed allows consumers to discover new
   assertions without scanning the knowledge tables.
+- Enrolled assistants may search, expand and page changes only for assertions
+  whose directly linked evidence is nonempty and entirely in their granted
+  sources (ADR-143). Mixed-source assertions are hidden in full; an ungranted
+  change cursor returns not found. OIDC grant removal is rechecked at each
+  transaction. This is not a semantic noninterference guarantee for the text
+  of a human-reviewed assertion or its opaque references to other assertions.
 
 ## API
 

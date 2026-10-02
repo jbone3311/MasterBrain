@@ -519,7 +519,8 @@ class Store:
                         and bool(
                             set(binding["scopes"])
                             & {
-                                "brain.search", "knowledge.search",
+                                "brain.search", "knowledge.search", "knowledge.read",
+                                "knowledge.changes.read",
                                 "brain.evidence.read", "brain.content.read",
                                 "brain.changes.read",
                             }
