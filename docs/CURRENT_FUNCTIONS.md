@@ -44,7 +44,9 @@ scopes, limits and response shapes are in [BRAIN_API.md](BRAIN_API.md).
   Results are not a single calibrated score or an AI-written answer.
 - KnowledgeCore: reviewed append-only entities, relationships, claims, events,
   projects, commitments and corrections; lexical search, exact expansion and
-  changes. These are base records, not a finished project-management system.
+  changes. Enrolled assistants are limited to assertions with wholly granted
+  direct evidence, including expansion and change cursors (ADR-143). These are
+  base records, not a finished project-management system.
 
 The private DataCore library also supports `stage_fileos_v2_inventory` for one
 sealed donor transition packet. It stores a nonpublishing v2 row ledger with

@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-143](adr/143_source_scoped_knowledge_reads.md) admits enrolled assistants
+to direct Knowledge search, evidence-linked assertion expansion, filtered
+change feeds and unified Brain search. Forward migration 0051 extends OIDC
+scope/source fences; hosted and legacy Email acceptance remain issue #88.
+
 [ADR-142](adr/142_source_scoped_brain_read_routes.md) extends enrolled
 assistant reads to the remaining directly source-checkable Brain search and
 FileOS status routes. SQL filters retained search before limits; exact-source

@@ -344,8 +344,22 @@ class KnowledgeCore:
         ):
             raise NotFound()
         table = _TABLES[kind]
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
-            row = conn.execute(f"SELECT * FROM {table} WHERE id=%s", (object_id,)).fetchone()
+            row = conn.execute(
+                f"SELECT k.* FROM {table} k WHERE k.id=%s "
+                "AND (%s::text[] IS NULL OR ("
+                "EXISTS (SELECT 1 FROM knowledge_evidence ke "
+                "WHERE ke.tenant_id=k.tenant_id AND ke.target_kind=%s "
+                "AND ke.target_id=k.id) AND NOT EXISTS ("
+                "SELECT 1 FROM knowledge_evidence ke JOIN brain_evidence e "
+                "ON e.tenant_id=ke.tenant_id AND e.id=ke.evidence_id "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id WHERE ke.tenant_id=k.tenant_id "
+                "AND ke.target_kind=%s AND ke.target_id=k.id "
+                "AND v.source_id<>ALL(%s::text[]))))",
+                (object_id, allowed_sources, kind, kind, allowed_sources),
+            ).fetchone()
             if not row:
                 raise NotFound()
             evidence = conn.execute(
@@ -419,22 +433,47 @@ class KnowledgeCore:
             raise NotFound()
         if not 1 <= limit <= 50:
             raise ValueError("invalid change limit")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             anchor = None
             if after:
                 anchor = conn.execute(
-                    "SELECT recorded_at,id FROM knowledge_change_events WHERE id=%s", (after,)
+                    "SELECT c.recorded_at,c.id FROM knowledge_change_events c WHERE c.id=%s "
+                    "AND (%s::text[] IS NULL OR ("
+                    "EXISTS (SELECT 1 FROM knowledge_evidence ke "
+                    "WHERE ke.tenant_id=c.tenant_id AND ke.target_kind=c.object_kind "
+                    "AND ke.target_id=c.object_id) AND NOT EXISTS ("
+                    "SELECT 1 FROM knowledge_evidence ke JOIN brain_evidence e "
+                    "ON e.tenant_id=ke.tenant_id AND e.id=ke.evidence_id "
+                    "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                    "AND v.id=e.source_version_id WHERE ke.tenant_id=c.tenant_id "
+                    "AND ke.target_kind=c.object_kind AND ke.target_id=c.object_id "
+                    "AND v.source_id<>ALL(%s::text[]))))",
+                    (after, allowed_sources, allowed_sources),
                 ).fetchone()
                 if not anchor:
                     raise NotFound()
             rows = conn.execute(
-                "SELECT id,object_kind,object_id,recorded_at FROM knowledge_change_events "
-                "WHERE (%s::timestamptz IS NULL OR (recorded_at,id)>(%s,%s)) "
-                "ORDER BY recorded_at,id LIMIT %s",
+                "SELECT c.id,c.object_kind,c.object_id,c.recorded_at "
+                "FROM knowledge_change_events c "
+                "WHERE (%s::timestamptz IS NULL OR (c.recorded_at,c.id)>(%s,%s)) "
+                "AND (%s::text[] IS NULL OR ("
+                "EXISTS (SELECT 1 FROM knowledge_evidence ke "
+                "WHERE ke.tenant_id=c.tenant_id AND ke.target_kind=c.object_kind "
+                "AND ke.target_id=c.object_id) AND NOT EXISTS ("
+                "SELECT 1 FROM knowledge_evidence ke JOIN brain_evidence e "
+                "ON e.tenant_id=ke.tenant_id AND e.id=ke.evidence_id "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id WHERE ke.tenant_id=c.tenant_id "
+                "AND ke.target_kind=c.object_kind AND ke.target_id=c.object_id "
+                "AND v.source_id<>ALL(%s::text[])))) "
+                "ORDER BY c.recorded_at,c.id LIMIT %s",
                 (
                     anchor["recorded_at"] if anchor else None,
                     anchor["recorded_at"] if anchor else None,
                     after,
+                    allowed_sources,
+                    allowed_sources,
                     limit + 1,
                 ),
             ).fetchall()

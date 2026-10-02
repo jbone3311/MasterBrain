@@ -88,12 +88,17 @@ source effects or an alternate route through KnowledgeCore.
 - `POST /v1/brain/unified-search` — implemented grouped DataCore evidence and
   KnowledgeCore assertion search; requires both search scopes, keeps ranks separate,
   and accepts explicit `retained` or `current_fileos` evidence visibility.
+  Enrolled assistants see only granted DataCore sources and Knowledge assertions
+  whose direct evidence is wholly granted (ADR-143).
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required
   append with a UUID idempotency key.
 - `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
   relationship, claim, event, project, commitment and correction records.
-- `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion.
-- `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change feed.
+- `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
+  enrolled assistants cannot resolve mixed or hidden-source assertions.
+- `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
+  feed; enrolled assistants see only directly source-authorized assertions and
+  cannot use an ungranted event as a cursor.
 - `POST /v1/search` — retained Email capability search during compatibility migration.
 - Future freeform cited synthesis — not implemented; the existing
   `/v1/brain/answers` route is limited to verified extractive quotes.
@@ -184,9 +189,9 @@ source-scoped current-search, evidence/content, ADR-133 coverage/change and
 ADR-142 directly source-filtered search/FileOS status routes, with an explicit
 source allowlist. ADR-134 also permits bounded
 extractive answers, subject to all four read scopes and an explicitly configured
-selector; the default is 503. Unified Brain and direct Knowledge routes fail
-closed for those assistants until their source semantics are reviewed. Hosted issuer
-enrollment, legacy Email assistant source filtering and derived-cache revocation
+selector; the default is 503. ADR-143 adds directly source-filtered Knowledge
+and unified Brain reads for enrolled assistants. Hosted issuer enrollment,
+legacy Email assistant source filtering and derived-cache revocation
 remain open in [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 
 Clients should search first, expand the smallest useful set, cite evidence IDs in

@@ -450,7 +450,9 @@ def create_app(
     @app.post("/v1/brain/unified-search")
     def unified_search(
         body: UnifiedSearchRequest,
-        principal: Annotated[Principal, Depends(require("brain.search"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.search", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         if "knowledge.search" not in principal.context.scopes:
             raise HTTPException(403, "scope_denied")
@@ -845,7 +847,9 @@ def create_app(
     @app.post("/v1/knowledge/search")
     def search_knowledge(
         body: KnowledgeSearchRequest,
-        principal: Annotated[Principal, Depends(require("knowledge.search"))],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         hits = knowledge.search(
             principal.context, body.query, limit=body.limit, kinds=list(body.kinds)
@@ -868,7 +872,9 @@ def create_app(
 
     @app.get("/v1/knowledge/changes")
     def knowledge_changes(
-        principal: Annotated[Principal, Depends(require("knowledge.changes.read"))],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.changes.read", assistant_source_aware=True))
+        ],
         after: str | None = None,
         limit: Annotated[int, Query(ge=1, le=50)] = 25,
     ) -> dict[str, Any]:
@@ -878,7 +884,9 @@ def create_app(
     def knowledge_object(
         kind: str,
         object_id: str,
-        principal: Annotated[Principal, Depends(require("knowledge.read"))],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.read", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         return knowledge.get(principal.context, kind, object_id)
 

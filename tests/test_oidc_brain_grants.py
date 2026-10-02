@@ -24,7 +24,7 @@ keys = oidc.keys
 identity_admin_login = oidc_pg.identity_admin_login
 READ_SCOPES = [
     "brain.search", "knowledge.search", "brain.evidence.read", "brain.content.read",
-    "brain.changes.read",
+    "brain.changes.read", "knowledge.read", "knowledge.changes.read",
 ]
 
 
@@ -166,7 +166,10 @@ def test_oidc_brain_assistant_requires_enrollment_and_revokes_every_read(
         assert client.post(
             "/v1/knowledge/search", json={"query": "insurance"},
             headers=_headers(raw),
-        ).status_code == 403
+        ).status_code == 200
+        assert client.get(
+            "/v1/knowledge/changes", headers=_headers(raw)
+        ).status_code == 200
 
     with pytest.raises(AccessDenied), store.transaction(
         replace(principal.context, source_ids=frozenset({email_hit["source_id"]}))
@@ -192,6 +195,9 @@ def test_oidc_brain_assistant_requires_enrollment_and_revokes_every_read(
         assert client.post(
             "/v1/brain/search", json={"query": "insurance"},
             headers=_headers(raw),
+        ).status_code == 401
+        assert client.get(
+            "/v1/knowledge/changes", headers=_headers(raw)
         ).status_code == 401
     with psycopg.connect(admin) as conn:
         events = conn.execute(
@@ -372,6 +378,53 @@ def test_oidc_status_only_assistant_still_requires_source_grant(
             "trial_files"
         ]
         assert client.get("/v1/brain/changes", headers=headers).status_code == 200
+        assert client.post(
+            "/v1/brain/current-search", json={"query": "insurance"}, headers=headers
+        ).status_code == 403
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "DELETE FROM external_identity_sources WHERE tenant_id=%s AND binding_id=%s",
+            (preview.context.tenant_id, binding),
+        )
+    with pytest.raises(AccessDenied), store.transaction(principal.context):
+        pass
+    assert auth.authenticate(raw) is None
+
+
+@pytest.mark.parametrize("scope", ["knowledge.read", "knowledge.changes.read"])
+def test_oidc_knowledge_only_scope_requires_grant_and_old_resolver_refuses(
+    preview, database, assistant, identity_admin_login, scope: str
+) -> None:
+    store, admin = database
+    binding, raw, auth = assistant
+    dsn, _ = identity_admin_login
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE external_identities SET scopes=ARRAY[%s]::text[] WHERE id=%s",
+            (scope, binding),
+        )
+    assert auth.authenticate(raw) is None
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "INSERT INTO external_identity_sources(tenant_id,binding_id,source_id) "
+            "VALUES (%s,%s,'trial_files')",
+            (preview.context.tenant_id, binding),
+        )
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT id FROM public.resolve_external_identity(%s,%s,%s)",
+            (auth.verifier.config.issuer, "fictional-brain-" + binding.hex, oidc.CLIENT),
+        ).fetchone() is None
+    principal = auth.authenticate(raw)
+    assert principal and principal.context.scopes == frozenset({scope})
+    with TestClient(create_app(store, auth), base_url="http://127.0.0.1") as client:
+        headers = _headers(raw)
+        if scope == "knowledge.read":
+            assert client.get(
+                "/v1/knowledge/entity/entity_" + "0" * 32, headers=headers
+            ).status_code == 404
+        else:
+            assert client.get("/v1/knowledge/changes", headers=headers).status_code == 200
         assert client.post(
             "/v1/brain/current-search", json={"query": "insurance"}, headers=headers
         ).status_code == 403

@@ -2,6 +2,13 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added ADR-143's source-scoped direct KnowledgeCore search, assertion expansion
+  and change feed for enrolled assistants, plus unified Brain search. Mixed-source
+  assertions are hidden in full; hidden change cursors return not found. Forward
+  migration 0051 admits the two Knowledge read scopes to administrator-bound
+  OIDC grants and retains old-resolver refusal. Hosted and legacy Email gates
+  remain open.
+
 - Extended enrolled-assistant access to retained DataCore search, aggregate
   current Email/FileOS search, and exact-source FileOS status/search reads
   (ADR-142). Filtering precedes ranking/limits; hidden source IDs return not

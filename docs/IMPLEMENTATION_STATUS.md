@@ -16,11 +16,19 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-143 applies the all-direct-evidence source-grant predicate to Knowledge
+  assertion expansion and change-feed anchor/page selection, admits enrolled
+  assistants to direct Knowledge and unified Brain reads, and extends OIDC
+  scope/source fences through migration 0051. This is synthetic read-path
+  containment, not hosted identity, semantic information-flow certification,
+  legacy Email assistant access or issue #88 closure.
+
 - ADR-142 extends enrolled-assistant reads to retained DataCore search,
   aggregate current FileOS/Email searches, and exact-source FileOS status,
   preview, index and active search. Filtering precedes limits; hidden sources
-  return not found. Direct Knowledge, unified and legacy Email routes remain
-  denied, and hosted issue #88 acceptance remains open.
+  return not found. At that checkpoint direct Knowledge, unified and legacy
+  Email routes remained denied; ADR-143 later admits the first two. Hosted
+  issue #88 acceptance remains open.
 
 - ADR-141 adds opt-in `--tenant-bound-db` to legacy `email-brain sync-read`,
   `process-jobs` and `process-documents`. The authenticated worker tenant binds

@@ -78,14 +78,18 @@ credential is **not** a dynamically revocable hosted grant. ADR-132 adds a
 separate forced-RLS grant table for administrator-bound OIDC Brain assistants;
 its same-tenant source foreign key, exact resolver and revision recheck stop
 future transactions after grant removal. Legacy Email assistant routes, hosted
-issuer enrollment, derived-cache invalidation and full source-aware route
+issuer enrollment, derived-cache invalidation and legacy Email assistant-route
 coverage remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 ADR-142 extends the same enrolled-source boundary to retained DataCore search,
 aggregate current Email/FileOS searches and exact-source FileOS status/search.
 The retained search predicate runs before ranking and limits; hidden source
 status and search return not found. OIDC source revocation is rechecked at the
 read transaction. Direct Knowledge, unified and legacy Email routes remain
-denied to assistants pending separate review.
+denied to assistants at that checkpoint. ADR-143 later admits direct
+Knowledge and unified reads after filtering every directly linked evidence
+source, including assertion expansion and change-feed cursors. It does not
+prove semantic noninterference for human-authored text or approve hosted use;
+legacy Email assistant routes remain denied.
 
 ## Privacy-safe failure observability
 
