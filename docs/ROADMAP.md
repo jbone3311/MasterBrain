@@ -15,7 +15,7 @@ FileOS cutover acceptance is implied.
 | Product identity and donor baseline | MasterBrain identity, source-layer boundaries, pinned FOS-Master provenance, first hash/dedupe parity and synthetic shadow corpus are in the repo | Full semantic and operational parity, owner cutover decision |
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
 | KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work | Automatic candidate pipeline, evaluated resolution, complete project/commitment reducers, rebuild and freshness proof |
-| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; a read-only reference client has fictional API parity; synthetic and administrator-bound OIDC Brain assistants have source-scoped access on five reviewed routes | Hosted issuer enrollment, all-route/cached revocation, cited answer synthesis, named-assistant adapter and full byte/token budgets |
+| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; a read-only reference client has fictional API parity; synthetic and administrator-bound OIDC Brain assistants have source-scoped access on the reviewed current, retained and exact-FileOS Brain reads | Hosted issuer enrollment, remaining Knowledge/legacy route and cached revocation, cited answer synthesis, named-assistant adapter and full byte/token budgets |
 | Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; an optional extractive route verifies exact quotes, but no selector is configured by default | Review and configure one privacy-approved model adapter, prove named-assistant identity/citation/revocation, then evaluate grounded synthesis and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
 | FileOS replacement and effects | No cutover or source effects | Sustained donor shadow, bounded rollback-ready cohort, owner sign-off; effects require a separate later approval |
@@ -132,8 +132,9 @@ FileOS cutover. The separate `v0.2.0a1` tag is synthetic-only.
 - **Client-neutral access:** the read-only reference client and fictional REST
   parity are implemented. Synthetic bootstrap and administrator-bound OIDC
   Brain assistants must enroll explicit source IDs for the original three
-  search/evidence reads and ADR-133's two status reads; other Brain/Knowledge
-  routes are denied to them. OIDC grant removal
+  search/evidence reads, ADR-133's two status reads and ADR-142's retained,
+  aggregate and exact-FileOS Brain reads. Unified Brain and direct Knowledge
+  routes remain denied to them. OIDC grant removal
   invalidates future transactions. Hosted issuer enrollment, legacy Email
   assistant filtering, all-route semantics and derived-cache invalidation
   remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).

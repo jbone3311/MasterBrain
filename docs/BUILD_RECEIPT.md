@@ -2,6 +2,26 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-142 source-scoped Brain read expansion — local verification
+
+Enrolled synthetic-bootstrap and administrator-bound OIDC assistants now use
+the existing retained DataCore search, aggregate current Email/FileOS searches
+and exact-source FileOS status, preview, index and active search routes.
+PostgreSQL integration tests exercised one tenant with nonempty Email and
+FileOS sources plus another tenant, hidden/unknown source IDs, source-filtered
+`LIMIT 1` results, a cross-tenant canary and OIDC grant revocation. Direct
+Knowledge/unified and legacy Email assistant routes remain denied.
+
+On local Python 3.14.7 with disposable PostgreSQL 17.11, the final-tree full
+suite passed **2,996 tests, one Docker-only skip**; 475 of 476
+PostgreSQL-marked tests executed. A separate deployment gate passed the same
+count on a fresh second test database. All six required Node suites passed
+**143 tests**. Locked non-editable package rebuild, Ruff, strict mypy over
+98 source files, documentation links and diff checks passed. No real account,
+hosted issuer, source effect or FOS-Master checkout was contacted. This local
+receipt is not exact-head GitHub CI or merged-main evidence, and does not
+close issue #88.
+
 ## ADR-141 legacy Email worker login — local verification
 
 The opt-in `--tenant-bound-db` mode covers `email-brain sync-read`,

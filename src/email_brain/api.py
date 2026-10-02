@@ -423,7 +423,9 @@ def create_app(
     @app.post("/v1/brain/search")
     def brain_search(
         body: BrainSearchRequest,
-        principal: Annotated[Principal, Depends(require("brain.search"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.search", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         hits = brain.search(principal.context, body.query, limit=body.limit)
         return {
@@ -673,21 +675,27 @@ def create_app(
     @app.get("/v1/brain/sources/{source_id}/freshness")
     def brain_source_freshness(
         source_id: str,
-        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.changes.read", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         return brain.fileos_freshness(principal.context, source_id)
 
     @app.get("/v1/brain/sources/{source_id}/inventory")
     def brain_source_inventory(
         source_id: str,
-        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.changes.read", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         return brain.fileos_inventory(principal.context, source_id)
 
     @app.get("/v1/brain/sources/{source_id}/rebuild-preview")
     def brain_source_rebuild_preview(
         source_id: str,
-        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.changes.read", assistant_source_aware=True))
+        ],
         after: str | None = None,
         limit: Annotated[int, Query(ge=1, le=50)] = 25,
     ) -> dict[str, Any]:
@@ -696,7 +704,9 @@ def create_app(
     @app.get("/v1/brain/sources/{source_id}/index")
     def brain_source_index_status(
         source_id: str,
-        principal: Annotated[Principal, Depends(require("brain.changes.read"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.changes.read", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         return brain.fileos_index_status(principal.context, source_id)
 
@@ -704,7 +714,9 @@ def create_app(
     def brain_source_active_search(
         source_id: str,
         body: BrainSearchRequest,
-        principal: Annotated[Principal, Depends(require("brain.search"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.search", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         hits = brain.search_fileos_active(
             principal.context, source_id, body.query, limit=body.limit
@@ -729,7 +741,9 @@ def create_app(
     @app.post("/v1/brain/fileos-search")
     def brain_current_fileos_search(
         body: BrainSearchRequest,
-        principal: Annotated[Principal, Depends(require("brain.search"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.search", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         hits = brain.search_current_fileos(principal.context, body.query, limit=body.limit)
         return {
@@ -752,7 +766,9 @@ def create_app(
     @app.post("/v1/brain/email-search")
     def brain_current_email_search(
         body: BrainSearchRequest,
-        principal: Annotated[Principal, Depends(require("brain.search"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.search", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         hits = brain.search_current_email(principal.context, body.query, limit=body.limit)
         return {
@@ -775,7 +791,9 @@ def create_app(
     @app.post("/v1/brain/email-family-search")
     def brain_current_email_family_search(
         body: EmailFamilySearchRequest,
-        principal: Annotated[Principal, Depends(require("brain.search"))],
+        principal: Annotated[
+            Principal, Depends(require("brain.search", assistant_source_aware=True))
+        ],
     ) -> dict[str, Any]:
         family = brain.search_current_email_family(
             principal.context,

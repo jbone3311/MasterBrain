@@ -195,13 +195,43 @@ def test_source_scoped_assistant_cannot_read_other_sources_or_alternate_routes(
         ).status_code == 404
         for path in ("/v1/knowledge/changes",):
             assert client.get(path, headers=headers).status_code == 403
-        for path in (
-            "/v1/brain/search", "/v1/brain/unified-search",
-            "/v1/brain/fileos-search", "/v1/brain/email-search",
-            "/v1/brain/email-family-search", "/v1/knowledge/search",
-        ):
+        for path in ("/v1/brain/unified-search", "/v1/knowledge/search"):
             denied = client.post(path, json={"query": "insurance"}, headers=headers)
             assert denied.status_code == 403
+        for path in ("/v1/brain/search", "/v1/brain/fileos-search"):
+            scoped_read = client.post(
+                path, json={"query": "insurance", "limit": 1}, headers=headers
+            )
+            assert scoped_read.status_code == 200, scoped_read.text
+            assert scoped_read.json()["results"]
+            assert all(
+                row["source_id"] == "trial_files"
+                for row in scoped_read.json()["results"]
+            )
+            assert email_source not in scoped_read.text
+        other_tenant = client.post(
+            "/v1/brain/search", json={"query": "other-tenant-canary"},
+            headers=headers,
+        )
+        assert other_tenant.status_code == 200
+        assert other_tenant.json()["results"] == []
+        for path in ("/v1/brain/email-search", "/v1/brain/email-family-search"):
+            scoped_read = client.post(path, json={"query": "insurance"}, headers=headers)
+            assert scoped_read.status_code == 200, scoped_read.text
+            assert email_source not in scoped_read.text
+            assert not any(scoped_read.json().get("results", []))
+            assert not any(scoped_read.json().get("layers", {}).values())
+        for suffix in ("freshness", "inventory", "rebuild-preview", "index"):
+            visible = client.get(
+                f"/v1/brain/sources/trial_files/{suffix}", headers=headers
+            )
+            assert visible.status_code == 200, visible.text
+        active = client.post(
+            "/v1/brain/sources/trial_files/search",
+            json={"query": "insurance"}, headers=headers,
+        )
+        assert active.status_code == 200
+        assert active.json()["results"]
         with BrainReadClient(
             "http://127.0.0.1", token, allow_insecure_loopback=True,
             transport=external_transport(client),
@@ -220,9 +250,11 @@ def test_source_scoped_assistant_cannot_read_other_sources_or_alternate_routes(
 
     dual_token = "assistant-dual-source-fixture-" + "z" * 32
     unknown_token = "assistant-unknown-source-fixture-" + "q" * 32
+    email_token = "assistant-email-source-fixture-" + "e" * 32
     rotated = create_app(store, TokenRegistry([
         assistant_credential(preview, dual_token, {"trial_files", email_source}),
         assistant_credential(preview, unknown_token, {"not_enrolled_here"}),
+        assistant_credential(preview, email_token, {email_source}),
     ]))
     with TestClient(rotated, base_url="http://127.0.0.1") as client:
         dual = client.post(
@@ -241,6 +273,24 @@ def test_source_scoped_assistant_cannot_read_other_sources_or_alternate_routes(
         assert client.get(
             f"/v1/brain/evidence/{file_id}", headers=unknown_headers
         ).status_code == 404
+        for token in (unknown_token, email_token):
+            hidden_headers = {"Authorization": "Bearer " + token}
+            for suffix in ("freshness", "inventory", "rebuild-preview", "index"):
+                assert client.get(
+                    f"/v1/brain/sources/trial_files/{suffix}",
+                    headers=hidden_headers,
+                ).status_code == 404
+            assert client.post(
+                "/v1/brain/sources/trial_files/search",
+                json={"query": "insurance"}, headers=hidden_headers,
+            ).status_code == 404
+        email_read = client.post(
+            "/v1/brain/search", json={"query": "insurance", "limit": 1},
+            headers={"Authorization": "Bearer " + email_token},
+        )
+        assert email_read.status_code == 200
+        assert email_read.json()["results"]
+        assert all(row["source_id"] == email_source for row in email_read.json()["results"])
 
 
 @pytest.mark.postgres

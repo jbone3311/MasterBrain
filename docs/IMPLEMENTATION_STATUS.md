@@ -16,6 +16,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-142 extends enrolled-assistant reads to retained DataCore search,
+  aggregate current FileOS/Email searches, and exact-source FileOS status,
+  preview, index and active search. Filtering precedes limits; hidden sources
+  return not found. Direct Knowledge, unified and legacy Email routes remain
+  denied, and hosted issue #88 acceptance remains open.
+
 - ADR-141 adds opt-in `--tenant-bound-db` to legacy `email-brain sync-read`,
   `process-jobs` and `process-documents`. The authenticated worker tenant binds
   preflight and execution, including encrypted stores and read-worker reopen,
