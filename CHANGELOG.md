@@ -13,8 +13,9 @@
   migration 0048): exact generation/base chunk comparisons and the reverse
   base count now use indexed probes under the existing five-second database
   statement limit. A fresh full PostgreSQL suite and two populated 3,000-row
-  repeats passed locally. V2 remains private and non-activatable; issue #84
-  awaits exact-head CI, restore and merged-main verification.
+  repeats passed locally. PR #90 passed exact-head and merged-main CI, strict
+  runtime and populated restore; issue #84 is closed. V2 remains private and
+  non-activatable.
 - Added synthetic-bootstrap source-scoped assistant reads (ADR-130): explicit
   source enrollment filters the shared current Email/FileOS/archive and
   reviewed-Knowledge search before limits, gates evidence expansion and denies
@@ -28,7 +29,7 @@
 - Merged the private FileOS v2 active-v1-versus-historical-v2 search comparison
   (ADR-128, PR #85). Its bounded, human-only result keeps separate rankings;
   it does not activate v2 or change FOS-Master. Intermittent populated-database
-  readiness latency remains tracked in issue #84.
+  readiness latency was subsequently corrected under ADR-131/PR #90.
 - Added a first-party read-only MasterBrain question workspace (ADR-127) over
   the existing scoped current-search and evidence routes. It groups indexed
   Email, FileOS, archive and KnowledgeCore results with partial-coverage
