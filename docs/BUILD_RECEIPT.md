@@ -25,8 +25,11 @@ disposable PostgreSQL 17.11 database also passed **3,014 tests with one
 intentional skip** and reported `PASS: repository quality gate`. These local
 results are separate from exact-head GitHub checks. On PR #116, all hosted
 jobs failed before their first step (no runner name or job log); one
-strict-gate retry failed the same way. The hosted cause is not yet established,
-and the PR must remain unmerged until exact-head full CI, strict runtime and
+strict-gate retry failed the same way. The Actions run page explains that the
+jobs were not started because recent account payments failed **or** the
+spending limit needs to be increased; it does not distinguish the two. This
+is an account billing gate, not a test result. The PR must remain unmerged
+until the account owner resolves it and exact-head full CI, strict runtime and
 populated-restore gates run and pass.
 
 ## Fictional contradictory-source Ask corpus — merged-main verification
