@@ -4506,12 +4506,17 @@ class DataCoreStore:
             raise NotFound()
         if not 1 <= limit <= 50:
             raise ValueError("invalid coverage limit")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             generated = conn.execute("SELECT clock_timestamp() AS generated_at").fetchone()
             assert generated is not None
             if (
                 after is not None
-                and not conn.execute("SELECT 1 FROM brain_sources WHERE id=%s", (after,)).fetchone()
+                and not conn.execute(
+                    "SELECT 1 FROM brain_sources WHERE id=%s "
+                    "AND (%s::text[] IS NULL OR id=ANY(%s::text[]))",
+                    (after, allowed_sources, allowed_sources),
+                ).fetchone()
             ):
                 raise NotFound()
             rows = conn.execute(
@@ -4539,7 +4544,9 @@ class DataCoreStore:
                 "AND db.source_id=a.source_id AND db.item_id=a.item_id "
                 "AND db.version_id=a.version_id AND db.evidence_id=a.evidence_id), "
                 "selected AS (SELECT id,kind,status,created_at FROM brain_sources "
-                "WHERE (%s::text IS NULL OR id>%s) ORDER BY id LIMIT %s) "
+                "WHERE (%s::text IS NULL OR id>%s) "
+                "AND (%s::text[] IS NULL OR id=ANY(%s::text[])) "
+                "ORDER BY id LIMIT %s) "
                 "SELECT s.id AS source_id,s.kind,s.status AS configured_status,"
                 "s.created_at AS registered_at,a.generation_id,a.activated_at,"
                 "g.run_actor_id,g.run_id,g.observed_at AS generation_observed_at,"
@@ -4567,7 +4574,7 @@ class DataCoreStore:
                 "FROM brain_fileos_run_receipts WHERE source_id=s.id "
                 "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1) lr "
                 "ON s.kind='fileos' ORDER BY s.id",
-                (after, after, limit + 1),
+                (after, after, allowed_sources, allowed_sources, limit + 1),
             ).fetchall()
             self.store.audit(conn, ctx, "brain.current_coverage_read", "brain_source", "registered")
         page = rows[:limit]
@@ -5707,22 +5714,29 @@ class DataCoreStore:
             raise NotFound()
         if not 1 <= limit <= 50:
             raise ValueError("invalid change limit")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             anchor = None
             if after is not None:
                 anchor = conn.execute(
-                    "SELECT recorded_at,id FROM brain_change_events WHERE id=%s", (after,)
+                    "SELECT recorded_at,id FROM brain_change_events WHERE id=%s "
+                    "AND (%s::text[] IS NULL OR source_id=ANY(%s::text[]))",
+                    (after, allowed_sources, allowed_sources),
                 ).fetchone()
                 if not anchor:
                     raise NotFound()
             rows = conn.execute(
                 "SELECT id,source_id,item_id,version_id,kind,recorded_at "
                 "FROM brain_change_events WHERE (%s::timestamptz IS NULL OR "
-                "(recorded_at,id)>(%s,%s)) ORDER BY recorded_at,id LIMIT %s",
+                "(recorded_at,id)>(%s,%s)) "
+                "AND (%s::text[] IS NULL OR source_id=ANY(%s::text[])) "
+                "ORDER BY recorded_at,id LIMIT %s",
                 (
                     anchor["recorded_at"] if anchor else None,
                     anchor["recorded_at"] if anchor else None,
                     after,
+                    allowed_sources,
+                    allowed_sources,
                     limit + 1,
                 ),
             ).fetchall()

@@ -23,7 +23,8 @@ database = pg.database
 keys = oidc.keys
 identity_admin_login = oidc_pg.identity_admin_login
 READ_SCOPES = [
-    "brain.search", "knowledge.search", "brain.evidence.read", "brain.content.read"
+    "brain.search", "knowledge.search", "brain.evidence.read", "brain.content.read",
+    "brain.changes.read",
 ]
 
 
@@ -101,6 +102,12 @@ def test_oidc_brain_assistant_requires_enrollment_and_revokes_every_read(
             "VALUES (%s,%s,%s)",
             (preview.context.tenant_id, binding, file_hit["source_id"]),
         )
+    with store.transaction(replace(
+        forged,
+        identity=replace(forged.identity, revision=2),
+        source_ids=frozenset({file_hit["source_id"]}),
+    )):
+        pass
     principal = auth.authenticate(raw)
     assert principal and principal.context.source_ids == frozenset({file_hit["source_id"]})
     assert principal.context.identity.revision == 2
@@ -113,6 +120,21 @@ def test_oidc_brain_assistant_requires_enrollment_and_revokes_every_read(
         assert response.json()["layers"]["fileos"] == original["layers"]["fileos"]
         assert response.json()["layers"]["email_messages"] == []
         assert email_hit["source_id"] not in response.text
+        coverage = client.get("/v1/brain/current-coverage", headers=_headers(raw))
+        assert coverage.status_code == 200
+        assert [row["source_id"] for row in coverage.json()["results"]] == [
+            file_hit["source_id"]
+        ]
+        assert client.get(
+            f"/v1/brain/current-coverage?after={email_hit['source_id']}",
+            headers=_headers(raw),
+        ).status_code == 404
+        changes = client.get("/v1/brain/changes", headers=_headers(raw))
+        assert changes.status_code == 200
+        assert all(
+            row["source_id"] == file_hit["source_id"]
+            for row in changes.json()["results"]
+        )
         assert client.get(
             f"/v1/brain/evidence/{file_hit['evidence_id']}", headers=_headers(raw)
         ).status_code == 200
@@ -288,3 +310,50 @@ def test_oidc_source_grant_cap_and_binding_revision(preview, database, assistant
             "SELECT count(*) FROM external_identity_sources WHERE binding_id=%s",
             (binding,),
         ).fetchone() == (20,)
+
+
+def test_oidc_status_only_assistant_still_requires_source_grant(
+    preview, database, assistant, identity_admin_login
+) -> None:
+    store, admin = database
+    binding, raw, auth = assistant
+    dsn, _ = identity_admin_login
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE external_identities SET scopes=ARRAY['brain.changes.read']::text[] "
+            "WHERE id=%s",
+            (binding,),
+        )
+    assert auth.authenticate(raw) is None
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "INSERT INTO external_identity_sources(tenant_id,binding_id,source_id) "
+            "VALUES (%s,%s,'trial_files')",
+            (preview.context.tenant_id, binding),
+        )
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT id FROM public.resolve_external_identity(%s,%s,%s)",
+            (auth.verifier.config.issuer, "fictional-brain-" + binding.hex, oidc.CLIENT),
+        ).fetchone() is None
+    principal = auth.authenticate(raw)
+    assert principal and principal.context.scopes == frozenset({"brain.changes.read"})
+    with TestClient(create_app(store, auth), base_url="http://127.0.0.1") as client:
+        headers = _headers(raw)
+        coverage = client.get("/v1/brain/current-coverage", headers=headers)
+        assert coverage.status_code == 200
+        assert [row["source_id"] for row in coverage.json()["results"]] == [
+            "trial_files"
+        ]
+        assert client.get("/v1/brain/changes", headers=headers).status_code == 200
+        assert client.post(
+            "/v1/brain/current-search", json={"query": "insurance"}, headers=headers
+        ).status_code == 403
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "DELETE FROM external_identity_sources WHERE tenant_id=%s AND binding_id=%s",
+            (preview.context.tenant_id, binding),
+        )
+    with pytest.raises(AccessDenied), store.transaction(principal.context):
+        pass
+    assert auth.authenticate(raw) is None

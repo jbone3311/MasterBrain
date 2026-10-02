@@ -2,6 +2,29 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## API-SOURCE-003 source-scoped status — branch verification
+
+ADR-133 and forward migration 0050 extend enrolled assistant access to
+`GET /v1/brain/current-coverage` and `GET /v1/brain/changes`. Both apply the
+source allowlist before paging and reject hidden-source cursors. The
+administrator-owned OIDC binding may now carry `brain.changes.read`; even a
+status-only assistant requires a same-tenant source grant, while the legacy
+resolver refuses it during rolling upgrades. The provider-neutral reference
+client exposes both bounded calls. The remaining Brain/Knowledge routes,
+hosted identity, source effects and FOS-Master are unchanged.
+
+On a fresh disposable PostgreSQL 17.11 database, the affected client/OIDC/
+cross-source suites passed **46 tests, one skipped**. An initial full run
+exposed migration-history fixtures that had not yet listed migration 0050;
+these produced 12 setup errors and three recovery failures. After updating
+those explicit histories, the focused migration/recovery suite passed
+**32 tests**, and the full suite passed **2,929 tests, one skipped** in
+156.50 seconds, including 464 of 465 PostgreSQL-marked tests. Ruff, strict
+mypy over 96 source files, documentation links and diff checks passed before
+the final test-only correction. Exact-head CI, strict runtime and populated
+restore remain to be verified before merge. This is synthetic-only evidence,
+not hosted or named-assistant acceptance.
+
 ## API-SOURCE-002 OIDC Brain grants — merged verification
 
 PR [#91](https://github.com/jbone3311/MasterBrain/pull/91) merged at

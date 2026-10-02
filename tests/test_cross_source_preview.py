@@ -46,7 +46,7 @@ def external_transport(app_client: TestClient) -> httpx.MockTransport:
     def forward(request: httpx.Request) -> httpx.Response:
         response = app_client.request(
             request.method,
-            request.url.path,
+            request.url.path + (f"?{request.url.query.decode()}" if request.url.query else ""),
             headers=dict(request.headers),
             content=request.content,
         )
@@ -134,10 +134,26 @@ def test_source_scoped_assistant_cannot_read_other_sources_or_alternate_routes(
             )
             assert denied.status_code == 404
             assert email_source not in denied.text
-        for path in (
-            "/v1/brain/current-coverage", "/v1/brain/changes",
-            "/v1/knowledge/changes",
-        ):
+        coverage = client.get("/v1/brain/current-coverage?limit=1", headers=headers)
+        assert coverage.status_code == 200
+        assert [row["source_id"] for row in coverage.json()["results"]] == ["trial_files"]
+        assert coverage.json()["next_cursor"] is None
+        assert client.get(
+            f"/v1/brain/current-coverage?after={email_source}", headers=headers
+        ).status_code == 404
+        changes = client.get("/v1/brain/changes?limit=1", headers=headers)
+        assert changes.status_code == 200
+        assert changes.json()["results"]
+        assert all(row["source_id"] == "trial_files" for row in changes.json()["results"])
+        with client_for(preview) as owner:
+            foreign_change = next(
+                row["id"] for row in owner.get("/v1/brain/changes?limit=50").json()["results"]
+                if row["source_id"] == email_source
+            )
+        assert client.get(
+            f"/v1/brain/changes?after={foreign_change}", headers=headers
+        ).status_code == 404
+        for path in ("/v1/knowledge/changes",):
             assert client.get(path, headers=headers).status_code == 403
         for path in (
             "/v1/brain/search", "/v1/brain/unified-search",
@@ -152,6 +168,13 @@ def test_source_scoped_assistant_cannot_read_other_sources_or_alternate_routes(
         ) as external:
             assert external.current_search("insurance")["layers"]["email_messages"] == []
             assert external.evidence(file_id)["id"] == file_id
+            assert [
+                row["source_id"] for row in external.current_coverage(limit=1)["results"]
+            ] == ["trial_files"]
+            assert all(
+                row["source_id"] == "trial_files"
+                for row in external.changes(limit=50)["results"]
+            )
             with pytest.raises(BrainClientError, match="not_found"):
                 external.evidence(email_id)
 

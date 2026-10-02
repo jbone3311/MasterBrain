@@ -35,8 +35,9 @@ effects. Knowledge workers read DataCore publications and write projections. Bra
 has scoped retrieval, not provider/filesystem credentials. Effect executors are
 separate, disabled initially, and restricted to approved commands.
 Synthetic bootstrap assistant source allowlists are not a hosted access system.
-ADR-132 adds administrator-owned OIDC Brain grants on the three source-aware
-routes, with transaction-time revocation. Hosted issuer enrollment, legacy Email
+ADR-132 adds administrator-owned OIDC Brain grants on three source-aware routes;
+ADR-133 adds filtered coverage and change status, with transaction-time
+revocation. Hosted issuer enrollment, legacy Email
 assistant filtering, derived-cache invalidation and all-route coverage remain
 release gates (issue #88).
 

@@ -521,6 +521,7 @@ class Store:
                             & {
                                 "brain.search", "knowledge.search",
                                 "brain.evidence.read", "brain.content.read",
+                                "brain.changes.read",
                             }
                         )
                         and not binding["source_ids"]

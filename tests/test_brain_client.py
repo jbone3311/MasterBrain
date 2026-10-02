@@ -35,6 +35,16 @@ def test_fixed_read_only_paths_and_separate_expansion() -> None:
             return httpx.Response(200, json={
                 "evidence_id": "evidence_123", "content": "fictional proof", "truncated": False,
             })
+        if request.url.path == "/v1/brain/current-coverage":
+            return httpx.Response(200, json={
+                "complete": False, "results": [{"source_id": "trial_files"}],
+                "next_cursor": None, "limit": 1,
+            })
+        if request.url.path == "/v1/brain/changes":
+            return httpx.Response(200, json={
+                "results": [{"id": "change_123", "source_id": "trial_files"}],
+                "next_cursor": None, "limit": 1,
+            })
         return httpx.Response(404)
 
     with BrainReadClient(
@@ -43,15 +53,21 @@ def test_fixed_read_only_paths_and_separate_expansion() -> None:
         assert client.current_search("Cedar Harbor")["coverage"] == {"complete": False}
         assert client.evidence("evidence_123")["source_kind"] == "email"
         assert client.evidence_content("evidence_123")["content"] == "fictional proof"
+        assert client.current_coverage(limit=1)["results"][0]["source_id"] == "trial_files"
+        assert client.changes(after="change_111", limit=1)["results"][0]["id"] == "change_123"
     assert [(call.method, call.url.path) for call in calls] == [
         ("POST", "/v1/brain/current-search"),
         ("GET", "/v1/brain/evidence/evidence_123"),
         ("POST", "/v1/brain/evidence/evidence_123/content"),
+        ("GET", "/v1/brain/current-coverage"),
+        ("GET", "/v1/brain/changes"),
     ]
     assert all(call.headers["authorization"] == "Bearer synthetic-token" for call in calls)
     assert all(call.headers["cache-control"] == "no-store" for call in calls)
     assert b'"query":"Cedar Harbor"' in calls[0].content
     assert b'"max_chars":4000' in calls[2].content
+    assert calls[3].url.query == b"limit=1"
+    assert calls[4].url.query == b"limit=1&after=change_111"
     with pytest.raises(BrainClientError, match="client_closed"):
         client.current_search("again")
 
@@ -98,6 +114,11 @@ def test_request_bounds_refuse_without_network() -> None:
                 client.evidence(evidence_id)
         with pytest.raises(BrainClientError, match="invalid_request"):
             client.evidence_content("evidence_123", max_chars=16001)
+        for limit in (0, 51, True):
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                client.changes(limit=limit)
+        with pytest.raises(BrainClientError, match="invalid_request"):
+            client.current_coverage(after="../other")
     assert calls == 0
 
 

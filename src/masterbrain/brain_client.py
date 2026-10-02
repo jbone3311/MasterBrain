@@ -211,6 +211,46 @@ class BrainReadClient:
             raise BrainClientError("invalid_response")
         return data
 
+    def current_coverage(
+        self, *, after: str | None = None, limit: int = 25
+    ) -> dict[str, Any]:
+        """Return only the caller's enrolled source coverage, with bounded paging."""
+        return self._status_page("current-coverage", after=after, limit=limit)
+
+    def changes(self, *, after: str | None = None, limit: int = 25) -> dict[str, Any]:
+        """Return only changes in enrolled sources, with bounded paging."""
+        return self._status_page("changes", after=after, limit=limit)
+
+    def _status_page(
+        self, route: str, *, after: str | None, limit: int
+    ) -> dict[str, Any]:
+        if after is not None:
+            self._validate_id(after)
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 50:
+            raise BrainClientError("invalid_request")
+        query = httpx.QueryParams({"limit": limit, **({"after": after} if after else {})})
+        data = self._request("GET", f"/v1/brain/{route}?{query}")
+        results = data.get("results")
+        cursor = data.get("next_cursor")
+        if (
+            data.get("limit") != limit
+            or not isinstance(results, list)
+            or len(results) > limit
+            or any(
+                not isinstance(row, dict)
+                or not isinstance(row.get("source_id"), str)
+                or not _IDENTITY.fullmatch(row["source_id"])
+                for row in results
+            )
+            or (
+                cursor is not None
+                and (not isinstance(cursor, str) or not _IDENTITY.fullmatch(cursor))
+            )
+            or (route == "current-coverage" and data.get("complete") is not False)
+        ):
+            raise BrainClientError("invalid_response")
+        return data
+
     @staticmethod
     def _validate_id(evidence_id: str) -> None:
         if not isinstance(evidence_id, str) or not _IDENTITY.fullmatch(evidence_id):

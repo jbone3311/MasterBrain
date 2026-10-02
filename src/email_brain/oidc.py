@@ -386,7 +386,8 @@ class OIDCAuthenticator:
             if binding is None:
                 return None
             brain_scopes = {
-                "brain.search", "knowledge.search", "brain.evidence.read", "brain.content.read"
+                "brain.search", "knowledge.search", "brain.evidence.read", "brain.content.read",
+                "brain.changes.read",
             }
             source_ids = frozenset(binding["source_ids"])
             if (

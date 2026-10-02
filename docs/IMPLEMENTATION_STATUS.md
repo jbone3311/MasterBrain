@@ -16,12 +16,20 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- API-SOURCE-003 extends source-aware assistant reads to bounded current
+  coverage and change-feed status under ADR-133 and forward migration 0050.
+  OIDC status-only assistants still require explicit enrollment; hidden-source
+  cursors fail closed, and grant removal invalidates saved contexts. The
+  provider-neutral reference client uses the same routes. This is synthetic
+  integration work pending exact-head CI and populated restore, not hosted or
+  named-assistant acceptance; issue #88 remains open.
+
 - API-SOURCE-002 adds an administrator-owned OIDC source-grant table, exact-key
   source-aware resolver and transaction-time revision/source checks under ADR-132
   and migration 0049. An assistant binding with Brain read scopes cannot mix
   legacy Email scopes or authenticate without an enrolled same-tenant source.
   Grant add/remove is audited and invalidates saved contexts at the next
-  transaction. It admits only ADR-130's three source-aware routes. This is a
+  transaction. ADR-133 subsequently adds two source-aware status routes. This is a
   synthetic/disposable implementation, not hosted issuer enrollment, a
   named-assistant connection, cache revocation or full assistant route coverage.
   PR #91's exact-head and merged-main CI, strict runtime and populated restore
@@ -35,16 +43,17 @@ production and FileOS cutover remain open.
   restore passed. Issue #84 is closed; live-source and cutover gates remain.
 
 - API-SOURCE-001 applies explicit, bounded source enrollment to synthetic
-  bootstrap assistants using the three read-only client routes (ADR-130).
+  bootstrap assistants using the initial three read-only client routes (ADR-130).
   Current Email/FileOS/archive searches and reviewed Knowledge results filter
   before limits; evidence metadata/content enforce the same allowlist, and
-  alternate Brain/Knowledge routes are denied. Human reads are unchanged.
+  initially unreviewed Brain/Knowledge routes are denied. Human reads are unchanged.
   Hosted issuer enrollment, derived-cache invalidation and full route coverage
   remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 
 - API-CLIENT-001 adds a provider-neutral, read-only reference client under
   ADR-129. It calls the same grouped current-search and separately scoped
-  evidence/content routes as `/brain`, with fixed-origin, bounded-response,
+  evidence/content routes as `/brain`, later extended to source-scoped coverage
+  and change status by ADR-133, with fixed-origin, bounded-response,
   redirect and error-scrubbing guards. Fictional PostgreSQL conformance compares
   its results with direct Brain API calls. It is not a deployed or certified
   Claude/Grok/ChatGPT adapter, hosted service, model answer or action path.
