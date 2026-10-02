@@ -34,9 +34,11 @@ Extraction workers can read bounded evidence and publish derivatives, not source
 effects. Knowledge workers read DataCore publications and write projections. Brain API
 has scoped retrieval, not provider/filesystem credentials. Effect executors are
 separate, disabled initially, and restricted to approved commands.
-Synthetic bootstrap assistant source allowlists are not a hosted access system:
-administrator-owned OIDC source enrollment, revocation and derived-cache
-invalidation remain release gates (ADR-130 and issue #88).
+Synthetic bootstrap assistant source allowlists are not a hosted access system.
+ADR-132 adds administrator-owned OIDC Brain grants on the three source-aware
+routes, with transaction-time revocation. Hosted issuer enrollment, legacy Email
+assistant filtering, derived-cache invalidation and all-route coverage remain
+release gates (issue #88).
 
 PDF, DOCX and XLSX use the dedicated `Dockerfile.documents` worker image. The ordinary
 API image intentionally excludes document-reader dependencies. The document worker is
@@ -83,6 +85,16 @@ missing route, a wrong binding and a shared/unbound runtime DSN before tenant
 queries. This synthetic path does not rotate/revoke credentials, route the
 separate worker commands, or establish hosted safety. Keep the old single-DSN
 mode local-only; do not deploy it as multi-tenant service access.
+Migration 0048 adds a forced-RLS source-grant table and a new exact-key resolver.
+Apply it before starting the new API binary, then rerun the administrator's
+`grant_runtime` helper and, for any opt-in identity-only login, the
+`grant_identity_lookup` helper so both logins can
+execute the v2 resolver without direct grant-table access. Review the
+administrator's existing binding and source IDs before enrolling a Brain
+assistant. The old resolver remains only for rolling-version compatibility;
+it does not return source grants. Revoke new Brain scopes and grants with the
+identity administrator before rolling back to Email-only local operation.
+Never treat this synthetic migration as hosted issuer or source-effect approval.
 
 Build immutable artifacts with dependency locks, SBOM/provenance, schema compatibility
 checks, migrations with rollback/forward recovery, and staged health gates. Deploy

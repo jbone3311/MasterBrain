@@ -1,8 +1,10 @@
 # Synthetic PostgreSQL backup/restore drill
 
-ADR-040 now adds populated identity bindings for both fictional tenants. The drill
-checks preserved binding IDs/scopes, identity-lookup RLS, tenant search isolation,
-disable/re-enable revision and rejection of stale contexts after restore. This is
+ADR-040 now adds populated identity bindings for both fictional tenants. ADR-132
+adds a Brain-scoped assistant binding and one same-tenant source grant for each.
+The drill checks preserved binding IDs/scopes/grants, identity-lookup RLS, tenant
+search isolation, grant removal and disable/re-enable revision, and rejection of
+stale contexts after restore. This is
 SQL authority proof, not a real issuer handshake; signatures have separate fake-issuer
 tests.
 

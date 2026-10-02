@@ -2,17 +2,25 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added administrator-owned OIDC Brain source grants (ADR-132, migration 0049):
+  an exact identity binding may enroll up to 20 existing same-tenant sources;
+  grant changes bump the binding revision, are audited, and invalidate saved
+  contexts at the next transaction. Only the three already source-aware Brain
+  read routes are admitted for assistants; the legacy identity resolver refuses
+  Brain-scoped assistants during a rolling upgrade. Hosted/named-assistant acceptance,
+  legacy Email assistant source filtering and derived-cache revocation remain open.
 - Added a forward-only FileOS v2 readiness-query correction (ADR-131,
   migration 0048): exact generation/base chunk comparisons and the reverse
   base count now use indexed probes under the existing five-second database
   statement limit. A fresh full PostgreSQL suite and two populated 3,000-row
-  repeats passed locally. V2 remains private and non-activatable; issue #84
-  awaits exact-head CI, restore and merged-main verification.
+  repeats passed locally. PR #90 passed exact-head and merged-main CI, strict
+  runtime and populated restore; issue #84 is closed. V2 remains private and
+  non-activatable.
 - Added synthetic-bootstrap source-scoped assistant reads (ADR-130): explicit
   source enrollment filters the shared current Email/FileOS/archive and
   reviewed-Knowledge search before limits, gates evidence expansion and denies
-  unreviewed alternate Brain/Knowledge routes. This does not establish hosted
-  OIDC grants, immediate revocation, a named assistant or source effects.
+  unreviewed alternate Brain/Knowledge routes. This does not itself establish
+  hosted OIDC grants, a named assistant or source effects.
 - Merged a provider-neutral, read-only Brain API client (ADR-129, PR #86)
   for grouped current search and separately scoped evidence/content reads.
   Fictional Email/FileOS client-vs-API parity, exact-head and merged-main CI,
@@ -21,7 +29,7 @@
 - Merged the private FileOS v2 active-v1-versus-historical-v2 search comparison
   (ADR-128, PR #85). Its bounded, human-only result keeps separate rankings;
   it does not activate v2 or change FOS-Master. Intermittent populated-database
-  readiness latency remains tracked in issue #84.
+  readiness latency was subsequently corrected under ADR-131/PR #90.
 - Added a first-party read-only MasterBrain question workspace (ADR-127) over
   the existing scoped current-search and evidence routes. It groups indexed
   Email, FileOS, archive and KnowledgeCore results with partial-coverage

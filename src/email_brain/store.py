@@ -476,7 +476,9 @@ class Store:
             if resolver and resolver["present"]:
                 direct_identity_read = conn.execute(
                     "SELECT has_table_privilege(current_user,"
-                    "'public.external_identities','SELECT') AS allowed"
+                    "'public.external_identities','SELECT') OR "
+                    "has_table_privilege(current_user,"
+                    "'public.external_identity_sources','SELECT') AS allowed"
                 ).fetchone()
                 if not direct_identity_read or direct_identity_read["allowed"]:
                     raise AccessDenied("unsafe runtime identity-table grant")
@@ -490,7 +492,7 @@ class Store:
     ) -> dict[str, Any] | None:
         """Exact binding lookup after caller-side token verification; no table SELECT."""
         return conn.execute(
-            "SELECT * FROM public.resolve_external_identity(%s,%s,%s)",
+            "SELECT * FROM public.resolve_external_identity_v2(%s,%s,%s)",
             (issuer, subject, client_id),
         ).fetchone()
 
@@ -512,6 +514,25 @@ class Store:
                     or binding["revision"] != identity.revision
                     or binding["client_kind"] != identity.client_kind
                     or not set(ctx.scopes).issubset(binding["scopes"])
+                    or (
+                        identity.client_kind == "assistant"
+                        and bool(
+                            set(binding["scopes"])
+                            & {
+                                "brain.search", "knowledge.search",
+                                "brain.evidence.read", "brain.content.read",
+                            }
+                        )
+                        and not binding["source_ids"]
+                    )
+                    or (
+                        ctx.source_ids
+                        != (
+                            frozenset(binding["source_ids"])
+                            if identity.client_kind == "assistant" and binding["source_ids"]
+                            else None
+                        )
+                    )
                     or not expiry_check
                     or not expiry_check["valid"]
                 ):

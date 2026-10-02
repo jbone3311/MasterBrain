@@ -408,6 +408,8 @@ def test_tenant_database_routing_two_tenant_api_and_fail_closed_routes(
         assert conn.execute("SELECT session_user").fetchone() == {"session_user": roles[0]}
         with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
             conn.execute("SELECT id FROM tenants")
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute("SELECT source_id FROM external_identity_sources")
         assert conn.execute(
             "SELECT has_function_privilege(session_user,"
             "'public.lock_recovery_owners(uuid,uuid,uuid)','EXECUTE') AS allowed"

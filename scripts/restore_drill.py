@@ -226,6 +226,7 @@ class SeededTenant:
     document_id: UUID
     document_digest: str
     identity_id: UUID
+    brain_identity_id: UUID
     brain_document_id: str
     brain_evidence_id: str
     brain_run_id: UUID
@@ -417,6 +418,23 @@ def seed(
             uuid4(),
         )
         require(activation.recorded, "DataCore index activation seed failed")
+        brain_identity_id = uuid4()
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO external_identities(id,tenant_id,actor_id,issuer,subject,client_id,"
+                "scopes,client_kind) VALUES (%s,%s,%s,'https://issuer.example.invalid',%s,"
+                "'restore-client',%s,'assistant')",
+                (
+                    brain_identity_id,tenant,actor,keyword + "-brain",
+                    ["brain.search","knowledge.search","brain.evidence.read",
+                     "brain.content.read"],
+                ),
+            )
+            conn.execute(
+                "INSERT INTO external_identity_sources(tenant_id,binding_id,source_id) "
+                "VALUES (%s,%s,%s)",
+                (tenant,brain_identity_id,source_id),
+            )
         knowledge = KnowledgeCore(store)
         entity = knowledge.publish(
             context,
@@ -615,6 +633,7 @@ def seed(
                 document_id,
                 stable_digest(store.document_evidence(context, document_id)),
                 identity_id,
+                brain_identity_id,
                 brain_document.document_id,
                 brain_document.evidence_id,
                 brain_run_id,
@@ -706,6 +725,49 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             not store.search(mapped.context, SearchRequest(query=foreign.keyword)),
             "restored identity crosses tenant",
         )
+        brain_verified = VerifiedToken(
+            "https://issuer.example.invalid",
+            current.keyword + "-brain",
+            "restore-client",
+            datetime.now(UTC) + timedelta(minutes=10),
+        )
+        brain_mapped = identity_auth.resolve(brain_verified)
+        require(brain_mapped is not None, "restored Brain identity missing")
+        assert brain_mapped is not None and brain_mapped.context.identity is not None
+        source_id = "files_" + current.keyword
+        require(
+            brain_mapped.context.identity.binding_id == current.brain_identity_id
+            and brain_mapped.context.source_ids == frozenset({source_id})
+            and brain_mapped.context.identity.revision == 2,
+            "restored Brain source grant changed",
+        )
+        datacore = DataCoreStore(store)
+        require(
+            len(datacore.search_current_fileos(brain_mapped.context,current.keyword)) == 1
+            and datacore.search_current_fileos(brain_mapped.context,foreign.keyword) == [],
+            "restored Brain grant crosses source or tenant",
+        )
+        try:
+            with store.transaction(ctx) as conn:
+                conn.execute("SELECT source_id FROM external_identity_sources")
+        except psycopg.errors.InsufficientPrivilege:
+            pass
+        else:
+            raise DrillFailure("runtime can directly read source grants")
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "DELETE FROM external_identity_sources WHERE tenant_id=%s "
+                "AND binding_id=%s AND source_id=%s",
+                (ctx.tenant_id,current.brain_identity_id,source_id),
+            )
+        require(identity_auth.resolve(brain_verified) is None,
+                "revoked restored Brain source grant accepted")
+        try:
+            datacore.search_current_fileos(brain_mapped.context,current.keyword)
+        except AccessDenied:
+            pass
+        else:
+            raise DrillFailure("saved restored Brain context survived source revocation")
         with store.transaction(mapped.context) as conn:
             identity = store.resolve_identity(
                 conn, verified.issuer, verified.subject, verified.client_id

@@ -2,7 +2,48 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## DC-002U readiness scaling correction — branch verification
+## API-SOURCE-002 OIDC Brain grants — rebased branch verification
+
+ADR-132 and forward migration 0049 add administrator-owned, same-tenant source
+grants to exact verified OIDC Brain assistant bindings. The source-aware resolver
+returns only enrolled IDs; the prior resolver refuses Brain-scoped assistants
+during rolling upgrades. Grant changes increment binding revision, emit
+content-free audit records and invalidate previously saved contexts on their
+next transaction. Existing Email-only OIDC bindings remain compatible. Only
+the three ADR-130 source-aware Brain read routes admit these assistants;
+hosted issuer enrollment, named-assistant certification, all-route and
+derived-cache revocation remain open under issue #88.
+
+After rebasing on merged FileOS readiness migration 0048, a fresh disposable
+PostgreSQL 17.11 database passed the focused OIDC/migration/recovery suite:
+**73 passed**. The first full suite passed **2,928 tests, one skipped** in
+163.83 seconds. After the legacy-resolver fail-closed correction, a second
+fresh database passed the same focused **73 tests** and full **2,928 tests,
+one skipped** in 126.87 seconds, including 463 of 464 PostgreSQL-marked tests.
+Ruff, strict mypy over 96 source files, 140 browser tests, documentation and
+diff checks passed before that final SQL-only correction; targeted and full
+PostgreSQL gates were repeated afterward. The local deployment gate passed
+2,465 non-PostgreSQL tests, skipping 464 database-marked tests by design.
+Pinned FOS-Master DataCore parity passed at 3,000 synthetic files; the donor
+classifier matched 3,004 paths. FOS-Master was not changed. Exact-head CI,
+strict runtime, populated Docker restore and merged-main gates are not yet
+claimed. The local host has no Docker command, so the restore drill must run
+in GitHub CI.
+
+## DC-002U readiness scaling correction — merged verification
+
+PR [#90](https://github.com/jbone3311/MasterBrain/pull/90) merged at
+`056f1b78e706e8e46d48a554f11ab67be788913f` from exact head
+`e3b50f547c00bb8e894d618afece8eca04d46884`. The head passed
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36955928457),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36955928432)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36955928455).
+The merge commit passed the corresponding
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36956934219),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36956934230)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36956934207).
+Issue [#84](https://github.com/jbone3311/MasterBrain/issues/84) is closed for
+the synthetic 3,000-row readiness timeout, not for live-source or cutover acceptance.
 
 ADR-131 replaces only the FileOS v2 readiness chunk comparison and reverse
 base count with indexed lookups in forward migration 0048. Exact ID, document,
@@ -23,9 +64,8 @@ tests, documentation inventory and diff checks passed. The pinned FOS-Master
 3,000-file DataCore comparison passed, and donor-policy shadow matched 3,004
 synthetic paths with no classifier mismatch. The local deployment gate passed
 2,465 non-PostgreSQL tests and skipped 460 PostgreSQL-marked tests by design.
-Exact-head CI, strict runtime,
-populated restore and merged-main checks are pending; issue #84 remains open
-until those gates pass.
+Both exact-head and merged-main CI reran the full PostgreSQL suite in the
+deployment gate; every reported check passed. FOS-Master remained unchanged.
 
 ## API-SOURCE-001 synthetic assistant source-scoped reads — local verification
 

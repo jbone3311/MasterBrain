@@ -18,8 +18,10 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 
 The server remains the authority for identity, tenant, scopes, source visibility
 and freshness. In the synthetic bootstrap path, an assistant must be enrolled
-for explicit source IDs; its other Brain/Knowledge routes are denied. This is a
-static test credential, not hosted grant issuance or immediate revocation. A
+for explicit source IDs; its other Brain/Knowledge routes are denied. ADR-132
+also lets a separately verified OIDC assistant use administrator-owned,
+same-tenant source grants, rechecked on each database transaction. Neither
+path is certified hosted grant issuance or a named assistant. A
 successful search is not a grant to read original evidence.
 No client method changes a file or mailbox, proposes or approves an action,
 returns provider credentials, or bypasses current-source selection.

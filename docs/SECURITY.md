@@ -57,9 +57,12 @@ ADR-130 adds a synthetic-bootstrap assistant source allowlist for the three
 client-facing Brain reads. SQL filters current source and evidence results before
 limits; mixed-source knowledge is omitted; alternate Brain/Knowledge routes are
 denied to that assistant. Human owner reads are unchanged. A static bootstrap
-credential is **not** a dynamically revocable hosted grant, and OIDC Brain source
-enrollment, derived-cache invalidation and full source-aware route coverage
-remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
+credential is **not** a dynamically revocable hosted grant. ADR-132 adds a
+separate forced-RLS grant table for administrator-bound OIDC Brain assistants;
+its same-tenant source foreign key, exact resolver and revision recheck stop
+future transactions after grant removal. Legacy Email assistant routes, hosted
+issuer enrollment, derived-cache invalidation and full source-aware route
+coverage remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 
 ## Privacy-safe failure observability
 

@@ -385,6 +385,16 @@ class OIDCAuthenticator:
                 )
             if binding is None:
                 return None
+            brain_scopes = {
+                "brain.search", "knowledge.search", "brain.evidence.read", "brain.content.read"
+            }
+            source_ids = frozenset(binding["source_ids"])
+            if (
+                binding["client_kind"] == "assistant"
+                and brain_scopes.intersection(binding["scopes"])
+                and not source_ids
+            ):
+                return None
             identity = ExternalIdentity(
                 binding["id"],
                 verified.issuer,
@@ -400,6 +410,7 @@ class OIDCAuthenticator:
                 frozenset(binding["scopes"]),
                 uuid4(),
                 identity,
+                source_ids if binding["client_kind"] == "assistant" and source_ids else None,
             )
             with self.store.transaction(ctx):
                 pass

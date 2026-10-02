@@ -104,12 +104,20 @@ allowlisted `scopes` and `client_kind` (`human` or `assistant`). There is no pub
 enrollment/mapping endpoint or automatic matching. The administrator must establish
 the subject/client through a trusted enrollment process, not copy an unverified token.
 
-Allowed application scopes are `email.search`, `email.evidence.read`,
-`email.proposal.create`, `email.proposal.read` and human-only `email.review`.
-These OIDC bindings do not yet issue Brain source grants. ADR-130 adds only
-synthetic bootstrap source enrollment for the three read-only Brain client
-routes; it is not hosted OIDC authorization or dynamic revocation. See
-[issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
+Allowed application scopes are the existing `email.search`,
+`email.evidence.read`, `email.proposal.create`, `email.proposal.read` and
+human-only `email.review`, plus `brain.search`, `knowledge.search`,
+`brain.evidence.read` and `brain.content.read` under ADR-132. A Brain-scoped
+assistant cannot combine legacy Email scopes, whose routes are not yet
+source-filtered. It cannot authenticate for Brain reads without at least one
+explicit source enrollment. The separate `external_identity_sources` table
+accepts only existing sources in the binding's tenant, at most 20; only the
+identity-administrator role can add/remove grants. New binaries use the
+exact-key `resolve_external_identity_v2` function; the older Email-only
+resolver remains for rolling-version compatibility, refuses Brain-scoped
+assistant bindings and does not expose grants.
+These are tested on fake signed tokens and disposable databases, not a hosted
+issuer enrollment or named assistant. See [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 Bindings remain owner-only: member/reviewer/operator memberships are not yet served.
 One verified triple maps to one tenant; workspace selection and granular sharing
 need a later explicit design, not request-supplied tenant IDs.
@@ -120,9 +128,11 @@ The separate administrator role can manage
 bindings across tenants, but has no direct `audit_events` write grant, table
 ownership, `BYPASSRLS`, or access to unrelated evidence tables. Binding IDs,
 tenant/actor and external identity are immutable. Administrator updates to
-active/scopes/kind increment a revision; disable/re-enable cannot revive an old
-saved context. Insert/update/delete emits an append-only audit event with the
-connecting database login and local binding state, no subject or token. This
+active/scopes/kind or source enrollment increment a revision; disable/re-enable
+or grant removal cannot revive an old saved context. Grant add/remove emits a
+separate content-free audit event; binding insert/update/delete also emits an
+append-only audit event with the connecting database login and local binding
+state, no subject or token. This
 identifies the DB administrator login, not an invented end-user actor. See
 [ADR-105](adr/105_identity_admin_enrollment.md) and
 [ADR-106](adr/106_identity_resolver_boundary.md). Issue #7 remains open: a
@@ -131,9 +141,10 @@ GUCs for other evidence tables. The resolver does not establish hosted containme
 
 ## Revocation and outages
 
-- Disable a known binding (`active=false`) or narrow its scopes through an approved
-  administrator operation. New authentication and database transactions recheck it;
-  a saved context cannot outlive its revision, membership or token expiry.
+- Disable a known binding (`active=false`), narrow its scopes or remove one
+  enrolled source through an approved administrator operation. New authentication
+  and database transactions recheck it; a saved context cannot outlive its
+  revision, source enrollment, membership or token expiry.
 - A transaction already admitted is not retroactively cancelled. Existing one-hour
   document/MIME approvals are separate durable consent: cancel their jobs or revoke
   owner membership using existing controls. Token expiry alone does not cancel them.
@@ -171,8 +182,11 @@ prove DNS/egress isolation; configure and test that in the hosted environment.
 [Offline tests](../tests/test_oidc.py) generate keys in memory and use fictional
 HTTP responses. [SQL/API tests](../tests/test_oidc_postgres.py) exercise mapping,
 RLS, scope/kind, wrong tenant, current revocation, administrator audit and denied
-runtime changes. [Restore](RESTORE_DRILL.md) includes two populated bindings,
-search/isolation and revision/revocation after restore. It exercises the SQL mapping
+runtime changes. [Brain grant tests](../tests/test_oidc_brain_grants.py) exercise
+same-tenant grants, no-enrollment denial, cross-source evidence, grant removal,
+forged context, cap and non-superuser administration. [Restore](RESTORE_DRILL.md)
+includes two Email bindings plus two Brain-scoped assistant bindings with source
+grants, search/isolation and revision/revocation after restore. It exercises the SQL mapping
 boundary, not a real issuer handshake or production key recovery.
 
 Stop JWT-mode API before rollback. Preserve migration/bindings/audit; use forward
