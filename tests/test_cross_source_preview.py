@@ -19,6 +19,7 @@ from pydantic import ValidationError
 from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
 from email_brain.store import Store
+from masterbrain.answers import QuoteSelection
 from masterbrain.brain_client import BrainClientError, BrainReadClient
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import EntityWrite
@@ -67,6 +68,45 @@ def assistant_credential(preview, token: str, sources: set[str]) -> Credential:
         client_kind="assistant",
         source_ids=sources,
     )
+
+
+class ExactQuoteSelector:
+    def select(self, question, passages):
+        assert question == "insurance"
+        return [QuoteSelection(passage.evidence_id, passage.content[:30])
+                for passage in passages if passage.content][:2]
+
+
+@pytest.mark.postgres
+def test_grounded_answer_client_matches_api_and_respects_source_grants(preview, database):
+    store, _ = database
+    token = "assistant-answer-fixture-" + "x" * 32
+    registry = TokenRegistry([assistant_credential(preview, token, {"trial_files"})])
+    app = create_app(store, registry, answer_selector=ExactQuoteSelector())
+    with TestClient(app, base_url="http://127.0.0.1") as client:
+        headers = {"Authorization": "Bearer " + token}
+        direct = client.post("/v1/brain/answers", json={"question": "insurance"},
+                             headers=headers)
+        assert direct.status_code == 200, direct.text
+        body = direct.json()
+        assert body["status"] == "quoted_evidence"
+        assert body["citations"]
+        assert all(item["source_id"] == "trial_files" for item in body["citations"])
+        assert all(0 < len(item["quote"]) <= 30 for item in body["citations"])
+        assert body["coverage"]["source_access"] == "enrolled_sources_only"
+        with BrainReadClient("http://127.0.0.1", token, allow_insecure_loopback=True,
+                             transport=external_transport(client)) as external:
+            assert external.answer("insurance") == body
+
+    no_content = assistant_credential(preview, token + "-limited", {"trial_files"}).model_copy(
+        update={"scopes": set(READ_SCOPES - {"brain.content.read"})}
+    )
+    limited = create_app(store, TokenRegistry([no_content]),
+                         answer_selector=ExactQuoteSelector())
+    with TestClient(limited, base_url="http://127.0.0.1") as client:
+        denied = client.post("/v1/brain/answers", json={"question": "insurance"},
+                             headers={"Authorization": "Bearer " + token + "-limited"})
+        assert denied.status_code == 403
 
 
 def test_assistant_source_enrollment_is_explicit_and_bounded() -> None:

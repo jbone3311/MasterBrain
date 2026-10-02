@@ -13,7 +13,11 @@ from typing import Any
 import httpx
 from pydantic import ValidationError
 
-from masterbrain.schemas import CurrentGroupedSearchRequest, EvidenceContentRequest
+from masterbrain.schemas import (
+    CurrentGroupedSearchRequest,
+    EvidenceContentRequest,
+    GroundedAnswerRequest,
+)
 
 MAX_RESPONSE_BYTES = 262_144
 _IDENTITY = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
@@ -181,6 +185,53 @@ class BrainReadClient:
         ):
             raise BrainClientError("invalid_response")
         return data
+
+    def answer(self, question: str) -> dict[str, Any]:
+        """Ask for server-verified current evidence quotes, never model tools."""
+        try:
+            request = GroundedAnswerRequest(question=question)
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        data = self._request(
+            "POST", "/v1/brain/answers", request.model_dump(mode="json")
+        )
+        citations = data.get("citations")
+        coverage = data.get("coverage")
+        if (
+            data.get("mode") != "grounded_extractive_v1"
+            or data.get("status") not in {
+                "quoted_evidence", "no_supported_evidence", "no_supported_answer"
+            }
+            or not isinstance(data.get("answer"), str)
+            or len(data["answer"]) > 200
+            or data.get("untrusted_content") is not True
+            or not isinstance(coverage, dict)
+            or coverage.get("complete") is not False
+            or not isinstance(citations, list)
+            or len(citations) > 4
+            or any(not self._valid_quote_citation(item) for item in citations)
+            or (data["status"] == "quoted_evidence") != bool(citations)
+        ):
+            raise BrainClientError("invalid_response")
+        return data
+
+    @staticmethod
+    def _valid_quote_citation(item: Any) -> bool:
+        if not isinstance(item, dict):
+            return False
+        ids = ("evidence_id", "document_id", "source_id")
+        return bool(
+            all(isinstance(item.get(key), str) and _IDENTITY.fullmatch(item[key]) for key in ids)
+            and isinstance(item.get("source_kind"), str)
+            and isinstance(item.get("quote"), str)
+            and 1 <= len(item["quote"]) <= 400
+            and type(item.get("start")) is int
+            and type(item.get("end")) is int
+            and item["start"] >= 0
+            and item["end"] - item["start"] == len(item["quote"])
+            and isinstance(item.get("body_sha256"), str)
+            and re.fullmatch(r"[a-f0-9]{64}", item["body_sha256"])
+        )
 
     def evidence(self, evidence_id: str) -> dict[str, Any]:
         """Expand selected evidence metadata only with the distinct server grant."""

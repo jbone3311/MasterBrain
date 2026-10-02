@@ -37,8 +37,8 @@
     if (clearToken) tokenField.value = "";
     questionField.value = "";
     turns.replaceChildren();
-    node("p", "Start with a distinctive name, topic, or phrase. Results are grouped by source; they are not an AI-generated answer.", turns, "empty");
-    status.textContent = usable() ? "Ready for a read-only search." : "Enter an authorized credential to begin.";
+    node("p", "Start with a distinctive name, topic, or phrase. Verified quotes require a configured answer selector; otherwise results are grouped by source.", turns, "empty");
+    status.textContent = usable() ? "Ready for a read-only question." : "Enter an authorized credential to begin.";
     updateButton();
   }
 
@@ -151,6 +151,37 @@
     return total;
   }
 
+  function renderAnswer(data, parent, capturedEpoch, token) {
+    if (!data || data.mode !== "grounded_extractive_v1" ||
+        !["quoted_evidence", "no_supported_evidence", "no_supported_answer"].includes(data.status) ||
+        typeof data.answer !== "string" || !Array.isArray(data.citations) ||
+        !data.coverage || data.coverage.complete !== false || data.untrusted_content !== true ||
+        data.citations.length > 4 || (data.status === "quoted_evidence") !== (data.citations.length > 0)) {
+      throw new Error("Answer response could not be verified.");
+    }
+    for (const citation of data.citations) {
+      if (!citation || typeof citation.evidence_id !== "string" || !citation.evidence_id ||
+          typeof citation.document_id !== "string" || typeof citation.source_id !== "string" ||
+          typeof citation.source_kind !== "string" || typeof citation.quote !== "string" ||
+          !citation.quote.trim() || citation.quote.length > 400 ||
+          !Number.isInteger(citation.start) || citation.start < 0 ||
+          citation.end !== citation.start + citation.quote.length ||
+          !/^[a-f0-9]{64}$/.test(citation.body_sha256)) {
+        throw new Error("Answer citation could not be verified.");
+      }
+    }
+    node("h3", "Verified source quotes", parent);
+    node("p", data.answer, parent);
+    node("p", "Partial coverage: these quotes are from current indexed evidence, not a complete account.", parent, "notice");
+    for (const citation of data.citations) {
+      const card = node("article", "", parent, "hit");
+      node("p", citation.quote, card);
+      node("p", `${citation.source_kind} · ${citation.source_id} · characters ${citation.start}–${citation.end}`, card, "locator");
+      addEvidenceButton(card, capturedEpoch, token, citation.evidence_id);
+    }
+    return data.citations.length;
+  }
+
   document.getElementById("ask-form").addEventListener("submit", async event => {
     event.preventDefault();
     const question = questionField.value.trim();
@@ -161,25 +192,40 @@
     updateButton();
     if (turns.querySelector(".empty")) turns.replaceChildren();
     const asked = node("article", "", turns, "turn question");
-    node("h3", "You searched", asked);
+    node("h3", "You asked", asked);
     node("p", question, asked);
     const answer = node("article", "", turns, "turn response");
-    node("p", "Searching authorized current sources…", answer);
+    node("p", "Checking authorized current sources…", answer);
     questionField.value = "";
     trimTurns();
-    status.textContent = "Searching…";
+    status.textContent = "Checking sources…";
     try {
-      const data = await api("/v1/brain/current-search", {query: question}, token);
+      let data;
+      let searchFallback = false;
+      try {
+        data = await api("/v1/brain/answers", {question}, token);
+      } catch (error) {
+        if (error.status !== 503) throw error;
+        if (epoch !== capturedEpoch || tokenField.value !== token) return;
+        searchFallback = true;
+        data = await api("/v1/brain/current-search", {query: question}, token);
+      }
       if (epoch !== capturedEpoch || tokenField.value !== token) return;
       answer.replaceChildren();
-      const count = renderResults(data, answer, capturedEpoch, token);
-      status.textContent = `${count} indexed results. Source coverage is partial; no action was taken.`;
+      if (searchFallback) {
+        node("p", "Answer selection is not configured; showing indexed search results.", answer, "notice");
+        const count = renderResults(data, answer, capturedEpoch, token);
+        status.textContent = `${count} indexed results. Source coverage is partial; no action was taken.`;
+      } else {
+        const count = renderAnswer(data, answer, capturedEpoch, token);
+        status.textContent = `${count} verified source quotes. Source coverage is partial; no action was taken.`;
+      }
     } catch (error) {
       if (epoch === capturedEpoch && tokenField.value === token) {
         answer.replaceChildren();
         node("p", Number.isInteger(error?.status) ?
-          `Request refused (${error.status}). Check your access.` : "Search unavailable. Please retry.", answer, "notice");
-        status.textContent = "Search did not complete.";
+          `Request refused (${error.status}). Check your access.` : "Answer unavailable. Please retry.", answer, "notice");
+        status.textContent = "Question did not complete.";
       }
     } finally {
       if (epoch === capturedEpoch) { busy = false; updateButton(); }

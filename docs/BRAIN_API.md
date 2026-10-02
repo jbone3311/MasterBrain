@@ -63,6 +63,14 @@ objects, general SQL, or an unbounded corpus dump.
   tenant-wide bootstrap reads. OIDC grant removal invalidates saved contexts at
   the next transaction; hosted issuer enrollment and derived-cache revocation
   are not accepted.
+- `POST /v1/brain/answers` — optional ADR-134 extractive answer over the same
+  current grouped search and separately authorized evidence/content reads.
+  Requires `brain.search`, `knowledge.search`, `brain.evidence.read` and
+  `brain.content.read`, plus assistant source enrollment. A configured selector
+  may choose at most four exact quotes from at most eight bounded passages;
+  the server verifies citations and rechecks current visibility. No selector
+  is configured by default, so the route returns 503. It has no effect grant,
+  freeform model-authored answer or hosted/named-assistant acceptance.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
   `brain.changes.read`, is cursor-bounded and does not enumerate providers or paths.
@@ -78,8 +86,8 @@ objects, general SQL, or an unbounded corpus dump.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change feed.
 - `POST /v1/search` — retained Email capability search during compatibility migration.
-- Future `POST /v1/answers` — bounded synthesis from retrieved evidence with citations;
-  **not implemented** as a route.
+- Future freeform cited synthesis — not implemented; the existing
+  `/v1/brain/answers` route is limited to verified extractive quotes.
 - Future graph traversal — related objects and cited attributes beyond exact lookup.
 - `GET /v1/projects/{id}` — project state, members, commitments, events, evidence.
 - `GET /v1/claims/{id}` — claim versions, support, contradictions, and supersession.
@@ -162,9 +170,11 @@ read-only reference over the same REST routes used by `/brain`; it passes a
 fictional cross-source conformance test. Use it only with a separately
 authorized credential. Passing local API/client tests does not establish
 assistant integration or hosted acceptance.
-ADR-130's bootstrap assistant and ADR-132's OIDC Brain assistant can call only
-current-search and the separately scoped evidence/content routes, with an
-explicit source allowlist. Other Brain and Knowledge routes fail closed for
+ADR-130's bootstrap assistant and ADR-132's OIDC Brain assistant can call the
+source-scoped current-search, evidence/content and ADR-133 coverage/change
+routes, with an explicit source allowlist. ADR-134 also permits bounded
+extractive answers, subject to all four read scopes and an explicitly configured
+selector; the default is 503. Other Brain and Knowledge routes fail closed for
 those assistants until their source semantics are reviewed. Hosted issuer
 enrollment, legacy Email assistant source filtering and derived-cache revocation
 remain open in [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).

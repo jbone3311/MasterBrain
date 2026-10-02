@@ -16,6 +16,14 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-134 adds an optional, provider-neutral extractive answer boundary to
+  `POST /v1/brain/answers`, the first-party `/brain` workspace and the external
+  read client. The server bounds passages, rejects invented or stale quotes and
+  returns exact evidence citations after a current-source recheck. Without an
+  owner-approved selector the route returns 503 and the workspace retains its
+  grouped-search fallback. This is not a configured model, freeform synthesis,
+  hosted chat, named-assistant acceptance or source-effect capability.
+
 - API-SOURCE-003 extends source-aware assistant reads to bounded current
   coverage and change-feed status under ADR-133 and forward migration 0050.
   OIDC status-only assistants still require explicit enrollment; hidden-source
