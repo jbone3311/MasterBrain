@@ -34,9 +34,20 @@ Its credential, questions and results stay only in page memory and clear when
 the credential changes. Same-origin fetches omit cookies, reject redirects and
 disable caching; strict CSP disallows external scripts. Untrusted excerpts and
 content become text nodes, not HTML. Stale requests are aborted/ignored. It
-has no model call, source-effect control, stored transcript, direct SQL or
+has no direct model call, source-effect control, stored transcript, direct SQL or
 provider credential. These controls do not establish hosted identity,
 revocation across future derived caches or live-source acceptance.
+
+ADR-134 adds an optional read-only answer route. An explicitly configured
+selector receives only bounded, currently authorized excerpts, with no tool or
+effect authority. Server-side checks require exact quoted substrings and
+recheck current search before disclosure. No selector is enabled by default;
+the first-party workspace then falls back to grouped search only on the fixed
+unavailable response. Access denial, malformed citations and stale data do not
+trigger fallback. A distinct Search only button preserves the preexisting
+search-only grant without converting an answer denial into a search. This does
+not approve sending private content to a remote
+model or establish semantic truth beyond the quoted source text.
 
 ADR-128's FileOS v2 search comparison is not in that workspace or the public
 Brain API. It requires a human transition reviewer plus search and evidence

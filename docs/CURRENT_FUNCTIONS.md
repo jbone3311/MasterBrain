@@ -12,11 +12,12 @@ approved for private data, or production accepted. The exact-commit gates are in
 | Function | Working path | Boundary |
 |---|---|---|
 | Search fictional Email and FileOS together | [cross-source browser trial](CROSS_SOURCE_TRIAL.md) and `POST /v1/brain/current-search` | Real PostgreSQL and Brain API, fictional data; grouped layers have separate ranks and partial coverage. No generated answer. |
+| Request verified source quotes for a question | `POST /v1/brain/answers`, `BrainReadClient.answer`, and `/brain` | Optional bounded extractive contract. No selector is configured by default, so the API returns 503 and the workspace shows grouped search. No freeform synthesis or approved remote model. |
 | Open a result and verify its source | `GET /v1/brain/evidence/{id}` then separately scoped `POST /v1/brain/evidence/{id}/content` | Bounded content with opaque provenance; original Email downloads require the distinct human reader permission. |
 | Check what is current or missing | `GET /v1/brain/current-coverage`, source freshness, inventory and index routes | Only completed FileOS runs, activated generations and explicitly bridged Email are represented; a partial result is not whole-source completeness. |
 | Search reviewed knowledge | `POST /v1/knowledge/search`, `GET /v1/knowledge/{kind}/{id}` | Human-reviewed, evidence-linked assertions; no automatic entity resolution or model-generated synthesis. |
 | Review Email evidence | Legacy `/v1/search`, selected-message reader, quarantine/retry, approved PDF jobs, narrow virtual sender rules, and travel/bill memory | Local/synthetic prototype; no provider send, move or delete. |
-| Call the same reads from a separately authorized external program | `BrainReadClient.current_search`, `.evidence`, `.evidence_content`, `.current_coverage`, `.changes` | Provider-neutral client; synthetic and administrator-bound OIDC assistants must enroll source IDs for these five source-aware routes. No hosted issuer enrollment, named assistant integration or source effect. |
+| Call the same reads from a separately authorized external program | `BrainReadClient.current_search`, `.evidence`, `.evidence_content`, `.current_coverage`, `.changes`, `.answer` | Provider-neutral client; synthetic and administrator-bound OIDC assistants must enroll source IDs. The optional answer route requires four read scopes and a selector. No hosted issuer enrollment, named assistant integration or source effect. |
 
 The trial is the quickest owner-facing entry point. Its
 [known-answer guide](CROSS_SOURCE_TRIAL.md) states expected counts and how to report
@@ -117,8 +118,9 @@ bounded layer; automatic archive fan-out is not implemented. See the
 
 ## Not yet callable or accepted
 
-- `POST /v1/answers`, automatic cited synthesis, graph traversal and broad
-  project/timeline views are designs, not routes in the current API.
+- Freeform cited synthesis, graph traversal and broad project/timeline views
+  are designs, not routes in the current API. The extractive
+  `/v1/brain/answers` route is optional and disabled by default.
 - No MCP server or certified Claude, Grok or ChatGPT connection exists. Assistants
   can use the documented REST contract only after separate identity, adapter and
   client conformance work.

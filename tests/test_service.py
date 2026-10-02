@@ -80,7 +80,8 @@ def test_owner_assets_remain_fixed_same_origin_and_noncacheable(client: TestClie
     elif path == "/brain":
         assert 'src="/brain.js"' in response.text
         assert 'id="brain-token" type="password"' in response.text
-        assert "does not generate answers" in response.text
+        assert "verified source quotes" in response.text
+        assert "It never changes a source" in response.text
         assert "/v1/brain/current-search" not in response.text
     elif path.endswith(".js"):
         assert response.headers["Content-Type"].startswith("text/javascript")

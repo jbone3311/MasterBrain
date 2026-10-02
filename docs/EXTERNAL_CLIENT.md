@@ -15,11 +15,16 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 | `current_search(query)` | `POST /v1/brain/current-search` | `brain.search` and `knowledge.search` |
 | `evidence(id)` | `GET /v1/brain/evidence/{id}` | `brain.evidence.read` |
 | `evidence_content(id, max_chars=4000)` | `POST /v1/brain/evidence/{id}/content` | `brain.content.read` |
+| `current_coverage()` | `GET /v1/brain/current-coverage` | `brain.changes.read` |
+| `changes(...)` | `GET /v1/brain/changes` | `brain.changes.read` |
+| `answer(question)` | `POST /v1/brain/answers` | `brain.search`, `knowledge.search`, `brain.evidence.read`, `brain.content.read`; an owner-configured selector is also required |
 
 The server remains the authority for identity, tenant, scopes, source visibility
 and freshness. In the synthetic bootstrap path, an assistant must be enrolled
-for explicit source IDs; its other Brain/Knowledge routes are denied. ADR-132
-also lets a separately verified OIDC assistant use administrator-owned,
+for explicit source IDs; routes without reviewed source semantics remain denied.
+ADR-133 adds two source-scoped status reads. ADR-134 adds the bounded answer
+read over the same current, separately authorized evidence, disabled without a
+selector. ADR-132 also lets a separately verified OIDC assistant use administrator-owned,
 same-tenant source grants, rechecked on each database transaction. Neither
 path is certified hosted grant issuance or a named assistant. A
 successful search is not a grant to read original evidence.
@@ -52,4 +57,6 @@ questions through a direct Brain API request and this client, comparing the
 exact grouped response, evidence expansion, separate content grant and
 cross-tenant denial. This proves the reference transport on a local test
 boundary; it does not certify a named assistant, hosted token issuance/revocation,
-private hosting, grounded answer synthesis or live sources.
+private hosting, a configured/approved model selector or live sources. The
+extractive answer method is not freeform synthesis: it returns only server-verified
+quotes and evidence links. The reference client has no source-effect methods.

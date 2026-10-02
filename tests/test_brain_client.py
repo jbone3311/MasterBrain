@@ -22,6 +22,60 @@ def current_result() -> dict[str, object]:
     }
 
 
+def answer_result() -> dict[str, object]:
+    return {
+        "mode": "grounded_extractive_v1",
+        "status": "quoted_evidence",
+        "answer": "Relevant passages from current indexed evidence are quoted below.",
+        "citations": [{
+            "evidence_id": "evidence_123", "document_id": "document_123",
+            "source_id": "trial_files", "source_kind": "fileos",
+            "quote": "fictional proof", "start": 0, "end": 15,
+            "body_sha256": "a" * 64,
+        }],
+        "coverage": {"complete": False, "source_access": "enrolled_sources_only"},
+        "untrusted_content": True,
+    }
+
+
+def test_answer_client_uses_same_read_only_origin_and_validates_response() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json=answer_result())
+
+    with BrainReadClient(
+        "https://brain.example", "synthetic-token", transport=httpx.MockTransport(handler)
+    ) as client:
+        assert client.answer("What is pending?")["citations"][0]["source_id"] == "trial_files"
+        for bad in (" ", "bad\x00question", "x" * 501):
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                client.answer(bad)
+    assert len(calls) == 1
+    assert calls[0].url.path == "/v1/brain/answers"
+    assert calls[0].headers["authorization"] == "Bearer synthetic-token"
+    assert b'"question":"What is pending?"' in calls[0].content
+
+
+@pytest.mark.parametrize("change", [
+    {"mode": "freeform"},
+    {"coverage": {"complete": True}},
+    {"citations": [{"evidence_id": "forged"}]},
+    {"citations": [{**answer_result()["citations"][0], "quote": "invented"}]},
+    {"status": "quoted_evidence", "citations": []},
+    {"answer": "x" * 201},
+])
+def test_answer_client_rejects_malformed_claims(change: dict) -> None:
+    result = {**answer_result(), **change}
+    with BrainReadClient(
+        "https://brain.example", "token",
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=result)),
+    ) as client:
+        with pytest.raises(BrainClientError, match="invalid_response"):
+            client.answer("fictional question")
+
+
 def test_fixed_read_only_paths_and_separate_expansion() -> None:
     calls: list[httpx.Request] = []
 

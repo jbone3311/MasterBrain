@@ -2,6 +2,30 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-134 grounded extractive answers — local branch verification
+
+This branch adds a provider-neutral selector contract, bounded server-verified
+exact quotes, read-client parity surface and a first-party quote display with a
+search fallback when no selector is configured. It has no enabled real model,
+new migration, source effects or FOS-Master changes. A full local run against
+disposable PostgreSQL 17.11 passed **2,950 tests, one skipped**; 465 of 466
+PostgreSQL-marked tests executed. All 146 browser tests, Ruff, strict mypy over
+97 source files, documentation links and diff checks passed. The focused real
+PostgreSQL test compared the assistant's exact answer with the external client,
+confirmed source-only citations and denied a missing content grant. Local
+Python 3.11.13 skipped the hidden editable-install `.pth` file after `uv sync`;
+the two CLI subprocess tests passed after installing the same source as a regular
+wheel. This was a local environment issue, not a product-code change. Record
+the exact branch commit and CI/strict-runtime/populated-restore results before
+merge. Do not label this hosted or live-source acceptance.
+
+The documentation-only PR [#97](https://github.com/jbone3311/MasterBrain/pull/97)
+merged into `main` at `680350593bfee4a8fb78a50b8a0168551f08060f`;
+[merged-main CI](https://github.com/jbone3311/MasterBrain/actions/runs/36966064373),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36966064505)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36966064408)
+all passed. This is a documentation receipt, not a product release.
+
 ## API-SOURCE-003 source-scoped status — merged verification
 
 PR [#96](https://github.com/jbone3311/MasterBrain/pull/96) merged at

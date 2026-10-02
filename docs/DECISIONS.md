@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-134](adr/134_grounded_extractive_answers.md) adds an optional, read-only
+extractive answer contract over currently authorized evidence. The selector has
+no effects; the server verifies exact quotes and citations. No model adapter is
+enabled by default, and this does not certify hosted or named-assistant use.
+
 [ADR-133](adr/133_source_scoped_brain_status.md) extends enrolled assistant
 reads to source-filtered current coverage and change status. Hidden-source
 cursors fail closed; the other Brain/Knowledge routes remain denied.

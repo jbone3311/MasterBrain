@@ -24,6 +24,17 @@ class EvidenceContentRequest(ClosedModel):
     max_chars: int = Field(default=4000, ge=1, le=16000, strict=True)
 
 
+class GroundedAnswerRequest(ClosedModel):
+    question: str = Field(min_length=1, max_length=500)
+
+    @field_validator("question")
+    @classmethod
+    def meaningful_question(cls, value: str) -> str:
+        if not value.strip() or "\x00" in value:
+            raise ValueError("invalid question")
+        return value.strip()
+
+
 class UnifiedSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     evidence_limit: int = Field(default=10, ge=1, le=25, strict=True)

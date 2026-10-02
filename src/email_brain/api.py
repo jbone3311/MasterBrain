@@ -39,6 +39,13 @@ from email_brain.schemas import (
     SearchRequest,
 )
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
+from masterbrain.answers import (
+    AnswerRejected,
+    AnswerSelector,
+    AnswerStale,
+    AnswerUnavailable,
+    GroundedAnswerService,
+)
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import KnowledgePublishRequest, KnowledgeSearchRequest
@@ -47,6 +54,7 @@ from masterbrain.schemas import (
     CurrentGroupedSearchRequest,
     EmailFamilySearchRequest,
     EvidenceContentRequest,
+    GroundedAnswerRequest,
     UnifiedSearchRequest,
 )
 
@@ -112,6 +120,7 @@ def create_app(
     *,
     brain_store: DataCoreStore | None = None,
     knowledge_store: KnowledgeCore | None = None,
+    answer_selector: AnswerSelector | None = None,
     recovery_parser_version: str | None = None,
     document_processor_version: str | None = None,
     browser_auth: BrowserAuth | None = None,
@@ -131,6 +140,7 @@ def create_app(
     memory = Memory(store)
     brain = brain_store or DataCoreStore(store)
     knowledge = knowledge_store or KnowledgeCore(store)
+    answers = GroundedAnswerService(brain, answer_selector)
     if browser_auth is not None:
         if browser_auth.authenticator.store is not store:
             raise ValueError("browser and API must share the same Store")
@@ -593,6 +603,33 @@ def create_app(
             "policy": {"scopes": ["brain.search", "knowledge.search"], "redactions": []},
             "untrusted_content": True,
         }
+
+    @app.post("/v1/brain/answers")
+    def grounded_answer(
+        body: GroundedAnswerRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        required = {
+            "knowledge.search", "brain.evidence.read", "brain.content.read"
+        }
+        if not required.issubset(principal.context.scopes):
+            raise HTTPException(403, "scope_denied")
+        try:
+            return answers.answer(
+                principal.context,
+                body.question,
+                lambda: current_grouped_search(
+                    CurrentGroupedSearchRequest(query=body.question), principal
+                ),
+            )
+        except AnswerUnavailable:
+            raise HTTPException(503, "answer_unavailable") from None
+        except AnswerRejected:
+            raise HTTPException(502, "answer_rejected") from None
+        except AnswerStale:
+            raise HTTPException(409, "answer_stale") from None
 
     @app.get("/v1/brain/evidence/{evidence_id}")
     def brain_evidence(

@@ -2,6 +2,14 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added an optional, read-only extractive answer route, reference client method
+  and first-party workspace display (ADR-134). The server bounds input and
+  passages, verifies exact quotes and citations, then rechecks current source
+  visibility. No model selector is configured by default; the API returns 503
+  and the browser falls back to grouped search. A separate Search only control
+  preserves search-only credentials without bypassing an answer denial. No hosted model, freeform
+  synthesis, source effects or FOS-Master change is included.
+
 - Added source-scoped current-coverage and change-feed reads for enrolled
   assistants (ADR-133, forward migration 0050). OIDC bindings may receive the
   distinct `brain.changes.read` scope only with source enrollment; hidden-source
