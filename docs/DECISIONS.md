@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-130](adr/130_assistant_source_scoped_reads.md) introduces explicit,
+synthetic-bootstrap source enrollment for the three assistant Brain read routes.
+It does not provide hosted or dynamically revocable source grants.
+
 [ADR-129](adr/129_read_only_external_brain_client.md) defines a provider-neutral,
 read-only HTTP reference client over the same current-search and separately
 scoped evidence routes as `/brain`. It is not a hosted or named-assistant adapter.

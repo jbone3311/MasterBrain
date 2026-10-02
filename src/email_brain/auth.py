@@ -5,13 +5,14 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 from uuid import UUID, uuid4
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from email_brain.domain.models import TenantContext
 from email_brain.schemas import ClosedModel
@@ -46,6 +47,11 @@ SCOPES = frozenset(
         "knowledge.review",
     }
 )
+_SOURCE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
+_BRAIN_READ_SCOPES = frozenset({
+    "brain.search", "brain.evidence.read", "brain.content.read", "brain.changes.read",
+    "knowledge.search", "knowledge.read", "knowledge.changes.read",
+})
 
 
 class Credential(ClosedModel):
@@ -55,6 +61,7 @@ class Credential(ClosedModel):
     scopes: set[str]
     expires_at: datetime
     client_kind: str = Field(pattern=r"^(human|assistant|worker)$")
+    source_ids: set[str] | None = Field(default=None, max_length=20)
 
     @field_validator("expires_at")
     @classmethod
@@ -69,6 +76,28 @@ class Credential(ClosedModel):
         if not value or not value <= SCOPES:
             raise ValueError("unknown or empty scopes")
         return value
+
+    @field_validator("source_ids")
+    @classmethod
+    def valid_source_ids(cls, value: set[str] | None) -> set[str] | None:
+        if value is not None and any(not _SOURCE_ID.fullmatch(item) for item in value):
+            raise ValueError("invalid source ID")
+        return value
+
+    @model_validator(mode="after")
+    def assistant_sources(self) -> Credential:
+        has_brain_reads = bool(self.scopes & _BRAIN_READ_SCOPES)
+        if self.client_kind == "assistant" and has_brain_reads and not self.source_ids:
+            raise ValueError("assistant Brain reads require source enrollment")
+        if (
+            self.client_kind == "assistant"
+            and has_brain_reads
+            and any(scope.startswith("email.") for scope in self.scopes)
+        ):
+            raise ValueError("assistant Brain and legacy Email scopes cannot be combined")
+        if self.client_kind != "assistant" and self.source_ids is not None:
+            raise ValueError("source enrollment is assistant-only in bootstrap")
+        return self
 
 
 @dataclass(frozen=True)
@@ -146,6 +175,10 @@ class TokenRegistry:
                         credential.actor_id,
                         frozenset(credential.scopes),
                         uuid4(),
+                        source_ids=(
+                            frozenset(credential.source_ids)
+                            if credential.source_ids is not None else None
+                        ),
                     ),
                     credential.client_kind,
                 )

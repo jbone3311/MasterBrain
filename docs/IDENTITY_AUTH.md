@@ -106,6 +106,10 @@ the subject/client through a trusted enrollment process, not copy an unverified 
 
 Allowed application scopes are `email.search`, `email.evidence.read`,
 `email.proposal.create`, `email.proposal.read` and human-only `email.review`.
+These OIDC bindings do not yet issue Brain source grants. ADR-130 adds only
+synthetic bootstrap source enrollment for the three read-only Brain client
+routes; it is not hosted OIDC authorization or dynamic revocation. See
+[issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 Bindings remain owner-only: member/reviewer/operator memberships are not yet served.
 One verified triple maps to one tenant; workspace selection and granular sharing
 need a later explicit design, not request-supplied tenant IDs.

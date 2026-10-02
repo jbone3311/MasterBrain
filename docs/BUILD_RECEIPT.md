@@ -2,6 +2,37 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## API-SOURCE-001 synthetic assistant source-scoped reads — local verification
+
+ADR-130 limits bootstrap assistant credentials to explicit, bounded source IDs
+for the three read-only Brain client routes. Current Email, FileOS and archive
+searches filter at SQL before ranking and limits; reviewed Knowledge search
+excludes mixed-source assertions. Evidence metadata and bounded text require
+the same source grant. Other Brain/Knowledge routes fail closed to assistants;
+human routes are unchanged. This is not hosted OIDC enrollment, dynamic grant
+revocation, a named assistant or source-effect authority. The broader gap is
+tracked in [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
+
+On a fresh disposable PostgreSQL 17.11 database, the corrected full suite
+passed **2,924 tests, one skipped** in 161.81 seconds, including 459 of 460
+PostgreSQL-marked tests. The final added same-tenant FileOS limit assertion
+and focused source-grant tests passed separately (four tests). The local
+deployment gate passed 2,465 non-PostgreSQL tests, skipping 460 database-marked
+tests by design. Ruff, strict mypy over 96 source files, 140 browser tests,
+documentation and diff checks passed. Pinned FOS-Master 3,000-file DataCore
+parity passed; donor-policy shadow matched 3,004 candidate rows with zero
+unexplained membership differences and six explicit policy gaps. FOS-Master
+was not changed. GitHub exact-head and merged-main checks are not yet claimed.
+
+The first full run had three credential/test-fixture compatibility failures,
+now corrected, plus the intermittent existing v2 readiness anti-join timeout
+from [issue #84](https://github.com/jbone3311/MasterBrain/issues/84).
+The server log identified `enforce_index_generation_ready()`'s unmatched
+generation/base-chunk join; an immediate 3,000-row rerun on the retained
+synthetic database passed in 64.44 seconds. The second fresh full run passed,
+but this is not proof that issue #84 is resolved; its finding is recorded on
+the issue. No statement budget was raised and no v2 activation was enabled.
+
 ## API-CLIENT-001 provider-neutral read-only client — merged verification
 
 PR [#86](https://github.com/jbone3311/MasterBrain/pull/86) merged at

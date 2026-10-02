@@ -53,6 +53,14 @@ itself. A future named assistant must not receive the bearer credential as
 prompt content or treat retrieved text as instructions; its separate
 prompt-injection and revocation acceptance is still open.
 
+ADR-130 adds a synthetic-bootstrap assistant source allowlist for the three
+client-facing Brain reads. SQL filters current source and evidence results before
+limits; mixed-source knowledge is omitted; alternate Brain/Knowledge routes are
+denied to that assistant. Human owner reads are unchanged. A static bootstrap
+credential is **not** a dynamically revocable hosted grant, and OIDC Brain source
+enrollment, derived-cache invalidation and full source-aware route coverage
+remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,

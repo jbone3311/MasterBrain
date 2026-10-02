@@ -6,18 +6,22 @@ import shutil
 import subprocess
 import sys
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import httpx
 import pytest
 import test_postgres as pg
 from cross_source_preview import ASSETS, FILES, READ_SCOPES, build_preview, credential
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from email_brain.api import create_app
-from email_brain.auth import TokenRegistry
+from email_brain.auth import Credential, TokenRegistry
 from email_brain.store import Store
 from masterbrain.brain_client import BrainClientError, BrainReadClient
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import EntityWrite
 
 # Reuse the repository's disposable-database preflight and least-privileged role.
 database = pg.database
@@ -51,6 +55,181 @@ def external_transport(app_client: TestClient) -> httpx.MockTransport:
         )
 
     return httpx.MockTransport(forward)
+
+
+def assistant_credential(preview, token: str, sources: set[str]) -> Credential:
+    return Credential(
+        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+        tenant_id=preview.context.tenant_id,
+        actor_id=preview.context.actor_id,
+        scopes=set(READ_SCOPES),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+        client_kind="assistant",
+        source_ids=sources,
+    )
+
+
+def test_assistant_source_enrollment_is_explicit_and_bounded() -> None:
+    common = {
+        "token_sha256": "a" * 64,
+        "tenant_id": uuid4(),
+        "actor_id": uuid4(),
+        "expires_at": datetime.now(UTC) + timedelta(hours=1),
+        "client_kind": "assistant",
+        "scopes": {"brain.search"},
+    }
+    for sources in (None, set(), {"bad/path"}, {f"source_{n}" for n in range(21)}):
+        with pytest.raises(ValidationError):
+            Credential(**common, source_ids=sources)
+    granted = Credential(**common, source_ids={"trial_files"})
+    assert granted.source_ids == {"trial_files"}
+    with pytest.raises(ValidationError):
+        Credential(**{**common, "client_kind": "human"}, source_ids={"trial_files"})
+    with pytest.raises(ValidationError):
+        Credential(
+            **{**common, "scopes": {"brain.search", "email.evidence.read"}},
+            source_ids={"trial_files"},
+        )
+    assert Credential(**{**common, "scopes": {"email.search"}}).source_ids is None
+
+
+@pytest.mark.postgres
+def test_source_scoped_assistant_cannot_read_other_sources_or_alternate_routes(
+    preview, database
+) -> None:
+    store, _ = database
+    token = "assistant-source-fixture-token-" + "x" * 32
+    registry = TokenRegistry([assistant_credential(preview, token, {"trial_files"})])
+    app = create_app(store, registry)
+    with client_for(preview) as owner:
+        full = owner.post("/v1/brain/current-search", json={"query": "insurance"}).json()
+        email_id = full["layers"]["email_messages"][0]["evidence_id"]
+        file_id = full["layers"]["fileos"][0]["evidence_id"]
+        email_source = full["layers"]["email_messages"][0]["source_id"]
+        assert email_source != "trial_files"
+        assert len(full["layers"]["email_messages"]) == 1
+    with TestClient(app, base_url="http://127.0.0.1") as client:
+        headers = {"Authorization": "Bearer " + token}
+        response = client.post(
+            "/v1/brain/current-search", json={"query": "insurance"}, headers=headers
+        )
+        assert response.status_code == 200
+        scoped = response.json()
+        assert scoped["coverage"]["source_access"] == "enrolled_sources_only"
+        assert len(scoped["layers"]["fileos"]) == 1
+        assert scoped["layers"]["email_messages"] == []
+        assert email_source not in response.text
+        assert client.get(f"/v1/brain/evidence/{file_id}", headers=headers).status_code == 200
+        assert client.post(
+            f"/v1/brain/evidence/{file_id}/content", json={"max_chars": 100},
+            headers=headers,
+        ).status_code == 200
+        for path, body in (
+            (f"/v1/brain/evidence/{email_id}", None),
+            (f"/v1/brain/evidence/{email_id}/content", {"max_chars": 100}),
+        ):
+            denied = (
+                client.get(path, headers=headers) if body is None
+                else client.post(path, json=body, headers=headers)
+            )
+            assert denied.status_code == 404
+            assert email_source not in denied.text
+        for path in (
+            "/v1/brain/current-coverage", "/v1/brain/changes",
+            "/v1/knowledge/changes",
+        ):
+            assert client.get(path, headers=headers).status_code == 403
+        for path in (
+            "/v1/brain/search", "/v1/brain/unified-search",
+            "/v1/brain/fileos-search", "/v1/brain/email-search",
+            "/v1/brain/email-family-search", "/v1/knowledge/search",
+        ):
+            denied = client.post(path, json={"query": "insurance"}, headers=headers)
+            assert denied.status_code == 403
+        with BrainReadClient(
+            "http://127.0.0.1", token, allow_insecure_loopback=True,
+            transport=external_transport(client),
+        ) as external:
+            assert external.current_search("insurance")["layers"]["email_messages"] == []
+            assert external.evidence(file_id)["id"] == file_id
+            with pytest.raises(BrainClientError, match="not_found"):
+                external.evidence(email_id)
+
+    dual_token = "assistant-dual-source-fixture-" + "z" * 32
+    unknown_token = "assistant-unknown-source-fixture-" + "q" * 32
+    rotated = create_app(store, TokenRegistry([
+        assistant_credential(preview, dual_token, {"trial_files", email_source}),
+        assistant_credential(preview, unknown_token, {"not_enrolled_here"}),
+    ]))
+    with TestClient(rotated, base_url="http://127.0.0.1") as client:
+        dual = client.post(
+            "/v1/brain/current-search", json={"query": "insurance"},
+            headers={"Authorization": "Bearer " + dual_token},
+        )
+        assert dual.status_code == 200
+        assert dual.json()["layers"] == full["layers"]
+        unknown_headers = {"Authorization": "Bearer " + unknown_token}
+        unknown = client.post(
+            "/v1/brain/current-search", json={"query": "insurance"},
+            headers=unknown_headers,
+        )
+        assert unknown.status_code == 200
+        assert all(not hits for hits in unknown.json()["layers"].values())
+        assert client.get(
+            f"/v1/brain/evidence/{file_id}", headers=unknown_headers
+        ).status_code == 404
+
+
+@pytest.mark.postgres
+def test_source_scoped_knowledge_excludes_mixed_evidence_before_limit(
+    preview, database
+) -> None:
+    store, _ = database
+    with client_for(preview) as owner:
+        results = owner.post("/v1/brain/current-search", json={"query": "insurance"}).json()
+        email_id = results["layers"]["email_messages"][0]["evidence_id"]
+        file_id = results["layers"]["fileos"][0]["evidence_id"]
+    reviewer = replace(
+        preview.context, scopes=preview.context.scopes | frozenset({"knowledge.review"})
+    )
+    knowledge = KnowledgeCore(store)
+    common = {
+        "kind": "entity", "entity_type": "artifact",
+        "source_quote": "Fictional insurance evidence.", "confidence": 0.9,
+        "observed_at": datetime(2026, 9, 24, tzinfo=UTC), "reviewed": True,
+    }
+    mixed = knowledge.publish(
+        reviewer,
+        EntityWrite(
+            **common, name="insurance insurance insurance insurance",
+            evidence_ids=[file_id, email_id],
+        ),
+        uuid4(),
+    )
+    file_only = knowledge.publish(
+        reviewer,
+        EntityWrite(**common, name="insurance", evidence_ids=[file_id]),
+        uuid4(),
+    )
+    owner_hits = knowledge.search(preview.context, "insurance", limit=2)
+    assert {hit.object_id for hit in owner_hits} == {mixed.object_id, file_only.object_id}
+    restricted = replace(preview.context, source_ids=frozenset({"trial_files"}))
+    scoped_hits = knowledge.search(restricted, "insurance", limit=1)
+    assert [hit.object_id for hit in scoped_hits] == [file_only.object_id]
+    token = "assistant-knowledge-fixture-token-" + "y" * 32
+    app = create_app(store, TokenRegistry([
+        assistant_credential(preview, token, {"trial_files"})
+    ]))
+    with TestClient(app, base_url="http://127.0.0.1") as client:
+        response = client.post(
+            "/v1/brain/current-search", json={"query": "insurance", "knowledge_limit": 1},
+            headers={"Authorization": "Bearer " + token},
+        )
+        assert response.status_code == 200
+        assert [hit["object_id"] for hit in response.json()["layers"]["knowledge"]] == [
+            file_only.object_id
+        ]
+        assert mixed.object_id not in response.text
 
 
 @pytest.mark.postgres

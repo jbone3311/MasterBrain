@@ -16,6 +16,14 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- API-SOURCE-001 applies explicit, bounded source enrollment to synthetic
+  bootstrap assistants using the three read-only client routes (ADR-130).
+  Current Email/FileOS/archive searches and reviewed Knowledge results filter
+  before limits; evidence metadata/content enforce the same allowlist, and
+  alternate Brain/Knowledge routes are denied. Human reads are unchanged.
+  Hosted OIDC source grants, immediate revocation, derived-cache invalidation
+  and full route coverage remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
+
 - API-CLIENT-001 adds a provider-neutral, read-only reference client under
   ADR-129. It calls the same grouped current-search and separately scoped
   evidence/content routes as `/brain`, with fixed-origin, bounded-response,
