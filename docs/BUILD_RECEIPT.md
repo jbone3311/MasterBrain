@@ -2,6 +2,45 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-145 question-term Ask retrieval — local verification
+
+The extractive answer route now removes only a fixed list of question filler
+words before its first and final current-source searches. It still sends the
+original question to the local selector, enforces all four read scopes,
+selects exact authorized quotes and rechecks current visibility. The literal
+Search only route is unchanged. On the fictional PostgreSQL corpus, literal
+search for “Find the insurance certificate for Cedar Harbor” returned no
+Email/FileOS hits, whereas Ask returned both source kinds with verified quotes;
+the external read client received the identical answer. Fixed-term, empty and
+contraction cases passed unit tests. No synonym or semantic inference is
+claimed.
+
+The complete final-tree Python 3.14.7 suite passed **3,005 tests, one
+intentional skip** against a fresh disposable PostgreSQL 17.11 database; 478
+of 479 PostgreSQL-marked tests executed. A separate deployment gate passed
+the same count on a second fresh disposable database. All six browser suites
+passed **143 tests** after their credential-clear test caught and removed a
+fictional project name from static empty-state copy. Ruff, strict mypy over
+98 source files and documentation inventory/link checks passed. These are
+local results, not yet exact-head GitHub or merged-main verification. No real
+account, hosted model, source effect or FOS-Master checkout was involved.
+
+## ADR-144 default local source quotes — merged-main verification
+
+PR [#112](https://github.com/jbone3311/MasterBrain/pull/112) merged at
+`66ed3c99c2f44ca3b91602807b7dec16f7f97089`. Its exact-head
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37026010900),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37026010284)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37026010324)
+passed. The merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37027838793),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37027838806)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37027838702)
+also passed. The default read-only Ask path selects bounded, locally ranked
+exact Email/FileOS source quotes, with server-verified citations and an
+explicit no-selector rollback. It is not freeform synthesis or live/hosted
+acceptance; issue #92 remains open.
+
 ## ADR-143 source-scoped Knowledge reads — local verification
 
 Forward migration 0051 admits `knowledge.read` and

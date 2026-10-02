@@ -83,7 +83,9 @@ credentials.
    coverage/freshness. Prove denial and revocation, including derived caches.
 2. **First-party workspace:** a read-only question screen now groups current
    search and separately authorized evidence expansion without a model. It can
-   now request verified extractive quotes through ADR-134/144; an explicitly
+   now request verified extractive quotes through ADR-134/144. ADR-145 removes
+   fixed question boilerplate from Ask retrieval without semantic rewriting;
+   a question still needs distinctive source words. An explicitly
    disabled selector falls back to grouped search; an explicit Search only control
    remains available to search-only credentials. True synthesized conversation
    remains gated on further grounded-answer and prompt-injection acceptance.

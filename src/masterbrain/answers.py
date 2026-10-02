@@ -24,6 +24,23 @@ _LAYERS = (
     "email_messages", "fileos", "email_attachments", "email_documents",
     "archive_members", "archive_documents", "archive_images",
 )
+_QUESTION_FILLER = frozenset({
+    "a", "about", "again", "also", "an", "and", "are", "at", "by", "can",
+    "could", "d", "did", "do", "does", "find", "for", "get", "give",
+    "has", "have", "help", "how", "in", "into", "is", "just", "ll",
+    "m", "me", "more", "my", "of", "on",
+    "please", "show", "status", "tell", "the", "that", "their", "there",
+    "these", "this", "those", "to", "t", "re", "s", "ve", "was", "were",
+    "what", "when", "where", "which", "will", "with", "would", "you",
+    "your",
+})
+
+
+def answer_search_query(question: str) -> str:
+    """Remove fixed question boilerplate without inventing search concepts."""
+    words = re.findall(r"\w+", question)
+    retained = [word for word in words if word.casefold() not in _QUESTION_FILLER]
+    return " ".join(retained) if retained else question
 
 
 class AnswerUnavailable(Exception):
@@ -65,21 +82,12 @@ class AnswerSelector(Protocol):
 class LocalExtractiveSelector:
     """Select matching source sentences locally; make no semantic claim."""
 
-    _STOP = frozenset({
-        "about", "after", "again", "also", "and", "are", "can", "could",
-        "did", "does", "find", "for", "from", "get", "has", "have", "how",
-        "into", "just", "latest", "more", "please", "show", "status", "tell",
-        "the", "that", "their", "there", "these", "this", "those", "was",
-        "were", "what", "when", "where", "which", "will", "with", "would",
-        "your",
-    })
-
     def select(
         self, question: str, passages: tuple[AnswerPassage, ...]
     ) -> Sequence[QuoteSelection]:
         terms = {
             term for term in re.findall(r"\w+", question.casefold())
-            if len(term) >= 3 and term not in self._STOP
+            if term not in _QUESTION_FILLER
         }
         if not terms:
             return []

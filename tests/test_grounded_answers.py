@@ -21,6 +21,7 @@ from masterbrain.answers import (
     GroundedAnswerService,
     LocalExtractiveSelector,
     QuoteSelection,
+    answer_search_query,
 )
 from masterbrain.datacore.persistence import DataCoreStore, EmailFamilySearch, SearchHit
 from masterbrain.knowledge import KnowledgeCore
@@ -202,6 +203,17 @@ def test_local_selector_is_deterministic_bounded_and_ignores_source_instructions
     assert "insurance" in first[0].quote
 
 
+@pytest.mark.parametrize("question, expected", [
+    ("Find the insurance certificate for Cedar Harbor", "insurance certificate Cedar Harbor"),
+    ("What's the status of insurance?", "insurance"),
+    ("Could you show me the W2 file?", "W2 file"),
+    ("What is this?", "What is this?"),
+    ("latest proposal", "latest proposal"),
+])
+def test_answer_search_terms_drop_only_fixed_boilerplate(question, expected) -> None:
+    assert answer_search_query(question) == expected
+
+
 def test_api_requires_all_read_scopes_and_selector() -> None:
     store = MagicMock(spec=Store)
     brain = brain_mock()
@@ -239,6 +251,15 @@ def test_api_requires_all_read_scopes_and_selector() -> None:
     )
     assert local_response.status_code == 200
     assert local_response.json()["citations"][0]["quote"] == "Cedar Harbor insurance is pending."
+    natural = local.post(
+        "/v1/brain/answers",
+        json={"question": "Find the insurance certificate for Cedar Harbor"},
+        headers=headers,
+    )
+    assert natural.status_code == 200
+    assert [call.args[1] for call in brain.search_current_fileos.call_args_list[-2:]] == [
+        "insurance certificate Cedar Harbor", "insurance certificate Cedar Harbor"
+    ]
     app = TestClient(create_app(
         store, registry(set(context().scopes)), brain_store=brain, knowledge_store=knowledge,
         answer_selector=Selector(),

@@ -1,6 +1,6 @@
 # Current MasterBrain functions
 
-Updated 2026-10-01; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
+Updated 2026-10-02; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
 verification. “Available” below means executable in this repository with
 synthetic/disposable inputs; it does **not** mean hosted, connected to real accounts,
 approved for private data, or production accepted. The exact-commit gates are in
@@ -12,7 +12,7 @@ approved for private data, or production accepted. The exact-commit gates are in
 | Function | Working path | Boundary |
 |---|---|---|
 | Search fictional Email and FileOS together | [cross-source browser trial](CROSS_SOURCE_TRIAL.md) and `POST /v1/brain/current-search` | Real PostgreSQL and Brain API, fictional data; plain-text excerpts, grouped layers with separate ranks and partial coverage. No generated answer. |
-| Request verified source quotes for a question | `POST /v1/brain/answers`, `BrainReadClient.answer`, and `/brain` | A local deterministic selector is the default. It returns exact current-source excerpts with verified citations or an explicit unsupported answer, not freeform synthesis. Explicitly disabling selection returns 503 and grouped-search fallback. No remote model. |
+| Request verified source quotes for a question | `POST /v1/brain/answers`, `BrainReadClient.answer`, and `/brain` | A local deterministic selector is the default. Ask removes fixed question boilerplate before lexical retrieval, then returns exact current-source excerpts with verified citations or an explicit unsupported answer. No synonyms, freeform synthesis or remote model. Explicitly disabling selection returns 503 and grouped-search fallback. |
 | Open a result and verify its source | `GET /v1/brain/evidence/{id}` then separately scoped `POST /v1/brain/evidence/{id}/content` | Bounded content with opaque provenance; original Email downloads require the distinct human reader permission. |
 | Check what is current or missing | `GET /v1/brain/current-coverage`, source freshness, inventory and index routes | Only completed FileOS runs, activated generations and explicitly bridged Email are represented; a partial result is not whole-source completeness. |
 | Publish or index one approved synthetic FileOS run with a tenant-bound database login | `masterbrain fileos publish --tenant-bound-db --check` or `masterbrain fileos index --tenant-bound-db --check`, then the same command without `--check` | Private worker-only options, including activation-only rollback. Require a DBA-enrolled login for the authenticated worker tenant; hosted credential lifecycle remains open. No file mutation. |

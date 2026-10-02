@@ -492,6 +492,22 @@ def test_default_local_answer_quotes_both_sources_and_client_matches(preview):
         assert empty.status_code == 200
         assert empty.json()["status"] == "no_supported_evidence"
         assert empty.json()["citations"] == []
+        question = "Find the insurance certificate for Cedar Harbor"
+        literal = direct.post("/v1/brain/current-search", json={"query": question})
+        assert literal.status_code == 200
+        assert literal.json()["layers"]["email_messages"] == []
+        assert literal.json()["layers"]["fileos"] == []
+        natural = direct.post("/v1/brain/answers", json={"question": question})
+        assert natural.status_code == 200
+        assert natural.json()["status"] == "quoted_evidence"
+        assert {item["source_kind"] for item in natural.json()["citations"]} == {
+            "email", "fileos"
+        }
+        with BrainReadClient(
+            "http://127.0.0.1", preview.token,
+            allow_insecure_loopback=True, transport=external_transport(direct),
+        ) as external:
+            assert external.answer(question) == natural.json()
 
 
 @pytest.mark.postgres

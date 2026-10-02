@@ -46,6 +46,7 @@ from masterbrain.answers import (
     AnswerUnavailable,
     GroundedAnswerService,
     LocalExtractiveSelector,
+    answer_search_query,
 )
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.knowledge import KnowledgeCore
@@ -627,7 +628,8 @@ def create_app(
                 principal.context,
                 body.question,
                 lambda: current_grouped_search(
-                    CurrentGroupedSearchRequest(query=body.question), principal
+                    CurrentGroupedSearchRequest(query=answer_search_query(body.question)),
+                    principal,
                 ),
             )
         except AnswerUnavailable:

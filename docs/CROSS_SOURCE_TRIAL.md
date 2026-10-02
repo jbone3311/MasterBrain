@@ -43,6 +43,12 @@ supporting evidence; Search only shows grouped current results. Neither path
 generates an AI-written answer or changes files/email. Use the launcher's actual port if
 you selected a nondefault one.
 
+For a question-shaped check, Ask “Find the insurance certificate for Cedar
+Harbor.” It should return verified Email and FileOS quotes containing
+“insurance.” Search only with that entire sentence is literal lexical search
+and may show no results; search for “insurance” to see the grouped records.
+Ask removes only fixed question boilerplate, not synonyms or temporal intent.
+
 ## Known answers
 
 | Search | Expected Email results | Expected File results | What to inspect |

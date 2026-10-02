@@ -41,7 +41,7 @@
     if (clearToken) tokenField.value = "";
     questionField.value = "";
     turns.replaceChildren();
-    node("p", "Start with a distinctive name, topic, or phrase. Ask shows locally selected source quotes; Search only groups results by source.", turns, "empty");
+    node("p", "Ask with distinctive source words, such as “Find the insurance certificate.” Ask shows local source quotes; Search only uses your literal words and groups results by source.", turns, "empty");
     status.textContent = usable() ? "Ready for a read-only question." : "Enter an authorized credential to begin.";
     updateButton();
   }

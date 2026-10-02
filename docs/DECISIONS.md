@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-145](adr/145_question_terms_for_extractive_answers.md) removes a fixed
+set of question boilerplate before the read-only extractive answer search.
+Both initial and final current-source checks use the same lexical terms; the
+original question and literal Search only route remain unchanged.
+
 [ADR-144](adr/144_local_extractive_answer_selector.md) supplies a local,
 deterministic quote selector for the default Ask path. It makes no semantic
 claim or remote model call; explicitly passing no selector restores the

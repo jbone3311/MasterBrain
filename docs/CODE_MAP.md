@@ -1,6 +1,6 @@
 # Current MasterBrain code map
 
-Updated 2026-10-01. Existing files, not a proposed directory tree. Python modular
+Updated 2026-10-02. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without
@@ -10,7 +10,7 @@ redirecting Email ingestion or search.
 |---|---|
 | First-party read-only question workspace | [static assets](../src/masterbrain/web/brain.html), [script](../src/masterbrain/web/brain.js), [API static routes](../src/email_brain/api.py), [browser tests](../tests/web_brain.test.cjs), [ADR-127](adr/127_first_party_read_workspace.md); optional verified quotes, no default model or source effect |
 | Plain-text search excerpt and trial evidence presentation | [DataCore queries](../src/masterbrain/datacore/persistence.py), [KnowledgeCore query](../src/masterbrain/knowledge.py), [trial browser](../tests/cross_source_assets/trial.js), [PostgreSQL/browser tests](../tests/test_cross_source_preview.py), [ADR-136](adr/136_plain_text_search_excerpts.md); no HTML interpretation or source effect |
-| Grounded extractive answer boundary | [local selector and verification](../src/masterbrain/answers.py), [route](../src/email_brain/api.py), [schemas](../src/masterbrain/schemas.py), [unit/API tests](../tests/test_grounded_answers.py), [real PostgreSQL/client parity](../tests/test_cross_source_preview.py), [ADR-134](adr/134_grounded_extractive_answers.md) and [ADR-144](adr/144_local_extractive_answer_selector.md); local quote selector enabled by default, explicitly disableable |
+| Grounded extractive answer boundary | [local selector and question terms](../src/masterbrain/answers.py), [route](../src/email_brain/api.py), [schemas](../src/masterbrain/schemas.py), [unit/API tests](../tests/test_grounded_answers.py), [real PostgreSQL/client parity](../tests/test_cross_source_preview.py), [ADR-134](adr/134_grounded_extractive_answers.md), [ADR-144](adr/144_local_extractive_answer_selector.md) and [ADR-145](adr/145_question_terms_for_extractive_answers.md); local quote selector enabled by default, explicitly disableable |
 | Provider-neutral external read client | [transport](../src/masterbrain/brain_client.py), [contract tests](../tests/test_brain_client.py), [real API parity](../tests/test_cross_source_preview.py), [guide](EXTERNAL_CLIENT.md), [ADR-129](adr/129_read_only_external_brain_client.md); no named assistant or effect method |
 | Synthetic assistant source-scoped reads | [credential and context](../src/email_brain/auth.py), [Brain route gate](../src/email_brain/api.py), [DataCore SQL filters](../src/masterbrain/datacore/persistence.py), [Knowledge filter](../src/masterbrain/knowledge.py), [cross-source regression](../tests/test_cross_source_preview.py), [ADR-130](adr/130_assistant_source_scoped_reads.md); not hosted/dynamically revocable |
 | MasterBrain command surface | [cli.py](../src/masterbrain/cli.py); read-only hash/compare/duplicates/FileOS snapshot and explicit publication |
