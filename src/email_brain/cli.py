@@ -222,6 +222,7 @@ def main() -> None:
         processing.add_argument("--check", action="store_true")
         processing.add_argument("--max-iterations", type=int, default=1)
         processing.add_argument("--idle-seconds", type=int, default=5)
+        processing.add_argument("--tenant-bound-db", action="store_true")
         if name == "sync-read":
             processing.add_argument("--allow-provider-read", action="store_true")
     for name in ("export-test-mailbox", "seed-test-mailbox"):
@@ -288,6 +289,7 @@ def main() -> None:
                     max_iterations=args.max_iterations,
                     idle_seconds=args.idle_seconds,
                     stop=stop,
+                    tenant_bound_db=args.tenant_bound_db,
                 )
             print(json.dumps(result, sort_keys=True))
             if result.get("attention_required"):
@@ -305,6 +307,7 @@ def main() -> None:
                     max_iterations=args.max_iterations,
                     idle_seconds=args.idle_seconds,
                     stop=stop,
+                    tenant_bound_db=args.tenant_bound_db,
                 )
             print(json.dumps(result, sort_keys=True))
         else:

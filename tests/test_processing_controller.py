@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Event
 from unittest.mock import MagicMock, Mock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -78,6 +78,36 @@ def test_check_has_no_claim_or_docker_side_effect(configured):
     store.transaction.assert_called_once()
     processor.assert_not_called()
     jobs.run_once.assert_not_called()
+
+
+def test_bound_preflight_routes_both_encrypted_store_instances(configured):
+    (path, config, creds, _), _, factory, jobs = configured
+    root = path.parent / "objects"
+    root.mkdir(mode=0o700)
+    config.update(blob_root=str(root), keys_file=str(path.parent / "keys.json"))
+    private_write(path, config)
+    private_write(path.parent / "keys.json", {
+        "tenant_id": creds[0]["tenant_id"],
+        "keys": [{"key_id": "k1", "key_hex": "a" * 64}],
+    })
+    assert control.run_controller(
+        path, "synthetic", check=True, tenant_bound_db=True
+    )["configuration_valid"]
+    assert control.Store.call_count == 2
+    assert all(
+        call.kwargs["tenant_dsns"] == {UUID(creds[0]["tenant_id"]): "synthetic"}
+        for call in control.Store.call_args_list
+    )
+    assert control.Store.call_args.kwargs["blobs"]._active_keys == {}
+    factory.assert_not_called()
+    jobs.run_once.assert_not_called()
+
+
+def test_bound_mode_rejects_non_boolean_before_store(configured):
+    (path, _, _, _), _, _, _ = configured
+    with pytest.raises(control.ControllerError):
+        control.run_controller(path, "synthetic", check=True, tenant_bound_db=1)
+    control.Store.assert_not_called()
 
 
 def test_bounded_loop_counts_only_fixed_status(configured):

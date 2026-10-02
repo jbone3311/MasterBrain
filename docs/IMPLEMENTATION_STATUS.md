@@ -16,6 +16,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-141 adds opt-in `--tenant-bound-db` to legacy `email-brain sync-read`,
+  `process-jobs` and `process-documents`. The authenticated worker tenant binds
+  preflight and execution, including encrypted stores and read-worker reopen,
+  to one PostgreSQL login. Fictional two-tenant tests cover all three modes;
+  this is not credential lifecycle or hosted issue #7 acceptance.
+
 - ADR-140 makes the fictional Mac trial launcher install non-editably and run
   without a second implicit sync. Its actual local PostgreSQL 17.11 self-test
   passed on the affected Mac after the editable `.pth` import failure; this is
@@ -25,8 +31,9 @@ production and FileOS cutover remain open.
   Email bridge and FileOS archive derivative command, including previews and
   sealed batches. A shared DataCore helper binds the authenticated worker
   tenant to one login; synthetic two-tenant PostgreSQL tests cover all check
-  modes plus selected Email/archive publication and replay. Legacy workers,
-  credential lifecycle, hosted adversarial acceptance and issue #7 remain open.
+  modes plus selected Email/archive publication and replay. At that checkpoint,
+  legacy worker routing, credential lifecycle, hosted adversarial acceptance
+  and issue #7 remained open; ADR-141 later routes the three worker commands.
 
 - ADR-138 adds an explicit `--tenant-bound-db` mode to private FileOS index
   build/activation and activation-only rollback. Both modes require the
@@ -211,8 +218,9 @@ production and FileOS cutover remain open.
   PostgreSQL tests cover two-tenant API search and missing/wrong/shared-route
   refusal; private-file tests cover malformed, duplicate, symlink and broad-mode
   configuration. ADR-135 subsequently adds one opt-in tenant-bound private
-  FileOS publisher, and ADR-138 adds index/rollback; remaining workers still
-  use explicit shared DSNs. Credential
+  FileOS publisher, and ADR-138 adds index/rollback; at that checkpoint other
+  workers still used explicit shared DSNs. ADR-139/141 later add opt-in routes
+  for the private derivatives and legacy Email worker commands. Credential
   lifecycle/hosted acceptance are not implemented. Issue #7 stays open.
 - ADR-108/migration 0037 add an opt-in restrictive RLS fence for a DBA-bound
   one-tenant PostgreSQL login. Synthetic arbitrary-SQL tests cover forged GUCs,

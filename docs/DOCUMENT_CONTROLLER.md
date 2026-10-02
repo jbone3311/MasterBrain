@@ -68,6 +68,13 @@ email-brain process-documents --config /srv/email-brain-private/pdf-controller.j
 Check validates configuration/identity/current account and optional key/root shape;
 it reports `claims: 0` and `execution_verified: false`. It does not inspect/launch
 the image, decrypt every object or certify host isolation or worker liveness.
+ADR-141 adds an opt-in `--tenant-bound-db` flag to both check and execution:
+provide a DBA-enrolled single-tenant `EMAIL_BRAIN_DSN` for the authenticated
+`email.document.process` worker. Shared, owner and wrong-tenant logins fail
+before job claim or Docker launch. The synthetic-only account policy, existing
+approval and optional encrypted-object keyring remain separate requirements;
+default local mode is unchanged. See [tenant-login contract](TENANT_LOGIN_FENCE.md).
+
 Default run polls once. Limits are 1–1,000 polls and 1–60 seconds between them.
 Durable retry/lease/consent deadlines are enforced by database time, not this sleep.
 

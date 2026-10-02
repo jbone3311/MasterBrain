@@ -61,6 +61,13 @@ def test_check_does_not_construct_processor_or_claim(configured):
     jobs.run_once.assert_not_called()
 
 
+def test_bound_mode_rejects_non_boolean_before_store(configured):
+    (path, _, _, _), _, _, _ = configured
+    with pytest.raises(mime.ControllerError):
+        document.run_document_controller(path, "synthetic", check=True, tenant_bound_db=1)
+    mime.Store.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "field,value",
     [

@@ -2,6 +2,13 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added ADR-141's opt-in `--tenant-bound-db` mode to the legacy `email-brain`
+  `sync-read`, `process-jobs` and `process-documents` commands. The authenticated
+  worker tenant selects one DBA-bound SQL login for preflight, encrypted-object
+  stores and execution; the read worker preserves that route when reopening
+  between polls. Defaults, worker scopes and source effects are unchanged.
+  Credential lifecycle and hosted acceptance remain issue #7.
+
 - Corrected the fictional Mac trial launcher to install the locked project
   non-editably and run without a second implicit sync (ADR-140). On this Mac,
   a hidden editable `.pth` file caused imports to fail despite a successful

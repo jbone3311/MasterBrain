@@ -71,6 +71,48 @@ def test_preflight_does_not_construct_client_claim_or_advance(configured):
     client.close.assert_not_called()
 
 
+def test_bound_read_reopen_uses_same_tenant_login(configured):
+    (path, _, creds, _), _, _, _ = configured
+    assert run(path, tenant_bound_db=True)["results"]["progress"] == 1
+    assert control.Store.call_count == 2  # preflight and poll-time reopen
+    assert all(
+        call.kwargs["tenant_dsns"] == {UUID(creds[0]["tenant_id"]): "synthetic"}
+        for call in control.Store.call_args_list
+    )
+
+
+def test_bound_read_encrypted_store_keeps_tenant_route(configured):
+    (path, config, creds, _), _, _, _ = configured
+    root = path.parent / "objects"
+    root.mkdir(mode=0o700)
+    config.update(
+        blob_root=str(root), keys_file=str(path.parent / "keys.json"), active_key_id="key"
+    )
+    private_write(path, config)
+    private_write(path.parent / "keys.json", {
+        "tenant_id": creds[0]["tenant_id"],
+        "keys": [{"key_id": "key", "key_hex": "a" * 64}],
+    })
+    assert control.run_read_controller(
+        path, "synthetic", check=True, tenant_bound_db=True
+    )["configuration_valid"]
+    assert control.Store.call_count == 2
+    assert all(
+        call.kwargs["tenant_dsns"] == {UUID(creds[0]["tenant_id"]): "synthetic"}
+        for call in control.Store.call_args_list
+    )
+    assert control.Store.call_args.kwargs["blobs"]._active_keys == {
+        UUID(creds[0]["tenant_id"]): "key"
+    }
+
+
+def test_bound_mode_rejects_non_boolean_before_store(configured):
+    (path, _, _, _), _, _, _ = configured
+    with pytest.raises(ControllerError):
+        control.run_read_controller(path, "synthetic", check=True, tenant_bound_db=1)
+    control.Store.assert_not_called()
+
+
 def test_execution_requires_explicit_flag_before_io(configured):
     (path, _, _, _), _, _, _ = configured
     with pytest.raises(ControllerError):

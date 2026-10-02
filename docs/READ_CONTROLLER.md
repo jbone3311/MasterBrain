@@ -15,8 +15,9 @@ and complete the live-pilot gates before using real credentials.
 
 This is distinct from `process-jobs` (approved MIME recovery) and
 `process-documents` (approved synthetic PDFs). Its worker identity has **exactly
-`email.ingest`**, never combined search/review/processing scopes. It still uses
-the owner-bound prototype database role; hosted service principals remain a gate.
+`email.ingest`**, never combined search/review/processing scopes. It uses the
+owner-bound prototype database role by default, with the separate opt-in
+tenant-bound login below; hosted service principals remain a gate.
 
 ## Private configuration
 
@@ -74,6 +75,16 @@ runtime role and keyring/root. It performs **zero provider requests and zero lea
 claims**, writes no enrollment/checkpoint/object and constructs no HTTP client.
 `configuration_valid` is not a provider-login, connectivity, full-key-recovery or
 hosted-security certificate. A paused worker may pass preflight and still need repair.
+
+For ADR-141's synthetic opt-in tenant-login fence, use a DBA-enrolled
+single-tenant `EMAIL_BRAIN_DSN` and add `--tenant-bound-db` to both check and
+execution. The authenticated `email.ingest` worker tenant, not the Fastmail
+account or response, selects the database binding. Shared, owner and wrong-
+tenant logins fail before any provider request. The worker reconstructs the
+bound store at each poll, including when encrypted-object keys are reloaded.
+Default local mode remains unchanged; this flag does not authorize a real
+provider read or establish hosted credential operations. See the
+[tenant-login contract](TENANT_LOGIN_FENCE.md).
 
 After separately authorized enrollment and acceptance, an explicit bounded run is:
 

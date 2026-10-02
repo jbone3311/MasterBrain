@@ -75,6 +75,10 @@ and activation-only rollback. ADR-139 applies it to every database-backed
 private `masterbrain` Email bridge and FileOS archive derivative command,
 including non-consuming previews and sealed batches. The worker tenant comes
 from the authenticated private credential; the supplied single-tenant DSN is
-checked through the same database binding on every transaction. Legacy
-workers, credential lifecycle, independent security review, operational
+checked through the same database binding on every transaction. ADR-141
+extends the explicit option to the three `email-brain` worker commands:
+Fastmail read, MIME recovery and synthetic PDF processing. Their check modes,
+encrypted stores and read-worker poll reopen retain the bound route. Default
+shared logins and private library callers outside these explicit modes remain
+GUC-driven. Credential lifecycle, independent security review, operational
 isolation and live rollout evidence remain open under issue #7.

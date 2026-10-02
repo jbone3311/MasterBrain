@@ -121,9 +121,11 @@ diagnostic evidence, not proof of a safe retry or a resolved failure.
   DSN. ADR-138 adds the same opt-in fence for FileOS index build and
   activation-only rollback. ADR-139 adds the same opt-in fence to private
   `masterbrain` Email bridge and FileOS archive derivative commands, including
-  previews and sealed batches. Legacy shared-runtime and other private worker
-  paths remain GUC-driven; credential operations and a hosted adversarial run are not
-  implemented. See [ADR-108](adr/108_tenant_login_rls_fence.md),
+  previews and sealed batches. ADR-141 adds the same opt-in bound-login mode to
+  legacy `email-brain` Fastmail read, MIME recovery and synthetic PDF worker
+  commands. Their default shared-runtime mode remains GUC-driven, as do private
+  library callers that have not opted in; credential operations and a hosted
+  adversarial run are not implemented. See [ADR-108](adr/108_tenant_login_rls_fence.md),
   [ADR-109](adr/109_tenant_database_routing.md) and the
   [tenant-login contract](TENANT_LOGIN_FENCE.md); issue #7 remains open.
 - Tenant/source isolation in application code and forced database RLS.

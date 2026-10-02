@@ -2,6 +2,33 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-141 legacy Email worker login — local verification
+
+The opt-in `--tenant-bound-db` mode covers `email-brain sync-read`,
+`process-jobs` and `process-documents` in both check and execution. All six
+CLI flag/default cases and the three controllers' strict-boolean, encrypted
+store and read-worker reopen unit cases passed. Six real PostgreSQL 17.11
+tests used two fictional tenants with DBA-bound non-owner logins: every
+preflight accepted the authenticated worker's login and refused shared,
+wrong-tenant and owner logins before provider, job or Docker work. Bounded
+fictional Fastmail, MIME and PDF execution passed through the bound login;
+credential revocation, forged-GUC foreign read/write denial, replay and
+unchanged original PDF evidence were checked. No real provider or source was
+contacted, and FOS-Master was not changed.
+
+An initial complete run exposed one existing encrypted-read integration test
+that called the private `_store` helper without the new option. Its false
+default was restored and the exact failing test passed on a fresh database.
+After rebuilding the installed package with the final code, the **whole**
+Python 3.14.7 suite and separate deployment gate each passed **2,996 tests,
+one Docker-only skip** against distinct disposable PostgreSQL clusters;
+475 of 476 PostgreSQL-marked tests executed. The six required Node browser
+suites passed **143 tests**. Locked dependency sync, Ruff, strict mypy over
+98 source files, documentation links and diff checks passed. This is local,
+synthetic evidence, not hosted credential lifecycle, operational restore or
+issue #7 closure. Exact-head and merged-main hosted results belong to their
+GitHub checks, not this local receipt.
+
 ## ADR-140 fictional Mac trial launcher — local verification
 
 On this Mac, a fresh editable `uv sync` left its generated `.pth` file with the

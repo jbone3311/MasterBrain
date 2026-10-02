@@ -46,13 +46,16 @@ def run_document_controller(
     max_iterations: int = 1,
     idle_seconds: int = 5,
     stop: Event | None = None,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     try:
         validate_run_options(dsn, max_iterations, idle_seconds)
         config = DocumentControllerConfig.model_validate(_json(path))
         identity = WorkerIdentity(config, scope="email.document.process")
         principal = identity.authenticate()
-        store = configured_store(config, dsn, principal, synthetic_only=True)
+        store = configured_store(
+            config, dsn, principal, synthetic_only=True, tenant_bound_db=tenant_bound_db
+        )
         identity.authenticate()
         if check:
             return {"configuration_valid": True, "execution_verified": False, "claims": 0}
