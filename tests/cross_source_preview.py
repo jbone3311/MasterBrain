@@ -43,6 +43,8 @@ from email_brain.store import IngestItem, Store
 from masterbrain.datacore.extraction import FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import CommitmentWrite
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = Path(__file__).with_name("cross_source_assets")
@@ -131,6 +133,30 @@ def publish_files(store: Store, ctx: TenantContext, root: Path, files: dict[str,
     core.activate_fileos_index_generation(ctx, "trial_files", generation.generation_id, uuid4())
 
 
+def publish_reviewed_knowledge(store: Store, ctx: TenantContext) -> None:
+    """One fictional, human-reviewed cross-source interpretation for Ask."""
+    core = DataCoreStore(store)
+    email = core.search_current_email_family(ctx, "insurance", message_limit=1).messages
+    files = core.search_current_fileos(ctx, "insurance", limit=1)
+    if len(email) != 1 or len(files) != 1:
+        raise RuntimeError("Synthetic knowledge evidence is incomplete")
+    reviewer = replace(ctx, scopes=ctx.scopes | frozenset({"knowledge.review"}))
+    KnowledgeCore(store).publish(
+        reviewer,
+        CommitmentWrite(
+            kind="commitment",
+            description="Closing readiness follow-up: obtain outstanding certificate",
+            state="open",
+            evidence_ids=[email[0].evidence_id, files[0].evidence_id],
+            source_quote="Insurance certificate remains outstanding.",
+            confidence=0.9,
+            observed_at=datetime(2026, 9, 24, tzinfo=UTC),
+            reviewed=True,
+        ),
+        uuid4(),
+    )
+
+
 def credential(ctx: TenantContext, token: str, scopes: frozenset[str] = READ_SCOPES) -> Credential:
     return Credential(
         token_sha256=hashlib.sha256(token.encode()).hexdigest(),
@@ -172,6 +198,7 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
                 ctx, hit["evidence_id"], uuid4(), code_revision=REVISION
             )
     publish_files(store, ctx, temporary_root / "owner", FILES)
+    publish_reviewed_knowledge(store, ctx)
     publish_files(store, other, temporary_root / "other", {
         "other-private.txt": "Cedar Harbor other-tenant-canary must not appear for the first user."
     })
@@ -405,7 +432,20 @@ def serve_trial(admin: str, port: int, self_test: bool) -> int:
                             raise RuntimeError("Synthetic startup citation failed")
                     if client.get("/v1/brain/current-coverage").status_code != 200:
                         raise RuntimeError("Synthetic startup coverage failed")
-                print("Synthetic browser-trial self-test passed: 2 emails, 2 files, cited content.")
+                    knowledge_answer = client.post(
+                        "/v1/brain/answers", json={"question": "readiness"}
+                    )
+                    if (
+                        knowledge_answer.status_code != 200
+                        or knowledge_answer.json().get("status") != "no_supported_answer"
+                        or knowledge_answer.json().get("citations") != []
+                        or len(knowledge_answer.json().get("reviewed_knowledge", [])) != 1
+                    ):
+                        raise RuntimeError("Synthetic startup knowledge Ask failed")
+                print(
+                    "Synthetic browser-trial self-test passed: "
+                    "2 emails, 2 files, reviewed knowledge."
+                )
                 return 0
             url = f"http://127.0.0.1:{port}/trial#{preview.token}"
             listener = socket.create_server(("127.0.0.1", port))

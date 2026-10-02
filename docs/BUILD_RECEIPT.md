@@ -2,6 +2,34 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-146 reviewed KnowledgeCore in Ask — local verification
+
+The answer route now lists at most four reviewed KnowledgeCore matches in a
+separate field beside exact source quotes. Each match shows at most five direct
+evidence IDs and its full link count. The final current grouped search must
+still contain the same assertion, displayed text and **all** direct links;
+otherwise the response fails as stale. Source-scoped Knowledge search already
+hides mixed-source assertions from a FileOS-only assistant. The external read
+client validates the field, and `/brain` renders it as inert text with separate
+evidence expansion. A knowledge-only match does not become a source quotation
+or a synthesized answer.
+
+Fictional real-PostgreSQL tests published FileOS-only, Email-only, mixed-source,
+second-tenant and knowledge-only reviewed assertions. They checked owner and
+enrolled-assistant visibility, exact client/API parity, missing or changed
+assertions between searches, malformed hits, four-hit/five-link output bounds
+and a changed link beyond the displayed five. The disposable browser trial now
+seeds one reviewed cross-source commitment; Ask “readiness” returns that match
+with two evidence links and no exact source quote. Its local launcher self-test
+passes the same path. No live account, donor checkout or source effect was used.
+
+The complete Python 3.14.7 suite passed **3,012 tests, one intentional skip**
+on disposable PostgreSQL 17.11; 479 of 480 PostgreSQL-marked tests executed.
+A separate deployment gate passed the same count on a second fresh database.
+All six browser suites passed **145 tests**; Ruff, strict mypy over 98 source
+files, documentation links/inventory and diff checks passed. These are local
+results, not yet exact-head GitHub or merged-main verification.
+
 ## ADR-145 question-term Ask retrieval — local verification
 
 The extractive answer route now removes only a fixed list of question filler

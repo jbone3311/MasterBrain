@@ -16,6 +16,14 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-146 adds a bounded, separate reviewed KnowledgeCore match list to Ask,
+  with at most five displayed direct evidence IDs per assertion and a full
+  source-grant/evidence-link recheck before disclosure. The first-party page
+  renders these as inert text beside exact DataCore source quotes; the external
+  client validates the same response. The fictional trial now includes one
+  reviewed cross-source commitment. This is not automatic claim synthesis,
+  KnowledgeCore current-state resolution or hosted acceptance.
+
 - ADR-145 derives a bounded lexical query for extractive Ask by removing only
   fixed question boilerplate. Initial and final current-source searches use
   the same terms; the selector sees the original question. Fictional

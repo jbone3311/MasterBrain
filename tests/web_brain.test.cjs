@@ -190,6 +190,48 @@ test("configured answer renders exact quotes as inert text and opens evidence", 
   assert.match(h.elements["brain-status"].textContent, /1 verified source quotes/);
 });
 
+test("Ask keeps reviewed knowledge distinct and renders it as inert text", async () => {
+  const evidenceId = `evidence_${"a".repeat(32)}`;
+  const h = harness(async url => {
+    if (url === "/v1/brain/answers") return {ok: true, json: async () => ({
+      mode: "grounded_extractive_v1", status: "no_supported_answer",
+      answer: "No exact source quote selected; reviewed knowledge matches are listed below.",
+      citations: [], reviewed_knowledge: [{object_kind: "commitment",
+        object_id: `commitment_${"b".repeat(32)}`, title: "<script>inert</script>",
+        excerpt: "Insurance certificate remains outstanding.",
+        evidence_ids: [evidenceId], linked_evidence_count: 1}],
+      coverage: {complete: false}, untrusted_content: true,
+    })};
+    return {ok: true, json: async () => ({id: evidenceId, source_kind: "fileos"})};
+  });
+  h.enterToken("owner-token");
+  await h.ask("insurance");
+  assert.equal(h.calls.length, 1);
+  const rendered = walk(h.elements.turns).map(item => item.textContent).join("\n");
+  assert.match(rendered, /Reviewed knowledge matches/);
+  assert.match(rendered, /interpretations, not exact source quotes/);
+  assert.match(rendered, /<script>inert<\/script>/);
+  assert.match(h.elements["brain-status"].textContent, /1 reviewed knowledge matches/);
+  const button = walk(h.elements.turns).find(item => item.tag === "button");
+  await button.events.click(); await flush();
+  assert.ok(h.calls.some(call => call.url === `/v1/brain/evidence/${evidenceId}`));
+  h.elements["clear-session"].events.click();
+  assert.doesNotMatch(walk(h.elements.turns).map(item => item.textContent).join("\n"), /inert/);
+});
+
+test("malformed reviewed knowledge is rejected without search fallback", async () => {
+  const h = harness(async () => ({ok: true, json: async () => ({
+    mode: "grounded_extractive_v1", status: "no_supported_answer", answer: "Unsupported.",
+    citations: [], reviewed_knowledge: [{object_kind: "claim", object_id: "bad",
+      title: "private", excerpt: "private", evidence_ids: [], linked_evidence_count: 0}],
+    coverage: {complete: false}, untrusted_content: true,
+  })}));
+  h.enterToken("owner-token");
+  await h.ask("insurance");
+  assert.deepEqual(h.calls.map(call => call.url), ["/v1/brain/answers"]);
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer unavailable/);
+});
+
 test("malformed answer is rejected and never falls back to search", async () => {
   const h = harness(async () => ({ok: true, json: async () => ({
     mode: "grounded_extractive_v1", status: "quoted_evidence", answer: "unsupported",

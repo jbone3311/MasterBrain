@@ -41,7 +41,7 @@
     if (clearToken) tokenField.value = "";
     questionField.value = "";
     turns.replaceChildren();
-    node("p", "Ask with distinctive source words, such as “Find the insurance certificate.” Ask shows local source quotes; Search only uses your literal words and groups results by source.", turns, "empty");
+    node("p", "Ask with distinctive source words, such as “Find the insurance certificate.” Ask shows source quotes and separate reviewed matches; Search only uses your literal words and groups results by source.", turns, "empty");
     status.textContent = usable() ? "Ready for a read-only question." : "Enter an authorized credential to begin.";
     updateButton();
   }
@@ -156,11 +156,13 @@
   }
 
   function renderAnswer(data, parent, capturedEpoch, token) {
+    const reviewed = data && data.reviewed_knowledge === undefined ? [] : data?.reviewed_knowledge;
     if (!data || data.mode !== "grounded_extractive_v1" ||
         !["quoted_evidence", "no_supported_evidence", "no_supported_answer"].includes(data.status) ||
         typeof data.answer !== "string" || !Array.isArray(data.citations) ||
         !data.coverage || data.coverage.complete !== false || data.untrusted_content !== true ||
-        data.citations.length > 4 || (data.status === "quoted_evidence") !== (data.citations.length > 0)) {
+        data.citations.length > 4 || (data.status === "quoted_evidence") !== (data.citations.length > 0) ||
+        !Array.isArray(reviewed) || reviewed.length > 4) {
       throw new Error("Answer response could not be verified.");
     }
     for (const citation of data.citations) {
@@ -174,16 +176,40 @@
         throw new Error("Answer citation could not be verified.");
       }
     }
-    node("h3", "Verified source quotes", parent);
+    for (const hit of reviewed) {
+      if (!hit || !["entity", "relationship", "claim", "event", "project", "commitment", "correction"].includes(hit.object_kind) ||
+          typeof hit.object_id !== "string" || !new RegExp(`^${hit.object_kind}_[a-f0-9]{32}$`).test(hit.object_id) ||
+          typeof hit.title !== "string" || !hit.title.length || hit.title.length > 300 || hit.title.includes("\0") ||
+          typeof hit.excerpt !== "string" || !hit.excerpt.length || hit.excerpt.length > 1200 || hit.excerpt.includes("\0") ||
+          !Array.isArray(hit.evidence_ids) || !hit.evidence_ids.length || hit.evidence_ids.length > 5 ||
+          new Set(hit.evidence_ids).size !== hit.evidence_ids.length ||
+          hit.evidence_ids.some(id => typeof id !== "string" || !/^evidence_[a-f0-9]{32}$/.test(id)) ||
+          !Number.isInteger(hit.linked_evidence_count) ||
+          hit.linked_evidence_count < hit.evidence_ids.length || hit.linked_evidence_count > 20) {
+        throw new Error("Reviewed knowledge response could not be verified.");
+      }
+    }
+    if (data.citations.length) node("h3", "Verified source quotes", parent);
     node("p", data.answer, parent);
-    node("p", "Partial coverage: these quotes are from current indexed evidence, not a complete account.", parent, "notice");
+    node("p", "Partial coverage: only authorized indexed sources and reviewed matches appear here, not a complete account.", parent, "notice");
     for (const citation of data.citations) {
       const card = node("article", "", parent, "hit");
       node("p", citation.quote, card);
       node("p", `${citation.source_kind} · ${citation.source_id} · characters ${citation.start}–${citation.end}`, card, "locator");
       addEvidenceButton(card, capturedEpoch, token, citation.evidence_id);
     }
-    return data.citations.length;
+    if (reviewed.length) {
+      node("h3", "Reviewed knowledge matches", parent);
+      node("p", "These are reviewed interpretations, not exact source quotes or a synthesized answer.", parent, "notice");
+      for (const hit of reviewed) {
+        const card = node("article", "", parent, "hit");
+        node("p", `${hit.object_kind} · ${hit.title}`, card);
+        node("p", hit.excerpt, card);
+        node("p", `${hit.evidence_ids.length} of ${hit.linked_evidence_count} linked evidence IDs shown`, card, "locator");
+        for (const id of hit.evidence_ids) addEvidenceButton(card, capturedEpoch, token, id);
+      }
+    }
+    return {quotes: data.citations.length, reviewed: reviewed.length};
   }
 
   async function runQuestion(searchOnly) {
@@ -225,7 +251,7 @@
         status.textContent = `${count} indexed results. Source coverage is partial; no action was taken.`;
       } else {
         const count = renderAnswer(data, answer, capturedEpoch, token);
-        status.textContent = `${count} verified source quotes. Source coverage is partial; no action was taken.`;
+        status.textContent = `${count.quotes} verified source quotes · ${count.reviewed} reviewed knowledge matches. Source coverage is partial; no action was taken.`;
       }
     } catch (error) {
       if (epoch === capturedEpoch && tokenField.value === token) {

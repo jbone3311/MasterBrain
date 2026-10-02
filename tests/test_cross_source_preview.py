@@ -332,6 +332,11 @@ def test_source_scoped_knowledge_excludes_mixed_evidence_before_limit(
         EntityWrite(**common, name="insurance email", evidence_ids=[email_id]),
         uuid4(),
     )
+    knowledge_only = knowledge.publish(
+        reviewer,
+        EntityWrite(**common, name="orchidplan", evidence_ids=[file_id]),
+        uuid4(),
+    )
     other_evidence = DataCoreStore(store).search(
         preview.other_context, "other-tenant-canary", limit=1
     )[0].evidence_id
@@ -348,6 +353,22 @@ def test_source_scoped_knowledge_excludes_mixed_evidence_before_limit(
     assert {hit.object_id for hit in owner_hits} == {
         mixed.object_id, file_only.object_id, email_only.object_id
     }
+    with client_for(preview) as owner:
+        answer = owner.post("/v1/brain/answers", json={"question": "insurance"})
+        assert answer.status_code == 200, answer.text
+        assert {item["object_id"] for item in answer.json()["reviewed_knowledge"]} == {
+            mixed.object_id, file_only.object_id, email_only.object_id
+        }
+        assert answer.json()["citations"]
+        knowledge_answer = owner.post(
+            "/v1/brain/answers", json={"question": "orchidplan"}
+        )
+        assert knowledge_answer.status_code == 200
+        assert knowledge_answer.json()["status"] == "no_supported_answer"
+        assert knowledge_answer.json()["citations"] == []
+        assert [hit["object_id"] for hit in knowledge_answer.json()["reviewed_knowledge"]] == [
+            knowledge_only.object_id
+        ]
     assert all("insurance" in hit.excerpt.casefold() for hit in owner_hits)
     assert all("<b>" not in hit.excerpt for hit in owner_hits)
     restricted = replace(preview.context, source_ids=frozenset({"trial_files"}))
@@ -369,6 +390,21 @@ def test_source_scoped_knowledge_excludes_mixed_evidence_before_limit(
             file_only.object_id
         ]
         assert mixed.object_id not in response.text
+        answer = client.post(
+            "/v1/brain/answers", json={"question": "insurance"}, headers=headers,
+        )
+        assert answer.status_code == 200, answer.text
+        assert [hit["object_id"] for hit in answer.json()["reviewed_knowledge"]] == [
+            file_only.object_id
+        ]
+        assert all(hit["source_id"] == "trial_files" for hit in answer.json()["citations"])
+        with BrainReadClient(
+            "http://127.0.0.1", token, allow_insecure_loopback=True,
+            transport=external_transport(client),
+        ) as external:
+            assert external.answer("insurance") == answer.json()
+        assert mixed.object_id not in answer.text
+        assert email_only.object_id not in answer.text
         direct = client.post(
             "/v1/knowledge/search", json={"query": "insurance", "limit": 1},
             headers=headers,
@@ -399,11 +435,11 @@ def test_source_scoped_knowledge_excludes_mixed_evidence_before_limit(
             assert client.get(
                 f"/v1/knowledge/entity/{hidden_id}", headers=headers
             ).status_code == 404
-        feed = client.get("/v1/knowledge/changes?limit=1", headers=headers)
+        feed = client.get("/v1/knowledge/changes?limit=2", headers=headers)
         assert feed.status_code == 200, feed.text
-        assert [item["object_id"] for item in feed.json()["results"]] == [
-            file_only.object_id
-        ]
+        assert {item["object_id"] for item in feed.json()["results"]} == {
+            file_only.object_id, knowledge_only.object_id
+        }
         assert feed.json()["next_cursor"] is None
         owner_changes = knowledge.changes(
             replace(
@@ -436,6 +472,14 @@ def test_source_scoped_knowledge_excludes_mixed_evidence_before_limit(
             headers={"Authorization": "Bearer " + dual_token},
         )
         assert both.status_code == 200
+        dual_answer = client.post(
+            "/v1/brain/answers", json={"question": "insurance"},
+            headers={"Authorization": "Bearer " + dual_token},
+        )
+        assert dual_answer.status_code == 200
+        assert {hit["object_id"] for hit in dual_answer.json()["reviewed_knowledge"]} == {
+            mixed.object_id, file_only.object_id, email_only.object_id
+        }
 
 
 @pytest.mark.postgres
@@ -446,7 +490,9 @@ def test_external_read_client_matches_first_party_api_on_known_answers(preview):
             "http://127.0.0.1", preview.token,
             allow_insecure_loopback=True, transport=transport,
         ) as external:
-            for query in ("Cedar Harbor", "insurance", "Juniper Plaza", "nonexistentcanary"):
+            for query in (
+                "Cedar Harbor", "insurance", "Juniper Plaza", "readiness", "nonexistentcanary"
+            ):
                 expected = direct.post("/v1/brain/current-search", json={"query": query}).json()
                 assert external.current_search(query) == expected
             hit = external.current_search("insurance")["layers"]["fileos"][0]
@@ -457,6 +503,14 @@ def test_external_read_client_matches_first_party_api_on_known_answers(preview):
             assert external.evidence_content(evidence_id) == direct.post(
                 f"/v1/brain/evidence/{evidence_id}/content", json={"max_chars": 4000}
             ).json()
+            knowledge_answer = direct.post(
+                "/v1/brain/answers", json={"question": "readiness"}
+            )
+            assert knowledge_answer.status_code == 200
+            assert knowledge_answer.json()["status"] == "no_supported_answer"
+            assert knowledge_answer.json()["citations"] == []
+            assert len(knowledge_answer.json()["reviewed_knowledge"]) == 1
+            assert external.answer("readiness") == knowledge_answer.json()
         with BrainReadClient(
             "http://127.0.0.1", preview.other_token,
             allow_insecure_loopback=True, transport=transport,
@@ -512,11 +566,12 @@ def test_default_local_answer_quotes_both_sources_and_client_matches(preview):
 
 @pytest.mark.postgres
 @pytest.mark.parametrize(
-    "query,emails,files",
-    [("Cedar Harbor", 2, 2), ("insurance", 1, 1), ("appraisal", 1, 1),
-     ("Juniper Plaza", 1, 1), ("nonexistentcanary", 0, 0)],
+    "query,emails,files,reviewed",
+    [("Cedar Harbor", 2, 2, 0), ("insurance", 1, 1, 0),
+     ("appraisal", 1, 1, 0), ("Juniper Plaza", 1, 1, 0),
+     ("readiness", 0, 0, 1), ("nonexistentcanary", 0, 0, 0)],
 )
-def test_known_answers_use_real_current_api(preview, query, emails, files):
+def test_known_answers_use_real_current_api(preview, query, emails, files, reviewed):
     with client_for(preview) as client:
         result = client.post("/v1/brain/current-search", json={"query": query})
         assert result.status_code == 200
@@ -532,7 +587,7 @@ def test_known_answers_use_real_current_api(preview, query, emails, files):
                 assert "<b>" not in hit["excerpt"]
                 assert "</b>" not in hit["excerpt"]
                 assert query.split()[0].casefold() in hit["excerpt"].casefold()
-        assert data["layers"]["knowledge"] == []
+        assert len(data["layers"]["knowledge"]) == reviewed
         assert "other-tenant-canary" not in result.text
 
 

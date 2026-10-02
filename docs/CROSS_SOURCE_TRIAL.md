@@ -39,7 +39,8 @@ the temporary trial credential from the URL printed in the launcher's terminal
 into its access field. The trial page removes that fragment from its own URL;
 the `/brain` workspace never reads a URL fragment or stores the credential.
 Ask on this screen selects bounded, exact source quotes locally and opens
-supporting evidence; Search only shows grouped current results. Neither path
+supporting evidence. It also lists reviewed KnowledgeCore matches separately;
+those are interpretations, not exact quotations. Search only shows grouped current results. Neither path
 generates an AI-written answer or changes files/email. Use the launcher's actual port if
 you selected a nondefault one.
 
@@ -48,16 +49,20 @@ Harbor.” It should return verified Email and FileOS quotes containing
 “insurance.” Search only with that entire sentence is literal lexical search
 and may show no results; search for “insurance” to see the grouped records.
 Ask removes only fixed question boilerplate, not synonyms or temporal intent.
+Then Ask “readiness.” It should show no exact source quote and one fictional
+reviewed commitment linked to both an Email and a File. The commitment is a
+human-reviewed interpretation; opening either link shows underlying evidence.
 
 ## Known answers
 
-| Search | Expected Email results | Expected File results | What to inspect |
-|---|---:|---:|---|
-| Cedar Harbor | 2 | 2 | All indexed evidence for the fictional deal |
-| insurance | 1 | 1 | Email and checklist both say the certificate is outstanding |
-| appraisal | 1 | 1 | Email and checklist both say the appraisal was received |
-| Juniper Plaza | 1 | 1 | A separate fictional project, not Cedar Harbor |
-| nonexistentcanary | 0 | 0 | Empty results; no invented answer |
+| Search | Email | Files | Reviewed knowledge | What to inspect |
+|---|---:|---:|---:|---|
+| Cedar Harbor | 2 | 2 | 0 | All indexed evidence for the fictional deal |
+| insurance | 1 | 1 | 0 | Email and checklist both say the certificate is outstanding |
+| appraisal | 1 | 1 | 0 | Email and checklist both say the appraisal was received |
+| Juniper Plaza | 1 | 1 | 0 | A separate fictional project, not Cedar Harbor |
+| readiness | 0 | 0 | 1 | Reviewed closing follow-up, with two source links; not an exact source quote |
+| nonexistentcanary | 0 | 0 | 0 | Empty results; no invented answer |
 
 Open evidence on an Email result and on a File result. The separately authorized
 content read should show the supporting source text directly, while the expandable citation
@@ -67,8 +72,9 @@ $8,000,000 loan and a 1.25 debt-service coverage ratio; the checklist lists Octo
 
 Open source coverage/freshness. The response intentionally says coverage is partial:
 only explicitly bridged current email and activated FileOS generations count.
-The synthetic source observation date is September 24, 2026. Knowledge and archive
-layers are not populated in this walkthrough. Ranks are not compared across layers.
+The synthetic source observation date is September 24, 2026. One reviewed
+KnowledgeCore commitment is populated; archive layers are not. Ranks are not
+compared across layers.
 
 ## Stop and report
 

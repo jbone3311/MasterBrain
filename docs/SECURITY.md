@@ -51,7 +51,10 @@ exact-quote selector by default, without network or source effects; explicit
 disablement makes the first-party workspace fall back to grouped search only
 on the fixed unavailable response. ADR-145 removes fixed question filler words
 before both current searches; it does not grant semantic or cross-source
-authority. Access denial, malformed citations and stale data do not
+authority. ADR-146 shows reviewed KnowledgeCore matches as a separate,
+bounded, untrusted list, only after rechecking their full evidence-link sets
+against current source visibility. It does not treat reviewed text as an exact
+source quote. Access denial, malformed citations and stale data do not
 trigger fallback. A distinct Search only button preserves the preexisting
 search-only grant without converting an answer denial into a search. This does
 not approve sending private content to a remote

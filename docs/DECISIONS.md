@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-146](adr/146_reviewed_knowledge_in_ask.md) lists bounded, source-scoped
+reviewed KnowledgeCore matches beside exact source quotes in Ask. It rechecks
+every selected assertion and all of its direct evidence links; reviewed
+interpretations are not promoted to source quotations or generated answers.
+
 [ADR-145](adr/145_question_terms_for_extractive_answers.md) removes a fixed
 set of question boilerplate before the read-only extractive answer search.
 Both initial and final current-source checks use the same lexical terms; the

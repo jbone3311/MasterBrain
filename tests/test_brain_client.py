@@ -65,6 +65,14 @@ def test_answer_client_uses_same_read_only_origin_and_validates_response() -> No
     {"citations": [{**answer_result()["citations"][0], "quote": "invented"}]},
     {"status": "quoted_evidence", "citations": []},
     {"answer": "x" * 201},
+    {"reviewed_knowledge": [{}]},
+    {"reviewed_knowledge": [{"object_kind": [], "evidence_ids": [{}]}]},
+    {"reviewed_knowledge": [{
+        "object_kind": "claim", "object_id": "claim_" + "a" * 32,
+        "title": "Private\x00title", "excerpt": "Evidence",
+        "evidence_ids": ["evidence_" + "b" * 32],
+        "linked_evidence_count": 1,
+    }]},
 ])
 def test_answer_client_rejects_malformed_claims(change: dict) -> None:
     result = {**answer_result(), **change}

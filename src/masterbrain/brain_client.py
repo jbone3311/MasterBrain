@@ -196,6 +196,7 @@ class BrainReadClient:
             "POST", "/v1/brain/answers", request.model_dump(mode="json")
         )
         citations = data.get("citations")
+        reviewed = data.get("reviewed_knowledge", [])
         coverage = data.get("coverage")
         if (
             data.get("mode") != "grounded_extractive_v1"
@@ -210,10 +211,47 @@ class BrainReadClient:
             or not isinstance(citations, list)
             or len(citations) > 4
             or any(not self._valid_quote_citation(item) for item in citations)
+            or not isinstance(reviewed, list)
+            or len(reviewed) > 4
+            or any(not self._valid_reviewed_knowledge(item) for item in reviewed)
             or (data["status"] == "quoted_evidence") != bool(citations)
         ):
             raise BrainClientError("invalid_response")
         return data
+
+    @staticmethod
+    def _valid_reviewed_knowledge(item: Any) -> bool:
+        if not isinstance(item, dict):
+            return False
+        kind = item.get("object_kind")
+        evidence_ids = item.get("evidence_ids")
+        count = item.get("linked_evidence_count")
+        if not isinstance(kind, str) or not isinstance(evidence_ids, list):
+            return False
+        if not all(isinstance(value, str) for value in evidence_ids):
+            return False
+        return bool(
+            kind in {
+                "entity", "relationship", "claim", "event", "project", "commitment",
+                "correction",
+            }
+            and isinstance(item.get("object_id"), str)
+            and re.fullmatch(rf"{kind}_[a-f0-9]{{32}}", item["object_id"])
+            and isinstance(item.get("title"), str)
+            and 1 <= len(item["title"]) <= 300
+            and "\x00" not in item["title"]
+            and isinstance(item.get("excerpt"), str)
+            and 1 <= len(item["excerpt"]) <= 1200
+            and "\x00" not in item["excerpt"]
+            and 1 <= len(evidence_ids) <= 5
+            and len(set(evidence_ids)) == len(evidence_ids)
+            and all(
+                isinstance(value, str) and re.fullmatch(r"evidence_[a-f0-9]{32}", value)
+                for value in evidence_ids
+            )
+            and type(count) is int
+            and len(evidence_ids) <= count <= 20
+        )
 
     @staticmethod
     def _valid_quote_citation(item: Any) -> bool:

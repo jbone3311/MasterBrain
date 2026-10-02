@@ -3,7 +3,9 @@
 Status: product target. A first-party read-only, conversation-shaped search
 workspace and a provider-neutral external read client now exist. The default
 local extractive path returns server-verified source quotes; it can be explicitly
-disabled. Freeform synthesis, certified assistant
+disabled. ADR-146 also shows separately labelled, bounded reviewed KnowledgeCore
+matches with direct evidence links. These matches are interpretations, not source
+quotes or an AI answer. Freeform synthesis, certified assistant
 integration, hosting and source-write capability do not exist. [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior.
 Synthetic bootstrap and verified administrator-bound OIDC Brain assistants
@@ -87,7 +89,8 @@ credentials.
    fixed question boilerplate from Ask retrieval without semantic rewriting;
    a question still needs distinctive source words. An explicitly
    disabled selector falls back to grouped search; an explicit Search only control
-   remains available to search-only credentials. True synthesized conversation
+   remains available to search-only credentials. ADR-146 lists source-scoped
+   reviewed assertions separately and rechecks them before disclosure. True synthesized conversation
    remains gated on further grounded-answer and prompt-injection acceptance.
 3. **External client:** a provider-neutral reference client now runs the same
    fictional current-search and evidence calls as the owner workspace, with

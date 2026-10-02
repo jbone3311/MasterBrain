@@ -2,6 +2,13 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added separately labelled reviewed KnowledgeCore matches to the read-only
+  Ask response and first-party page (ADR-146). The server bounds their text
+  and displayed evidence IDs, rechecks all direct links and source grants, and
+  keeps them distinct from exact source quotations. The fictional trial now
+  includes one reviewed cross-source commitment; no model or source effect was
+  added.
+
 - Made extractive Ask retrieve with substantive lexical terms from an ordinary
   question instead of requiring source documents to contain question filler
   words (ADR-145). The original question still drives local quote selection;
