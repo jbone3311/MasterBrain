@@ -62,6 +62,60 @@ class AnswerSelector(Protocol):
     ) -> Sequence[QuoteSelection]: ...
 
 
+class LocalExtractiveSelector:
+    """Select matching source sentences locally; make no semantic claim."""
+
+    _STOP = frozenset({
+        "about", "after", "again", "also", "and", "are", "can", "could",
+        "did", "does", "find", "for", "from", "get", "has", "have", "how",
+        "into", "just", "latest", "more", "please", "show", "status", "tell",
+        "the", "that", "their", "there", "these", "this", "those", "was",
+        "were", "what", "when", "where", "which", "will", "with", "would",
+        "your",
+    })
+
+    def select(
+        self, question: str, passages: tuple[AnswerPassage, ...]
+    ) -> Sequence[QuoteSelection]:
+        terms = {
+            term for term in re.findall(r"\w+", question.casefold())
+            if len(term) >= 3 and term not in self._STOP
+        }
+        if not terms:
+            return []
+        ranked: list[tuple[int, int, QuoteSelection]] = []
+        for ordinal, passage in enumerate(passages[:MAX_PASSAGES]):
+            best_score = 0
+            best_quote = ""
+            for match in re.finditer(r"[^.!?\n]+(?:[.!?]+|$)", passage.content):
+                sentence = match.group().strip()
+                if not sentence:
+                    continue
+                words = set(re.findall(r"\w+", sentence.casefold()))
+                score = len(terms & words)
+                if score <= best_score:
+                    continue
+                if len(sentence) > MAX_QUOTE_CHARS:
+                    # Keep the matching term inside an exact, bounded slice.
+                    first = next((word for word in sorted(terms) if word in words), None)
+                    if first is None:
+                        continue
+                    found = re.search(r"\b" + re.escape(first) + r"\b", sentence, re.IGNORECASE)
+                    if found is None:
+                        continue
+                    position = found.start()
+                    start = max(0, position - MAX_QUOTE_CHARS // 3)
+                    sentence = sentence[start:start + MAX_QUOTE_CHARS].strip()
+                best_score = score
+                best_quote = sentence
+            if best_quote:
+                ranked.append((
+                    best_score, ordinal, QuoteSelection(passage.evidence_id, best_quote)
+                ))
+        ranked.sort(key=lambda item: (-item[0], item[1]))
+        return [item[2] for item in ranked[:MAX_SELECTIONS]]
+
+
 class GroundedAnswerService:
     def __init__(self, brain: DataCoreStore, selector: AnswerSelector | None) -> None:
         self.brain = brain

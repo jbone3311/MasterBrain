@@ -467,6 +467,34 @@ def test_external_read_client_matches_first_party_api_on_known_answers(preview):
 
 
 @pytest.mark.postgres
+def test_default_local_answer_quotes_both_sources_and_client_matches(preview):
+    with client_for(preview) as direct:
+        response = direct.post("/v1/brain/answers", json={"question": "insurance"})
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["status"] == "quoted_evidence"
+        assert {item["source_kind"] for item in body["citations"]} == {
+            "email", "fileos"
+        }
+        for citation in body["citations"]:
+            content = direct.post(
+                f"/v1/brain/evidence/{citation['evidence_id']}/content",
+                json={"max_chars": 1200},
+            ).json()
+            assert content["content"][citation["start"]:citation["end"]] == citation["quote"]
+            assert "insurance" in citation["quote"].casefold()
+        with BrainReadClient(
+            "http://127.0.0.1", preview.token,
+            allow_insecure_loopback=True, transport=external_transport(direct),
+        ) as external:
+            assert external.answer("insurance") == body
+        empty = direct.post("/v1/brain/answers", json={"question": "nonexistentcanary"})
+        assert empty.status_code == 200
+        assert empty.json()["status"] == "no_supported_evidence"
+        assert empty.json()["citations"] == []
+
+
+@pytest.mark.postgres
 @pytest.mark.parametrize(
     "query,emails,files",
     [("Cedar Harbor", 2, 2), ("insurance", 1, 1), ("appraisal", 1, 1),

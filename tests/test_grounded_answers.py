@@ -14,10 +14,12 @@ from email_brain.api import create_app
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Store
 from masterbrain.answers import (
+    AnswerPassage,
     AnswerRejected,
     AnswerStale,
     AnswerUnavailable,
     GroundedAnswerService,
+    LocalExtractiveSelector,
     QuoteSelection,
 )
 from masterbrain.datacore.persistence import DataCoreStore, EmailFamilySearch, SearchHit
@@ -177,6 +179,29 @@ def test_no_current_evidence_is_explicit_and_never_calls_model() -> None:
     assert selector.seen is None
 
 
+def test_local_selector_is_deterministic_bounded_and_ignores_source_instructions() -> None:
+    passages = (
+        AnswerPassage(EVIDENCE, DOCUMENT, SOURCE, "fileos", BODY, "a" * 64),
+        AnswerPassage("evidence_" + "b" * 32, DOCUMENT, SOURCE, "email",
+                      "Insurance certificate is outstanding.", "b" * 64),
+    )
+    selector = LocalExtractiveSelector()
+    selected = selector.select("What about insurance?", passages)
+    assert selected == [
+        QuoteSelection(EVIDENCE, "Cedar Harbor insurance is pending."),
+        QuoteSelection("evidence_" + "b" * 32, "Insurance certificate is outstanding."),
+    ]
+    assert selector.select("nonexistentcanary", passages) == []
+    assert selector.select("what is this", passages) == []
+    long_body = "A" * 800 + " insurance certificate pending." + "B" * 800
+    long = AnswerPassage(EVIDENCE, DOCUMENT, SOURCE, "fileos", long_body, "a" * 64)
+    first = selector.select("insurance", (long,))
+    assert len(first) == 1
+    assert 0 < len(first[0].quote) <= 400
+    assert first[0].quote in long_body
+    assert "insurance" in first[0].quote
+
+
 def test_api_requires_all_read_scopes_and_selector() -> None:
     store = MagicMock(spec=Store)
     brain = brain_mock()
@@ -199,11 +224,21 @@ def test_api_requires_all_read_scopes_and_selector() -> None:
             "/v1/brain/answers", json={"question": "Cedar Harbor"}, headers=headers
         ).status_code == 403
     no_model = TestClient(create_app(
-        store, registry(set(context().scopes)), brain_store=brain, knowledge_store=knowledge
+        store, registry(set(context().scopes)), brain_store=brain,
+        knowledge_store=knowledge, answer_selector=None,
     ))
     assert no_model.post(
         "/v1/brain/answers", json={"question": "Cedar Harbor"}, headers=headers
     ).status_code == 503
+    local = TestClient(create_app(
+        store, registry(set(context().scopes)), brain_store=brain,
+        knowledge_store=knowledge,
+    ))
+    local_response = local.post(
+        "/v1/brain/answers", json={"question": "insurance"}, headers=headers
+    )
+    assert local_response.status_code == 200
+    assert local_response.json()["citations"][0]["quote"] == "Cedar Harbor insurance is pending."
     app = TestClient(create_app(
         store, registry(set(context().scopes)), brain_store=brain, knowledge_store=knowledge,
         answer_selector=Selector(),

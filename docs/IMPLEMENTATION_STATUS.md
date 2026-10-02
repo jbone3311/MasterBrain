@@ -16,6 +16,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-144 makes the first-party Ask route return locally selected, bounded
+  exact source quotes by default. This is deterministic retrieval over already
+  authorized evidence, not a model-generated answer or remote inference;
+  `answer_selector=None` restores the fixed 503/fallback behavior. The owner's
+  interactive Mac walkthrough and live/hosted acceptance remain open.
+
 - ADR-143 applies the all-direct-evidence source-grant predicate to Knowledge
   assertion expansion and change-feed anchor/page selection, admits enrolled
   assistants to direct Knowledge and unified Brain reads, and extends OIDC
@@ -81,9 +87,9 @@ production and FileOS cutover remain open.
 - ADR-134 adds an optional, provider-neutral extractive answer boundary to
   `POST /v1/brain/answers`, the first-party `/brain` workspace and the external
   read client. The server bounds passages, rejects invented or stale quotes and
-  returns exact evidence citations after a current-source recheck. Without an
-  owner-approved selector the route returns 503 and the workspace retains its
-  grouped-search fallback. This is not a configured model, freeform synthesis,
+  returns exact evidence citations after a current-source recheck. ADR-144
+  later provides a local default selector; explicit disablement returns 503
+  and retains grouped-search fallback. This is not a configured model, freeform synthesis,
   hosted chat, named-assistant acceptance or source-effect capability.
 
 - API-SOURCE-003 extends source-aware assistant reads to bounded current

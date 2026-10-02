@@ -46,9 +46,10 @@ synthetic and does not establish a production browser identity boundary.
 ADR-134 adds an optional read-only answer route. An explicitly configured
 selector receives only bounded, currently authorized excerpts, with no tool or
 effect authority. Server-side checks require exact quoted substrings and
-recheck current search before disclosure. No selector is enabled by default;
-the first-party workspace then falls back to grouped search only on the fixed
-unavailable response. Access denial, malformed citations and stale data do not
+recheck current search before disclosure. ADR-144 enables a local deterministic
+exact-quote selector by default, without network or source effects; explicit
+disablement makes the first-party workspace fall back to grouped search only
+on the fixed unavailable response. Access denial, malformed citations and stale data do not
 trigger fallback. A distinct Search only button preserves the preexisting
 search-only grant without converting an answer denial into a search. This does
 not approve sending private content to a remote

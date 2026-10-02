@@ -77,8 +77,9 @@ source effects or an alternate route through KnowledgeCore.
   Requires `brain.search`, `knowledge.search`, `brain.evidence.read` and
   `brain.content.read`, plus assistant source enrollment. A configured selector
   may choose at most four exact quotes from at most eight bounded passages;
-  the server verifies citations and rechecks current visibility. No selector
-  is configured by default, so the route returns 503. It has no effect grant,
+  the server verifies citations and rechecks current visibility. ADR-144 makes
+  a local deterministic excerpt selector the default; explicit `None` disables
+  it and returns 503. It has no effect grant,
   freeform model-authored answer or hosted/named-assistant acceptance.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
@@ -188,8 +189,8 @@ ADR-130's bootstrap assistant and ADR-132's OIDC Brain assistant can call the
 source-scoped current-search, evidence/content, ADR-133 coverage/change and
 ADR-142 directly source-filtered search/FileOS status routes, with an explicit
 source allowlist. ADR-134 also permits bounded
-extractive answers, subject to all four read scopes and an explicitly configured
-selector; the default is 503. ADR-143 adds directly source-filtered Knowledge
+extractive answers, subject to all four read scopes; ADR-144 selects local
+exact quotes by default and permits explicit disabling. ADR-143 adds directly source-filtered Knowledge
 and unified Brain reads for enrolled assistants. Hosted issuer enrollment,
 legacy Email assistant source filtering and derived-cache revocation
 remain open in [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
