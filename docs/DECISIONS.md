@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-141](adr/141_tenant_bound_legacy_email_workers.md) extends opt-in
+tenant-bound database access to the three legacy `email-brain` worker commands.
+It leaves credential lifecycle and hosted acceptance open under issue #7.
+
 [ADR-140](adr/140_noneditable_synthetic_trial_launcher.md) makes only the
 fictional Mac trial launcher use a locked non-editable package install. It
 does not change the ordinary developer install or source authority.

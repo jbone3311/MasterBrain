@@ -24,6 +24,7 @@ from email_brain.recovery_jobs import RecoveryJobs
 from email_brain.sandbox_runner import DockerMimeProcessor
 from email_brain.schemas import ClosedModel
 from email_brain.store import Store
+from masterbrain.datacore.worker_db import worker_store
 
 
 class ControllerError(ValueError):
@@ -261,9 +262,10 @@ def configured_store(
     principal: Principal,
     *,
     synthetic_only: bool = False,
+    tenant_bound_db: bool = False,
 ) -> Store:
     """Validate current ownership and read-only object keys; never create storage."""
-    store = Store(dsn)
+    store = worker_store(Store, dsn, principal.context.tenant_id, tenant_bound_db)
     with store.transaction(principal.context) as conn:
         account = conn.execute(
             "SELECT provider_account_id,secret_ref FROM mail_accounts "
@@ -287,8 +289,11 @@ def configured_store(
         # Check mode must not create an empty object root or alter storage.
         with _directory(config.blob_root):
             pass
-        store = Store(
+        store = worker_store(
+            Store,
             dsn,
+            principal.context.tenant_id,
+            tenant_bound_db,
             blobs=EncryptedBlobStore(
                 config.blob_root,
                 {(keys.tenant_id, k.key_id): bytes.fromhex(k.key_hex) for k in keys.keys},
@@ -355,6 +360,7 @@ def run_controller(
     max_iterations: int = 1,
     idle_seconds: int = 5,
     stop: Event | None = None,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Run explicit bounded work. CLI owns signal handling; tests may inject stop."""
     try:
@@ -362,7 +368,7 @@ def run_controller(
         config = ControllerConfig.model_validate(_json(path))
         identity = WorkerIdentity(config)
         principal = identity.authenticate()
-        store = configured_store(config, dsn, principal)
+        store = configured_store(config, dsn, principal, tenant_bound_db=tenant_bound_db)
         identity.authenticate()
         if check:
             return {"configuration_valid": True, "execution_verified": False, "claims": 0}

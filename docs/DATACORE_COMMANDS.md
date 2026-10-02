@@ -12,8 +12,9 @@ With this opt-in, `MASTERBRAIN_DSN` must be a DBA-enrolled login bound to the
 authenticated worker's exact tenant; shared, owner and wrong-tenant logins
 fail before check mode succeeds. Keep the DSN out of arguments, plans and
 source content. This is synthetic/disposable containment, not hosted
-credential management or acceptance. The legacy `email-brain` command is not
-covered by this option.
+credential management or acceptance. ADR-141 separately adds the same named
+opt-in to the three `email-brain` worker commands; other legacy commands are
+not covered. See [tenant-login contract](TENANT_LOGIN_FENCE.md).
 
 ## Bridge one current Email evidence version
 

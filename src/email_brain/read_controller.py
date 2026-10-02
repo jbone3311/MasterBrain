@@ -30,6 +30,7 @@ from email_brain.processing_controller import (
 from email_brain.schemas import ClosedModel
 from email_brain.store import Store
 from email_brain.sync import ReadWorker
+from masterbrain.datacore.worker_db import worker_store
 
 
 class ReadControllerConfig(ClosedModel):
@@ -125,8 +126,10 @@ def _binding(store: Store, principal: Principal, config: ReadControllerConfig) -
         return row["paused"]
 
 
-def _store(config: ReadControllerConfig, dsn: str, principal: Principal) -> Store:
-    store = Store(dsn)
+def _store(
+    config: ReadControllerConfig, dsn: str, principal: Principal, tenant_bound_db: bool = False
+) -> Store:
+    store = worker_store(Store, dsn, principal.context.tenant_id, tenant_bound_db)
     _binding(store, principal, config)
     if config.blob_root is not None and config.keys_file is not None:
         keys = _Keys.model_validate(_json(config.keys_file))
@@ -139,8 +142,11 @@ def _store(config: ReadControllerConfig, dsn: str, principal: Principal) -> Stor
             raise ControllerError()
         with _directory(config.blob_root):
             pass
-        store = Store(
+        store = worker_store(
+            Store,
             dsn,
+            principal.context.tenant_id,
+            tenant_bound_db,
             blobs=EncryptedBlobStore(
                 config.blob_root,
                 {(keys.tenant_id, key.key_id): bytes.fromhex(key.key_hex) for key in keys.keys},
@@ -190,6 +196,7 @@ def run_read_controller(
     idle_seconds: int = 5,
     stop: Event | None = None,
     transport_factory: Callable[[], httpx.BaseTransport] | None = None,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Transport injection is test/library-only, never a config URL or CLI option."""
     try:
@@ -203,7 +210,7 @@ def run_read_controller(
         config = ReadControllerConfig.model_validate(_json(path))
         identity = WorkerIdentity(config, scope="email.ingest")
         principal = identity.authenticate()
-        store = _store(config, dsn, principal)
+        store = _store(config, dsn, principal, tenant_bound_db)
         _provider_token(config)
         identity.authenticate()
         if check:
@@ -235,7 +242,7 @@ def run_read_controller(
                 break
             principal = identity.authenticate()
             # Reopen the keyring between steps, including deliberate key rotation.
-            store = _store(config, dsn, principal)
+            store = _store(config, dsn, principal, tenant_bound_db)
             if _binding(store, principal, config):
                 counts["paused"] += 1
                 attention = True

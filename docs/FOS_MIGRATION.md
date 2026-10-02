@@ -155,8 +155,9 @@ ADR-135 adds an opt-in tenant-bound database login to the private v1 FileOS
 publisher. It changes neither donor policy nor v2 activation and is not a
 cutover gate by itself. ADR-138 extends that opt-in fence to FileOS indexing
 and rollback; ADR-139 extends it to the private archive derivative commands.
-Legacy workers, private v2 library callers and hosted credential operations
-still need separate tenant-bound routing and acceptance.
+ADR-141 routes the three legacy Email worker commands through an opt-in bound
+login. Private v2 library callers, hosted credential operations and operational
+acceptance still need separate work. None of these changes proves FileOS cutover.
 
 ## Proposed next tranches
 

@@ -86,6 +86,15 @@ does **not** claim a job, parse mail, launch Docker, test an image, decrypt all
 objects or certify operational readiness. Output explicitly says
 `execution_verified: false`. No missing directories or credentials are created.
 
+For the synthetic opt-in tenant-login fence (ADR-141), supply a DBA-enrolled
+single-tenant login as `EMAIL_BRAIN_DSN` and add `--tenant-bound-db` to both
+`--check` and execution. The authenticated `email.process` worker tenant,
+never the account or job, selects the binding. Shared, owner and wrong-tenant
+logins fail before a claim or parser launch; optional encrypted storage uses
+the same bound store. Default local mode is unchanged. A passed check is not
+hosted credential, container or live-source acceptance. See the
+[tenant-login contract](TENANT_LOGIN_FENCE.md).
+
 Default execution polls once. `--max-iterations` accepts 1–1000; `--idle-seconds`
 accepts 1–60 and is used **between** polls, including successful polls. Durable
 retry deadlines and 120-second leases stay in SQL; sleeping holds no transaction.
