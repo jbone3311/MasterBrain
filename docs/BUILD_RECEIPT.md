@@ -2,6 +2,34 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## API-SOURCE-002 OIDC Brain grants — rebased branch verification
+
+ADR-132 and forward migration 0049 add administrator-owned, same-tenant source
+grants to exact verified OIDC Brain assistant bindings. The source-aware resolver
+returns only enrolled IDs; the prior resolver refuses Brain-scoped assistants
+during rolling upgrades. Grant changes increment binding revision, emit
+content-free audit records and invalidate previously saved contexts on their
+next transaction. Existing Email-only OIDC bindings remain compatible. Only
+the three ADR-130 source-aware Brain read routes admit these assistants;
+hosted issuer enrollment, named-assistant certification, all-route and
+derived-cache revocation remain open under issue #88.
+
+After rebasing on merged FileOS readiness migration 0048, a fresh disposable
+PostgreSQL 17.11 database passed the focused OIDC/migration/recovery suite:
+**73 passed**. The first full suite passed **2,928 tests, one skipped** in
+163.83 seconds. After the legacy-resolver fail-closed correction, a second
+fresh database passed the same focused **73 tests** and full **2,928 tests,
+one skipped** in 126.87 seconds, including 463 of 464 PostgreSQL-marked tests.
+Ruff, strict mypy over 96 source files, 140 browser tests, documentation and
+diff checks passed before that final SQL-only correction; targeted and full
+PostgreSQL gates were repeated afterward. The local deployment gate passed
+2,465 non-PostgreSQL tests, skipping 464 database-marked tests by design.
+Pinned FOS-Master DataCore parity passed at 3,000 synthetic files; the donor
+classifier matched 3,004 paths. FOS-Master was not changed. Exact-head CI,
+strict runtime, populated Docker restore and merged-main gates are not yet
+claimed. The local host has no Docker command, so the restore drill must run
+in GitHub CI.
+
 ## DC-002U readiness scaling correction — branch verification
 
 ADR-131 replaces only the FileOS v2 readiness chunk comparison and reverse

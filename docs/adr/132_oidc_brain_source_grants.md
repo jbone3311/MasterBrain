@@ -24,8 +24,9 @@ grant change.
   cannot read or modify this table directly.
 - Resolve the verified issuer/subject/client tuple through a new exact-key
   definer function that returns the active binding and its sorted source IDs.
-  Keep the old resolver temporarily for rolling-version compatibility; new
-  binaries require the new function. The result is server-owned context, never
+  Keep the old resolver temporarily for rolling Email-only compatibility, but
+  make it refuse Brain-scoped assistant bindings; new binaries require the new
+  function. The result is server-owned context, never
   a token or request claim. A Brain-scoped assistant without a source grant
   cannot authenticate for Brain reads.
 - Every grant add/removal increments the binding revision and writes a

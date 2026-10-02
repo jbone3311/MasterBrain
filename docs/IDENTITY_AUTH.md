@@ -114,7 +114,8 @@ explicit source enrollment. The separate `external_identity_sources` table
 accepts only existing sources in the binding's tenant, at most 20; only the
 identity-administrator role can add/remove grants. New binaries use the
 exact-key `resolve_external_identity_v2` function; the older Email-only
-resolver remains for rolling-version compatibility and does not expose grants.
+resolver remains for rolling-version compatibility, refuses Brain-scoped
+assistant bindings and does not expose grants.
 These are tested on fake signed tokens and disposable databases, not a hosted
 issuer enrollment or named assistant. See [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
 Bindings remain owner-only: member/reviewer/operator memberships are not yet served.

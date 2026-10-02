@@ -119,8 +119,29 @@ CREATE TRIGGER external_identity_source_change
     AFTER INSERT OR DELETE ON public.external_identity_sources FOR EACH ROW
     EXECUTE FUNCTION public.audit_external_identity_source_change();
 
--- New binaries use only this exact-key resolver. Keep the old Email-only
--- resolver for rolling compatibility; it cannot return any source enrollment.
+-- An older binary cannot represent source grants. Keep its exact-key resolver
+-- for Email-only rolling compatibility, but never return Brain assistants.
+CREATE OR REPLACE FUNCTION public.resolve_external_identity(
+    requested_issuer text, requested_subject text, requested_client_id text
+) RETURNS TABLE (
+    id uuid, tenant_id uuid, actor_id uuid, scopes text[],
+    client_kind text, revision bigint
+) LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+    SELECT e.id,e.tenant_id,e.actor_id,e.scopes,e.client_kind,e.revision
+    FROM public.external_identities AS e
+    WHERE e.active
+      AND e.issuer=requested_issuer
+      AND e.subject=requested_subject
+      AND e.client_id=requested_client_id
+      AND NOT (
+          e.client_kind='assistant' AND
+          e.scopes && ARRAY['brain.search','knowledge.search',
+                            'brain.evidence.read','brain.content.read']::text[]
+      )
+      AND public.masterbrain_tenant_login_allows(e.tenant_id)
+$$;
+
+-- New binaries use only this source-aware exact-key resolver.
 CREATE FUNCTION public.resolve_external_identity_v2(
     requested_issuer text, requested_subject text, requested_client_id text
 ) RETURNS TABLE (

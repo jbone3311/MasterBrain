@@ -63,6 +63,11 @@ def test_oidc_brain_assistant_requires_enrollment_and_revokes_every_read(
     store, admin = database
     binding, raw, auth = assistant
     dsn, admin_role = identity_admin_login
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT id FROM public.resolve_external_identity(%s,%s,%s)",
+            (auth.verifier.config.issuer, "fictional-brain-" + binding.hex, oidc.CLIENT),
+        ).fetchone() is None
     assert auth.authenticate(raw) is None
     verified = auth.verifier.verify(raw)
     assert verified is not None
