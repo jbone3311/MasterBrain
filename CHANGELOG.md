@@ -6,9 +6,9 @@
   assistants (ADR-133, forward migration 0050). OIDC bindings may receive the
   distinct `brain.changes.read` scope only with source enrollment; hidden-source
   results and cursors are excluded before pagination. The provider-neutral
-  client now exposes both bounded calls. Synthetic tests pass; full CI and
-  populated restore remain pending on this branch. This is not hosted chat,
-  named-assistant certification or source-write authority.
+  client now exposes both bounded calls. PR #96 is merged; its exact-head
+  and merged-main CI, strict runtime and populated restore passed. This is not
+  hosted chat, named-assistant certification or source-write authority.
 
 - Added administrator-owned OIDC Brain source grants (ADR-132, migration 0049):
   an exact identity binding may enroll up to 20 existing same-tenant sources;

@@ -21,8 +21,9 @@ production and FileOS cutover remain open.
   OIDC status-only assistants still require explicit enrollment; hidden-source
   cursors fail closed, and grant removal invalidates saved contexts. The
   provider-neutral reference client uses the same routes. This is synthetic
-  integration work pending exact-head CI and populated restore, not hosted or
-  named-assistant acceptance; issue #88 remains open.
+  integration work: PR #96's exact-head and merged-main CI, strict runtime
+  and populated restore passed. This is not hosted or named-assistant
+  acceptance. Issue #88 remains open.
 
 - API-SOURCE-002 adds an administrator-owned OIDC source-grant table, exact-key
   source-aware resolver and transaction-time revision/source checks under ADR-132

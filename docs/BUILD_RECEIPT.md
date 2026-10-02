@@ -2,7 +2,20 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## API-SOURCE-003 source-scoped status — branch verification
+## API-SOURCE-003 source-scoped status — merged verification
+
+PR [#96](https://github.com/jbone3311/MasterBrain/pull/96) merged at
+`9c07f00445307ad99fef33a02546564ba9ca0945` from exact head
+`fe03439b253d3a2a1806770f4313c327d4b671e5`. The head passed
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36962808900),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36962808873)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36962808967).
+The merge commit passed
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36963721901),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36963721904)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36963721936).
+Both CI gates ran the complete PostgreSQL suite directly and again through
+the deployment gate, followed by isolated container checks.
 
 ADR-133 and forward migration 0050 extend enrolled assistant access to
 `GET /v1/brain/current-coverage` and `GET /v1/brain/changes`. Both apply the
@@ -21,9 +34,11 @@ those explicit histories, the focused migration/recovery suite passed
 **32 tests**, and the full suite passed **2,929 tests, one skipped** in
 156.50 seconds, including 464 of 465 PostgreSQL-marked tests. Ruff, strict
 mypy over 96 source files, documentation links and diff checks passed before
-the final test-only correction. Exact-head CI, strict runtime and populated
-restore remain to be verified before merge. This is synthetic-only evidence,
-not hosted or named-assistant acceptance.
+the final test-only correction; a targeted status-only assistant regression
+passed afterward. The merged-main restore verified 85 tables, 270 rows, two
+tenants, four external objects, two identity bindings, matching content hashes,
+RLS, identity revocation and refusal of database-only restore. This is
+synthetic-only evidence, not hosted or named-assistant acceptance.
 
 ## API-SOURCE-002 OIDC Brain grants — merged verification
 
