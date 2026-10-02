@@ -44,7 +44,7 @@ function searchData() {
 function walk(element) { return [element, ...element.children.flatMap(walk)]; }
 const flush = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 function harness(customFetch) {
-  const ids = ["brain-token", "brain-question", "ask-button", "turns", "brain-status",
+  const ids = ["brain-token", "brain-question", "ask-button", "search-button", "turns", "brain-status",
     "ask-form", "clear-session", "clear-turns"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element(id)]));
   const calls = [];
@@ -67,7 +67,12 @@ function harness(customFetch) {
     await elements["ask-form"].events.submit({preventDefault() {}});
     await flush();
   };
-  return {elements, calls, enterToken, ask};
+  const searchOnly = async value => {
+    elements["brain-question"].value = value;
+    await elements["search-button"].events.click();
+    await flush();
+  };
+  return {elements, calls, enterToken, ask, searchOnly};
 }
 
 test("static shell makes no request and refuses a missing credential", async () => {
@@ -195,4 +200,17 @@ test("malformed answer is rejected and never falls back to search", async () => 
   await h.ask("Cedar Harbor");
   assert.equal(h.calls.length, 1);
   assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer unavailable/);
+});
+
+test("an answer denial does not silently search, but explicit Search only remains usable", async () => {
+  const h = harness(async url => url === "/v1/brain/answers" ? {ok: false, status: 403} :
+    {ok: true, json: async () => searchData()});
+  h.enterToken("search-only-token");
+  await h.ask("Cedar Harbor");
+  assert.deepEqual(h.calls.map(call => call.url), ["/v1/brain/answers"]);
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Request refused \(403\)/);
+  await h.searchOnly("Cedar Harbor");
+  assert.deepEqual(h.calls.map(call => call.url),
+    ["/v1/brain/answers", "/v1/brain/current-search"]);
+  assert.match(h.elements["brain-status"].textContent, /3 indexed results/);
 });

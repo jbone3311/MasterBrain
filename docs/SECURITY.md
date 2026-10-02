@@ -44,7 +44,9 @@ effect authority. Server-side checks require exact quoted substrings and
 recheck current search before disclosure. No selector is enabled by default;
 the first-party workspace then falls back to grouped search only on the fixed
 unavailable response. Access denial, malformed citations and stale data do not
-trigger fallback. This does not approve sending private content to a remote
+trigger fallback. A distinct Search only button preserves the preexisting
+search-only grant without converting an answer denial into a search. This does
+not approve sending private content to a remote
 model or establish semantic truth beyond the quoted source text.
 
 ADR-128's FileOS v2 search comparison is not in that workspace or the public

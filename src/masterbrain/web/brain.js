@@ -3,6 +3,7 @@
   const tokenField = document.getElementById("brain-token");
   const questionField = document.getElementById("brain-question");
   const askButton = document.getElementById("ask-button");
+  const searchButton = document.getElementById("search-button");
   const turns = document.getElementById("turns");
   const status = document.getElementById("brain-status");
   const groups = [
@@ -28,7 +29,10 @@
   }
 
   function usable() { return tokenField.value.trim().length > 0; }
-  function updateButton() { askButton.disabled = busy || !usable(); }
+  function updateButton() {
+    askButton.disabled = busy || !usable();
+    searchButton.disabled = busy || !usable();
+  }
   function invalidate(clearToken = false) {
     epoch += 1;
     for (const controller of pending) controller.abort();
@@ -182,8 +186,7 @@
     return data.citations.length;
   }
 
-  document.getElementById("ask-form").addEventListener("submit", async event => {
-    event.preventDefault();
+  async function runQuestion(searchOnly) {
     const question = questionField.value.trim();
     const token = tokenField.value;
     if (!question || !usable() || busy) return;
@@ -192,7 +195,7 @@
     updateButton();
     if (turns.querySelector(".empty")) turns.replaceChildren();
     const asked = node("article", "", turns, "turn question");
-    node("h3", "You asked", asked);
+    node("h3", searchOnly ? "You searched" : "You asked", asked);
     node("p", question, asked);
     const answer = node("article", "", turns, "turn response");
     node("p", "Checking authorized current sources…", answer);
@@ -201,19 +204,23 @@
     status.textContent = "Checking sources…";
     try {
       let data;
-      let searchFallback = false;
-      try {
-        data = await api("/v1/brain/answers", {question}, token);
-      } catch (error) {
-        if (error.status !== 503) throw error;
-        if (epoch !== capturedEpoch || tokenField.value !== token) return;
-        searchFallback = true;
+      let searchFallback = searchOnly;
+      if (searchOnly) {
         data = await api("/v1/brain/current-search", {query: question}, token);
+      } else {
+        try {
+          data = await api("/v1/brain/answers", {question}, token);
+        } catch (error) {
+          if (error.status !== 503) throw error;
+          if (epoch !== capturedEpoch || tokenField.value !== token) return;
+          searchFallback = true;
+          data = await api("/v1/brain/current-search", {query: question}, token);
+        }
       }
       if (epoch !== capturedEpoch || tokenField.value !== token) return;
       answer.replaceChildren();
       if (searchFallback) {
-        node("p", "Answer selection is not configured; showing indexed search results.", answer, "notice");
+        if (!searchOnly) node("p", "Answer selection is not configured; showing indexed search results.", answer, "notice");
         const count = renderResults(data, answer, capturedEpoch, token);
         status.textContent = `${count} indexed results. Source coverage is partial; no action was taken.`;
       } else {
@@ -230,7 +237,12 @@
     } finally {
       if (epoch === capturedEpoch) { busy = false; updateButton(); }
     }
+  }
+  document.getElementById("ask-form").addEventListener("submit", event => {
+    event.preventDefault();
+    return runQuestion(false);
   });
+  searchButton.addEventListener("click", () => runQuestion(true));
   tokenField.addEventListener("input", () => invalidate());
   document.getElementById("clear-session").addEventListener("click", () => invalidate(true));
   document.getElementById("clear-turns").addEventListener("click", () => invalidate());

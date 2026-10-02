@@ -84,7 +84,8 @@ credentials.
 2. **First-party workspace:** a read-only question screen now groups current
    search and separately authorized evidence expansion without a model. It can
    now request verified extractive quotes through ADR-134; without an approved
-   selector it falls back to grouped search. True synthesized conversation
+   selector it falls back to grouped search; an explicit Search only control
+   remains available to search-only credentials. True synthesized conversation
    remains gated on further grounded-answer and prompt-injection acceptance.
 3. **External client:** a provider-neutral reference client now runs the same
    fictional current-search and evidence calls as the owner workspace, with

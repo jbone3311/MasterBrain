@@ -25,7 +25,8 @@
         placeholder="Held in this page's memory only">
       <button id="clear-session" type="button">Clear session</button>
     </div>
-    <p class="hint">Use only an owner-authorized credential. It is not saved in the URL,
+    <p class="hint">Use only an owner-authorized credential. If your credential allows
+      search but not content, use Search only. It is not saved in the URL,
       browser storage, or chat history. Read permissions still apply separately to
       search, evidence metadata, and content.</p>
   </section>
@@ -45,6 +46,7 @@
         <input id="brain-question" maxlength="500" required
           placeholder="Search a project, email, file, or commitment" autocomplete="off">
         <button id="ask-button" type="submit" disabled>Ask</button>
+        <button id="search-button" type="button" disabled>Search only</button>
       </div>
     </form>
     <p id="brain-status" role="status" aria-live="polite">Enter an authorized credential to begin.</p>

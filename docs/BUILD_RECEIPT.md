@@ -9,7 +9,7 @@ exact quotes, read-client parity surface and a first-party quote display with a
 search fallback when no selector is configured. It has no enabled real model,
 new migration, source effects or FOS-Master changes. A full local run against
 disposable PostgreSQL 17.11 passed **2,950 tests, one skipped**; 465 of 466
-PostgreSQL-marked tests executed. All 145 browser tests, Ruff, strict mypy over
+PostgreSQL-marked tests executed. All 146 browser tests, Ruff, strict mypy over
 97 source files, documentation links and diff checks passed. The focused real
 PostgreSQL test compared the assistant's exact answer with the external client,
 confirmed source-only citations and denied a missing content grant. Local
