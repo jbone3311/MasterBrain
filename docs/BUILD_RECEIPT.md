@@ -2,9 +2,22 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-134 grounded extractive answers — local branch verification
+## ADR-134 grounded extractive answers — merged verification
 
-This branch adds a provider-neutral selector contract, bounded server-verified
+PR [#98](https://github.com/jbone3311/MasterBrain/pull/98) merged at
+`3f5ee3b16b2494accda6e35d505bde51e4bc3d7c` from exact head
+`e93f38e631c713d3b9e384f1450dc08a77d984db`. The head passed
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36968373504),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36968373492)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36968373501).
+The merge commit's [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/36969615525),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36969615531)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36969615529)
+all passed on the exact merge commit. Both CI gates ran the full PostgreSQL
+suite directly and through the deployment gate, then the isolated container
+checks. The reference client and browser tests are part of that CI gate.
+
+This increment adds a provider-neutral selector contract, bounded server-verified
 exact quotes, read-client parity surface and a first-party quote display with a
 search fallback when no selector is configured. It has no enabled real model,
 new migration, source effects or FOS-Master changes. A full local run against
@@ -15,9 +28,8 @@ PostgreSQL test compared the assistant's exact answer with the external client,
 confirmed source-only citations and denied a missing content grant. Local
 Python 3.11.13 skipped the hidden editable-install `.pth` file after `uv sync`;
 the two CLI subprocess tests passed after installing the same source as a regular
-wheel. This was a local environment issue, not a product-code change. Record
-the exact branch commit and CI/strict-runtime/populated-restore results before
-merge. Do not label this hosted or live-source acceptance.
+wheel. This was a local environment issue, not a product-code change. No
+hosted or live-source acceptance is claimed.
 
 The documentation-only PR [#97](https://github.com/jbone3311/MasterBrain/pull/97)
 merged into `main` at `680350593bfee4a8fb78a50b8a0168551f08060f`;
