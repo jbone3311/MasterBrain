@@ -525,6 +525,35 @@ def test_actual_disposable_docker_launcher():
     assert "Synthetic browser-trial self-test passed" in result.stdout
 
 
+def test_actual_disposable_local_launcher():
+    import cross_source_preview as trial
+
+    if trial.local_postgres_binaries() is None:
+        pytest.skip("Local PostgreSQL 17 binaries unavailable")
+    result = subprocess.run(
+        [sys.executable, str(ASSETS.parent / "cross_source_preview.py"),
+         "--synthetic-preview", "--backend", "local", "--self-test"],
+        capture_output=True, text=True, timeout=240, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Synthetic browser-trial self-test passed" in result.stdout
+    assert "Check temporary synthetic PostgreSQL cluster" not in result.stderr
+
+
+def test_local_backend_refuses_wrong_postgres_version(monkeypatch, tmp_path):
+    import cross_source_preview as trial
+
+    initdb = tmp_path / "initdb"
+    pg_ctl = tmp_path / "pg_ctl"
+    initdb.touch(mode=0o700)
+    pg_ctl.touch(mode=0o700)
+    monkeypatch.setattr(trial.shutil, "which", lambda name: str(initdb))
+    monkeypatch.setattr(
+        trial.subprocess, "check_output", lambda *a, **kw: "initdb (PostgreSQL) 16.1"
+    )
+    assert trial.local_postgres_binaries() is None
+
+
 def test_browser_javascript_behaviors():
     if not shutil.which("node"):
         if os.environ.get("CI"):

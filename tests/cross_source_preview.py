@@ -1,7 +1,7 @@
 """Fictional-data browser trial using the real PostgreSQL store and Brain API.
 
-Run with --synthetic-preview. Creates its own temporary Docker PostgreSQL; accepts
-no account, filesystem root, credential or database configuration from the user.
+Run with --synthetic-preview. Creates its own disposable PostgreSQL 17 cluster;
+accepts no account, filesystem root, credential or database configuration.
 """
 
 from __future__ import annotations
@@ -18,6 +18,8 @@ import tempfile
 import threading
 import time
 import webbrowser
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -218,24 +220,12 @@ def cleanup_trial_container(name: str, marker: str) -> None:
         )
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--synthetic-preview", action="store_true", required=True)
-    parser.add_argument("--port", type=int, default=8766)
-    parser.add_argument(
-        "--self-test", action="store_true", help="validate then clean up without a browser"
-    )
-    args = parser.parse_args()
-    if not 1024 <= args.port <= 65535:
-        parser.error("port must be 1024..65535")
-    if not shutil.which("docker"):
-        parser.error("Docker Desktop must be installed and running for this disposable trial")
+@contextmanager
+def docker_database() -> Iterator[str]:
     name = "masterbrain-trial-" + secrets.token_hex(6)
     password = secrets.token_urlsafe(32)
     marker = secrets.token_hex(16)
-    stage = "starting disposable PostgreSQL"
     try:
-        print("Creating fictional-data trial. No live accounts or source folders are used.")
         docker(
             "run", "--detach", "--rm", "--name", name,
             "--label", f"masterbrain.trial={marker}",
@@ -248,16 +238,141 @@ def main() -> int:
             host="127.0.0.1", port=port, dbname="email_brain_test_preview",
             user="postgres", password=password, connect_timeout=2,
         )
-        for attempt in range(60):
+        yield admin
+    finally:
+        cleanup_trial_container(name, marker)
+
+
+def local_postgres_binaries() -> tuple[Path, Path] | None:
+    found = shutil.which("initdb")
+    if not found:
+        return None
+    initdb = Path(found).resolve()
+    pg_ctl = initdb.parent / "pg_ctl"
+    if not pg_ctl.is_file() or not os.access(pg_ctl, os.X_OK):
+        return None
+    for binary, expected in (
+        (initdb, "initdb (PostgreSQL) 17."),
+        (pg_ctl, "pg_ctl (PostgreSQL) 17."),
+    ):
+        try:
+            version = subprocess.check_output(
+                [str(binary), "--version"], text=True, stderr=subprocess.DEVNULL,
+                timeout=5,
+            )
+        except (subprocess.SubprocessError, OSError):
+            return None
+        if not version.startswith(expected):
+            return None
+    return initdb, pg_ctl
+
+
+def free_loopback_port() -> int:
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        return int(listener.getsockname()[1])
+
+
+@contextmanager
+def local_database() -> Iterator[str]:
+    binaries = local_postgres_binaries()
+    if binaries is None:
+        raise RuntimeError("Local PostgreSQL 17 initdb and pg_ctl are required")
+    initdb, pg_ctl = binaries
+    root = Path(tempfile.mkdtemp(prefix="masterbrain-trial-pg-"))
+    data = root / "data"
+    password_file = root / "password"
+    password = secrets.token_urlsafe(32)
+    port = free_loopback_port()
+    pg_env = {key: value for key, value in os.environ.items() if not key.startswith("PG")}
+    try:
+        password_file.write_text(password + "\n", encoding="utf-8")
+        password_file.chmod(0o600)
+        try:
+            subprocess.run(
+                [str(initdb), "-D", str(data), "--username=trial_admin",
+                 "--auth-host=scram-sha-256", "--auth-local=reject",
+                 f"--pwfile={password_file}"],
+                env=pg_env, capture_output=True, text=True, timeout=90, check=True,
+            )
+        finally:
+            password_file.unlink(missing_ok=True)
+        subprocess.run(
+            [str(pg_ctl), "-D", str(data), "-l", str(root / "postgres.log"),
+             "-o", f"-h 127.0.0.1 -p {port} -c unix_socket_directories=''",
+             "-w", "-t", "30", "start"],
+            env=pg_env, capture_output=True, text=True, timeout=45, check=True,
+        )
+        bootstrap = make_conninfo(
+            host="127.0.0.1", port=port, dbname="postgres", user="trial_admin",
+            password=password, connect_timeout=2,
+        )
+        with psycopg.connect(bootstrap, autocommit=True) as conn:
+            conn.execute("CREATE DATABASE email_brain_test_preview")
+        yield make_conninfo(bootstrap, dbname="email_brain_test_preview")
+    finally:
+        # A startup timeout may still have launched PostgreSQL. Never remove a
+        # possibly running cluster; keep its exact private path for inspection.
+        if (data / "postmaster.pid").exists():
             try:
-                with psycopg.connect(admin):
-                    break
-            except psycopg.OperationalError:
-                if attempt == 59:
-                    raise
-                time.sleep(1)
-        stage = "initializing synthetic schema"
-        migrate(admin, ROOT / "migrations")
+                stopped = subprocess.run(
+                    [str(pg_ctl), "-D", str(data), "-m", "fast", "-w", "-t", "30", "stop"],
+                    env=pg_env, capture_output=True, text=True, timeout=45, check=False,
+                ).returncode == 0
+            except (subprocess.SubprocessError, OSError):
+                stopped = False
+            if not stopped:
+                print(f"Check temporary synthetic PostgreSQL cluster at {root}.",
+                      file=sys.stderr)
+                raise RuntimeError("Temporary synthetic PostgreSQL stop was not confirmed")
+        shutil.rmtree(root)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--synthetic-preview", action="store_true", required=True)
+    parser.add_argument("--port", type=int, default=8766)
+    parser.add_argument("--backend", choices=("auto", "docker", "local"), default="auto")
+    parser.add_argument(
+        "--self-test", action="store_true", help="validate then clean up without a browser"
+    )
+    args = parser.parse_args()
+    if not 1024 <= args.port <= 65535:
+        parser.error("port must be 1024..65535")
+    backend = args.backend
+    if backend == "auto":
+        backend = "docker" if shutil.which("docker") else "local"
+    if backend == "docker" and not shutil.which("docker"):
+        parser.error("Docker Desktop is unavailable; use --backend local with PostgreSQL 17")
+    if backend == "local" and local_postgres_binaries() is None:
+        parser.error("PostgreSQL 17 initdb and pg_ctl are required for --backend local")
+    stage = "running fictional trial"
+    try:
+        print("Creating fictional-data trial. No live accounts or source folders are used.")
+        database = docker_database() if backend == "docker" else local_database()
+        with database as admin:
+            for attempt in range(60):
+                try:
+                    with psycopg.connect(admin):
+                        break
+                except psycopg.OperationalError:
+                    if attempt == 59:
+                        raise
+                    time.sleep(1)
+            return serve_trial(admin, args.port, args.self_test)
+    except KeyboardInterrupt:
+        return 0
+    except Exception as exc:
+        print(
+            f"Trial stopped while {stage} ({type(exc).__name__}); details suppressed.",
+            file=sys.stderr,
+        )
+        return 1
+
+
+def serve_trial(admin: str, port: int, self_test: bool) -> int:
+    migrate(admin, ROOT / "migrations")
+    try:
         runtime_password = secrets.token_urlsafe(32)
         with psycopg.connect(admin) as conn:
             conn.execute(
@@ -266,10 +381,9 @@ def main() -> int:
             )
             grant_runtime(conn, "trial_runtime")
         runtime = make_conninfo(admin, user="trial_runtime", password=runtime_password)
-        stage = "seeding and validating fictional evidence"
         with tempfile.TemporaryDirectory(prefix="masterbrain-fictional-") as folder:
             preview = build_preview(Store(runtime), admin, Path(folder))
-            if args.self_test:
+            if self_test:
                 with TestClient(
                     preview.app, base_url="http://127.0.0.1",
                     headers={"Authorization": "Bearer " + preview.token},
@@ -293,18 +407,17 @@ def main() -> int:
                         raise RuntimeError("Synthetic startup coverage failed")
                 print("Synthetic browser-trial self-test passed: 2 emails, 2 files, cited content.")
                 return 0
-            url = f"http://127.0.0.1:{args.port}/trial#{preview.token}"
-            listener = socket.create_server(("127.0.0.1", args.port))
+            url = f"http://127.0.0.1:{port}/trial#{preview.token}"
+            listener = socket.create_server(("127.0.0.1", port))
             opener = threading.Timer(1.5, webbrowser.open, args=(url,))
             opener.daemon = True
             opener.start()
-            print(f"Trial opening at http://127.0.0.1:{args.port}/trial . Stop with Ctrl-C.")
+            print(f"Trial opening at http://127.0.0.1:{port}/trial . Stop with Ctrl-C.")
             print("Two-hour read-only trial credential stays in browser memory.")
             print("No real token is needed. Restart the launcher if the tab loses its credential.")
-            stage = "serving the loopback browser trial"
             try:
                 config = uvicorn.Config(
-                    preview.app, host="127.0.0.1", port=args.port, access_log=False
+                    preview.app, host="127.0.0.1", port=port, access_log=False
                 )
                 uvicorn.Server(config).run(sockets=[listener])
             finally:
@@ -313,14 +426,6 @@ def main() -> int:
         return 0
     except KeyboardInterrupt:
         return 0
-    except Exception as exc:
-        print(
-            f"Trial stopped while {stage} ({type(exc).__name__}); details suppressed.",
-            file=sys.stderr,
-        )
-        return 1
-    finally:
-        cleanup_trial_container(name, marker)
 
 
 if __name__ == "__main__":
