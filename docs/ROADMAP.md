@@ -101,7 +101,10 @@ Security and data-integrity blockers take priority over adding more surface area
    Repeated 3,000-row runs against one accumulated disposable database exposed
    a readiness-query timeout in the existing v2 builder; track the populated-
    database scaling work in [#84](https://github.com/jbone3311/MasterBrain/issues/84)
-   without relaxing its exact-closure or five-second statement gate.
+   without relaxing its exact-closure or five-second statement gate. ADR-131's
+   forward-only indexed correction passed a fresh full suite and two populated
+   3,000-row repeats locally; exact-head CI, restore and merged-main checks
+   remain before the finding can be closed.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container

@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-131](adr/131_fileos_v2_readiness_set_check.md) changes only the exact
+FileOS v2 readiness chunk-closure and base-count queries to indexed per-row
+checks under the same statement budget. It grants no v2 activation, current
+visibility or cutover.
+
 [ADR-130](adr/130_assistant_source_scoped_reads.md) introduces explicit,
 synthetic-bootstrap source enrollment for the three assistant Brain read routes.
 It does not provide hosted or dynamically revocable source grants.

@@ -2,6 +2,31 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## DC-002U readiness scaling correction — branch verification
+
+ADR-131 replaces only the FileOS v2 readiness chunk comparison and reverse
+base count with indexed lookups in forward migration 0048. Exact ID, document,
+ordinal, offsets, text and SHA-256 comparison remains mandatory; the five-second
+statement limit and SQL refusal of v2 activation are unchanged. No donor or
+current-read path was edited. The first `EXCEPT ALL` candidate and a later
+half-indexed candidate each timed out in the populated full suite; neither was
+committed. This records the failed experiments, not only the successful run.
+
+On a fresh disposable PostgreSQL 17.11 database, the revised full suite passed
+**2,924 tests, one skipped** in 119.39 seconds, including 459 of 460 database-
+marked tests. The 3,000-hashed-row case then passed again on that populated
+database in 70.44 and 83.89 seconds. Runtime-role `EXPLAIN (ANALYZE, BUFFERS)` on a
+committed synthetic generation showed indexed chunk lookup and per-document
+count at about 25 and 28 ms respectively; committed-plan timing alone is not
+the acceptance basis. Ruff, strict mypy over 96 source files, 140 browser
+tests, documentation inventory and diff checks passed. The pinned FOS-Master
+3,000-file DataCore comparison passed, and donor-policy shadow matched 3,004
+synthetic paths with no classifier mismatch. The local deployment gate passed
+2,465 non-PostgreSQL tests and skipped 460 PostgreSQL-marked tests by design.
+Exact-head CI, strict runtime,
+populated restore and merged-main checks are pending; issue #84 remains open
+until those gates pass.
+
 ## API-SOURCE-001 synthetic assistant source-scoped reads — local verification
 
 ADR-130 limits bootstrap assistant credentials to explicit, bounded source IDs
