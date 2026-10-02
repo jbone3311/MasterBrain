@@ -25,6 +25,9 @@ for explicit source IDs; routes without reviewed source semantics remain denied.
 ADR-133 adds two source-scoped status reads. ADR-134 adds the bounded answer
 read over the same current, separately authorized evidence; ADR-144 supplies
 a local deterministic default selector and retains explicit disablement.
+ADR-145 removes fixed question boilerplate before answer retrieval, while
+`current_search(query)` remains literal and the selector receives the original
+question. This is lexical cleanup, not synonym search or AI-written synthesis.
 ADR-132 also lets a separately verified OIDC assistant use administrator-owned,
 same-tenant source grants, rechecked on each database transaction. Neither
 path is certified hosted grant issuance or a named assistant. A

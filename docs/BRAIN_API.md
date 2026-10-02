@@ -79,7 +79,9 @@ source effects or an alternate route through KnowledgeCore.
   may choose at most four exact quotes from at most eight bounded passages;
   the server verifies citations and rechecks current visibility. ADR-144 makes
   a local deterministic excerpt selector the default; explicit `None` disables
-  it and returns 503. It has no effect grant,
+  it and returns 503. ADR-145 removes fixed question boilerplate before both
+  current-search calls; the original question reaches the selector, and Search
+  only retains literal query behavior. It has no effect grant,
   freeform model-authored answer or hosted/named-assistant acceptance.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires

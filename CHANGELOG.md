@@ -2,6 +2,17 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Made extractive Ask retrieve with substantive lexical terms from an ordinary
+  question instead of requiring source documents to contain question filler
+  words (ADR-145). The original question still drives local quote selection;
+  initial and final current-source checks use the same terms. Search only
+  remains literal, and no semantic synthesis or remote model was added.
+
+- Enabled the default local, deterministic, verified-quote Ask path (ADR-144)
+  with explicit selector disablement. It returns bounded current Email/FileOS
+  quotes or an unsupported answer, not an AI-written conclusion; FOS-Master
+  and source data are unchanged.
+
 - Added ADR-143's source-scoped direct KnowledgeCore search, assertion expansion
   and change feed for enrolled assistants, plus unified Brain search. Mixed-source
   assertions are hidden in full; hidden change cursors return not found. Forward

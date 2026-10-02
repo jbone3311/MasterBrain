@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-145 derives a bounded lexical query for extractive Ask by removing only
+  fixed question boilerplate. Initial and final current-source searches use
+  the same terms; the selector sees the original question. Fictional
+  PostgreSQL Email/FileOS evidence supports a natural-question known answer
+  that literal full-question search misses. No synonym/semantic understanding,
+  hosted acceptance or source-effect authority is implied.
+
 - ADR-144 makes the first-party Ask route return locally selected, bounded
   exact source quotes by default. This is deterministic retrieval over already
   authorized evidence, not a model-generated answer or remote inference;
