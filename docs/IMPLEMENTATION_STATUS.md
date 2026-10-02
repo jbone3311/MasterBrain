@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-135 adds an explicit `--tenant-bound-db` mode to the private FileOS
+  publisher. Check, publication and replay use one authenticated worker tenant
+  and a DBA-bound single-tenant login; a shared, unbound or wrong-tenant login
+  fails before intake. The default legacy local mode and other private workers
+  remain unchanged. This is synthetic/disposable containment, not closure of
+  issue #7 or hosted multi-tenant acceptance.
+
 - ADR-134 adds an optional, provider-neutral extractive answer boundary to
   `POST /v1/brain/answers`, the first-party `/brain` workspace and the external
   read client. The server bounds passages, rejects invented or stale quotes and
@@ -169,8 +176,9 @@ production and FileOS cutover remain open.
   exact-identity login and separately fenced tenant logins. Real disposable
   PostgreSQL tests cover two-tenant API search and missing/wrong/shared-route
   refusal; private-file tests cover malformed, duplicate, symlink and broad-mode
-  configuration. Existing private workers still use explicit shared DSNs and
-  credential lifecycle/hosted acceptance are not implemented. Issue #7 stays open.
+  configuration. ADR-135 subsequently adds one opt-in tenant-bound private
+  FileOS publisher; other workers still use explicit shared DSNs. Credential
+  lifecycle/hosted acceptance are not implemented. Issue #7 stays open.
 - ADR-108/migration 0037 add an opt-in restrictive RLS fence for a DBA-bound
   one-tenant PostgreSQL login. Synthetic arbitrary-SQL tests cover forged GUCs,
   wrong-tenant read/write, role switching and mapping loss. No worker DSN router,

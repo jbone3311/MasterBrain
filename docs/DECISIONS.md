@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-135](adr/135_tenant_bound_fileos_publisher.md) adds an opt-in
+single-tenant database-login check to the private FileOS publisher. It
+does not route other workers, retire shared local DSNs or close issue #7.
+
 [ADR-134](adr/134_grounded_extractive_answers.md) adds an optional, read-only
 extractive answer contract over currently authorized evidence. The selector has
 no effects; the server verifies exact quotes and citations. No model adapter is

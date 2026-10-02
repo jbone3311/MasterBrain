@@ -74,11 +74,12 @@ def test_cli_publish_uses_masterbrain_dsn_and_scrubs_it(
     run = monkeypatch.setattr(
         cli,
         "run_fileos_controller",
-        lambda path, received_dsn, received_key, check: {
+        lambda path, received_dsn, received_key, check, tenant_bound_db: {
             "config": path == config,
             "dsn": received_dsn == dsn,
             "key": str(received_key) == key,
             "check": check,
+            "tenant_bound_db": tenant_bound_db,
             "source_effects": False,
         },
     )
@@ -101,8 +102,27 @@ def test_cli_publish_uses_masterbrain_dsn_and_scrubs_it(
         "dsn": True,
         "key": True,
         "source_effects": False,
+        "tenant_bound_db": False,
     }
     assert dsn not in output
+
+
+def test_cli_publish_forwards_tenant_bound_mode(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    key = "93c5a004-81ab-45b6-8652-e8ced2b40e47"
+    monkeypatch.setenv("MASTERBRAIN_DSN", "dbname=synthetic user=bound password=secret")
+    monkeypatch.setattr(
+        cli, "run_fileos_controller",
+        lambda _path, _dsn, _key, **options: options,
+    )
+    main([
+        "fileos", "publish", "--config", str(tmp_path / "operator.json"),
+        "--idempotency-key", key, "--tenant-bound-db", "--check",
+    ])
+    assert json.loads(capsys.readouterr().out) == {
+        "check": True, "tenant_bound_db": True,
+    }
 
 
 def test_cli_index_uses_masterbrain_dsn_and_explicit_target(

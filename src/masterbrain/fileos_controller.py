@@ -96,10 +96,11 @@ def run_fileos_controller(
     idempotency_key: UUID,
     *,
     check: bool = False,
+    tenant_bound_db: bool = False,
 ) -> dict[str, Any]:
     """Validate or publish one immutable snapshot with bounded, replayable authority."""
     try:
-        if not dsn or not isinstance(idempotency_key, UUID):
+        if not dsn or not isinstance(idempotency_key, UUID) or type(tenant_bound_db) is not bool:
             raise FileOSControllerError()
         config = FileOSControllerConfig.model_validate(_json(path))
         manifest = _manifest(config)
@@ -112,7 +113,10 @@ def run_fileos_controller(
             config, scope=frozenset({"brain.source.ingest", "brain.document.publish"})
         )
         initial = identity.authenticate()
-        store = Store(dsn)
+        store = (
+            Store(dsn, tenant_dsns={initial.context.tenant_id: dsn})
+            if tenant_bound_db else Store(dsn)
+        )
         with store.transaction(initial.context):
             pass
         _current(identity, initial)

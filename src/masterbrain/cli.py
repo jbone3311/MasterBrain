@@ -118,6 +118,7 @@ def build_parser() -> argparse.ArgumentParser:
     publish.add_argument("--config", type=Path, required=True)
     publish.add_argument("--idempotency-key", type=UUID, required=True)
     publish.add_argument("--check", action="store_true")
+    publish.add_argument("--tenant-bound-db", action="store_true")
     index = file_commands.add_parser("index", help="Build/activate a FileOS index generation")
     index.add_argument("--config", type=Path, required=True)
     target = index.add_mutually_exclusive_group(required=True)
@@ -263,7 +264,10 @@ def main(argv: Sequence[str] | None = None) -> None:
                 raise ValueError("MASTERBRAIN_DSN is required")
             print(
                 _json(
-                    run_fileos_controller(args.config, dsn, args.idempotency_key, check=args.check)
+                    run_fileos_controller(
+                        args.config, dsn, args.idempotency_key,
+                        check=args.check, tenant_bound_db=args.tenant_bound_db,
+                    )
                 )
             )
         elif args.command == "fileos" and args.file_command == "index":

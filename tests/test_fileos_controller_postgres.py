@@ -12,8 +12,11 @@ from uuid import UUID, uuid4
 import psycopg
 import pytest
 import test_postgres as pg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 
 from email_brain.domain.models import TenantContext
+from email_brain.migrate import grant_tenant_runtime
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.fileos_controller import FileOSControllerError, run_fileos_controller
@@ -158,6 +161,62 @@ def test_admin_dsn_and_revoked_local_worker_are_refused(
             ).fetchone()[0]
             == 0
         )
+
+
+def test_tenant_bound_fileos_publish_contains_shared_and_wrong_login(
+    database: tuple[object, str],
+    tenant: tuple[TenantContext, UUID],
+    tmp_path: Path,
+) -> None:
+    shared, admin = database
+    ctx, _ = tenant
+    path, source, _, _ = setup_controller(tmp_path, ctx)
+    other_tenant = uuid4()
+    own_role = "test_fileos_bound_" + uuid4().hex[:12]
+    other_role = "test_fileos_bound_" + uuid4().hex[:12]
+    own_password, other_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Other fictional worker tenant')",
+                     (other_tenant,))
+        for role, password, tenant_id in (
+            (own_role, own_password, ctx.tenant_id),
+            (other_role, other_password, other_tenant),
+        ):
+            conn.execute(
+                sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                    sql.Identifier(role), sql.Literal(password)
+                )
+            )
+            grant_tenant_runtime(conn, role, tenant_id)
+    own_dsn = make_conninfo(admin, user=own_role, password=own_password)
+    other_dsn = make_conninfo(admin, user=other_role, password=other_password)
+    key = uuid4()
+    for refused_dsn in (shared.dsn, other_dsn, admin):
+        with pytest.raises(FileOSControllerError):
+            run_fileos_controller(path, refused_dsn, key, check=True, tenant_bound_db=True)
+    assert run_fileos_controller(
+        path, own_dsn, key, check=True, tenant_bound_db=True
+    )["execution_verified"] is False
+    before = source.joinpath("brief.txt").read_bytes()
+    first = run_fileos_controller(path, own_dsn, key, tenant_bound_db=True)
+    assert first["completion"]["recorded"] is True
+    assert first["observed_items"] == 1
+    replay = run_fileos_controller(path, own_dsn, key, tenant_bound_db=True)
+    assert replay["completion"]["recorded"] is False
+    assert source.joinpath("brief.txt").read_bytes() == before
+    with psycopg.connect(own_dsn) as conn:
+        conn.execute("SELECT set_config('email_brain.tenant_id', %s, true)",
+                     (str(other_tenant),))
+        assert conn.execute("SELECT id FROM tenants WHERE id=%s", (other_tenant,)).fetchall() == []
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,'forged_worker_source','email','Forged source')",
+                (other_tenant,),
+            )
+    private_write(path.parent / "credentials.json", [])
+    with pytest.raises(FileOSControllerError):
+        run_fileos_controller(path, own_dsn, uuid4(), check=True, tenant_bound_db=True)
 
 
 def test_index_build_replay_changed_revision_and_rollback(

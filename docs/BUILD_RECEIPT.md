@@ -2,6 +2,20 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-135 tenant-bound FileOS publisher — branch verification pending
+
+One private publisher now has an explicit single-tenant database-login mode.
+The authenticated worker tenant, not the manifest or request, selects the
+database fence. A real disposable PostgreSQL test proves check, publication,
+replay, wrong/shared/owner-login refusal and cross-tenant read/write denial
+after a forged tenant GUC.
+The local full suite passed **2,954 tests, one skipped** on PostgreSQL 17.11:
+466 of 467 PostgreSQL-marked tests executed. All 146 browser tests, Ruff,
+strict mypy over 97 source files, documentation links and diff checks passed.
+Record the exact branch head and hosted CI/strict-runtime/restore results
+before merge. Other workers and hosted credential operations remain issue #7;
+FOS-Master is unchanged.
+
 ## ADR-134 grounded extractive answers — merged verification
 
 PR [#98](https://github.com/jbone3311/MasterBrain/pull/98) merged at

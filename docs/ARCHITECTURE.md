@@ -54,6 +54,9 @@ Brain API. It binds a private config to one root/source/snapshot, requires exact
 scopes and a request UUID, then repeatedly revalidates authority while invoking the
 same adapter. It emits only counts. Scheduling, effects and Docker authority are not
 part of the public API process.
+ADR-135 lets this one publisher require a database login bound to its
+authenticated worker tenant. The opt-in check uses the existing transaction
+fence; it does not route other private workers or authorize hosted operation.
 
 Whole-run completion is separate from intake and per-document publication. Only an
 append-only receipt whose terminal outcome counts cover the exact manifest advances a
