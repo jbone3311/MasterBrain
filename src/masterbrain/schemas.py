@@ -13,6 +13,19 @@ class BrainSearchRequest(ClosedModel):
     limit: int = Field(default=10, ge=1, le=50, strict=True)
 
 
+class FileOSV2SearchPreviewRequest(ClosedModel):
+    generation_id: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")
+    query: str = Field(min_length=1, max_length=500)
+    limit: int = Field(default=10, ge=1, le=50, strict=True)
+
+    @field_validator("query")
+    @classmethod
+    def nonempty_query(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("query is empty")
+        return value
+
+
 class EmailFamilySearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     message_limit: int = Field(default=10, ge=1, le=25, strict=True)

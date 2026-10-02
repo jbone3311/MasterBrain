@@ -6467,6 +6467,106 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert preview.active_v1_hits == ()
     assert {hit.locator for hit in preview.candidate_hits} == {"changed.txt"}
     assert all(hit.source_id == source_id for hit in preview.candidate_hits)
+    review_token = "synthetic-fileos-v2-review-" + "r" * 32
+    review_credential = Credential(
+        token_sha256=hashlib.sha256(review_token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id,
+        actor_id=ctx.actor_id,
+        scopes={
+            "brain.fileos.transition.review", "brain.search", "brain.evidence.read",
+        },
+        client_kind="human",
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+    )
+    review_path = f"/v1/brain/sources/{source_id}/v2-search-preview"
+    review_body = {
+        "generation_id": generation.generation_id,
+        "query": "synthetic changed proof",
+        "limit": 10,
+    }
+    with store.transaction(ctx) as conn:
+        activation_count = conn.execute(
+            "SELECT count(*) AS n FROM brain_index_activations "
+            "WHERE tenant_id=%s AND source_id=%s", (ctx.tenant_id, source_id),
+        ).fetchone()["n"]
+    with TestClient(create_app(store, TokenRegistry([review_credential]))) as client:
+        headers = {"Authorization": "Bearer " + review_token}
+        response = client.post(review_path, json=review_body, headers=headers)
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert result["source_id"] == source_id
+        assert result["candidate_generation_id"] == generation.generation_id
+        assert result["active_v1_generation_id"] is None
+        assert result["candidate_visibility"] == "historical_preview"
+        assert result["ranking"] == "within_generation_only"
+        assert result["coverage"] == "historical_comparison_not_current_fileos"
+        assert result["layers"]["active_v1"] == []
+        assert {hit["locator"] for hit in result["layers"]["candidate_v2"]} == {
+            hit.locator for hit in preview.candidate_hits
+        }
+        assert all(hit["source_id"] == source_id for hit in result["layers"]["candidate_v2"])
+        assert result["untrusted_content"] is True
+        assert client.post(
+            review_path, json={**review_body, "limit": 0}, headers=headers,
+        ).status_code == 422
+        assert client.post(
+            review_path, json={**review_body, "limit": 51}, headers=headers,
+        ).status_code == 422
+        assert client.post(
+            review_path, json={**review_body, "unexpected": True}, headers=headers,
+        ).status_code == 422
+        assert client.post(
+            review_path, json={**review_body, "query": " "}, headers=headers,
+        ).status_code == 422
+        assert client.post(
+            review_path, json={**review_body, "generation_id": "bad/path"},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            review_path, json={**review_body, "generation_id": "index_generation_v2_" + "0" * 32},
+            headers=headers,
+        ).status_code == 404
+        assert client.post(
+            "/v1/brain/sources/files_wrong_source/v2-search-preview",
+            json=review_body, headers=headers,
+        ).status_code == 404
+    limited_token = "synthetic-fileos-v2-limited-" + "l" * 32
+    limited_credential = review_credential.model_copy(update={
+        "token_sha256": hashlib.sha256(limited_token.encode()).hexdigest(),
+        "scopes": {"brain.fileos.transition.review"},
+    })
+    with TestClient(create_app(store, TokenRegistry([limited_credential]))) as client:
+        assert client.post(
+            review_path, json=review_body,
+            headers={"Authorization": "Bearer " + limited_token},
+        ).status_code == 403
+
+    class NonHumanReviewAuthenticator:
+        def authenticate(self, _token: str) -> Principal:
+            return Principal(replace(human.context, source_ids=frozenset({source_id})),
+                             "assistant")
+
+    with TestClient(create_app(store, NonHumanReviewAuthenticator())) as client:
+        assert client.post(
+            review_path, json=review_body,
+            headers={"Authorization": "Bearer synthetic-nonhuman"},
+        ).status_code == 403
+    other_token = "synthetic-fileos-v2-other-" + "o" * 32
+    other_credential = review_credential.model_copy(update={
+        "token_sha256": hashlib.sha256(other_token.encode()).hexdigest(),
+        "tenant_id": other_tenant,
+        "actor_id": other_actor,
+    })
+    with TestClient(create_app(store, TokenRegistry([other_credential]))) as client:
+        assert client.post(
+            review_path, json=review_body,
+            headers={"Authorization": "Bearer " + other_token},
+        ).status_code == 404
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_index_activations "
+            "WHERE tenant_id=%s AND source_id=%s", (ctx.tenant_id, source_id),
+        ).fetchone()["n"] == activation_count
     with pytest.raises(AccessDenied, match="human FileOS"):
         search_reviewer.preview(index_worker, source_id, generation.generation_id,
                                 "synthetic changed proof")
@@ -6613,6 +6713,14 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert compared.active_v1_generation_id == active_v1.generation_id
     assert compared.active_v1_hits == ()
     assert {hit.locator for hit in compared.candidate_hits} == {"changed.txt"}
+    with TestClient(create_app(store, TokenRegistry([review_credential]))) as client:
+        response = client.post(
+            review_path, json=review_body,
+            headers={"Authorization": "Bearer " + review_token},
+        )
+        assert response.status_code == 200
+        assert response.json()["active_v1_generation_id"] == active_v1.generation_id
+        assert response.json()["layers"]["active_v1"] == []
     assert core.search_fileos_active(ctx, source_id, "synthetic changed proof") == []
     next_manifest = snapshot_tree(
         tmp_path,
@@ -6643,6 +6751,13 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     with pytest.raises(Conflict, match="basis requires review"):
         search_reviewer.preview(human, source_id, generation.generation_id,
                                 "synthetic changed proof")
+    with TestClient(create_app(store, TokenRegistry([review_credential]))) as client:
+        stale = client.post(
+            review_path, json=review_body,
+            headers={"Authorization": "Bearer " + review_token},
+        )
+        assert stale.status_code == 409
+        assert "changed.txt" not in stale.text
     with pytest.raises(Conflict, match="requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, tmp_path)
     with pytest.raises(Conflict, match="requires review"):

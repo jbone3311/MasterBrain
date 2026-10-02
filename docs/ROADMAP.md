@@ -107,7 +107,8 @@ Security and data-integrity blockers take priority over adding more surface area
    database-enforced activation refusal. PR #81 merged with exact-head and
    merged-main gates green. DC-002V (ADR-128) adds a private human-review
    comparison of one named v2 generation with active v1 using the same lexical
-   query; it is not a public or current-search route. Current visibility,
+   query. ADR-147 gives that comparison a bounded, human-only Brain API route;
+   it is still a historical preview, not current-search visibility. Current visibility,
    later v2-run behavior, absence
    suppression, rollback and live acceptance remain separate decisions before
    any switch.

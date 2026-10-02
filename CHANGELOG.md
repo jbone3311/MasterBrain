@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Exposed the existing historical FileOS v2-versus-active-v1 lexical
+  comparison through a bounded, human-only Brain API route (ADR-147). It
+  requires transition-review, search and evidence scopes; the v2 result is
+  explicitly a preview, and SQL still bars activation. No donor or source
+  changes were made.
+
 - Expanded the fictional Email/FileOS trial with conflicting Maple Arcade
   closing dates. A real-PostgreSQL Ask/API/client test requires both exact
   citations and no invented resolution; the launcher self-test checks the

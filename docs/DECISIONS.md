@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-147](adr/147_human_fileos_v2_review_api.md) exposes the existing
+historical FileOS v2 search comparison through one human-only, bounded Brain
+API route. It keeps current v1 search and SQL-refused v2 activation unchanged.
+
 [ADR-146](adr/146_reviewed_knowledge_in_ask.md) lists bounded, source-scoped
 reviewed KnowledgeCore matches beside exact source quotes in Ask. It rechecks
 every selected assertion and all of its direct evidence links; reviewed
