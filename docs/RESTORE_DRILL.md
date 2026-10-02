@@ -4,11 +4,18 @@ ADR-040 now adds populated identity bindings for both fictional tenants. ADR-132
 adds a Brain-scoped assistant binding and one same-tenant source grant for each.
 The drill checks preserved binding IDs/scopes/grants, identity-lookup RLS, tenant
 search isolation, grant removal and disable/re-enable revision, and rejection of
-stale contexts after restore. This is
-SQL authority proof, not a real issuer handshake; signatures have separate fake-issuer
-tests.
+stale contexts after restore. This is SQL authority proof, not a real issuer
+handshake; signatures have separate fake-issuer tests.
 
-Latest verified runtime: **98a334c47253d7e1af74a948837d2c40e9ff9c95**,
+Latest verified runtime: **89a4351e35bc83d6bad19fe4a5f0cf9b80d5b11f**,
+[run 36958959449](https://github.com/jbone3311/MasterBrain/actions/runs/36958959449),
+passed 2026-10-01 Pacific: **85 tables, 269 rows, two tenants, four external
+objects and two identity bindings**. Matching content hashes, RLS, identity
+revocation and database-only restore refusal passed; 29 restore-safety tests
+passed. The 17.52-second disposable run is not production RTO/PITR, live issuer
+verification or hosted key-loss recovery.
+
+Previously verified runtime: **98a334c47253d7e1af74a948837d2c40e9ff9c95**,
 [run 35624876390](https://github.com/jbone3311/MasterBrain/actions/runs/35624876390),
 passed 2026-09-21: **27 tables, 147 rows, two tenants, four encrypted objects,
 two identity bindings**, matching hashes, RLS, revoked-context denial and

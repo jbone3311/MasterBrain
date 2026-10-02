@@ -2,7 +2,21 @@
 
 Updated 2026-10-01 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## API-SOURCE-002 OIDC Brain grants — rebased branch verification
+## API-SOURCE-002 OIDC Brain grants — merged verification
+
+PR [#91](https://github.com/jbone3311/MasterBrain/pull/91) merged at
+`89a4351e35bc83d6bad19fe4a5f0cf9b80d5b11f` from exact head
+`9e4b63a69cc3bc7a37a70332defb168e331873be`. The head passed
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36958088397),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36958088367)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36958088395).
+The merge commit passed the corresponding
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/36958959477),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/36958959460)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/36958959449).
+Both CI gates ran the full PostgreSQL suite directly and again through the
+deployment gate on an accumulated synthetic database. This is not hosted or
+named-assistant acceptance; issue #88 remains open.
 
 ADR-132 and forward migration 0049 add administrator-owned, same-tenant source
 grants to exact verified OIDC Brain assistant bindings. The source-aware resolver
@@ -25,10 +39,12 @@ diff checks passed before that final SQL-only correction; targeted and full
 PostgreSQL gates were repeated afterward. The local deployment gate passed
 2,465 non-PostgreSQL tests, skipping 464 database-marked tests by design.
 Pinned FOS-Master DataCore parity passed at 3,000 synthetic files; the donor
-classifier matched 3,004 paths. FOS-Master was not changed. Exact-head CI,
-strict runtime, populated Docker restore and merged-main gates are not yet
-claimed. The local host has no Docker command, so the restore drill must run
-in GitHub CI.
+classifier matched 3,004 paths. FOS-Master was not changed. Docker is not
+available on the local host; GitHub's populated restore drill verified 85
+tables, 269 rows, two tenants, four external objects and two identity bindings
+with matching content hashes, RLS, identity revocation and refusal of a
+database-only restore. This remains synthetic-only, not a production RTO or
+live-issuer proof.
 
 ## DC-002U readiness scaling correction — merged verification
 
