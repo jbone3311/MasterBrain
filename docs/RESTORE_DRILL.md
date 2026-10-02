@@ -7,7 +7,16 @@ search isolation, grant removal and disable/re-enable revision, and rejection of
 stale contexts after restore. This is SQL authority proof, not a real issuer
 handshake; signatures have separate fake-issuer tests.
 
-Latest verified runtime: **89a4351e35bc83d6bad19fe4a5f0cf9b80d5b11f**,
+Latest verified runtime: **9c07f00445307ad99fef33a02546564ba9ca0945**,
+[run 36963721936](https://github.com/jbone3311/MasterBrain/actions/runs/36963721936),
+passed 2026-10-01 Pacific: **85 tables, 270 rows, two tenants, four external
+objects and two identity bindings**. Matching content hashes, RLS, identity
+revocation and database-only restore refusal passed. The 22.22-second
+disposable run is not production RTO/PITR, live issuer verification or hosted
+key-loss recovery. Migration 0050 adds an OIDC scope and function changes,
+not another tenant data table.
+
+Previously verified runtime: **89a4351e35bc83d6bad19fe4a5f0cf9b80d5b11f**,
 [run 36958959449](https://github.com/jbone3311/MasterBrain/actions/runs/36958959449),
 passed 2026-10-01 Pacific: **85 tables, 269 rows, two tenants, four external
 objects and two identity bindings**. Matching content hashes, RLS, identity
