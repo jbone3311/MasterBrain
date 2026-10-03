@@ -154,6 +154,15 @@ and after-open move regressions return only a directory coverage error. The pinn
 matches 3,004 ordinary rows with the six documented policy gaps. This does
 not change the donor scanner or authorize live-root shadow/cutover.
 
+ADR-156 removes the remaining symlink-target type probe from that shadow.
+Directory entries are checked for symlinks before no-follow directory
+classification. File, directory and dangling links now share a
+`symlink_skipped` coverage error; a directory link is no longer a safe
+exclusion. The shadow profile and candidate version advance to v2 so an old
+review packet cannot silently acquire the new policy. Ordinary donor parity
+is unchanged. This still does not establish real cloud-placeholder or live
+root acceptance.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,

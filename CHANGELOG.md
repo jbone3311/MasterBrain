@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Removed symlink-target type inspection from the synthetic, nonpublishing
+  FileOS donor shadow (ADR-156). Directory links now block coverage instead
+  of becoming exclusions; v2 profile/candidate versions require a fresh
+  review. Current FileOS, source files and FOS-Master are unchanged.
+
 - Moved the synthetic two-tenant logical restore rehearsal to a second fresh
   PostgreSQL 17 container (ADR-155). Source roles must be absent in the target;
   their restored mappings are retired before new bound logins pass forged-SQL

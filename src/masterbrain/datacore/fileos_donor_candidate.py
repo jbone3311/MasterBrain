@@ -21,7 +21,7 @@ from masterbrain.datacore.fileos_donor_shadow import (
     scan_donor_policy_shadow,
 )
 
-CANDIDATE_VERSION = "masterbrain-fileos-donor-candidate-v1"
+CANDIDATE_VERSION = "masterbrain-fileos-donor-candidate-v2"
 DONOR_COMMIT = "218d5caec2f20b9047fd3eb8e027dc671acf0c15"
 _HEX_SHA = re.compile(r"[a-f0-9]{64}\Z", re.ASCII)
 _DEFERRED_STATES = frozenset({"no_hash", "dataless", "oversize"})
@@ -132,7 +132,6 @@ def build_fileos_donor_candidate(
             "donor_junk_dir",
             "donor_operational_dir",
             "donor_junk_file",
-            "symlink_directory",
             "not_regular",
         }:
             raise ValueError("invalid donor candidate exclusion")
@@ -156,7 +155,7 @@ def build_fileos_donor_candidate(
     excluded_directories = {
         entry["locator"]
         for entry in exclusions
-        if entry["reason"] in {"donor_junk_dir", "donor_operational_dir", "symlink_directory"}
+        if entry["reason"] in {"donor_junk_dir", "donor_operational_dir"}
     }
     for locator in occupied:
         parts = locator.split("/")
