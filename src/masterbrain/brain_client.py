@@ -14,6 +14,7 @@ import httpx
 from pydantic import ValidationError
 
 from masterbrain.schemas import (
+    MAX_ANSWER_TEXT_BYTES,
     CurrentGroupedSearchRequest,
     EvidenceContentRequest,
     GroundedAnswerRequest,
@@ -229,6 +230,7 @@ class BrainReadClient:
             or not isinstance(coverage, dict)
             or coverage.get("complete") is not False
             or not isinstance(coverage.get("answer_context_truncated", False), bool)
+            or not isinstance(coverage.get("answer_output_truncated", False), bool)
             or coverage.get("source_focus", "all") != source_focus
             or not isinstance(citations, list)
             or len(citations) > 4
@@ -242,9 +244,24 @@ class BrainReadClient:
             or any(not self._valid_reviewed_knowledge(item) for item in reviewed)
             or (source_focus != "all" and bool(reviewed))
             or (data["status"] == "quoted_evidence") != bool(citations)
+            or not self._within_answer_text_budget(citations, reviewed)
         ):
             raise BrainClientError("invalid_response")
         return data
+
+    @staticmethod
+    def _within_answer_text_budget(
+        citations: list[dict[str, Any]], reviewed: list[dict[str, Any]]
+    ) -> bool:
+        try:
+            size = sum(len(item["quote"].encode("utf-8")) for item in citations)
+            size += sum(
+                len(item["title"].encode("utf-8"))
+                + len(item["excerpt"].encode("utf-8")) for item in reviewed
+            )
+        except UnicodeEncodeError:
+            return False
+        return size <= MAX_ANSWER_TEXT_BYTES
 
     @staticmethod
     def _valid_reviewed_knowledge(item: Any) -> bool:

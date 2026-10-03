@@ -8,6 +8,7 @@ from email_brain.schemas import ClosedModel
 from masterbrain.knowledge_schema import KnowledgeKind
 
 SourceFocus = Literal["all", "email", "fileos"]
+MAX_ANSWER_TEXT_BYTES = 8192
 
 
 class BrainSearchRequest(ClosedModel):

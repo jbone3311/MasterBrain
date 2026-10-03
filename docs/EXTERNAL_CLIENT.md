@@ -35,6 +35,10 @@ ADR-151 makes `answer(question)` carry `coverage.answer_context_truncated`.
 The selector sees at most 2,048 UTF-8 bytes from one passage and 8,192 bytes
 of passage text total. The client validates the flag when present; callers
 must not read a flagged no-quote answer as a whole-source negative result.
+ADR-157 separately limits the returned quote plus reviewed-match text to
+8,192 UTF-8 bytes. `coverage.answer_output_truncated` says reviewed display
+text was shortened or omitted; exact quotes remain intact. The client rejects
+over-budget or malformed responses. This is not a whole-JSON or token budget.
 ADR-132 also lets a separately verified OIDC assistant use administrator-owned,
 same-tenant source grants, rechecked on each database transaction. Neither
 path is certified hosted grant issuance or a named assistant. A

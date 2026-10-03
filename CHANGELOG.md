@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Bounded extractive Ask's returned exact quote plus reviewed-match text to
+  8,192 UTF-8 bytes (ADR-157). Exact quotes stay intact; reviewed output is
+  shortened or omitted in stable order with a separate visible flag. The
+  browser now counts Unicode code points like the API for citations and text
+  limits. Full JSON, token and hosted-model budgets remain open.
+
 - Removed symlink-target type inspection from the synthetic, nonpublishing
   FileOS donor shadow (ADR-156). Directory links now block coverage instead
   of becoming exclusions; v2 profile/candidate versions require a fresh

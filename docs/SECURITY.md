@@ -67,6 +67,14 @@ the aggregate cap is full. It rejects invalid Unicode adapter text. This
 limits future model exposure but is not a total prompt/token, response, hosted
 egress or remote-model approval.
 
+ADR-157 also caps aggregate untrusted text returned by Ask: exact source quotes
+plus reviewed KnowledgeCore titles/excerpts total at most 8,192 UTF-8 bytes.
+The server preserves exact quotes, then clips or omits reviewed display text
+with an explicit `answer_output_truncated` flag after full currentness and
+direct-link rechecks. The reference client and browser reject over-budget
+responses; the browser counts Unicode code points for citation offsets.
+This does not cap the complete JSON envelope or approve model egress.
+
 ADR-128's FileOS v2 search comparison is not in the first-party workspace.
 ADR-147 exposes only that existing comparison through a human-only Brain API
 route. It requires transition-review, search and evidence grants, binds one

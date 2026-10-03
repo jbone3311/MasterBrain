@@ -1,5 +1,7 @@
 """Read-only external Brain API transport and privacy boundaries."""
 
+import json
+
 import httpx
 import pytest
 
@@ -63,11 +65,18 @@ def test_answer_client_uses_same_read_only_origin_and_validates_response() -> No
     {"mode": "freeform"},
     {"coverage": {"complete": True}},
     {"coverage": {"complete": False, "answer_context_truncated": "yes"}},
+    {"coverage": {"complete": False, "answer_output_truncated": "yes"}},
     {"citations": [{"evidence_id": "forged"}]},
     {"citations": [{**answer_result()["citations"][0], "quote": "invented"}]},
+    {"citations": [{**answer_result()["citations"][0], "quote": "bad\ud800", "end": 4}]},
     {"status": "quoted_evidence", "citations": []},
     {"answer": "x" * 201},
     {"reviewed_knowledge": [{}]},
+    {"reviewed_knowledge": [{
+        "object_kind": "claim", "object_id": "claim_" + "a" * 32,
+        "title": "📄" * 300, "excerpt": "📄" * 1200,
+        "evidence_ids": ["evidence_" + "b" * 32], "linked_evidence_count": 1,
+    }] * 4},
     {"reviewed_knowledge": [{"object_kind": [], "evidence_ids": [{}]}]},
     {"reviewed_knowledge": [{
         "object_kind": "claim", "object_id": "claim_" + "a" * 32,
@@ -80,7 +89,9 @@ def test_answer_client_rejects_malformed_claims(change: dict) -> None:
     result = {**answer_result(), **change}
     with BrainReadClient(
         "https://brain.example", "token",
-        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=result)),
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, content=json.dumps(result).encode())
+        ),
     ) as client:
         with pytest.raises(BrainClientError, match="invalid_response"):
             client.answer("fictional question")

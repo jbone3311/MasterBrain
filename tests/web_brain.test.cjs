@@ -60,7 +60,7 @@ function harness(customFetch) {
           {id: "ev_email", source_kind: "email", observed_at: "2026-09-24", sha256: "a".repeat(64)};
       return {ok: true, status: 200, json: async () => value};
     },
-    AbortController, setTimeout, clearTimeout,
+    AbortController, TextEncoder, setTimeout, clearTimeout,
   });
   const enterToken = value => { elements["brain-token"].value = value; elements["brain-token"].events.input(); };
   const chooseFocus = value => {
@@ -308,6 +308,40 @@ test("malformed Ask context-budget flag is rejected", async () => {
   h.enterToken("owner-token");
   await h.ask("insurance");
   assert.deepEqual(h.calls.map(call => call.url), ["/v1/brain/answers"]);
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer unavailable/);
+});
+
+test("Ask marks shortened output and rejects an oversized untrusted answer body", async () => {
+  const hit = number => ({object_kind: "claim", object_id: `claim_${number.toString(16).padStart(32, "0")}`,
+    title: "📄".repeat(300), excerpt: "📄".repeat(1200),
+    evidence_ids: [`evidence_${number.toString(16).padStart(32, "0")}`], linked_evidence_count: 1});
+  const response = {mode: "grounded_extractive_v1", status: "no_supported_answer",
+    answer: "No exact source quote selected; reviewed knowledge matches are listed below.",
+    citations: [], reviewed_knowledge: [hit(1)],
+    coverage: {complete: false, answer_output_truncated: true}, untrusted_content: true};
+  const h = harness(async () => ({ok: true, json: async () => response}));
+  h.enterToken("owner-token");
+  await h.ask("insurance");
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer results were shortened/);
+  response.reviewed_knowledge = [hit(1), hit(2)];
+  await h.ask("insurance");
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer unavailable/);
+});
+
+test("Ask validates Unicode code-point citation offsets and rejects lone surrogates", async () => {
+  const response = {mode: "grounded_extractive_v1", status: "quoted_evidence",
+    answer: "Relevant passages from current indexed evidence are quoted below.",
+    citations: [{evidence_id: "evidence_" + "a".repeat(32), document_id: "document_" + "b".repeat(32),
+      source_id: "trial_files", source_kind: "fileos", quote: "📄 proof", start: 3, end: 10,
+      body_sha256: "a".repeat(64)}], reviewed_knowledge: [],
+    coverage: {complete: false, answer_output_truncated: false}, untrusted_content: true};
+  const h = harness(async () => ({ok: true, json: async () => response}));
+  h.enterToken("owner-token");
+  await h.ask("proof");
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /📄 proof/);
+  response.citations[0].quote = "bad\ud800";
+  response.citations[0].end = 7;
+  await h.ask("proof");
   assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer unavailable/);
 });
 

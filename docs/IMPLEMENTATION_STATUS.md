@@ -38,6 +38,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-157 caps aggregate exact quote plus reviewed KnowledgeCore display text
+  returned by Ask at 8,192 UTF-8 bytes. Exact quotes and links remain intact;
+  reviewed excerpts may be shortened or later matches omitted with a separate
+  output-truncation flag. The client and browser reject over-budget responses;
+  browser character/offset checks now match the API's Unicode code-point
+  semantics. This is not a total response or model-token budget.
+
 - ADR-156 removes symlink-target type probing from the nonpublishing FileOS
   donor-policy shadow. Directory links become coverage errors, and new
   candidate/profile versions refuse reuse of old-policy packets for staging.

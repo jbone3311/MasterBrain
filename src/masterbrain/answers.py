@@ -14,7 +14,7 @@ from typing import Any, Protocol
 from email_brain.domain.models import TenantContext
 from email_brain.store import NotFound
 from masterbrain.datacore.persistence import DataCoreStore
-from masterbrain.schemas import SourceFocus
+from masterbrain.schemas import MAX_ANSWER_TEXT_BYTES, SourceFocus
 
 MAX_PASSAGES = 8
 MAX_PASSAGE_CHARS = 1200
@@ -219,13 +219,18 @@ class GroundedAnswerService:
                 or len(set(evidence_ids)) != len(evidence_ids)
             ):
                 raise AnswerRejected()
+            try:
+                title.encode("utf-8")
+                excerpt.encode("utf-8")
+            except UnicodeEncodeError:
+                raise AnswerRejected() from None
             seen.add(object_id)
             full_ids = tuple(evidence_ids)
             selected.append(({
                 "object_kind": kind,
                 "object_id": object_id,
                 "title": title,
-                "excerpt": excerpt[:1200],
+                "excerpt": excerpt,
                 "evidence_ids": list(full_ids[:MAX_REVIEWED_EVIDENCE_IDS]),
                 "linked_evidence_count": len(full_ids),
             }, full_ids))
@@ -265,6 +270,49 @@ class GroundedAnswerService:
             return value, False, len(encoded)
         prefix = encoded[:max_bytes].decode("utf-8", errors="ignore")
         return prefix, True, len(prefix.encode("utf-8"))
+
+    @classmethod
+    def _bound_answer_text(
+        cls, citations: list[dict[str, Any]], reviewed: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], bool]:
+        """Keep exact quotes; shorten or omit reviewed text in stable search order."""
+        quote_bytes = 0
+        for citation in citations:
+            try:
+                quote_bytes += len(citation["quote"].encode("utf-8"))
+            except UnicodeEncodeError:
+                raise AnswerRejected() from None
+        if quote_bytes > MAX_ANSWER_TEXT_BYTES:
+            # The fixed four-by-400-character quote ceiling currently makes
+            # this unreachable, but preserve the invariant if either changes.
+            raise AnswerRejected()
+        remaining = MAX_ANSWER_TEXT_BYTES - quote_bytes
+        bounded: list[dict[str, Any]] = []
+        truncated = False
+        for item in reviewed:
+            title, title_shortened, title_bytes = cls._bounded_utf8_prefix(
+                item["title"], remaining
+            )
+            if title_shortened or not title:
+                truncated = True
+                break
+            excerpt_source = item["excerpt"][:1200]
+            excerpt, excerpt_shortened, excerpt_bytes = cls._bounded_utf8_prefix(
+                excerpt_source, remaining - title_bytes
+            )
+            if not excerpt:
+                truncated = True
+                break
+            bounded.append({**item, "title": title, "excerpt": excerpt})
+            remaining -= title_bytes + excerpt_bytes
+            if len(excerpt_source) < len(item["excerpt"]):
+                truncated = True
+            if excerpt_shortened:
+                truncated = True
+                break
+        if len(bounded) < len(reviewed):
+            truncated = True
+        return bounded, truncated
 
     def answer(
         self,
@@ -349,9 +397,12 @@ class GroundedAnswerService:
             refreshed_grouped = search_current()
             self._recheck_focus(refreshed_grouped, source_focus)
             self._recheck_knowledge(reviewed, refreshed_grouped, source_focus)
+            bounded_reviewed, output_truncated = self._bound_answer_text(
+                [], [item for item, _ in reviewed]
+            )
             return self._response(
-                "no_supported_answer" if reviewed else "no_supported_evidence",
-                [], coverage, [item for item, _ in reviewed], context_truncated,
+                "no_supported_answer" if bounded_reviewed else "no_supported_evidence",
+                [], coverage, bounded_reviewed, context_truncated, output_truncated,
             )
         try:
             selected = self.selector.select(question, tuple(passages))
@@ -403,9 +454,12 @@ class GroundedAnswerService:
         }
         if any((item["evidence_id"], item["document_id"]) not in current for item in citations):
             raise AnswerStale()
+        bounded_reviewed, output_truncated = self._bound_answer_text(
+            citations, [item for item, _ in reviewed]
+        )
         return self._response(
             "quoted_evidence" if citations else "no_supported_answer",
-            citations, coverage, [item for item, _ in reviewed], context_truncated,
+            citations, coverage, bounded_reviewed, context_truncated, output_truncated,
         )
 
     @staticmethod
@@ -415,6 +469,7 @@ class GroundedAnswerService:
         coverage: dict[str, Any],
         reviewed_knowledge: list[dict[str, Any]],
         context_truncated: bool,
+        output_truncated: bool,
     ) -> dict[str, Any]:
         return {
             "mode": "grounded_extractive_v1",
@@ -435,6 +490,7 @@ class GroundedAnswerService:
             "coverage": {
                 "complete": False,
                 "answer_context_truncated": context_truncated,
+                "answer_output_truncated": output_truncated,
                 "source_focus": coverage.get("source_focus", "all"),
                 "source_access": coverage.get("source_access"),
                 "knowledge": (

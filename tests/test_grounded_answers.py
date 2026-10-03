@@ -14,6 +14,7 @@ from email_brain.api import create_app
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Store
 from masterbrain.answers import (
+    MAX_ANSWER_TEXT_BYTES,
     AnswerPassage,
     AnswerRejected,
     AnswerStale,
@@ -348,6 +349,72 @@ def test_reviewed_knowledge_caps_hits_and_links_but_rechecks_hidden_links() -> N
 
     with pytest.raises(AnswerStale):
         GroundedAnswerService(brain_mock(), Selector()).answer(context(), "insurance", drifted)
+
+
+def test_answer_output_budget_preserves_quotes_and_bounds_reviewed_unicode() -> None:
+    first = reviewed_hit()
+    initial = grouped()
+    initial["layers"]["knowledge"] = [
+        {**first, "object_id": "commitment_" + f"{number:032x}",
+         "title": "Review " + "🔒" * 250, "excerpt": "📄" * 1200}
+        for number in range(4)
+    ]
+    answer = GroundedAnswerService(brain_mock(), Selector()).answer(
+        context(), "insurance", lambda: initial
+    )
+    assert answer["status"] == "quoted_evidence"
+    assert answer["citations"][0]["quote"] == "Cedar Harbor insurance is pending."
+    assert answer["coverage"]["answer_context_truncated"] is False
+    assert answer["coverage"]["answer_output_truncated"] is True
+    assert 0 < len(answer["reviewed_knowledge"]) < 4
+    assert any(len(item["excerpt"]) < 1200 for item in answer["reviewed_knowledge"])
+    emitted = sum(len(item["quote"].encode()) for item in answer["citations"])
+    emitted += sum(
+        len(item["title"].encode()) + len(item["excerpt"].encode())
+        for item in answer["reviewed_knowledge"]
+    )
+    assert emitted <= MAX_ANSWER_TEXT_BYTES
+    assert all(item["linked_evidence_count"] == 1 for item in answer["reviewed_knowledge"])
+
+
+def test_answer_output_budget_rejects_invalid_unicode_without_disclosing_it() -> None:
+    initial = grouped(False)
+    initial["layers"]["knowledge"] = [{**reviewed_hit(), "title": "bad\ud800"}]
+    with pytest.raises(AnswerRejected):
+        GroundedAnswerService(brain_mock(), Selector()).answer(
+            context(), "insurance", lambda: initial
+        )
+
+
+def test_reviewed_per_item_clip_is_reported_without_hiding_later_hits() -> None:
+    initial = grouped(False)
+    initial["layers"]["knowledge"] = [
+        {**reviewed_hit(), "excerpt": "x" * 1201},
+        {**reviewed_hit(), "object_id": "commitment_" + "e" * 32},
+    ]
+    answer = GroundedAnswerService(brain_mock(), Selector()).answer(
+        context(), "insurance", lambda: initial
+    )
+    assert answer["coverage"]["answer_output_truncated"] is True
+    assert len(answer["reviewed_knowledge"]) == 2
+    assert answer["reviewed_knowledge"][0]["excerpt"] == "x" * 1200
+
+
+def test_output_budget_never_shortens_four_maximum_multibyte_quotes() -> None:
+    quote = "📄" * 400
+    citations = [{"quote": quote} for _ in range(4)]
+    reviewed = [{**reviewed_hit(), "title": "🔒" * 300,
+                 "excerpt": "📄" * 1200}]
+    bounded, truncated = GroundedAnswerService._bound_answer_text(citations, reviewed)
+    assert truncated is True
+    assert all(item["quote"] == quote for item in citations)
+    assert len(bounded) == 1
+    assert bounded[0]["title"] == reviewed[0]["title"]
+    assert bounded[0]["excerpt"]
+    assert sum(len(item["quote"].encode()) for item in citations) + sum(
+        len(item["title"].encode()) + len(item["excerpt"].encode())
+        for item in bounded
+    ) <= MAX_ANSWER_TEXT_BYTES
 
 
 def test_local_selector_is_deterministic_bounded_and_ignores_source_instructions() -> None:

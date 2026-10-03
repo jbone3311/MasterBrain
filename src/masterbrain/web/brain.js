@@ -1,5 +1,6 @@
 "use strict";
 (() => {
+  const MAX_ANSWER_TEXT_BYTES = 8192; // Keep aligned with masterbrain.schemas.
   const tokenField = document.getElementById("brain-token");
   const questionField = document.getElementById("brain-question");
   const focusField = document.getElementById("brain-source-focus");
@@ -168,6 +169,9 @@
   }
 
   function renderAnswer(data, parent, capturedEpoch, token, focus) {
+    const validUnicode = text => {
+      try { encodeURIComponent(text); return true; } catch { return false; }
+    };
     const reviewed = data && data.reviewed_knowledge === undefined ? [] : data?.reviewed_knowledge;
     if (!data || data.mode !== "grounded_extractive_v1" ||
         !["quoted_evidence", "no_supported_evidence", "no_supported_answer"].includes(data.status) ||
@@ -175,6 +179,8 @@
         !data.coverage || data.coverage.complete !== false || data.untrusted_content !== true ||
         (data.coverage.answer_context_truncated !== undefined &&
           typeof data.coverage.answer_context_truncated !== "boolean") ||
+        (data.coverage.answer_output_truncated !== undefined &&
+          typeof data.coverage.answer_output_truncated !== "boolean") ||
         (data.coverage.source_focus || "all") !== focus ||
         data.citations.length > 4 || (data.status === "quoted_evidence") !== (data.citations.length > 0) ||
         !Array.isArray(reviewed) || reviewed.length > 4 || (focus !== "all" && reviewed.length)) {
@@ -185,9 +191,9 @@
           typeof citation.document_id !== "string" || typeof citation.source_id !== "string" ||
           typeof citation.source_kind !== "string" || typeof citation.quote !== "string" ||
           (focus !== "all" && citation.source_kind !== focus) ||
-          !citation.quote.trim() || citation.quote.length > 400 ||
+          !citation.quote.trim() || !validUnicode(citation.quote) || Array.from(citation.quote).length > 400 ||
           !Number.isInteger(citation.start) || citation.start < 0 ||
-          citation.end !== citation.start + citation.quote.length ||
+          citation.end !== citation.start + Array.from(citation.quote).length ||
           !/^[a-f0-9]{64}$/.test(citation.body_sha256)) {
         throw new Error("Answer citation could not be verified.");
       }
@@ -195,8 +201,8 @@
     for (const hit of reviewed) {
       if (!hit || !["entity", "relationship", "claim", "event", "project", "commitment", "correction"].includes(hit.object_kind) ||
           typeof hit.object_id !== "string" || !new RegExp(`^${hit.object_kind}_[a-f0-9]{32}$`).test(hit.object_id) ||
-          typeof hit.title !== "string" || !hit.title.length || hit.title.length > 300 || hit.title.includes("\0") ||
-          typeof hit.excerpt !== "string" || !hit.excerpt.length || hit.excerpt.length > 1200 || hit.excerpt.includes("\0") ||
+          typeof hit.title !== "string" || !hit.title.length || !validUnicode(hit.title) || Array.from(hit.title).length > 300 || hit.title.includes("\0") ||
+          typeof hit.excerpt !== "string" || !hit.excerpt.length || !validUnicode(hit.excerpt) || Array.from(hit.excerpt).length > 1200 || hit.excerpt.includes("\0") ||
           !Array.isArray(hit.evidence_ids) || !hit.evidence_ids.length || hit.evidence_ids.length > 5 ||
           new Set(hit.evidence_ids).size !== hit.evidence_ids.length ||
           hit.evidence_ids.some(id => typeof id !== "string" || !/^evidence_[a-f0-9]{32}$/.test(id)) ||
@@ -205,11 +211,18 @@
         throw new Error("Reviewed knowledge response could not be verified.");
       }
     }
+    const encoder = new TextEncoder();
+    const answerTextBytes = data.citations.reduce((total, item) =>
+      total + encoder.encode(item.quote).length, 0) + reviewed.reduce((total, item) =>
+      total + encoder.encode(item.title).length + encoder.encode(item.excerpt).length, 0);
+    if (answerTextBytes > MAX_ANSWER_TEXT_BYTES) throw new Error("Answer text budget exceeded.");
     if (data.citations.length) node("h3", "Verified source quotes", parent);
     node("p", data.answer, parent);
     node("p", "Partial coverage: only authorized indexed sources and reviewed matches appear here, not a complete account.", parent, "notice");
     if (data.coverage.answer_context_truncated) node("p",
       "Answer context was shortened by read limits. Other indexed source text may support this question.", parent, "notice");
+    if (data.coverage.answer_output_truncated) node("p",
+      "Answer results were shortened by the output limit. Open evidence or narrow the question for more detail.", parent, "notice");
     if (focus !== "all") node("p", focus === "email" ?
       "Email only. Files and reviewed knowledge were not searched." :
       "Files only. Email and reviewed knowledge were not searched.", parent, "notice");
