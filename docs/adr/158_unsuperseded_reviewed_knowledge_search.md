@@ -1,7 +1,8 @@
 # ADR-158 — Explicit unsuperseded reviewed KnowledgeCore search
 
-Status: accepted for a synthetic/disposable read-only candidate, pending PR
-verification. No current-search switch or live-source claim follows.
+Status: accepted and merged in PR #146 for synthetic/disposable read-only use;
+exact-head CI, strict runtime and restore passed. No current-search switch or
+live-source claim follows.
 
 ## Context
 

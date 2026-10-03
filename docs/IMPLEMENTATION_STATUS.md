@@ -1,6 +1,9 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-03. The latest merged owner-facing read checkpoint is
+Updated 2026-10-03. The latest merged direct KnowledgeCore read checkpoint is
+ADR-158/PR #146 at `3bf21b8`: optional unsuperseded review-chain search,
+with exact-head full CI, strict runtime and populated restore green;
+merged-main checks are running. The latest merged Ask checkpoint is
 ADR-157/PR #144 at `96cb22b`: aggregate Ask output-text budgeting, with
 exact-head and merged-main CI, strict runtime and restore green. The latest Email functional
 checkpoint is ADR-110/PR #133 at `ff7a296`: synthetic Fastmail read-worker resilience,
@@ -45,8 +48,8 @@ production and FileOS cutover remain open.
   successors or corrections with visible replacements exist, before rank and
   limit. Retained history is still the default. This is a review-chain leaf
   view, not valid-time truth, contradiction resolution, grouped Brain current
-  KnowledgeCore behavior, or hosted acceptance. PostgreSQL and PR gates are
-  pending for this candidate.
+  KnowledgeCore behavior, or hosted acceptance. Exact-head PostgreSQL and PR
+  gates passed; merged-main checks are tracked in the build receipt.
 
 - ADR-157 caps aggregate exact quote plus reviewed KnowledgeCore display text
   returned by Ask at 8,192 UTF-8 bytes. Exact quotes and links remain intact;
