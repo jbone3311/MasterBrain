@@ -2,6 +2,25 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Ask mid-turn assistant source revocation — local regression
+
+A synthetic OIDC assistant enrolled for one Email and one FileOS source began
+an Ask request over both. A test selector removed the FileOS grant after it
+received bounded passages but before the final current-search recheck. The
+in-flight API response was `403 access_denied`, with no answer or quote; the
+next request returned only Email citations. The focused disposable PostgreSQL
+17.11 test passed (one PostgreSQL-marked test executed, zero skipped). The
+broader Ask/source-grant/cross-source selection passed **57 tests** with one
+Docker-only skip (24 of 25 PostgreSQL-marked tests executed). An initial
+sandboxed pass failed only when the nested local trial launcher could not
+allocate shared memory; the complete selection passed when that disposable
+launcher was permitted. The final local deployment gate passed **3,028 Python
+tests, one Docker-only skip** (483 of 484 PostgreSQL-marked tests executed)
+on disposable PostgreSQL 17.11. All six browser suites passed **145 tests**.
+Ruff, strict mypy over 98 source files and the documentation inventory/link
+check passed. This is an authorization regression,
+not hosted issuer enrollment, cache revocation or issue #88 closure.
+
 ## FileOS v1 completion trigger-cost audit — merged verification
 
 The opt-in [benchmark](FILEOS_COMPLETION_BENCHMARK.md) used two equivalent

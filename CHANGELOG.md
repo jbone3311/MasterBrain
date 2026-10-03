@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added a disposable-PostgreSQL Ask regression that removes one of two OIDC
+  assistant source grants during quote selection. The in-flight answer must
+  refuse disclosure; the next turn may cite only the still-enrolled source.
+  This is synthetic authorization evidence, not hosted revocation acceptance.
+
 - Added an opt-in synthetic 3,000-row PostgreSQL benchmark for the FileOS v1
   completion ledger. It compares the current writer with the old per-item
   deferred trigger added back, records checkpoint counts and runs on local

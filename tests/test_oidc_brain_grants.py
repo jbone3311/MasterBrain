@@ -17,6 +17,7 @@ from email_brain.api import create_app
 from email_brain.domain.models import ExternalIdentity
 from email_brain.oidc import OIDCAuthenticator
 from email_brain.store import AccessDenied
+from masterbrain.answers import QuoteSelection
 
 pytestmark = pytest.mark.postgres
 database = pg.database
@@ -56,6 +57,62 @@ def assistant(preview, database, keys):
 
 def _headers(token: str) -> dict[str, str]:
     return {"Authorization": "Bearer " + token}
+
+
+def test_ask_refuses_midturn_source_revocation_and_next_turn_is_scoped(
+    preview, database, assistant, identity_admin_login
+) -> None:
+    store, _ = database
+    binding, raw, auth = assistant
+    dsn, _ = identity_admin_login
+    with TestClient(preview.app, base_url="http://127.0.0.1") as owner:
+        initial = owner.post(
+            "/v1/brain/current-search", json={"query": "insurance"},
+            headers=_headers(preview.token),
+        )
+    assert initial.status_code == 200
+    file_source = initial.json()["layers"]["fileos"][0]["source_id"]
+    email_source = initial.json()["layers"]["email_messages"][0]["source_id"]
+    with psycopg.connect(dsn) as conn:
+        for source_id in (file_source, email_source):
+            conn.execute(
+                "INSERT INTO external_identity_sources(tenant_id,binding_id,source_id) "
+                "VALUES (%s,%s,%s)",
+                (preview.context.tenant_id, binding, source_id),
+            )
+
+    class RevokingSelector:
+        def select(self, question, passages):
+            assert question == "insurance"
+            assert {passage.source_id for passage in passages} == {
+                file_source, email_source
+            }
+            with psycopg.connect(dsn) as conn:
+                conn.execute(
+                    "DELETE FROM external_identity_sources "
+                    "WHERE tenant_id=%s AND binding_id=%s AND source_id=%s",
+                    (preview.context.tenant_id, binding, file_source),
+                )
+            return [QuoteSelection(passages[0].evidence_id, passages[0].content[:30])]
+
+    with TestClient(
+        create_app(store, auth, answer_selector=RevokingSelector()),
+        base_url="http://127.0.0.1",
+    ) as client:
+        revoked_during_answer = client.post(
+            "/v1/brain/answers", json={"question": "insurance"}, headers=_headers(raw),
+        )
+    assert revoked_during_answer.status_code == 403
+    assert revoked_during_answer.json() == {"error": "access_denied"}
+
+    with TestClient(create_app(store, auth), base_url="http://127.0.0.1") as client:
+        next_turn = client.post(
+            "/v1/brain/answers", json={"question": "insurance"}, headers=_headers(raw),
+        )
+    assert next_turn.status_code == 200
+    assert next_turn.json()["status"] == "quoted_evidence"
+    assert {item["source_id"] for item in next_turn.json()["citations"]} == {email_source}
+    assert file_source not in next_turn.text
 
 
 def test_oidc_brain_assistant_requires_enrollment_and_revokes_every_read(
