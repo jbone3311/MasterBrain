@@ -1,7 +1,9 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-02. Current `main` includes PR #116 at `b6ebcbf`; its final
-head and merged-main CI, strict runtime and populated restore passed. Tagged
+Updated 2026-10-02. Current `main` is the post-PR #117 documentation merge
+`394b693`; its full CI, strict runtime and populated restore passed. The last
+functional FileOS slice is PR #116 at `b6ebcbf`; its final-head and merged-main
+gates passed. Tagged
 synthetic checkpoint `v0.2.0a1` is
 `c0a531d8a7d0991be0a0f1ea717479c07cc20feb`; its exact full CI,
 strict-runtime, populated restore and local pinned-donor DataCore parity passed.
@@ -17,6 +19,14 @@ not still-open integration work. Interactive Mac acceptance, issues #7/#9,
 production and FileOS cutover remain open.
 
 ## Implemented
+
+- ADR-148 adds a default refusal before unapplied legacy migrations 0008 and
+  0009 rewrite populated `message_versions` or `raw_objects`. A nonwaiting
+  writer-fencing lock makes the emptiness check stable until DDL, and a
+  five-second lock budget bounds readers that block the stronger DDL lock. The explicit
+  administrator maintenance override preserves the old SQL and its provenance
+  checks; it is not an online upgrade or issue #9 closure. PostgreSQL tests
+  exercise both refusals, a concurrent writer, the override and replay.
 
 - ADR-147 gives the existing ADR-128 historical FileOS v2 search reviewer a
   bounded, human-only Brain API route for one named ready generation versus

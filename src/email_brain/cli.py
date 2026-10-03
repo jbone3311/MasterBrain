@@ -195,6 +195,14 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     migration = commands.add_parser("migrate", help="Administrator-only schema migration")
     migration.add_argument("--directory", type=Path, default=Path("migrations"))
+    migration.add_argument(
+        "--allow-populated-rewrite",
+        action="store_true",
+        help=(
+            "Explicitly permit the lock-heavy 0008/0009 rewrites "
+            "after a reviewed maintenance plan"
+        ),
+    )
     for command in ("init-demo", "seed-demo"):
         commands.add_parser(command).add_argument("--state-dir", type=Path, required=True)
     corpus = commands.add_parser("seed-corpus", help="Import fictional emails, no provider calls")
@@ -240,7 +248,14 @@ def main() -> None:
     args = parser.parse_args()
     try:
         if args.command == "migrate":
-            print("Applied:", migrate(_env("EMAIL_BRAIN_ADMIN_DSN"), args.directory))
+            print(
+                "Applied:",
+                migrate(
+                    _env("EMAIL_BRAIN_ADMIN_DSN"),
+                    args.directory,
+                    allow_populated_rewrite=args.allow_populated_rewrite,
+                ),
+            )
         elif args.command == "init-demo":
             provision_demo(args.state_dir)
         elif args.command == "seed-demo":

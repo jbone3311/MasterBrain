@@ -26,6 +26,13 @@ from email_brain.store import AccessDenied, Conflict, NotFound, Store
 database, tenant = pg.database, pg.tenant
 
 
+def test_populated_rewrite_override_requires_explicit_boolean():
+    from pathlib import Path
+
+    with pytest.raises(ValueError, match="allow_populated_rewrite must be boolean"):
+        migrate("not-used", Path("migrations"), allow_populated_rewrite="yes")  # type: ignore[arg-type]
+
+
 def held(store, ctx, account, monkeypatch, *, raw=None, cursor=None, key="held"):
     message = replace(
         pg.item(key),
@@ -393,6 +400,10 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
         for path in sorted(directory.glob("000[1-7]_*.sql")):
             (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
+        with psycopg.connect(dsn) as reader:
+            reader.execute("LOCK TABLE message_versions IN ACCESS SHARE MODE")
+            with pytest.raises(psycopg.errors.LockNotAvailable):
+                migrate(dsn, directory)
         tenant_id, account_id, message_id, version_id = (uuid4() for _ in range(4))
         snapshot = {"parser_version": "synthetic-old", "text": "unchanged"}
         with psycopg.connect(dsn) as conn:
@@ -424,8 +435,14 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             )
         with psycopg.connect(dsn) as conn:
             conn.execute("UPDATE messages SET parser_version='mismatched-legacy'")
-        with pytest.raises(psycopg.errors.RaiseException, match="parser provenance mismatch"):
+        with psycopg.connect(dsn) as writer:
+            writer.execute("LOCK TABLE message_versions IN ROW EXCLUSIVE MODE")
+            with pytest.raises(psycopg.errors.LockNotAvailable):
+                migrate(dsn, directory)
+        with pytest.raises(ValueError, match="0008_quarantine_recovery.sql rewrites populated"):
             migrate(dsn, directory)
+        with pytest.raises(psycopg.errors.RaiseException, match="parser provenance mismatch"):
+            migrate(dsn, directory, allow_populated_rewrite=True)
         with psycopg.connect(dsn) as conn:
             assert (
                 conn.execute(
@@ -435,8 +452,19 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
                 == 0
             )
             conn.execute("UPDATE messages SET parser_version='synthetic-old'")
-        assert migrate(dsn, directory) == [
-            "0008_quarantine_recovery.sql",
+        rewrite_0008 = next(directory.glob("0008_*.sql"))
+        (tmp_path / rewrite_0008.name).write_bytes(rewrite_0008.read_bytes())
+        assert migrate(dsn, tmp_path, allow_populated_rewrite=True) == [
+            "0008_quarantine_recovery.sql"
+        ]
+        with pytest.raises(ValueError, match="0009_external_raw_evidence.sql rewrites populated"):
+            migrate(dsn, directory)
+        with psycopg.connect(dsn) as conn:
+            assert conn.execute(
+                "SELECT count(*) FROM schema_migrations "
+                "WHERE name='0009_external_raw_evidence.sql'"
+            ).fetchone() == (0,)
+        assert migrate(dsn, directory, allow_populated_rewrite=True) == [
             "0009_external_raw_evidence.sql",
             "0010_recovery_jobs.sql",
             "0011_processing_history.sql",
@@ -481,6 +509,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0050_oidc_brain_read_status.sql",
             "0051_oidc_knowledge_read_grants.sql",
         ]
+        assert migrate(dsn, directory) == []
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
                 "SELECT id,snapshot,parser_version FROM message_versions"

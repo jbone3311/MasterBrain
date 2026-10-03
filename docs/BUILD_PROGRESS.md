@@ -2,6 +2,16 @@
 
 ## Current `main` checkpoint (2026-10-02)
 
+[PR #117](https://github.com/jbone3311/MasterBrain/pull/117) reconciled the
+roadmap, status and feature inventory after #116. It is a documentation-only
+merge at `394b693759624bf4f764ec6a5f8a732231c8c882`; final-head and
+merged-main full CI, strict runtime and populated restore passed. This does
+not create a new version or live-product claim. The next code tranche is
+ADR-148's migration safety gate for issue #9; it does not make populated
+upgrades online.
+
+## Previous functional `main` checkpoint (2026-10-02)
+
 [PR #116](https://github.com/jbone3311/MasterBrain/pull/116) merged the
 human-only FileOS v2 historical search-review API at
 `b6ebcbf7b5e6b12e10967c5d09d7a04970d5d982`. Final-head and merged-main

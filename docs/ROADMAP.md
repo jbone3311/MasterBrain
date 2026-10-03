@@ -87,6 +87,10 @@ Security and data-integrity blockers take priority over adding more surface area
    acceptance remain next.
    Independently close #7 and the
    [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).
+   ADR-148 now refuses implicit populated 0008/0009 heap rewrites and requires
+   an explicit maintenance override; it does not make those migrations online
+   or cover later populated-index/DDL lock budgets. Measure and rehearse a
+   safe upgrade path before closing #9.
    Require exploit/lock evidence, regression tests, restore and an operational
    rollout/rollback receipt. Green synthetic CI alone does not close them;
    release exceptions apply only where [acceptance criteria](RELEASE_ACCEPTANCE.md)

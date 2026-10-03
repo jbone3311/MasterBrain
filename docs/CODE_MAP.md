@@ -99,7 +99,7 @@ redirecting Email ingestion or search.
 | Coherent mailbox/manifest/replay | [synthetic_mailbox.py](../src/email_brain/synthetic_mailbox.py), [synthetic_formats.py](../src/email_brain/synthetic_formats.py) |
 | Owner UI | [web/](../src/email_brain/web/) |
 | PDF owner workflow/search | [document_review.js](../src/email_brain/web/document_review.js); existing API calls, independent document state and text-only evidence |
-| Schema upgrades | [migrations/](../migrations/), [migrate.py](../src/email_brain/migrate.py) |
+| Schema upgrades | [migrations/](../migrations/), [migrate.py](../src/email_brain/migrate.py); [ADR-148](adr/148_populated_legacy_rewrite_guard.md) refuses implicit populated 0008/0009 rewrites, not all DDL locks |
 | Protected-record TRUNCATE refusal | [migration 0030](../migrations/0030_protected_record_truncate_guards.sql), [contract](EVIDENCE_TRUNCATE_GUARDS.md), [ADR-092](adr/092_protected_record_truncate_guards.md) |
 | Checks | [tests/](../tests/), [CI](../.github/workflows/ci.yml) |
 | Offline documentation gate | [check_docs.py](../scripts/check_docs.py), [regression tests](../tests/test_check_docs.py); inventory/paths/supported headings, including `.github/` templates |

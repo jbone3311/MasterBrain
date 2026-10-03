@@ -173,8 +173,43 @@ RUNTIME_INSERT = (
     "proposal_evidence",
 )
 
+POPULATED_REWRITE_TABLES = {
+    "0008_quarantine_recovery.sql": "message_versions",
+    "0009_external_raw_evidence.sql": "raw_objects",
+}
 
-def migrate(dsn: str, directory: Path) -> list[str]:
+
+def _guard_populated_rewrite(
+    conn: psycopg.Connection[tuple[object, ...]], migration_name: str
+) -> None:
+    """Refuse legacy heap rewrites on populated tables without an explicit rollout."""
+    table = POPULATED_REWRITE_TABLES.get(migration_name)
+    if table is None:
+        return
+    # A concurrent reader may allow SHARE but block the ALTER's stronger lock.
+    # Bound that upgrade too; the explicit maintenance override keeps its own
+    # operator-chosen lock budget.
+    conn.execute("SET LOCAL lock_timeout = '5s'")
+    # SHARE permits readers but fences concurrent inserts between the check and
+    # the ALTER TABLE. NOWAIT turns a busy writer into a safe, immediate refusal.
+    conn.execute(
+        sql.SQL("LOCK TABLE public.{} IN SHARE MODE NOWAIT").format(sql.Identifier(table))
+    )
+    if conn.execute(
+        sql.SQL("SELECT EXISTS (SELECT 1 FROM public.{} LIMIT 1)").format(sql.Identifier(table))
+    ).fetchone() == (True,):
+        raise ValueError(
+            f"{migration_name} rewrites populated {table}; "
+            "use an operator-reviewed maintenance path or "
+            "--allow-populated-rewrite after a backup and lock-budget review"
+        )
+
+
+def migrate(
+    dsn: str, directory: Path, *, allow_populated_rewrite: bool = False
+) -> list[str]:
+    if type(allow_populated_rewrite) is not bool:
+        raise ValueError("allow_populated_rewrite must be boolean")
     files = sorted(directory.glob("[0-9][0-9][0-9][0-9]_*.sql"))
     if not files:
         raise ValueError("migration directory is empty")
@@ -209,6 +244,8 @@ def migrate(dsn: str, directory: Path) -> list[str]:
                     if line.strip() not in {"BEGIN;", "COMMIT;"}
                 )
                 with conn.transaction():
+                    if not allow_populated_rewrite:
+                        _guard_populated_rewrite(conn, path.name)
                     conn.execute(body)
                     conn.execute(
                         "INSERT INTO schema_migrations(name,sha256) VALUES (%s,%s)",
