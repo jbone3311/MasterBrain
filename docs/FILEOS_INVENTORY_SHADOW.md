@@ -144,6 +144,15 @@ leaf and root-swap regressions pass; the pinned 3,000-file comparator still has
 3,004 ordinary/replay/change and metadata-only matches. These checks do not
 prove real Dropbox/OneDrive placeholder behavior or make a scan publishable.
 
+ADR-152 also confines directory enumeration in this separate donor-policy
+shadow. A synthetic child-directory symlink swap had allowed `os.walk` to
+list an outside junk filename and return it as an exclusion, even though the
+confined leaf reader refused bytes. Each directory is now reopened through
+no-follow descriptors; descendant and nested-ancestor swap regressions return
+only a directory coverage error. The pinned 3,000-file comparator still
+matches 3,004 ordinary rows with the six documented policy gaps. This does
+not change the donor scanner or authorize live-root shadow/cutover.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,

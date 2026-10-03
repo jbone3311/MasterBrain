@@ -194,13 +194,14 @@ def test_metadata_shadow_does_not_catalog_swapped_outside_root(
     outside.mkdir()
     (outside / "external.txt").write_bytes(b"outside metadata")
 
-    def swapped_walk(_root: Path, *, topdown: bool, onerror):
-        assert topdown is True
+    real_open = shadow._open_shadow_directory
+
+    def swapped_open(candidate: Path, relative: str, identity: tuple[int, int]) -> int:
         root.rename(tmp_path / "moved")
         root.symlink_to(outside, target_is_directory=True)
-        yield str(root), [], ["external.txt"]
+        return real_open(candidate, relative, identity)
 
-    monkeypatch.setattr(shadow.os, "walk", swapped_walk)
+    monkeypatch.setattr(shadow, "_open_shadow_directory", swapped_open)
     result = shadow.scan_donor_policy_shadow(root, metadata_only=True)
     assert result["rows"] == []
     assert result["errors"] == [{"locator": ".", "code": "root_changed_during_scan"}]
@@ -214,18 +215,87 @@ def test_unreadable_directory_is_a_coverage_error(
     unreadable = root / "unreadable"
     unreadable.mkdir()
 
-    def failed_walk(_root: Path, *, topdown: bool, onerror):
-        assert topdown is True
-        onerror(PermissionError(13, "synthetic refusal", str(unreadable)))
-        yield str(root), [], []
+    real_open = shadow._open_shadow_directory
 
-    monkeypatch.setattr(shadow.os, "walk", failed_walk)
+    def refused_open(candidate: Path, relative: str, identity: tuple[int, int]) -> int:
+        if relative == "unreadable":
+            raise shadow.ConfinedFileUnavailable()
+        return real_open(candidate, relative, identity)
+
+    monkeypatch.setattr(shadow, "_open_shadow_directory", refused_open)
     result = shadow.scan_donor_policy_shadow(root)
     assert result["rows"] == []
     assert result["errors"] == [
         {"locator": "unreadable", "code": "directory_unreadable"}
     ]
     assert result["publishable"] is False
+
+
+def test_descendant_symlink_swap_does_not_enumerate_outside_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    child = root / "child"
+    child.mkdir(parents=True)
+    (child / "inside.txt").write_bytes(b"inside")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "_status.html").write_bytes(b"outside")
+    real_open = shadow._open_shadow_directory
+    real_scandir = os.scandir
+
+    def confined_scandir(directory: int):
+        info = os.fstat(directory)
+        assert (info.st_dev, info.st_ino) != (outside.stat().st_dev, outside.stat().st_ino)
+        return real_scandir(directory)
+
+    def swapped_open(candidate: Path, relative: str, identity: tuple[int, int]) -> int:
+        if relative == "child":
+            child.rename(root / "moved")
+            child.symlink_to(outside, target_is_directory=True)
+        return real_open(candidate, relative, identity)
+
+    monkeypatch.setattr(shadow, "_open_shadow_directory", swapped_open)
+    monkeypatch.setattr(shadow.os, "scandir", confined_scandir)
+    result = shadow.scan_donor_policy_shadow(root)
+    assert result["rows"] == []
+    assert result["exclusions"] == []
+    assert result["errors"] == [
+        {"locator": "child", "code": "directory_unreadable"}
+    ]
+
+
+def test_nested_ancestor_swap_does_not_enumerate_outside_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    grandchild = root / "child" / "grandchild"
+    grandchild.mkdir(parents=True)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "_status.html").write_bytes(b"outside")
+    real_open = shadow._open_shadow_directory
+    real_scandir = os.scandir
+
+    def confined_scandir(directory: int):
+        info = os.fstat(directory)
+        assert (info.st_dev, info.st_ino) != (outside.stat().st_dev, outside.stat().st_ino)
+        return real_scandir(directory)
+
+    def swapped_open(candidate: Path, relative: str, identity: tuple[int, int]) -> int:
+        if relative == "child/grandchild":
+            (root / "child").rename(root / "moved")
+            (root / "child").symlink_to(outside, target_is_directory=True)
+        return real_open(candidate, relative, identity)
+
+    monkeypatch.setattr(shadow, "_open_shadow_directory", swapped_open)
+    monkeypatch.setattr(shadow.os, "scandir", confined_scandir)
+    result = shadow.scan_donor_policy_shadow(root)
+    assert result["rows"] == []
+    assert result["exclusions"] == []
+    assert result["errors"] == [
+        {"locator": "child/grandchild", "code": "directory_unreadable"}
+    ]
 
 
 def test_comparator_does_not_hide_shadow_coverage_error(tmp_path: Path) -> None:

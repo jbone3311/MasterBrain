@@ -35,6 +35,38 @@ def _identity(info: os.stat_result) -> tuple[int, int, int, int]:
     return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns
 
 
+def _open_shadow_directory(
+    root: Path, relative: str, root_identity: tuple[int, int]
+) -> int:
+    """Open one directory through no-follow descriptors, never through a walked path."""
+    directory_flag = getattr(os, "O_DIRECTORY", None)
+    nofollow_flag = getattr(os, "O_NOFOLLOW", None)
+    if directory_flag is None or nofollow_flag is None:
+        raise ConfinedFileUnavailable()
+    flags = os.O_RDONLY | directory_flag | nofollow_flag
+    opened: list[int] = []
+    try:
+        directory = os.open(root.anchor, flags)
+        opened.append(directory)
+        for part in root.parts[1:]:
+            directory = os.open(part, flags, dir_fd=directory)
+            opened.append(directory)
+        root_info = os.fstat(directory)
+        if (root_info.st_dev, root_info.st_ino) != root_identity:
+            raise ConfinedFileChanged()
+        if relative != ".":
+            for part in relative.split("/"):
+                directory = os.open(part, flags, dir_fd=directory)
+                opened.append(directory)
+        opened.pop()
+        return directory
+    except OSError as exc:
+        raise ConfinedFileUnavailable() from exc
+    finally:
+        for descriptor in reversed(opened):
+            os.close(descriptor)
+
+
 def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict[str, Any]:
     """Compare pinned donor membership safely; the result is never publishable.
 
@@ -60,15 +92,9 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
             raise ValueError("FileOS shadow record limit exceeded")
         collection.append(entry)
 
-    def onerror(exc: OSError) -> None:
-        path = Path(exc.filename) if exc.filename else root
-        try:
-            relative = locator(path)
-        except ValueError:
-            relative = "."
-        record(errors, {"locator": relative, "code": "directory_unreadable"})
-
-    for directory, dirnames, filenames in os.walk(root, topdown=True, onerror=onerror):
+    pending = ["."]
+    while pending:
+        directory = pending.pop()
         try:
             current_root = root.lstat()
             if not stat.S_ISDIR(current_root.st_mode) or (
@@ -78,9 +104,41 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
         except (OSError, ConfinedFileChanged):
             record(errors, {"locator": ".", "code": "root_changed_during_scan"})
             break
-        current = Path(directory)
+        try:
+            directory_fd = _open_shadow_directory(root, directory, root_identity)
+        except ConfinedFileChanged:
+            record(errors, {"locator": ".", "code": "root_changed_during_scan"})
+            break
+        except ConfinedFileUnavailable:
+            record(
+                errors,
+                {
+                    "locator": directory,
+                    "code": (
+                        "root_changed_during_scan"
+                        if directory == "."
+                        else "directory_unreadable"
+                    ),
+                },
+            )
+            if directory == ".":
+                break
+            continue
+        try:
+            with os.scandir(directory_fd) as listing:
+                entries = sorted(list(listing), key=lambda entry: entry.name)
+            dirnames: list[str] = []
+            filenames: list[str] = []
+            for entry in entries:
+                (dirnames if entry.is_dir() else filenames).append(entry.name)
+        except OSError:
+            record(errors, {"locator": directory, "code": "directory_unreadable"})
+            continue
+        finally:
+            os.close(directory_fd)
+        current = root if directory == "." else root / directory
         kept_dirs: list[str] = []
-        for name in sorted(dirnames):
+        for name in dirnames:
             path = current / name
             kind = classify_dir(name)
             if kind != "content":
@@ -89,9 +147,9 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
                 record(exclusions, {"locator": locator(path), "reason": "symlink_directory"})
             else:
                 kept_dirs.append(name)
-        dirnames[:] = kept_dirs
+        pending.extend(reversed([locator(current / name) for name in kept_dirs]))
 
-        for name in sorted(filenames):
+        for name in filenames:
             path = current / name
             relative = locator(path)
             if is_junk_file(name):
