@@ -21,6 +21,10 @@ file-byte read. Root identity checks do not cover this ancestor swap.
   or cannot be opened, record a bounded directory coverage error; do not
   enumerate it or publish a successful row. Preserve ordinary donor membership,
   ordering, file hash/metadata handling and the existing nonpublishable shape.
+- Retain the existing symlink-directory classification, which may stat a link
+  target to distinguish it from a file link. The target is never opened for
+  listing or content. This narrow metadata observation is not an attested
+  live-root policy and needs separate acceptance before live shadow.
 - Keep the existing v1 snapshot, database state, source permissions, and
   FOS-Master checkout unchanged. This does not decide donor policy, real cloud
   placeholder handling, v2 current visibility or FileOS cutover.
