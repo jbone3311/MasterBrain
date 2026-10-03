@@ -77,7 +77,10 @@ def test_timeline_query_binds_project_and_recorded_cutoff_before_limit() -> None
     assert result["results"] == [] and result["recorded_cutoff_at"] == NOW
     query, params = conn.execute.call_args.args
     assert "ev.project_id=%s" in query
-    assert "ev.recorded_at<=%s" in query
+    assert "ev.recorded_at<=allowed.cutoff" in query
+    assert "s.recorded_at<=allowed.cutoff" in query
+    assert "c.recorded_at<=allowed.cutoff" in query
+    assert "r.recorded_at<=allowed.cutoff" in query
     assert "ORDER BY ev.starts_at,ev.id LIMIT %s" in query
     assert "NOT EXISTS (SELECT 1 FROM knowledge_events s" in query
     assert project in params and params[-1] == 4
@@ -104,7 +107,7 @@ def test_timeline_cursor_anchor_uses_same_filters_and_fails_closed() -> None:
     assert KnowledgeCore(store).timeline(ctx, request)["results"] == []
     anchor_sql, anchor_params = conn.execute.call_args_list[1].args
     page_sql, page_params = conn.execute.call_args_list[2].args
-    assert "ev.id=%s" in anchor_sql and "ev.recorded_at<=%s" in anchor_sql
+    assert "ev.id=%s" in anchor_sql and "ev.recorded_at<=allowed.cutoff" in anchor_sql
     assert "(ev.starts_at,ev.id)>(%s,%s)" in page_sql
     assert anchor_sql.count("%s") == len(anchor_params)
     assert page_sql.count("%s") == len(page_params)

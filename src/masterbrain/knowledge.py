@@ -84,6 +84,7 @@ _TIMELINE_UNSUPERSEDED_SQL = (
     "LEFT JOIN knowledge_projects sp ON sp.tenant_id=s.tenant_id "
     "AND sp.id=s.project_id "
     "WHERE s.tenant_id=ev.tenant_id AND s.supersedes_id=ev.id "
+    "AND s.recorded_at<=allowed.cutoff "
     "AND " + _visible_assertion_sql("s", "'event'", "s.id")
     + " AND (s.project_id IS NULL OR "
     + _visible_assertion_sql("sp", "'project'", "sp.id") + ")) "
@@ -93,7 +94,8 @@ _TIMELINE_UNSUPERSEDED_SQL = (
     "LEFT JOIN knowledge_projects rp ON rp.tenant_id=r.tenant_id "
     "AND rp.id=r.project_id "
     "WHERE c.tenant_id=ev.tenant_id AND c.target_kind='event' "
-    "AND c.target_id=ev.id AND "
+    "AND c.target_id=ev.id AND c.recorded_at<=allowed.cutoff "
+    "AND r.recorded_at<=allowed.cutoff AND "
     + _visible_assertion_sql("c", "'correction'", "c.id") + " AND "
     + _visible_assertion_sql("r", "'event'", "r.id")
     + " AND (r.project_id IS NULL OR "
@@ -507,7 +509,7 @@ class KnowledgeCore:
         project_sql = "AND ev.project_id=%s " if request.project_id is not None else ""
         where_sql = (
             "WHERE ev.starts_at>=%s AND ev.starts_at<%s "
-            "AND ev.recorded_at<=%s "
+            "AND ev.recorded_at<=allowed.cutoff "
             + project_sql
             + "AND " + _visible_assertion_sql("ev", "'event'", "ev.id") + " "
             + "AND (ev.project_id IS NULL OR "
@@ -527,15 +529,15 @@ class KnowledgeCore:
                 raise ValueError("invalid future timeline cutoff")
             params: tuple[Any, ...] = (
                 request.start.astimezone(UTC), request.end.astimezone(UTC),
-                cutoff_at,
                 *((request.project_id,) if request.project_id is not None else ()),
             )
             anchor = None
             if request.after is not None:
                 anchor = conn.execute(
-                    "WITH allowed AS (SELECT %s::text[] AS sources) "
+                    "WITH allowed AS (SELECT %s::text[] AS sources, "
+                    "%s::timestamptz AS cutoff) "
                     "SELECT ev.starts_at,ev.id " + from_sql + where_sql + " AND ev.id=%s",
-                    (allowed_sources, *params, request.after),
+                    (allowed_sources, cutoff_at, *params, request.after),
                 ).fetchone()
                 if anchor is None:
                     raise NotFound()
@@ -543,12 +545,13 @@ class KnowledgeCore:
                 " AND (ev.starts_at,ev.id)>(%s,%s)" if anchor is not None else ""
             )
             rows = conn.execute(
-                "WITH allowed AS (SELECT %s::text[] AS sources) "
+                "WITH allowed AS (SELECT %s::text[] AS sources, "
+                "%s::timestamptz AS cutoff) "
                 "SELECT ev.id,ev.event_type,ev.title,ev.starts_at,ev.ends_at,"
                 "ev.project_id " + from_sql + where_sql + cursor_sql
                 + " ORDER BY ev.starts_at,ev.id LIMIT %s",
                 (
-                    allowed_sources, *params,
+                    allowed_sources, cutoff_at, *params,
                     *((anchor["starts_at"], anchor["id"]) if anchor else ()),
                     request.limit + 1,
                 ),

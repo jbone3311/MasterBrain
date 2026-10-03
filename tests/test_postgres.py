@@ -3797,6 +3797,9 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
                         end=timeline_start + timedelta(days=3)),
     )["results"]] == [dated_replacement.object_id]
 
+    first_current_page = knowledge.timeline(ctx, TimelineRequest(
+        start=timeline_start, end=timeline_start + timedelta(days=1), limit=1,
+    ))
     first_timeline_page = knowledge.timeline(ctx, TimelineRequest(
         start=timeline_start, end=timeline_start + timedelta(days=1),
         visibility="retained", limit=1,
@@ -3807,6 +3810,27 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         EventWrite(
             kind="event", event_type="decision", title="Skyline late backdated",
             starts_at=same_start + timedelta(minutes=30), **common,
+        ),
+        uuid4(),
+    )
+    late_successor = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline late successor",
+            starts_at=same_start + timedelta(hours=3),
+            supersedes_id=branch_event.object_id, **common,
+        ),
+        uuid4(),
+    )
+    knowledge.publish(
+        ctx,
+        CorrectionWrite(
+            kind="correction", target_kind="event",
+            target_id=hidden_project_event.object_id,
+            replacement_id=late_event.object_id,
+            reason="Reviewed late event correction", evidence_ids=[evidence_id],
+            source_quote=common["source_quote"], observed_at=common["observed_at"],
+            reviewed=True,
         ),
         uuid4(),
     )
@@ -3829,9 +3853,34 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         visible_project_predecessor.object_id, hidden_project_successor.object_id,
     }
     assert late_event.object_id not in {row["object_id"] for row in pages}
+    assert late_successor.object_id not in {row["object_id"] for row in pages}
     assert [(row["starts_at"], row["object_id"]) for row in pages] == sorted(
         (row["starts_at"], row["object_id"]) for row in pages
     )
+    current_pages = [first_current_page["results"][0]]
+    current_cursor = first_current_page["next_cursor"]
+    for _ in range(10):
+        if current_cursor is None:
+            break
+        next_current = knowledge.timeline(ctx, TimelineRequest(
+            start=timeline_start, end=timeline_start + timedelta(days=1),
+            limit=1, recorded_cutoff_at=first_current_page["recorded_cutoff_at"],
+            after=current_cursor,
+        ))
+        current_pages.extend(next_current["results"])
+        current_cursor = next_current["next_cursor"]
+    else:
+        pytest.fail("current timeline cursor did not terminate")
+    assert {row["object_id"] for row in current_pages} == {
+        revised_event.object_id, branch_event.object_id,
+        hidden_project_event.object_id, hidden_project_successor.object_id,
+        early_hidden_project_event.object_id,
+    }
+    current_now = {row["object_id"] for row in knowledge.timeline(ctx, timeline_query)["results"]}
+    assert branch_event.object_id not in current_now
+    assert hidden_project_event.object_id not in current_now
+    assert late_successor.object_id in current_now
+    assert late_event.object_id in current_now
     with pytest.raises(NotFound):
         knowledge.timeline(fileos_only, TimelineRequest(
             start=timeline_start, end=timeline_start + timedelta(days=1),

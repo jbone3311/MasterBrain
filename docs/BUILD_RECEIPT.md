@@ -13,6 +13,12 @@ passed. The new PostgreSQL semantics, populated migration, full CI, strict
 runtime and restore are unverified. Local PostgreSQL 17 `initdb` cannot
 allocate host shared memory, and GitHub Actions is currently unable to start
 jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
+Pre-merge review found and corrected a page-cutoff gap: late successors and
+corrections can no longer suppress earlier eligible events on later pages.
+The new PostgreSQL regression covers both paths but has **not executed**;
+the eight focused mock/schema/API tests and the 2,615 non-PostgreSQL tests
+passed again after this change. GitHub review remains
+[draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151).
 No live source, donor or version change.
 
 ## CI execution blocker — issue #150

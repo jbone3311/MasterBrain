@@ -31,7 +31,9 @@ query or treating an undated assertion as a dated event.
 - Order by `(starts_at,id)` ascending. On the first page, return a database
   transaction-time `recorded_cutoff_at`; later pages must pass that timestamp
   with the opaque event-ID `after` cursor. Rows recorded after the cutoff are
-  excluded. Resolve the anchor under the same tenant, interval, project,
+  excluded. Apply that cutoff to visible successors, corrections and their
+  replacements as well, so a later review cannot retroactively suppress an
+  earlier page's eligible event. Resolve the anchor under the same tenant, interval, project,
   visibility and source filters; a hidden/invalid anchor is indistinguishable
   from an unknown one. This is a recorded-time cutoff, **not a durable MVCC
   snapshot**: a transaction that inserted before the cutoff but commits after
@@ -47,8 +49,8 @@ query or treating an undated assertion as a dated event.
 
 Use disposable PostgreSQL for interval edges, same-time tie paging, a late
 backdated insert, undated exclusion, project filtering, tenant isolation,
-source-hidden events/projects, revocation/hidden cursors, supersession and
-correction leaves, retained history and evidence drill-down. Check invalid
+source-hidden events/projects, revocation/hidden cursors, late supersession and
+correction visibility across a cutoff, retained history and evidence drill-down. Check invalid
 windows/cursors/scopes, documentation, full CI, runtime and restore. Record
 only opaque operation codes in audit; do not log title, dates, source quote or
 project IDs. Roll back the route/service while preserving additive indexes and
