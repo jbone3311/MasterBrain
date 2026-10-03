@@ -55,3 +55,6 @@ windows/cursors/scopes, documentation, full CI, runtime and restore. Record
 only opaque operation codes in audit; do not log title, dates, source quote or
 project IDs. Roll back the route/service while preserving additive indexes and
 immutable history. FOS-Master and all source effects remain unchanged.
+The populated forward-migration test also checks that 0054 leaves dated and
+undated event rows and the heap filenode unchanged, creates both partial
+indexes, and replays as a no-op. It does not measure hosted write-lock impact.

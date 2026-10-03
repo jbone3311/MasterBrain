@@ -9,7 +9,7 @@ date range and review-chain mode. Direct evidence IDs remain available for
 drill-down, while undated events stay in search/history. A provider-neutral
 read-only client now requests this page and validates its closed response
 contract. Local schema/API/client tests passed, including 2,627 non-PostgreSQL
-tests. The isolated local PostgreSQL 17.11 suite passed 487 tests with one
+tests. The isolated local PostgreSQL 17.11 suite passed 488 tests with one
 Docker-only skip; full CI, container, strict-runtime and restore gates remain
 unverified while
 [issue #150](https://github.com/jbone3311/MasterBrain/issues/150) prevents

@@ -53,7 +53,7 @@ production and FileOS cutover remain open.
   under `knowledge.search`, with source-aware project filtering and retained
   or unsuperseded visibility. It excludes undated events and claims no source
   freshness, cross-kind timeline or hosted acceptance. An isolated local
-  PostgreSQL 17.11 database passed the 487 executable PostgreSQL-marked tests;
+  PostgreSQL 17.11 database passed the 488 executable PostgreSQL-marked tests;
   the Docker browser launcher skipped and PR gates remain unverified because
   issue #150 prevents Actions from starting jobs.
 

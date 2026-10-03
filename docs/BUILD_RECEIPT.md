@@ -12,12 +12,20 @@ deselected, **not passed in that run**. Ruff, source mypy, documentation and
 diff checks passed. An existing isolated local PostgreSQL 17.11 test cluster
 then allowed real database verification: the KnowledgeCore timeline integration
 test passed after correcting two test expectations for its newly added late
-successor, and the full PostgreSQL-marked suite passed **487 tests, one skip**
-in 221.44 seconds. The one skip is the Docker-backed browser launcher, because
+successor. The first full PostgreSQL-marked run passed **487 tests, one skip**
+in 221.44 seconds. After adding the populated 0054 migration regression, the
+updated full run passed **488 tests, one skip** in 208.34 seconds. The one skip
+is the Docker-backed browser launcher, because
 Docker is unavailable locally; the separate local launcher cannot initialize
 a fresh cluster while macOS's 32 System V shared-memory slots are occupied.
 The tests used a newly created, distinct `email_brain_test_timeline151_20261003`
 database on port 55443; existing test databases and FOS-Master were untouched.
+An additional populated-upgrade regression applied migrations 0001–0053,
+inserted both dated/project-linked and undated KnowledgeCore events, then
+applied 0054 and verified unchanged rows, row locations and heap filenode,
+both partial indexes and idempotent replay. The entire migration-integrity
+module passed **5/5** locally. This is not a large-hosted-table lock-budget
+or online-index proof.
 This proves disposable local PostgreSQL behavior, not CI, container, strict
 runtime, populated restore or hosted acceptance. GitHub Actions is still unable
 to start jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
