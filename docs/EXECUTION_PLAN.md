@@ -1,11 +1,14 @@
 # MasterBrain Incremental Execution Plan
 
-Updated 2026-09-25. Checkpoints 1–5 below describe the original build sequence;
+Updated 2026-10-02. Checkpoints 1–5 below describe the original build sequence;
 their bounded synthetic slices now exist on `main`, but their production-level exit
 criteria are **not** all met. Do not assign them again as blank-slate work. The active
-queue is [roadmap next packages](ROADMAP.md#next-build-packages): interactive
-cross-source acceptance, security/upgrade issues #6/#7/#9, engineering-quality
-gate #34, then the next bounded FileOS derivative and donor shadow work. The
+queue is [roadmap next verified sequence](ROADMAP.md#next-verified-sequence):
+interactive cross-source acceptance; security/upgrade issues #7/#9 and
+engineering-quality gate #34; assistant/hosting issues #88/#94; and bounded
+FileOS donor shadow before any v2 current-state decision. PR #116's
+human-only historical comparison API is merged and verified, but it does not
+activate v2 or replace FOS-Master. The
 [current function map](CURRENT_FUNCTIONS.md) separates implemented routes from
 designs.
 

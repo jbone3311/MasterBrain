@@ -1,6 +1,8 @@
 # Archive-member PDF and Office derivative contract
 
-Status: checkpoint 4V implemented and accepted on the private migration branch.
+Status: checkpoint 4V is implemented in the cumulative synthetic `main` stack;
+this does not establish live-source or production acceptance. See the
+[current implementation status](IMPLEMENTATION_STATUS.md).
 
 ## Purpose
 

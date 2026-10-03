@@ -5,8 +5,9 @@ humans and authorized clients such as Claude, Grok, ChatGPT, and future assistan
 Implemented DataCore access lives under `/v1/brain`; the first reviewed KnowledgeCore
 publish/read slice lives under `/v1/knowledge`. Synthesis remains a target contract.
 The first-party read-only workspace at `/brain` uses these same scoped resources;
-it is not a second, privileged retrieval or action backend. It displays lexical
-search results in conversation form, not generated answers. Full chat synthesis
+it is not a second, privileged retrieval or action backend. It displays grouped
+lexical results, verified exact source quotes and separately labelled reviewed
+KnowledgeCore matches, not generated conclusions. Full chat synthesis
 and external-client acceptance remain targets [documented separately](USER_INTERFACES.md).
 ADR-147 exposes ADR-128's FileOS v2 comparison through one human-only,
 historical-preview route. It is not current v2 visibility or cutover.

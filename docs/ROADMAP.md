@@ -1,6 +1,7 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-02. This is a dependency-ordered plan, not a release claim.
+Updated 2026-10-02 after PR #116 (`b6ebcbf`). This is a dependency-ordered
+plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
@@ -18,7 +19,41 @@ FileOS cutover acceptance is implied.
 | Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads | Hosted issuer enrollment, legacy Email route and cached revocation, cited answer synthesis, named-assistant adapter and full byte/token budgets |
 | Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; Ask returns exact quotes and a separate reviewed KnowledgeCore match list, with fixed question boilerplate removed before lexical retrieval | Run the owner's interactive trial, evaluate held-out natural questions, corrections and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
-| FileOS replacement and effects | No cutover or source effects | Sustained donor shadow, bounded rollback-ready cohort, owner sign-off; effects require a separate later approval |
+| FileOS replacement and effects | Private v2 generation plus human-only historical v1/v2 comparison API are merged; no cutover or source effects | Decide donor-policy edge behavior, prove sustained live shadow and v2 current/absence/rollback semantics, then a bounded rollback-ready cohort and owner sign-off; effects require a separate later approval |
+
+## Next verified sequence
+
+The latest merged FileOS slice is [PR #116](https://github.com/jbone3311/MasterBrain/pull/116):
+its final head and merged `main` passed full CI, strict runtime and populated
+restore. It exposes **historical review only**. It is not a reason to activate a
+v2 generation, reinterpret absence, stop FOS-Master or claim a live product.
+
+1. Complete the owner's fictional cross-source walkthrough and record expected
+   versus observed answers, citations and gaps. The existing local launcher
+   self-test is not owner acceptance.
+2. Resolve the security and operational gates in
+   [#7](https://github.com/jbone3311/MasterBrain/issues/7),
+   [#9](https://github.com/jbone3311/MasterBrain/issues/9) and
+   [#34](https://github.com/jbone3311/MasterBrain/issues/34) before a hosted
+   pilot. An unresolved critical/high defect is not an acceptable release
+   exception. Finish assistant enrollment/revocation in
+   [#88](https://github.com/jbone3311/MasterBrain/issues/88).
+3. In the FileOS lane, keep FOS-Master pinned and unchanged. Settle cloud-
+   placeholder, fault/race and inventory-policy differences; run read-only
+   donor shadow on an owner-authorized bounded root. Only then design a
+   separately approved v2 current-visibility, later-run, absence and rollback
+   transaction with golden, stress and fault gates. The historical API is a
+   review aid, not a shortcut to this decision.
+4. In the product lane, use [#92](https://github.com/jbone3311/MasterBrain/issues/92)
+   for grounded chat evaluation and [#94](https://github.com/jbone3311/MasterBrain/issues/94)
+   for an owner-approved private central API/database pilot. Keep
+   [#93](https://github.com/jbone3311/MasterBrain/issues/93) reviewed source
+   effects behind separate grants, previews, idempotency and rollback; do not
+   treat the present read-only API as a write API.
+
+These lanes can be researched independently, but each code tranche still needs
+its own exact-head and merged-main verification before the next dependent
+tranche. No new version tag or production claim follows from PR #116 alone.
 
 ## Next build packages
 
@@ -50,10 +85,12 @@ Security and data-integrity blockers take priority over adding more surface area
    commands. ADR-141 extends this to all three legacy Email worker commands.
    Private library caller routing, credential lifecycle and hosted adversarial
    acceptance remain next.
-   Independently close or explicitly accept that risk and the
+   Independently close #7 and the
    [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).
    Require exploit/lock evidence, regression tests, restore and an operational
-   rollout/rollback receipt. Green synthetic CI alone does not close them.
+   rollout/rollback receipt. Green synthetic CI alone does not close them;
+   release exceptions apply only where [acceptance criteria](RELEASE_ACCEPTANCE.md)
+   permit them.
 3. **Complete the engineering-quality gate.** Follow
    [#34](https://github.com/jbone3311/MasterBrain/issues/34): package/API version
    identity, content-safe application **and PostgreSQL server** logging, bounded
