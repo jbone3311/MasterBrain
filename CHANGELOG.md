@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added ADR-148's administrator migration guard: unapplied 0008/0009
+  generated-column rewrites now refuse populated tables by default, with a
+  nonwaiting writer fence. A deliberately named maintenance override retains
+  the old SQL after operator review; it is not an online migration or closure
+  of issue #9.
+
 - Exposed the existing historical FileOS v2-versus-active-v1 lexical
   comparison through a bounded, human-only Brain API route (ADR-147). It
   requires transition-review, search and evidence scopes; the v2 result is

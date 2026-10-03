@@ -2,6 +2,39 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-148 populated legacy rewrite refusal — local branch verification
+
+On the final branch source, a disposable loopback PostgreSQL 17.11 database
+ran the complete Python 3.14.7 suite: **3,015 passed, one intentional skip**;
+481 of 482 PostgreSQL-marked tests executed. The focused populated-upgrade
+regression proved default refusal for both legacy rewrites, immediate refusal
+under a concurrent writer, bounded refusal under a concurrent reader, no
+failed-migration ledger row, explicit override retaining the existing parser
+integrity check, and checksum-safe replay. All six browser suites passed
+**145 tests**; Ruff, strict mypy over 98 source files, documentation inventory
+and diff checks passed. An initial full run used a Unix-socket test DSN that
+the cross-source fixture intentionally rejects and could not launch a nested
+local cluster inside the sandbox. The final run used the fixture-required
+loopback DSN and permitted only a disposable synthetic launcher; it passed.
+These local results are not hosted exact-head or merged-main acceptance. The
+two generated-column rewrites remain lock-heavy behind an explicit operator
+override; issue #9's broader populated-upgrade risk remains open.
+
+## Post-PR #116 roadmap reconciliation — merged-main verification
+
+[PR #117](https://github.com/jbone3311/MasterBrain/pull/117) changed only
+documentation and identity/status metadata. Its final head
+`d04c1d5f6652758b7d53546992ab380d45db52eb` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37094427920),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37094427924)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37094427916).
+It merged at `394b693759624bf4f764ec6a5f8a732231c8c882`; merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37094998793),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37094998794)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37094998763)
+also passed. No new live/hosted or FileOS cutover claim follows from this
+documentation merge.
+
 ## ADR-147 human FileOS v2 search review API — merged-main verification
 
 The new human-only Brain route delegates to ADR-128's unchanged historical

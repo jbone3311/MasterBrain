@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-148](adr/148_populated_legacy_rewrite_guard.md) makes the administrator
+migrator refuse unapplied 0008/0009 generated-column rewrites on populated
+tables unless an operator explicitly opts into the lock-heavy path. This does
+not solve issue #9's online-upgrade, later-index or production lock budget.
+
 [ADR-147](adr/147_human_fileos_v2_review_api.md) exposes the existing
 historical FileOS v2 search comparison through one human-only, bounded Brain
 API route. It keeps current v1 search and SQL-refused v2 activation unchanged.

@@ -56,7 +56,20 @@ Schema migrations use a dedicated administrative credential whose effective role
 has `BYPASSRLS` or superuser visibility as well as the needed DDL permissions. The
 migrator rejects any other role before creating its ledger or changing schema;
 runtime and worker credentials must never inherit this privilege. Migration
-0034 also needs `CREATEROLE` to create the cluster-global, non-login identity-admin
+0008 rewrites populated `message_versions`, and 0009 rewrites populated
+`raw_objects` to add stored generated columns under `ACCESS EXCLUSIVE`. ADR-148
+now makes the default migrator refuse either unapplied rewrite on a populated
+target. It uses a nonwaiting lock to fence a concurrent writer during the
+emptiness check; a busy writer fails immediately, while a reader that blocks
+the subsequent DDL reaches a five-second lock timeout. The explicit
+`email-brain migrate --allow-populated-rewrite` override preserves the old SQL,
+but is only for an operator-reviewed maintenance window with measured size,
+disk headroom, lock budget, backup/restore and client-drain plan. It is **not**
+an online-upgrade path or a release acceptance. Already-applied checksummed
+files do not require the flag. See [ADR-148](adr/148_populated_legacy_rewrite_guard.md)
+and [issue #9](https://github.com/jbone3311/MasterBrain/issues/9).
+
+Migration 0034 also needs `CREATEROLE` to create the cluster-global, non-login identity-admin
 group if it does not already exist. A DBA may pre-provision that group with the
 attributes in [ADR-105](adr/105_identity_admin_enrollment.md) and no members;
 review membership before applying 0034 or granting a named administrator login.
