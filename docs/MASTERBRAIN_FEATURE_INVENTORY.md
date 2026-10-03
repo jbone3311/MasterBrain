@@ -1,6 +1,6 @@
 # MasterBrain Feature Inventory
 
-Updated 2026-10-02 after PR #116. See [current callable functions](CURRENT_FUNCTIONS.md) and
+Updated 2026-10-02 after PR #120. See [current callable functions](CURRENT_FUNCTIONS.md) and
 the [exact-commit receipt](BUILD_RECEIPT.md) for verified checkpoints. This
 inventory is broader than a user workflow: a separately available library or
 operator is not a hosted product.
