@@ -2,7 +2,42 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Current `main` documentation checkpoint — PR #131
+## ADR-110 Fastmail resilience integration — local candidate
+
+The integration branch preserves Claude's [draft #45](https://github.com/jbone3311/MasterBrain/pull/45)
+commit as a merge parent, ports its held-source schema to forward migration
+0052, distinguishes control-byte overflow from malformed JMAP, and bisects a
+valid oversized metadata batch before an atomic page commit. A synthetic
+50-message response above the unchanged 1 MiB control cap split into two
+25-message requests with all 50 items and the inventory seal committed. A
+single unsplittable row retained the cursor and failed closed. A reported
+source size above 2 GiB was held without allocating or downloading it.
+Focused Fastmail/JMAP/worker tests passed **130**, browser tests passed **149**,
+Ruff and strict mypy over 98 source files passed, and the documentation inventory
+passed. On disposable local PostgreSQL 17.11, the full repository gate passed
+**3,085 Python tests, one Docker-only skip and one excluded nested-launcher
+test**; the nested local-launcher test passed separately after the task's
+other disposable cluster was stopped. macOS had exhausted its 32 SysV shared-
+memory IDs with both clusters running; the original socket-DSN run also
+violated the trial harness's loopback-DSN requirement. These are test-environment
+constraints, not evidence of live-provider correctness. Exact-head hosted CI,
+strict runtime, populated restore and any merged-main acceptance are still
+required; no real mailbox was contacted or approved.
+
+## Prior `main` documentation checkpoints — PRs #131 and #132
+
+[PR #132](https://github.com/jbone3311/MasterBrain/pull/132) refreshed the
+README, roadmap, progress and receipt for the Fastmail integration gate. Its
+final documentation head `4b24732` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37120001143),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37120001165)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37120001131).
+It merged at `520ba81f3290a201b8f4093b8ac6f46357da1445`; merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37120175490),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37120175489)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37120175495)
+passed. This documentation-only merge did not accept Claude's code or create a
+new version.
 
 [PR #131](https://github.com/jbone3311/MasterBrain/pull/131) merged the
 post-ADR-152 documentation receipt at

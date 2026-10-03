@@ -1,9 +1,9 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-03. The latest merged `main` checkpoint is
-ADR-152/PR #130 at `c834fef`; exact-head full CI, strict runtime and
-populated restore passed. Merged-main strict runtime and restore passed;
-full CI is tracked separately in the [build receipt](BUILD_RECEIPT.md).
+Updated 2026-10-03. The latest FileOS shadow hardening checkpoint on `main` is
+ADR-152/PR #130 at `c834fef`; exact-head and merged-main full CI, strict runtime
+and populated restore passed. Later documentation checkpoints and Fastmail
+integration evidence are tracked in the [build receipt](BUILD_RECEIPT.md).
 ADR-151/PR #128 at `14e91f0` passed exact-head and merged-main full CI,
 strict runtime and populated restore. ADR-150/PR #126 at `c984a2e` passed
 exact-head and merged-main full CI, strict runtime and populated restore.

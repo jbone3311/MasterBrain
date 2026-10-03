@@ -1,6 +1,16 @@
 # MasterBrain Build Progress
 
-## Current GitHub checkpoint (2026-10-03)
+## Fastmail reliability integration candidate (2026-10-03)
+
+ADR-110's Claude-derived integration branch preserves the original draft as a
+merge parent, forward-numbers its held-source migration to 0052 and handles a
+valid metadata response above the fixed control budget without dropping IDs.
+The local full gate and separate nested-launcher test passed on fictional data;
+exact counts and environmental constraints are in the
+[build receipt](BUILD_RECEIPT.md). Hosted exact-head and merged-main gates,
+review and any live account acceptance remain separate. FOS-Master is unchanged.
+
+## Post-ADR-152 documentation checkpoint (2026-10-03)
 
 [PR #131](https://github.com/jbone3311/MasterBrain/pull/131) merged the
 post-ADR-152 documentation receipt to `main` at `65dcdf7`. The latest
@@ -9,11 +19,11 @@ the nonpublishing FileOS donor shadow now confines directory enumeration.
 Its exact-head and merged-main CI, strict runtime and populated restore passed;
 this does not approve live-root shadowing, v2 current visibility or donor cutover.
 The current `main` checks are linked in the [build receipt](BUILD_RECEIPT.md).
-The only open PR at this checkpoint is
-[Claude's draft #45](https://github.com/jbone3311/MasterBrain/pull/45), not
-integrated or release-ready. Its Fastmail metadata-page budget and migration
-number must be reconciled against current `main`, then independently tested
-before any merge; see the [roadmap](ROADMAP.md#next-verified-sequence).
+At this checkpoint [Claude's draft #45](https://github.com/jbone3311/MasterBrain/pull/45)
+was the only open PR, not integrated or release-ready. Its later integration
+must resolve the metadata-page budget and migration number against current
+`main` and pass independent tests before acceptance; see the
+[roadmap](ROADMAP.md#next-verified-sequence).
 
 ## FileOS completion scale audit (verified, not a cutover gate)
 
