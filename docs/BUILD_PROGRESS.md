@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Current `main` checkpoint (2026-10-02)
+
+[PR #116](https://github.com/jbone3311/MasterBrain/pull/116) merged the
+human-only FileOS v2 historical search-review API at
+`b6ebcbf7b5e6b12e10967c5d09d7a04970d5d982`. Final-head and merged-main
+full CI, strict runtime and populated restore passed; exact run links and the
+earlier GitHub billing-startup incident are in the
+[build receipt](BUILD_RECEIPT.md). This remains synthetic/disposable review
+capability, not v2 current visibility, a live-source pilot, donor cutover or
+production release. The detailed next decisions are in the
+[roadmap](ROADMAP.md#next-verified-sequence).
+
 ## Current synthetic version checkpoint (2026-10-01)
 
 Annotated tag [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
@@ -429,7 +441,13 @@ database change.
   are green. This accepts one explicit image member/key command, not live-source or
   production operation.
 
-## Current work
+## Historical work at checkpoint 5C
+
+The following two sections preserve the then-current handoff and deferrals;
+they do not override the current `main` checkpoint above. Current archive-image
+OCR search has since been implemented. See the
+[feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md) and
+[roadmap](ROADMAP.md).
 
 - Track the separate [Claude 5D workstream](https://github.com/jbone3311/MasterBrain/issues/10)
   for independent review of 5B persistence and a proposed current-only OCR search

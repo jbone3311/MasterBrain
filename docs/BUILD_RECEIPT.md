@@ -2,7 +2,7 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-147 human FileOS v2 search review API — local verification
+## ADR-147 human FileOS v2 search review API — merged-main verification
 
 The new human-only Brain route delegates to ADR-128's unchanged historical
 reviewer. A fictional PostgreSQL chain built a ready v2 generation, compared
@@ -30,7 +30,17 @@ changed, reruns on code head `5771cfc23e424cb840124f2b221bf72aaad2d05e`
 passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37053370693),
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37053370723)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37053370719).
-PR #116 records the final documentation-only head and merge checks separately.
+The final documentation-only head `4003f540f1e609758318b2314e2f7def56fc89ec`
+then passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37092189981),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37092190089)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37092189948).
+[PR #116](https://github.com/jbone3311/MasterBrain/pull/116) merged at
+`b6ebcbf7b5e6b12e10967c5d09d7a04970d5d982`; merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37093077307),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37093077327)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37093077285)
+also passed. The finished branch was removed. None of these checks proves
+live-root parity, v2 current visibility, absence semantics or donor cutover.
 
 ## Fictional contradictory-source Ask corpus — merged-main verification
 

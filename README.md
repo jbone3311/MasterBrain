@@ -6,10 +6,13 @@ layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compac
 progressive access with drill-down to original evidence.
 
 **Status:** [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
-is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01).
-That exact `main` commit passed full CI, strict runtime, populated restore and
-local pinned-donor DataCore parity. The fictional cross-source browser trial is
-merged, but interactive Mac acceptance is still pending. See
+is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01), not
+the current product release. As of 2026-10-02, `main` includes
+[PR #116](https://github.com/jbone3311/MasterBrain/pull/116) at `b6ebcbf`:
+the human-only historical FileOS v2 search comparison API. Exact-head and
+merged-main full CI, strict runtime and populated restore passed. The fictional
+cross-source browser trial is merged, but interactive Mac acceptance is still
+pending. See
 [current functions](docs/CURRENT_FUNCTIONS.md) and the
 [exact-commit receipt](docs/BUILD_RECEIPT.md). The
 Email capability has executable read-only ingestion, evidence storage, search,
@@ -71,7 +74,7 @@ FileOS sources ┘       │              │                │
 | Deterministic FileOS rebuild preview | Implemented; hosted PostgreSQL and restore gates green |
 | Immutable FileOS index generations, activation and rollback | Implemented; hosted PostgreSQL and restore gates green |
 | Private FileOS v2 generation in shared index tables | Merged; exact-head and merged-main gates green; v2 activation/current reads refused |
-| Human-only FileOS v2 search comparison API | One named historical generation versus active v1 with exact scopes and stale-baseline refusal; no activation or cutover |
+| Human-only FileOS v2 search comparison API | Merged and hosted-verified via PR #116; one named historical generation versus active v1 with exact scopes and stale-baseline refusal; no activation or cutover |
 | Private FileOS generation/rollback operator | Implemented; hosted PostgreSQL and restore gates green |
 | Cross-source current FileOS search | Implemented; hosted PostgreSQL and restore gates green |
 | Current FileOS + KnowledgeCore grouped retrieval | Implemented; hosted PostgreSQL and restore gates green |

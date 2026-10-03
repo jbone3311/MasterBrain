@@ -1,6 +1,6 @@
 # MasterBrain Feature Inventory
 
-Updated 2026-10-01. See [current callable functions](CURRENT_FUNCTIONS.md) and
+Updated 2026-10-02 after PR #116. See [current callable functions](CURRENT_FUNCTIONS.md) and
 the [exact-commit receipt](BUILD_RECEIPT.md) for verified checkpoints. This
 inventory is broader than a user workflow: a separately available library or
 operator is not a hosted product.
@@ -36,6 +36,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Authenticated idempotent snapshot publication | Explicit one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Explicit index generation and rollback | Private one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Private v2 generation in shared index tables | Merged historical builder; exact-head/merged-main gates green; v2 activation and current reads refused | DataCore |
+| FileOS | Human-only historical v2 search comparison | Brain API route merged via PR #116 with exact-head/merged-main gates green; compares one ready v2 generation with active v1 under three scopes, without activation or cutover | DataCore + Brain API |
 | FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
 
 ## DataCore
@@ -74,13 +75,13 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Capability | Required behavior | State |
 |---|---|---|
 | Search | Compact ranked hits across Email and files | Explicit current Email/FileOS routes, grouped current sources + knowledge, retained grouped search and bounded current coverage status implemented |
-| Answer | Evidence-backed synthesis with uncertainty and coverage | Designed |
+| Answer | Evidence-backed synthesis with uncertainty and coverage | Bounded local exact-quote selection and separately labelled reviewed KnowledgeCore matches implemented; freeform synthesis, semantic conflict resolution and hosted acceptance remain planned |
 | Expand | Fetch selected entity/project/claim/timeline/chunk | Exact DataCore/KnowledgeCore expansion implemented |
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |
 | Change feeds | Cursor-based non-consuming updates by layer | DataCore and KnowledgeCore feeds implemented |
-| Client neutrality | Same typed contract for Claude, Grok, ChatGPT, other LLMs | Model-neutral REST routes implemented; no certified MCP/client adapter or cross-client conformance yet |
-| First-party chat | Ask across Email, FileOS and KnowledgeCore through the same scoped Brain API, with cited answers and evidence drill-down | First read-only question workspace implemented with grouped lexical hits and separately scoped evidence; generated answers and hosted acceptance pending |
-| External assistant access | Separately authorized API/adapter with the same grants, freshness and evidence behavior as first-party chat | REST prototype only; no certified Grok/Claude/ChatGPT connection or hosted access |
+| Client neutrality | Same typed contract for Claude, Grok, ChatGPT, other LLMs | Model-neutral REST routes and a read-only reference client implemented; no certified named-assistant adapter or hosted cross-client conformance yet |
+| First-party chat | Ask across Email, FileOS and KnowledgeCore through the same scoped Brain API, with cited answers and evidence drill-down | Read-only question workspace shows verified exact source quotes and separate reviewed matches with evidence drill-down; no stateful conversation, freeform synthesis or hosted acceptance |
+| External assistant access | Separately authorized API/adapter with the same grants, freshness and evidence behavior as first-party chat | Source-scoped REST/reference-client prototype only; no certified Grok/Claude/ChatGPT connection or hosted access |
 | Budget controls | max results/bytes/tokens, field selection, continuation | Selected result/text/page bounds implemented; common token/field-budget contract planned |
 | Effects | Typed proposal → policy → preview → approval → separate executor, with receipts and recovery | Designed; no source-write authority enabled for chat or external assistants |
 

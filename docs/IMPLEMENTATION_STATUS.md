@@ -1,6 +1,8 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-02. Tagged synthetic checkpoint `v0.2.0a1` is
+Updated 2026-10-02. Current `main` includes PR #116 at `b6ebcbf`; its final
+head and merged-main CI, strict runtime and populated restore passed. Tagged
+synthetic checkpoint `v0.2.0a1` is
 `c0a531d8a7d0991be0a0f1ea717479c07cc20feb`; its exact full CI,
 strict-runtime, populated restore and local pinned-donor DataCore parity passed.
 **Implemented** means executable in this repository; it does not
@@ -20,7 +22,9 @@ production and FileOS cutover remain open.
   bounded, human-only Brain API route for one named ready generation versus
   active v1. The route requires transition-review, search and evidence scopes,
   labels v2 as a historical preview and refuses stale baselines; assistants
-  cannot call it. This is synthetic/disposable review access, not an owner UI,
+  cannot call it. PR #116 merged with final-head and merged-main full CI,
+  strict runtime and populated restore green. This is synthetic/disposable
+  review access, not an owner UI,
   v2 current visibility, live-source acceptance or FOS-Master cutover.
 
 - ADR-146 adds a bounded, separate reviewed KnowledgeCore match list to Ask,
