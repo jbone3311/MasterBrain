@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import os
 import sqlite3
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -83,8 +85,88 @@ def test_symlinks_are_skipped_without_outside_read(tmp_path: Path) -> None:
     (root / "folder-link").symlink_to(tmp_path, target_is_directory=True)
     result = shadow.scan_donor_policy_shadow(root)
     assert [row["locator"] for row in result["rows"]] == ["ordinary.txt"]
-    assert {entry["locator"] for entry in result["errors"]} == {"external.txt", "internal.txt"}
-    assert {entry["reason"] for entry in result["exclusions"]} == {"symlink_directory"}
+    assert {entry["locator"] for entry in result["errors"]} == {
+        "external.txt", "folder-link", "internal.txt"
+    }
+    assert {entry["code"] for entry in result["errors"]} == {"symlink_skipped"}
+    assert result["exclusions"] == []
+
+
+def test_symlink_target_type_is_never_queried(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.txt").write_bytes(b"outside")
+    (root / "file-link").symlink_to(outside / "secret.txt")
+    (root / "dir-link").symlink_to(outside, target_is_directory=True)
+    (root / "dangling-link").symlink_to(tmp_path / "missing")
+    (root / "ordinary.txt").write_bytes(b"inside")
+    real_scandir = os.scandir
+
+    class GuardedEntry:
+        def __init__(self, entry: os.DirEntry[str]) -> None:
+            self.entry = entry
+            self.name = entry.name
+
+        def is_symlink(self) -> bool:
+            return self.entry.is_symlink()
+
+        def is_dir(self, *, follow_symlinks: bool = True) -> bool:
+            if follow_symlinks:
+                raise AssertionError("shadow followed a directory-entry target")
+            if self.entry.is_symlink():
+                raise AssertionError("shadow queried a symlink target type")
+            return self.entry.is_dir(follow_symlinks=False)
+
+    @contextmanager
+    def guarded_scandir(directory: int):
+        with real_scandir(directory) as entries:
+            yield (GuardedEntry(entry) for entry in entries)
+
+    monkeypatch.setattr(shadow.os, "scandir", guarded_scandir)
+    result = shadow.scan_donor_policy_shadow(root)
+    assert result["rows"] == [
+        {
+            "locator": "ordinary.txt",
+            "size_bytes": 6,
+            "sha256": hashlib.sha256(b"inside").hexdigest(),
+            "state": "hashed",
+        }
+    ]
+    assert result["exclusions"] == []
+    assert result["errors"] == [
+        {"locator": "dangling-link", "code": "symlink_skipped"},
+        {"locator": "dir-link", "code": "symlink_skipped"},
+        {"locator": "file-link", "code": "symlink_skipped"},
+    ]
+
+
+def test_directory_replaced_by_link_after_listing_is_a_coverage_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    child = root / "child"
+    child.mkdir(parents=True)
+    (child / "inside.txt").write_bytes(b"inside")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.txt").write_bytes(b"outside")
+    real_classify = shadow.classify_dir
+
+    def swap_after_listing(name: str) -> str:
+        if name == "child":
+            child.rename(root / "moved")
+            child.symlink_to(outside, target_is_directory=True)
+        return real_classify(name)
+
+    monkeypatch.setattr(shadow, "classify_dir", swap_after_listing)
+    result = shadow.scan_donor_policy_shadow(root)
+    assert result["rows"] == []
+    assert result["exclusions"] == []
+    assert result["errors"] == [{"locator": "child", "code": "symlink_skipped"}]
 
 
 def test_special_leaf_keeps_nonregular_exclusion_without_open(tmp_path: Path) -> None:

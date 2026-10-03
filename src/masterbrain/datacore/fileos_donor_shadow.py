@@ -23,7 +23,7 @@ from masterbrain.datacore.fileos_junk_filter import classify_dir, is_junk_file
 DONOR_HASH_LIMIT = 2 * 1024**3
 SF_DATALESS = 0x40000000
 MAX_SHADOW_RECORDS = 20_000
-SHADOW_PROFILE = "pinned-fos-scanner-shadow-v1"
+SHADOW_PROFILE = "pinned-fos-scanner-shadow-v2"
 
 
 def _is_dataless(info: os.stat_result) -> bool:
@@ -149,7 +149,13 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
             dirnames: list[str] = []
             filenames: list[str] = []
             for entry in entries:
-                (dirnames if entry.is_dir() else filenames).append(entry.name)
+                if entry.is_symlink():
+                    relative = entry.name if directory == "." else f"{directory}/{entry.name}"
+                    record(errors, {"locator": relative, "code": "symlink_skipped"})
+                elif entry.is_dir(follow_symlinks=False):
+                    dirnames.append(entry.name)
+                else:
+                    filenames.append(entry.name)
         except OSError:
             record(errors, {"locator": directory, "code": "directory_unreadable"})
             continue
@@ -160,10 +166,10 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
         for name in dirnames:
             path = current / name
             kind = classify_dir(name)
-            if kind != "content":
+            if path.is_symlink():
+                record(errors, {"locator": locator(path), "code": "symlink_skipped"})
+            elif kind != "content":
                 record(exclusions, {"locator": locator(path), "reason": f"donor_{kind}_dir"})
-            elif path.is_symlink():
-                record(exclusions, {"locator": locator(path), "reason": "symlink_directory"})
             else:
                 kept_dirs.append(name)
         pending.extend(reversed([locator(current / name) for name in kept_dirs]))
@@ -171,11 +177,11 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
         for name in filenames:
             path = current / name
             relative = locator(path)
-            if is_junk_file(name):
-                record(exclusions, {"locator": relative, "reason": "donor_junk_file"})
-                continue
             if path.is_symlink():
                 record(errors, {"locator": relative, "code": "symlink_skipped"})
+                continue
+            if is_junk_file(name):
+                record(exclusions, {"locator": relative, "reason": "donor_junk_file"})
                 continue
             try:
                 before = stat_confined_leaf(root, relative, root_identity=root_identity)

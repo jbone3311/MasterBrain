@@ -7,7 +7,7 @@ FileOS snapshot, importer, database, search path, or FOS-Master. Its decision is
 
 `build_fileos_donor_candidate(root, source_id=..., observed_at=...,
 metadata_only=False)` runs one bounded, root-confined donor-policy shadow scan.
-The result has `candidate_version: masterbrain-fileos-donor-candidate-v1` and
+The result has `candidate_version: masterbrain-fileos-donor-candidate-v2` and
 `publishable: false`; it deliberately has no `manifest_version`, so the existing
 v1 importer rejects it. The source ID and timezone-aware observation time are
 required. A private physical-root binding, the pinned donor commit, policy
@@ -20,7 +20,7 @@ The four disjoint, sorted ledgers are:
 |---|---|---|
 | `hashed` | A regular file with donor-policy SHA-256, byte size, media type and stable item/version IDs | Candidate identity only; no evidence is published |
 | `deferred` | `no_hash`, `dataless` or `oversize` observation with locator, size and stable item ID | **No** version, digest, document, chunk, or searchable text |
-| `exclusions` | Explicit donor junk, operational, symlink-directory or nonregular skip | No |
+| `exclusions` | Explicit donor junk, operational or nonregular skip | No |
 | `errors` | Unreadable, changed, skipped-symlink or root-drift observation | No; coverage is uncertain |
 
 No downstream consumer may treat a deferred locator or an error as proof that a
@@ -29,6 +29,13 @@ inventing a digest or reusing a previous version ID. Counts must match their
 ledgers; duplicate/overlapping locators, malformed hashes/states and record
 overflow fail closed. Root drift is recorded as an error. This ledger is not a
 completion receipt and cannot authorize absence inference.
+
+[ADR-156](adr/156_shadow_symlink_target_boundary.md) advances the nonpublishing
+shadow profile and candidate to v2: any symlink, including one pointing to a
+directory, is a `symlink_skipped` error without asking the target's type.
+Previously sealed v1 packets remain historical, but are not newly staged or
+sealed as v2; a fresh scan and review is required. This changes no publishable
+FileOS inventory, source data or donor repository.
 
 ## Verification boundary
 

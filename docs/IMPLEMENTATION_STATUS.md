@@ -37,6 +37,11 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-156 removes symlink-target type probing from the nonpublishing FileOS
+  donor-policy shadow. Directory links become coverage errors, and new
+  candidate/profile versions refuse reuse of old-policy packets for staging.
+  This is synthetic hardening, not live-root or FileOS cutover acceptance.
+
 - ADR-152 makes the nonpublishing FileOS donor-policy shadow enumerate each
   directory through a no-follow descriptor instead of `os.walk`. Synthetic
   descendant/ancestor swaps and an after-open move now produce directory

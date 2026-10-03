@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-156](adr/156_shadow_symlink_target_boundary.md) removes symlink-target
+type inspection from the nonpublishing FileOS donor shadow. A directory link
+becomes a coverage error, and versioned v2 shadow/candidate packets require a
+fresh scan and review; v1/current FileOS and FOS-Master are unchanged.
+
 [ADR-155](adr/155_separate_cluster_tenant_restore.md) rehearses a two-tenant
 restore into a fresh, separately labelled PostgreSQL 17 container. It retires
 stale restored role-name bindings and enrolls new target logins before the

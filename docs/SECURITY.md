@@ -185,8 +185,11 @@ directory is opened through no-follow descriptors from the authorized root;
 a swapped descendant link yields a directory coverage error instead of
 enumerating outside filenames. This does not change the publishable v1
 snapshot, approve donor policy or establish live-source safety. Existing
-symlink-directory classification can still stat a target's type without
-listing or opening it; its live-root privacy policy remains a separate gate.
+symlink-directory classification could still inspect a target's type without
+listing or opening it. ADR-156 removes that probe: all symlinks are coverage
+errors before no-follow directory classification, and the shadow/candidate
+versions advance so older packets cannot be silently reused as new-policy
+evidence. Live-root privacy and cloud-placeholder behavior remain separate gates.
 
 ADR-100 requires FileOS snapshot hashing and text/PDF/Office extraction to read
 through the authorized root with no-follow directory/file descriptors. Pathname

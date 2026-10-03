@@ -456,7 +456,7 @@ def _fileos_v2_staged_rows(
                 reason_key = "reason" if kind == "excluded" else "code"
                 allowed = (
                     {"donor_junk_dir", "donor_operational_dir", "donor_junk_file",
-                     "symlink_directory", "not_regular"}
+                     "not_regular"}
                     if kind == "excluded" else
                     {"directory_unreadable", "root_changed_during_scan", "symlink_skipped",
                      "changed_during_scan", "file_unreadable"}
@@ -467,7 +467,7 @@ def _fileos_v2_staged_rows(
     excluded_directories = {
         locator for kind, locator, *_, reason in rows
         if kind == "excluded"
-        and reason in {"donor_junk_dir", "donor_operational_dir", "symlink_directory"}
+        and reason in {"donor_junk_dir", "donor_operational_dir"}
     }
     for locator in occupied:
         parts = locator.split("/")
@@ -4021,6 +4021,8 @@ class DataCoreStore:
         The source advisory lock closes the gap between the caller's scan and
         insertion. This table is never read by freshness, absence or search.
         """
+        from masterbrain.datacore.fileos_donor_candidate import CANDIDATE_VERSION
+
         self.store.require(ctx, "brain.source.ingest")
         self.store.require(ctx, "brain.changes.read")
         if not isinstance(prior_run_id, UUID) or not isinstance(packet_id, UUID):
@@ -4049,7 +4051,7 @@ class DataCoreStore:
             or packet["source_id"] != source.source_id
             or packet["prior_run_id"] != str(prior_run_id)
             or packet["prior_manifest_sha256"] != prior_hash
-            or candidate.get("candidate_version") != "masterbrain-fileos-donor-candidate-v1"
+            or candidate.get("candidate_version") != CANDIDATE_VERSION
             or candidate.get("publishable") is not False
             or not isinstance(candidate_source, Mapping)
             or candidate_source.get("source_id") != source.source_id
@@ -4116,6 +4118,10 @@ class DataCoreStore:
             raise ValueError("invalid FileOS transition packet encoding") from exc
         if len(encoded) > 16 * 1024 * 1024:
             raise ValueError("FileOS transition packet byte bound exceeded")
+        # A new packet must obey the current shadow profile before it can be
+        # sealed. Older symlink-directory exclusions remain readable history,
+        # not authority for a new v2 stage.
+        _fileos_v2_staged_rows(candidate, source.source_id)
         packet_hash = hashlib.sha256(encoded).hexdigest()
         with self.store.transaction(ctx) as conn:
             conn.execute(

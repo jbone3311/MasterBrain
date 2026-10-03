@@ -108,6 +108,36 @@ def test_symlink_and_coverage_errors_remain_explicit(tmp_path: Path) -> None:
     assert [row["locator"] for row in result["hashed"]] == ["proof.txt"]
 
 
+def test_directory_symlink_blocks_candidate_and_old_profile_cannot_stage(
+    tmp_path: Path,
+) -> None:
+    outside = tmp_path.parent / f"{tmp_path.name}-outside"
+    outside.mkdir()
+    (tmp_path / "directory-link").symlink_to(outside, target_is_directory=True)
+    result = candidate.build_fileos_donor_candidate(
+        tmp_path, source_id="files_candidate", observed_at=OBSERVED
+    )
+    assert result["errors"] == [
+        {"locator": "directory-link", "code": "symlink_skipped"}
+    ]
+    assert result["counts"]["excluded"] == 0
+    assert result["policy"]["shadow_profile"] == "pinned-fos-scanner-shadow-v2"
+    old = deepcopy(result)
+    old["candidate_version"] = "masterbrain-fileos-donor-candidate-v1"
+    old["policy"]["shadow_profile"] = "pinned-fos-scanner-shadow-v1"
+    with pytest.raises(ValueError, match="candidate ledger"):
+        _fileos_v2_staged_rows(old, "files_candidate")
+    forged = deepcopy(result)
+    forged["errors"] = []
+    forged["exclusions"] = [
+        {"locator": "directory-link", "reason": "symlink_directory"}
+    ]
+    forged["counts"]["errors"] = 0
+    forged["counts"]["excluded"] = 1
+    with pytest.raises(ValueError, match="coverage row"):
+        _fileos_v2_staged_rows(forged, "files_candidate")
+
+
 def test_v2_stage_projection_keeps_all_donor_ledger_kinds(tmp_path: Path) -> None:
     (tmp_path / "proof.txt").write_bytes(b"fictional")
     (tmp_path / "_status.html").write_bytes(b"generated")
