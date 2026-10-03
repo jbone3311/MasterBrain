@@ -11,7 +11,8 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from email_brain.api import create_app
-from email_brain.auth import Credential, TokenRegistry
+from email_brain.auth import Credential, Principal, TokenRegistry
+from email_brain.domain.models import TenantContext
 from email_brain.inference import Route, RoutingPolicy, route, validate_classification
 from email_brain.normalize import normalize
 from email_brain.store import Store
@@ -629,6 +630,36 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
 def test_expiry_and_bad_token() -> None:
     assert registry(expired=True).authenticate(TOKEN) is None
     assert registry().authenticate("wrong-token" * 5) is None
+
+
+@pytest.mark.parametrize("scope", ["email.search", "email.evidence.read", "email.proposal.read"])
+def test_bootstrap_assistant_cannot_receive_legacy_email_scope(scope: str) -> None:
+    with pytest.raises(ValueError, match="legacy Email scopes are unavailable to assistants"):
+        registry({scope}, "assistant")
+
+
+@pytest.mark.parametrize(
+    "scope,method,path,body",
+    [
+        ("email.search", "post", "/v1/search", {"query": "fictional"}),
+        ("email.evidence.read", "get", f"/v1/evidence/{uuid4()}", None),
+        ("email.search", "get", f"/v1/accounts/{uuid4()}/sync-status", None),
+    ],
+)
+def test_forged_assistant_principal_cannot_reach_legacy_email_route(
+    scope: str, method: str, path: str, body: dict[str, str] | None
+) -> None:
+    store = MagicMock(spec=Store)
+    authenticator = MagicMock()
+    authenticator.authenticate.return_value = Principal(
+        TenantContext(uuid4(), uuid4(), frozenset({scope}), uuid4()), "assistant"
+    )
+    client = TestClient(create_app(store, authenticator))
+    response = client.request(
+        method, path, json=body, headers={"Authorization": f"Bearer {TOKEN}"}
+    )
+    assert response.status_code == 403
+    assert store.method_calls == []
 
 
 def test_assistants_cannot_be_reviewers() -> None:

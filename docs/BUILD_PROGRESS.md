@@ -1,5 +1,16 @@
 # MasterBrain Build Progress
 
+## Current authorization-hardening tranche (in verification)
+
+[ADR-149](adr/149_assistant_legacy_email_denial.md) makes the source-scoped
+Brain API the assistant entrance for Email. New bootstrap credentials with
+legacy `email.*` scopes are refused, existing OIDC assistant bindings with
+those scopes fail authentication and saved-context use, and legacy Email API
+dependencies deny even a forged assistant principal before database work.
+Human/worker compatibility paths remain. This tranche is synthetic-only and
+does not close hosted assistant issue #88; exact-head and merged-main receipts
+must be recorded before calling it merged and verified.
+
 ## Latest recorded functional checkpoint (2026-10-02)
 
 [PR #118](https://github.com/jbone3311/MasterBrain/pull/118) merged ADR-148's

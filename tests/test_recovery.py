@@ -83,7 +83,14 @@ def test_api_denies_missing_scope_and_rejects_untrusted_parameters(monkeypatch):
     assert client.post(path, json={**body, "raw": "private"}, headers=headers).status_code == 422
     assert client.post(path, json={}, headers=headers).status_code == 422
     for scopes, kind in (({"email.evidence.read"}, "assistant"), ({"email.review"}, "human")):
-        denied = TestClient(create_app(store, registry(scopes, kind)))
+        if kind == "assistant":
+            authenticator = MagicMock()
+            authenticator.authenticate.return_value = Principal(
+                registry(scopes).authenticate(TOKEN).context, "assistant"
+            )
+        else:
+            authenticator = registry(scopes, kind)
+        denied = TestClient(create_app(store, authenticator))
         # Mock must not bypass the library's scope guard.
         store.require = Store.require
         assert denied.post(path, json=body, headers=headers).status_code == 403

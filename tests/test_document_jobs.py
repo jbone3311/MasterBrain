@@ -729,6 +729,16 @@ def test_foreign_access_and_immutable_results(database, tenant):
 
 def client(store, ctx, *, kind="human", scopes=None, version=VERSION):
     token = "synthetic-document-token-" + "x" * 32
+    if kind == "assistant":
+        # Forge an already-authenticated principal to exercise the API's
+        # defense-in-depth denial; bootstrap rejects these credentials now.
+        authenticator = Mock()
+        authenticator.authenticate.return_value = Principal(
+            replace(ctx, scopes=frozenset(scopes or ctx.scopes)), "assistant"
+        )
+        result = TestClient(create_app(store, authenticator, document_processor_version=version))
+        result.headers["Authorization"] = "Bearer " + token
+        return result
     credential = Credential(
         token_sha256=hashlib.sha256(token.encode()).hexdigest(),
         tenant_id=ctx.tenant_id,

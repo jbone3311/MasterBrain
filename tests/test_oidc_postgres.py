@@ -131,7 +131,7 @@ def test_revocation_invalidates_saved_context_and_new_api(setup, change):
     with pytest.raises(AccessDenied), store.transaction(principal.context):
         pass
     fresh = auth.authenticate(raw)
-    if change in {"active", "membership", "delete"}:
+    if change in {"active", "kind", "membership", "delete"}:
         assert fresh is None
     else:
         assert fresh and fresh.context.identity.revision == 2
@@ -383,7 +383,32 @@ def test_assistant_cannot_review_even_with_signed_owner_claim(setup):
         json={"decision": "approved", "expected_version": 1},
         headers={"Authorization": "Bearer " + malicious},
     )
-    assert response.status_code == 403
+    assert response.status_code == 401
+
+
+def test_existing_oidc_email_only_assistant_cannot_authenticate_or_reuse_context(setup):
+    store, admin, _, _, _, binding, raw, auth = setup
+    previous = auth.authenticate(raw)
+    assert previous is not None and previous.context.identity is not None
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE external_identities SET client_kind='assistant',"
+            "scopes=ARRAY['email.search'] WHERE id=%s",
+            (binding,),
+        )
+    stale_assistant = replace(
+        previous.context,
+        scopes=frozenset({"email.search"}),
+        identity=replace(previous.context.identity, revision=2, client_kind="assistant"),
+    )
+    with pytest.raises(AccessDenied), store.transaction(stale_assistant):
+        pass
+    assert auth.authenticate(raw) is None
+    client = TestClient(create_app(store, auth))
+    assert client.post(
+        "/v1/search", json={"query": "fictional"},
+        headers={"Authorization": "Bearer " + raw},
+    ).status_code == 401
 
 
 def test_database_outage_and_unsafe_role_fail_closed(setup, monkeypatch):

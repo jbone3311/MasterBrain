@@ -160,9 +160,15 @@ def reader_client(monkeypatch, kind="human", scopes=None):
     identifier = uuid4()
     reader.download.return_value = (b"source bytes", f"message-{identifier}.eml")
     monkeypatch.setattr("email_brain.api.MessageReader", lambda _: reader)
-    client = TestClient(
-        create_app(MagicMock(spec=Store), registry(scopes or {"email.evidence.read"}, kind))
-    )
+    if kind == "assistant":
+        authenticator = MagicMock()
+        authenticator.authenticate.return_value = Principal(
+            registry(scopes or {"email.evidence.read"}).authenticate(TOKEN).context,
+            "assistant",
+        )
+    else:
+        authenticator = registry(scopes or {"email.evidence.read"}, kind)
+    client = TestClient(create_app(MagicMock(spec=Store), authenticator))
     return client, reader, f"/v1/reader/{identifier}"
 
 

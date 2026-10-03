@@ -183,6 +183,8 @@ def create_app(
                 human and principal.client_kind != "human"
             ):
                 raise HTTPException(403, "scope_denied")
+            if principal.client_kind == "assistant" and scope.startswith("email."):
+                raise HTTPException(403, "scope_denied")
             if principal.client_kind == "assistant" and scope.startswith(("brain.", "knowledge.")):
                 if not assistant_source_aware or not principal.context.source_ids:
                     raise HTTPException(403, "scope_denied")

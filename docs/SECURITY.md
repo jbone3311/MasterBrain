@@ -96,7 +96,12 @@ denied to assistants at that checkpoint. ADR-143 later admits direct
 Knowledge and unified reads after filtering every directly linked evidence
 source, including assertion expansion and change-feed cursors. It does not
 prove semantic noninterference for human-authored text or approve hosted use;
-legacy Email assistant routes remain denied.
+legacy Email assistant routes remain denied. ADR-149 makes that denial
+explicit across `email.*` API dependencies, bootstrap credential issuance
+and OIDC transaction rechecks. An older Email-only assistant binding now
+fails authentication rather than using unfenced compatibility reads. Human
+and worker Email paths are unchanged; hosted issuer and derived-cache
+acceptance remain open.
 
 ## Privacy-safe failure observability
 

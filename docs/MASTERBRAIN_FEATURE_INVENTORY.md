@@ -81,7 +81,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Change feeds | Cursor-based non-consuming updates by layer | DataCore and KnowledgeCore feeds implemented |
 | Client neutrality | Same typed contract for Claude, Grok, ChatGPT, other LLMs | Model-neutral REST routes and a read-only reference client implemented; no certified named-assistant adapter or hosted cross-client conformance yet |
 | First-party chat | Ask across Email, FileOS and KnowledgeCore through the same scoped Brain API, with cited answers and evidence drill-down | Read-only question workspace shows verified exact source quotes and separate reviewed matches with evidence drill-down; no stateful conversation, freeform synthesis or hosted acceptance |
-| External assistant access | Separately authorized API/adapter with the same grants, freshness and evidence behavior as first-party chat | Source-scoped REST/reference-client prototype only; no certified Grok/Claude/ChatGPT connection or hosted access |
+| External assistant access | Separately authorized API/adapter with the same grants, freshness and evidence behavior as first-party chat | Source-scoped REST/reference-client prototype only; ADR-149 denies unfenced legacy Email routes to assistants; no certified Grok/Claude/ChatGPT connection or hosted access |
 | Budget controls | max results/bytes/tokens, field selection, continuation | Selected result/text/page bounds implemented; common token/field-budget contract planned |
 | Effects | Typed proposal → policy → preview → approval → separate executor, with receipts and recovery | Designed; no source-write authority enabled for chat or external assistants |
 

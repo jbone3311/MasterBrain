@@ -516,6 +516,10 @@ class Store:
                     or not set(ctx.scopes).issubset(binding["scopes"])
                     or (
                         identity.client_kind == "assistant"
+                        and any(scope.startswith("email.") for scope in binding["scopes"])
+                    )
+                    or (
+                        identity.client_kind == "assistant"
                         and bool(
                             set(binding["scopes"])
                             & {

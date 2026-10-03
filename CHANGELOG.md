@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Denied assistant access to legacy `email.*` compatibility API routes
+  (ADR-149). Bootstrap assistant Email scopes are refused, and old OIDC
+  Email-only assistant bindings fail transaction recheck. Enrolled assistants
+  continue through source-filtered Brain/Knowledge routes. Human/worker Email
+  behavior and FOS-Master are unchanged; hosted acceptance remains open.
+
 - Added ADR-148's administrator migration guard: unapplied 0008/0009
   generated-column rewrites now refuse populated tables by default, with a
   nonwaiting writer fence. A deliberately named maintenance override retains

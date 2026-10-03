@@ -16,7 +16,7 @@ FileOS cutover acceptance is implied.
 | Product identity and donor baseline | MasterBrain identity, source-layer boundaries, pinned FOS-Master provenance, first hash/dedupe parity and synthetic shadow corpus are in the repo | Full semantic and operational parity, owner cutover decision |
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
 | KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work | Automatic candidate pipeline, evaluated resolution, complete project/commitment reducers, rebuild and freshness proof |
-| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads | Hosted issuer enrollment, legacy Email route and cached revocation, cited answer synthesis, named-assistant adapter and full byte/token budgets |
+| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search, evidence drill-down and partial coverage work; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads; ADR-149 denies unfenced legacy Email routes to assistants | Hosted issuer enrollment and derived-cache revocation, cited answer synthesis, named-assistant adapter and full byte/token budgets |
 | Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; Ask returns exact quotes and a separate reviewed KnowledgeCore match list, with fixed question boilerplate removed before lexical retrieval | Run the owner's interactive trial, evaluate held-out natural questions, corrections and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
 | FileOS replacement and effects | Private v2 generation plus human-only historical v1/v2 comparison API are merged; no cutover or source effects | Decide donor-policy edge behavior, prove sustained live shadow and v2 current/absence/rollback semantics, then a bounded rollback-ready cohort and owner sign-off; effects require a separate later approval |
@@ -185,8 +185,9 @@ FileOS cutover. The separate `v0.2.0a1` tag is synthetic-only.
   aggregate and exact-FileOS Brain reads. ADR-143 adds unified Brain and direct
   Knowledge reads, with all directly linked evidence sources required.
   OIDC grant removal
-  invalidates future transactions. Hosted issuer enrollment, legacy Email
-  assistant filtering, hosted semantics and derived-cache invalidation
+  invalidates future transactions. ADR-149 keeps legacy Email compatibility
+  routes human/operator-only instead of creating a second assistant read path.
+  Hosted issuer enrollment, hosted semantics and derived-cache invalidation
   remain [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
   A named MCP/other assistant adapter still requires prompt-injection isolation,
   compactness, citations and cross-assistant conformance. The REST Brain API
