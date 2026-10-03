@@ -2,6 +2,23 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Explicit Brain source focus — local candidate verification
+
+ADR-150 adds optional All/Email/FileOS focus to grouped current search,
+extractive Ask, the first-party `/brain` workspace and `BrainReadClient`.
+Focused calls skip excluded source and reviewed-knowledge queries and mark
+their coverage `not_searched`; grants, scopes, currentness rechecks and
+evidence boundaries are unchanged. A real disposable PostgreSQL 17.11
+cross-source/API/client/assistant parity test passed, including hidden-source
+denial. After the final coverage-label refinement, the focused selection
+passed **59 tests** (one PostgreSQL-marked test executed, none skipped). The
+local deployment gate passed **3,032 Python tests, one Docker-only skip**
+(484 of 485 PostgreSQL-marked tests executed); all six browser suites passed
+**147 tests**. Ruff, strict mypy over 98 files, the documentation inventory/link
+check and diff whitespace check passed. CI, strict runtime and populated
+restore remain pending on the branch; this is not a hosted or live-source
+acceptance claim.
+
 ## Ask mid-turn assistant source revocation — local regression
 
 A synthetic OIDC assistant enrolled for one Email and one FileOS source began

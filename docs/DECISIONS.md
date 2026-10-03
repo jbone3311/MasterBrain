@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-150](adr/150_explicit_brain_source_focus.md) adds an explicit,
+read-only Email or FileOS focus to current grouped search and Ask. It avoids
+fetching excluded layers and labels their absence as unsearched; it changes
+no grant, source effect, v2 visibility or donor cutover.
+
 [ADR-149](adr/149_assistant_legacy_email_denial.md) keeps legacy Email
 compatibility API routes outside assistant access. Bootstrap issuance,
 OIDC transaction rechecks and route dependencies fail closed for `email.*`

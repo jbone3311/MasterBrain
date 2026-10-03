@@ -44,9 +44,10 @@ function searchData() {
 function walk(element) { return [element, ...element.children.flatMap(walk)]; }
 const flush = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 function harness(customFetch) {
-  const ids = ["brain-token", "brain-question", "ask-button", "search-button", "turns", "brain-status",
+  const ids = ["brain-token", "brain-question", "brain-source-focus", "ask-button", "search-button", "turns", "brain-status",
     "ask-form", "clear-session", "clear-turns"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element(id)]));
+  elements["brain-source-focus"].value = "all";
   const calls = [];
   vm.runInNewContext(script, {
     document: {getElementById: id => elements[id], createElement: tag => new Element(tag)},
@@ -62,6 +63,10 @@ function harness(customFetch) {
     AbortController, setTimeout, clearTimeout,
   });
   const enterToken = value => { elements["brain-token"].value = value; elements["brain-token"].events.input(); };
+  const chooseFocus = value => {
+    elements["brain-source-focus"].value = value;
+    elements["brain-source-focus"].events.change();
+  };
   const ask = async value => {
     elements["brain-question"].value = value;
     await elements["ask-form"].events.submit({preventDefault() {}});
@@ -72,7 +77,7 @@ function harness(customFetch) {
     await elements["search-button"].events.click();
     await flush();
   };
-  return {elements, calls, enterToken, ask, searchOnly};
+  return {elements, calls, enterToken, chooseFocus, ask, searchOnly};
 }
 
 test("static shell makes no request and refuses a missing credential", async () => {
@@ -102,6 +107,54 @@ test("read-only conversation uses the scoped API and renders hostile content as 
   assert.match(rendered, /<img src=x onerror=alert\(1\)>/);
   assert.match(rendered, /Reviewed commitment/);
   assert.equal(h.calls.some(call => /proposals|move|rename|delete/.test(call.url)), false);
+});
+
+test("explicit Email focus narrows Ask and Search only without fetching Files", async () => {
+  const h = harness(async url => {
+    if (url === "/v1/brain/answers") return {ok: true, json: async () => ({
+      mode: "grounded_extractive_v1", status: "quoted_evidence",
+      answer: "Relevant passages from current indexed evidence are quoted below.",
+      citations: [{evidence_id: "ev_email", document_id: "doc_email", source_id: "source_email",
+        source_kind: "email", quote: "Insurance is pending.", start: 0, end: 21,
+        body_sha256: "a".repeat(64)}],
+      reviewed_knowledge: [], coverage: {complete: false, source_focus: "email"},
+      untrusted_content: true,
+    })};
+    const data = searchData();
+    data.coverage.source_focus = "email";
+    data.layers.fileos = [];
+    data.layers.knowledge = [];
+    return {ok: true, json: async () => data};
+  });
+  h.enterToken("owner-token");
+  h.chooseFocus("email");
+  await h.ask("insurance");
+  assert.equal(h.calls.length, 1);
+  assert.equal(JSON.parse(h.calls[0].options.body).source_focus, "email");
+  let rendered = walk(h.elements.turns).map(item => item.textContent).join("\n");
+  assert.match(rendered, /Files and reviewed knowledge were not searched/);
+  assert.doesNotMatch(rendered, /private\/path.txt/);
+  await h.searchOnly("insurance");
+  assert.equal(JSON.parse(h.calls[1].options.body).source_focus, "email");
+  rendered = walk(h.elements.turns).map(item => item.textContent).join("\n");
+  assert.doesNotMatch(rendered, /Files ·/);
+  assert.doesNotMatch(rendered, /Reviewed knowledge ·/);
+});
+
+test("changing source focus clears prior results and rejects a late response", async () => {
+  let release;
+  const h = harness(async () => new Promise(resolve => {
+    release = () => resolve({ok: true, json: async () => searchData()});
+  }));
+  h.enterToken("owner-token");
+  h.elements["brain-question"].value = "Cedar Harbor";
+  const inFlight = h.elements["ask-form"].events.submit({preventDefault() {}});
+  await flush();
+  h.chooseFocus("fileos");
+  release(); await inFlight; await flush();
+  assert.equal(h.elements.turns.childElementCount, 1);
+  assert.equal(h.elements.turns.firstElementChild.className, "empty");
+  assert.equal(h.elements["brain-question"].value, "");
 });
 
 test("evidence metadata and text use separate authorized calls; denied text stays hidden", async () => {

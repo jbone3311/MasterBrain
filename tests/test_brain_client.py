@@ -84,6 +84,43 @@ def test_answer_client_rejects_malformed_claims(change: dict) -> None:
             client.answer("fictional question")
 
 
+def test_explicit_focus_matches_api_and_rejects_widened_responses() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if request.url.path == "/v1/brain/current-search":
+            data = current_result()
+            data["coverage"] = {"complete": False, "source_focus": "fileos"}
+            return httpx.Response(200, json=data)
+        data = answer_result()
+        data["coverage"] = {"complete": False, "source_focus": "fileos"}
+        return httpx.Response(200, json=data)
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler)
+    ) as client:
+        assert client.current_search("insurance", source_focus="fileos")["coverage"][
+            "source_focus"
+        ] == "fileos"
+        assert client.answer("insurance", source_focus="fileos")["citations"]
+        for invalid in ("files", "", "FileOS"):
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                client.current_search("insurance", source_focus=invalid)
+    assert len(calls) == 2
+    assert all(b'"source_focus":"fileos"' in call.content for call in calls)
+
+    widened = current_result()
+    widened["coverage"] = {"complete": False, "source_focus": "fileos"}
+    widened["layers"]["email_messages"] = [{"evidence_id": "hidden"}]
+    with BrainReadClient(
+        "https://brain.example", "token",
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=widened)),
+    ) as client:
+        with pytest.raises(BrainClientError, match="invalid_response"):
+            client.current_search("insurance", source_focus="fileos")
+
+
 def test_fixed_read_only_paths_and_separate_expansion() -> None:
     calls: list[httpx.Request] = []
 

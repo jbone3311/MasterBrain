@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added explicit All/Email/FileOS focus to grouped Brain search, extractive
+  Ask, `/brain` and `BrainReadClient` (ADR-150). Focused reads skip excluded
+  source/knowledge queries, mark unsearched coverage and keep the same grants,
+  currentness checks and evidence scopes. No automatic routing or source effect.
+
 - Added a disposable-PostgreSQL Ask regression that removes one of two OIDC
   assistant source grants during quote selection. The in-flight answer must
   refuse disclosure; the next turn may cite only the still-enrolled source.

@@ -16,6 +16,9 @@ issuer enrollment and derived-cache revocation are still
 open ([issue #88](https://github.com/jbone3311/MasterBrain/issues/88)).
 ADR-149 excludes assistants from unfenced legacy Email compatibility routes;
 their Email reads use source-enrolled Brain routes.
+ADR-150 adds an explicit All/Email/FileOS focus in `/brain` and the external
+read client. A focused request skips excluded source reads, labels unsearched
+groups and leaves access grants unchanged. It is not automatic intent routing.
 
 ## One service, two entrances
 
@@ -94,6 +97,9 @@ credentials.
    remains available to search-only credentials. ADR-146 lists source-scoped
    reviewed assertions separately and rechecks them before disclosure. True synthesized conversation
    remains gated on further grounded-answer and prompt-injection acceptance.
+   ADR-150 lets the owner explicitly focus either mode on Email or FileOS;
+   changing focus invalidates an in-flight result, and the page does not claim
+   excluded groups were searched.
 3. **External client:** a provider-neutral reference client now runs the same
    fictional current-search and evidence calls as the owner workspace, with
    source/scope parity tests. Next connect at least one separately authorized
