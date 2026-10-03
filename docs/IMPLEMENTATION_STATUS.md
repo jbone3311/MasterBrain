@@ -1,8 +1,9 @@
 # MasterBrain Implementation Status
 
 Updated 2026-10-02. The latest recorded functional `main` checkpoint is
-ADR-148/PR #118 at `46aa000`; its exact-head and merged-main full CI, strict
-runtime and populated restore passed. The last functional FileOS slice is
+ADR-149/PR #120 at `0591eac`; its exact-head and merged-main full CI, strict
+runtime and populated restore passed. The previous ADR-148/PR #118 at
+`46aa000` also passed those gates. The last functional FileOS slice is
 PR #116 at `b6ebcbf`; its final-head and merged-main gates passed. Tagged
 synthetic checkpoint `v0.2.0a1` is
 `c0a531d8a7d0991be0a0f1ea717479c07cc20feb`; its exact full CI,

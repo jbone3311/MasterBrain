@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added an opt-in synthetic 3,000-row PostgreSQL benchmark for the FileOS v1
+  completion ledger. It compares the current writer with the old per-item
+  deferred trigger added back, records checkpoint counts and runs on local
+  PostgreSQL plus a dedicated `postgres:17` workflow. It changes no runtime
+  behavior, FOS-Master data or cutover authority; issue #71 remains open.
+
 - Denied assistant access to legacy `email.*` compatibility API routes
   (ADR-149). Bootstrap assistant Email scopes are refused, and old OIDC
   Email-only assistant bindings fail transaction recheck. Enrolled assistants
