@@ -11,7 +11,8 @@ acceptance remain open.
 This is a dependency-ordered plan, not a release claim.
 GitHub Actions cannot currently start jobs at the latest documentation-only
 merged-main checkpoint because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
-The new ADR-160 timeline remains a branch candidate until real PostgreSQL,
+The new ADR-160 timeline remains [draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151)
+until real PostgreSQL,
 strict-runtime and restore gates execute; local non-PostgreSQL passes do not
 replace them.
 [Current functions](CURRENT_FUNCTIONS.md) and

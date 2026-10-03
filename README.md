@@ -19,7 +19,7 @@ requires fresh v2 shadow packets before staging. Earlier
 confined directory enumeration against descendant symlink swaps. Both
 changes passed their exact-head and merged-main CI,
 strict runtime and restore gates; exact runs are tracked in the
-[build receipt](docs/BUILD_RECEIPT.md). This is not FileOS cutover. The latest
+[build receipt](docs/BUILD_RECEIPT.md). This is not FileOS cutover. A prior
 owner-facing change, [PR #144](https://github.com/jbone3311/MasterBrain/pull/144),
 bounds the total returned exact quote and reviewed-match text and visibly
 reports shortened output. Earlier
@@ -44,6 +44,15 @@ and a pinned-donor parity harness. These paths are tested on fictional inputs an
 disposable PostgreSQL; MasterBrain is not a hosted or live-source product, and
 FOS-Master has not been replaced, renamed, or modified. See the
 [alpha test guide](docs/ALPHA_TESTING.md) for the precise trial boundary.
+
+The latest merged KnowledgeCore read work is grouped reviewed-current
+search/Ask in [PR #148](https://github.com/jbone3311/MasterBrain/pull/148).
+The next reviewed-event timeline is an unmerged
+[draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151): its local
+non-PostgreSQL checks passed, but PostgreSQL and required GitHub checks have
+not executed. GitHub Actions currently cannot start jobs because of the
+[account billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
+Neither the draft nor the failed-to-start checks establish a working timeline.
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
 [build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is

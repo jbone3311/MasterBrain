@@ -3,7 +3,10 @@
 Updated 2026-10-03. The latest merged grouped Brain/Ask read checkpoint is
 ADR-159/PR #148 at `f9402d7`: unsuperseded reviewed leaves in the all-source
 Knowledge layer, with exact-head full CI, strict runtime and populated restore
-green; merged-main checks are running. The prior direct KnowledgeCore read
+green. The subsequent documentation-only merged-main checkpoint could not
+start Actions jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
+ADR-160 is an unmerged [draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151),
+with local non-PostgreSQL checks but no executed PostgreSQL or PR gates. The prior direct KnowledgeCore read
 checkpoint is ADR-158/PR #146 at `3bf21b8`, with exact-head and merged-main
 checks green. The prior Ask output-budget checkpoint is
 ADR-157/PR #144 at `96cb22b`: aggregate Ask output-text budgeting, with
