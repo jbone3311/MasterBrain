@@ -153,7 +153,10 @@ source effects or an alternate route through KnowledgeCore.
   asserted. The cutoff excludes later-recorded rows but is not a durable
   cross-request MVCC snapshot if an earlier insert commits late. Assistant
   source grants cover both the event and its linked project before limit.
-  PostgreSQL/PR verification is pending.
+  `BrainReadClient.timeline` is an opt-in read-only reference transport with
+  closed request bounds and response-shape checks; it does not add an assistant
+  enrollment or turn this into a hosted capability. PostgreSQL/PR verification
+  is pending.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change

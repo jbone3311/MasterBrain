@@ -6,7 +6,7 @@ Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 Branch `codex/knowledge-timeline-read` adds a bounded occurrence-window event
 read and forward migration 0054. Nine local schema/API/query-construction
-tests passed; the full local non-PostgreSQL suite passed 2,616 tests, with
+tests passed; the full local non-PostgreSQL suite passed 2,627 tests, with
 488 PostgreSQL-marked tests and one host-dependent disposable launcher test
 deselected, **not passed**. Ruff, source mypy, documentation and diff checks
 passed. The new PostgreSQL semantics, populated migration, full CI, strict
@@ -16,8 +16,11 @@ jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBr
 Pre-merge review found and corrected a page-cutoff gap: late successors and
 corrections can no longer suppress earlier eligible events on later pages.
 The new PostgreSQL regression covers both paths but has **not executed**;
-the nine focused mock/schema/API tests and the 2,616 non-PostgreSQL tests
-passed again after this change. GitHub review remains
+the nine focused mock/schema/API tests and the 2,627 non-PostgreSQL tests
+passed again after this change. The provider-neutral `BrainReadClient.timeline`
+adds closed read requests and response validation; its 11 additional transport
+cases passed, but cannot prove the database query or hosted assistant identity.
+GitHub review remains
 [draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151).
 No live source, donor or version change.
 

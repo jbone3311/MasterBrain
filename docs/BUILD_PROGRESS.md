@@ -6,8 +6,10 @@
 window under KnowledgeCore. Its first page fixes a database recorded-time cutoff;
 later pages use an event-ID cursor and the same source/project visibility,
 date range and review-chain mode. Direct evidence IDs remain available for
-drill-down, while undated events stay in search/history. Local schema/API
-tests passed, including 2,615 non-PostgreSQL tests; real PostgreSQL,
+drill-down, while undated events stay in search/history. A provider-neutral
+read-only client now requests this page and validates its closed response
+contract. Local schema/API/client tests passed, including 2,627 non-PostgreSQL
+tests; real PostgreSQL,
 migration, full CI and restore gates remain unverified while
 [issue #150](https://github.com/jbone3311/MasterBrain/issues/150) prevents
 Actions jobs from starting. This is not a cross-kind timeline, source freshness, hosted read or
