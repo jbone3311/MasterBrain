@@ -1,7 +1,7 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-02 through PR #120 (`0591eac`), with the FileOS completion
-benchmark under verification. This is a dependency-ordered
+Updated 2026-10-03 through the FileOS completion benchmark and verification
+receipt on `main` (PRs #122/#123). This is a dependency-ordered
 plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
@@ -38,7 +38,9 @@ v2 generation, reinterpret absence, stop FOS-Master or claim a live product.
    [#34](https://github.com/jbone3311/MasterBrain/issues/34) before a hosted
    pilot. An unresolved critical/high defect is not an acceptable release
    exception. Finish assistant enrollment/revocation in
-   [#88](https://github.com/jbone3311/MasterBrain/issues/88).
+   [#88](https://github.com/jbone3311/MasterBrain/issues/88). A new
+   disposable-PostgreSQL Ask regression checks revocation during quote
+   selection and the next turn; it does not replace hosted issuer/cache tests.
 3. In the FileOS lane, keep FOS-Master pinned and unchanged. Settle cloud-
    placeholder, fault/race and inventory-policy differences; run read-only
    donor shadow on an owner-authorized bounded root. Only then design a
