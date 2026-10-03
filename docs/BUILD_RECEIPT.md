@@ -2,6 +2,25 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Ask output-text budget — ADR-157 candidate
+
+The candidate branch `codex/ask-output-text-budget` keeps exact source quotes
+and bounds the aggregate returned quote/reviewed text at 8,192 UTF-8 bytes.
+Focused Ask/client tests passed (70); the first-party browser tests passed
+(16), as did the full six-file browser set (151), Ruff, source mypy and the
+documentation checker (255 Markdown files, 1,380 local paths/fragments).
+The local non-PostgreSQL suite passed 2,610 tests, with 488 PostgreSQL-marked
+tests and the one host-dependent disposable launcher test excluded (489
+deselected, not passed).
+PostgreSQL integration and exact-head CI, strict-runtime and restore are **not
+yet proven for this candidate**. The local disposable launcher remains blocked
+by the macOS PostgreSQL shared-memory limit seen on the prior checkpoint; its
+failure must not be counted as a passing local database test. No FileOS donor,
+source, schema, deployment or product version changes are included.
+
+The [post-merge full CI for PR #142](https://github.com/jbone3311/MasterBrain/actions/runs/37138045748)
+subsequently completed successfully at exact `main` commit `d5bb39f`.
+
 ## Plan synchronization — PR #142 merged
 
 [PR #142](https://github.com/jbone3311/MasterBrain/pull/142) merged a
@@ -10,8 +29,7 @@ documentation-only receipt for ADR-156 at
 strict-runtime and logical-restore checks passed before merge. It added no
 runtime capability, live-source acceptance or product version. The
 [post-merge full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37138045748)
-was still running when this receipt was written; check that run before citing
-it as a passing merged-main gate.
+later passed at that exact `main` commit, as recorded above.
 
 ## Donor-shadow symlink boundary — PR #141 merged
 

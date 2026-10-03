@@ -103,6 +103,9 @@ credentials.
    ADR-151 caps selector-visible source text by UTF-8 bytes and visibly warns
    when an upstream character or byte cap shortened that context; a no-quote answer under that warning is
    not evidence that the rest of the indexed source text was considered.
+   ADR-157 separately bounds returned untrusted quote and reviewed-match text,
+   keeping exact citations while visibly flagging shortened reviewed display
+   text. It does not make Ask a complete AI-written conversation.
 3. **External client:** a provider-neutral reference client now runs the same
    fictional current-search and evidence calls as the owner workspace, with
    source/scope parity tests. Next connect at least one separately authorized

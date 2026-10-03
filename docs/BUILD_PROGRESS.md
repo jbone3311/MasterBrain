@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Ask output-text budget (2026-10-03, candidate)
+
+[ADR-157](adr/157_ask_output_text_budget.md) adds a separate 8,192-byte
+aggregate ceiling on returned exact quotes plus reviewed KnowledgeCore text.
+It preserves exact citations and full source-grant/currentness rechecks, then
+shortens or omits reviewed display text with a distinct visible flag. The
+browser now counts Unicode code points for the API's character and citation
+offset contract. Local focused API/client and browser tests, the full
+non-PostgreSQL suite, Ruff, mypy and documentation checks passed. Protected PR
+gates remain before this is an integrated checkpoint.
+This is not a complete response, model-token, hosted-chat or FileOS gate.
+
 ## Donor-shadow symlink-target boundary (2026-10-03)
 
 [PR #141](https://github.com/jbone3311/MasterBrain/pull/141) merged

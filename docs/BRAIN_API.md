@@ -111,7 +111,12 @@ source effects or an alternate route through KnowledgeCore.
   is true if the upstream character cap or this byte budget shortened text,
   or if a candidate was omitted by the byte budget;
   a no-quote result then does not imply that all current source text was read.
-  This is not a model-token or whole-response budget.
+  ADR-157 separately caps returned exact quotes plus reviewed title/excerpt
+  strings at 8,192 UTF-8 bytes. Exact quotes are never shortened for this
+  budget; reviewed text is shortened or omitted in stable result order, with
+  `coverage.answer_output_truncated` set. The prior per-item 1,200-character
+  reviewed excerpt cap also sets that output flag when it shortens text.
+  This is not a model-token, total JSON or whole-response budget.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
   `brain.changes.read`, is cursor-bounded and does not enumerate providers or paths.
