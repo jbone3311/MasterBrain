@@ -1,15 +1,30 @@
 # MasterBrain Build Progress
 
-## Current FileOS completion scale audit (in verification)
+## Current GitHub checkpoint (2026-10-03)
+
+[PR #131](https://github.com/jbone3311/MasterBrain/pull/131) merged the
+post-ADR-152 documentation receipt to `main` at `65dcdf7`. The latest
+functional change remains [PR #130](https://github.com/jbone3311/MasterBrain/pull/130):
+the nonpublishing FileOS donor shadow now confines directory enumeration.
+Its exact-head and merged-main CI, strict runtime and populated restore passed;
+this does not approve live-root shadowing, v2 current visibility or donor cutover.
+The current `main` checks are linked in the [build receipt](BUILD_RECEIPT.md).
+The only open PR at this checkpoint is
+[Claude's draft #45](https://github.com/jbone3311/MasterBrain/pull/45), not
+integrated or release-ready. Its Fastmail metadata-page budget and migration
+number must be reconciled against current `main`, then independently tested
+before any merge; see the [roadmap](ROADMAP.md#next-verified-sequence).
+
+## FileOS completion scale audit (verified, not a cutover gate)
 
 The opt-in [3,000-row benchmark](FILEOS_COMPLETION_BENCHMARK.md) isolates the
 old deferred per-item ledger trigger on today's synthetic FileOS v1 writer.
 Two fresh local PostgreSQL 17.11 runs show a roughly 42–46× trigger cost;
 the second observed no checkpoints in either measured completion. An
 independent [PostgreSQL 17 container run](https://github.com/jbone3311/MasterBrain/actions/runs/37104973815)
-showed 33.33× with no measured checkpoints. Final-head/merged-main checks
-remain to be verified. This does not change FileOS behavior or close issue
-#71 by itself.
+showed 33.33× with no measured checkpoints. Final-head and merged-main
+checks for the benchmark tranche are in the [build receipt](BUILD_RECEIPT.md).
+This does not change FileOS behavior or close issue #71 by itself.
 
 ## Latest merged authorization-hardening tranche (2026-10-02)
 
