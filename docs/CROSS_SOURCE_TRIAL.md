@@ -43,6 +43,10 @@ supporting evidence. It also lists reviewed KnowledgeCore matches separately;
 those are interpretations, not exact quotations. Search only shows grouped current results. Neither path
 generates an AI-written answer or changes files/email. Use the launcher's actual port if
 you selected a nondefault one.
+Ask also labels when its selector-visible source text was shortened to the
+UTF-8 byte budget. In that case, a no-quote result does not mean the rest of
+the current indexed source text was examined. Open evidence or use Search only
+to investigate further; the warning is not a source-grant or freshness change.
 
 For a question-shaped check, Ask “Find the insurance certificate for Cedar
 Harbor.” It should return verified Email and FileOS quotes containing

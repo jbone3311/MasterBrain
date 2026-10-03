@@ -31,6 +31,10 @@ question. This is lexical cleanup, not synonym search or AI-written synthesis.
 ADR-146 adds a separately bounded, validated `reviewed_knowledge` list to
 `answer(question)`; it is not a list of exact quotations. The client still
 follows selected evidence IDs through the distinct evidence/content grants.
+ADR-151 makes `answer(question)` carry `coverage.answer_context_truncated`.
+The selector sees at most 2,048 UTF-8 bytes from one passage and 8,192 bytes
+of passage text total. The client validates the flag when present; callers
+must not read a flagged no-quote answer as a whole-source negative result.
 ADR-132 also lets a separately verified OIDC assistant use administrator-owned,
 same-tenant source grants, rechecked on each database transaction. Neither
 path is certified hosted grant issuance or a named assistant. A

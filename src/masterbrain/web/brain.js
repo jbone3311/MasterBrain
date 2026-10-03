@@ -173,6 +173,8 @@
         !["quoted_evidence", "no_supported_evidence", "no_supported_answer"].includes(data.status) ||
         typeof data.answer !== "string" || !Array.isArray(data.citations) ||
         !data.coverage || data.coverage.complete !== false || data.untrusted_content !== true ||
+        (data.coverage.answer_context_truncated !== undefined &&
+          typeof data.coverage.answer_context_truncated !== "boolean") ||
         (data.coverage.source_focus || "all") !== focus ||
         data.citations.length > 4 || (data.status === "quoted_evidence") !== (data.citations.length > 0) ||
         !Array.isArray(reviewed) || reviewed.length > 4 || (focus !== "all" && reviewed.length)) {
@@ -206,6 +208,8 @@
     if (data.citations.length) node("h3", "Verified source quotes", parent);
     node("p", data.answer, parent);
     node("p", "Partial coverage: only authorized indexed sources and reviewed matches appear here, not a complete account.", parent, "notice");
+    if (data.coverage.answer_context_truncated) node("p",
+      "Answer context was shortened by read limits. Other indexed source text may support this question.", parent, "notice");
     if (focus !== "all") node("p", focus === "email" ?
       "Email only. Files and reviewed knowledge were not searched." :
       "Files only. Email and reviewed knowledge were not searched.", parent, "notice");

@@ -1,7 +1,7 @@
 # MasterBrain Roadmap
 
 Updated 2026-10-03 through ADR-150's explicit source-focus slice on `main`
-(PR #126 at `c984a2e`). This is a dependency-ordered
+(PR #126 at `c984a2e`) and ADR-151's bounded Ask context. This is a dependency-ordered
 plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
@@ -17,7 +17,7 @@ FileOS cutover acceptance is implied.
 | Product identity and donor baseline | MasterBrain identity, source-layer boundaries, pinned FOS-Master provenance, first hash/dedupe parity and synthetic shadow corpus are in the repo | Full semantic and operational parity, owner cutover decision |
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
 | KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work | Automatic candidate pipeline, evaluated resolution, complete project/commitment reducers, rebuild and freshness proof |
-| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search with explicit All/Email/FileOS focus, evidence drill-down and partial coverage work; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads; ADR-149 denies unfenced legacy Email routes to assistants | Hosted issuer enrollment and derived-cache revocation, cited answer synthesis, named-assistant adapter and full byte/token budgets |
+| Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search with explicit All/Email/FileOS focus, evidence drill-down and partial coverage work; extractive Ask has an 8-KiB passage-text cap and visible truncation; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads; ADR-149 denies unfenced legacy Email routes to assistants | Hosted issuer enrollment and derived-cache revocation, cited answer synthesis, named-assistant adapter and full prompt/token/response budgets |
 | Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; Ask returns exact quotes and a separate reviewed KnowledgeCore match list, with fixed question boilerplate removed before lexical retrieval | Run the owner's interactive trial, evaluate held-out natural questions, corrections and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
 | FileOS replacement and effects | Private v2 generation plus human-only historical v1/v2 comparison API are merged; no cutover or source effects | Decide donor-policy edge behavior, prove sustained live shadow and v2 current/absence/rollback semantics, then a bounded rollback-ready cohort and owner sign-off; effects require a separate later approval |

@@ -23,6 +23,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-151 bounds the extractive Ask selector's source passage text by UTF-8
+  bytes (2,048 each, 8,192 total), retains exact prefix citations and reports
+  truncated context to the API, read client and first-party UI. This is not a
+  tokenizer-aware prompt limit, whole-response budget, remote model approval
+  or hosted acceptance.
+
 - ADR-150 adds an optional, explicit All/Email/FileOS focus to grouped current
   search and extractive Ask. The API skips excluded source and KnowledgeCore
   reads, keeps the response shape, reports unsearched layers, and rechecks

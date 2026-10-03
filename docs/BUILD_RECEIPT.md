@@ -2,6 +2,21 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Extractive Ask UTF-8 passage budget — local candidate verification
+
+ADR-151 caps selector-visible text at 2,048 UTF-8 bytes per passage and
+8,192 bytes total, and reports upstream character/byte shortening through
+`coverage.answer_context_truncated`. Focused unit/browser tests cover Unicode
+boundaries, aggregate exhaustion, skipped later evidence reads, exact prefix
+citations, malformed text and coverage rendering. A real disposable PostgreSQL
+17.11 API/client/assistant focus scenario passed with the new flag. The final
+local deployment gate passed **3,037 Python tests, one Docker-only skip**
+(484 of 485 PostgreSQL-marked tests executed); all six browser suites passed
+**148 tests**. Ruff, strict mypy over 98 source files, the documentation
+inventory/link check and diff whitespace check passed. Exact-head CI, strict
+runtime and populated restore are separate PR merge gates; this is not a
+whole-response/model-token budget or hosted/named-assistant acceptance.
+
 ## Explicit Brain source focus — PR #126 and merged `main`
 
 ADR-150 adds optional All/Email/FileOS focus to grouped current search,

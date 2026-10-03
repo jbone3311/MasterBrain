@@ -106,6 +106,12 @@ source effects or an alternate route through KnowledgeCore.
   It accepts the same `source_focus`; quote selection and final currentness
   recheck must remain within that focus. Focused Ask returns no reviewed
   KnowledgeCore matches, while still requiring its existing scopes.
+  ADR-151 additionally caps selector-visible passage text at 2,048 UTF-8
+  bytes per passage and 8,192 bytes total. `coverage.answer_context_truncated`
+  is true if the upstream character cap or this byte budget shortened text,
+  or if a candidate was omitted by the byte budget;
+  a no-quote result then does not imply that all current source text was read.
+  This is not a model-token or whole-response budget.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
   `brain.changes.read`, is cursor-bounded and does not enumerate providers or paths.

@@ -228,6 +228,7 @@ class BrainReadClient:
             or data.get("untrusted_content") is not True
             or not isinstance(coverage, dict)
             or coverage.get("complete") is not False
+            or not isinstance(coverage.get("answer_context_truncated", False), bool)
             or coverage.get("source_focus", "all") != source_focus
             or not isinstance(citations, list)
             or len(citations) > 4

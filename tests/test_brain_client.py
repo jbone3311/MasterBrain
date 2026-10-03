@@ -33,7 +33,8 @@ def answer_result() -> dict[str, object]:
             "quote": "fictional proof", "start": 0, "end": 15,
             "body_sha256": "a" * 64,
         }],
-        "coverage": {"complete": False, "source_access": "enrolled_sources_only"},
+        "coverage": {"complete": False, "source_access": "enrolled_sources_only",
+                     "answer_context_truncated": False},
         "untrusted_content": True,
     }
 
@@ -61,6 +62,7 @@ def test_answer_client_uses_same_read_only_origin_and_validates_response() -> No
 @pytest.mark.parametrize("change", [
     {"mode": "freeform"},
     {"coverage": {"complete": True}},
+    {"coverage": {"complete": False, "answer_context_truncated": "yes"}},
     {"citations": [{"evidence_id": "forged"}]},
     {"citations": [{**answer_result()["citations"][0], "quote": "invented"}]},
     {"status": "quoted_evidence", "citations": []},

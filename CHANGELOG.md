@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Bounded extractive Ask's selector-visible passage text to 2,048 UTF-8 bytes
+  per passage and 8,192 in total (ADR-151), with an explicit truncation flag
+  in the API/client and visible `/brain` warning. No model-token or total
+  response budget, remote inference or source effect is implied.
+
 - Added explicit All/Email/FileOS focus to grouped Brain search, extractive
   Ask, `/brain` and `BrainReadClient` (ADR-150). Focused reads skip excluded
   source/knowledge queries, mark unsearched coverage and keep the same grants,

@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-151](adr/151_ask_utf8_context_budget.md) caps extractive Ask's
+selector-visible passage text at 2,048 UTF-8 bytes per passage and 8,192
+bytes in aggregate, with explicit truncation coverage. It grants no remote
+inference, token budget or source effect.
+
 [ADR-150](adr/150_explicit_brain_source_focus.md) adds an explicit,
 read-only Email or FileOS focus to current grouped search and Ask. It avoids
 fetching excluded layers and labels their absence as unsearched; it changes

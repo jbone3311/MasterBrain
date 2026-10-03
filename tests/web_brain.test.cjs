@@ -232,7 +232,7 @@ test("configured answer renders exact quotes as inert text and opens evidence", 
       answer: "Relevant passages from current indexed evidence are quoted below.",
       citations: [{evidence_id: "ev_email", document_id: "doc1", source_id: "email",
         source_kind: "email", quote: "<script>inert</script>", start: 0, end: 22,
-        body_sha256: "a".repeat(64)}], coverage: {complete: false}, untrusted_content: true,
+        body_sha256: "a".repeat(64)}], coverage: {complete: false, answer_context_truncated: true}, untrusted_content: true,
     })};
     return {ok: true, json: async () => ({id: "ev_email", source_kind: "email"})};
   });
@@ -240,6 +240,7 @@ test("configured answer renders exact quotes as inert text and opens evidence", 
   await h.ask("Cedar Harbor");
   assert.equal(h.calls.length, 1);
   assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /<script>inert<\/script>/);
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer context was shortened/);
   assert.match(h.elements["brain-status"].textContent, /1 verified source quotes/);
 });
 
@@ -294,6 +295,19 @@ test("malformed answer is rejected and never falls back to search", async () => 
   h.enterToken("owner-token");
   await h.ask("Cedar Harbor");
   assert.equal(h.calls.length, 1);
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer unavailable/);
+});
+
+test("malformed Ask context-budget flag is rejected", async () => {
+  const h = harness(async () => ({ok: true, json: async () => ({
+    mode: "grounded_extractive_v1", status: "no_supported_evidence",
+    answer: "No supported answer from current indexed evidence.", citations: [],
+    reviewed_knowledge: [], coverage: {complete: false, answer_context_truncated: "false"},
+    untrusted_content: true,
+  })}));
+  h.enterToken("owner-token");
+  await h.ask("insurance");
+  assert.deepEqual(h.calls.map(call => call.url), ["/v1/brain/answers"]);
   assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Answer unavailable/);
 });
 

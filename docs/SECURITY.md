@@ -59,6 +59,13 @@ trigger fallback. A distinct Search only button preserves the preexisting
 search-only grant without converting an answer denial into a search. This does
 not approve sending private content to a remote
 model or establish semantic truth beyond the quoted source text.
+ADR-151 imposes an 8,192-UTF-8-byte total selector passage budget and a
+2,048-byte per-passage cap. The server truncates at a valid Unicode boundary,
+reports `answer_context_truncated` for an upstream character or byte cap, and
+does not read further candidates once
+the aggregate cap is full. It rejects invalid Unicode adapter text. This
+limits future model exposure but is not a total prompt/token, response, hosted
+egress or remote-model approval.
 
 ADR-128's FileOS v2 search comparison is not in the first-party workspace.
 ADR-147 exposes only that existing comparison through a human-only Brain API
