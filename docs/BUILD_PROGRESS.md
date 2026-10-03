@@ -1,15 +1,19 @@
 # MasterBrain Build Progress
 
-## Ask output-text budget (2026-10-03, candidate)
+## Ask output-text budget merged (2026-10-03)
 
-[ADR-157](adr/157_ask_output_text_budget.md) adds a separate 8,192-byte
+[PR #144](https://github.com/jbone3311/MasterBrain/pull/144) merged
+[ADR-157](adr/157_ask_output_text_budget.md) at `96cb22b`. It adds a separate 8,192-byte
 aggregate ceiling on returned exact quotes plus reviewed KnowledgeCore text.
 It preserves exact citations and full source-grant/currentness rechecks, then
 shortens or omits reviewed display text with a distinct visible flag. The
 browser now counts Unicode code points for the API's character and citation
 offset contract. Local focused API/client and browser tests, the full
-non-PostgreSQL suite, Ruff, mypy and documentation checks passed. Protected PR
-gates remain before this is an integrated checkpoint.
+non-PostgreSQL suite, Ruff, mypy and documentation checks passed. The final
+PR head passed full CI including PostgreSQL and deployment checks, strict
+runtime and populated restore before automatic merge. The separate merged-main
+full CI, strict-runtime and restore runs also passed. Exact runs are in the
+[build receipt](BUILD_RECEIPT.md).
 This is not a complete response, model-token, hosted-chat or FileOS gate.
 
 ## Donor-shadow symlink-target boundary (2026-10-03)

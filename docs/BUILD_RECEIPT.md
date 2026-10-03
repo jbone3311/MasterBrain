@@ -2,18 +2,33 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Ask output-text budget — ADR-157 candidate
+## Ask output-text budget — PR #144 merged
 
-The candidate branch `codex/ask-output-text-budget` keeps exact source quotes
+[PR #144](https://github.com/jbone3311/MasterBrain/pull/144) merged
+[ADR-157](adr/157_ask_output_text_budget.md) at
+`96cb22bd0f9c3247e0ee3bce770a717e43c7d078`. Its final head
+`e24cbac` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37139485238)
+(3,087 tests passed, 12 skipped; all 488 PostgreSQL-marked tests executed,
+plus deployment and container checks),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37139485229)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37139485172)
+before automatic merge. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37140450382)
+also passed (3,087 tests, including all 488 PostgreSQL-marked tests, plus
+deployment/container checks), along with
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37140450350)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37140450360).
+The change keeps exact source quotes
 and bounds the aggregate returned quote/reviewed text at 8,192 UTF-8 bytes.
 Focused Ask/client tests passed (70); the first-party browser tests passed
 (16), as did the full six-file browser set (151), Ruff, source mypy and the
-documentation checker (255 Markdown files, 1,380 local paths/fragments).
+initial local documentation checker (255 Markdown files, 1,380 local
+paths/fragments); the updated head's hosted docs check passed.
 The local non-PostgreSQL suite passed 2,610 tests, with 488 PostgreSQL-marked
 tests and the one host-dependent disposable launcher test excluded (489
 deselected, not passed).
-PostgreSQL integration and exact-head CI, strict-runtime and restore are **not
-yet proven for this candidate**. The local disposable launcher remains blocked
+The local disposable launcher remains blocked
 by the macOS PostgreSQL shared-memory limit seen on the prior checkpoint; its
 failure must not be counted as a passing local database test. No FileOS donor,
 source, schema, deployment or product version changes are included.
@@ -21,7 +36,18 @@ source, schema, deployment or product version changes are included.
 The [post-merge full CI for PR #142](https://github.com/jbone3311/MasterBrain/actions/runs/37138045748)
 subsequently completed successfully at exact `main` commit `d5bb39f`.
 
-## Plan synchronization — PR #142 merged
+## Plan synchronization — PR #143 merged
+
+[PR #143](https://github.com/jbone3311/MasterBrain/pull/143) merged the
+README, roadmap and receipt reconciliation at
+`2d00b2238257a073066587716b480ffe839a2122`. Its exact-head full CI,
+strict-runtime and populated restore passed before merge. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37139432806),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37139432824)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37139432808)
+also passed. This was documentation only, not a product version or live gate.
+
+## ADR-156 documentation receipt — PR #142 merged
 
 [PR #142](https://github.com/jbone3311/MasterBrain/pull/142) merged a
 documentation-only receipt for ADR-156 at

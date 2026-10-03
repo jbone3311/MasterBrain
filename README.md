@@ -20,12 +20,14 @@ confined directory enumeration against descendant symlink swaps. Both
 changes passed their exact-head and merged-main CI,
 strict runtime and restore gates; exact runs are tracked in the
 [build receipt](docs/BUILD_RECEIPT.md). This is not FileOS cutover. The latest
-owner-facing change, [PR #128](https://github.com/jbone3311/MasterBrain/pull/128),
-bounds extractive Ask source passage text by UTF-8 bytes and reports truncated
-context; it is not a model-token or whole-response budget. Earlier
-[PR #126](https://github.com/jbone3311/MasterBrain/pull/126)
-added explicit All/Email/FileOS read focus; neither change closes hosted
-assistant issue #88. [PR #118](https://github.com/jbone3311/MasterBrain/pull/118)
+owner-facing change, [PR #144](https://github.com/jbone3311/MasterBrain/pull/144),
+bounds the total returned exact quote and reviewed-match text and visibly
+reports shortened output. Earlier
+[PR #128](https://github.com/jbone3311/MasterBrain/pull/128) bounded
+selector-visible source passages and marked shortened context. Neither is a
+model-token or whole-response budget. [PR #126](https://github.com/jbone3311/MasterBrain/pull/126)
+added explicit All/Email/FileOS read focus; these changes do not close hosted
+assistant issue #88. Earlier [PR #118](https://github.com/jbone3311/MasterBrain/pull/118)
 refuses implicit populated legacy migration rewrites but does not make upgrades
 online or close issue #9. The latest user-facing FileOS slice is
 [PR #116](https://github.com/jbone3311/MasterBrain/pull/116) at `b6ebcbf`:
