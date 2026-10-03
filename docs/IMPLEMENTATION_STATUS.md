@@ -45,6 +45,14 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-160 adds a bounded, recorded-cutoff-paged reviewed-event occurrence timeline
+  under `knowledge.search`, with source-aware project filtering and retained
+  or unsuperseded visibility. It excludes undated events and claims no source
+  freshness, cross-kind timeline or hosted acceptance. PostgreSQL and PR
+  gates are unverified for this candidate; issue #150 prevents Actions from
+  starting jobs and the local PostgreSQL 17 cluster cannot allocate shared
+  memory on this Mac.
+
 - ADR-159 composes ADR-158's source-grant-aware unsuperseded projection into
   grouped Brain current-search and Ask, with explicit coverage labeling.
   Direct KnowledgeCore and unified retained-history searches remain unchanged;

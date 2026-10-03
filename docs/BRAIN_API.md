@@ -142,6 +142,18 @@ source effects or an alternate route through KnowledgeCore.
   It is not a real-world-current or valid-time guarantee. ADR-159 later
   selects this mode only in grouped Brain current-search and Ask; direct
   search still defaults to retained history.
+- `GET /v1/knowledge/timeline` — ADR-160 candidate for occurrence-dated,
+  reviewed events. Requires `knowledge.search` and an aware `start`/`end`
+  window `[start,end)` of at most 366 days. Optional `project_id`,
+  `visibility=unsuperseded` (default) or `retained`, and a 1–50 result limit
+  apply before paging. Results are ordered by event start and opaque ID, with
+  direct evidence IDs for expansion. An `after` event cursor must carry the
+  first page's `recorded_cutoff_at`; a hidden or mismatched anchor returns not found.
+  Undated events are excluded and coverage says source freshness is not
+  asserted. The cutoff excludes later-recorded rows but is not a durable
+  cross-request MVCC snapshot if an earlier insert commits late. Assistant
+  source grants cover both the event and its linked project before limit.
+  PostgreSQL/PR verification is pending.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
@@ -155,7 +167,8 @@ source effects or an alternate route through KnowledgeCore.
 - Future graph traversal — related objects and cited attributes beyond exact lookup.
 - `GET /v1/projects/{id}` — project state, members, commitments, events, evidence.
 - `GET /v1/claims/{id}` — claim versions, support, contradictions, and supersession.
-- `GET /v1/timeline` — cursor/time-bounded events.
+- Future cross-kind timeline — commitments, project milestones and other
+  temporal objects beyond the reviewed-event route above.
 - Future unified evidence/change routes will compose Email, DataCore and KnowledgeCore
   only after their evidence identities share a proven migration path.
 - `POST /v1/proposals` — typed proposed change; never direct provider/filesystem access.

@@ -517,6 +517,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0051_oidc_knowledge_read_grants.sql",
             "0052_held_source_quarantine.sql",
             "0053_knowledge_unsuperseded_lookup.sql",
+            "0054_knowledge_event_timeline.sql",
         ]
         assert migrate(dsn, directory) == []
         with psycopg.connect(dsn) as conn:
@@ -566,6 +567,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
                 "0051_oidc_knowledge_read_grants.sql",
                 "0052_held_source_quarantine.sql",
                 "0053_knowledge_unsuperseded_lookup.sql",
+                "0054_knowledge_event_timeline.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -611,6 +613,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             "0051_oidc_knowledge_read_grants.sql",
             "0052_held_source_quarantine.sql",
             "0053_knowledge_unsuperseded_lookup.sql",
+            "0054_knowledge_event_timeline.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -702,6 +705,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
             "0051_oidc_knowledge_read_grants.sql",
             "0052_held_source_quarantine.sql",
             "0053_knowledge_unsuperseded_lookup.sql",
+            "0054_knowledge_event_timeline.sql",
             }:
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)

@@ -63,7 +63,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Entities | People, organizations, places, accounts, artifacts; aliases | Reviewed append/read implemented |
 | Relationships | Typed, directional, temporal, evidence-backed | Reviewed append/read implemented |
 | Facts/claims | Assertion, value, confidence, reviewer, valid/observed time | Reviewed append/read implemented |
-| Events/timeline | Event time distinct from ingestion time | Reviewed event records implemented |
+| Events/timeline | Event time distinct from ingestion time | Reviewed event records implemented; ADR-160 bounded occurrence timeline candidate awaits PostgreSQL/PR gates. No cross-kind timeline or source freshness claim |
 | Projects | State and evidence; future members/milestones/decisions | Reviewed base record implemented |
 | Commitments | Owner, counterparty, due state and evidence | Reviewed append/read implemented |
 | Corrections | Supersede without erasing history; retain contradictions | Implemented append-only links |

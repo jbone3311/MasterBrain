@@ -153,6 +153,12 @@ the reviewed supersession/correction graph. ADR-159 composes that projection
 into the grouped Brain current-search and Ask Knowledge layer while keeping
 retained direct and unified reads. It does not compare valid times, establish
 source freshness or collapse conflicting leaves.
+ADR-160 adds a separate chronological read over reviewed events with known
+occurrence starts. It filters event and linked-project source grants before
+keyset pagination, fixes a recorded-time cutoff at the first page's database
+timestamp, and keeps undated events outside the dated view. A pre-cutoff
+insert that commits late can still enter a later page: this is not a durable
+MVCC snapshot, cross-kind or source-freshness projection.
 
 Brain API performs authorization and progressive disclosure. Search results are
 compact; expansions are explicit; original evidence requires a stronger permission.

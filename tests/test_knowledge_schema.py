@@ -11,6 +11,7 @@ from masterbrain.knowledge_schema import (
     EventWrite,
     KnowledgePublishRequest,
     KnowledgeSearchRequest,
+    TimelineRequest,
 )
 
 NOW = datetime(2026, 9, 22, tzinfo=UTC)
@@ -92,3 +93,27 @@ def test_knowledge_search_visibility_is_closed_and_defaults_to_retained() -> Non
     )
     with pytest.raises(ValidationError):
         KnowledgeSearchRequest.model_validate({"query": "Atlas", "visibility": "current"})
+
+
+def test_timeline_requires_bounded_aware_window_and_recorded_cutoff_cursor() -> None:
+    request = TimelineRequest(start=NOW, end=NOW + timedelta(days=1))
+    assert request.visibility == "unsuperseded" and request.limit == 25
+    assert TimelineRequest(
+        start=NOW, end=NOW + timedelta(days=366), visibility="retained",
+        project_id="project_" + "1" * 32,
+    ).project_id == "project_" + "1" * 32
+    for update in (
+        {"end": NOW},
+        {"end": NOW + timedelta(days=367)},
+        {"start": NOW.replace(tzinfo=None)},
+        {"after": "event_" + "2" * 32},
+        {"after": "project_" + "2" * 32, "recorded_cutoff_at": NOW},
+        {"project_id": "event_" + "2" * 32},
+        {"visibility": "current"},
+        {"limit": 51},
+        {"extra": "forbidden"},
+    ):
+        with pytest.raises(ValidationError):
+            TimelineRequest.model_validate({
+                "start": NOW, "end": NOW + timedelta(days=1), **update,
+            })

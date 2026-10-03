@@ -2,6 +2,34 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed-event timeline — ADR-160 candidate
+
+Branch `codex/knowledge-timeline-read` adds a bounded occurrence-window event
+read and forward migration 0054. Eight local schema/API/query-construction
+tests passed; the full local non-PostgreSQL suite passed 2,615 tests, with
+488 PostgreSQL-marked tests and one host-dependent disposable launcher test
+deselected, **not passed**. Ruff, source mypy, documentation and diff checks
+passed. The new PostgreSQL semantics, populated migration, full CI, strict
+runtime and restore are unverified. Local PostgreSQL 17 `initdb` cannot
+allocate host shared memory, and GitHub Actions is currently unable to start
+jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
+No live source, donor or version change.
+
+## CI execution blocker — issue #150
+
+At documentation-only PR #149's merged-main commit
+`168ad65e32174c328d45286e9acbf0331a85b9d4`, [CI](https://github.com/jbone3311/MasterBrain/actions/runs/37147321816),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37147321823)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/37147321797)
+failed **before a runner or any test step started**. Each check annotation
+reports failed account payments or an insufficient spending limit. These are
+not product test failures or passing runs. The PR head and the preceding
+functional merge had executed and passed their required checks; the
+documentation-only merge adds no runtime behavior. The owner must restore
+Actions eligibility and rerun the exact merged-main checks before that
+checkpoint can be called fully verified. Later feature PRs must not merge
+without executed exact-head gates.
+
 ## Grouped current reviewed leaves — PR #148 merged
 
 [PR #148](https://github.com/jbone3311/MasterBrain/pull/148) merged
@@ -15,7 +43,7 @@ checks passed),
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37145216964)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37145216984).
 The merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37146314821)
-is running; merged-main
+passed, as did merged-main
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37146314852)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37146314751)
 passed at that exact merge commit. This selects ADR-158's unsuperseded

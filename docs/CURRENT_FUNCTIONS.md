@@ -44,7 +44,9 @@ scopes, limits and response shapes are in [BRAIN_API.md](BRAIN_API.md).
   Results are not a single calibrated score or an AI-written answer.
 - KnowledgeCore: reviewed append-only entities, relationships, claims, events,
   projects, commitments and corrections; lexical search, exact expansion and
-  changes. Enrolled assistants are limited to assertions with wholly granted
+  changes. ADR-160 adds a candidate bounded, recorded-cutoff-paged reviewed-event
+  occurrence timeline (PostgreSQL/PR gates pending). Enrolled assistants are
+  limited to assertions with wholly granted
   direct evidence, including expansion and change cursors (ADR-143). These are
   base records, not a finished project-management system.
 
@@ -128,7 +130,7 @@ bounded layer; automatic archive fan-out is not implemented. See the
 
 ## Not yet callable or accepted
 
-- Freeform cited synthesis, graph traversal and broad project/timeline views
+- Freeform cited synthesis, graph traversal and broad project/cross-kind timeline views
   are designs, not routes in the current API. The default extractive
   `/v1/brain/answers` route selects local source quotes only.
 - No MCP server or certified Claude, Grok or ChatGPT connection exists. Assistants

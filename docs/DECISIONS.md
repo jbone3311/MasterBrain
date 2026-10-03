@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-160](adr/160_reviewed_event_timeline.md) defines a bounded,
+recorded-cutoff-paged reviewed-event occurrence timeline with source-aware project
+filtering. Undated events remain in exact/history reads; this is not source
+freshness or real-world temporal truth.
+
 [ADR-159](adr/159_current_brain_reviewed_leaves.md) selects source-grant-aware
 unsuperseded review-chain leaves for grouped Brain current-search and Ask.
 Direct KnowledgeCore and grouped unified retained reads remain unchanged;

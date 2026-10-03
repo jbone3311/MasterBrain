@@ -103,6 +103,7 @@ from masterbrain.knowledge_schema import (
     EventWrite,
     ProjectWrite,
     RelationshipWrite,
+    TimelineRequest,
 )
 
 pytestmark = pytest.mark.postgres
@@ -3522,6 +3523,8 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         "knowledge_projects_supersedes_lookup",
         "knowledge_commitments_supersedes_lookup",
         "knowledge_corrections_target_lookup",
+        "knowledge_events_timeline_lookup",
+        "knowledge_events_project_timeline_lookup",
     }
 
     hits = knowledge.search(ctx, "October", kinds=["claim"])
@@ -3653,6 +3656,199 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert {hit.object_id for hit in knowledge.search(
         fileos_only, "Orion audit", kinds=["commitment"], visibility="unsuperseded"
     )} == {hidden_correction_old.object_id, hidden_correction_new.object_id}
+    timeline_start = datetime(2026, 10, 2, tzinfo=UTC)
+    same_start = timeline_start + timedelta(hours=9)
+    early_hidden_project_event = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline early hidden project",
+            starts_at=same_start - timedelta(hours=1),
+            project_id=new_project.object_id, **common,
+        ),
+        uuid4(),
+    )
+    opening_event = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline decision opening",
+            starts_at=same_start, project_id=old_project.object_id, **common,
+        ),
+        uuid4(),
+    )
+    revised_event = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline decision revised",
+            starts_at=same_start, project_id=new_project.object_id,
+            supersedes_id=opening_event.object_id,
+            **{**common, "evidence_ids": [evidence_id, current_email.evidence_id]},
+        ),
+        uuid4(),
+    )
+    branch_event = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline decision alternate",
+            starts_at=same_start, project_id=old_project.object_id,
+            supersedes_id=opening_event.object_id, **common,
+        ),
+        uuid4(),
+    )
+    hidden_project_event = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline linked decision",
+            starts_at=same_start + timedelta(hours=1),
+            project_id=new_project.object_id, **common,
+        ),
+        uuid4(),
+    )
+    visible_project_predecessor = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline visible predecessor",
+            starts_at=same_start + timedelta(hours=2),
+            project_id=old_project.object_id, **common,
+        ),
+        uuid4(),
+    )
+    hidden_project_successor = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline hidden successor",
+            starts_at=same_start + timedelta(hours=2),
+            project_id=new_project.object_id,
+            supersedes_id=visible_project_predecessor.object_id, **common,
+        ),
+        uuid4(),
+    )
+    undated_event = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline undated review",
+            project_id=old_project.object_id, **common,
+        ),
+        uuid4(),
+    )
+    dated_old = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="review", title="Skyline October review old",
+            starts_at=timeline_start + timedelta(days=1), **common,
+        ),
+        uuid4(),
+    )
+    dated_replacement = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="review", title="Skyline October review new",
+            starts_at=timeline_start + timedelta(days=2),
+            project_id=new_project.object_id, **common,
+        ),
+        uuid4(),
+    )
+    knowledge.publish(
+        ctx,
+        CorrectionWrite(
+            kind="correction", target_kind="event", target_id=dated_old.object_id,
+            replacement_id=dated_replacement.object_id, reason="Reviewed event correction",
+            evidence_ids=[evidence_id],
+            source_quote=common["source_quote"], observed_at=common["observed_at"],
+            reviewed=True,
+        ),
+        uuid4(),
+    )
+    timeline_query = TimelineRequest(start=timeline_start, end=timeline_start + timedelta(days=1))
+    owner_timeline = knowledge.timeline(ctx, timeline_query)
+    assert owner_timeline["coverage"] == {
+        "undated_events": "excluded", "source_freshness": "not_asserted",
+        "interpretation": "reviewed_assertions",
+    }
+    assert {row["object_id"] for row in owner_timeline["results"]} == {
+        revised_event.object_id, branch_event.object_id, hidden_project_event.object_id,
+        hidden_project_successor.object_id, early_hidden_project_event.object_id,
+    }
+    assert all(row["evidence_ids"] for row in owner_timeline["results"])
+    assert undated_event.object_id not in {row["object_id"] for row in owner_timeline["results"]}
+    assert knowledge.get(ctx, "event", undated_event.object_id)["title"] == (
+        "Skyline undated review"
+    )
+    assistant_timeline = knowledge.timeline(fileos_only, timeline_query)
+    assert {row["object_id"] for row in assistant_timeline["results"]} == {
+        branch_event.object_id, visible_project_predecessor.object_id,
+    }
+    limited_assistant_timeline = knowledge.timeline(
+        fileos_only, TimelineRequest(
+            start=timeline_start, end=timeline_start + timedelta(days=1), limit=1,
+        ),
+    )["results"]
+    assert len(limited_assistant_timeline) == 1
+    assert limited_assistant_timeline[0]["object_id"] in {
+        branch_event.object_id, visible_project_predecessor.object_id,
+    }
+    assert [row["object_id"] for row in knowledge.timeline(
+        fileos_only,
+        TimelineRequest(start=timeline_start + timedelta(days=1),
+                        end=timeline_start + timedelta(days=3)),
+    )["results"]] == [dated_old.object_id]
+    assert [row["object_id"] for row in knowledge.timeline(
+        ctx,
+        TimelineRequest(start=timeline_start + timedelta(days=1),
+                        end=timeline_start + timedelta(days=3)),
+    )["results"]] == [dated_replacement.object_id]
+
+    first_timeline_page = knowledge.timeline(ctx, TimelineRequest(
+        start=timeline_start, end=timeline_start + timedelta(days=1),
+        visibility="retained", limit=1,
+    ))
+    cutoff_at = first_timeline_page["recorded_cutoff_at"]
+    late_event = knowledge.publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="decision", title="Skyline late backdated",
+            starts_at=same_start + timedelta(minutes=30), **common,
+        ),
+        uuid4(),
+    )
+    pages = [first_timeline_page["results"][0]]
+    cursor = first_timeline_page["next_cursor"]
+    for _ in range(10):
+        if cursor is None:
+            break
+        next_page = knowledge.timeline(ctx, TimelineRequest(
+            start=timeline_start, end=timeline_start + timedelta(days=1),
+            visibility="retained", limit=1, recorded_cutoff_at=cutoff_at, after=cursor,
+        ))
+        pages.extend(next_page["results"])
+        cursor = next_page["next_cursor"]
+    else:
+        pytest.fail("timeline cursor did not terminate")
+    assert {row["object_id"] for row in pages} == {
+        early_hidden_project_event.object_id, opening_event.object_id, revised_event.object_id,
+        branch_event.object_id, hidden_project_event.object_id,
+        visible_project_predecessor.object_id, hidden_project_successor.object_id,
+    }
+    assert late_event.object_id not in {row["object_id"] for row in pages}
+    assert [(row["starts_at"], row["object_id"]) for row in pages] == sorted(
+        (row["starts_at"], row["object_id"]) for row in pages
+    )
+    with pytest.raises(NotFound):
+        knowledge.timeline(fileos_only, TimelineRequest(
+            start=timeline_start, end=timeline_start + timedelta(days=1),
+            visibility="retained", recorded_cutoff_at=cutoff_at,
+            after=revised_event.object_id,
+        ))
+    with pytest.raises(NotFound):
+        knowledge.timeline(ctx, TimelineRequest(
+            start=timeline_start, end=timeline_start + timedelta(days=1),
+            project_id=old_project.object_id, visibility="retained",
+            recorded_cutoff_at=cutoff_at, after=hidden_project_event.object_id,
+        ))
+    with pytest.raises(ValueError, match="future timeline cutoff"):
+        knowledge.timeline(ctx, TimelineRequest(
+            start=timeline_start, end=timeline_start + timedelta(days=1),
+            recorded_cutoff_at=datetime.now(UTC) + timedelta(days=1),
+        ))
     loaded = knowledge.get(ctx, "commitment", commitment.object_id)
     assert loaded["description"].startswith("Alex will submit")
     assert loaded["valid_from"] == datetime(2026, 9, 22, tzinfo=UTC)
@@ -3678,6 +3874,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
     assert knowledge.search(other, "October") == []
     assert knowledge.search(other, "Skyline", visibility="unsuperseded") == []
+    assert knowledge.timeline(other, timeline_query)["results"] == []
     assert core.current_coverage(other)["results"] == []
     with pytest.raises(NotFound):
         knowledge.get(other, "claim", second_claim.object_id)
@@ -3728,6 +3925,26 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert {row["object_id"] for row in current_reviewed.json()["results"]} == {
         new_project.object_id, second_project_branch.object_id,
     }
+    timeline_api = api.get(
+        "/v1/knowledge/timeline",
+        params={
+            "start": timeline_start.isoformat(),
+            "end": (timeline_start + timedelta(days=1)).isoformat(),
+            "project_id": old_project.object_id,
+        },
+        headers=headers,
+    )
+    assert timeline_api.status_code == 200, timeline_api.text
+    assert timeline_api.json()["visibility"] == "unsuperseded"
+    assert [row["object_id"] for row in timeline_api.json()["results"]] == [
+        branch_event.object_id
+    ]
+    assert all(row["project_id"] == old_project.object_id for row in timeline_api.json()["results"])
+    assert api.get(
+        "/v1/knowledge/timeline",
+        params={"start": timeline_start.isoformat(), "end": timeline_start.isoformat()},
+        headers=headers,
+    ).status_code == 422
     grouped_leaves = api.post(
         "/v1/brain/current-search",
         json={"query": "Skyline renewal", "knowledge_kinds": ["project"]},
@@ -3774,6 +3991,21 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert [row["object_id"] for row in assistant_reviewed.json()["results"]] == [
         second_project_branch.object_id
     ]
+    assistant_timeline_api = assistant_api.get(
+        "/v1/knowledge/timeline",
+        params={"start": timeline_start.isoformat(),
+                "end": (timeline_start + timedelta(days=1)).isoformat()},
+        headers={"Authorization": f"Bearer {assistant_token}"},
+    )
+    assert assistant_timeline_api.status_code == 200
+    assert {row["object_id"] for row in assistant_timeline_api.json()["results"]} == {
+        branch_event.object_id, late_event.object_id,
+        visible_project_predecessor.object_id,
+    }
+    assert revised_event.object_id not in assistant_timeline_api.text
+    assert hidden_project_event.object_id not in assistant_timeline_api.text
+    assert hidden_project_successor.object_id not in assistant_timeline_api.text
+    assert early_hidden_project_event.object_id not in assistant_timeline_api.text
     assistant_grouped = assistant_api.post(
         "/v1/brain/current-search",
         json={"query": "Skyline renewal", "knowledge_kinds": ["project"]},

@@ -130,6 +130,13 @@ grouped Brain current-search and Ask. A correction or successor hidden by
 source grants cannot suppress a visible older match. Ask still rechecks the
 selected review matches before returning them. This does not establish
 real-world truth, valid-time currency or source freshness.
+ADR-160's reviewed-event timeline requires a bounded aware-date window and
+recorded-cutoff cursor. Source-filtered assistants must see every direct event
+evidence link and, when present, the linked project's full direct evidence
+set. Hidden or filter-mismatched cursors return not found. The audit records
+only a fixed operation code, never event text, dates or project identities.
+Its cutoff excludes later-recorded rows, not late commits of earlier inserts;
+it is not a durable MVCC snapshot, source freshness or truth guarantee.
 
 ## Privacy-safe failure observability
 
