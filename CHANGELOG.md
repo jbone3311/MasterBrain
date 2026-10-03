@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added a stable strict-runtime aggregate check and a versioned main-branch
+  protection policy (ADR-153). The three always-on CI gates must pass before
+  merge once GitHub protection is applied and independently verified. This is
+  governance, not live-product acceptance.
+
 - Bounded extractive Ask's selector-visible passage text to 2,048 UTF-8 bytes
   per passage and 8,192 in total (ADR-151), with an explicit truncation flag
   in the API/client and visible `/brain` warning. No model-token or total
