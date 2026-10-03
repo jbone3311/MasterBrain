@@ -3,7 +3,9 @@
 Updated 2026-10-03 through ADR-155's merged separate-cluster restore
 (PR #139 at `9b1ae23`) and ADR-156's merged, nonpublishing FileOS
 shadow symlink-target boundary (PR #141 at `082b0e8`). The latest merged
-Fastmail resilience is ADR-110/PR #133.
+Fastmail resilience is ADR-110/PR #133. ADR-157/PR #144 at `96cb22b`
+adds a bounded Ask output-text slice; full response/token and grounded-chat
+acceptance remain open.
 This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
