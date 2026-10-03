@@ -34,7 +34,10 @@ The new PostgreSQL regression covers both paths and passed locally;
 the nine focused mock/schema/API tests and the 2,627 non-PostgreSQL tests
 passed again after this change. The provider-neutral `BrainReadClient.timeline`
 adds closed read requests and response validation; its 11 additional transport
-cases passed, but cannot prove the database query or hosted assistant identity.
+cases passed. A subsequent end-to-end regression passed through
+`BrainReadClient.timeline`, the authenticated FastAPI route and real
+PostgreSQL, paging retained project events across the returned cutoff/cursor.
+This does not prove hosted assistant identity or replace exact-head CI.
 GitHub review remains
 [draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151).
 No live source, donor or version change.

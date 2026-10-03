@@ -44,6 +44,7 @@ from email_brain.sync_store import SyncStore
 from email_brain.synthetic import fake_email
 from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain import archive_member_controller as archive_controller
+from masterbrain.brain_client import BrainReadClient
 from masterbrain.datacore import fileos_donor_transition as transition_module
 from masterbrain.datacore import fileos_v2_document_publication as document_publication_module
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
@@ -4004,6 +4005,38 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         row["project_id"] == old_project.object_id
         for row in retained_timeline_api.json()["results"]
     )
+    def serve_timeline(request: httpx.Request) -> httpx.Response:
+        response = api.get(
+            request.url.path + "?" + request.url.query.decode("ascii"),
+            headers={"Authorization": request.headers["authorization"]},
+        )
+        return httpx.Response(
+            response.status_code, content=response.content,
+            headers={"content-type": response.headers["content-type"]},
+        )
+
+    with BrainReadClient(
+        "https://brain.example", token, transport=httpx.MockTransport(serve_timeline)
+    ) as read_client:
+        first_client_page = read_client.timeline(
+            timeline_start, timeline_start + timedelta(days=1),
+            project_id=old_project.object_id, visibility="retained", limit=2,
+        )
+        assert len(first_client_page["results"]) == 2
+        assert first_client_page["next_cursor"] is not None
+        second_client_page = read_client.timeline(
+            timeline_start, timeline_start + timedelta(days=1),
+            project_id=old_project.object_id, visibility="retained", limit=2,
+            recorded_cutoff_at=datetime.fromisoformat(first_client_page["recorded_cutoff_at"]),
+            after=first_client_page["next_cursor"],
+        )
+        assert second_client_page["next_cursor"] is None
+        assert {row["object_id"] for row in [
+            *first_client_page["results"], *second_client_page["results"],
+        ]} == {
+            opening_event.object_id, branch_event.object_id,
+            visible_project_predecessor.object_id,
+        }
     assert api.get(
         "/v1/knowledge/timeline",
         params={"start": timeline_start.isoformat(), "end": timeline_start.isoformat()},
