@@ -23,14 +23,14 @@ route; reinstalling this branch's package corrected the test environment, and
 the complete rerun passed. An independent deployment gate on a second fresh
 disposable PostgreSQL 17.11 database also passed **3,014 tests with one
 intentional skip** and reported `PASS: repository quality gate`. These local
-results are separate from exact-head GitHub checks. On PR #116, all hosted
-jobs failed before their first step (no runner name or job log); one
-strict-gate retry failed the same way. The Actions run page explains that the
-jobs were not started because recent account payments failed **or** the
-spending limit needs to be increased; it does not distinguish the two. This
-is an account billing gate, not a test result. The PR must remain unmerged
-until the account owner resolves it and exact-head full CI, strict runtime and
-populated-restore gates run and pass.
+results are separate from GitHub checks. The first hosted attempts on PR #116
+failed before any job step because GitHub reported an account payment or Actions
+spending-limit gate; they were not test failures. After the account condition
+changed, reruns on code head `5771cfc23e424cb840124f2b221bf72aaad2d05e`
+passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37053370693),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37053370723)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37053370719).
+PR #116 records the final documentation-only head and merge checks separately.
 
 ## Fictional contradictory-source Ask corpus — merged-main verification
 
