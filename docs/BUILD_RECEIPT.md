@@ -2,15 +2,29 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Grouped current reviewed leaves — ADR-159 candidate
+## Grouped current reviewed leaves — PR #148 merged
 
-Branch `codex/brain-current-reviewed-leaves` selects ADR-158's unsuperseded
+[PR #148](https://github.com/jbone3311/MasterBrain/pull/148) merged
+[ADR-159](adr/159_current_brain_reviewed_leaves.md) at
+`f9402d753db6f37c8f9861c170a2a29e9a21003e`. Its final head
+`d12db81566d47275f66e4cb817954b284d14398e` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37145217025)
+(3,088 tests passed, 12 skipped, including all 488 PostgreSQL-marked tests;
+the deployment gate repeated the same 3,088 tests and container/worker
+checks passed),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37145216964)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37145216984).
+The merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37146314821)
+is running; merged-main
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37146314852)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37146314751)
+passed at that exact merge commit. This selects ADR-158's unsuperseded
 KnowledgeCore mode only for grouped current-search and Ask. The retained
 direct/unified routes and focused source reads remain unchanged. Focused local
-non-PostgreSQL tests passed 74; the full non-PostgreSQL run passed 2,611 tests,
-with 488 PostgreSQL-marked and one host-dependent local launcher test deselected,
-**not passed**. PostgreSQL semantic regression, full CI,
-strict runtime and restore are pending. No source, donor or version change.
+non-PostgreSQL tests passed 74; the full local non-PostgreSQL run passed
+2,611 tests, with 488 PostgreSQL-marked and one host-dependent local launcher
+test deselected, **not passed** locally. Ruff, mypy, documentation and 16
+first-party browser tests passed. No source, donor or version change.
 
 ## Unsuperseded reviewed KnowledgeCore search — PR #146 merged
 
@@ -30,10 +44,12 @@ and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37
 The documentation receipt [PR #147](https://github.com/jbone3311/MasterBrain/pull/147)
 merged at `53463412486c1cdce223f2077831f1e1ae9c6a87` after its exact-head
 required checks passed. Its merged-main strict-runtime and restore checks
-passed; full CI is still running. This receipt changed no product behavior.
+passed, including [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37144260203).
+This receipt changed no product behavior.
 This adds optional read-only review-chain leaf retrieval, source-grant-aware
 suppression, and forward lookup indexes in migration 0053. Retained history
-remains the default; grouped Brain current-search and Ask are unchanged.
+remained the default; grouped Brain current-search and Ask were unchanged at
+that checkpoint, before ADR-159.
 Local non-PostgreSQL tests passed 2,611; 488 PostgreSQL-marked tests and one
 host-dependent disposable launcher test were deselected, **not passed**
 locally. Ruff, source mypy and documentation checks passed. FOS-Master and

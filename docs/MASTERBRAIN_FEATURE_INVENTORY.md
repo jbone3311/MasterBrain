@@ -67,7 +67,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Projects | State and evidence; future members/milestones/decisions | Reviewed base record implemented |
 | Commitments | Owner, counterparty, due state and evidence | Reviewed append/read implemented |
 | Corrections | Supersede without erasing history; retain contradictions | Implemented append-only links |
-| Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Grouped current FileOS + Email-family + unsuperseded reviewed Knowledge leaves (ADR-159 pending PR verification), retained/current FileOS + historical Knowledge, and layered Email lexical slices implemented; graph/semantic planned |
+| Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Grouped current FileOS + Email-family + unsuperseded reviewed Knowledge leaves (ADR-159/PR #148 exact-head verified), retained/current FileOS + historical Knowledge, and layered Email lexical slices implemented; graph/semantic planned |
 | Freshness | Source sync, extraction, indexing and interpretation freshness separated | Registered-source FileOS readiness and explicit Email bridge coverage implemented; interpretation freshness remains partial |
 
 ## Brain API and clients

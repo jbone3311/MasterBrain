@@ -1,7 +1,8 @@
 # ADR-159 — Review-chain leaves in grouped current Brain reads
 
-Status: accepted for a synthetic/disposable read-only candidate, pending PR
-verification. No hosted or live-source acceptance follows.
+Status: accepted and merged in PR #148 for synthetic/disposable read-only use;
+exact-head CI, strict runtime and restore passed. No hosted or live-source
+acceptance follows.
 
 ## Context
 
