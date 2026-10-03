@@ -116,3 +116,29 @@ def test_timeline_cursor_anchor_uses_same_filters_and_fails_closed() -> None:
     conn.execute.side_effect = [clock, MagicMock(fetchone=lambda: None)]
     with pytest.raises(NotFound):
         KnowledgeCore(store).timeline(ctx, request)
+
+
+def test_unsuperseded_cursor_freezes_chain_in_anchor_and_page() -> None:
+    store = MagicMock(spec=Store)
+    conn = store.transaction.return_value.__enter__.return_value
+    clock = MagicMock()
+    clock.fetchone.return_value = {"now": NOW + timedelta(days=1)}
+    event_id = "event_" + "3" * 32
+    anchor = MagicMock()
+    anchor.fetchone.return_value = {"starts_at": NOW, "id": event_id}
+    page = MagicMock()
+    page.fetchall.return_value = []
+    conn.execute.side_effect = [clock, anchor, page]
+    ctx = TenantContext(uuid4(), uuid4(), frozenset({"knowledge.search"}), uuid4())
+    KnowledgeCore(store).timeline(ctx, TimelineRequest(
+        start=NOW - timedelta(days=1), end=NOW + timedelta(days=1),
+        recorded_cutoff_at=NOW, after=event_id,
+    ))
+    for call in conn.execute.call_args_list[1:]:
+        query, params = call.args
+        assert "s.recorded_at<=allowed.cutoff" in query
+        assert "c.recorded_at<=allowed.cutoff" in query
+        assert "r.recorded_at<=allowed.cutoff" in query
+        assert "ev.recorded_at<=allowed.cutoff" in query
+        assert params[1] == NOW
+        assert query.count("%s") == len(params)

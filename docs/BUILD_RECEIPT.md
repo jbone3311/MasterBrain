@@ -5,8 +5,8 @@ Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 ## Reviewed-event timeline — ADR-160 candidate
 
 Branch `codex/knowledge-timeline-read` adds a bounded occurrence-window event
-read and forward migration 0054. Eight local schema/API/query-construction
-tests passed; the full local non-PostgreSQL suite passed 2,615 tests, with
+read and forward migration 0054. Nine local schema/API/query-construction
+tests passed; the full local non-PostgreSQL suite passed 2,616 tests, with
 488 PostgreSQL-marked tests and one host-dependent disposable launcher test
 deselected, **not passed**. Ruff, source mypy, documentation and diff checks
 passed. The new PostgreSQL semantics, populated migration, full CI, strict
@@ -16,7 +16,7 @@ jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBr
 Pre-merge review found and corrected a page-cutoff gap: late successors and
 corrections can no longer suppress earlier eligible events on later pages.
 The new PostgreSQL regression covers both paths but has **not executed**;
-the eight focused mock/schema/API tests and the 2,615 non-PostgreSQL tests
+the nine focused mock/schema/API tests and the 2,616 non-PostgreSQL tests
 passed again after this change. GitHub review remains
 [draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151).
 No live source, donor or version change.
