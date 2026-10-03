@@ -7,6 +7,8 @@ from pydantic import Field, field_validator
 from email_brain.schemas import ClosedModel
 from masterbrain.knowledge_schema import KnowledgeKind
 
+SourceFocus = Literal["all", "email", "fileos"]
+
 
 class BrainSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
@@ -39,6 +41,7 @@ class EvidenceContentRequest(ClosedModel):
 
 class GroundedAnswerRequest(ClosedModel):
     question: str = Field(min_length=1, max_length=500)
+    source_focus: SourceFocus = "all"
 
     @field_validator("question")
     @classmethod
@@ -65,6 +68,7 @@ class UnifiedSearchRequest(ClosedModel):
 
 class CurrentGroupedSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
+    source_focus: SourceFocus = "all"
     fileos_limit: int = Field(default=10, ge=1, le=20, strict=True)
     archive_member_limit: int = Field(default=10, ge=1, le=20, strict=True)
     archive_document_limit: int = Field(default=10, ge=1, le=20, strict=True)

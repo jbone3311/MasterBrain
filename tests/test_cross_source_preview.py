@@ -565,6 +565,63 @@ def test_default_local_answer_quotes_both_sources_and_client_matches(preview):
 
 
 @pytest.mark.postgres
+def test_explicit_source_focus_has_api_client_and_assistant_parity(preview, database):
+    with client_for(preview) as direct:
+        with BrainReadClient(
+            "http://127.0.0.1", preview.token,
+            allow_insecure_loopback=True, transport=external_transport(direct),
+        ) as external:
+            for focus, expected_kind in (("email", "email"), ("fileos", "fileos")):
+                request = {"query": "insurance", "source_focus": focus}
+                search = direct.post("/v1/brain/current-search", json=request)
+                assert search.status_code == 200, search.text
+                assert external.current_search("insurance", source_focus=focus) == search.json()
+                layers = search.json()["layers"]
+                assert search.json()["coverage"]["source_focus"] == focus
+                assert search.json()["coverage"]["knowledge"] == "not_searched"
+                excluded = "email" if focus == "fileos" else "fileos"
+                assert search.json()["coverage"][excluded] == "not_searched"
+                assert layers["knowledge"] == []
+                assert bool(layers["email_messages"]) == (focus == "email")
+                assert bool(layers["fileos"]) == (focus == "fileos")
+                answer = direct.post(
+                    "/v1/brain/answers",
+                    json={"question": "insurance", "source_focus": focus},
+                )
+                assert answer.status_code == 200, answer.text
+                assert answer.json()["status"] == "quoted_evidence"
+                assert answer.json()["reviewed_knowledge"] == []
+                assert {hit["source_kind"] for hit in answer.json()["citations"]} == {
+                    expected_kind
+                }
+                assert external.answer("insurance", source_focus=focus) == answer.json()
+
+    store, _ = database
+    token = "assistant-focused-trial-" + "f" * 32
+    app = create_app(store, TokenRegistry([
+        assistant_credential(preview, token, {"trial_files"})
+    ]))
+    headers = {"Authorization": "Bearer " + token}
+    with TestClient(app, base_url="http://127.0.0.1") as scoped:
+        hidden = scoped.post(
+            "/v1/brain/answers",
+            json={"question": "insurance", "source_focus": "email"},
+            headers=headers,
+        )
+        assert hidden.status_code == 200, hidden.text
+        assert hidden.json()["status"] == "no_supported_evidence"
+        assert hidden.json()["citations"] == []
+        visible = scoped.post(
+            "/v1/brain/answers",
+            json={"question": "insurance", "source_focus": "fileos"},
+            headers=headers,
+        )
+        assert visible.status_code == 200, visible.text
+        assert {hit["source_kind"] for hit in visible.json()["citations"]} == {"fileos"}
+        assert "email" not in visible.text
+
+
+@pytest.mark.postgres
 def test_ask_preserves_unresolved_cross_source_date_conflict(preview, database):
     question = "When is Maple Arcade closing?"
     with client_for(preview) as direct:

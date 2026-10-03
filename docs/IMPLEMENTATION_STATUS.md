@@ -1,8 +1,9 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-02. The latest recorded functional `main` checkpoint is
-ADR-149/PR #120 at `0591eac`; its exact-head and merged-main full CI, strict
-runtime and populated restore passed. The previous ADR-148/PR #118 at
+Updated 2026-10-03. The latest recorded `main` checkpoint is
+PR #125 at `8e62664`; its exact-head and merged-main full CI, strict runtime
+and populated restore passed. ADR-149/PR #120 at `0591eac` also passed these
+gates. The previous ADR-148/PR #118 at
 `46aa000` also passed those gates. The last functional FileOS slice is
 PR #116 at `b6ebcbf`; its final-head and merged-main gates passed. Tagged
 synthetic checkpoint `v0.2.0a1` is
@@ -20,6 +21,13 @@ not still-open integration work. Interactive Mac acceptance, issues #7/#9,
 production and FileOS cutover remain open.
 
 ## Implemented
+
+- ADR-150 adds an optional, explicit All/Email/FileOS focus to grouped current
+  search and extractive Ask. The API skips excluded source and KnowledgeCore
+  reads, keeps the response shape, reports unsearched layers, and rechecks
+  answer citations within the selected focus. `/brain` and `BrainReadClient`
+  use the same contract. This is local/fictional read behavior, not an access
+  grant, hosted assistant integration or model-based source selection.
 
 - ADR-149 excludes assistants from legacy `email.*` API dependencies before
   route work, refuses bootstrap assistant Email scopes and rejects old OIDC

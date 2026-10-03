@@ -525,30 +525,43 @@ def create_app(
     ) -> dict[str, Any]:
         if "knowledge.search" not in principal.context.scopes:
             raise HTTPException(403, "scope_denied")
-        fileos_hits = brain.search_current_fileos(
-            principal.context, body.query, limit=body.fileos_limit
+        include_files = body.source_focus in {"all", "fileos"}
+        include_email = body.source_focus in {"all", "email"}
+        fileos_hits = (
+            brain.search_current_fileos(principal.context, body.query, limit=body.fileos_limit)
+            if include_files else []
         )
-        archive_member_hits = brain.search_current_archive_members(
-            principal.context, body.query, limit=body.archive_member_limit
+        archive_member_hits = (
+            brain.search_current_archive_members(
+                principal.context, body.query, limit=body.archive_member_limit
+            ) if include_files else []
         )
-        archive_document_hits = brain.search_current_archive_documents(
-            principal.context, body.query, limit=body.archive_document_limit
+        archive_document_hits = (
+            brain.search_current_archive_documents(
+                principal.context, body.query, limit=body.archive_document_limit
+            ) if include_files else []
         )
-        archive_image_hits = brain.search_current_archive_images(
-            principal.context, body.query, limit=body.archive_image_limit
+        archive_image_hits = (
+            brain.search_current_archive_images(
+                principal.context, body.query, limit=body.archive_image_limit
+            ) if include_files else []
         )
-        email_hits = brain.search_current_email_family(
-            principal.context,
-            body.query,
-            message_limit=body.email_message_limit,
-            attachment_limit=body.email_attachment_limit,
-            document_limit=body.email_document_limit,
+        email_hits = (
+            brain.search_current_email_family(
+                principal.context,
+                body.query,
+                message_limit=body.email_message_limit,
+                attachment_limit=body.email_attachment_limit,
+                document_limit=body.email_document_limit,
+            ) if include_email else None
         )
-        knowledge_hits = knowledge.search(
-            principal.context,
-            body.query,
-            limit=body.knowledge_limit,
-            kinds=list(body.knowledge_kinds),
+        knowledge_hits = (
+            knowledge.search(
+                principal.context,
+                body.query,
+                limit=body.knowledge_limit,
+                kinds=list(body.knowledge_kinds),
+            ) if body.source_focus == "all" else []
         )
 
         def evidence(hits: tuple[SearchHit, ...] | list[SearchHit]) -> list[dict[str, Any]]:
@@ -570,16 +583,31 @@ def create_app(
             "ranking": "within_group_only",
             "consistency": "independent_layer_reads",
             "coverage": {
+                "source_focus": body.source_focus,
                 "source_access": (
                     "enrolled_sources_only"
                     if principal.context.source_ids is not None else "tenant_sources"
                 ),
-                "fileos": "sources_with_active_generation_only",
-                "archive_members": "explicitly_published_current_archive_members_only",
-                "archive_documents": ("explicitly_published_current_archive_documents_only"),
-                "archive_images": "explicitly_published_current_archive_images_only",
-                "email": "explicitly_bridged_current_only",
-                "knowledge": "reviewed_retained_assertions",
+                "fileos": (
+                    "sources_with_active_generation_only" if include_files else "not_searched"
+                ),
+                "archive_members": (
+                    "explicitly_published_current_archive_members_only"
+                    if include_files else "not_searched"
+                ),
+                "archive_documents": (
+                    "explicitly_published_current_archive_documents_only"
+                    if include_files else "not_searched"
+                ),
+                "archive_images": (
+                    "explicitly_published_current_archive_images_only"
+                    if include_files else "not_searched"
+                ),
+                "email": "explicitly_bridged_current_only" if include_email else "not_searched",
+                "knowledge": (
+                    "reviewed_retained_assertions"
+                    if body.source_focus == "all" else "not_searched"
+                ),
                 "complete": False,
             },
             "layers": {
@@ -587,9 +615,9 @@ def create_app(
                 "archive_members": evidence(archive_member_hits),
                 "archive_documents": evidence(archive_document_hits),
                 "archive_images": evidence(archive_image_hits),
-                "email_messages": evidence(email_hits.messages),
-                "email_attachments": evidence(email_hits.attachments),
-                "email_documents": evidence(email_hits.documents),
+                "email_messages": evidence(email_hits.messages) if email_hits else [],
+                "email_attachments": evidence(email_hits.attachments) if email_hits else [],
+                "email_documents": evidence(email_hits.documents) if email_hits else [],
                 "knowledge": [
                     {
                         "object_kind": hit.object_kind,
@@ -633,9 +661,13 @@ def create_app(
                 principal.context,
                 body.question,
                 lambda: current_grouped_search(
-                    CurrentGroupedSearchRequest(query=answer_search_query(body.question)),
+                    CurrentGroupedSearchRequest(
+                        query=answer_search_query(body.question),
+                        source_focus=body.source_focus,
+                    ),
                     principal,
                 ),
+                source_focus=body.source_focus,
             )
         except AnswerUnavailable:
             raise HTTPException(503, "answer_unavailable") from None

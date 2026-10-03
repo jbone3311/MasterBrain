@@ -83,6 +83,11 @@ source effects or an alternate route through KnowledgeCore.
   tenant-wide bootstrap reads. OIDC grant removal invalidates saved contexts at
   the next transaction; hosted issuer enrollment and derived-cache revocation
   are not accepted.
+  Optional `source_focus` is `all` (default), `email`, or `fileos` (ADR-150).
+  A focused call does not query excluded source or KnowledgeCore layers; those
+  response groups remain present but empty, and `coverage.source_focus` plus
+  `coverage.knowledge=not_searched` distinguishes exclusion from no matches.
+  Focus narrows retrieval only; it never broadens scopes or source grants.
 - `POST /v1/brain/answers` — optional ADR-134 extractive answer over the same
   current grouped search and separately authorized evidence/content reads.
   Requires `brain.search`, `knowledge.search`, `brain.evidence.read` and
@@ -98,6 +103,9 @@ source effects or an alternate route through KnowledgeCore.
   against current source grants before disclosure. Reviewed interpretations
   are not exact source quotes. It has no effect grant,
   freeform model-authored answer or hosted/named-assistant acceptance.
+  It accepts the same `source_focus`; quote selection and final currentness
+  recheck must remain within that focus. Focused Ask returns no reviewed
+  KnowledgeCore matches, while still requiring its existing scopes.
 - `GET /v1/brain/current-coverage` — implemented bounded status for registered FileOS
   generation readiness and explicitly bridged current Email family coverage; requires
   `brain.changes.read`, is cursor-bounded and does not enumerate providers or paths.

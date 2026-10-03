@@ -316,6 +316,86 @@ def test_answer_search_terms_drop_only_fixed_boilerplate(question, expected) -> 
     assert answer_search_query(question) == expected
 
 
+def test_focused_answer_refuses_excluded_or_drifted_layers() -> None:
+    current = grouped()
+    current["coverage"]["source_focus"] = "fileos"
+    answer = GroundedAnswerService(brain_mock(), Selector()).answer(
+        context(), "insurance", lambda: current, source_focus="fileos"
+    )
+    assert answer["status"] == "quoted_evidence"
+    assert answer["coverage"]["source_focus"] == "fileos"
+    assert answer["coverage"]["knowledge"] == "not_searched"
+    excluded = grouped()
+    excluded["coverage"]["source_focus"] = "fileos"
+    excluded["layers"]["email_messages"] = [excluded["layers"]["fileos"][0]]
+    with pytest.raises(AnswerRejected):
+        GroundedAnswerService(brain_mock(), Selector()).answer(
+            context(), "insurance", lambda: excluded, source_focus="fileos"
+        )
+    wrong_kind = brain_mock()
+    wrong_kind.evidence.return_value["source_kind"] = "email"
+    with pytest.raises(AnswerRejected):
+        GroundedAnswerService(wrong_kind, Selector()).answer(
+            context(), "insurance", lambda: current, source_focus="fileos"
+        )
+    calls = 0
+
+    def drifted():
+        nonlocal calls
+        calls += 1
+        return current if calls == 1 else grouped()
+
+    with pytest.raises(AnswerStale):
+        GroundedAnswerService(brain_mock(), Selector()).answer(
+            context(), "insurance", drifted, source_focus="fileos"
+        )
+
+
+def test_source_focus_skips_excluded_api_reads() -> None:
+    store = MagicMock(spec=Store)
+    brain = brain_mock()
+    knowledge = MagicMock(spec=KnowledgeCore)
+    hit = SearchHit("chunk_" + "c" * 32, DOCUMENT, EVIDENCE, SOURCE, "file.txt", BODY, 1.0)
+    brain.search_current_fileos.return_value = [hit]
+    brain.search_current_archive_members.return_value = []
+    brain.search_current_archive_documents.return_value = []
+    brain.search_current_archive_images.return_value = []
+    brain.search_current_email_family.return_value = EmailFamilySearch((hit,), (), ())
+    knowledge.search.return_value = []
+    headers = {"Authorization": "Bearer " + TOKEN}
+    with TestClient(create_app(
+        store, registry(set(context().scopes)), brain_store=brain,
+        knowledge_store=knowledge,
+    )) as client:
+        email = client.post(
+            "/v1/brain/current-search",
+            json={"query": "insurance", "source_focus": "email"}, headers=headers,
+        )
+        assert email.status_code == 200
+        assert email.json()["coverage"]["source_focus"] == "email"
+        assert email.json()["coverage"]["knowledge"] == "not_searched"
+        assert len(email.json()["layers"]["email_messages"]) == 1
+        assert email.json()["layers"]["fileos"] == []
+        assert email.json()["layers"]["knowledge"] == []
+        brain.search_current_fileos.assert_not_called()
+        brain.search_current_archive_members.assert_not_called()
+        knowledge.search.assert_not_called()
+        brain.search_current_email_family.reset_mock()
+        files = client.post(
+            "/v1/brain/current-search",
+            json={"query": "insurance", "source_focus": "fileos"}, headers=headers,
+        )
+        assert files.status_code == 200
+        assert len(files.json()["layers"]["fileos"]) == 1
+        assert files.json()["layers"]["email_messages"] == []
+        brain.search_current_email_family.assert_not_called()
+        knowledge.search.assert_not_called()
+        assert client.post(
+            "/v1/brain/current-search",
+            json={"query": "insurance", "source_focus": "unknown"}, headers=headers,
+        ).status_code == 422
+
+
 def test_api_requires_all_read_scopes_and_selector() -> None:
     store = MagicMock(spec=Store)
     brain = brain_mock()

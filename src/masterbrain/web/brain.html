@@ -44,6 +44,14 @@
     </div>
     <form id="ask-form">
       <label for="brain-question">Ask MasterBrain</label>
+      <div class="focus-row">
+        <label for="brain-source-focus">Search in</label>
+        <select id="brain-source-focus">
+          <option value="all">Email, files and reviewed knowledge</option>
+          <option value="email">Email only</option>
+          <option value="fileos">Files only</option>
+        </select>
+      </div>
       <div class="ask-row">
         <input id="brain-question" maxlength="500" required
           placeholder="Find the insurance certificate" autocomplete="off">

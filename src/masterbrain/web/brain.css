@@ -10,11 +10,13 @@ h2 { font-size: 1.15rem; margin: .25rem 0 1rem; }
 header > p:last-child { color: #49615c; max-width: 62ch; line-height: 1.55; }
 section { background: #fff; border: 1px solid #d7e3db; border-radius: 18px;
   box-shadow: 0 12px 36px rgba(24, 43, 40, .04); padding: clamp(1rem, 3vw, 1.6rem); margin-bottom: 1rem; }
-.access-row, .ask-row { display: flex; gap: .7rem; align-items: center; }
+.access-row, .ask-row, .focus-row { display: flex; gap: .7rem; align-items: center; }
+.focus-row { margin: .65rem 0; }
+.focus-row label { font-size: .86rem; font-weight: 650; white-space: nowrap; }
 .access-row label { font-size: .86rem; font-weight: 650; white-space: nowrap; }
-input { font: inherit; border: 1px solid #aec8ba; border-radius: 10px; padding: .7rem .85rem;
+input, select { font: inherit; border: 1px solid #aec8ba; border-radius: 10px; padding: .7rem .85rem;
   min-width: 0; flex: 1; background: #fcfefd; color: #182b28; }
-input:focus-visible, button:focus-visible { outline: 3px solid #7dbfa6; outline-offset: 2px; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid #7dbfa6; outline-offset: 2px; }
 button { border: 0; border-radius: 10px; padding: .73rem 1rem; background: #206b59;
   color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
 button:hover { background: #14503f; }
@@ -44,6 +46,7 @@ button:disabled { background: #a4b8ad; cursor: not-allowed; }
 footer { padding: 1rem .2rem 2rem; }
 @media (max-width: 680px) {
   .access-row { align-items: stretch; flex-direction: column; }
+  .focus-row { align-items: stretch; flex-direction: column; }
   .ask-row { align-items: stretch; }
   .ask-row button { flex: 0 0 auto; }
   .workspace-heading { align-items: start; }

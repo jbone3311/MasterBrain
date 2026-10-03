@@ -14,6 +14,7 @@ from typing import Any, Protocol
 from email_brain.domain.models import TenantContext
 from email_brain.store import NotFound
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.schemas import SourceFocus
 
 MAX_PASSAGES = 8
 MAX_PASSAGE_CHARS = 1200
@@ -30,6 +31,8 @@ _LAYERS = (
     "email_messages", "fileos", "email_attachments", "email_documents",
     "archive_members", "archive_documents", "archive_images",
 )
+_EMAIL_LAYERS = ("email_messages", "email_attachments", "email_documents")
+_FILEOS_LAYERS = ("fileos", "archive_members", "archive_documents", "archive_images")
 _QUESTION_FILLER = frozenset({
     "a", "about", "again", "also", "an", "and", "are", "at", "by", "can",
     "could", "d", "did", "do", "does", "find", "for", "get", "give",
@@ -136,17 +139,28 @@ class GroundedAnswerService:
         self.selector = selector
 
     @staticmethod
-    def _hits(grouped: dict[str, Any]) -> list[dict[str, Any]]:
+    def _hits(
+        grouped: dict[str, Any], source_focus: SourceFocus = "all"
+    ) -> list[dict[str, Any]]:
         layers = grouped.get("layers")
         if not isinstance(layers, dict):
+            raise AnswerRejected()
+        selected_layers = (
+            _LAYERS if source_focus == "all" else
+            _EMAIL_LAYERS if source_focus == "email" else _FILEOS_LAYERS
+        )
+        if any(not isinstance(layers.get(layer), list) for layer in _LAYERS):
+            raise AnswerRejected()
+        if source_focus != "all" and any(
+            layers[layer] for layer in _LAYERS if layer not in selected_layers
+        ):
             raise AnswerRejected()
         candidates: list[dict[str, Any]] = []
         seen: set[str] = set()
         for ordinal in range(2):
-            for layer in _LAYERS:
+            for layer in selected_layers:
                 hits = layers.get(layer)
-                if not isinstance(hits, list):
-                    raise AnswerRejected()
+                assert isinstance(hits, list)
                 if ordinal >= len(hits):
                     continue
                 hit = hits[ordinal]
@@ -163,11 +177,15 @@ class GroundedAnswerService:
 
     @staticmethod
     def _knowledge_hits(
-        grouped: dict[str, Any]
+        grouped: dict[str, Any], source_focus: SourceFocus = "all"
     ) -> list[tuple[dict[str, Any], tuple[str, ...]]]:
         layers = grouped.get("layers")
         if not isinstance(layers, dict) or not isinstance(layers.get("knowledge"), list):
             raise AnswerRejected()
+        if source_focus != "all":
+            if layers["knowledge"]:
+                raise AnswerRejected()
+            return []
         selected: list[tuple[dict[str, Any], tuple[str, ...]]] = []
         seen: set[str] = set()
         for hit in layers["knowledge"][:MAX_REVIEWED_HITS]:
@@ -216,12 +234,23 @@ class GroundedAnswerService:
         cls,
         selected: list[tuple[dict[str, Any], tuple[str, ...]]],
         refreshed: dict[str, Any],
+        source_focus: SourceFocus,
     ) -> None:
         current = {
             item["object_id"]: (item, ids)
-            for item, ids in cls._knowledge_hits(refreshed)
+            for item, ids in cls._knowledge_hits(refreshed, source_focus)
         }
         if any(current.get(item["object_id"]) != (item, ids) for item, ids in selected):
+            raise AnswerStale()
+
+    @staticmethod
+    def _recheck_focus(grouped: dict[str, Any], source_focus: SourceFocus) -> None:
+        coverage = grouped.get("coverage")
+        if (
+            not isinstance(coverage, dict)
+            or coverage.get("complete") is not False
+            or coverage.get("source_focus", "all") != source_focus
+        ):
             raise AnswerStale()
 
     def answer(
@@ -229,16 +258,24 @@ class GroundedAnswerService:
         ctx: TenantContext,
         question: str,
         search_current: Callable[[], dict[str, Any]],
+        *,
+        source_focus: SourceFocus = "all",
     ) -> dict[str, Any]:
         if self.selector is None:
             raise AnswerUnavailable()
+        if source_focus not in {"all", "email", "fileos"}:
+            raise AnswerRejected()
         grouped = search_current()
         coverage = grouped.get("coverage")
-        if not isinstance(coverage, dict) or coverage.get("complete") is not False:
+        if (
+            not isinstance(coverage, dict)
+            or coverage.get("complete") is not False
+            or coverage.get("source_focus", "all") != source_focus
+        ):
             raise AnswerRejected()
-        reviewed = self._knowledge_hits(grouped)
+        reviewed = self._knowledge_hits(grouped, source_focus)
         passages: list[AnswerPassage] = []
-        for hit in self._hits(grouped):
+        for hit in self._hits(grouped, source_focus):
             evidence_id = hit.get("evidence_id")
             document_id = hit.get("document_id")
             source_id = hit.get("source_id")
@@ -268,13 +305,16 @@ class GroundedAnswerService:
                 # One evidence can have multiple derivatives. Do not cite a
                 # search hit with another document's extracted body.
                 continue
+            if source_focus != "all" and metadata["source_kind"] != source_focus:
+                raise AnswerRejected()
             passages.append(AnswerPassage(
                 evidence_id, document_id, source_id, metadata["source_kind"],
                 content["content"], body_sha256,
             ))
         if not passages:
             refreshed_grouped = search_current()
-            self._recheck_knowledge(reviewed, refreshed_grouped)
+            self._recheck_focus(refreshed_grouped, source_focus)
+            self._recheck_knowledge(reviewed, refreshed_grouped, source_focus)
             return self._response(
                 "no_supported_answer" if reviewed else "no_supported_evidence",
                 [], coverage, [item for item, _ in reviewed],
@@ -321,8 +361,9 @@ class GroundedAnswerService:
                 "body_sha256": passage.body_sha256,
             })
         refreshed_grouped = search_current()
-        self._recheck_knowledge(reviewed, refreshed_grouped)
-        refreshed = self._hits(refreshed_grouped)
+        self._recheck_focus(refreshed_grouped, source_focus)
+        self._recheck_knowledge(reviewed, refreshed_grouped, source_focus)
+        refreshed = self._hits(refreshed_grouped, source_focus)
         current = {
             (hit.get("evidence_id"), hit.get("document_id")) for hit in refreshed
         }
@@ -354,8 +395,12 @@ class GroundedAnswerService:
             "reviewed_knowledge": reviewed_knowledge,
             "coverage": {
                 "complete": False,
+                "source_focus": coverage.get("source_focus", "all"),
                 "source_access": coverage.get("source_access"),
-                "knowledge": "reviewed_assertions_listed_not_synthesized",
+                "knowledge": (
+                    "reviewed_assertions_listed_not_synthesized"
+                    if coverage.get("source_focus", "all") == "all" else "not_searched"
+                ),
             },
             "untrusted_content": True,
         }

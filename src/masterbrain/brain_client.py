@@ -17,6 +17,7 @@ from masterbrain.schemas import (
     CurrentGroupedSearchRequest,
     EvidenceContentRequest,
     GroundedAnswerRequest,
+    SourceFocus,
 )
 
 MAX_RESPONSE_BYTES = 262_144
@@ -33,6 +34,13 @@ _CURRENT_LAYERS = frozenset(
         "knowledge",
     }
 )
+_FOCUS_LAYERS = {
+    "all": _CURRENT_LAYERS,
+    "email": frozenset({"email_messages", "email_attachments", "email_documents"}),
+    "fileos": frozenset({
+        "fileos", "archive_members", "archive_documents", "archive_images",
+    }),
+}
 
 
 class BrainClientError(RuntimeError):
@@ -154,16 +162,21 @@ class BrainReadClient:
         finally:
             self._http.cookies.clear()
 
-    def current_search(self, query: str) -> dict[str, Any]:
+    def current_search(
+        self, query: str, *, source_focus: SourceFocus = "all"
+    ) -> dict[str, Any]:
         """Return grouped current evidence; ranks are only comparable within a layer."""
         if not isinstance(query, str) or not query.strip() or "\x00" in query:
             raise BrainClientError("invalid_request")
         try:
-            request = CurrentGroupedSearchRequest(query=query)
+            request = CurrentGroupedSearchRequest(query=query, source_focus=source_focus)
         except ValidationError:
             raise BrainClientError("invalid_request") from None
+        payload = request.model_dump(mode="json")
+        if source_focus == "all":
+            payload.pop("source_focus")  # Keep default calls compatible with older servers.
         data = self._request(
-            "POST", "/v1/brain/current-search", request.model_dump(mode="json")
+            "POST", "/v1/brain/current-search", payload
         )
         layers = data.get("layers")
         coverage = data.get("coverage")
@@ -182,18 +195,25 @@ class BrainReadClient:
             )
             or not isinstance(coverage, dict)
             or coverage.get("complete") is not False
+            or coverage.get("source_focus", "all") != source_focus
+            or any(layers[name] for name in _CURRENT_LAYERS - _FOCUS_LAYERS[source_focus])
         ):
             raise BrainClientError("invalid_response")
         return data
 
-    def answer(self, question: str) -> dict[str, Any]:
+    def answer(
+        self, question: str, *, source_focus: SourceFocus = "all"
+    ) -> dict[str, Any]:
         """Ask for server-verified current evidence quotes, never model tools."""
         try:
-            request = GroundedAnswerRequest(question=question)
+            request = GroundedAnswerRequest(question=question, source_focus=source_focus)
         except ValidationError:
             raise BrainClientError("invalid_request") from None
+        payload = request.model_dump(mode="json")
+        if source_focus == "all":
+            payload.pop("source_focus")
         data = self._request(
-            "POST", "/v1/brain/answers", request.model_dump(mode="json")
+            "POST", "/v1/brain/answers", payload
         )
         citations = data.get("citations")
         reviewed = data.get("reviewed_knowledge", [])
@@ -208,12 +228,18 @@ class BrainReadClient:
             or data.get("untrusted_content") is not True
             or not isinstance(coverage, dict)
             or coverage.get("complete") is not False
+            or coverage.get("source_focus", "all") != source_focus
             or not isinstance(citations, list)
             or len(citations) > 4
             or any(not self._valid_quote_citation(item) for item in citations)
+            or (
+                source_focus != "all"
+                and any(item["source_kind"] != source_focus for item in citations)
+            )
             or not isinstance(reviewed, list)
             or len(reviewed) > 4
             or any(not self._valid_reviewed_knowledge(item) for item in reviewed)
+            or (source_focus != "all" and bool(reviewed))
             or (data["status"] == "quoted_evidence") != bool(citations)
         ):
             raise BrainClientError("invalid_response")
