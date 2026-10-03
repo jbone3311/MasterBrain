@@ -100,6 +100,9 @@ credentials.
    ADR-150 lets the owner explicitly focus either mode on Email or FileOS;
    changing focus invalidates an in-flight result, and the page does not claim
    excluded groups were searched.
+   ADR-151 caps selector-visible source text by UTF-8 bytes and visibly warns
+   when an upstream character or byte cap shortened that context; a no-quote answer under that warning is
+   not evidence that the rest of the indexed source text was considered.
 3. **External client:** a provider-neutral reference client now runs the same
    fictional current-search and evidence calls as the owner workspace, with
    source/scope parity tests. Next connect at least one separately authorized

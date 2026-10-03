@@ -18,6 +18,8 @@ from masterbrain.schemas import SourceFocus
 
 MAX_PASSAGES = 8
 MAX_PASSAGE_CHARS = 1200
+MAX_PASSAGE_BYTES = 2048
+MAX_CONTEXT_BYTES = 8192
 MAX_SELECTIONS = 4
 MAX_QUOTE_CHARS = 400
 MAX_REVIEWED_HITS = 4
@@ -253,6 +255,17 @@ class GroundedAnswerService:
         ):
             raise AnswerStale()
 
+    @staticmethod
+    def _bounded_utf8_prefix(value: str, max_bytes: int) -> tuple[str, bool, int]:
+        try:
+            encoded = value.encode("utf-8")
+        except UnicodeEncodeError:
+            raise AnswerRejected() from None
+        if len(encoded) <= max_bytes:
+            return value, False, len(encoded)
+        prefix = encoded[:max_bytes].decode("utf-8", errors="ignore")
+        return prefix, True, len(prefix.encode("utf-8"))
+
     def answer(
         self,
         ctx: TenantContext,
@@ -275,7 +288,13 @@ class GroundedAnswerService:
             raise AnswerRejected()
         reviewed = self._knowledge_hits(grouped, source_focus)
         passages: list[AnswerPassage] = []
-        for hit in self._hits(grouped, source_focus):
+        candidate_hits = self._hits(grouped, source_focus)
+        remaining_bytes = MAX_CONTEXT_BYTES
+        context_truncated = False
+        for ordinal, hit in enumerate(candidate_hits):
+            if remaining_bytes == 0:
+                context_truncated = True
+                break
             evidence_id = hit.get("evidence_id")
             document_id = hit.get("document_id")
             source_id = hit.get("source_id")
@@ -299,6 +318,7 @@ class GroundedAnswerService:
                 or content.get("document_id") != document_id
                 or not isinstance(metadata.get("source_kind"), str)
                 or not isinstance(content.get("content"), str)
+                or not isinstance(content.get("truncated", False), bool)
                 or not isinstance(body_sha256, str)
                 or not _SHA256.fullmatch(body_sha256)
             ):
@@ -307,17 +327,31 @@ class GroundedAnswerService:
                 continue
             if source_focus != "all" and metadata["source_kind"] != source_focus:
                 raise AnswerRejected()
+            if content.get("truncated", False):
+                context_truncated = True
+            bounded, shortened, used_bytes = self._bounded_utf8_prefix(
+                content["content"], min(MAX_PASSAGE_BYTES, remaining_bytes)
+            )
+            if shortened:
+                context_truncated = True
+            if not bounded:
+                context_truncated = True
+                break
+            remaining_bytes -= used_bytes
             passages.append(AnswerPassage(
                 evidence_id, document_id, source_id, metadata["source_kind"],
-                content["content"], body_sha256,
+                bounded, body_sha256,
             ))
+            if remaining_bytes == 0 and ordinal + 1 < len(candidate_hits):
+                context_truncated = True
+                break
         if not passages:
             refreshed_grouped = search_current()
             self._recheck_focus(refreshed_grouped, source_focus)
             self._recheck_knowledge(reviewed, refreshed_grouped, source_focus)
             return self._response(
                 "no_supported_answer" if reviewed else "no_supported_evidence",
-                [], coverage, [item for item, _ in reviewed],
+                [], coverage, [item for item, _ in reviewed], context_truncated,
             )
         try:
             selected = self.selector.select(question, tuple(passages))
@@ -371,7 +405,7 @@ class GroundedAnswerService:
             raise AnswerStale()
         return self._response(
             "quoted_evidence" if citations else "no_supported_answer",
-            citations, coverage, [item for item, _ in reviewed],
+            citations, coverage, [item for item, _ in reviewed], context_truncated,
         )
 
     @staticmethod
@@ -380,6 +414,7 @@ class GroundedAnswerService:
         citations: list[dict[str, Any]],
         coverage: dict[str, Any],
         reviewed_knowledge: list[dict[str, Any]],
+        context_truncated: bool,
     ) -> dict[str, Any]:
         return {
             "mode": "grounded_extractive_v1",
@@ -388,13 +423,18 @@ class GroundedAnswerService:
                 "Relevant passages from current indexed evidence are quoted below."
                 if citations else (
                     "No exact source quote selected; reviewed knowledge matches are listed below."
-                    if reviewed_knowledge else "No supported answer from current indexed evidence."
+                    if reviewed_knowledge else (
+                        "No exact quote selected from the bounded current evidence context."
+                        if context_truncated else
+                        "No supported answer from current indexed evidence."
+                    )
                 )
             ),
             "citations": citations,
             "reviewed_knowledge": reviewed_knowledge,
             "coverage": {
                 "complete": False,
+                "answer_context_truncated": context_truncated,
                 "source_focus": coverage.get("source_focus", "all"),
                 "source_access": coverage.get("source_access"),
                 "knowledge": (

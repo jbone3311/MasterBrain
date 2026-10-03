@@ -590,6 +590,7 @@ def test_explicit_source_focus_has_api_client_and_assistant_parity(preview, data
                 )
                 assert answer.status_code == 200, answer.text
                 assert answer.json()["status"] == "quoted_evidence"
+                assert answer.json()["coverage"]["answer_context_truncated"] is False
                 assert answer.json()["reviewed_knowledge"] == []
                 assert {hit["source_kind"] for hit in answer.json()["citations"]} == {
                     expected_kind

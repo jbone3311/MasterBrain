@@ -107,6 +107,7 @@ def test_exact_quote_and_server_computed_citation() -> None:
     assert answer["mode"] == "grounded_extractive_v1"
     assert answer["status"] == "quoted_evidence"
     assert answer["coverage"]["complete"] is False
+    assert answer["coverage"]["answer_context_truncated"] is False
     assert answer["coverage"]["source_access"] == "enrolled_sources_only"
     assert answer["untrusted_content"] is True
     assert len(answer["citations"]) == 1
@@ -120,6 +121,73 @@ def test_exact_quote_and_server_computed_citation() -> None:
     assert len(selector.seen[1]) == 1
     assert selector.seen[1][0].content == BODY
     assert brain.evidence_content.call_args.kwargs == {"max_chars": 1200}
+
+
+def test_ask_caps_multibyte_passage_on_unicode_boundary() -> None:
+    brain = brain_mock()
+    brain.evidence_content.return_value["content"] = "界" * 1200
+    selector = Selector([QuoteSelection(EVIDENCE, "界" * 5)])
+    result = GroundedAnswerService(brain, selector).answer(
+        context(), "界", grouped
+    )
+    passage = selector.seen[1][0]
+    assert passage.content == "界" * 682
+    assert len(passage.content.encode("utf-8")) == 2046
+    assert result["coverage"]["answer_context_truncated"] is True
+    assert result["citations"][0]["quote"] == "界" * 5
+    assert result["citations"][0]["start"] == 0
+
+
+def test_ask_caps_aggregate_context_and_skips_unread_candidates() -> None:
+    candidate_ids = ["evidence_" + f"{index:032x}" for index in range(8)]
+    current = grouped(False)
+    layer_names = (
+        "email_messages", "fileos", "email_attachments", "email_documents",
+        "archive_members", "archive_documents", "archive_images",
+    )
+    for index, layer in enumerate(layer_names):
+        current["layers"][layer] = [{
+            "evidence_id": candidate_ids[index], "document_id": DOCUMENT,
+            "source_id": SOURCE,
+        }]
+    current["layers"]["fileos"].append({
+        "evidence_id": candidate_ids[7], "document_id": DOCUMENT,
+        "source_id": SOURCE,
+    })
+    brain = brain_mock()
+    brain.evidence.side_effect = lambda ctx, evidence_id: {
+        "document_id": DOCUMENT, "source_id": SOURCE, "source_kind": "fileos",
+    }
+    brain.evidence_content.side_effect = lambda ctx, evidence_id, *, max_chars: {
+        "document_id": DOCUMENT, "content": "A" * 1200, "body_sha256": "a" * 64,
+    }
+    selector = Selector([])
+    result = GroundedAnswerService(brain, selector).answer(
+        context(), "A", lambda: current
+    )
+    passages = selector.seen[1]
+    assert len(passages) == 7
+    assert sum(len(item.content.encode("utf-8")) for item in passages) == 8192
+    assert [len(item.content) for item in passages] == [1200] * 6 + [992]
+    assert brain.evidence_content.call_count == 7
+    assert result["coverage"]["answer_context_truncated"] is True
+    assert "bounded current evidence context" in result["answer"]
+
+
+def test_ask_rejects_non_utf8_source_text() -> None:
+    brain = brain_mock()
+    brain.evidence_content.return_value["content"] = "bad\ud800text"
+    with pytest.raises(AnswerRejected):
+        GroundedAnswerService(brain, Selector()).answer(context(), "bad", grouped)
+
+
+def test_ask_reports_upstream_character_truncation() -> None:
+    brain = brain_mock()
+    brain.evidence_content.return_value["truncated"] = True
+    result = GroundedAnswerService(brain, Selector([])).answer(
+        context(), "insurance", grouped
+    )
+    assert result["coverage"]["answer_context_truncated"] is True
 
 
 @pytest.mark.parametrize("choices", [
