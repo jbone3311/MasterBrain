@@ -2,6 +2,45 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Separate-cluster two-tenant restore — PR #139 merged
+
+[PR #139](https://github.com/jbone3311/MasterBrain/pull/139) merged ADR-155
+at `9b1ae2365266f57597b8f292c4aea72d281ed207`. Its final head
+`7ffd975` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37130962823),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37130962885)
+and the actual [PostgreSQL 17 restore](https://github.com/jbone3311/MasterBrain/actions/runs/37130962801).
+The source and target were distinct owned, loopback-only containers with
+separate generated passwords. The target bootstrapped only two fixed no-login
+policy roles before restore; source tenant login roles were absent. After
+hash-equal restoration of 85 tables, 280 rows and four encrypted objects,
+two stale source-name bindings were retired before two fresh target logins
+passed the ADR-154 forged-context isolation checks. The exact-head restore
+reported four bound role/tenant pairs and passed in 22.83 seconds; this is
+not a production RTO. Merged-main
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37132007727)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37132007711)
+also passed; the merged-main restore reported the same counts and refusal
+flags in 19.89 seconds. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37132007732)
+also passed, including its deployment checks.
+No FOS-Master, live source, runtime credential rotation or hosted environment
+changed; issue #7 remains open.
+
+## Two-tenant restore receipt — PR #138 merged
+
+[PR #138](https://github.com/jbone3311/MasterBrain/pull/138) recorded the
+prior same-cluster proof at `3c27823beee0454180aeb13e3b28d60a28d29033`.
+Its exact-head
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37129384659),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37129384660)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37129384813)
+passed before automatic merge. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37130367289),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37130367238)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37130367301)
+also passed. This was documentation only, not an additional product version.
+
 ## Two-tenant bound-login restore proof — PR #137 merged
 
 [PR #137](https://github.com/jbone3311/MasterBrain/pull/137) merged ADR-154

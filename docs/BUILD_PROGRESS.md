@@ -1,5 +1,18 @@
 # MasterBrain Build Progress
 
+## Fresh-cluster restore rehearsal (2026-10-03)
+
+[PR #139](https://github.com/jbone3311/MasterBrain/pull/139) merged
+[ADR-155](adr/155_separate_cluster_tenant_restore.md) at `9b1ae23`.
+The disposable drill now dumps from one PostgreSQL 17 container and restores
+to a second independently owned container. The target lacks source tenant
+login roles, bootstraps only fixed policy markers, retires two orphaned
+source-name bindings, then enrolls new tenant logins for forged-SQL isolation
+checks. Exact-head full CI, strict runtime and restore passed; merged-main
+restore and strict runtime also passed. Exact run links and limits are in the
+[build receipt](BUILD_RECEIPT.md). This is not managed-host recovery or
+credential lifecycle acceptance; issue #7 remains open.
+
 ## Two-tenant restore containment proof (2026-10-03)
 
 [PR #137](https://github.com/jbone3311/MasterBrain/pull/137) merged

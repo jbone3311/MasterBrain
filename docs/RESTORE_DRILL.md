@@ -7,16 +7,24 @@ search isolation, grant removal and disable/re-enable revision, and rejection of
 stale contexts after restore. This is SQL authority proof, not a real issuer
 handshake; signatures have separate fake-issuer tests.
 
-Latest verified runtime before the ADR-155 separate-cluster change:
+Latest verified runtime: **9b1ae2365266f57597b8f292c4aea72d281ed207**,
+[run 37132007711](https://github.com/jbone3311/MasterBrain/actions/runs/37132007711),
+passed 2026-10-03 UTC. The separate source and target PostgreSQL 17
+containers restored **85 tables, 280 rows, two tenants and four encrypted
+objects** with equal content hashes. Both source login roles were absent in
+the fresh target; two orphaned mappings were retired and two new bound target
+logins passed forged-context isolation. Runtime receipt: four bound
+role/tenant pairs, 19.89 seconds including disposable startup. This is not
+role-secret recovery, managed PITR, production RTO or hosted acceptance.
+
+Previously verified same-cluster runtime:
 **abf5292de54458a3b063b40f8270301cb7d216da**,
 [run 37128717578](https://github.com/jbone3311/MasterBrain/actions/runs/37128717578),
 passed 2026-10-03 UTC: **85 tables, 280 rows, two tenants, four external
 objects and four tenant-bound role/tenant pairs** across the source and target
 databases. Equal content hashes, forced RLS, identity revocation, forged-context
-refusal and database-only refusal passed. This 21.99-second run still used one
-cluster; it did not restore global role objects or credentials. ADR-155's
-separate-cluster implementation needs its own CI result before that stronger
-claim is made.
+refusal and database-only refusal passed. This 21.99-second run used one
+cluster; it did not restore global role objects or credentials.
 
 Previously verified runtime: **9c07f00445307ad99fef33a02546564ba9ca0945**,
 [run 36963721936](https://github.com/jbone3311/MasterBrain/actions/runs/36963721936),
