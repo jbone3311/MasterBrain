@@ -1,8 +1,9 @@
 # MasterBrain Implementation Status
 
 Updated 2026-10-03. The latest recorded `main` checkpoint is
-PR #125 at `8e62664`; its exact-head and merged-main full CI, strict runtime
-and populated restore passed. ADR-149/PR #120 at `0591eac` also passed these
+ADR-150/PR #126 at `c984a2e`; its exact-head and merged-main full CI, strict
+runtime and populated restore passed. PR #125 at `8e62664` and
+ADR-149/PR #120 at `0591eac` also passed these
 gates. The previous ADR-148/PR #118 at
 `46aa000` also passed those gates. The last functional FileOS slice is
 PR #116 at `b6ebcbf`; its final-head and merged-main gates passed. Tagged
