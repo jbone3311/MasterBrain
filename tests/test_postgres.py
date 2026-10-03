@@ -3694,6 +3694,8 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
                         actor_id=ctx.actor_id,
                         scopes={
                             "brain.search",
+                            "brain.evidence.read",
+                            "brain.content.read",
                             "brain.changes.read",
                             "knowledge.search",
                             "knowledge.read",
@@ -3726,11 +3728,39 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert {row["object_id"] for row in current_reviewed.json()["results"]} == {
         new_project.object_id, second_project_branch.object_id,
     }
+    grouped_leaves = api.post(
+        "/v1/brain/current-search",
+        json={"query": "Skyline renewal", "knowledge_kinds": ["project"]},
+        headers=headers,
+    )
+    assert grouped_leaves.status_code == 200
+    assert grouped_leaves.json()["coverage"]["knowledge"] == (
+        "reviewed_unsuperseded_assertions"
+    )
+    assert {row["object_id"] for row in grouped_leaves.json()["layers"]["knowledge"]} == {
+        new_project.object_id, second_project_branch.object_id,
+    }
+    corrected_grouped = api.post(
+        "/v1/brain/current-search",
+        json={"query": "Skyline audit", "knowledge_kinds": ["commitment"]},
+        headers=headers,
+    )
+    assert corrected_grouped.status_code == 200
+    assert [row["object_id"] for row in corrected_grouped.json()["layers"]["knowledge"]] == [
+        new_commitment.object_id
+    ]
+    reviewed_answer = api.post(
+        "/v1/brain/answers", json={"question": "Skyline renewal"}, headers=headers,
+    )
+    assert reviewed_answer.status_code == 200
+    assert {row["object_id"] for row in reviewed_answer.json()["reviewed_knowledge"]} == {
+        new_project.object_id, second_project_branch.object_id,
+    }
     assistant_token = secrets.token_urlsafe(40)
     assistant_api = TestClient(create_app(store, TokenRegistry([Credential(
         token_sha256=hashlib.sha256(assistant_token.encode()).hexdigest(),
         tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
-        scopes={"knowledge.search"},
+        scopes={"brain.search", "knowledge.search"},
         expires_at=datetime.now(UTC) + timedelta(minutes=5),
         client_kind="assistant", source_ids={"files_knowledge"},
     )])))
@@ -3744,6 +3774,34 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert [row["object_id"] for row in assistant_reviewed.json()["results"]] == [
         second_project_branch.object_id
     ]
+    assistant_grouped = assistant_api.post(
+        "/v1/brain/current-search",
+        json={"query": "Skyline renewal", "knowledge_kinds": ["project"]},
+        headers={"Authorization": f"Bearer {assistant_token}"},
+    )
+    assert assistant_grouped.status_code == 200
+    assert [row["object_id"] for row in assistant_grouped.json()["layers"]["knowledge"]] == [
+        second_project_branch.object_id
+    ]
+    assert old_project.object_id not in assistant_grouped.text
+    assistant_correction = assistant_api.post(
+        "/v1/brain/current-search",
+        json={"query": "Skyline audit", "knowledge_kinds": ["commitment"]},
+        headers={"Authorization": f"Bearer {assistant_token}"},
+    )
+    assert assistant_correction.status_code == 200
+    assert [row["object_id"] for row in assistant_correction.json()["layers"]["knowledge"]] == [
+        old_commitment.object_id
+    ]
+    retained_grouped = api.post(
+        "/v1/brain/unified-search",
+        json={"query": "Skyline renewal", "knowledge_kinds": ["project"]},
+        headers=headers,
+    )
+    assert retained_grouped.status_code == 200
+    assert {row["object_id"] for row in retained_grouped.json()["layers"]["knowledge"]} == {
+        old_project.object_id, new_project.object_id, second_project_branch.object_id,
+    }
     assert api.post(
         "/v1/knowledge/search",
         json={"query": "Skyline", "visibility": "current"}, headers=headers,

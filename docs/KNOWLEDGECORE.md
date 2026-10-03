@@ -25,8 +25,8 @@ Email or FileOS source.
   `unsuperseded` read mode that omits corrected targets and same-kind
   supersession predecessors before ranking and limit. Multiple review-chain
   leaves remain visible. This is not valid-time truth or contradiction
-  resolution; grouped Brain current-search still uses retained reviewed
-  KnowledgeCore results in this tranche.
+  resolution. ADR-159 uses that explicit mode in grouped Brain current-search
+  and Ask; direct and unified retained-history reads remain available.
 - A cursor-bounded append-only change feed allows consumers to discover new
   assertions without scanning the knowledge tables.
 - Enrolled assistants may search, expand and page changes only for assertions

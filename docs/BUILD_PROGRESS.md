@@ -1,5 +1,16 @@
 # MasterBrain Build Progress
 
+## Grouped current reviewed leaves (2026-10-03, candidate)
+
+[ADR-159](adr/159_current_brain_reviewed_leaves.md) composes the verified
+ADR-158 `unsuperseded` query into the all-source Knowledge layer of grouped
+Brain current-search and Ask. Retained direct and unified reads do not change;
+focused Email/FileOS reads still skip KnowledgeCore. The response labels its
+Knowledge coverage explicitly. Local focused and full non-PostgreSQL tests
+passed; PostgreSQL,
+exact-head CI, strict runtime and restore are pending. This is neither
+valid-time truth nor hosted/live-source acceptance.
+
 ## Optional unsuperseded reviewed search merged (2026-10-03)
 
 [PR #146](https://github.com/jbone3311/MasterBrain/pull/146) merged
@@ -9,7 +20,8 @@ explicit KnowledgeCore search option that filters review-chain predecessors
 before ranking and limit. It considers a successor/correction only when its
 full direct evidence links, and a correction's replacement, are visible under
 the caller's source grants. Retained history remains the default; grouped
-Brain current-search and Ask have not switched their KnowledgeCore layer.
+Brain current-search and Ask did not switch in that initial tranche; ADR-159
+is the separate, pending composition.
 Local non-PostgreSQL tests, Ruff, mypy and documentation checks passed;
 exact-head full PostgreSQL CI, strict runtime and populated restore passed
 before merge. Merged-main checks are running; links and exact counts are in

@@ -561,6 +561,7 @@ def create_app(
                 body.query,
                 limit=body.knowledge_limit,
                 kinds=list(body.knowledge_kinds),
+                visibility="unsuperseded",
             ) if body.source_focus == "all" else []
         )
 
@@ -605,7 +606,7 @@ def create_app(
                 ),
                 "email": "explicitly_bridged_current_only" if include_email else "not_searched",
                 "knowledge": (
-                    "reviewed_retained_assertions"
+                    "reviewed_unsuperseded_assertions"
                     if body.source_focus == "all" else "not_searched"
                 ),
                 "complete": False,

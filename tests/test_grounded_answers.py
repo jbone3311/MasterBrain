@@ -525,6 +525,16 @@ def test_source_focus_skips_excluded_api_reads() -> None:
         assert files.json()["layers"]["email_messages"] == []
         brain.search_current_email_family.assert_not_called()
         knowledge.search.assert_not_called()
+        all_sources = client.post(
+            "/v1/brain/current-search",
+            json={"query": "insurance", "source_focus": "all"}, headers=headers,
+        )
+        assert all_sources.status_code == 200
+        assert all_sources.json()["coverage"]["knowledge"] == (
+            "reviewed_unsuperseded_assertions"
+        )
+        knowledge.search.assert_called_once()
+        assert knowledge.search.call_args.kwargs["visibility"] == "unsuperseded"
         assert client.post(
             "/v1/brain/current-search",
             json={"query": "insurance", "source_focus": "unknown"}, headers=headers,

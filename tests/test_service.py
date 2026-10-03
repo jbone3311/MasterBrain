@@ -602,6 +602,7 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
     assert body["layers"]["email_messages"][0]["evidence_id"] == email_hit.evidence_id
     assert body["layers"]["email_attachments"] == []
     assert body["layers"]["knowledge"][0]["object_kind"] == "project"
+    assert body["coverage"]["knowledge"] == "reviewed_unsuperseded_assertions"
     assert brain.search_current_fileos.call_args.kwargs == {"limit": 2}
     assert brain.search_current_archive_members.call_args.kwargs == {"limit": 7}
     assert brain.search_current_archive_documents.call_args.kwargs == {"limit": 8}
@@ -611,7 +612,9 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
         "attachment_limit": 4,
         "document_limit": 5,
     }
-    assert knowledge.search.call_args.kwargs == {"limit": 6, "kinds": ["project"]}
+    assert knowledge.search.call_args.kwargs == {
+        "limit": 6, "kinds": ["project"], "visibility": "unsuperseded"
+    }
     for invalid in (
         {"query": "Atlas", "fileos_limit": 21},
         {"query": "Atlas", "archive_member_limit": 0},
