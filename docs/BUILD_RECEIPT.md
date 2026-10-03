@@ -2,6 +2,17 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Plan synchronization — PR #142 merged
+
+[PR #142](https://github.com/jbone3311/MasterBrain/pull/142) merged a
+documentation-only receipt for ADR-156 at
+`d5bb39f968e7750f2cf02dbb513fd311183ebf04`. Its exact-head full CI,
+strict-runtime and logical-restore checks passed before merge. It added no
+runtime capability, live-source acceptance or product version. The
+[post-merge full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37138045748)
+was still running when this receipt was written; check that run before citing
+it as a passing merged-main gate.
+
 ## Donor-shadow symlink boundary — PR #141 merged
 
 [PR #141](https://github.com/jbone3311/MasterBrain/pull/141) merged
