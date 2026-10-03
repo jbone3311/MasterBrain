@@ -298,6 +298,36 @@ def test_nested_ancestor_swap_does_not_enumerate_outside_names(
     ]
 
 
+def test_open_child_moved_before_listing_is_uncertain(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    child = root / "child"
+    child.mkdir(parents=True)
+    (child / "inside.txt").write_bytes(b"inside")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "_status.html").write_bytes(b"outside")
+    child_info = child.stat()
+    real_scandir = os.scandir
+
+    def moved_before_listing(directory: int):
+        info = os.fstat(directory)
+        if (info.st_dev, info.st_ino) == (child_info.st_dev, child_info.st_ino):
+            child.rename(root / "moved")
+            child.symlink_to(outside, target_is_directory=True)
+        assert (info.st_dev, info.st_ino) != (outside.stat().st_dev, outside.stat().st_ino)
+        return real_scandir(directory)
+
+    monkeypatch.setattr(shadow.os, "scandir", moved_before_listing)
+    result = shadow.scan_donor_policy_shadow(root)
+    assert result["rows"] == []
+    assert result["exclusions"] == []
+    assert result["errors"] == [
+        {"locator": "child", "code": "directory_unreadable"}
+    ]
+
+
 def test_comparator_does_not_hide_shadow_coverage_error(tmp_path: Path) -> None:
     module = _comparator_module()
     result = shadow.scan_donor_policy_shadow(tmp_path)

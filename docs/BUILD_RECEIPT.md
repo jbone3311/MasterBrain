@@ -7,9 +7,9 @@ Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 ADR-152 replaces the nonpublishing shadow's pathname directory walk with
 root-bound, no-follow descriptor enumeration. A deterministic descendant
 symlink swap previously leaked an outside junk filename into the exclusion
-ledger without reading bytes; new descendant and nested-ancestor swap tests
-now record only a directory coverage error. The focused inventory/donor/
-candidate/transition selection passed **61 tests, zero skips**; Ruff, strict
+ledger without reading bytes; new descendant, nested-ancestor and after-open
+move tests now record only a directory coverage error. The focused inventory/
+donor/candidate/transition selection passed **62 tests, zero skips**; Ruff, strict
 mypy over 98 source files, documentation links and diff checks passed. The
 unchanged FOS-Master checkout at `218d5cae` still matched **3,004 ordinary
 rows** on the 3,000-file comparison and **9,998 ordinary rows** on the

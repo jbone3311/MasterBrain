@@ -125,8 +125,27 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
                 break
             continue
         try:
+            opened_identity = os.fstat(directory_fd)
             with os.scandir(directory_fd) as listing:
                 entries = sorted(list(listing), key=lambda entry: entry.name)
+            try:
+                recheck_fd = _open_shadow_directory(root, directory, root_identity)
+            except ConfinedFileChanged:
+                record(errors, {"locator": ".", "code": "root_changed_during_scan"})
+                break
+            except ConfinedFileUnavailable:
+                record(errors, {"locator": directory, "code": "directory_unreadable"})
+                continue
+            try:
+                rechecked_identity = os.fstat(recheck_fd)
+                if (opened_identity.st_dev, opened_identity.st_ino) != (
+                    rechecked_identity.st_dev,
+                    rechecked_identity.st_ino,
+                ):
+                    record(errors, {"locator": directory, "code": "directory_unreadable"})
+                    continue
+            finally:
+                os.close(recheck_fd)
             dirnames: list[str] = []
             filenames: list[str] = []
             for entry in entries:

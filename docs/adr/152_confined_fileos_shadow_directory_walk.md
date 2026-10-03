@@ -17,9 +17,10 @@ file-byte read. Root identity checks do not cover this ancestor swap.
   root and each ancestor with `O_DIRECTORY | O_NOFOLLOW`. Never use `os.walk`
   or follow a descendant symlink to list children. Bind the root descriptor
   to the initial device/inode observation.
-- Reopen a child locator before its turn. If it has disappeared, become a link,
-  or cannot be opened, record a bounded directory coverage error; do not
-  enumerate it or publish a successful row. Preserve ordinary donor membership,
+- Reopen a child locator before its turn and again after listing. If it has
+  disappeared, become a link, changed identity or cannot be opened, record a
+  bounded directory coverage error; do not process the uncertain listing or
+  publish a successful row. Preserve ordinary donor membership,
   ordering, file hash/metadata handling and the existing nonpublishable shape.
 - Retain the existing symlink-directory classification, which may stat a link
   target to distinguish it from a file link. The target is never opened for
@@ -32,7 +33,8 @@ file-byte read. Root identity checks do not cover this ancestor swap.
 ## Verification and rollback
 
 Use synthetic roots to test a descendant symlink swap before opening a child,
-an ancestor swap during a nested scan, root replacement, unreadable directory,
+an ancestor swap during a nested scan, an after-open move, root replacement,
+unreadable directory,
 symlink leaves, ordinary pinned-donor parity, record limits and metadata-only
 no-byte-read behavior. Run focused tests, 3,000-file pinned-donor comparison,
 full CI, strict runtime, restore and documentation gates. A rollback restores

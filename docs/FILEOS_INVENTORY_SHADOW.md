@@ -148,8 +148,9 @@ ADR-152 also confines directory enumeration in this separate donor-policy
 shadow. A synthetic child-directory symlink swap had allowed `os.walk` to
 list an outside junk filename and return it as an exclusion, even though the
 confined leaf reader refused bytes. Each directory is now reopened through
-no-follow descriptors; descendant and nested-ancestor swap regressions return
-only a directory coverage error. The pinned 3,000-file comparator still
+no-follow descriptors and rechecked after listing; descendant, nested-ancestor
+and after-open move regressions return only a directory coverage error. The pinned
+3,000-file comparator still
 matches 3,004 ordinary rows with the six documented policy gaps. This does
 not change the donor scanner or authorize live-root shadow/cutover.
 

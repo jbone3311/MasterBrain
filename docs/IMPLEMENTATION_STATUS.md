@@ -28,8 +28,9 @@ production and FileOS cutover remain open.
 
 - ADR-152 makes the nonpublishing FileOS donor-policy shadow enumerate each
   directory through a no-follow descriptor instead of `os.walk`. Synthetic
-  descendant/ancestor swaps now produce directory coverage errors without
-  listing outside filenames. The pinned 3,000-file donor comparison still
+  descendant/ancestor swaps and an after-open move now produce directory
+  coverage errors without listing outside filenames. The pinned 3,000-file
+  donor comparison still
   matched 3,004 ordinary rows with six known policy gaps. This is local
   candidate verification, not a publishable scanner or live-root acceptance.
 
