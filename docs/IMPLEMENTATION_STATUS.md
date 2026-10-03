@@ -1,6 +1,10 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-03. The latest FileOS shadow hardening checkpoint on `main` is
+Updated 2026-10-03. The latest merged engineering checkpoint is
+ADR-110/PR #133 at `ff7a296`: synthetic Fastmail read-worker resilience,
+with exact-head and merged-main CI, strict runtime and populated restore passed.
+The runs are linked in the [build receipt](BUILD_RECEIPT.md); no live
+mailbox is accepted. The latest FileOS shadow hardening checkpoint on `main` is
 ADR-152/PR #130 at `c834fef`; exact-head and merged-main full CI, strict runtime
 and populated restore passed. Later documentation checkpoints and Fastmail
 integration evidence are tracked in the [build receipt](BUILD_RECEIPT.md).

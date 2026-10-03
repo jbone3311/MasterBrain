@@ -249,7 +249,7 @@
   A pinned synthetic FOS-Master comparison now matches 3,004 ordinary file rows
   without changing snapshot v1, completion, search, or the donor repository.
   Metadata-only and fault outcomes remain explicit; no FileOS cutover is implied.
-- Added a synthetic Fastmail read-worker resilience proposal (ADR-110,
+- Integrated synthetic Fastmail read-worker resilience (ADR-110,
   migration 0052): listing pages by JMAP anchor with an explicit sort instead of
   restarting on every query-state change; oversized messages become accounted
   `source_too_large` quarantine receipts and advance the cursor instead of pausing

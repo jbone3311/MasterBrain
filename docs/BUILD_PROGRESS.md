@@ -1,14 +1,17 @@
 # MasterBrain Build Progress
 
-## Fastmail reliability integration candidate (2026-10-03)
+## Fastmail reliability integration merged (2026-10-03)
 
-ADR-110's Claude-derived integration branch preserves the original draft as a
-merge parent, forward-numbers its held-source migration to 0052 and handles a
+ADR-110's [PR #133](https://github.com/jbone3311/MasterBrain/pull/133)
+preserves Claude's original draft as a merge parent, forward-numbers its
+held-source migration to 0052 and handles a
 valid metadata response above the fixed control budget without dropping IDs.
 The local full gate and separate nested-launcher test passed on fictional data;
 exact counts and environmental constraints are in the
-[build receipt](BUILD_RECEIPT.md). Hosted exact-head and merged-main gates,
-review and any live account acceptance remain separate. FOS-Master is unchanged.
+[build receipt](BUILD_RECEIPT.md). Exact-head CI, strict runtime and populated
+restore passed before the merge at `ff7a296`; merged-main runs are linked in
+the receipt and also passed. Live account acceptance remains separate.
+FOS-Master is unchanged.
 
 ## Post-ADR-152 documentation checkpoint (2026-10-03)
 
