@@ -2,7 +2,7 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-149 assistant legacy Email denial — local verification, hosted checks pending
+## ADR-149 assistant legacy Email denial — merged verification
 
 On this branch, synthetic bootstrap tests refused assistant `email.*` scopes;
 API tests passed forged assistant principals into legacy search, evidence,
@@ -17,8 +17,18 @@ strict mypy over 98 source files, documentation inventory/links and diff
 checks passed. A first sandboxed run could not launch its nested disposable
 PostgreSQL self-test; the individual test and entire suite passed with the
 local launcher permitted. No real account, hosted issuer, source effect or
-FOS-Master checkout was touched. Exact-head and merged-main GitHub checks
-are separate pending gates; issue #88 remains open.
+FOS-Master checkout was touched. [PR #120](https://github.com/jbone3311/MasterBrain/pull/120)
+passed exact-head `a3a30627e2d6fd31143200a6e048e45e73f6d966`
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37101399730),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37101399726)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37101399627).
+It merged at `0591eacf027cadf8feb1696a70cacfc16847165d`; merged-main
+checks are separately recorded at
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37102019122),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37102019170)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37102019176).
+The run links are authoritative for their final outcomes. Issue #88 remains
+open.
 
 ## ADR-148 populated legacy rewrite refusal — merged-main verification
 
