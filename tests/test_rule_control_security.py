@@ -4,7 +4,7 @@ import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import psycopg
@@ -277,21 +277,25 @@ def test_rest_rule_review_simulation_activation_and_rollback_are_virtual_only(da
     context, account = tenant
     owner_token = "synthetic-rest-owner-token-never-valid"
     assistant_token = "synthetic-rest-assistant-token-never-valid"
-    credentials = TokenRegistry(
+    owner_registry = TokenRegistry(
         [
             Credential(
-                token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+                token_sha256=hashlib.sha256(owner_token.encode()).hexdigest(),
                 tenant_id=context.tenant_id,
                 actor_id=context.actor_id,
-                scopes=scopes,
+                scopes=set(context.scopes),
                 expires_at=datetime.now(UTC) + timedelta(hours=1),
-                client_kind=kind,
-            )
-            for token, kind, scopes in (
-                (owner_token, "human", set(context.scopes)),
-                (assistant_token, "assistant", {"email.proposal.create"}),
+                client_kind="human",
             )
         ]
+    )
+    credentials = MagicMock()
+    credentials.authenticate.side_effect = lambda token: (
+        Principal(
+            replace(context, scopes=frozenset({"email.proposal.create"})), "assistant"
+        )
+        if token == assistant_token
+        else owner_registry.authenticate(token)
     )
     raw = b"From: person@example.invalid\r\nSubject: Virtualcanary\r\n\r\nKeep this evidence."
     store.ingest_page(

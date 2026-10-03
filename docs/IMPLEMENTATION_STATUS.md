@@ -20,6 +20,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-149 excludes assistants from legacy `email.*` API dependencies before
+  route work, refuses bootstrap assistant Email scopes and rejects old OIDC
+  Email-only assistant bindings at each Store transaction. Enrolled assistants
+  continue through source-filtered Brain/Knowledge reads. This chooses a
+  single assistant read surface; it does not certify a hosted issuer, named
+  assistant or derived-cache revocation under issue #88.
+
 - ADR-148 adds a default refusal before unapplied legacy migrations 0008 and
   0009 rewrite populated `message_versions` or `raw_objects`. A nonwaiting
   writer-fencing lock makes the emptiness check stable until DDL, and a

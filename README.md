@@ -31,6 +31,10 @@ The internal `email_brain` package remains for compatibility and identifies the
 original Email capability, not the final product. New source-neutral code enters
 through `masterbrain.datacore`, `masterbrain.knowledge`, and the Brain API
 boundaries.
+Assistant access to Email is through explicitly enrolled, source-scoped Brain
+routes; legacy `email.*` compatibility routes are reserved for human/operator
+clients ([ADR-149](docs/adr/149_assistant_legacy_email_denial.md)). This is
+authorization hardening, not hosted assistant acceptance.
 
 ## Product shape
 

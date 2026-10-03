@@ -150,6 +150,12 @@ class TokenRegistry:
             for c in credentials
         ):
             raise ValueError("processing is worker-only")
+        if any(
+            c.client_kind == "assistant"
+            and any(scope.startswith("email.") for scope in c.scopes)
+            for c in credentials
+        ):
+            raise ValueError("legacy Email scopes are unavailable to assistants")
         self.credentials = credentials
 
     @classmethod

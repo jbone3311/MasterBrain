@@ -2,6 +2,24 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-149 assistant legacy Email denial — local verification, hosted checks pending
+
+On this branch, synthetic bootstrap tests refused assistant `email.*` scopes;
+API tests passed forged assistant principals into legacy search, evidence,
+account status, reader, memory, recovery, document and rule routes and observed
+denial before protected work. Disposable PostgreSQL integration proved an old
+Email-only OIDC assistant binding cannot authenticate or reuse a saved
+transaction context; existing enrolled Brain assistant and human/worker paths
+continued to pass. The full Python 3.14.7 suite on loopback PostgreSQL 17.11
+passed **3,022 tests, one Docker-only skip**; 482 of 483 PostgreSQL-marked
+tests executed. All six required browser suites passed **145 tests**. Ruff,
+strict mypy over 98 source files, documentation inventory/links and diff
+checks passed. A first sandboxed run could not launch its nested disposable
+PostgreSQL self-test; the individual test and entire suite passed with the
+local launcher permitted. No real account, hosted issuer, source effect or
+FOS-Master checkout was touched. Exact-head and merged-main GitHub checks
+are separate pending gates; issue #88 remains open.
+
 ## ADR-148 populated legacy rewrite refusal — merged-main verification
 
 On the final branch source, a disposable loopback PostgreSQL 17.11 database

@@ -5,6 +5,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock
 from uuid import uuid4
 
 import psycopg
@@ -232,13 +233,22 @@ def test_trip_link_bill_decimal_and_paging(database, tenant):
     assert [b["revision"] for b in memory.summary(ctx, account)["buckets"]] == [2, 3]
 
 
-def test_actual_http_assistant_read_and_human_write(database, tenant):
+def test_legacy_memory_assistant_denied_and_human_write_preserved(database, tenant):
     store, _ = database
     ctx, account = tenant
     memory, human, request = setup(store, ctx, account)
     token = "synthetic-memory-read-token-not-a-secret"
 
     def api(kind):
+        if kind == "assistant":
+            authenticator = Mock()
+            authenticator.authenticate.return_value = Principal(
+                replace(ctx, scopes=frozenset({"email.evidence.read"})), "assistant"
+            )
+            return TestClient(
+                create_app(store, authenticator),
+                headers={"Authorization": f"Bearer {token}"},
+            )
         return TestClient(
             create_app(
                 store,
@@ -268,9 +278,9 @@ def test_actual_http_assistant_read_and_human_write(database, tenant):
     )
     assert result.status_code == 200
     assistant = api("assistant")
-    assert assistant.get(f"{path}/records/{record}").json()["payload"]["confirmation"] == "DEMO42"
-    assert assistant.get(f"{path}/summary").json()["all_mail_interpreted"] is False
-    assert assistant.get(f"{path}/changes").json()["consumed"] is False
+    assert assistant.get(f"{path}/records/{record}").status_code == 403
+    assert assistant.get(f"{path}/summary").status_code == 403
+    assert assistant.get(f"{path}/changes").status_code == 403
     assert (
         assistant.put(
             f"{path}/records/{record}",

@@ -55,7 +55,14 @@ def test_disabled_processing_is_default_and_api_has_no_execution_routes():
 def test_job_authorization_requires_human_review_and_evidence(scope, kind, status):
     store = MagicMock(spec=Store)
     store.require = Store.require
-    client = TestClient(create_app(store, registry(scope, kind), recovery_parser_version=VERSION))
+    if kind == "assistant":
+        authenticator = MagicMock()
+        authenticator.authenticate.return_value = Principal(
+            registry(scope).authenticate(TOKEN).context, "assistant"
+        )
+    else:
+        authenticator = registry(scope, kind)
+    client = TestClient(create_app(store, authenticator, recovery_parser_version=VERSION))
     path = f"/v1/accounts/{uuid4()}/quarantine/{uuid4()}/jobs"
     response = client.post(
         path,

@@ -109,9 +109,14 @@ Allowed application scopes are the existing `email.search`,
 human-only `email.review`, plus `brain.search`, `knowledge.search`,
 `brain.evidence.read` and `brain.content.read` under ADR-132. A Brain-scoped
 assistant cannot combine legacy Email scopes, whose routes are not yet
-source-filtered. It cannot authenticate for Brain reads without at least one
-explicit source enrollment. The separate `external_identity_sources` table
-accepts only existing sources in the binding's tenant, at most 20; only the
+source-filtered. ADR-149 additionally refuses all legacy `email.*` scopes for
+assistants at the API dependency and transaction boundaries. A pre-existing
+Email-only assistant binding is not rewritten, but cannot authenticate on the
+new binary; an administrator must review its migration to explicit source
+grants plus Brain read scopes. It cannot authenticate for Brain reads without
+at least one explicit source enrollment. The separate
+`external_identity_sources` table accepts only existing sources in the
+binding's tenant, at most 20; only the
 identity-administrator role can add/remove grants. New binaries use the
 exact-key `resolve_external_identity_v2` function; the older Email-only
 resolver remains for rolling-version compatibility, refuses Brain-scoped

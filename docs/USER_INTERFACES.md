@@ -12,8 +12,10 @@ Synthetic bootstrap and verified administrator-bound OIDC Brain assistants
 using the reviewed Brain search, evidence and status routes require explicit
 source enrollment (ADR-133/142).
 OIDC grant removal invalidates saved contexts at the next transaction; hosted
-issuer enrollment, legacy Email-route enforcement and derived-cache revocation are still
+issuer enrollment and derived-cache revocation are still
 open ([issue #88](https://github.com/jbone3311/MasterBrain/issues/88)).
+ADR-149 excludes assistants from unfenced legacy Email compatibility routes;
+their Email reads use source-enrolled Brain routes.
 
 ## One service, two entrances
 

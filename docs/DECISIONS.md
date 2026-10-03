@@ -10,6 +10,12 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-149](adr/149_assistant_legacy_email_denial.md) keeps legacy Email
+compatibility API routes outside assistant access. Bootstrap issuance,
+OIDC transaction rechecks and route dependencies fail closed for `email.*`
+assistant scopes; enrolled assistants use source-filtered Brain reads instead.
+Hosted and cache-revocation acceptance remain issue #88.
+
 [ADR-148](adr/148_populated_legacy_rewrite_guard.md) makes the administrator
 migrator refuse unapplied 0008/0009 generated-column rewrites on populated
 tables unless an operator explicitly opts into the lock-heavy path. This does

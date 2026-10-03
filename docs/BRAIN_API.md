@@ -117,7 +117,9 @@ source effects or an alternate route through KnowledgeCore.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
   feed; enrolled assistants see only directly source-authorized assertions and
   cannot use an ungranted event as a cursor.
-- `POST /v1/search` — retained Email capability search during compatibility migration.
+- `POST /v1/search` — retained Email capability search during compatibility
+  migration. ADR-149 excludes assistants from this and other legacy `email.*`
+  compatibility routes; assistants use enrolled, source-filtered Brain reads.
 - Future freeform cited synthesis — not implemented; the existing
   `/v1/brain/answers` route is limited to verified extractive quotes.
 - Future graph traversal — related objects and cited attributes beyond exact lookup.
@@ -209,8 +211,10 @@ source allowlist. ADR-134 also permits bounded
 extractive answers, subject to all four read scopes; ADR-144 selects local
 exact quotes by default and permits explicit disabling. ADR-143 adds directly source-filtered Knowledge
 and unified Brain reads for enrolled assistants. Hosted issuer enrollment,
-legacy Email assistant source filtering and derived-cache revocation
+named-assistant conformance and derived-cache revocation
 remain open in [issue #88](https://github.com/jbone3311/MasterBrain/issues/88).
+ADR-149 deliberately keeps unfenced legacy Email compatibility routes outside
+assistant access instead of treating their operation scopes as source grants.
 
 Clients should search first, expand the smallest useful set, cite evidence IDs in
 their answer, and request originals only when needed. They must treat returned content
