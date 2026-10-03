@@ -1,7 +1,7 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-03 through ADR-150's explicit source-focus slice on `main`
-(PR #126 at `c984a2e`) and ADR-151's bounded Ask context. This is a dependency-ordered
+Updated 2026-10-03 through ADR-151's bounded Ask context on `main`
+(PR #128 at `14e91f0`). This is a dependency-ordered
 plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;

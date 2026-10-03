@@ -8,14 +8,16 @@ progressive access with drill-down to original evidence.
 **Status:** [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
 is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01), not
 the current product release. The latest merged functional checkpoint is
-[PR #120](https://github.com/jbone3311/MasterBrain/pull/120) at `0591eac`:
-assistants are denied unfenced legacy Email compatibility routes and use
-source-scoped Brain reads. Exact-head CI, strict runtime and restore passed;
-merged-main checks are recorded in the [build receipt](docs/BUILD_RECEIPT.md).
-This does not close hosted assistant issue #88. The prior functional
-[PR #118](https://github.com/jbone3311/MasterBrain/pull/118) at `46aa000`
-refuses implicit populated legacy migration rewrites but does not make
-upgrades online or close issue #9. The latest FileOS slice is
+[PR #128](https://github.com/jbone3311/MasterBrain/pull/128) at `14e91f0`:
+extractive Ask limits source passage text by UTF-8 bytes and reports truncated
+context. Its exact-head CI, strict runtime and populated restore passed;
+merged-main checks are tracked separately in the
+[build receipt](docs/BUILD_RECEIPT.md). This is not a model-token or
+whole-response budget. Earlier [PR #126](https://github.com/jbone3311/MasterBrain/pull/126)
+added explicit All/Email/FileOS read focus; neither change closes hosted
+assistant issue #88. [PR #118](https://github.com/jbone3311/MasterBrain/pull/118)
+refuses implicit populated legacy migration rewrites but does not make upgrades
+online or close issue #9. The latest FileOS slice is
 [PR #116](https://github.com/jbone3311/MasterBrain/pull/116) at `b6ebcbf`:
 the human-only historical v2 search comparison API. PRs #118 and #116 passed
 exact-head and merged-main full CI, strict runtime and populated restore. The fictional
@@ -71,12 +73,12 @@ FileOS sources ┘       │              │                │
 | Email ingestion, evidence, PostgreSQL FTS, review/recovery | Working synthetic prototype |
 | Fictional Email/FileOS browser trial with citation drill-down | Hosted-test verified; Docker-free local PostgreSQL self-test passed; interactive owner acceptance pending |
 | Provider-neutral external Brain API read client | Reference transport for current-search/evidence and source-scoped coverage/change status; synthetic and administrator-bound OIDC Brain assistants require explicit source enrollment. No hosted or named-assistant integration |
-| First-party and external extractive Ask | The default local selector returns server-verified Email/FileOS source quotes and separately labelled, source-scoped reviewed KnowledgeCore matches. Fixed question boilerplate is removed before lexical retrieval. No freeform synthesis, hosted model or source writes |
+| First-party and external extractive Ask | The default local selector returns server-verified Email/FileOS source quotes and separately labelled, source-scoped reviewed KnowledgeCore matches. Fixed question boilerplate is removed before lexical retrieval; source passage text is byte-bounded and truncation is visible. No freeform synthesis, hosted model or source writes |
 | Privacy-safe API failure correlation | Implemented; production log collection and alerting pending |
 | Opt-in tenant-routed database access | Synthetic two-tenant API path with separate exact-lookup and bound data logins; every database-backed private `masterbrain` Email/FileOS command and the three legacy `email-brain` worker commands can require the authenticated tenant's bound login. Private library caller routing, credential lifecycle and hosted acceptance remain open |
 | Typed reviewed travel/bill memory | Working narrow prototype |
 | File hashing and read-only duplicate discovery in DataCore | Extracted; donor parity harness added |
-| FileOS scanner/reconciler inventory classifier | Behavior-identical donor extraction; 3,000-path parity, not yet wired into snapshots |
+| FileOS scanner/reconciler inventory classifier | Behavior-identical donor extraction; a local pinned-donor comparison also passed at the 10,000-item v1 bound, but policy acceptance and snapshot integration remain open |
 | FileOS whole-inventory shadow comparison | Synthetic donor scanner versus MasterBrain snapshots; six explicit policy gaps and mass-loss divergence, no cutover |
 | File text/Markdown/HTML/CSV extraction | Working shared prototype |
 | Isolated FileOS PDF/DOCX/XLSX extraction | Implemented; hosted container and restore gates green |
