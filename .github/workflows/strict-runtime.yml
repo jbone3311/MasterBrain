@@ -64,3 +64,16 @@ jobs:
               assert 'requires security-patched' in result.stderr, result.stderr
               print(package + ': unsupported runtime rejected at startup')
           PY
+  strict-runtime-gate:
+    if: ${{ always() }}
+    needs: [supported, unsupported]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require both runtime matrices to succeed
+        env:
+          SUPPORTED_RESULT: ${{ needs.supported.result }}
+          UNSUPPORTED_RESULT: ${{ needs.unsupported.result }}
+        run: |
+          test "$SUPPORTED_RESULT" = success
+          test "$UNSUPPORTED_RESULT" = success

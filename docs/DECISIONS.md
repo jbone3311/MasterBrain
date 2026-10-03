@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-153](adr/153_required_main_checks.md) requires stable full CI, restore
+and runtime-matrix checks before merging to `main`, including administrators.
+It changes repository governance, not live-source or FileOS authority.
+
 [ADR-152](adr/152_confined_fileos_shadow_directory_walk.md) confines every
 directory of the nonpublishing donor-policy shadow to no-follow descriptors.
 A descendant symlink swap cannot enumerate outside filenames; this grants no
