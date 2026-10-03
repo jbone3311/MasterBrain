@@ -2,7 +2,7 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Extractive Ask UTF-8 passage budget — local candidate verification
+## Extractive Ask UTF-8 passage budget — PR #128 merged
 
 ADR-151 caps selector-visible text at 2,048 UTF-8 bytes per passage and
 8,192 bytes total, and reports upstream character/byte shortening through
@@ -13,9 +13,29 @@ citations, malformed text and coverage rendering. A real disposable PostgreSQL
 local deployment gate passed **3,037 Python tests, one Docker-only skip**
 (484 of 485 PostgreSQL-marked tests executed); all six browser suites passed
 **148 tests**. Ruff, strict mypy over 98 source files, the documentation
-inventory/link check and diff whitespace check passed. Exact-head CI, strict
-runtime and populated restore are separate PR merge gates; this is not a
+inventory/link check and diff whitespace check passed. Exact-head
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37113897875),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37113897648)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37113897707)
+passed on [PR #128](https://github.com/jbone3311/MasterBrain/pull/128)
+head `25ec6f4`; it merged to `main` at `14e91f0`. Merged-main
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37114695392)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37114695418)
+passed. Merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37114695386)
+was still running at this receipt; its linked run is authoritative for the final
+outcome. This is not a
 whole-response/model-token budget or hosted/named-assistant acceptance.
+
+## Pinned FileOS donor capacity comparison — local evidence
+
+On the unchanged FOS-Master checkout at `218d5cae`, the nonpublishing
+donor-policy comparator passed with 3,000 stress files (3,004 ordinary matches)
+and again with 9,994 stress files, the maximum synthetic v1 corpus bound
+(9,998 ordinary, metadata-only, changed and replay matches; 10,000 prior v1
+rows). Both runs retained six explicit policy gaps and zero unexplained
+membership differences. The focused donor suites passed **44 tests, zero
+skips**. These are synthetic local comparisons, not complete semantic parity,
+live-root acceptance, v2 current visibility or permission to switch FileOS.
 
 ## Explicit Brain source focus — PR #126 and merged `main`
 

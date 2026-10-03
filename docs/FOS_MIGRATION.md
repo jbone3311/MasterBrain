@@ -165,6 +165,15 @@ acceptance still need separate work. None of these changes proves FileOS cutover
 
 ## Proposed next tranches
 
+The latest local pinned-donor comparison on 2026-10-03 passed at both 3,000
+stress files and the 9,994-stress-file maximum (10,000 prior v1 rows), with
+zero unexplained membership differences; 44 focused donor tests passed.
+This is capacity evidence for the synthetic, nonpublishing path only. The six
+known policy gaps, real cloud placeholders, permission faults, platform/name
+behavior, owner-authorized live shadow, later v2 current/absence semantics and
+rollback still require review. No v2 activation or FOS-Master change is
+authorized by this result; see the [exact receipt](BUILD_RECEIPT.md).
+
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then
    extend fault/platform acceptance. ADR-119 adds fresh approval-bound source
