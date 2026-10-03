@@ -22,8 +22,7 @@ head `25ec6f4`; it merged to `main` at `14e91f0`. Merged-main
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37114695392)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37114695418)
 passed. Merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37114695386)
-was still running at this receipt; its linked run is authoritative for the final
-outcome. This is not a
+also passed. This is not a
 whole-response/model-token budget or hosted/named-assistant acceptance.
 
 ## Pinned FileOS donor capacity comparison — local evidence

@@ -1,9 +1,8 @@
 # MasterBrain Implementation Status
 
 Updated 2026-10-03. The latest merged `main` checkpoint is
-ADR-151/PR #128 at `14e91f0`; its exact-head full CI, strict runtime and
-populated restore passed. Merged-main strict runtime and populated restore
-passed; merged-main full CI is tracked separately in the
+ADR-151/PR #128 at `14e91f0`; its exact-head and merged-main full CI, strict
+runtime and populated restore passed. The linked runs are in the
 [build receipt](BUILD_RECEIPT.md). ADR-150/PR #126 at `c984a2e` passed
 exact-head and merged-main full CI, strict runtime and populated restore.
 PR #125 at `8e62664` and
