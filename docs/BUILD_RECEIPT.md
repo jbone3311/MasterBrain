@@ -21,6 +21,13 @@ database on port 55443; existing test databases and FOS-Master were untouched.
 This proves disposable local PostgreSQL behavior, not CI, container, strict
 runtime, populated restore or hosted acceptance. GitHub Actions is still unable
 to start jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
+The local supported-Python 3.11.13 strict-runtime subset
+(`test_strict_runtime.py`, `test_rule_control.py`, `test_review_fixes.py`)
+passed **92 tests**, including all 13 PostgreSQL-marked cases. Installed
+unsupported Python 3.12.4 refused both package entry-point imports with the
+required security-patched-parser error. The six CI browser JavaScript files
+passed **151 tests** under Node 24. These are partial local equivalents, not
+the CI interpreter matrix or Docker restore/container gates.
 Pre-merge review found and corrected a page-cutoff gap: late successors and
 corrections can no longer suppress earlier eligible events on later pages.
 The new PostgreSQL regression covers both paths and passed locally;
