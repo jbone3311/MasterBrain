@@ -34,7 +34,8 @@ Email or FileOS source.
   filter and direct evidence IDs. It defaults to unsuperseded review-chain
   leaves; retained history is explicit. A linked project must also satisfy
   assistant source grants. Undated events remain in exact/search/history
-  reads. This candidate awaits PostgreSQL and PR gates and is not an event
+  reads. This candidate passed isolated local PostgreSQL but awaits CI/PR gates
+  and is not an event
   extraction pipeline, source freshness or valid-time truth guarantee.
 - Enrolled assistants may search, expand and page changes only for assertions
   whose directly linked evidence is nonempty and entirely in their granted

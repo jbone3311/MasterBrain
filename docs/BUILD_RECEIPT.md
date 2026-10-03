@@ -8,14 +8,22 @@ Branch `codex/knowledge-timeline-read` adds a bounded occurrence-window event
 read and forward migration 0054. Nine local schema/API/query-construction
 tests passed; the full local non-PostgreSQL suite passed 2,627 tests, with
 488 PostgreSQL-marked tests and one host-dependent disposable launcher test
-deselected, **not passed**. Ruff, source mypy, documentation and diff checks
-passed. The new PostgreSQL semantics, populated migration, full CI, strict
-runtime and restore are unverified. Local PostgreSQL 17 `initdb` cannot
-allocate host shared memory, and GitHub Actions is currently unable to start
-jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
+deselected, **not passed in that run**. Ruff, source mypy, documentation and
+diff checks passed. An existing isolated local PostgreSQL 17.11 test cluster
+then allowed real database verification: the KnowledgeCore timeline integration
+test passed after correcting two test expectations for its newly added late
+successor, and the full PostgreSQL-marked suite passed **487 tests, one skip**
+in 221.44 seconds. The one skip is the Docker-backed browser launcher, because
+Docker is unavailable locally; the separate local launcher cannot initialize
+a fresh cluster while macOS's 32 System V shared-memory slots are occupied.
+The tests used a newly created, distinct `email_brain_test_timeline151_20261003`
+database on port 55443; existing test databases and FOS-Master were untouched.
+This proves disposable local PostgreSQL behavior, not CI, container, strict
+runtime, populated restore or hosted acceptance. GitHub Actions is still unable
+to start jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
 Pre-merge review found and corrected a page-cutoff gap: late successors and
 corrections can no longer suppress earlier eligible events on later pages.
-The new PostgreSQL regression covers both paths but has **not executed**;
+The new PostgreSQL regression covers both paths and passed locally;
 the nine focused mock/schema/API tests and the 2,627 non-PostgreSQL tests
 passed again after this change. The provider-neutral `BrainReadClient.timeline`
 adds closed read requests and response validation; its 11 additional transport

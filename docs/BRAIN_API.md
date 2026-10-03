@@ -155,8 +155,10 @@ source effects or an alternate route through KnowledgeCore.
   source grants cover both the event and its linked project before limit.
   `BrainReadClient.timeline` is an opt-in read-only reference transport with
   closed request bounds and response-shape checks; it does not add an assistant
-  enrollment or turn this into a hosted capability. PostgreSQL/PR verification
-  is pending.
+  enrollment or turn this into a hosted capability. CI/PR verification
+  remains blocked by GitHub Actions billing. Local disposable PostgreSQL
+  timeline and full database-suite verification passed; CI/container/restore
+  verification remains pending.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change

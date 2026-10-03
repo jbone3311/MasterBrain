@@ -3985,10 +3985,25 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     )
     assert timeline_api.status_code == 200, timeline_api.text
     assert timeline_api.json()["visibility"] == "unsuperseded"
-    assert [row["object_id"] for row in timeline_api.json()["results"]] == [
-        branch_event.object_id
-    ]
-    assert all(row["project_id"] == old_project.object_id for row in timeline_api.json()["results"])
+    assert timeline_api.json()["results"] == []
+    retained_timeline_api = api.get(
+        "/v1/knowledge/timeline",
+        params={
+            "start": timeline_start.isoformat(),
+            "end": (timeline_start + timedelta(days=1)).isoformat(),
+            "project_id": old_project.object_id,
+            "visibility": "retained",
+        },
+        headers=headers,
+    )
+    assert retained_timeline_api.status_code == 200, retained_timeline_api.text
+    assert {row["object_id"] for row in retained_timeline_api.json()["results"]} == {
+        opening_event.object_id, branch_event.object_id, visible_project_predecessor.object_id,
+    }
+    assert all(
+        row["project_id"] == old_project.object_id
+        for row in retained_timeline_api.json()["results"]
+    )
     assert api.get(
         "/v1/knowledge/timeline",
         params={"start": timeline_start.isoformat(), "end": timeline_start.isoformat()},
@@ -4048,7 +4063,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     )
     assert assistant_timeline_api.status_code == 200
     assert {row["object_id"] for row in assistant_timeline_api.json()["results"]} == {
-        branch_event.object_id, late_event.object_id,
+        late_successor.object_id, late_event.object_id,
         visible_project_predecessor.object_id,
     }
     assert revised_event.object_id not in assistant_timeline_api.text

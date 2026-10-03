@@ -12,9 +12,9 @@ This is a dependency-ordered plan, not a release claim.
 GitHub Actions cannot currently start jobs at the latest documentation-only
 merged-main checkpoint because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
 The new ADR-160 timeline remains [draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151)
-until real PostgreSQL,
-strict-runtime and restore gates execute; local non-PostgreSQL passes do not
-replace them.
+until exact-head CI, strict-runtime, container and restore gates execute. The
+isolated local PostgreSQL 17.11 suite passed 487 tests with a Docker-only skip;
+that does not replace the required GitHub gates.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The

@@ -6,7 +6,8 @@ Knowledge layer, with exact-head full CI, strict runtime and populated restore
 green. The subsequent documentation-only merged-main checkpoint could not
 start Actions jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
 ADR-160 is an unmerged [draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151),
-with local non-PostgreSQL checks but no executed PostgreSQL or PR gates. The prior direct KnowledgeCore read
+with local non-PostgreSQL and PostgreSQL 17.11 checks passed, but no executed PR
+gates. The prior direct KnowledgeCore read
 checkpoint is ADR-158/PR #146 at `3bf21b8`, with exact-head and merged-main
 checks green. The prior Ask output-budget checkpoint is
 ADR-157/PR #144 at `96cb22b`: aggregate Ask output-text budgeting, with
@@ -51,10 +52,10 @@ production and FileOS cutover remain open.
 - ADR-160 adds a bounded, recorded-cutoff-paged reviewed-event occurrence timeline
   under `knowledge.search`, with source-aware project filtering and retained
   or unsuperseded visibility. It excludes undated events and claims no source
-  freshness, cross-kind timeline or hosted acceptance. PostgreSQL and PR
-  gates are unverified for this candidate; issue #150 prevents Actions from
-  starting jobs and the local PostgreSQL 17 cluster cannot allocate shared
-  memory on this Mac.
+  freshness, cross-kind timeline or hosted acceptance. An isolated local
+  PostgreSQL 17.11 database passed the 487 executable PostgreSQL-marked tests;
+  the Docker browser launcher skipped and PR gates remain unverified because
+  issue #150 prevents Actions from starting jobs.
 
 - ADR-159 composes ADR-158's source-grant-aware unsuperseded projection into
   grouped Brain current-search and Ask, with explicit coverage labeling.

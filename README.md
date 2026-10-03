@@ -49,10 +49,10 @@ The latest merged KnowledgeCore read work is grouped reviewed-current
 search/Ask in [PR #148](https://github.com/jbone3311/MasterBrain/pull/148).
 The next reviewed-event timeline is an unmerged
 [draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151): its local
-non-PostgreSQL checks passed, but PostgreSQL and required GitHub checks have
-not executed. GitHub Actions currently cannot start jobs because of the
+non-PostgreSQL checks and isolated PostgreSQL 17.11 suite passed, but required
+GitHub checks have not executed. GitHub Actions currently cannot start jobs because of the
 [account billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
-Neither the draft nor the failed-to-start checks establish a working timeline.
+The local test result does not make the draft a merged or hosted capability.
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
 [build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is
