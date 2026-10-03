@@ -5,6 +5,9 @@ ADR-110/PR #133 at `ff7a296`: synthetic Fastmail read-worker resilience,
 with exact-head and merged-main CI, strict runtime and populated restore passed.
 ADR-154/PR #137 later strengthens the disposable two-tenant restore drill;
 it changes no product runtime path and does not close hosted issue #7.
+ADR-155/PR #139 extends that proof to a fresh target PostgreSQL cluster,
+including orphaned role-binding retirement and new target login enrollment.
+It remains a synthetic drill, not managed-host credential recovery.
 The runs are linked in the [build receipt](BUILD_RECEIPT.md); no live
 mailbox is accepted. The latest FileOS shadow hardening checkpoint on `main` is
 ADR-152/PR #130 at `c834fef`; exact-head and merged-main full CI, strict runtime
