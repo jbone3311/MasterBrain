@@ -161,7 +161,9 @@ diagnostic evidence, not proof of a safe retry or a resolved failure.
   ADR-154 extends the disposable logical restore with newly provisioned,
   two-tenant bound logins and forged-context SQL checks after restoration.
   Role objects and secrets are not restored, and this is not hosted credential
-  lifecycle or separate-cluster disaster-recovery acceptance.
+  lifecycle acceptance. ADR-155 moves the target to a second fresh container
+  and retires orphan source-role mappings before enrolling new target logins;
+  managed-host recovery, role-secret escrow and session draining remain open.
 - Tenant/source isolation in application code and forced database RLS.
 - Encryption in transit and at rest; managed key rotation and recovery procedures.
 - Network isolation for databases/object storage; no public administrative endpoints.

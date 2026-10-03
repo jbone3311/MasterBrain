@@ -7,7 +7,18 @@ search isolation, grant removal and disable/re-enable revision, and rejection of
 stale contexts after restore. This is SQL authority proof, not a real issuer
 handshake; signatures have separate fake-issuer tests.
 
-Latest verified runtime: **9c07f00445307ad99fef33a02546564ba9ca0945**,
+Latest verified runtime before the ADR-155 separate-cluster change:
+**abf5292de54458a3b063b40f8270301cb7d216da**,
+[run 37128717578](https://github.com/jbone3311/MasterBrain/actions/runs/37128717578),
+passed 2026-10-03 UTC: **85 tables, 280 rows, two tenants, four external
+objects and four tenant-bound role/tenant pairs** across the source and target
+databases. Equal content hashes, forced RLS, identity revocation, forged-context
+refusal and database-only refusal passed. This 21.99-second run still used one
+cluster; it did not restore global role objects or credentials. ADR-155's
+separate-cluster implementation needs its own CI result before that stronger
+claim is made.
+
+Previously verified runtime: **9c07f00445307ad99fef33a02546564ba9ca0945**,
 [run 36963721936](https://github.com/jbone3311/MasterBrain/actions/runs/36963721936),
 passed 2026-10-01 Pacific: **85 tables, 270 rows, two tenants, four external
 objects and two identity bindings**. Matching content hashes, RLS, identity
@@ -134,10 +145,15 @@ pass. This checks the local object contract, not Azure Blob/KMS or key-backup re
 See the current [build receipt](BUILD_RECEIPT.md) for the last verified commit.
 
 This is an executable **logical dump and restore**, not merely a manifest check.
-It creates a completely new PostgreSQL 17 Docker cluster, seeds two fake tenants,
-runs `pg_dump` in custom format, restores into a fresh empty database using
-`pg_restore`, and checks the result. Both utilities come from the same PostgreSQL
-17 container as the server, avoiding a host-client major-version mismatch.
+ADR-155 creates two independently labelled PostgreSQL 17 Docker clusters with
+different generated passwords. It seeds two fake tenants in the source, runs
+`pg_dump` there in custom format, restores into the empty target cluster using
+`pg_restore`, and checks the result. Each utility runs beside its own PostgreSQL
+17 server, avoiding a host-client major-version mismatch. Source role objects
+must be absent in the fresh target; restored role-name mappings are retired
+with audit tombstones before two new tenant-bound target logins are enrolled.
+The target pre-creates only the two fixed no-login policy-marker roles required
+for `pg_restore`; no source login role or password is copied.
 
 PostgreSQL supports custom archives with selective reconstruction via `pg_restore`;
 a database dump does not include global roles. This drill deliberately restores
@@ -162,6 +178,11 @@ reviewed application grants. [pg_dump](https://www.postgresql.org/docs/17/app-pg
   missing-context fail-closed behavior, runtime denial of raw mutation, rejection
   of privileged application runtime roles and restored immutable-evidence triggers.
 - Applied migration checksums remain unchanged; no new migration runs after restore.
+- Two tenant-bound logins before dump and two newly enrolled logins in the
+  separate target cluster can read only their own evidence. Forged tenant/actor
+  settings cannot read foreign rows or write foreign audit records, and the
+  logins cannot assume identity administration. No stale source-role mapping
+  remains after target bootstrap.
 
 All input is generated synthetic mail with `example.invalid` addresses. One plain
 text attachment is extracted, a generated PDF keeps its original deferred receipt
@@ -171,17 +192,18 @@ quarantine evidence. No real provider or model is contacted.
 ## Safety boundaries
 
 The script accepts **no existing DSN, input archive, target database, host or output
-path**. Source/target/control names use a random `email_brain_test_restore_*` prefix
-inside its own new cluster. Docker is pinned to the local Linux UNIX socket;
+path**. Source and target names use a random `email_brain_test_restore_*` prefix
+in two new clusters. Docker is pinned to the local Linux UNIX socket;
 PostgreSQL host and hostaddr are explicitly loopback. Ambient `PG*` configuration
 is rejected before any Docker action, preventing service files or host overrides.
-No host volumes are mounted. The only published port binds to `127.0.0.1`.
+No host volumes are mounted. Both published ports bind to `127.0.0.1`.
 
 The dump exists only in a private temporary directory (0700), as a 0600 file.
 It is not printed, committed or uploaded. The archive is deleted after restore;
-cleanup removes only the exact container ID whose name and random ownership label
-match this invocation, including its anonymous data volume. No prune or existing
-database cleanup command runs. A failed ownership check refuses removal.
+cleanup examines each exact container ID, name and random ownership label before
+removing it and its anonymous data volume. Cleanup of one is attempted even if
+the other fails. No prune or existing database cleanup command runs. A failed
+ownership check refuses that removal.
 
 The final receipt contains only pass/fail, counts, elapsed time and validation
 flags. Utility/database errors are suppressed because they may include rows or
@@ -219,3 +241,6 @@ production RPO/RTO. The reported elapsed time is a tiny synthetic drill, not a
 service recovery guarantee. No production backup command or retention system is
 introduced. Future operational drills need explicit authorization and independently
 verified backup/key/identity access. See [ADR-023](adr/023_synthetic_restore_drill.md).
+The separate-cluster role-bootstrap limits are in
+[ADR-155](adr/155_separate_cluster_tenant_restore.md); this does not prove
+managed-cloud recovery, role-secret escrow, rotation or active-session drain.

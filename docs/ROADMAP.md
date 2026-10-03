@@ -113,7 +113,9 @@ Security and data-integrity blockers take priority over adding more surface area
    Private library caller routing, credential lifecycle and hosted adversarial
    acceptance remain next. ADR-154 extends the disposable restore drill to
    check two DBA-bound logins and forged tenant settings after logical restore;
-   it does not restore role secrets or prove a separate-cluster hosted recovery.
+   ADR-155 extends that to a second disposable PostgreSQL cluster, requiring
+   absent source roles and audited retirement of their restored bindings.
+   Neither drill restores role secrets or proves managed-host recovery.
    Independently close #7 and the
    [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).
    ADR-148 now refuses implicit populated 0008/0009 heap rewrites and requires

@@ -89,3 +89,9 @@ and foreign evidence access, forged tenant/actor settings, foreign audit writes
 and role switching. This is same-cluster synthetic proof: role objects are not
 restored, and credential escrow, rotation, pool draining and hosted two-tenant
 disaster recovery remain untested.
+
+ADR-155 moves the test target to an independent disposable PostgreSQL 17
+cluster. Source role objects must be absent there; the restored source-name
+bindings are retired with audit tombstones before new target roles are bound.
+This proves a synthetic role-bootstrap sequence, not credential escrow,
+managed-host restore, active-session revocation or hosted acceptance.

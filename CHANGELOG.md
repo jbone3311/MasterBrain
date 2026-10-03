@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Moved the synthetic two-tenant logical restore rehearsal to a second fresh
+  PostgreSQL 17 container (ADR-155). Source roles must be absent in the target;
+  their restored mappings are retired before new bound logins pass forged-SQL
+  isolation checks. This is not managed-host or credential-lifecycle acceptance.
+
 - Extended the synthetic PostgreSQL 17 logical restore drill to provision
   separate tenant-bound logins before and after restore and test forged SQL
   tenant settings, foreign reads/writes and identity-role refusal (ADR-154).

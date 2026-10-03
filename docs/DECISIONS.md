@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-155](adr/155_separate_cluster_tenant_restore.md) rehearses a two-tenant
+restore into a fresh, separately labelled PostgreSQL 17 container. It retires
+stale restored role-name bindings and enrolls new target logins before the
+bound-login isolation checks; hosted credential operations remain open.
+
 [ADR-154](adr/154_two_tenant_bound_restore_proof.md) adds an actual
 two-tenant bound-login isolation proof before and after the disposable
 PostgreSQL restore. It does not accept hosted credential lifecycle or close
