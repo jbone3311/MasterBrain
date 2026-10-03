@@ -1,8 +1,8 @@
 # MasterBrain Roadmap
 
 Updated 2026-10-03 through ADR-152's confined FileOS shadow on `main`
-(PR #130 at `c834fef`). This is a dependency-ordered
-plan, not a release claim.
+(PR #130 at `c834fef`) and documentation PR #131 at `65dcdf7`.
+This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
@@ -23,6 +23,17 @@ FileOS cutover acceptance is implied.
 | FileOS replacement and effects | Private v2 generation plus human-only historical v1/v2 comparison API are merged; no cutover or source effects | Decide donor-policy edge behavior, prove sustained live shadow and v2 current/absence/rollback semantics, then a bounded rollback-ready cohort and owner sign-off; effects require a separate later approval |
 
 ## Next verified sequence
+
+The immediate Email reliability candidate is
+[draft PR #45](https://github.com/jbone3311/MasterBrain/pull/45), which is
+not merged. Before integration, reconcile its old-base migration number with
+the current migration sequence; verify that a valid 50-message metadata page
+larger than the Fastmail control-response limit does not pause the account;
+and run a synthetic full-page, partial-budget, replay and recovery corpus
+against the current head. Keep the original Claude branch intact and integrate
+on a separate branch with provenance and exact-head CI, strict-runtime and
+populated-restore evidence. A green old-base check alone is insufficient.
+No live Fastmail account is authorized by this plan.
 
 The latest merged FileOS functional slice is [PR #116](https://github.com/jbone3311/MasterBrain/pull/116):
 its final head and merged `main` passed full CI, strict runtime and populated

@@ -2,6 +2,19 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Current `main` documentation checkpoint — PR #131
+
+[PR #131](https://github.com/jbone3311/MasterBrain/pull/131) merged the
+post-ADR-152 documentation receipt at
+`65dcdf79749bb583ba6597705e3da98865a57d10`. This was a documentation
+checkpoint, not a functional change or version release. Its exact-head
+full CI, strict runtime and populated restore passed. On the merged commit,
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37119099301)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37119099315)
+passed; [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37119099299)
+was still in progress when this receipt was written. Do not infer its final
+result. PR #45 remains a separate unmerged draft.
+
 ## Confined FileOS donor-shadow directory walk — PR #130 merged
 
 ADR-152 replaces the nonpublishing shadow's pathname directory walk with
@@ -22,9 +35,8 @@ passed on [PR #130](https://github.com/jbone3311/MasterBrain/pull/130)
 head `2328e5a`; it merged to `main` at `c834fef`. Merged-main
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37118024678)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37118024743)
-passed. The merged-main [full CI run](https://github.com/jbone3311/MasterBrain/actions/runs/37118024704)
-is linked separately; consult its final outcome rather than inferring a pass
-from the PR-head gate. No publishable v2 inventory, live-root shadow or donor edit
+passed. Merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37118024704)
+also passed. No publishable v2 inventory, live-root shadow or donor edit
 is claimed.
 
 ## Extractive Ask UTF-8 passage budget — PR #128 merged
