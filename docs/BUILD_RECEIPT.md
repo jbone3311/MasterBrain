@@ -2,6 +2,23 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Confined FileOS donor-shadow directory walk — local candidate verification
+
+ADR-152 replaces the nonpublishing shadow's pathname directory walk with
+root-bound, no-follow descriptor enumeration. A deterministic descendant
+symlink swap previously leaked an outside junk filename into the exclusion
+ledger without reading bytes; new descendant, nested-ancestor and after-open
+move tests now record only a directory coverage error. The focused inventory/
+donor/candidate/transition selection passed **62 tests, zero skips**; Ruff, strict
+mypy over 98 source files, documentation links and diff checks passed. The
+unchanged FOS-Master checkout at `218d5cae` still matched **3,004 ordinary
+rows** on the 3,000-file comparison and **9,998 ordinary rows** on the
+9,994-file stress comparison (10,000 prior v1 rows), with six explicit policy
+gaps and zero unexplained membership differences. Full PR CI, strict runtime
+and restore remain
+separate gates. No publishable v2 inventory, live-root shadow or donor edit
+is claimed.
+
 ## Extractive Ask UTF-8 passage budget — PR #128 merged
 
 ADR-151 caps selector-visible text at 2,048 UTF-8 bytes per passage and

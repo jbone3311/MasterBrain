@@ -174,6 +174,14 @@ diagnostic evidence, not proof of a safe retry or a resolved failure.
 
 ## FileOS document parser controls
 
+ADR-152 removes `os.walk` from the nonpublishing donor-policy shadow. Each
+directory is opened through no-follow descriptors from the authorized root;
+a swapped descendant link yields a directory coverage error instead of
+enumerating outside filenames. This does not change the publishable v1
+snapshot, approve donor policy or establish live-source safety. Existing
+symlink-directory classification can still stat a target's type without
+listing or opening it; its live-root privacy policy remains a separate gate.
+
 ADR-100 requires FileOS snapshot hashing and text/PDF/Office extraction to read
 through the authorized root with no-follow directory/file descriptors. Pathname
 prechecks and digest mismatch alone do not prevent an outside-root read after a

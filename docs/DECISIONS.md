@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-152](adr/152_confined_fileos_shadow_directory_walk.md) confines every
+directory of the nonpublishing donor-policy shadow to no-follow descriptors.
+A descendant symlink swap cannot enumerate outside filenames; this grants no
+publishable policy, v2 activation or FileOS cutover.
+
 [ADR-151](adr/151_ask_utf8_context_budget.md) caps extractive Ask's
 selector-visible passage text at 2,048 UTF-8 bytes per passage and 8,192
 bytes in aggregate, with explicit truncation coverage. It grants no remote

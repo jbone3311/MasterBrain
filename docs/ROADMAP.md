@@ -46,7 +46,9 @@ v2 generation, reinterpret absence, stop FOS-Master or claim a live product.
    donor shadow on an owner-authorized bounded root. Only then design a
    separately approved v2 current-visibility, later-run, absence and rollback
    transaction with golden, stress and fault gates. The historical API is a
-   review aid, not a shortcut to this decision.
+   review aid, not a shortcut to this decision. ADR-152 closes a synthetic
+   descendant-directory symlink enumeration leak in the nonpublishing shadow;
+   it does not substitute for live-root or cross-platform fault acceptance.
 4. In the product lane, use [#92](https://github.com/jbone3311/MasterBrain/issues/92)
    for grounded chat evaluation and [#94](https://github.com/jbone3311/MasterBrain/issues/94)
    for an owner-approved private central API/database pilot. Keep
