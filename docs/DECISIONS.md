@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-154](adr/154_two_tenant_bound_restore_proof.md) adds an actual
+two-tenant bound-login isolation proof before and after the disposable
+PostgreSQL restore. It does not accept hosted credential lifecycle or close
+issue #7.
+
 [ADR-153](adr/153_required_main_checks.md) requires stable full CI, restore
 and runtime-matrix checks before merging to `main`, including administrators.
 It changes repository governance, not live-source or FileOS authority.

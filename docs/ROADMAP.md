@@ -111,7 +111,9 @@ Security and data-integrity blockers take priority over adding more surface area
    add opt-in tenant-bound access to all database-backed private `masterbrain`
    commands. ADR-141 extends this to all three legacy Email worker commands.
    Private library caller routing, credential lifecycle and hosted adversarial
-   acceptance remain next.
+   acceptance remain next. ADR-154 extends the disposable restore drill to
+   check two DBA-bound logins and forged tenant settings after logical restore;
+   it does not restore role secrets or prove a separate-cluster hosted recovery.
    Independently close #7 and the
    [populated migration lock/rewrite risk #9](https://github.com/jbone3311/MasterBrain/issues/9).
    ADR-148 now refuses implicit populated 0008/0009 heap rewrites and requires

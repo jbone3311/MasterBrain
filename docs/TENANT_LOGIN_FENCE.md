@@ -82,3 +82,10 @@ encrypted stores and read-worker poll reopen retain the bound route. Default
 shared logins and private library callers outside these explicit modes remain
 GUC-driven. Credential lifecycle, independent security review, operational
 isolation and live rollout evidence remain open under issue #7.
+
+ADR-154 extends the disposable PostgreSQL 17 logical restore drill with two
+new bound logins after restore. It checks their restored tenant mapping, own
+and foreign evidence access, forged tenant/actor settings, foreign audit writes
+and role switching. This is same-cluster synthetic proof: role objects are not
+restored, and credential escrow, rotation, pool draining and hosted two-tenant
+disaster recovery remain untested.
