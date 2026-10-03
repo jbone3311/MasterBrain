@@ -41,6 +41,12 @@ its final head and merged `main` passed full CI, strict runtime and populated
 restore. It exposes **historical review only**. It is not a reason to activate a
 v2 generation, reinterpret absence, stop FOS-Master or claim a live product.
 
+Repository governance is tracked separately from functional acceptance:
+[ADR-153](adr/153_required_main_checks.md) protects `main` with three
+always-on required checks. It was tested with a blocked pending PR and an
+automatic merge only after CI succeeded. Passing those synthetic checks does
+not prove a live mailbox, hosted privacy boundary or FileOS cutover.
+
 1. Complete the owner's fictional cross-source walkthrough and record expected
    versus observed answers, citations and gaps. The existing local launcher
    self-test is not owner acceptance.

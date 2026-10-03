@@ -2,6 +2,28 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Main-branch required checks — PR #135 merged
+
+[PR #135](https://github.com/jbone3311/MasterBrain/pull/135) added the
+ADR-153 stable `strict-runtime-gate` and versioned main-protection policy.
+Its exact head `19907d6` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37125012352),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37125012361)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37125012343).
+The applied GitHub rule requires `gate`, `logical-restore` and
+`strict-runtime-gate`, strict branch freshness, pull requests and resolved
+conversations; it applies to administrators and denies force pushes/deletion.
+With the first two checks green and full CI still running, GitHub reported
+the PR `BLOCKED`; the requested automatic merge remained queued. Only after
+full CI succeeded did GitHub merge it at
+`6cdebb6832afd668b60019c0220804d090c83375`. This verifies merge
+enforcement for that PR. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37125957941),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37125957937)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37125957963)
+also passed. No runtime product behavior, live-source authority or FOS-Master
+state changed.
+
 ## Latest documentation checkpoint — PR #134 merged
 
 [PR #134](https://github.com/jbone3311/MasterBrain/pull/134) reconciled the
