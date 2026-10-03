@@ -12,8 +12,7 @@ full CI, strict runtime and populated restore passed. On the merged commit,
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37119099301)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37119099315)
 passed; [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37119099299)
-was still in progress when this receipt was written. Do not infer its final
-result. PR #45 remains a separate unmerged draft.
+also passed. PR #45 remains a separate unmerged draft.
 
 ## Confined FileOS donor-shadow directory walk — PR #130 merged
 
