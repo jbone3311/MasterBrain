@@ -10,8 +10,9 @@ including orphaned role-binding retirement and new target login enrollment.
 It remains a synthetic drill, not managed-host credential recovery.
 The runs are linked in the [build receipt](BUILD_RECEIPT.md); no live
 mailbox is accepted. The latest FileOS shadow hardening checkpoint on `main` is
-ADR-152/PR #130 at `c834fef`; exact-head and merged-main full CI, strict runtime
-and populated restore passed. Later documentation checkpoints and Fastmail
+ADR-156/PR #141 at `082b0e8`; its corrected exact head passed full CI, strict
+runtime and populated restore. The prior ADR-152/PR #130 at `c834fef` also
+passed exact-head and merged-main checks. Later documentation checkpoints and Fastmail
 integration evidence are tracked in the [build receipt](BUILD_RECEIPT.md).
 ADR-151/PR #128 at `14e91f0` passed exact-head and merged-main full CI,
 strict runtime and populated restore. ADR-150/PR #126 at `c984a2e` passed
