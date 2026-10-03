@@ -7,10 +7,13 @@ progressive access with drill-down to original evidence.
 
 **Status:** [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
 is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01), not
-the current product release. As of 2026-10-02, `main` includes
+the current product release. The latest recorded functional `main` checkpoint
+is [PR #118](https://github.com/jbone3311/MasterBrain/pull/118) at `46aa000`:
+it refuses implicit populated legacy migration rewrites but does not make
+upgrades online or close issue #9. The latest FileOS slice is
 [PR #116](https://github.com/jbone3311/MasterBrain/pull/116) at `b6ebcbf`:
-the human-only historical FileOS v2 search comparison API. Exact-head and
-merged-main full CI, strict runtime and populated restore passed. The fictional
+the human-only historical v2 search comparison API. Both PRs passed exact-head
+and merged-main full CI, strict runtime and populated restore. The fictional
 cross-source browser trial is merged, but interactive Mac acceptance is still
 pending. See
 [current functions](docs/CURRENT_FUNCTIONS.md) and the
