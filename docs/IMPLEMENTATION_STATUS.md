@@ -1,9 +1,9 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-03. The latest merged `main` checkpoint is
-ADR-152/PR #130 at `c834fef`; exact-head full CI, strict runtime and
-populated restore passed. Merged-main strict runtime and restore passed;
-full CI is tracked separately in the [build receipt](BUILD_RECEIPT.md).
+Updated 2026-10-03. The latest FileOS shadow hardening checkpoint on `main` is
+ADR-152/PR #130 at `c834fef`; exact-head and merged-main full CI, strict runtime
+and populated restore passed. Later documentation checkpoints and Fastmail
+integration evidence are tracked in the [build receipt](BUILD_RECEIPT.md).
 ADR-151/PR #128 at `14e91f0` passed exact-head and merged-main full CI,
 strict runtime and populated restore. ADR-150/PR #126 at `c984a2e` passed
 exact-head and merged-main full CI, strict runtime and populated restore.
@@ -320,6 +320,13 @@ production and FileOS cutover remain open.
   production credential lifecycle, live rollout or closure of issue #7 is
   claimed; the older shared login remains vulnerable under arbitrary SQL. See
   [the contract](TENANT_LOGIN_FENCE.md).
+- Fastmail read worker resilience (ADR-110, migration 0052): anchored, byte- and
+  time-bounded listing that survives mailbox churn; metadata responses over the
+  fixed control cap are split by ID before an atomic page commit; oversized mail held as
+  accounted `source_too_large` receipts without pausing the account; retained-blob
+  reuse for flag-only updates; tolerant `Retry-After`; `lease_lost` outcome.
+  Verified with unit and disposable-PostgreSQL tests on synthetic transports; no
+  live mailbox has been enrolled.
 - Existing `email_brain` capability: Fastmail/JMAP read worker, raw/evidence storage,
   MIME/attachment accounting, PostgreSQL FTS, owner search/read, reviewed rules,
   recovery/quarantine, synthetic mailbox, PDF approval path, and narrow reviewed

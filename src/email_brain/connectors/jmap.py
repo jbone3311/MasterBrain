@@ -9,9 +9,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+# Listing order is explicit so anchor paging is stable across servers. Ascending
+# receipt time means mail arriving during a listing lands after the anchor.
+LISTING_SORT: tuple[dict[str, Any], ...] = ({"property": "receivedAt", "isAscending": True},)
+
 
 class ResyncRequired(Exception):
     pass
+
+
+class AnchorNotFound(Exception):
+    """The listing anchor no longer exists; restart the inventory generation."""
 
 
 class ProtocolError(Exception):
@@ -42,6 +50,9 @@ class QueryPage:
 
     @property
     def has_more(self) -> bool:
+        # Position and total come from one server snapshot, so together they say
+        # whether anything followed this page at that instant. A server may return
+        # fewer IDs than requested, so a short page alone never means the end.
         return self.position + len(self.ids) < self.total
 
 
@@ -85,6 +96,8 @@ class JmapReader:
             raise ProtocolError("invalid payload")
         if name == "error" and payload.get("type") == "cannotCalculateChanges":
             raise ResyncRequired()
+        if name == "error" and payload.get("type") == "anchorNotFound":
+            raise AnchorNotFound()
         if name != method or payload.get("accountId") != self.account_id:
             raise ProtocolError("method/account mismatch or provider error")
         return payload
@@ -111,28 +124,39 @@ class JmapReader:
             raise ProtocolError("changes made no state progress")
         return ChangeIds(groups[0], groups[1], groups[2], state, data["hasMoreChanges"])
 
-    def bootstrap_page(self, position: int = 0) -> tuple[tuple[str, ...], bool]:
-        page = self.query_page(position)
-        return page.ids, page.has_more
+    def query_page(self, anchor: str | None = None, limit: int = 100) -> QueryPage:
+        """List the page after ``anchor`` in explicit receipt order.
 
-    def query_page(self, position: int = 0, limit: int = 100) -> QueryPage:
+        Anchor paging keeps its place when mail is created or destroyed elsewhere in
+        the mailbox, which positional paging cannot (RFC 8620 section 5.5). A missing
+        anchor raises ``AnchorNotFound`` so the caller restarts the inventory.
+        """
         if type(limit) is not int or not 1 <= limit <= 100:
             raise ValueError("invalid batch limit")
-        if type(position) is not int or not 0 <= position <= 2**31 - 1:
-            raise ValueError("invalid position")
-        data = self._call(
-            "Email/query", {"position": position, "limit": limit, "calculateTotal": True}
-        )
+        arguments: dict[str, Any] = {
+            "sort": [dict(entry) for entry in LISTING_SORT],
+            "limit": limit,
+            "calculateTotal": True,
+        }
+        if anchor is None:
+            arguments["position"] = 0
+        else:
+            arguments["anchor"] = identifier(anchor)
+            arguments["anchorOffset"] = 1
+        data = self._call("Email/query", arguments)
         ids = id_list(data.get("ids"), limit)
         total = data.get("total")
+        position = data.get("position")
         if (
-            type(data.get("position")) is not int
-            or data["position"] != position
+            type(position) is not int
+            or not 0 <= position <= 2**31 - 1
+            or (anchor is None and position != 0)
             or type(total) is not int
             or not 0 <= total <= 2**31 - 1
             or (ids and position + len(ids) > total)
+            or (anchor is not None and anchor in ids)
         ):
-            raise ProtocolError("invalid bootstrap page")
+            raise ProtocolError("invalid listing page")
         if not ids and position < total:
-            raise ProtocolError("bootstrap made no progress")
+            raise ProtocolError("listing made no progress")
         return QueryPage(ids, identifier(data.get("queryState")), position, total)

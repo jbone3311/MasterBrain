@@ -24,16 +24,15 @@ FileOS cutover acceptance is implied.
 
 ## Next verified sequence
 
-The immediate Email reliability candidate is
-[draft PR #45](https://github.com/jbone3311/MasterBrain/pull/45), which is
-not merged. Before integration, reconcile its old-base migration number with
-the current migration sequence; verify that a valid 50-message metadata page
-larger than the Fastmail control-response limit does not pause the account;
-and run a synthetic full-page, partial-budget, replay and recovery corpus
-against the current head. Keep the original Claude branch intact and integrate
-on a separate branch with provenance and exact-head CI, strict-runtime and
-populated-restore evidence. A green old-base check alone is insufficient.
-No live Fastmail account is authorized by this plan.
+The Email reliability tranche uses [ADR-110](adr/110_fastmail_sync_resilience.md)
+and preserves the original [Claude draft #45](https://github.com/jbone3311/MasterBrain/pull/45)
+as provenance. The current integration renumbers its held-source migration to
+0052 and splits only control-byte-overflowing metadata requests. Before treating
+that work as accepted, require a valid 50-message metadata-overflow page, an
+unsplittable-row refusal, partial-budget/replay/recovery tests, populated
+migration coverage, exact-head CI, strict runtime and populated restore. A
+green old-base check alone is insufficient. No live Fastmail account is
+authorized by this plan.
 
 The latest merged FileOS functional slice is [PR #116](https://github.com/jbone3311/MasterBrain/pull/116):
 its final head and merged `main` passed full CI, strict runtime and populated

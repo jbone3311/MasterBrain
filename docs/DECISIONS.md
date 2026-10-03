@@ -203,6 +203,10 @@ invented versions or evidence; v1 intake and FileOS completion remain unchanged.
 FOS scanner-policy shadow profile. It changes no publishable FileOS snapshot,
 completion policy, operator, or FOS-Master behavior; donor-policy adoption and
 live-source acceptance remain separate decisions.
+[ADR-110](adr/110_fastmail_sync_resilience.md) pages Fastmail listings by anchor,
+holds oversized mail as accounted `source_too_large` receipts instead of pausing
+the account, reuses retained bytes for unchanged blobs and treats a lost lease as
+an outcome. It grants no mailbox write, enrollment or live acceptance.
 
 [ADR-109](adr/109_tenant_database_routing.md) adds an opt-in API service path
 with an identity-only lookup DSN and one database-fenced login per configured

@@ -7,11 +7,11 @@ progressive access with drill-down to original evidence.
 
 **Status:** [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
 is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01), not
-the current product release. The latest merged engineering checkpoint is
+the current product release. The latest FileOS shadow-hardening checkpoint is
 [PR #130](https://github.com/jbone3311/MasterBrain/pull/130) at `c834fef`:
 the nonpublishing FileOS donor shadow now confines directory enumeration
-against descendant symlink swaps. It passed exact-head CI, strict runtime and
-restore; merged-main checks are tracked in the
+against descendant symlink swaps. It passed exact-head and merged-main CI,
+strict runtime and restore; exact runs are tracked in the
 [build receipt](docs/BUILD_RECEIPT.md). This is not FileOS cutover. The latest
 owner-facing change, [PR #128](https://github.com/jbone3311/MasterBrain/pull/128),
 bounds extractive Ask source passage text by UTF-8 bytes and reports truncated
@@ -37,11 +37,11 @@ FOS-Master has not been replaced, renamed, or modified. See the
 [alpha test guide](docs/ALPHA_TESTING.md) for the precise trial boundary.
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
-[build progress](docs/BUILD_PROGRESS.md). Claude's
-[Fastmail resilience PR #45](https://github.com/jbone3311/MasterBrain/pull/45)
-is still a draft on an older base: its metadata-page budget and migration
-number need reconciliation and fresh tests before it can be merged. Neither
-that draft nor the current synthetic alpha authorizes a live mailbox.
+[build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is
+tracked under [ADR-110](docs/adr/110_fastmail_sync_resilience.md); its original
+external proposal is [Claude's PR #45](https://github.com/jbone3311/MasterBrain/pull/45).
+The [build receipt](docs/BUILD_RECEIPT.md) distinguishes integrated, tested
+behavior from unmerged proposals. Neither path authorizes a live mailbox.
 
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 The internal `email_brain` package remains for compatibility and identifies the

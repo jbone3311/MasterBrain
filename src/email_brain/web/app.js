@@ -74,9 +74,10 @@ function renderHeldMessages(version = importVersion) {
   for (const {data, account} of heldPages) for (const receipt of data.results) {
     const card = node("article", "");
     card.append(node("h3", "Message held for parser review"), node("p", `Reason: ${receipt.reason}`),
-      node("small", `Source ID: ${receipt.provider_id} · Parser: ${receipt.parser_version}`),
-      node("pre", `Preserved SHA-256: ${receipt.raw_sha256}`));
-    if (data.reprocessing === true && typeof data.retry_parser_version === "string" && data.retry_parser_version) {
+      node("small", `Source ID: ${receipt.provider_id} · Parser: ${receipt.parser_version}`));
+    if (typeof receipt.raw_sha256 === "string") card.append(node("pre", `Preserved SHA-256: ${receipt.raw_sha256}`));
+    else card.append(node("p", "Source bytes were not retained: the provider message exceeds the configured storage budget. Raise the budget and let synchronization revisit it; there is nothing to retry here."));
+    if (typeof receipt.raw_sha256 === "string" && data.reprocessing === true && typeof data.retry_parser_version === "string" && data.retry_parser_version) {
       const retry = node("button", "Retry parsing");
       const session = sessionVersion, token = byId("token").value;
       card.append(node("small", `Retry parser: ${data.retry_parser_version}`));
