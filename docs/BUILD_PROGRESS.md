@@ -1,5 +1,18 @@
 # MasterBrain Build Progress
 
+## Optional unsuperseded reviewed search (2026-10-03, candidate)
+
+[ADR-158](adr/158_unsuperseded_reviewed_knowledge_search.md) adds a direct,
+explicit KnowledgeCore search option that filters review-chain predecessors
+before ranking and limit. It considers a successor/correction only when its
+full direct evidence links, and a correction's replacement, are visible under
+the caller's source grants. Retained history remains the default; grouped
+Brain current-search and Ask have not switched their KnowledgeCore layer.
+Local non-PostgreSQL tests, Ruff, mypy and documentation checks passed;
+PostgreSQL semantics, migration upgrade, exact-head CI and restore are still
+pending. This is not current valid-time truth, conflict resolution or a live
+product gate.
+
 ## Ask output-text budget merged (2026-10-03)
 
 [PR #144](https://github.com/jbone3311/MasterBrain/pull/144) merged

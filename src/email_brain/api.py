@@ -937,7 +937,8 @@ def create_app(
         ],
     ) -> dict[str, Any]:
         hits = knowledge.search(
-            principal.context, body.query, limit=body.limit, kinds=list(body.kinds)
+            principal.context, body.query, limit=body.limit, kinds=list(body.kinds),
+            visibility=body.visibility,
         )
         return {
             "results": [
@@ -952,6 +953,7 @@ def create_app(
                 for hit in hits
             ],
             "page": {"next_cursor": None, "truncated": False},
+            "visibility": body.visibility,
             "untrusted_content": True,
         }
 

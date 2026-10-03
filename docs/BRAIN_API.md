@@ -131,6 +131,12 @@ source effects or an alternate route through KnowledgeCore.
   append with a UUID idempotency key.
 - `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
   relationship, claim, event, project, commitment and correction records.
+  ADR-158 adds an optional `visibility` of `retained` (default) or
+  `unsuperseded`. The latter excludes correction records and review-chain
+  predecessors before rank/limit, considering only successors/corrections and
+  replacements whose direct evidence is fully source-authorized to the caller.
+  It is not a real-world-current or valid-time guarantee. The grouped Brain
+  current-search has **not** switched its KnowledgeCore layer in this tranche.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change

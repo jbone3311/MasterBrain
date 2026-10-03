@@ -21,6 +21,12 @@ Email or FileOS source.
 - Publication uses actor-scoped UUID idempotency keys and immutable receipts.
 - Lexical retrieval is bounded to 50 results and can filter by object kind. Reads
   include evidence IDs; object expansion includes the full evidence link.
+- Direct lexical search defaults to retained history. ADR-158 adds an explicit
+  `unsuperseded` read mode that omits corrected targets and same-kind
+  supersession predecessors before ranking and limit. Multiple review-chain
+  leaves remain visible. This is not valid-time truth or contradiction
+  resolution; grouped Brain current-search still uses retained reviewed
+  KnowledgeCore results in this tranche.
 - A cursor-bounded append-only change feed allows consumers to discover new
   assertions without scanning the knowledge tables.
 - Enrolled assistants may search, expand and page changes only for assertions
@@ -35,7 +41,7 @@ Email or FileOS source.
 | Route | Scope | Behavior |
 |---|---|---|
 | `POST /v1/knowledge/assertions` | `knowledge.review` | Human-only reviewed append; UUID `Idempotency-Key` required |
-| `POST /v1/knowledge/search` | `knowledge.search` | Compact lexical results with evidence IDs |
+| `POST /v1/knowledge/search` | `knowledge.search` | Compact lexical results with evidence IDs; explicit `retained` (default) or `unsuperseded` visibility |
 | `GET /v1/knowledge/{kind}/{id}` | `knowledge.read` | One tenant-scoped assertion and its evidence links |
 | `GET /v1/knowledge/changes` | `knowledge.changes.read` | Bounded chronological change page |
 
@@ -53,7 +59,9 @@ entities and claims, compares all table hashes after logical restore and repeats
 positive and cross-tenant retrieval checks.
 
 This is not yet automatic knowledge extraction or unified cross-source question
-answering. Known-answer evaluation, Email memory migration, FOS fact-pipeline parity,
+answering. Unsuperseded review-chain leaves are not guaranteed true at the
+current valid time or fresh against the underlying sources. Known-answer
+evaluation, Email memory migration, FOS fact-pipeline parity,
 semantic ranking, graph traversal, synthesis, freshness/rebuild workers and live
 source acceptance remain later gates.
 

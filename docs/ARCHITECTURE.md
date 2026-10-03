@@ -148,6 +148,10 @@ erasing retained evidence. Legacy Email search remains authoritative.
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.
+ADR-158's first optional `unsuperseded` query is a source-grant-aware leaf of
+the reviewed supersession/correction graph. It does not compare valid times,
+collapse conflicting leaves or change the grouped Brain current-search's
+retained KnowledgeCore layer. That later composition needs its own evaluation.
 
 Brain API performs authorization and progressive disclosure. Search results are
 compact; expansions are explicit; original evidence requires a stronger permission.

@@ -10,6 +10,7 @@ from masterbrain.knowledge_schema import (
     EntityWrite,
     EventWrite,
     KnowledgePublishRequest,
+    KnowledgeSearchRequest,
 )
 
 NOW = datetime(2026, 9, 22, tzinfo=UTC)
@@ -82,3 +83,12 @@ def test_correction_requires_same_kind_replacement() -> None:
                 "reviewed": True,
             }
         )
+
+
+def test_knowledge_search_visibility_is_closed_and_defaults_to_retained() -> None:
+    assert KnowledgeSearchRequest(query="Atlas").visibility == "retained"
+    assert KnowledgeSearchRequest(query="Atlas", visibility="unsuperseded").visibility == (
+        "unsuperseded"
+    )
+    with pytest.raises(ValidationError):
+        KnowledgeSearchRequest.model_validate({"query": "Atlas", "visibility": "current"})

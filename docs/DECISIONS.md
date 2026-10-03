@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-158](adr/158_unsuperseded_reviewed_knowledge_search.md) defines an
+explicit, source-grant-aware unsuperseded KnowledgeCore read mode alongside
+retained history. It does not select truth, resolve branches or switch the
+grouped Brain current-search layer yet.
+
 [ADR-157](adr/157_ask_output_text_budget.md) caps the aggregate UTF-8 bytes
 of extractive Ask's exact quotes and separately reviewed match text. It exposes
 output truncation without cutting exact citations or claiming a full response
