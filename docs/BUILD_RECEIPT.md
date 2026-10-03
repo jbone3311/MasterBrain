@@ -2,16 +2,28 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Unsuperseded reviewed KnowledgeCore search — ADR-158 candidate
+## Unsuperseded reviewed KnowledgeCore search — PR #146 merged
 
-Branch `codex/knowledge-unsuperseded-search` adds optional read-only
-review-chain leaf retrieval, source-grant-aware suppression, and forward
-lookup indexes in migration 0053. Local non-PostgreSQL tests passed 2,611;
-488 PostgreSQL-marked tests and one host-dependent disposable launcher test
-were deselected, **not passed**. Ruff, source mypy and the documentation
-checker passed. The new PostgreSQL semantic and populated-upgrade tests,
-hosted CI, strict runtime and restore have not yet passed on this candidate.
-FOS-Master and all source files remain unchanged.
+[PR #146](https://github.com/jbone3311/MasterBrain/pull/146) merged
+[ADR-158](adr/158_unsuperseded_reviewed_knowledge_search.md) at
+`3bf21b8720cc8a28392687bede283f9dbac7e779`. Its final head
+`e8957b1c96698f83a6cbef042d6d07575934e7e4` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37142497725)
+(3,088 tests passed, 12 skipped, including all 488 PostgreSQL-marked tests;
+the deployment gate independently reran the same 3,088 tests and the
+container/worker checks passed),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37142497687)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37142497688).
+The merged-main checks at this exact commit are running: [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37143412564),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37143412576),
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37143412567).
+This adds optional read-only review-chain leaf retrieval, source-grant-aware
+suppression, and forward lookup indexes in migration 0053. Retained history
+remains the default; grouped Brain current-search and Ask are unchanged.
+Local non-PostgreSQL tests passed 2,611; 488 PostgreSQL-marked tests and one
+host-dependent disposable launcher test were deselected, **not passed**
+locally. Ruff, source mypy and documentation checks passed. FOS-Master and
+all source files remain unchanged.
 
 ## Ask output-text budget — PR #144 merged
 
