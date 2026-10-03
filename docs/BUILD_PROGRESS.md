@@ -1,5 +1,18 @@
 # MasterBrain Build Progress
 
+## Donor-shadow symlink-target boundary (2026-10-03)
+
+[PR #141](https://github.com/jbone3311/MasterBrain/pull/141) merged
+[ADR-156](adr/156_shadow_symlink_target_boundary.md) at `082b0e8` after the
+first CI run exposed and the second commit fixed an error-order regression.
+The nonpublishing FileOS donor shadow no longer probes a symlink target's type;
+directory links now block coverage. New profile/candidate versions require a
+fresh scan before staging, while older packets remain immutable history.
+The final-head full CI, strict runtime, logical restore and synthetic ledger
+checks passed. Exact runs and local host limits are in the
+[build receipt](BUILD_RECEIPT.md). This does not accept live-root shadowing,
+current v2 visibility, FileOS effects or donor cutover.
+
 ## Fresh-cluster restore rehearsal (2026-10-03)
 
 [PR #139](https://github.com/jbone3311/MasterBrain/pull/139) merged

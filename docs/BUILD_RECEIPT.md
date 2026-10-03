@@ -2,6 +2,36 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Donor-shadow symlink boundary — PR #141 merged
+
+[PR #141](https://github.com/jbone3311/MasterBrain/pull/141) merged
+[ADR-156](adr/156_shadow_symlink_target_boundary.md) at
+`082b0e849ac69cb0abd9472d3e758f6e59c7d3b5`. The first head `5db15e0`
+failed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37134626132)
+on one PostgreSQL packet test: new profile validation ran before the existing
+16-MiB packet-size refusal and changed its error contract. The corrective
+`732926e` head restored the size-check order and passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37135176013)
+(3,080 tests, including all 488 PostgreSQL-marked tests, plus deployment checks),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37135176287),
+[logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/37135176169)
+and the [synthetic ledger benchmark](https://github.com/jbone3311/MasterBrain/actions/runs/37135176025).
+Local focused tests, Ruff, mypy and documentation checks passed. The local
+full suite passed 2,603 tests with one synthetic PostgreSQL launcher test
+excluded because macOS `initdb` could not allocate a host shared-memory
+segment; this was not counted as a passing local PostgreSQL gate. The pinned,
+unchanged FOS-Master comparator matched 3,004 ordinary rows at 3,000 stress
+files and 9,998 ordinary rows at the 9,994-file maximum, with zero unexplained
+membership differences. Its existing six v1-policy gaps remain explicit.
+Merged-main [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37136194994),
+[populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37136194986)
+and [synthetic ledger benchmark](https://github.com/jbone3311/MasterBrain/actions/runs/37136194976)
+also passed at the exact merge. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37136195012)
+passed, including its PostgreSQL tests and deployment checks. No live
+root, publishable v1 inventory, v2 current read, source effect or donor
+runtime was switched.
+
 ## Separate-cluster two-tenant restore — PR #139 merged
 
 [PR #139](https://github.com/jbone3311/MasterBrain/pull/139) merged ADR-155

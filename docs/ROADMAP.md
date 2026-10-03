@@ -1,9 +1,9 @@
 # MasterBrain Roadmap
 
 Updated 2026-10-03 through ADR-155's merged separate-cluster restore
-(PR #139 at `9b1ae23`) and ADR-156's in-flight, nonpublishing FileOS
-shadow symlink-target boundary. The latest merged Fastmail resilience is
-ADR-110/PR #133; the prior merged FileOS shadow boundary is ADR-152/PR #130.
+(PR #139 at `9b1ae23`) and ADR-156's merged, nonpublishing FileOS
+shadow symlink-target boundary (PR #141 at `082b0e8`). The latest merged
+Fastmail resilience is ADR-110/PR #133.
 This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
