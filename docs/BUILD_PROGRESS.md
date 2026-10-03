@@ -1,14 +1,23 @@
 # MasterBrain Build Progress
 
-## Current `main` checkpoint (2026-10-02)
+## Latest recorded functional checkpoint (2026-10-02)
+
+[PR #118](https://github.com/jbone3311/MasterBrain/pull/118) merged ADR-148's
+administrator refusal gate for populated legacy 0008/0009 rewrites at
+`46aa0009ce0e038acd1830739031f502d109aab2`. Exact-head and merged-main
+full CI, strict runtime and populated restore passed; links are in the
+[build receipt](BUILD_RECEIPT.md). The explicit maintenance override retains
+the old lock-heavy SQL. This does not close issue #9 or authorize a populated
+production rollout.
+
+## Previous documentation checkpoint (2026-10-02)
 
 [PR #117](https://github.com/jbone3311/MasterBrain/pull/117) reconciled the
 roadmap, status and feature inventory after #116. It is a documentation-only
 merge at `394b693759624bf4f764ec6a5f8a732231c8c882`; final-head and
-merged-main full CI, strict runtime and populated restore passed. This does
-not create a new version or live-product claim. The next code tranche is
-ADR-148's migration safety gate for issue #9; it does not make populated
-upgrades online.
+merged-main full CI, strict runtime and populated restore passed. This did
+not create a new version or live-product claim. ADR-148 was the next code
+tranche and is recorded above; it does not make populated upgrades online.
 
 ## Previous functional `main` checkpoint (2026-10-02)
 

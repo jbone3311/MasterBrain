@@ -2,7 +2,7 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-148 populated legacy rewrite refusal — local branch verification
+## ADR-148 populated legacy rewrite refusal — merged-main verification
 
 On the final branch source, a disposable loopback PostgreSQL 17.11 database
 ran the complete Python 3.14.7 suite: **3,015 passed, one intentional skip**;
@@ -16,9 +16,18 @@ and diff checks passed. An initial full run used a Unix-socket test DSN that
 the cross-source fixture intentionally rejects and could not launch a nested
 local cluster inside the sandbox. The final run used the fixture-required
 loopback DSN and permitted only a disposable synthetic launcher; it passed.
-These local results are not hosted exact-head or merged-main acceptance. The
-two generated-column rewrites remain lock-heavy behind an explicit operator
-override; issue #9's broader populated-upgrade risk remains open.
+These local results are separate from the hosted checks. [PR #118](https://github.com/jbone3311/MasterBrain/pull/118)
+passed final-head `df7da1b07efd48b8212783eaca1936ac84bf713b`
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37097115920),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37097115861)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37097115901).
+It merged at `46aa0009ce0e038acd1830739031f502d109aab2`; merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37097866169),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37097866193)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37097866201)
+also passed. The two generated-column rewrites remain lock-heavy behind an
+explicit operator override; issue #9's broader populated-upgrade risk remains
+open.
 
 ## Post-PR #116 roadmap reconciliation — merged-main verification
 

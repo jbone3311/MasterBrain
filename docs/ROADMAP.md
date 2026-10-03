@@ -1,6 +1,6 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-02 after PR #116 (`b6ebcbf`). This is a dependency-ordered
+Updated 2026-10-02 through PR #118 (`46aa000`). This is a dependency-ordered
 plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
@@ -51,9 +51,13 @@ v2 generation, reinterpret absence, stop FOS-Master or claim a live product.
    effects behind separate grants, previews, idempotency and rollback; do not
    treat the present read-only API as a write API.
 
-These lanes can be researched independently, but each code tranche still needs
+The later [PR #118](https://github.com/jbone3311/MasterBrain/pull/118) adds a
+default refusal for populated legacy 0008/0009 rewrites; it is not an online
+upgrade or closure of the hosted migration-lock gate. These lanes can be
+researched independently, but each code tranche still needs
 its own exact-head and merged-main verification before the next dependent
-tranche. No new version tag or production claim follows from PR #116 alone.
+tranche. Neither PR #116 nor PR #118 creates a new version tag or production
+claim.
 
 ## Next build packages
 
