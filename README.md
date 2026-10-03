@@ -48,6 +48,9 @@ The [build receipt](docs/BUILD_RECEIPT.md) distinguishes integrated, tested
 behavior from the original draft. Neither path authorizes a live mailbox.
 
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
+Its `main` branch requires full CI, strict-runtime and populated-restore checks
+on PRs, including for administrators (ADR-153); this is not a production-release
+or live-source approval.
 The internal `email_brain` package remains for compatibility and identifies the
 original Email capability, not the final product. New source-neutral code enters
 through `masterbrain.datacore`, `masterbrain.knowledge`, and the Brain API

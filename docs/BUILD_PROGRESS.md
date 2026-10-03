@@ -1,5 +1,15 @@
 # MasterBrain Build Progress
 
+## Main-branch merge safety (2026-10-03)
+
+[PR #135](https://github.com/jbone3311/MasterBrain/pull/135) merged
+ADR-153's stable strict-runtime matrix gate and applied three required
+checks to `main`. GitHub held its automatic merge while full CI was running
+and merged only after that check passed. The applied rule also requires fresh
+PRs and resolved conversations, applies to administrators, and refuses force
+pushes/deletion. Exact runs are in the [build receipt](BUILD_RECEIPT.md).
+This is repository governance, not a new product capability or live acceptance.
+
 ## Fastmail reliability integration merged (2026-10-03)
 
 ADR-110's [PR #133](https://github.com/jbone3311/MasterBrain/pull/133)

@@ -2,6 +2,40 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Main-branch required checks — PR #135 merged
+
+[PR #135](https://github.com/jbone3311/MasterBrain/pull/135) added the
+ADR-153 stable `strict-runtime-gate` and versioned main-protection policy.
+Its exact head `19907d6` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37125012352),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37125012361)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37125012343).
+The applied GitHub rule requires `gate`, `logical-restore` and
+`strict-runtime-gate`, strict branch freshness, pull requests and resolved
+conversations; it applies to administrators and denies force pushes/deletion.
+With the first two checks green and full CI still running, GitHub reported
+the PR `BLOCKED`; the requested automatic merge remained queued. Only after
+full CI succeeded did GitHub merge it at
+`6cdebb6832afd668b60019c0220804d090c83375`. This verifies merge
+enforcement for that PR. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37125957941),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37125957937)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37125957963)
+also passed. No runtime product behavior, live-source authority or FOS-Master
+state changed.
+
+## Latest documentation checkpoint — PR #134 merged
+
+[PR #134](https://github.com/jbone3311/MasterBrain/pull/134) reconciled the
+Fastmail integration receipt at `7e99a6648a0843a3fcbb199cb106bf910a52b24c`.
+Its final-head [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37122985816),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37122985782)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37122985766)
+passed. Merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37123950883),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37123950917)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37123950904)
+also passed. This was documentation only, not another functional version.
+
 ## ADR-110 Fastmail resilience integration — PR #133 merged
 
 The [integration PR #133](https://github.com/jbone3311/MasterBrain/pull/133)
@@ -57,7 +91,8 @@ full CI, strict runtime and populated restore passed. On the merged commit,
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37119099301)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37119099315)
 passed; [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37119099299)
-also passed. PR #45 remains a separate unmerged draft.
+also passed. At that checkpoint PR #45 was a separate draft; GitHub later
+marked it merged when its preserved commit entered `main` through PR #133.
 
 ## Confined FileOS donor-shadow directory walk — PR #130 merged
 
