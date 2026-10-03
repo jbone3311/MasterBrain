@@ -89,6 +89,28 @@ def test_missing_container_cleanup_does_nothing(monkeypatch):
     drill.cleanup_container(NAME, NONCE)
 
 
+def test_two_cluster_cleanup_attempts_both_exact_names(monkeypatch):
+    seen = []
+
+    def cleanup(name, nonce):
+        seen.append((name, nonce))
+        if name.endswith("_target"):
+            raise drill.DrillFailure("target cleanup failed")
+
+    monkeypatch.setattr(drill, "cleanup_container", cleanup)
+    with pytest.raises(drill.DrillFailure, match="target cleanup failed"):
+        drill.cleanup_clusters(NAME + "_source", NAME + "_target", NONCE)
+    assert seen == [(NAME + "_target", NONCE), (NAME + "_source", NONCE)]
+
+
+def test_cluster_start_rejects_unsafe_name_and_utility_before_docker(monkeypatch):
+    monkeypatch.setattr(drill, "command", lambda *args, **kwargs: pytest.fail("no Docker call"))
+    with pytest.raises(drill.DrillFailure, match="database name"):
+        drill.start_cluster("production", NONCE, "synthetic-only", "pg_dump")
+    with pytest.raises(drill.DrillFailure, match="utility"):
+        drill.start_cluster(NAME + "_source", NONCE, "synthetic-only", "psql")
+
+
 @pytest.mark.parametrize(
     "mapping",
     [

@@ -1,4 +1,4 @@
-"""Opt-in logical restore proof using a fresh, synthetic-only local Docker cluster.
+"""Opt-in logical restore proof using fresh, synthetic-only local Docker clusters.
 
 No DSN, input archive, target database, Docker host, or output-path argument exists.
 Run only on a disposable Linux Docker runner. Never a production backup command.
@@ -195,6 +195,76 @@ def dsn(port: int, password: str, name: str, user: str = "postgres") -> str:
         connect_timeout=2,
         options="-c statement_timeout=10000 -c lock_timeout=3000",
     )
+
+
+def start_cluster(name: str, nonce: str, password: str, utility: str) -> tuple[str, str]:
+    """Start and verify one exact owned, loopback-only PostgreSQL 17 container."""
+    database_name(name)
+    require(utility in {"pg_dump", "pg_restore"}, "invalid restore utility")
+    command(
+        [
+            "run",
+            "--detach",
+            "--rm",
+            "--name",
+            name,
+            "--label",
+            f"{LABEL}={nonce}",
+            "--publish",
+            "127.0.0.1::5432",
+            "--env",
+            "POSTGRES_PASSWORD",
+            "--env",
+            f"POSTGRES_DB={name}",
+            IMAGE,
+        ],
+        environment=dict(os.environ, POSTGRES_PASSWORD=password),
+    )
+    record = inspect_container(name)
+    require(record is not None, "drill container was not created")
+    assert record is not None
+    identity = owned_container(record, name, nonce)
+    admin = dsn(published_port(record), password, name)
+    for _ in range(40):
+        try:
+            with psycopg.connect(admin) as conn:
+                require(170000 <= conn.info.server_version < 180000, "PostgreSQL 17 required")
+            break
+        except psycopg.OperationalError:
+            time.sleep(1)
+    else:
+        raise DrillFailure("disposable PostgreSQL did not become ready")
+    require(
+        command(["exec", identity, utility, "--version"]).startswith(
+            f"{utility} (PostgreSQL) 17.".encode()
+        ),
+        "PostgreSQL utility version mismatch",
+    )
+    return identity, admin
+
+
+def cleanup_clusters(source: str, target: str, nonce: str) -> None:
+    """Attempt exact cleanup of both containers, even if the first fails."""
+    try:
+        cleanup_container(target, nonce)
+    finally:
+        cleanup_container(source, nonce)
+
+
+def bootstrap_restored_marker_roles(admin: str) -> None:
+    """Create only the fixed no-login roles referenced by dumped RLS policies."""
+    with psycopg.connect(admin) as conn:
+        for role in ("masterbrain_identity_admin", "masterbrain_tenant_runtime"):
+            require(
+                conn.execute("SELECT 1 FROM pg_roles WHERE rolname=%s", (role,)).fetchone() is None,
+                "restore marker role unexpectedly exists",
+            )
+            conn.execute(
+                sql.SQL(
+                    "CREATE ROLE {} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB "
+                    "NOCREATEROLE NOREPLICATION"
+                ).format(sql.Identifier(role))
+            )
 
 
 def make_runtime(admin: str, role: str) -> Store:
@@ -1159,6 +1229,36 @@ def verify_tenant_bound_isolation(
                 raise DrillFailure("bound login acquired identity administration")
 
 
+def retire_unrestored_bindings(
+    admin: str, tenants: list[SeededTenant], source_roles: list[str]
+) -> None:
+    """Remove orphaned source-login mappings in the fresh target cluster."""
+    require(len(tenants) == len(source_roles) == 2, "invalid restored role inventory")
+    with psycopg.connect(admin) as conn:
+        for tenant, role in zip(tenants, source_roles, strict=True):
+            require(
+                conn.execute("SELECT 1 FROM pg_roles WHERE rolname=%s", (role,)).fetchone() is None,
+                "source login unexpectedly exists in target cluster",
+            )
+            require(
+                conn.execute(
+                    "SELECT tenant_id FROM public.masterbrain_tenant_login_bindings "
+                    "WHERE role_name=%s",
+                    (role,),
+                ).fetchone()
+                == (tenant.context.tenant_id,),
+                "restored source-login mapping changed",
+            )
+            require(
+                conn.execute(
+                    "DELETE FROM public.masterbrain_tenant_login_bindings WHERE role_name=%s",
+                    (role,),
+                ).rowcount
+                == 1,
+                "restored source-login mapping could not be retired",
+            )
+
+
 def run_drill() -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="email-brain-objects-", dir="/tmp") as directory:
         return _run_drill(Path(directory).resolve())
@@ -1171,62 +1271,17 @@ def _run_drill(storage: Path) -> dict[str, object]:
     )
     nonce = uuid4().hex
     name = PREFIX + nonce[:16]
-    source, target, control = (name + suffix for suffix in ("_source", "_target", "_control"))
-    password = secrets.token_urlsafe(32)
+    source, target = name + "_source", name + "_target"
+    source_password, target_password = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     started = time.monotonic()
     # The fixed Docker UNIX socket defeats ambient remote Docker host/context settings.
-    environment = dict(os.environ, POSTGRES_PASSWORD=password)
     try:
-        stage("create_disposable_cluster")
-        command(
-            [
-                "run",
-                "--detach",
-                "--rm",
-                "--name",
-                name,
-                "--label",
-                f"{LABEL}={nonce}",
-                "--publish",
-                "127.0.0.1::5432",
-                "--env",
-                "POSTGRES_PASSWORD",
-                "--env",
-                f"POSTGRES_DB={control}",
-                IMAGE,
-            ],
-            environment=environment,
-        )
-        record = inspect_container(name)
-        require(record is not None, "drill container was not created")
-        assert record is not None
-        identity = owned_container(record, name, nonce)
-        port = published_port(record)
-        control_dsn = dsn(port, password, control)
-        for _ in range(40):
-            try:
-                with psycopg.connect(control_dsn) as conn:
-                    require(170000 <= conn.info.server_version < 180000, "PostgreSQL 17 required")
-                break
-            except psycopg.OperationalError:
-                time.sleep(1)
-        else:
-            raise DrillFailure("disposable PostgreSQL did not become ready")
-        for utility in ("pg_dump", "pg_restore"):
-            require(
-                command(["exec", identity, utility, "--version"]).startswith(
-                    f"{utility} (PostgreSQL) 17.".encode()
-                ),
-                "PostgreSQL utility version mismatch",
-            )
-        with psycopg.connect(control_dsn, autocommit=True) as conn:
-            for database in (source, target):
-                conn.execute(
-                    sql.SQL("CREATE DATABASE {} TEMPLATE template0").format(
-                        sql.Identifier(database_name(database))
-                    )
-                )
-        source_dsn, target_dsn = dsn(port, password, source), dsn(port, password, target)
+        stage("create_disposable_source_cluster")
+        source_identity, source_dsn = start_cluster(source, nonce, source_password, "pg_dump")
+        stage("create_disposable_target_cluster")
+        target_identity, target_dsn = start_cluster(target, nonce, target_password, "pg_restore")
+        require(source_identity != target_identity, "restore clusters share an identity")
+        bootstrap_restored_marker_roles(target_dsn)
         root = Path(__file__).resolve().parents[1]
         stage("migrate_and_seed_synthetic_source")
         migrate(source_dsn, root / "migrations")
@@ -1263,7 +1318,7 @@ def _run_drill(storage: Path) -> dict[str, object]:
                 command(
                     [
                         "exec",
-                        identity,
+                        source_identity,
                         "pg_dump",
                         "--username=postgres",
                         f"--dbname={source}",
@@ -1282,7 +1337,7 @@ def _run_drill(storage: Path) -> dict[str, object]:
                     [
                         "exec",
                         "-i",
-                        identity,
+                        target_identity,
                         "pg_restore",
                         "--username=postgres",
                         f"--dbname={target}",
@@ -1316,6 +1371,7 @@ def _run_drill(storage: Path) -> dict[str, object]:
         restored_store = make_runtime(target_dsn, "restore_target_runtime")
         restored_store.blobs = target_blobs
         verify_restored(target_dsn, restored_store, tenants)
+        retire_unrestored_bindings(target_dsn, tenants, [role for role, _ in source_bound])
         target_bound = [
             (
                 f"restore_target_tenant_{index}",
@@ -1326,6 +1382,14 @@ def _run_drill(storage: Path) -> dict[str, object]:
             for index, tenant in enumerate(tenants)
         ]
         verify_tenant_bound_isolation(target_dsn, tenants, target_bound)
+        with psycopg.connect(target_dsn) as conn:
+            require(
+                conn.execute(
+                    "SELECT count(*) FROM public.masterbrain_tenant_login_bindings"
+                ).fetchone()
+                == (len(target_bound),),
+                "stale source-login mapping remains after restore",
+            )
         return {
             "status": "passed",
             "synthetic_only": True,
@@ -1339,6 +1403,8 @@ def _run_drill(storage: Path) -> dict[str, object]:
             "identity_revocation_verified": True,
             "tenant_bound_login_pairs_verified": len(source_bound) + len(target_bound),
             "tenant_bound_forged_context_refused": True,
+            "separate_cluster_roles_verified": True,
+            "stale_source_bindings_retired": len(source_bound),
             "database_only_restore_refused": True,
             "external_objects_verified": sum(
                 len(target_blobs.object_keys(t.context.tenant_id, t.account_id)) for t in tenants
@@ -1346,8 +1412,8 @@ def _run_drill(storage: Path) -> dict[str, object]:
             "elapsed_seconds": round(time.monotonic() - started, 2),
         }
     finally:
-        stage("cleanup_exact_owned_container")
-        cleanup_container(name, nonce)
+        stage("cleanup_exact_owned_containers")
+        cleanup_clusters(source, target, nonce)
 
 
 def main() -> int:
@@ -1356,7 +1422,7 @@ def main() -> int:
         "--run-disposable",
         action="store_true",
         required=True,
-        help="Create and destroy a fresh synthetic PostgreSQL Docker container",
+        help="Create and destroy two fresh synthetic PostgreSQL Docker containers",
     )
     parser.parse_args()
     try:
