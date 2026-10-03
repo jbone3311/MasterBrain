@@ -1,6 +1,7 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-02 through PR #118 (`46aa000`). This is a dependency-ordered
+Updated 2026-10-02 through PR #120 (`0591eac`), with the FileOS completion
+benchmark under verification. This is a dependency-ordered
 plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
@@ -164,6 +165,9 @@ Security and data-integrity blockers take priority over adding more surface area
    3,000-row tests, then exact-head and merged-main CI, strict runtime and
    populated restore. The issue is closed without relaxing exact closure or
    the five-second statement gate; live-source acceptance remains separate.
+   A separate [controlled v1 completion benchmark](FILEOS_COMPLETION_BENCHMARK.md)
+   now isolates the old per-item deferred ledger trigger's 3,000-row cost on
+   local PostgreSQL 17.11; container and broader load evidence remain issue #71.
    PRs #52, #55, #57, #59 and #61 are merged with final-head and merged-main CI, strict
    runtime and restore green. PR #63 adds the nonpublishing approval receipt;
    its exact-head and merged-main gates passed after an intermittent container

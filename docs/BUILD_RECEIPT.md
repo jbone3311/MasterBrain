@@ -2,6 +2,27 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## FileOS v1 completion trigger-cost audit — local evidence, hosted pending
+
+The opt-in [benchmark](FILEOS_COMPLETION_BENCHMARK.md) used two equivalent
+synthetic 3,000-item FileOS sources on a fresh disposable Homebrew PostgreSQL
+17.11 database. With the current schema/writer, completion took **0.529 s**;
+adding back migration 0018's old deferred per-item whole-ledger trigger made
+the otherwise same completion take **24.404 s** (**46.1×**). PostgreSQL reported
+zero timed/requested checkpoints during either measured completion. Both
+immutable ledgers had exactly 3,000 rows; the added trigger and ephemeral
+login were removed. A first fresh-database run measured 0.577 s versus
+24.202 s (41.97×) without checkpoint counters. These are single-machine
+wall-clock measurements that isolate trigger overhead, not exact historical
+binary replay or a production SLA. On the final local tree, the separate
+deployment gate passed **3,027 Python tests, one Docker-only skip** on
+disposable PostgreSQL 17.11 (482 of 483 PostgreSQL-marked tests executed);
+all six browser suites passed **145 tests**. Ruff, strict mypy over 98 source
+files and the benchmark script, documentation links and diff checks passed.
+The `postgres:17` workflow result and exact-head/merged-main checks are
+pending. FOS-Master was not contacted; issue #71 remains open for broader
+load/platform acceptance.
+
 ## ADR-149 assistant legacy Email denial — merged verification
 
 On this branch, synthetic bootstrap tests refused assistant `email.*` scopes;
