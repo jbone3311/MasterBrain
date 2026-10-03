@@ -1,8 +1,8 @@
 # Build and validation receipt
 
-Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## FileOS v1 completion trigger-cost audit — local evidence, hosted pending
+## FileOS v1 completion trigger-cost audit — merged verification
 
 The opt-in [benchmark](FILEOS_COMPLETION_BENCHMARK.md) used two equivalent
 synthetic 3,000-item FileOS sources on a fresh disposable Homebrew PostgreSQL
@@ -19,13 +19,22 @@ deployment gate passed **3,027 Python tests, one Docker-only skip** on
 disposable PostgreSQL 17.11 (482 of 483 PostgreSQL-marked tests executed);
 all six browser suites passed **145 tests**. Ruff, strict mypy over 98 source
 files and the benchmark script, documentation links and diff checks passed.
-The independent [PostgreSQL 17.11 Debian container workflow](https://github.com/jbone3311/MasterBrain/actions/runs/37104973815)
+An independent [PostgreSQL 17 Debian container workflow](https://github.com/jbone3311/MasterBrain/actions/runs/37104973815)
 passed the same 3,000-row comparison: current **1.520 s**, with old trigger
 **50.655 s** (**33.33×**), and zero timed/requested checkpoints during each
-completion. This corroborates the trigger-cost mechanism across two local
-platforms but is not a production latency guarantee. Final PR-head and
-merged-main gates are pending. FOS-Master was not contacted; issue #71 remains
-open for broader load/platform acceptance.
+completion. The final PR-head [container benchmark](https://github.com/jbone3311/MasterBrain/actions/runs/37105169392)
+also passed: **1.548 s** versus **51.810 s** (**33.46×**) with zero
+checkpoints. [PR #122](https://github.com/jbone3311/MasterBrain/pull/122)
+passed exact-head `26c5cf18e38d979dcc2a5a06ccfdd6611adbc762`
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37105169366),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37105169368),
+[populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37105169415)
+and the dedicated benchmark above. It merged at
+`412486037f60184c7d27b4542e52a038ccb9b612`; merged-main checks are
+tracked separately. This corroborates the trigger-cost mechanism across two
+platforms but is not a production latency guarantee. FOS-Master was not
+contacted; [issue #71](https://github.com/jbone3311/MasterBrain/issues/71)
+remains open for broader load/platform acceptance, parity and cutover gates.
 
 ## ADR-149 assistant legacy Email denial — merged verification
 
