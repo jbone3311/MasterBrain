@@ -32,5 +32,9 @@ on 2026-10-03 took **1.520 s** versus **50.655 s** (**33.33×**) and also
 reported zero checkpoints. These are environment-specific wall-clock
 observations, not an SLA or proof that all later workloads meet the five-second
 statement budget. Exact details are in the [build receipt](BUILD_RECEIPT.md).
+The final PR-head [container run](https://github.com/jbone3311/MasterBrain/actions/runs/37105169392)
+also passed: 1.548 s current versus 51.810 s with the legacy trigger
+(33.46×), with zero checkpoints. The benchmark and documentation merged via
+[PR #122](https://github.com/jbone3311/MasterBrain/pull/122) on 2026-10-03.
 A real FileOS cutover still needs donor parity, sustained read-only
 shadowing, source-fault tests, rollback and owner acceptance.
