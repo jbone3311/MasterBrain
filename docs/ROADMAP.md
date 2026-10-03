@@ -1,7 +1,7 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-03 through ADR-151's bounded Ask context on `main`
-(PR #128 at `14e91f0`). This is a dependency-ordered
+Updated 2026-10-03 through ADR-152's confined FileOS shadow on `main`
+(PR #130 at `c834fef`). This is a dependency-ordered
 plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
