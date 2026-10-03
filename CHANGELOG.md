@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Extended the synthetic PostgreSQL 17 logical restore drill to provision
+  separate tenant-bound logins before and after restore and test forged SQL
+  tenant settings, foreign reads/writes and identity-role refusal (ADR-154).
+  No live credential lifecycle or hosted isolation is claimed.
+
 - Added a stable strict-runtime aggregate check and a versioned main-branch
   protection policy (ADR-153). The three always-on CI gates must pass before
   merge once GitHub protection is applied and independently verified. This is

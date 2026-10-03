@@ -35,7 +35,7 @@ from email_brain.document_jobs import POLICY, DocumentJobs
 from email_brain.domain.models import TenantContext
 from email_brain.memory import Memory
 from email_brain.memory_schema import MemoryWrite, Trip
-from email_brain.migrate import grant_runtime, migrate
+from email_brain.migrate import grant_runtime, grant_tenant_runtime, migrate
 from email_brain.normalize import PARSER_VERSION, NormalizedMessage
 from email_brain.oidc import AccessTokenVerifier, OIDCAuthenticator, OIDCConfig, VerifiedToken
 from email_brain.pdf_contract import PdfPage, PdfResult, source_for
@@ -207,6 +207,20 @@ def make_runtime(admin: str, role: str) -> Store:
             ).format(sql.Identifier(role), sql.Literal(password))
         )
         grant_runtime(conn, role)
+    return Store(make_conninfo(admin, user=role, password=password))
+
+
+def make_tenant_runtime(admin: str, role: str, tenant_id: UUID) -> Store:
+    """Provision one disposable login bound to one fictional tenant."""
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL(
+                "CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE "
+                "NOREPLICATION PASSWORD {}"
+            ).format(sql.Identifier(role), sql.Literal(password))
+        )
+        grant_tenant_runtime(conn, role, tenant_id)
     return Store(make_conninfo(admin, user=role, password=password))
 
 
@@ -425,15 +439,22 @@ def seed(
                 "scopes,client_kind) VALUES (%s,%s,%s,'https://issuer.example.invalid',%s,"
                 "'restore-client',%s,'assistant')",
                 (
-                    brain_identity_id,tenant,actor,keyword + "-brain",
-                    ["brain.search","knowledge.search","brain.evidence.read",
-                     "brain.content.read"],
+                    brain_identity_id,
+                    tenant,
+                    actor,
+                    keyword + "-brain",
+                    [
+                        "brain.search",
+                        "knowledge.search",
+                        "brain.evidence.read",
+                        "brain.content.read",
+                    ],
                 ),
             )
             conn.execute(
                 "INSERT INTO external_identity_sources(tenant_id,binding_id,source_id) "
                 "VALUES (%s,%s,%s)",
-                (tenant,brain_identity_id,source_id),
+                (tenant, brain_identity_id, source_id),
             )
         knowledge = KnowledgeCore(store)
         entity = knowledge.publish(
@@ -743,8 +764,8 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         )
         datacore = DataCoreStore(store)
         require(
-            len(datacore.search_current_fileos(brain_mapped.context,current.keyword)) == 1
-            and datacore.search_current_fileos(brain_mapped.context,foreign.keyword) == [],
+            len(datacore.search_current_fileos(brain_mapped.context, current.keyword)) == 1
+            and datacore.search_current_fileos(brain_mapped.context, foreign.keyword) == [],
             "restored Brain grant crosses source or tenant",
         )
         try:
@@ -758,12 +779,14 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             conn.execute(
                 "DELETE FROM external_identity_sources WHERE tenant_id=%s "
                 "AND binding_id=%s AND source_id=%s",
-                (ctx.tenant_id,current.brain_identity_id,source_id),
+                (ctx.tenant_id, current.brain_identity_id, source_id),
             )
-        require(identity_auth.resolve(brain_verified) is None,
-                "revoked restored Brain source grant accepted")
+        require(
+            identity_auth.resolve(brain_verified) is None,
+            "revoked restored Brain source grant accepted",
+        )
         try:
-            datacore.search_current_fileos(brain_mapped.context,current.keyword)
+            datacore.search_current_fileos(brain_mapped.context, current.keyword)
         except AccessDenied:
             pass
         else:
@@ -1053,6 +1076,89 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
         raise DrillFailure("restored immutable evidence trigger is missing")
 
 
+def verify_tenant_bound_isolation(
+    admin: str, tenants: list[SeededTenant], stores: list[tuple[str, Store]]
+) -> None:
+    """Exercise restored DBA bindings with actual non-owner SQL sessions."""
+    require(len(tenants) == len(stores) == 2, "tenant-login drill requires two tenants")
+    with psycopg.connect(admin) as conn:
+        for tenant, (role, _) in zip(tenants, stores, strict=True):
+            require(
+                conn.execute(
+                    "SELECT tenant_id FROM public.masterbrain_tenant_login_bindings "
+                    "WHERE role_name=%s",
+                    (role,),
+                ).fetchone()
+                == (tenant.context.tenant_id,),
+                "restored tenant login binding changed",
+            )
+    for current, foreign, (role, store) in (
+        (tenants[0], tenants[1], stores[0]),
+        (tenants[1], tenants[0], stores[1]),
+    ):
+        require(
+            bool(store.search(current.context, SearchRequest(query=current.keyword))),
+            "bound login cannot read own restored evidence",
+        )
+        require(
+            not store.search(current.context, SearchRequest(query=foreign.keyword)),
+            "bound login can read foreign restored evidence",
+        )
+        with psycopg.connect(store.dsn) as conn:
+            require(
+                conn.execute("SELECT session_user,current_user").fetchone() == (role, role),
+                "tenant login session identity changed",
+            )
+            conn.execute(
+                "SELECT set_config('email_brain.tenant_id',%s,true)",
+                (str(foreign.context.tenant_id),),
+            )
+            conn.execute(
+                "SELECT set_config('email_brain.actor_id',%s,true)",
+                (str(foreign.context.actor_id),),
+            )
+            require(
+                conn.execute(
+                    "SELECT id FROM tenants WHERE id=%s", (foreign.context.tenant_id,)
+                ).fetchall()
+                == [],
+                "forged tenant context crossed restored tenant RLS",
+            )
+            require(
+                conn.execute(
+                    "SELECT id FROM messages WHERE tenant_id=%s", (foreign.context.tenant_id,)
+                ).fetchall()
+                == [],
+                "forged tenant context crossed restored evidence RLS",
+            )
+            require(
+                conn.execute(
+                    "SELECT public.masterbrain_tenant_login_allows(%s)",
+                    (foreign.context.tenant_id,),
+                ).fetchone()
+                == (False,),
+                "restored tenant-login predicate accepted foreign tenant",
+            )
+            try:
+                with conn.transaction():
+                    conn.execute(
+                        "INSERT INTO audit_events(tenant_id,actor_id,request_id,event_type,"
+                        "resource_type,outcome) VALUES (%s,%s,%s,'forged','tenant','ok')",
+                        (foreign.context.tenant_id, foreign.context.actor_id, uuid4()),
+                    )
+            except psycopg.errors.InsufficientPrivilege:
+                pass
+            else:
+                raise DrillFailure("bound login wrote foreign restored audit evidence")
+            try:
+                with conn.transaction():
+                    conn.execute("SET ROLE masterbrain_identity_admin")
+            except psycopg.errors.InsufficientPrivilege:
+                pass
+            else:
+                raise DrillFailure("bound login acquired identity administration")
+
+
 def run_drill() -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="email-brain-objects-", dir="/tmp") as directory:
         return _run_drill(Path(directory).resolve())
@@ -1127,6 +1233,16 @@ def _run_drill(storage: Path) -> dict[str, object]:
         source_store = make_runtime(source_dsn, "restore_source_runtime")
         keys: dict[tuple[UUID, str], bytes] = {}
         tenants = seed(source_dsn, source_store, object_root=storage / "source", keys=keys)
+        source_bound = [
+            (
+                f"restore_source_tenant_{index}",
+                make_tenant_runtime(
+                    source_dsn, f"restore_source_tenant_{index}", tenant.context.tenant_id
+                ),
+            )
+            for index, tenant in enumerate(tenants)
+        ]
+        verify_tenant_bound_isolation(source_dsn, tenants, source_bound)
         before = snapshot(source_dsn, source_store.blobs)
         # Separate encrypted-byte backup; key material remains independently in memory.
         shutil.copytree(storage / "source", storage / "backup")
@@ -1200,6 +1316,16 @@ def _run_drill(storage: Path) -> dict[str, object]:
         restored_store = make_runtime(target_dsn, "restore_target_runtime")
         restored_store.blobs = target_blobs
         verify_restored(target_dsn, restored_store, tenants)
+        target_bound = [
+            (
+                f"restore_target_tenant_{index}",
+                make_tenant_runtime(
+                    target_dsn, f"restore_target_tenant_{index}", tenant.context.tenant_id
+                ),
+            )
+            for index, tenant in enumerate(tenants)
+        ]
+        verify_tenant_bound_isolation(target_dsn, tenants, target_bound)
         return {
             "status": "passed",
             "synthetic_only": True,
@@ -1211,6 +1337,8 @@ def _run_drill(storage: Path) -> dict[str, object]:
             "rls_verified": True,
             "identity_bindings_verified": len(tenants),
             "identity_revocation_verified": True,
+            "tenant_bound_login_pairs_verified": len(source_bound) + len(target_bound),
+            "tenant_bound_forged_context_refused": True,
             "database_only_restore_refused": True,
             "external_objects_verified": sum(
                 len(target_blobs.object_keys(t.context.tenant_id, t.account_id)) for t in tenants
