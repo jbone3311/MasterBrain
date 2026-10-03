@@ -1,5 +1,16 @@
 # MasterBrain Build Progress
 
+## Two-tenant restore containment proof (2026-10-03)
+
+[PR #137](https://github.com/jbone3311/MasterBrain/pull/137) merged
+[ADR-154](adr/154_two_tenant_bound_restore_proof.md) at `abf5292`.
+The disposable PostgreSQL 17 drill now provisions two bound logins before
+dump and two new bound logins after restore, then checks own/foreign reads,
+forged tenant settings, denied foreign audit writes and denied role switching.
+The PR-head restore, full CI and strict runtime passed; exact results are in
+the [build receipt](BUILD_RECEIPT.md). This narrows issue #7's restore evidence
+but does not prove hosted credential lifecycle or separate-cluster recovery.
+
 ## Main-branch merge safety (2026-10-03)
 
 [PR #135](https://github.com/jbone3311/MasterBrain/pull/135) merged

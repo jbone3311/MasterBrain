@@ -2,6 +2,40 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Two-tenant bound-login restore proof — PR #137 merged
+
+[PR #137](https://github.com/jbone3311/MasterBrain/pull/137) merged ADR-154
+at `abf5292de54458a3b063b40f8270301cb7d216da`. Its final head
+`9a375d3` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37127823023),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37127823028)
+and the actual [PostgreSQL 17 logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/37127823127).
+The restore job verified 85 tables, 280 rows, two fictional tenants, four
+tenant-bound role/tenant pairs across the source and target databases,
+content-hash equality and forged-context refusal. Local offline restore
+safety tests passed **29**, as did Ruff, source/script mypy and documentation
+checks. This is a same-cluster disposable drill, not restored role secrets,
+separate-cluster disaster recovery, hosted tenant acceptance or closure of
+issue #7.
+Merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37128717526),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37128717529)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37128717578)
+also passed on `abf5292`.
+
+## Protected-main documentation reconciliation — PR #136 merged
+
+[PR #136](https://github.com/jbone3311/MasterBrain/pull/136) reconciled the
+README, roadmap, progress notes and build receipt at
+`eab4dba83f439c3938b747e717d6344874185047`. Its exact-head
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37126621943),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37126621940)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37126621949)
+passed before automatic merge. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37127289376),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37127289461)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37127289279)
+also passed. This was documentation only, not a new product version.
+
 ## Main-branch required checks — PR #135 merged
 
 [PR #135](https://github.com/jbone3311/MasterBrain/pull/135) added the
