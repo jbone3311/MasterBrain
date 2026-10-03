@@ -48,6 +48,7 @@ from masterbrain.answers import (
     LocalExtractiveSelector,
     answer_search_query,
 )
+from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReviewer
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import KnowledgePublishRequest, KnowledgeSearchRequest
@@ -56,6 +57,7 @@ from masterbrain.schemas import (
     CurrentGroupedSearchRequest,
     EmailFamilySearchRequest,
     EvidenceContentRequest,
+    FileOSV2SearchPreviewRequest,
     GroundedAnswerRequest,
     UnifiedSearchRequest,
 )
@@ -142,6 +144,7 @@ def create_app(
     message_reader = MessageReader(store)
     memory = Memory(store)
     brain = brain_store or DataCoreStore(store)
+    fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
     answers = GroundedAnswerService(brain, answer_selector)
     if browser_auth is not None:
@@ -741,6 +744,50 @@ def create_app(
                 for hit in hits
             ],
             "active_generation_only": True,
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/sources/{source_id}/v2-search-preview")
+    def brain_source_v2_search_preview(
+        source_id: str,
+        body: FileOSV2SearchPreviewRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            comparison = fileos_v2_reviewer.preview(
+                principal, source_id, body.generation_id, body.query, limit=body.limit,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+
+        def compact(hits: tuple[SearchHit, ...]) -> list[dict[str, Any]]:
+            return [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ]
+
+        return {
+            "source_id": comparison.source_id,
+            "candidate_generation_id": comparison.candidate_generation_id,
+            "active_v1_generation_id": comparison.active_v1_generation_id,
+            "candidate_visibility": comparison.candidate_visibility,
+            "ranking": "within_generation_only",
+            "coverage": "historical_comparison_not_current_fileos",
+            "limit_per_generation": body.limit,
+            "layers": {
+                "active_v1": compact(comparison.active_v1_hits),
+                "candidate_v2": compact(comparison.candidate_hits),
+            },
             "untrusted_content": True,
         }
 

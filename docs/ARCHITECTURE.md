@@ -101,6 +101,9 @@ crash cannot create partial readiness. Retained-history search may see those
 derivatives, but no v2 current index/activation, absence or cutover follows.
 ADR-126 defines a shared-table v2 generation over one ready document attempt;
 its first implementation must remain private and SQL-fenced against activation.
+ADR-147 exposes only the existing human-scoped historical search comparison of
+one ready v2 generation with active v1 through a bounded Brain API route. That
+read path neither activates v2 nor changes FileOS current-state authority.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

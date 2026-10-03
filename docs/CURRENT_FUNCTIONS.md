@@ -80,8 +80,10 @@ activates current v2 FileOS reads or infers absence.
 shared DataCore index without activating it. `FileOSV2SearchReviewer` privately
 compares a named ready v2 generation with that source's active v1 generation
 using the same bounded lexical query. It requires a human transition reviewer
-with search and evidence grants, labels v2 results historical, and has no
-CLI/API route, live-source attestation, current-read effect or cutover authority.
+with search and evidence grants and labels v2 results historical. ADR-147 exposes
+that comparison at the human-only
+`POST /v1/brain/sources/{source_id}/v2-search-preview` API route; there is no
+CLI command, live-source attestation, current-read effect or cutover authority.
 
 ## Operator and shared processing functions
 

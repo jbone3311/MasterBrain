@@ -16,6 +16,13 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-147 gives the existing ADR-128 historical FileOS v2 search reviewer a
+  bounded, human-only Brain API route for one named ready generation versus
+  active v1. The route requires transition-review, search and evidence scopes,
+  labels v2 as a historical preview and refuses stale baselines; assistants
+  cannot call it. This is synthetic/disposable review access, not an owner UI,
+  v2 current visibility, live-source acceptance or FOS-Master cutover.
+
 - ADR-146 adds a bounded, separate reviewed KnowledgeCore match list to Ask,
   with at most five displayed direct evidence IDs per assertion and a full
   source-grant/evidence-link recheck before disclosure. The first-party page

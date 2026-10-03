@@ -8,8 +8,8 @@ The first-party read-only workspace at `/brain` uses these same scoped resources
 it is not a second, privileged retrieval or action backend. It displays lexical
 search results in conversation form, not generated answers. Full chat synthesis
 and external-client acceptance remain targets [documented separately](USER_INTERFACES.md).
-ADR-128's FileOS v2 search comparison is an internal, human-review method, not
-a Brain API route or evidence of current v2 visibility.
+ADR-147 exposes ADR-128's FileOS v2 comparison through one human-only,
+historical-preview route. It is not current v2 visibility or cutover.
 
 ## Progressive access
 
@@ -44,6 +44,16 @@ objects, general SQL, or an unbounded corpus dump.
   generation status; requires `brain.changes.read`.
 - `POST /v1/brain/sources/{source_id}/search` — implemented bounded lexical search
   against only that source's active generation; requires `brain.search`.
+- `POST /v1/brain/sources/{source_id}/v2-search-preview` — implemented
+  human-only, read-only comparison of one named ready historical v2 generation
+  against the source's active v1 generation. A closed request carries
+  `generation_id`, `query` and `limit` (1–50 per generation). Requires
+  `brain.fileos.transition.review`, `brain.search` and
+  `brain.evidence.read`; assistants are denied. Results are independently
+  ranked and the candidate is labelled `historical_preview`. Missing or
+  wrong-source generations return 404, stale v1/root basis returns 409, and
+  invalid input returns generic 422. This does not activate v2 or establish
+  FileOS parity/cutover (ADR-147).
 
 ADR-142 admits enrolled assistants to the five exact-source FileOS reads above
 and the aggregate/retained Brain searches. An ungranted source is

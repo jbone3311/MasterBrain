@@ -2,7 +2,48 @@
 
 Updated 2026-10-02 Pacific. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Fictional contradictory-source Ask corpus — local verification
+## ADR-147 human FileOS v2 search review API — local verification
+
+The new human-only Brain route delegates to ADR-128's unchanged historical
+reviewer. A fictional PostgreSQL chain built a ready v2 generation, compared
+it with no active v1 and then with an active v1, and verified that a later v1
+completion makes the API return 409 without exposing hits. The same test
+checked exact source/generation binding, invalid inputs, missing targets,
+scope and assistant denial, and unchanged activation count. This focused
+real-PostgreSQL test passed on a fresh disposable database. On current `main`,
+the pinned FOS-Master donor-policy shadow still matched **3,004 ordinary**
+rows on the 3,000-file corpus; six v1-to-donor policy gaps remain explicit.
+No donor edit, source effect, v2 activation or live-root acceptance occurred.
+The complete Python 3.14.7 suite passed **3,014 tests with one intentional
+skip** on a fresh PostgreSQL 17.11 cluster; 481 of 482 PostgreSQL-marked tests
+executed. All six browser suites passed **145 tests**; Ruff, strict mypy over
+98 source files, documentation links/inventory and diff checks passed. The
+first full run loaded a stale installed package and returned 404 for the new
+route; reinstalling this branch's package corrected the test environment, and
+the complete rerun passed. An independent deployment gate on a second fresh
+disposable PostgreSQL 17.11 database also passed **3,014 tests with one
+intentional skip** and reported `PASS: repository quality gate`. These local
+results are separate from GitHub checks. The first hosted attempts on PR #116
+failed before any job step because GitHub reported an account payment or Actions
+spending-limit gate; they were not test failures. After the account condition
+changed, reruns on code head `5771cfc23e424cb840124f2b221bf72aaad2d05e`
+passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37053370693),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37053370723)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37053370719).
+PR #116 records the final documentation-only head and merge checks separately.
+
+## Fictional contradictory-source Ask corpus — merged-main verification
+
+PR [#115](https://github.com/jbone3311/MasterBrain/pull/115) merged at
+`e81a51cda2423c2d18702b51a8d04b90fe74901d`. Its exact-head
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37044596370),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37044596336)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37044596459)
+passed. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37046381483),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37046381401)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37046381314)
+also passed. The finished branch was removed.
 
 The cross-source trial now has a Maple Arcade file and Email stating different
 fictional closing dates. Both are explicitly bridged/indexed. Ask “When is
@@ -22,7 +63,8 @@ run launched from a `PYTHONPATH` workaround failed three clean-subprocess
 imports; the locked non-editable installation made those three pass, and both
 subsequent full runs passed. This is evaluation of an unresolved conflict,
 not semantic conflict detection, chronology resolution or hosted/live-source
-acceptance. Exact-head GitHub checks remain pending for this branch.
+acceptance. The local results are separate from the exact-head and merged-main
+checks above.
 
 ## ADR-146 reviewed KnowledgeCore in Ask — merged-main verification
 

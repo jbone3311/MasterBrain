@@ -60,12 +60,13 @@ search-only grant without converting an answer denial into a search. This does
 not approve sending private content to a remote
 model or establish semantic truth beyond the quoted source text.
 
-ADR-128's FileOS v2 search comparison is not in that workspace or the public
-Brain API. It requires a human transition reviewer plus search and evidence
-grants, binds one ready historical generation to the latest v1 baseline under
-the source lock, emits a content-free audit event, and labels v2 results as a
-preview. It cannot activate v2 or give an external assistant an alternate
-route around current-search policy.
+ADR-128's FileOS v2 search comparison is not in the first-party workspace.
+ADR-147 exposes only that existing comparison through a human-only Brain API
+route. It requires transition-review, search and evidence grants, binds one
+ready historical generation to the latest v1 baseline under the source lock,
+emits a content-free audit event, and labels v2 results as a preview. Invalid
+requests and stale baselines fail with generic errors; assistants cannot call
+this route. It cannot activate v2 or bypass current-search policy.
 
 ADR-129's external reference client fixes one operator-supplied origin, defaults
 to HTTPS, disallows redirects and ambient proxies, bounds responses and exposes
