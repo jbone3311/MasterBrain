@@ -1,9 +1,11 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-03. The latest merged direct KnowledgeCore read checkpoint is
-ADR-158/PR #146 at `3bf21b8`: optional unsuperseded review-chain search,
-with exact-head full CI, strict runtime and populated restore green;
-merged-main checks are running. The latest merged Ask checkpoint is
+Updated 2026-10-03. The latest merged grouped Brain/Ask read checkpoint is
+ADR-159/PR #148 at `f9402d7`: unsuperseded reviewed leaves in the all-source
+Knowledge layer, with exact-head full CI, strict runtime and populated restore
+green; merged-main checks are running. The prior direct KnowledgeCore read
+checkpoint is ADR-158/PR #146 at `3bf21b8`, with exact-head and merged-main
+checks green. The prior Ask output-budget checkpoint is
 ADR-157/PR #144 at `96cb22b`: aggregate Ask output-text budgeting, with
 exact-head and merged-main CI, strict runtime and restore green. The latest Email functional
 checkpoint is ADR-110/PR #133 at `ff7a296`: synthetic Fastmail read-worker resilience,
@@ -46,8 +48,8 @@ production and FileOS cutover remain open.
 - ADR-159 composes ADR-158's source-grant-aware unsuperseded projection into
   grouped Brain current-search and Ask, with explicit coverage labeling.
   Direct KnowledgeCore and unified retained-history searches remain unchanged;
-  multiple leaves are not valid-time truth. PostgreSQL and PR gates are
-  pending for this candidate.
+  multiple leaves are not valid-time truth. Exact-head PostgreSQL, strict
+  runtime and restore gates passed; merged-main checks are in the receipt.
 
 - ADR-158 adds an optional `unsuperseded` direct KnowledgeCore lexical mode.
   It omits correction records and predecessors only when source-authorized
