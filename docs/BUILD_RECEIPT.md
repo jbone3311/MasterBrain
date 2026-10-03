@@ -2,9 +2,10 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## ADR-110 Fastmail resilience integration — local candidate
+## ADR-110 Fastmail resilience integration — PR #133 merged
 
-The integration branch preserves Claude's [draft #45](https://github.com/jbone3311/MasterBrain/pull/45)
+The [integration PR #133](https://github.com/jbone3311/MasterBrain/pull/133)
+preserves Claude's [draft #45](https://github.com/jbone3311/MasterBrain/pull/45)
 commit as a merge parent, ports its held-source schema to forward migration
 0052, distinguishes control-byte overflow from malformed JMAP, and bisects a
 valid oversized metadata batch before an atomic page commit. A synthetic
@@ -20,9 +21,18 @@ test**; the nested local-launcher test passed separately after the task's
 other disposable cluster was stopped. macOS had exhausted its 32 SysV shared-
 memory IDs with both clusters running; the original socket-DSN run also
 violated the trial harness's loopback-DSN requirement. These are test-environment
-constraints, not evidence of live-provider correctness. Exact-head hosted CI,
-strict runtime, populated restore and any merged-main acceptance are still
-required; no real mailbox was contacted or approved.
+constraints, not evidence of live-provider correctness. The exact head
+`123e89e6aba8194ee5e294320db47cac30ef47fc` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37121216438),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37121216346)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37121216459)
+before merging to `main` at `ff7a2960ad90763396bc2b340dd7d69f3bed8bd5`.
+Merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37122058539),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37122058534)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37122058546)
+also passed. These verify the merged synthetic/disposable state, not a live
+Fastmail account or hosted operator rollout; no real mailbox was contacted
+or approved.
 
 ## Prior `main` documentation checkpoints — PRs #131 and #132
 

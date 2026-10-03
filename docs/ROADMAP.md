@@ -1,7 +1,8 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-03 through ADR-152's confined FileOS shadow on `main`
-(PR #130 at `c834fef`) and documentation PR #131 at `65dcdf7`.
+Updated 2026-10-03 through ADR-110's Fastmail resilience on `main`
+(PR #133 at `ff7a296`) and ADR-152's confined FileOS shadow
+(PR #130 at `c834fef`).
 This is a dependency-ordered plan, not a release claim.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
@@ -24,15 +25,16 @@ FileOS cutover acceptance is implied.
 
 ## Next verified sequence
 
-The Email reliability tranche uses [ADR-110](adr/110_fastmail_sync_resilience.md)
+The synthetic Email reliability tranche uses [ADR-110](adr/110_fastmail_sync_resilience.md)
 and preserves the original [Claude draft #45](https://github.com/jbone3311/MasterBrain/pull/45)
-as provenance. The current integration renumbers its held-source migration to
-0052 and splits only control-byte-overflowing metadata requests. Before treating
-that work as accepted, require a valid 50-message metadata-overflow page, an
-unsplittable-row refusal, partial-budget/replay/recovery tests, populated
-migration coverage, exact-head CI, strict runtime and populated restore. A
-green old-base check alone is insufficient. No live Fastmail account is
-authorized by this plan.
+as provenance. [PR #133](https://github.com/jbone3311/MasterBrain/pull/133)
+renumbered its held-source migration to 0052 and splits only control-byte-
+overflowing metadata requests. The valid 50-message overflow page,
+unsplittable-row refusal, partial-budget/replay/recovery and populated
+migration tests passed, as did exact-head CI, strict runtime and restore.
+Merged-main results are in the [build receipt](BUILD_RECEIPT.md). This is not
+a live-account, scheduler, hosted-operations or production acceptance; those
+remain separately gated. FOS-Master is unaffected.
 
 The latest merged FileOS functional slice is [PR #116](https://github.com/jbone3311/MasterBrain/pull/116):
 its final head and merged `main` passed full CI, strict runtime and populated
