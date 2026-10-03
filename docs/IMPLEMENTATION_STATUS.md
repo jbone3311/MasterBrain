@@ -1,7 +1,9 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-03. The latest merged functional checkpoint is
-ADR-110/PR #133 at `ff7a296`: synthetic Fastmail read-worker resilience,
+Updated 2026-10-03. The latest merged owner-facing read checkpoint is
+ADR-157/PR #144 at `96cb22b`: aggregate Ask output-text budgeting, with
+exact-head and merged-main CI, strict runtime and restore green. The latest Email functional
+checkpoint is ADR-110/PR #133 at `ff7a296`: synthetic Fastmail read-worker resilience,
 with exact-head and merged-main CI, strict runtime and populated restore passed.
 ADR-154/PR #137 later strengthens the disposable two-tenant restore drill;
 it changes no product runtime path and does not close hosted issue #7.
