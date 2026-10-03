@@ -19,9 +19,13 @@ deployment gate passed **3,027 Python tests, one Docker-only skip** on
 disposable PostgreSQL 17.11 (482 of 483 PostgreSQL-marked tests executed);
 all six browser suites passed **145 tests**. Ruff, strict mypy over 98 source
 files and the benchmark script, documentation links and diff checks passed.
-The `postgres:17` workflow result and exact-head/merged-main checks are
-pending. FOS-Master was not contacted; issue #71 remains open for broader
-load/platform acceptance.
+The independent [PostgreSQL 17.11 Debian container workflow](https://github.com/jbone3311/MasterBrain/actions/runs/37104973815)
+passed the same 3,000-row comparison: current **1.520 s**, with old trigger
+**50.655 s** (**33.33×**), and zero timed/requested checkpoints during each
+completion. This corroborates the trigger-cost mechanism across two local
+platforms but is not a production latency guarantee. Final PR-head and
+merged-main gates are pending. FOS-Master was not contacted; issue #71 remains
+open for broader load/platform acceptance.
 
 ## ADR-149 assistant legacy Email denial — merged verification
 

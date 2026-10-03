@@ -25,7 +25,12 @@ shared runner is not a stable performance budget.
 On 2026-10-02, local Homebrew PostgreSQL 17.11 on macOS completed the current
 3,000-row writer in **0.577 s**, then the same writer with the legacy trigger
 in **24.202 s** (41.97×). That first controlled run did not capture checkpoint
-counters; a repeated run and the container result are recorded in the
-[build receipt](BUILD_RECEIPT.md). These are one-machine observations, not an
-SLA. A real FileOS cutover still needs donor parity, sustained read-only
+counters. A repeated local run took 0.529 s versus 24.404 s (46.1×), with
+zero checkpoints during either measured completion. The independent
+[`postgres:17` container run](https://github.com/jbone3311/MasterBrain/actions/runs/37104973815)
+on 2026-10-03 took **1.520 s** versus **50.655 s** (**33.33×**) and also
+reported zero checkpoints. These are environment-specific wall-clock
+observations, not an SLA or proof that all later workloads meet the five-second
+statement budget. Exact details are in the [build receipt](BUILD_RECEIPT.md).
+A real FileOS cutover still needs donor parity, sustained read-only
 shadowing, source-fault tests, rollback and owner acceptance.

@@ -5,9 +5,11 @@
 The opt-in [3,000-row benchmark](FILEOS_COMPLETION_BENCHMARK.md) isolates the
 old deferred per-item ledger trigger on today's synthetic FileOS v1 writer.
 Two fresh local PostgreSQL 17.11 runs show a roughly 42–46× trigger cost;
-the second observed no checkpoints in either measured completion. A dedicated
-`postgres:17` workflow and exact-head/merged-main checks remain to be
-verified. This does not change FileOS behavior or close issue #71 by itself.
+the second observed no checkpoints in either measured completion. An
+independent [PostgreSQL 17 container run](https://github.com/jbone3311/MasterBrain/actions/runs/37104973815)
+showed 33.33× with no measured checkpoints. Final-head/merged-main checks
+remain to be verified. This does not change FileOS behavior or close issue
+#71 by itself.
 
 ## Latest merged authorization-hardening tranche (2026-10-02)
 
