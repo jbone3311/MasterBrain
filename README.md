@@ -36,6 +36,13 @@ disposable PostgreSQL; MasterBrain is not a hosted or live-source product, and
 FOS-Master has not been replaced, renamed, or modified. See the
 [alpha test guide](docs/ALPHA_TESTING.md) for the precise trial boundary.
 
+For work in progress, use the [roadmap](docs/ROADMAP.md) and
+[build progress](docs/BUILD_PROGRESS.md). Claude's
+[Fastmail resilience PR #45](https://github.com/jbone3311/MasterBrain/pull/45)
+is still a draft on an older base: its metadata-page budget and migration
+number need reconciliation and fresh tests before it can be merged. Neither
+that draft nor the current synthetic alpha authorizes a live mailbox.
+
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 The internal `email_brain` package remains for compatibility and identifies the
 original Email capability, not the final product. New source-neutral code enters
