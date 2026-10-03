@@ -3507,9 +3507,152 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         assert next(row for row in claims if row["value"] == "October")["supersedes_id"] == (
             first_claim.object_id
         )
+    with psycopg.connect(admin) as conn:
+        lookup_indexes = {
+            row[0] for row in conn.execute(
+                "SELECT indexname FROM pg_indexes WHERE schemaname='public' "
+                "AND indexname LIKE 'knowledge_%_lookup'"
+            ).fetchall()
+        }
+    assert lookup_indexes >= {
+        "knowledge_entities_supersedes_lookup",
+        "knowledge_relationships_supersedes_lookup",
+        "knowledge_claims_supersedes_lookup",
+        "knowledge_events_supersedes_lookup",
+        "knowledge_projects_supersedes_lookup",
+        "knowledge_commitments_supersedes_lookup",
+        "knowledge_corrections_target_lookup",
+    }
 
     hits = knowledge.search(ctx, "October", kinds=["claim"])
     assert len(hits) == 1 and hits[0].object_id == second_claim.object_id
+    assert [hit.object_id for hit in knowledge.search(
+        ctx, "September", kinds=["claim"], visibility="retained"
+    )] == [first_claim.object_id]
+    assert knowledge.search(
+        ctx, "September", kinds=["claim"], visibility="unsuperseded"
+    ) == []
+    assert [hit.object_id for hit in knowledge.search(
+        ctx, "October", kinds=["claim"], visibility="unsuperseded"
+    )] == [second_claim.object_id]
+    assert knowledge.search(
+        ctx, "Later reviewed evidence", kinds=["correction"], visibility="unsuperseded"
+    ) == []
+    with pytest.raises(ValueError, match="invalid knowledge visibility"):
+        knowledge.search(ctx, "October", visibility="current")  # type: ignore[arg-type]
+
+    old_project = knowledge.publish(
+        ctx,
+        ProjectWrite(kind="project", title="Skyline renewal", description="Open review",
+                     state="active", **common),
+        uuid4(),
+    )
+    new_project = knowledge.publish(
+        ctx,
+        ProjectWrite(
+            kind="project", title="Skyline renewal", description="Completed review",
+            state="completed", supersedes_id=old_project.object_id,
+            **{**common, "evidence_ids": [evidence_id, current_email.evidence_id]},
+        ),
+        uuid4(),
+    )
+    assert {hit.object_id for hit in knowledge.search(
+        ctx, "Skyline renewal", kinds=["project"], visibility="retained"
+    )} == {old_project.object_id, new_project.object_id}
+    assert [hit.object_id for hit in knowledge.search(
+        ctx, "Skyline renewal", kinds=["project"], visibility="unsuperseded", limit=1
+    )] == [new_project.object_id]
+    fileos_only = replace(ctx, source_ids=frozenset({"files_knowledge"}))
+    assert [hit.object_id for hit in knowledge.search(
+        fileos_only, "Skyline renewal", kinds=["project"], visibility="unsuperseded"
+    )] == [old_project.object_id]
+    second_project_branch = knowledge.publish(
+        ctx,
+        ProjectWrite(
+            kind="project", title="Skyline renewal", description="Blocked review",
+            state="blocked", supersedes_id=old_project.object_id, **common,
+        ),
+        uuid4(),
+    )
+    assert {hit.object_id for hit in knowledge.search(
+        ctx, "Skyline renewal", kinds=["project"], visibility="unsuperseded"
+    )} == {new_project.object_id, second_project_branch.object_id}
+    assert [hit.object_id for hit in knowledge.search(
+        fileos_only, "Skyline renewal", kinds=["project"], visibility="unsuperseded"
+    )] == [second_project_branch.object_id]
+
+    old_commitment = knowledge.publish(
+        ctx,
+        CommitmentWrite(
+            kind="commitment", description="Skyline audit pending", state="open", **common,
+        ),
+        uuid4(),
+    )
+    new_commitment = knowledge.publish(
+        ctx,
+        CommitmentWrite(
+            kind="commitment", description="Skyline audit complete", state="completed",
+            **{**common, "evidence_ids": [current_email.evidence_id]},
+        ),
+        uuid4(),
+    )
+    knowledge.publish(
+        ctx,
+        CorrectionWrite(
+            kind="correction", target_kind="commitment",
+            target_id=old_commitment.object_id,
+            replacement_id=new_commitment.object_id,
+            reason="Reviewed audit correction",
+            evidence_ids=[evidence_id],
+            source_quote=common["source_quote"], observed_at=common["observed_at"],
+            reviewed=True,
+        ),
+        uuid4(),
+    )
+    assert {hit.object_id for hit in knowledge.search(
+        ctx, "Skyline audit", kinds=["commitment"], visibility="retained"
+    )} == {old_commitment.object_id, new_commitment.object_id}
+    assert [hit.object_id for hit in knowledge.search(
+        ctx, "Skyline audit", kinds=["commitment"], visibility="unsuperseded"
+    )] == [new_commitment.object_id]
+    assert [hit.object_id for hit in knowledge.search(
+        fileos_only, "Skyline audit", kinds=["commitment"], visibility="unsuperseded"
+    )] == [old_commitment.object_id]
+
+    hidden_correction_old = knowledge.publish(
+        ctx,
+        CommitmentWrite(
+            kind="commitment", description="Orion audit pending", state="open", **common,
+        ),
+        uuid4(),
+    )
+    hidden_correction_new = knowledge.publish(
+        ctx,
+        CommitmentWrite(
+            kind="commitment", description="Orion audit complete",
+            state="completed", **common,
+        ),
+        uuid4(),
+    )
+    knowledge.publish(
+        ctx,
+        CorrectionWrite(
+            kind="correction", target_kind="commitment",
+            target_id=hidden_correction_old.object_id,
+            replacement_id=hidden_correction_new.object_id,
+            reason="Orion reviewed correction",
+            evidence_ids=[current_email.evidence_id],
+            source_quote=common["source_quote"], observed_at=common["observed_at"],
+            reviewed=True,
+        ),
+        uuid4(),
+    )
+    assert [hit.object_id for hit in knowledge.search(
+        ctx, "Orion audit pending", kinds=["commitment"], visibility="unsuperseded"
+    )] == []
+    assert {hit.object_id for hit in knowledge.search(
+        fileos_only, "Orion audit", kinds=["commitment"], visibility="unsuperseded"
+    )} == {hidden_correction_old.object_id, hidden_correction_new.object_id}
     loaded = knowledge.get(ctx, "commitment", commitment.object_id)
     assert loaded["description"].startswith("Alex will submit")
     assert loaded["valid_from"] == datetime(2026, 9, 22, tzinfo=UTC)
@@ -3534,6 +3677,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         )
     other = replace(ctx, tenant_id=other_tenant, actor_id=other_actor, request_id=uuid4())
     assert knowledge.search(other, "October") == []
+    assert knowledge.search(other, "Skyline", visibility="unsuperseded") == []
     assert core.current_coverage(other)["results"] == []
     with pytest.raises(NotFound):
         knowledge.get(other, "claim", second_claim.object_id)
@@ -3570,6 +3714,40 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         headers=headers,
     )
     assert searched.status_code == 200 and searched.json()["results"]
+    assert searched.json()["visibility"] == "retained"
+    current_reviewed = api.post(
+        "/v1/knowledge/search",
+        json={"query": "Skyline renewal", "kinds": ["project"],
+              "visibility": "unsuperseded"},
+        headers=headers,
+    )
+    assert current_reviewed.status_code == 200
+    assert current_reviewed.json()["visibility"] == "unsuperseded"
+    assert {row["object_id"] for row in current_reviewed.json()["results"]} == {
+        new_project.object_id, second_project_branch.object_id,
+    }
+    assistant_token = secrets.token_urlsafe(40)
+    assistant_api = TestClient(create_app(store, TokenRegistry([Credential(
+        token_sha256=hashlib.sha256(assistant_token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"knowledge.search"},
+        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+        client_kind="assistant", source_ids={"files_knowledge"},
+    )])))
+    assistant_reviewed = assistant_api.post(
+        "/v1/knowledge/search",
+        json={"query": "Skyline renewal", "kinds": ["project"],
+              "visibility": "unsuperseded"},
+        headers={"Authorization": f"Bearer {assistant_token}"},
+    )
+    assert assistant_reviewed.status_code == 200
+    assert [row["object_id"] for row in assistant_reviewed.json()["results"]] == [
+        second_project_branch.object_id
+    ]
+    assert api.post(
+        "/v1/knowledge/search",
+        json={"query": "Skyline", "visibility": "current"}, headers=headers,
+    ).status_code == 422
     unified = api.post(
         "/v1/brain/unified-search",
         json={

@@ -21,6 +21,7 @@ from masterbrain.knowledge_schema import (
     EntityWrite,
     EventWrite,
     KnowledgeAssertion,
+    KnowledgeVisibility,
     ProjectWrite,
     RelationshipWrite,
 )
@@ -35,6 +36,44 @@ _TABLES = {
     "commitment": "knowledge_commitments",
     "correction": "knowledge_corrections",
 }
+
+
+def _visible_assertion_sql(alias: str, kind_sql: str, id_sql: str) -> str:
+    """Closed SQL fragment for an assertion's full direct-source grant set."""
+    return (
+        "(allowed.sources IS NULL OR ("
+        "EXISTS (SELECT 1 FROM knowledge_evidence ke "
+        f"WHERE ke.tenant_id={alias}.tenant_id AND ke.target_kind={kind_sql} "
+        f"AND ke.target_id={id_sql}) AND NOT EXISTS ("
+        "SELECT 1 FROM knowledge_evidence ke "
+        "JOIN brain_evidence e ON e.tenant_id=ke.tenant_id "
+        "AND e.id=ke.evidence_id "
+        "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+        "AND v.id=e.source_version_id "
+        f"WHERE ke.tenant_id={alias}.tenant_id AND ke.target_kind={kind_sql} "
+        f"AND ke.target_id={id_sql} "
+        "AND v.source_id<>ALL(allowed.sources))))"
+    )
+
+
+_VISIBLE_REPLACEMENT = _visible_assertion_sql("r", "r.object_kind", "r.object_id")
+_VISIBLE_CORRECTION = _visible_assertion_sql("c", "'correction'", "c.id")
+_UNSUPERSEDED_SQL = (
+    "k.object_kind<>'correction' AND NOT EXISTS ("
+    "SELECT 1 FROM knowledge_corrections c "
+    "JOIN knowledge_search_documents r ON r.tenant_id=c.tenant_id "
+    "AND r.object_kind=c.target_kind AND r.object_id=c.replacement_id "
+    "WHERE c.tenant_id=k.tenant_id AND c.target_kind=k.object_kind "
+    "AND c.target_id=k.object_id AND "
+    + _VISIBLE_CORRECTION + " AND " + _VISIBLE_REPLACEMENT + ") "
+    + " ".join(
+        "AND (k.object_kind<>'" + kind + "' OR NOT EXISTS ("
+        "SELECT 1 FROM " + table + " s WHERE s.tenant_id=k.tenant_id "
+        "AND s.supersedes_id=k.object_id AND "
+        + _visible_assertion_sql("s", "'" + kind + "'", "s.id") + "))"
+        for kind, table in _TABLES.items() if kind != "correction"
+    )
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -371,7 +410,8 @@ class KnowledgeCore:
             return {**row, "kind": kind, "evidence": evidence, "untrusted_content": True}
 
     def search(
-        self, ctx: TenantContext, query: str, *, limit: int = 10, kinds: list[str] | None = None
+        self, ctx: TenantContext, query: str, *, limit: int = 10,
+        kinds: list[str] | None = None, visibility: KnowledgeVisibility = "retained",
     ) -> list[KnowledgeHit]:
         self.store.require(ctx, "knowledge.search")
         selected = kinds or []
@@ -379,30 +419,29 @@ class KnowledgeCore:
             raise ValueError("invalid knowledge search")
         if any(kind not in _TABLES for kind in selected) or len(set(selected)) != len(selected):
             raise ValueError("invalid knowledge kinds")
+        if visibility not in {"retained", "unsuperseded"}:
+            raise ValueError("invalid knowledge visibility")
         allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        visibility_sql = (
+            " AND (" + _UNSUPERSEDED_SQL + ")"
+            if visibility == "unsuperseded" else ""
+        )
         with self.store.transaction(ctx) as conn:
             rows = conn.execute(
+                "WITH allowed AS (SELECT %s::text[] AS sources) "
                 "SELECT k.object_kind,k.object_id,k.title,"
                 "ts_headline('simple',k.body,plainto_tsquery('simple',%s),"
                 "'MaxWords=35,MinWords=10,StartSel=\"\",StopSel=\"\"') AS excerpt,"
                 "ts_rank_cd(k.search_vector,plainto_tsquery('simple',%s)) AS rank "
-                "FROM knowledge_search_documents k WHERE k.search_vector @@ "
+                "FROM knowledge_search_documents k CROSS JOIN allowed "
+                "WHERE k.search_vector @@ "
                 "plainto_tsquery('simple',%s) "
                 "AND (cardinality(%s::text[])=0 OR k.object_kind=ANY(%s)) "
-                "AND (%s::text[] IS NULL OR ("
-                "EXISTS (SELECT 1 FROM knowledge_evidence ke "
-                "WHERE ke.tenant_id=k.tenant_id AND ke.target_kind=k.object_kind "
-                "AND ke.target_id=k.object_id) AND NOT EXISTS ("
-                "SELECT 1 FROM knowledge_evidence ke "
-                "JOIN brain_evidence e ON e.tenant_id=ke.tenant_id "
-                "AND e.id=ke.evidence_id JOIN brain_source_versions v "
-                "ON v.tenant_id=e.tenant_id AND v.id=e.source_version_id "
-                "WHERE ke.tenant_id=k.tenant_id AND ke.target_kind=k.object_kind "
-                "AND ke.target_id=k.object_id AND v.source_id<>ALL(%s::text[])))) "
-                "ORDER BY rank DESC,k.object_kind,k.object_id LIMIT %s",
+                "AND " + _visible_assertion_sql("k", "k.object_kind", "k.object_id")
+                + visibility_sql + " ORDER BY rank DESC,k.object_kind,k.object_id LIMIT %s",
                 (
-                    query, query, query, selected, selected, allowed_sources,
-                    allowed_sources, limit,
+                    allowed_sources, query, query, query, selected, selected,
+                    limit,
                 ),
             ).fetchall()
             hits: list[KnowledgeHit] = []

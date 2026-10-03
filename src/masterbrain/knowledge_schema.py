@@ -14,6 +14,7 @@ Predicate = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,99}$")]
 KnowledgeKind = Literal[
     "entity", "relationship", "claim", "event", "project", "commitment", "correction"
 ]
+KnowledgeVisibility = Literal["retained", "unsuperseded"]
 
 
 class AssertionBase(ClosedModel):
@@ -161,6 +162,7 @@ class KnowledgeSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     limit: int = Field(default=10, ge=1, le=50, strict=True)
     kinds: list[KnowledgeKind] = Field(default_factory=list, max_length=7)
+    visibility: KnowledgeVisibility = "retained"
 
     @field_validator("kinds")
     @classmethod

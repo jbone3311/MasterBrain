@@ -83,6 +83,13 @@ extraction remain targets.
 - **commitment**: description, owner, counterparty, due interval, state and evidence.
 - **supersession/correction**: links versions without erasing prior assertions.
 
+Migration `0053_knowledge_unsuperseded_lookup.sql` adds tenant-scoped indexes
+for the six same-kind `supersedes_id` links and correction targets. It changes
+no assertion rows. Direct KnowledgeCore search may explicitly request the
+source-grant-aware unsuperseded review-chain leaves (ADR-158); the default
+continues to retrieve retained history. Multiple leaves and valid-time
+intervals remain independent, so this is not a single current-truth row.
+
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is
 represented explicitly.

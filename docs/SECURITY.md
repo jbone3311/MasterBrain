@@ -118,6 +118,14 @@ fails authentication rather than using unfenced compatibility reads. Human
 and worker Email paths are unchanged; hosted issuer and derived-cache
 acceptance remain open.
 
+ADR-158's optional unsuperseded KnowledgeCore search checks the full direct
+source-grant set on each predecessor, successor, correction and replacement
+before a newer record may suppress an older result. A hidden-source update
+must not change the visible review-chain projection solely by being added.
+Returned hits still require the direct-link filter before rank and limit.
+This is synthetic read behavior, not a semantic noninterference proof for
+human-authored text or hosted assistant acceptance.
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,

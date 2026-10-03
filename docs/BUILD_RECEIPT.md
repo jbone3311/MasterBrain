@@ -2,6 +2,17 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Unsuperseded reviewed KnowledgeCore search — ADR-158 candidate
+
+Branch `codex/knowledge-unsuperseded-search` adds optional read-only
+review-chain leaf retrieval, source-grant-aware suppression, and forward
+lookup indexes in migration 0053. Local non-PostgreSQL tests passed 2,611;
+488 PostgreSQL-marked tests and one host-dependent disposable launcher test
+were deselected, **not passed**. Ruff, source mypy and the documentation
+checker passed. The new PostgreSQL semantic and populated-upgrade tests,
+hosted CI, strict runtime and restore have not yet passed on this candidate.
+FOS-Master and all source files remain unchanged.
+
 ## Ask output-text budget — ADR-157 candidate
 
 The candidate branch `codex/ask-output-text-budget` keeps exact source quotes

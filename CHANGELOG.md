@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added an explicit source-grant-aware `unsuperseded` visibility option to
+  direct KnowledgeCore lexical search (ADR-158), with indexes for successor
+  and correction lookups. Retained history remains the default, and grouped
+  Brain current-search has not switched its KnowledgeCore layer. Multiple
+  review-chain leaves remain distinct; this is not temporal truth resolution.
+
 - Bounded extractive Ask's returned exact quote plus reviewed-match text to
   8,192 UTF-8 bytes (ADR-157). Exact quotes stay intact; reviewed output is
   shortened or omitted in stable order with a separate visible flag. The

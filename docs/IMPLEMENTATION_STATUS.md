@@ -38,6 +38,14 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-158 adds an optional `unsuperseded` direct KnowledgeCore lexical mode.
+  It omits correction records and predecessors only when source-authorized
+  successors or corrections with visible replacements exist, before rank and
+  limit. Retained history is still the default. This is a review-chain leaf
+  view, not valid-time truth, contradiction resolution, grouped Brain current
+  KnowledgeCore behavior, or hosted acceptance. PostgreSQL and PR gates are
+  pending for this candidate.
+
 - ADR-157 caps aggregate exact quote plus reviewed KnowledgeCore display text
   returned by Ask at 8,192 UTF-8 bytes. Exact quotes and links remain intact;
   reviewed excerpts may be shortened or later matches omitted with a separate
