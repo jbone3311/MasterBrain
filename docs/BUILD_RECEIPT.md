@@ -2,7 +2,7 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Explicit Brain source focus — local candidate verification
+## Explicit Brain source focus — PR #126 and merged `main`
 
 ADR-150 adds optional All/Email/FileOS focus to grouped current search,
 extractive Ask, the first-party `/brain` workspace and `BrainReadClient`.
@@ -16,8 +16,12 @@ local deployment gate passed **3,032 Python tests, one Docker-only skip**
 (484 of 485 PostgreSQL-marked tests executed); all six browser suites passed
 **147 tests**. Ruff, strict mypy over 98 files, the documentation inventory/link
 check and diff whitespace check passed. CI, strict runtime and populated
-restore remain pending on the branch; this is not a hosted or live-source
-acceptance claim.
+restore passed on the exact [PR #126](https://github.com/jbone3311/MasterBrain/pull/126)
+head `0c64a48` and merged `main` `c984a2e`:
+[CI](https://github.com/jbone3311/MasterBrain/actions/runs/37111156596),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37111156635),
+[populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37111156665).
+This is not a hosted or live-source acceptance claim.
 
 ## Ask mid-turn assistant source revocation — local regression
 
