@@ -16,6 +16,12 @@ or encrypted integrity failure returns 503 `evidence_storage_unavailable`, also
 without a cached attempt. Restore storage before retrying. Existing inline evidence
 continues to use the checks below; no raw-download endpoint is introduced.
 
+Mail whose source exceeds the storage budget is held as `source_too_large` with a
+null `raw_sha256` (migration **0038**, [ADR-110](adr/110_fastmail_sync_resilience.md)).
+There is nothing to parse: retry and isolated recovery jobs return 409, and the
+owner screen shows the receipt without a retry control. The worker revisits the
+message under a larger budget at its next full listing.
+
 ## Operator workflow
 
 1. Sign in with a human owner bootstrap credential carrying `email.review` and

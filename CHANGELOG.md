@@ -249,6 +249,16 @@
   A pinned synthetic FOS-Master comparison now matches 3,004 ordinary file rows
   without changing snapshot v1, completion, search, or the donor repository.
   Metadata-only and fault outcomes remain explicit; no FileOS cutover is implied.
+- Added a synthetic Fastmail read-worker resilience proposal (ADR-110,
+  migration 0052): listing pages by JMAP anchor with an explicit sort instead of
+  restarting on every query-state change; oversized messages become accounted
+  `source_too_large` quarantine receipts and advance the cursor instead of pausing
+  the account; flag-only updates reuse retained bytes for an unchanged blob; a
+  non-ASCII `Retry-After` is ignored; a lost lease is a `lease_lost` outcome.
+  Oversized metadata control responses are split by ID, and valid reported
+  source sizes beyond 2 GiB are held without allocation. A single unsplittable
+  control row still fails closed. Live acceptance remains a separate gate; no
+  mailbox write or scheduler is added.
 - Added opt-in two-stage API database routing: a table-blind exact-identity login
   resolves verified claims, then one tenant-bound login performs tenant SQL
   (ADR-109). Synthetic two-tenant API tests and private-file validation pass;

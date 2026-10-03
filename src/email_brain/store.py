@@ -90,16 +90,25 @@ def digest(value: Any) -> str:
     ).hexdigest()
 
 
+HELD_SOURCE_TOO_LARGE = "source_too_large"
+MAX_PROVIDER_SIZE = 2**53 - 1  # Exact in interoperable JSON integer consumers.
+
+
 @dataclass(frozen=True)
 class IngestItem:
     event_key: str
     provider_id: str
     version: str
     received_at: datetime
-    raw: bytes | None = None  # None is an explicit provider tombstone.
+    raw: bytes | None = None  # None is an explicit provider tombstone unless held.
     thread_id: str | None = None
     mailbox_ids: tuple[str, ...] = ()
     keywords: tuple[str, ...] = ()
+    blob_id: str | None = None  # Provider blob identity of ``raw``; enables reuse.
+    # A held message exists at the provider but its bytes were not retained because
+    # they exceed the configured storage budget. It is accounted, not silently skipped.
+    held_reason: str | None = None
+    source_size: int | None = None
 
     def __post_init__(self) -> None:
         if not all(0 < len(v) <= 1000 for v in (self.event_key, self.provider_id, self.version)):
@@ -111,6 +120,22 @@ class IngestItem:
         for values in (self.mailbox_ids, self.keywords):
             if len(values) > 100 or any(not 0 < len(v) <= 512 or "\x00" in v for v in values):
                 raise ValueError("invalid provider metadata")
+        if self.blob_id is not None and (
+            not 0 < len(self.blob_id) <= 512 or "\x00" in self.blob_id
+        ):
+            raise ValueError("invalid blob identifier")
+        if self.held_reason is not None and (
+            self.held_reason != HELD_SOURCE_TOO_LARGE or self.raw is not None
+        ):
+            raise ValueError("held items carry a known reason and no retained bytes")
+        if self.source_size is not None and (
+            type(self.source_size) is not int or not 0 <= self.source_size <= MAX_PROVIDER_SIZE
+        ):
+            raise ValueError("invalid source size")
+
+    @property
+    def held(self) -> bool:
+        return self.held_reason is not None
 
 
 class Store:
@@ -191,6 +216,41 @@ class Store:
     def load_raw(self, ctx: TenantContext, account_id: UUID, sha: str) -> bytes:
         """Internal authorized read. Human exports resolve evidence first, never raw keys."""
         self.require(ctx, "email.evidence.read")
+        return self._retained_raw(ctx, account_id, sha)
+
+    def retained_blobs(
+        self, ctx: TenantContext, account_id: UUID, provider_ids: Sequence[str]
+    ) -> dict[str, tuple[str, str]]:
+        """Provider blob identity and raw digest already retained for current projections.
+
+        Ingest-scoped: lets a worker reuse retained bytes for a flag-only provider update
+        instead of downloading the message again. Only messages whose projection recorded
+        a blob identity qualify; quarantined or legacy rows fall back to a download.
+        """
+        self.require(ctx, "email.ingest")
+        if not 0 < len(provider_ids) <= 100 or len(set(provider_ids)) != len(provider_ids):
+            raise ValueError("1..100 distinct provider IDs required")
+        with self.transaction(ctx) as conn:
+            rows = conn.execute(
+                "SELECT m.provider_message_id,m.provider_metadata->>'blob_id' AS blob_id,"
+                "m.raw_sha256 FROM messages m JOIN raw_objects r ON r.tenant_id=m.tenant_id "
+                "AND r.account_id=m.account_id AND r.sha256=m.raw_sha256 "
+                "WHERE m.account_id=%s AND m.provider_message_id=ANY(%s) "
+                "AND NOT m.quarantined AND m.provider_metadata ? 'blob_id'",
+                (account_id, list(provider_ids)),
+            ).fetchall()
+        return {
+            row["provider_message_id"]: (row["blob_id"], row["raw_sha256"])
+            for row in rows
+            if isinstance(row["blob_id"], str) and row["blob_id"]
+        }
+
+    def retained_raw_for_ingest(self, ctx: TenantContext, account_id: UUID, sha: str) -> bytes:
+        """Ingest-scoped retained bytes for provider replay; never a human export path."""
+        self.require(ctx, "email.ingest")
+        return self._retained_raw(ctx, account_id, sha)
+
+    def _retained_raw(self, ctx: TenantContext, account_id: UUID, sha: str) -> bytes:
         with self.transaction(ctx) as conn:
             row = conn.execute(
                 "SELECT r.raw_mime,r.blob_ref FROM raw_objects r JOIN mail_accounts a "
@@ -336,16 +396,16 @@ class Store:
             ),
         ).fetchone()
         assert message is not None
+        metadata: dict[str, Any] = (
+            {"mailbox_ids": item.mailbox_ids, "keywords": item.keywords}
+            if source_metadata_known
+            else {"source_metadata": "unknown"}
+        )
+        if source_metadata_known and item.blob_id is not None:
+            metadata["blob_id"] = item.blob_id
         conn.execute(
             "UPDATE messages SET provider_metadata=%s WHERE id=%s",
-            (
-                Jsonb(
-                    {"mailbox_ids": item.mailbox_ids, "keywords": item.keywords}
-                    if source_metadata_known
-                    else {"source_metadata": "unknown"}
-                ),
-                message["id"],
-            ),
+            (Jsonb(metadata), message["id"]),
         )
         snapshot = {
             "subject": normalized.subject,
@@ -609,7 +669,7 @@ class Store:
                 item,
                 *(
                     prepare_mime(item.raw)
-                    if item.raw is None or len(item.raw) <= MAX_RAW_BYTES
+                    if not item.held and (item.raw is None or len(item.raw) <= MAX_RAW_BYTES)
                     else (None, [], True)
                 ),
             )
@@ -749,6 +809,18 @@ class Store:
                         ),
                     )
                 if quarantined:
+                    source_metadata: dict[str, Any] = {
+                        "thread_id": item.thread_id,
+                        "mailbox_ids": item.mailbox_ids,
+                        "keywords": item.keywords,
+                    }
+                    if item.held:
+                        reason = str(item.held_reason)
+                        source_metadata["source_size"] = item.source_size
+                    elif item.raw is not None and len(item.raw) > MAX_RAW_BYTES:
+                        reason = "mime_too_large"
+                    else:
+                        reason = "mime_rejected"
                     conn.execute(
                         "INSERT INTO quarantine_receipts"
                         "(tenant_id,account_id,event_key,provider_id,"
@@ -760,17 +832,9 @@ class Store:
                             item.event_key,
                             item.provider_id,
                             raw_hash,
-                            "mime_too_large"
-                            if item.raw is not None and len(item.raw) > MAX_RAW_BYTES
-                            else "mime_rejected",
+                            reason,
                             PARSER_VERSION,
-                            Jsonb(
-                                {
-                                    "thread_id": item.thread_id,
-                                    "mailbox_ids": item.mailbox_ids,
-                                    "keywords": item.keywords,
-                                }
-                            ),
+                            Jsonb(source_metadata),
                         ),
                     )
                     conn.execute(
@@ -810,6 +874,8 @@ class Store:
         # Preserve hashes for pre-worker events with no provider membership snapshot.
         if item.mailbox_ids or item.keywords:
             payload.update(mailbox_ids=item.mailbox_ids, keywords=item.keywords)
+        if item.held:
+            payload.update(held=item.held_reason, source_size=item.source_size)
         return digest(payload)
 
     def quarantines(

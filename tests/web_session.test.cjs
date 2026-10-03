@@ -308,6 +308,20 @@ test("legacy or unsupported quarantine responses expose no retry control", async
   }
 });
 
+test("a held source without retained bytes explains itself and exposes no retry control", async () => {
+  const page = heldPage();
+  page.results[0] = {...page.results[0], reason: "source_too_large", raw_sha256: null};
+  const app = harness(async () => response(page));
+  app.element("account-id").value = heldAccount;
+  await app.evaluate(`heldMessages('${heldAccount}')`);
+  const nodes = descendants(app.element("quarantine"));
+  assert.equal(app.element("quarantine").children.length, 1);
+  assert.ok(nodes.some((n) => n.textContent === "Reason: source_too_large"));
+  assert.ok(nodes.some((n) => /not retained.*storage budget/.test(n.textContent)));
+  assert.ok(!nodes.some((n) => /Preserved SHA-256/.test(n.textContent)));
+  assert.ok(!nodes.some((n) => typeof n.onclick === "function"));
+});
+
 test("recovery failures stay held, refresh current status, and explain cached outcomes without raw content", async () => {
   for (const outcome of ["mime_rejected", "integrity_failed"]) {
     const calls = [];

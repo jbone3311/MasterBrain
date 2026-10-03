@@ -156,8 +156,14 @@ def test_change_during_blob_read_cannot_publish(database, tenant, tmp_path, chan
         return response
 
     mail.handle = changing
-    with pytest.raises(control.ControllerError):
-        run()
+    if change == "lease":
+        # A replaced lease is another worker's account now: no outcome is recorded
+        # and nothing is published, but the command is not an operator error.
+        result = run(max_iterations=1)
+        assert result["results"]["lease_lost"] == 1 and not result["attention_required"]
+    else:
+        with pytest.raises(control.ControllerError):
+            run()
     assert mutated == [True] and all(t.closed for t in transports)
     # The privileged observer reads only this fixture after owner revocation.
     with psycopg.connect(admin) as conn:
