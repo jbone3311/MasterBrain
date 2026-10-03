@@ -1,9 +1,11 @@
 # MasterBrain Implementation Status
 
 Updated 2026-10-03. The latest merged `main` checkpoint is
-ADR-151/PR #128 at `14e91f0`; its exact-head and merged-main full CI, strict
-runtime and populated restore passed. The linked runs are in the
-[build receipt](BUILD_RECEIPT.md). ADR-150/PR #126 at `c984a2e` passed
+ADR-152/PR #130 at `c834fef`; exact-head full CI, strict runtime and
+populated restore passed. Merged-main strict runtime and restore passed;
+full CI is tracked separately in the [build receipt](BUILD_RECEIPT.md).
+ADR-151/PR #128 at `14e91f0` passed exact-head and merged-main full CI,
+strict runtime and populated restore. ADR-150/PR #126 at `c984a2e` passed
 exact-head and merged-main full CI, strict runtime and populated restore.
 PR #125 at `8e62664` and
 ADR-149/PR #120 at `0591eac` also passed these
@@ -30,9 +32,9 @@ production and FileOS cutover remain open.
   directory through a no-follow descriptor instead of `os.walk`. Synthetic
   descendant/ancestor swaps and an after-open move now produce directory
   coverage errors without listing outside filenames. The pinned 3,000-file
-  donor comparison still
-  matched 3,004 ordinary rows with six known policy gaps. This is local
-  candidate verification, not a publishable scanner or live-root acceptance.
+  donor comparison still matched 3,004 ordinary rows with six known policy
+  gaps. PR #130 passed exact-head CI, strict runtime and restore; this is not
+  a publishable scanner or live-root acceptance.
 
 - ADR-151 bounds the extractive Ask selector's source passage text by UTF-8
   bytes (2,048 each, 8,192 total), retains exact prefix citations and reports

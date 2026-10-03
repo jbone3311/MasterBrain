@@ -7,17 +7,20 @@ progressive access with drill-down to original evidence.
 
 **Status:** [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
 is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01), not
-the current product release. The latest merged functional checkpoint is
-[PR #128](https://github.com/jbone3311/MasterBrain/pull/128) at `14e91f0`:
-extractive Ask limits source passage text by UTF-8 bytes and reports truncated
-context. Its exact-head CI, strict runtime and populated restore passed;
-merged-main checks are tracked separately in the
-[build receipt](docs/BUILD_RECEIPT.md). This is not a model-token or
-whole-response budget. Earlier [PR #126](https://github.com/jbone3311/MasterBrain/pull/126)
+the current product release. The latest merged engineering checkpoint is
+[PR #130](https://github.com/jbone3311/MasterBrain/pull/130) at `c834fef`:
+the nonpublishing FileOS donor shadow now confines directory enumeration
+against descendant symlink swaps. It passed exact-head CI, strict runtime and
+restore; merged-main checks are tracked in the
+[build receipt](docs/BUILD_RECEIPT.md). This is not FileOS cutover. The latest
+owner-facing change, [PR #128](https://github.com/jbone3311/MasterBrain/pull/128),
+bounds extractive Ask source passage text by UTF-8 bytes and reports truncated
+context; it is not a model-token or whole-response budget. Earlier
+[PR #126](https://github.com/jbone3311/MasterBrain/pull/126)
 added explicit All/Email/FileOS read focus; neither change closes hosted
 assistant issue #88. [PR #118](https://github.com/jbone3311/MasterBrain/pull/118)
 refuses implicit populated legacy migration rewrites but does not make upgrades
-online or close issue #9. The latest FileOS slice is
+online or close issue #9. The latest user-facing FileOS slice is
 [PR #116](https://github.com/jbone3311/MasterBrain/pull/116) at `b6ebcbf`:
 the human-only historical v2 search comparison API. PRs #118 and #116 passed
 exact-head and merged-main full CI, strict runtime and populated restore. The fictional
