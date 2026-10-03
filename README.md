@@ -7,15 +7,18 @@ progressive access with drill-down to original evidence.
 
 **Status:** [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
 is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01), not
-the current product release. The latest merged engineering checkpoint is
+the current product release. The latest Email functional checkpoint is
 [PR #133](https://github.com/jbone3311/MasterBrain/pull/133): read-only Fastmail
 sync resilience with bounded metadata batching and held oversized mail. It is
 synthetic/disposable-database verified, not a live mailbox acceptance. The
 latest FileOS shadow-hardening checkpoint is
-[PR #130](https://github.com/jbone3311/MasterBrain/pull/130) at `c834fef`:
-the nonpublishing FileOS donor shadow now confines directory enumeration
-against descendant symlink swaps. It passed exact-head and merged-main CI,
-strict runtime and restore; exact runs are tracked in the
+[PR #141](https://github.com/jbone3311/MasterBrain/pull/141) at `082b0e8`:
+the nonpublishing FileOS donor shadow stops inspecting symlink targets and
+requires fresh v2 shadow packets before staging. Earlier
+[PR #130](https://github.com/jbone3311/MasterBrain/pull/130) at `c834fef`
+confined directory enumeration against descendant symlink swaps. Both
+changes passed their exact-head and merged-main CI,
+strict runtime and restore gates; exact runs are tracked in the
 [build receipt](docs/BUILD_RECEIPT.md). This is not FileOS cutover. The latest
 owner-facing change, [PR #128](https://github.com/jbone3311/MasterBrain/pull/128),
 bounds extractive Ask source passage text by UTF-8 bytes and reports truncated

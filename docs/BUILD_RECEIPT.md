@@ -21,6 +21,16 @@ source, schema, deployment or product version changes are included.
 The [post-merge full CI for PR #142](https://github.com/jbone3311/MasterBrain/actions/runs/37138045748)
 subsequently completed successfully at exact `main` commit `d5bb39f`.
 
+## Plan synchronization — PR #142 merged
+
+[PR #142](https://github.com/jbone3311/MasterBrain/pull/142) merged a
+documentation-only receipt for ADR-156 at
+`d5bb39f968e7750f2cf02dbb513fd311183ebf04`. Its exact-head full CI,
+strict-runtime and logical-restore checks passed before merge. It added no
+runtime capability, live-source acceptance or product version. The
+[post-merge full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37138045748)
+later passed at that exact `main` commit, as recorded above.
+
 ## Donor-shadow symlink boundary — PR #141 merged
 
 [PR #141](https://github.com/jbone3311/MasterBrain/pull/141) merged

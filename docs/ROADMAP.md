@@ -26,6 +26,24 @@ FileOS cutover acceptance is implied.
 
 ## Next verified sequence
 
+The active lanes are deliberately separate. A read-only owner trial and grounded
+chat evaluation can proceed without a FileOS policy switch; the private hosting
+pilot needs the owner's choices; reviewed source actions remain later work.
+Each lane must pass its own acceptance gate before the next dependent step:
+
+| Lane | Next concrete step | Gate that remains open |
+|---|---|---|
+| Product chat ([#92](https://github.com/jbone3311/MasterBrain/issues/92)) | Record the owner's fictional cross-source question trial, then test held-out questions, contradiction handling, answer/citation budgets and first-party versus API behavior | No model-written answer or named-assistant parity is accepted yet |
+| Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Obtain region, budget, retention, identity and authorized-source decisions; then exercise a private, reversible pilot | No live source, hosted identity, recovery or operations acceptance exists |
+| FileOS migration ([migration plan](FOS_MIGRATION.md)) | Review the six recorded donor-policy differences and fault/platform cases, then run an owner-authorized read-only shadow on a bounded root | No v2 current publication, FileOS effect, donor cutover or retirement is approved |
+| Reviewed actions ([#93](https://github.com/jbone3311/MasterBrain/issues/93)) | Specify typed propose/preview/approve/execute contracts and reversible first actions | The existing Brain API stays read-only until separate grants, safety tests and approval exist |
+
+The donor remains pinned at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
+and unchanged. The latest ADR-156 shadow hardening reduces what the synthetic
+comparison may observe; it does not resolve the six policy differences or
+authorize a live root. The exact checkpoint is in the
+[build receipt](BUILD_RECEIPT.md).
+
 The synthetic Email reliability tranche uses [ADR-110](adr/110_fastmail_sync_resilience.md)
 and preserves the original [Claude draft #45](https://github.com/jbone3311/MasterBrain/pull/45)
 as provenance. [PR #133](https://github.com/jbone3311/MasterBrain/pull/133)
