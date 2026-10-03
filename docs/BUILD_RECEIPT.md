@@ -2,6 +2,16 @@
 
 Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Grouped current reviewed leaves — ADR-159 candidate
+
+Branch `codex/brain-current-reviewed-leaves` selects ADR-158's unsuperseded
+KnowledgeCore mode only for grouped current-search and Ask. The retained
+direct/unified routes and focused source reads remain unchanged. Focused local
+non-PostgreSQL tests passed 74; the full non-PostgreSQL run passed 2,611 tests,
+with 488 PostgreSQL-marked and one host-dependent local launcher test deselected,
+**not passed**. PostgreSQL semantic regression, full CI,
+strict runtime and restore are pending. No source, donor or version change.
+
 ## Unsuperseded reviewed KnowledgeCore search — PR #146 merged
 
 [PR #146](https://github.com/jbone3311/MasterBrain/pull/146) merged
@@ -14,9 +24,13 @@ the deployment gate independently reran the same 3,088 tests and the
 container/worker checks passed),
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37142497687)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37142497688).
-The merged-main checks at this exact commit are running: [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37143412564),
+The merged-main checks at this exact commit passed: [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37143412564),
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37143412576),
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37143412567).
+The documentation receipt [PR #147](https://github.com/jbone3311/MasterBrain/pull/147)
+merged at `53463412486c1cdce223f2077831f1e1ae9c6a87` after its exact-head
+required checks passed. Its merged-main strict-runtime and restore checks
+passed; full CI is still running. This receipt changed no product behavior.
 This adds optional read-only review-chain leaf retrieval, source-grant-aware
 suppression, and forward lookup indexes in migration 0053. Retained history
 remains the default; grouped Brain current-search and Ask are unchanged.

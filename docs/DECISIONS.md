@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-159](adr/159_current_brain_reviewed_leaves.md) selects source-grant-aware
+unsuperseded review-chain leaves for grouped Brain current-search and Ask.
+Direct KnowledgeCore and grouped unified retained reads remain unchanged;
+multiple leaves and partial coverage are explicit.
+
 [ADR-158](adr/158_unsuperseded_reviewed_knowledge_search.md) defines an
 explicit, source-grant-aware unsuperseded KnowledgeCore read mode alongside
 retained history. It does not select truth, resolve branches or switch the

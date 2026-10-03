@@ -88,6 +88,10 @@ source effects or an alternate route through KnowledgeCore.
   response groups remain present but empty, and `coverage.source_focus` plus
   `coverage.knowledge=not_searched` distinguishes exclusion from no matches.
   Focus narrows retrieval only; it never broadens scopes or source grants.
+  ADR-159 makes the all-source Knowledge layer a source-grant-aware
+  `unsuperseded` review-chain leaf projection before rank/limit and labels
+  `coverage.knowledge=reviewed_unsuperseded_assertions`. It does not resolve
+  competing leaves, check valid time or certify live-source freshness.
 - `POST /v1/brain/answers` — optional ADR-134 extractive answer over the same
   current grouped search and separately authorized evidence/content reads.
   Requires `brain.search`, `knowledge.search`, `brain.evidence.read` and
@@ -135,8 +139,9 @@ source effects or an alternate route through KnowledgeCore.
   `unsuperseded`. The latter excludes correction records and review-chain
   predecessors before rank/limit, considering only successors/corrections and
   replacements whose direct evidence is fully source-authorized to the caller.
-  It is not a real-world-current or valid-time guarantee. The grouped Brain
-  current-search has **not** switched its KnowledgeCore layer in this tranche.
+  It is not a real-world-current or valid-time guarantee. ADR-159 later
+  selects this mode only in grouped Brain current-search and Ask; direct
+  search still defaults to retained history.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change

@@ -125,6 +125,11 @@ must not change the visible review-chain projection solely by being added.
 Returned hits still require the direct-link filter before rank and limit.
 This is synthetic read behavior, not a semantic noninterference proof for
 human-authored text or hosted assistant acceptance.
+ADR-159 applies that same filtered projection to the Knowledge layer of
+grouped Brain current-search and Ask. A correction or successor hidden by
+source grants cannot suppress a visible older match. Ask still rechecks the
+selected review matches before returning them. This does not establish
+real-world truth, valid-time currency or source freshness.
 
 ## Privacy-safe failure observability
 

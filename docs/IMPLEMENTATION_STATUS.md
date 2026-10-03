@@ -43,6 +43,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-159 composes ADR-158's source-grant-aware unsuperseded projection into
+  grouped Brain current-search and Ask, with explicit coverage labeling.
+  Direct KnowledgeCore and unified retained-history searches remain unchanged;
+  multiple leaves are not valid-time truth. PostgreSQL and PR gates are
+  pending for this candidate.
+
 - ADR-158 adds an optional `unsuperseded` direct KnowledgeCore lexical mode.
   It omits correction records and predecessors only when source-authorized
   successors or corrections with visible replacements exist, before rank and

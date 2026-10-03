@@ -2,11 +2,17 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Selected unsuperseded reviewed KnowledgeCore leaves in grouped Brain
+  current-search and Ask (ADR-159), with explicit coverage labeling and
+  source-grant-aware suppression. Retained direct and unified searches remain
+  available; this is not valid-time truth or hosted acceptance.
+
 - Added an explicit source-grant-aware `unsuperseded` visibility option to
   direct KnowledgeCore lexical search (ADR-158), with indexes for successor
   and correction lookups. Retained history remains the default, and grouped
-  Brain current-search has not switched its KnowledgeCore layer. Multiple
-  review-chain leaves remain distinct; this is not temporal truth resolution.
+  Brain current-search did not switch in that initial tranche; ADR-159 later
+  selects it. Multiple review-chain leaves remain distinct; this is not
+  temporal truth resolution.
 
 - Bounded extractive Ask's returned exact quote plus reviewed-match text to
   8,192 UTF-8 bytes (ADR-157). Exact quotes stay intact; reviewed output is
