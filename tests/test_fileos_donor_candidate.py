@@ -127,6 +127,15 @@ def test_directory_symlink_blocks_candidate_and_old_profile_cannot_stage(
     old["policy"]["shadow_profile"] = "pinned-fos-scanner-shadow-v1"
     with pytest.raises(ValueError, match="candidate ledger"):
         _fileos_v2_staged_rows(old, "files_candidate")
+    forged = deepcopy(result)
+    forged["errors"] = []
+    forged["exclusions"] = [
+        {"locator": "directory-link", "reason": "symlink_directory"}
+    ]
+    forged["counts"]["errors"] = 0
+    forged["counts"]["excluded"] = 1
+    with pytest.raises(ValueError, match="coverage row"):
+        _fileos_v2_staged_rows(forged, "files_candidate")
 
 
 def test_v2_stage_projection_keeps_all_donor_ledger_kinds(tmp_path: Path) -> None:

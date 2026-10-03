@@ -4109,10 +4109,6 @@ class DataCoreStore:
         donor_observed = _parse_time(candidate.get("observed_at"))
         if donor_observed <= prior_observed:
             raise ValueError("FileOS transition observation is not newer")
-        # A new packet must obey the current shadow profile before it can be
-        # sealed. Older symlink-directory exclusions remain readable history,
-        # not authority for a new v2 stage.
-        _fileos_v2_staged_rows(candidate, source.source_id)
         try:
             encoded = json.dumps(
                 packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
@@ -4122,6 +4118,10 @@ class DataCoreStore:
             raise ValueError("invalid FileOS transition packet encoding") from exc
         if len(encoded) > 16 * 1024 * 1024:
             raise ValueError("FileOS transition packet byte bound exceeded")
+        # A new packet must obey the current shadow profile before it can be
+        # sealed. Older symlink-directory exclusions remain readable history,
+        # not authority for a new v2 stage.
+        _fileos_v2_staged_rows(candidate, source.source_id)
         packet_hash = hashlib.sha256(encoded).hexdigest()
         with self.store.transaction(ctx) as conn:
             conn.execute(
