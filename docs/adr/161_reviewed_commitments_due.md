@@ -1,7 +1,8 @@
 # ADR-161 — Bounded reviewed commitments due
 
-Status: accepted for a synthetic, read-only KnowledgeCore tranche. Hosted and
-live-source acceptance remain separate.
+Status: accepted and merged through PR #152 with exact-head and merged-main
+CI, strict-runtime and restore passed. Hosted and live-source acceptance
+remain separate.
 
 ## Context
 

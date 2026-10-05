@@ -1,6 +1,6 @@
 # MasterBrain Feature Inventory
 
-Updated 2026-10-05 through merged ADR-160 and under-verification ADR-161.
+Updated 2026-10-05 through merged ADR-160 and ADR-161.
 See [current callable functions](CURRENT_FUNCTIONS.md) and
 the [exact-commit receipt](BUILD_RECEIPT.md) for verified checkpoints. This
 inventory is broader than a user workflow: a separately available library or
@@ -66,7 +66,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Facts/claims | Assertion, value, confidence, reviewer, valid/observed time | Reviewed append/read implemented |
 | Events/timeline | Event time distinct from ingestion time | Reviewed event records and ADR-160 bounded occurrence timeline implemented; merged-main CI/restore passed. No cross-kind timeline or source freshness claim |
 | Projects | State and evidence; future members/milestones/decisions | Reviewed base record implemented |
-| Commitments | Owner, counterparty, due state and evidence | Reviewed append/read implemented; ADR-161 bounded due-window API/client and indexes are under verification. No automatic overdue reducer or source freshness claim |
+| Commitments | Owner, counterparty, due state and evidence | Reviewed append/read and ADR-161 bounded due-window API/client and indexes implemented; merged-main gates passed. No automatic overdue reducer or source freshness claim |
 | Corrections | Supersede without erasing history; retain contradictions | Implemented append-only links |
 | Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Grouped current FileOS + Email-family + unsuperseded reviewed Knowledge leaves (ADR-159/PR #148 exact-head verified), retained/current FileOS + historical Knowledge, and layered Email lexical slices implemented; graph/semantic planned |
 | Freshness | Source sync, extraction, indexing and interpretation freshness separated | Registered-source FileOS readiness and explicit Email bridge coverage implemented; interpretation freshness remains partial |

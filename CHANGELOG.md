@@ -4,8 +4,9 @@
 
 - Added an ADR-161 bounded, recorded-cutoff-paged reviewed-commitment due view,
   with additive lookup indexes, source-aware related-object filtering, compact
-  API results and a validated read client. Synthetic/local verification is in
-  progress. It does not compute overdue state or enable source actions.
+  API results and a validated read client. PR #152 exact-head and merged-main
+  CI, strict-runtime and restore checks passed. It does not compute overdue
+  state or enable source actions.
 
 - Added an ADR-160 bounded, recorded-cutoff-paged reviewed-event
   occurrence timeline with source-aware project filtering, explicit retained

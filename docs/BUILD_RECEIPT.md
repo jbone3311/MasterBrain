@@ -2,7 +2,24 @@
 
 Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Reviewed-commitment due view — ADR-161 work in progress
+## Reviewed-commitment due view — ADR-161 merged
+
+[PR #152](https://github.com/jbone3311/MasterBrain/pull/152) merged at
+`e3826ff8f6e1a6ad2f5b7a369f4d7e06b7962d08` from exact PR head
+`cc6e445638d5ad358e020ff96e3523dd777885d3`. Exact-head
+[CI 37340533691](https://github.com/jbone3311/MasterBrain/actions/runs/37340533691)
+passed **3,124 tests, 12 skipped**, including **490/490 PostgreSQL-marked**;
+the deployment repeat passed the same counts and the API/PDF/FileOS document,
+image and archive worker container checks passed. Exact-head
+[strict runtime 37340533835](https://github.com/jbone3311/MasterBrain/actions/runs/37340533835)
+and [restore 37340533705](https://github.com/jbone3311/MasterBrain/actions/runs/37340533705)
+passed. The merged `main` commit separately passed
+[CI 37342204761](https://github.com/jbone3311/MasterBrain/actions/runs/37342204761)
+with the same **3,124 passed, 12 skipped, 490/490 PostgreSQL-marked** plus
+the deployment repeat and container checks;
+[strict runtime 37342204648](https://github.com/jbone3311/MasterBrain/actions/runs/37342204648)
+and [restore 37342204774](https://github.com/jbone3311/MasterBrain/actions/runs/37342204774)
+also passed. These are synthetic CI proofs, not hosted/live-source acceptance.
 
 Branch `codex/knowledge-commitments-due` adds a bounded, read-only due-window
 view, additive partial indexes (migration 0055), provider-neutral client method
@@ -14,8 +31,7 @@ virtual environment's subprocess import path, the full non-PostgreSQL run
 passed **2,645 tests** with the Docker-backed launcher excluded; the full
 PostgreSQL-marked run passed **489 tests, one Docker-only skip** in 143.50
 seconds. The isolated base was `email_brain_test_due161_20261005` on port
-55443. Ruff, mypy, documentation and diff checks passed. Exact-head GitHub
-checks remain pending at this writing. No FOS-Master mutation, hosted
+55443. Ruff, mypy, documentation and diff checks passed. No FOS-Master mutation, hosted
 acceptance, overdue computation or source effect is implied.
 
 ## Reviewed-event timeline — ADR-160 merged

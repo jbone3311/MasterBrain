@@ -1,7 +1,7 @@
 # MasterBrain Roadmap
 
 Updated 2026-10-05 through ADR-160's merged event timeline and ADR-161's
-under-verification reviewed-commitment due view. ADR-159's grouped Brain/Ask reviewed-leaf
+merged reviewed-commitment due view. ADR-159's grouped Brain/Ask reviewed-leaf
 projection (PR #148 at `f9402d7`), ADR-158's optional direct KnowledgeCore
 unsuperseded search (PR #146 at `3bf21b8`), ADR-155's separate-cluster restore
 (PR #139 at `9b1ae23`) and ADR-156's merged, nonpublishing FileOS
@@ -15,8 +15,10 @@ The documentation-only `main` checkpoint encountered
 After recovery, ADR-160 [PR #151](https://github.com/jbone3311/MasterBrain/pull/151)
 merged at `90ee9e4`. Implementation-head and merged-main CI, container,
 strict-runtime and restore gates passed. The isolated local PostgreSQL 17.11
-suite also passed 488 tests with a Docker-only skip. ADR-161 is a separate
-unverified tranche.
+suite also passed 488 tests with a Docker-only skip. ADR-161 separately merged
+through PR #152 at `e3826ff` after exact-head gates and passed merged-main
+CI, strict-runtime and restore; both full CI runs executed all 490
+PostgreSQL-marked tests.
 [Current functions](CURRENT_FUNCTIONS.md) and
 [implementation status](IMPLEMENTATION_STATUS.md) describe executable behavior;
 [build receipts](BUILD_RECEIPT.md) tie verification to exact commits. The
@@ -30,7 +32,7 @@ FileOS cutover acceptance is implied.
 |---|---|---|
 | Product identity and donor baseline | MasterBrain identity, source-layer boundaries, pinned FOS-Master provenance, first hash/dedupe parity and synthetic shadow corpus are in the repo | Full semantic and operational parity, owner cutover decision |
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
-| KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work; optional direct and grouped current-search/Ask unsuperseded review-chain leaves passed exact-head PostgreSQL, strict-runtime and restore gates; ADR-160 reviewed-event timeline passed merged-main gates; ADR-161 due-window commitment read is under verification | Cross-kind/valid-time timeline, project/commitment reducers, automatic candidate pipeline, evaluated resolution, rebuild and freshness proof |
+| KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work; optional direct and grouped current-search/Ask unsuperseded review-chain leaves passed exact-head PostgreSQL, strict-runtime and restore gates; ADR-160 reviewed-event timeline and ADR-161 due-window commitment read passed merged-main gates | Cross-kind/valid-time timeline, project/commitment reducers, automatic candidate pipeline, evaluated resolution, rebuild and freshness proof |
 | Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search with explicit All/Email/FileOS focus, evidence drill-down and partial coverage work; extractive Ask has separate 8-KiB selector-input and returned-untrusted-text caps with visible truncation; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads; ADR-149 denies unfenced legacy Email routes to assistants | Hosted issuer enrollment and derived-cache revocation, cited answer synthesis, named-assistant adapter and full prompt/token/whole-response budgets |
 | Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; Ask returns exact quotes and a separate reviewed KnowledgeCore match list, with fixed question boilerplate removed before lexical retrieval | Run the owner's interactive trial, evaluate held-out natural questions, corrections and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
