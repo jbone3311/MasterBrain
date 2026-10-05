@@ -211,3 +211,17 @@ class DueCommitmentsRequest(ClosedModel):
         if self.after is not None and self.recorded_cutoff_at is None:
             raise ValueError("due cursor requires recorded_cutoff_at")
         return self
+
+
+class ProjectDossierRequest(ClosedModel):
+    visibility: KnowledgeVisibility = "unsuperseded"
+    event_limit: int = Field(default=10, ge=1, le=25)
+    commitment_limit: int = Field(default=10, ge=1, le=25)
+    recorded_cutoff_at: AwareDatetime | None = None
+
+    @field_validator("event_limit", "commitment_limit", mode="before")
+    @classmethod
+    def integer_limit(cls, value: object) -> object:
+        if isinstance(value, bool):
+            raise ValueError("boolean limit is invalid")
+        return value

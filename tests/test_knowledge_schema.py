@@ -11,6 +11,7 @@ from masterbrain.knowledge_schema import (
     EventWrite,
     KnowledgePublishRequest,
     KnowledgeSearchRequest,
+    ProjectDossierRequest,
     TimelineRequest,
 )
 
@@ -117,3 +118,19 @@ def test_timeline_requires_bounded_aware_window_and_recorded_cutoff_cursor() -> 
             TimelineRequest.model_validate({
                 "start": NOW, "end": NOW + timedelta(days=1), **update,
             })
+
+
+def test_project_dossier_is_closed_bounded_and_cutoff_aware() -> None:
+    request = ProjectDossierRequest()
+    assert request.visibility == "unsuperseded"
+    assert request.event_limit == request.commitment_limit == 10
+    assert ProjectDossierRequest(recorded_cutoff_at=NOW, visibility="retained").visibility == (
+        "retained"
+    )
+    for updates in (
+        {"visibility": "current"}, {"event_limit": 0}, {"event_limit": 26},
+        {"commitment_limit": True}, {"recorded_cutoff_at": NOW.replace(tzinfo=None)},
+        {"unknown": "not allowed"},
+    ):
+        with pytest.raises(ValidationError):
+            ProjectDossierRequest.model_validate(updates)

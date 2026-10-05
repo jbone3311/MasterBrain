@@ -55,7 +55,10 @@ gates passed after the [Actions billing incident #150](https://github.com/jbone3
 The ADR-161 read-only reviewed-commitment due-window slice merged in
 [PR #152](https://github.com/jbone3311/MasterBrain/pull/152) at `e3826ff`,
 with exact-head and merged-main CI, strict-runtime and restore checks green.
-Neither view is a hosted capability, source-freshness proof,
+The next [ADR-162 project dossier](docs/adr/162_reviewed_project_dossier.md)
+is in review: a bounded read of one reviewed project and its linked events
+and commitments, including undated links; it does not calculate live project
+state. Neither merged view nor the dossier is a hosted capability, source-freshness proof,
 cross-kind timeline or FileOS cutover. See the [build receipt](docs/BUILD_RECEIPT.md).
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and

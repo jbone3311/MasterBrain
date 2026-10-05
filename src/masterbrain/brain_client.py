@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
     KnowledgeVisibility,
+    ProjectDossierRequest,
     TimelineRequest,
 )
 from masterbrain.schemas import (
@@ -487,6 +488,156 @@ class BrainReadClient:
         if order != sorted(order):
             raise BrainClientError("invalid_response")
         return data
+
+    def project_dossier(
+        self,
+        project_id: str,
+        *,
+        visibility: KnowledgeVisibility = "unsuperseded",
+        event_limit: int = 10,
+        commitment_limit: int = 10,
+        recorded_cutoff_at: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Read compact reviewed project context with bounded linked assertions."""
+        if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
+            raise BrainClientError("invalid_request")
+        if type(event_limit) is not int or type(commitment_limit) is not int:
+            raise BrainClientError("invalid_request")
+        if recorded_cutoff_at is not None and not isinstance(recorded_cutoff_at, datetime):
+            raise BrainClientError("invalid_request")
+        try:
+            request = ProjectDossierRequest.model_validate({
+                "visibility": visibility, "event_limit": event_limit,
+                "commitment_limit": commitment_limit,
+                "recorded_cutoff_at": recorded_cutoff_at,
+            })
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        query = httpx.QueryParams(request.model_dump(mode="json", exclude_none=True))
+        data = self._request(
+            "GET", f"/v1/knowledge/projects/{project_id}/dossier?{query}",
+        )
+        cutoff = self._aware_datetime(data.get("recorded_cutoff_at"))
+        project = data.get("project")
+        events = data.get("events")
+        commitments = data.get("commitments")
+        coverage = data.get("coverage")
+        if (
+            cutoff is None
+            or recorded_cutoff_at is not None and cutoff != recorded_cutoff_at
+            or data.get("visibility") != visibility
+            or type(data.get("event_limit")) is not int
+            or data["event_limit"] != event_limit
+            or type(data.get("commitment_limit")) is not int
+            or data["commitment_limit"] != commitment_limit
+            or type(data.get("events_truncated")) is not bool
+            or type(data.get("commitments_truncated")) is not bool
+            or data.get("untrusted_content") is not True
+            or not isinstance(coverage, dict)
+            or coverage.get("order") != "recorded_at_descending"
+            or coverage.get("undated_links") != "included"
+            or coverage.get("source_freshness") != "not_asserted"
+            or coverage.get("interpretation") != "reviewed_assertions_not_current_state"
+            or not self._valid_project_dossier_project(project, project_id, cutoff)
+            or not isinstance(events, list) or len(events) > event_limit
+            or not isinstance(commitments, list) or len(commitments) > commitment_limit
+            or data["events_truncated"] and len(events) != event_limit
+            or data["commitments_truncated"] and len(commitments) != commitment_limit
+            or any(not self._valid_project_dossier_event(row, project_id, cutoff)
+                   for row in events)
+            or any(not self._valid_project_dossier_commitment(row, project_id, cutoff)
+                   for row in commitments)
+        ):
+            raise BrainClientError("invalid_response")
+        for rows in (events, commitments):
+            ids = [row["object_id"] for row in rows]
+            order = [(self._aware_datetime(row["recorded_at"]), row["object_id"])
+                     for row in rows]
+            if len(set(ids)) != len(ids) or order != sorted(order, reverse=True):
+                raise BrainClientError("invalid_response")
+        return data
+
+    @staticmethod
+    def _valid_dossier_evidence(value: Any) -> bool:
+        return bool(
+            isinstance(value, list) and 1 <= len(value) <= 20
+            and len(set(item for item in value if isinstance(item, str))) == len(value)
+            and all(isinstance(item, str) and _EVIDENCE_ID.fullmatch(item)
+                    for item in value)
+        )
+
+    @classmethod
+    def _valid_project_dossier_project(
+        cls, row: Any, project_id: str, cutoff: datetime
+    ) -> bool:
+        if not isinstance(row, dict):
+            return False
+        recorded = cls._aware_datetime(row.get("recorded_at"))
+        title, summary = row.get("title"), row.get("summary")
+        return bool(
+            row.get("object_kind") == "project" and row.get("object_id") == project_id
+            and isinstance(title, str) and 1 <= len(title) <= 300 and "\x00" not in title
+            and isinstance(summary, str) and len(summary) <= 300 and "\x00" not in summary
+            and type(row.get("summary_truncated")) is bool
+            and row.get("state") in {
+                "proposed", "active", "blocked", "completed", "cancelled", "unknown",
+            }
+            and recorded is not None and recorded <= cutoff
+            and cls._valid_dossier_evidence(row.get("evidence_ids"))
+        )
+
+    @classmethod
+    def _valid_project_dossier_event(
+        cls, row: Any, project_id: str, cutoff: datetime
+    ) -> bool:
+        if not isinstance(row, dict):
+            return False
+        recorded = cls._aware_datetime(row.get("recorded_at"))
+        starts = cls._aware_datetime(row.get("starts_at")) if row.get("starts_at") else None
+        ends = cls._aware_datetime(row.get("ends_at")) if row.get("ends_at") else None
+        title, event_type = row.get("title"), row.get("event_type")
+        return bool(
+            row.get("object_kind") == "event"
+            and row.get("project_id") == project_id
+            and isinstance(row.get("object_id"), str)
+            and _EVENT_ID.fullmatch(row["object_id"])
+            and isinstance(title, str) and 1 <= len(title) <= 300 and "\x00" not in title
+            and isinstance(event_type, str) and _EVENT_TYPE.fullmatch(event_type)
+            and recorded is not None and recorded <= cutoff
+            and (row.get("starts_at") is None or starts is not None)
+            and (row.get("ends_at") is None or starts is not None and ends is not None
+                 and ends > starts)
+            and cls._valid_dossier_evidence(row.get("evidence_ids"))
+        )
+
+    @classmethod
+    def _valid_project_dossier_commitment(
+        cls, row: Any, project_id: str, cutoff: datetime
+    ) -> bool:
+        if not isinstance(row, dict):
+            return False
+        recorded = cls._aware_datetime(row.get("recorded_at"))
+        due = cls._aware_datetime(row.get("due_at")) if row.get("due_at") else None
+        summary = row.get("summary")
+        owner, counterparty = row.get("owner_entity_id"), row.get("counterparty_entity_id")
+        return bool(
+            row.get("object_kind") == "commitment"
+            and row.get("project_id") == project_id
+            and isinstance(row.get("object_id"), str)
+            and _COMMITMENT_ID.fullmatch(row["object_id"])
+            and isinstance(summary, str) and 1 <= len(summary) <= 300
+            and "\x00" not in summary
+            and type(row.get("summary_truncated")) is bool
+            and row.get("state") in {
+                "proposed", "open", "completed", "cancelled", "overdue", "unknown",
+            }
+            and recorded is not None and recorded <= cutoff
+            and (row.get("due_at") is None or due is not None)
+            and (owner is None or isinstance(owner, str) and _ENTITY_ID.fullmatch(owner))
+            and (counterparty is None or isinstance(counterparty, str)
+                 and _ENTITY_ID.fullmatch(counterparty))
+            and cls._valid_dossier_evidence(row.get("evidence_ids"))
+        )
 
     @classmethod
     def _valid_due_row(cls, row: Any, request: DueCommitmentsRequest) -> bool:

@@ -2,6 +2,31 @@
 
 Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed project dossier — ADR-162 in review
+
+Branch `codex/knowledge-project-dossier` adds one read-only, exact-project
+KnowledgeCore dossier, independently bounded linked event and commitment
+lists (including undated links), an additive recorded-time index migration
+0056, a provider-neutral client method and source-aware regressions. The
+starting `main` commit `2acda635a2be6f1a0198859817a23e42225cd879`
+passed [full CI 37346476188](https://github.com/jbone3311/MasterBrain/actions/runs/37346476188),
+strict runtime and restore before this branch was proposed. That is **base**
+evidence, not an ADR-162 head gate.
+
+Local focused schema/API/client tests passed 87 cases. The isolated
+PostgreSQL 17.11 end-to-end KnowledgeCore/API/client case and populated,
+no-row-rewrite migration case passed after the final source-link validation
+change. A second full local run passed **3,153 tests**
+with **490/491 PostgreSQL-marked executed**, one Docker-only skip and one
+explicitly deselected local trial launcher. The launcher was separately
+attempted and failed while `initdb` requested another System V shared-memory
+ID on this Mac (`shmget: No space left on device`, not disk exhaustion); it is
+not counted as passed. The final future-cutoff assertion was then rechecked
+in the focused real-PostgreSQL path (2/2 passed). The six browser test files
+passed 151/151 Node tests. Exact final-head full CI, strict-runtime, restore and
+container gates remain pending. Ruff, source mypy, docs and diff checks pass.
+No hosted source, FileOS effect, FOS-Master mutation or release tag is claimed.
+
 ## Reviewed-commitment due view — ADR-161 merged
 
 [PR #152](https://github.com/jbone3311/MasterBrain/pull/152) merged at

@@ -24,6 +24,7 @@ from masterbrain.knowledge_schema import (
     EventWrite,
     KnowledgeAssertion,
     KnowledgeVisibility,
+    ProjectDossierRequest,
     ProjectWrite,
     RelationshipWrite,
     TimelineRequest,
@@ -734,6 +735,151 @@ class KnowledgeCore:
                 "undated_commitments": "excluded",
                 "source_freshness": "not_asserted",
                 "interpretation": "reviewed_assertions",
+            },
+            "untrusted_content": True,
+        }
+
+    def project_dossier(
+        self, ctx: TenantContext, project_id: str, request: ProjectDossierRequest
+    ) -> dict[str, Any]:
+        """Return bounded reviewed project context, never a current-state reducer."""
+        self.store.require(ctx, "knowledge.search")
+        if (
+            not isinstance(request, ProjectDossierRequest)
+            or not _ID.fullmatch(project_id)
+            or not project_id.startswith("project_")
+        ):
+            raise NotFound()
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        event_visibility = (
+            " AND (" + _TIMELINE_UNSUPERSEDED_SQL + ")"
+            if request.visibility == "unsuperseded" else ""
+        )
+        commitment_visibility = (
+            " AND (" + _DUE_UNSUPERSEDED_SQL + ")"
+            if request.visibility == "unsuperseded" else ""
+        )
+        common = (
+            "WITH allowed AS (SELECT %s::text[] AS sources, "
+            "%s::timestamptz AS cutoff) "
+        )
+        with self.store.transaction(ctx) as conn:
+            clock = conn.execute("SELECT transaction_timestamp() AS now").fetchone()
+            if clock is None:
+                raise RuntimeError("project dossier database clock unavailable")
+            now = clock["now"]
+            cutoff_at = (
+                request.recorded_cutoff_at.astimezone(UTC)
+                if request.recorded_cutoff_at else now
+            )
+            if cutoff_at > now:
+                raise ValueError("invalid future project dossier cutoff")
+            project = conn.execute(
+                common + "SELECT p.id,p.title,p.description,p.state,p.recorded_at "
+                "FROM knowledge_projects p CROSS JOIN allowed "
+                "WHERE p.id=%s AND p.recorded_at<=allowed.cutoff AND "
+                + _visible_assertion_sql("p", "'project'", "p.id"),
+                (allowed_sources, cutoff_at, project_id),
+            ).fetchone()
+            if project is None:
+                raise NotFound()
+            events = conn.execute(
+                common + "SELECT ev.id,ev.event_type,ev.title,ev.starts_at,"
+                "ev.ends_at,ev.project_id,ev.recorded_at FROM knowledge_events ev "
+                "JOIN knowledge_projects p ON p.tenant_id=ev.tenant_id "
+                "AND p.id=ev.project_id CROSS JOIN allowed "
+                "WHERE ev.project_id=%s AND ev.recorded_at<=allowed.cutoff AND "
+                + _visible_assertion_sql("ev", "'event'", "ev.id")
+                + " AND " + _visible_assertion_sql("p", "'project'", "p.id")
+                + event_visibility
+                + " ORDER BY ev.recorded_at DESC,ev.id DESC LIMIT %s",
+                (allowed_sources, cutoff_at, project_id, request.event_limit + 1),
+            ).fetchall()
+            commitments = conn.execute(
+                common + "SELECT cm.id,cm.description,cm.state,cm.due_at,"
+                "cm.project_id,cm.owner_entity_id,cm.counterparty_entity_id,cm.recorded_at "
+                "FROM knowledge_commitments cm CROSS JOIN allowed "
+                "WHERE cm.project_id=%s AND cm.recorded_at<=allowed.cutoff AND ("
+                + _visible_commitment_sql("cm") + ")"
+                + commitment_visibility
+                + " ORDER BY cm.recorded_at DESC,cm.id DESC LIMIT %s",
+                (
+                    allowed_sources, cutoff_at, project_id,
+                    request.commitment_limit + 1,
+                ),
+            ).fetchall()
+            event_page = events[:request.event_limit]
+            commitment_page = commitments[:request.commitment_limit]
+            ids_by_kind = {
+                "project": [project_id],
+                "event": [row["id"] for row in event_page],
+                "commitment": [row["id"] for row in commitment_page],
+            }
+            evidence_by_kind: dict[str, dict[str, list[str]]] = {}
+            for kind, ids in ids_by_kind.items():
+                evidence_by_kind[kind] = {object_id: [] for object_id in ids}
+                if ids:
+                    links = conn.execute(
+                        "SELECT target_id,evidence_id FROM knowledge_evidence "
+                        "WHERE target_kind=%s AND target_id=ANY(%s) "
+                        "ORDER BY target_id,evidence_id",
+                        (kind, ids),
+                    ).fetchall()
+                    for link in links:
+                        evidence_by_kind[kind][link["target_id"]].append(link["evidence_id"])
+            self.store.audit(conn, ctx, "knowledge.project_dossier_read", "project")
+        return {
+            "project": {
+                "object_kind": "project",
+                "object_id": project_id,
+                "title": project["title"],
+                "summary": project["description"][:300],
+                "summary_truncated": len(project["description"]) > 300,
+                "state": project["state"],
+                "recorded_at": project["recorded_at"],
+                "evidence_ids": evidence_by_kind["project"][project_id],
+            },
+            "events": [
+                {
+                    "object_kind": "event",
+                    "object_id": row["id"],
+                    "event_type": row["event_type"],
+                    "title": row["title"],
+                    "starts_at": row["starts_at"],
+                    "ends_at": row["ends_at"],
+                    "project_id": row["project_id"],
+                    "recorded_at": row["recorded_at"],
+                    "evidence_ids": evidence_by_kind["event"][row["id"]],
+                }
+                for row in event_page
+            ],
+            "commitments": [
+                {
+                    "object_kind": "commitment",
+                    "object_id": row["id"],
+                    "summary": row["description"][:300],
+                    "summary_truncated": len(row["description"]) > 300,
+                    "state": row["state"],
+                    "due_at": row["due_at"],
+                    "project_id": row["project_id"],
+                    "owner_entity_id": row["owner_entity_id"],
+                    "counterparty_entity_id": row["counterparty_entity_id"],
+                    "recorded_at": row["recorded_at"],
+                    "evidence_ids": evidence_by_kind["commitment"][row["id"]],
+                }
+                for row in commitment_page
+            ],
+            "recorded_cutoff_at": cutoff_at,
+            "visibility": request.visibility,
+            "event_limit": request.event_limit,
+            "commitment_limit": request.commitment_limit,
+            "events_truncated": len(events) > request.event_limit,
+            "commitments_truncated": len(commitments) > request.commitment_limit,
+            "coverage": {
+                "order": "recorded_at_descending",
+                "undated_links": "included",
+                "source_freshness": "not_asserted",
+                "interpretation": "reviewed_assertions_not_current_state",
             },
             "untrusted_content": True,
         }

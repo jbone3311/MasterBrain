@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-162](adr/162_reviewed_project_dossier.md) defines a bounded, source-aware
+reviewed project dossier with separately limited linked events and commitments,
+including undated records. Its state is an assertion, not a current-state reducer.
+
 [ADR-161](adr/161_reviewed_commitments_due.md) defines a bounded,
 recorded-cutoff-paged due view for reviewed commitments. It checks direct and
 linked-object source grants before limit; this is not current truth, source

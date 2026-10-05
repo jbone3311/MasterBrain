@@ -170,6 +170,20 @@ source effects or an alternate route through KnowledgeCore.
   Undated commitments stay in search/history. The cutoff is not a durable MVCC
   snapshot, and the view does not infer overdue status, source freshness or
   real-world truth. `BrainReadClient.commitments_due` validates the transport.
+- `GET /v1/knowledge/projects/{project_id}/dossier` — ADR-162 compact,
+  read-only context for one reviewed project assertion and its linked events
+  and commitments. Requires `knowledge.search`; each list has an independent
+  1–25 limit (default 10), a truncation flag and direct evidence IDs. An
+  optional aware recorded-time cutoff and `unsuperseded` (default) or
+  `retained` visibility apply to both lists; the project is always the exact
+  requested reviewed assertion, not automatically redirected to a successor.
+  Results are ordered by recording
+  time, not occurrence/due time; undated links are included. Assistants must
+  have grants to the project, every returned assertion and every referenced
+  commitment owner/counterparty. A hidden, missing or cutoff-invisible project
+  returns not found. This is reviewed context, not a project-state reducer,
+  source-freshness claim or durable cross-request snapshot.
+  `BrainReadClient.project_dossier` validates the bounded response.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
@@ -181,7 +195,8 @@ source effects or an alternate route through KnowledgeCore.
 - Future freeform cited synthesis — not implemented; the existing
   `/v1/brain/answers` route is limited to verified extractive quotes.
 - Future graph traversal — related objects and cited attributes beyond exact lookup.
-- `GET /v1/projects/{id}` — project state, members, commitments, events, evidence.
+- Future project reducer — reconcile project versions, members, milestones,
+  contradictory branches and valid-time state beyond ADR-162's exact dossier.
 - `GET /v1/claims/{id}` — claim versions, support, contradictions, and supersession.
 - Future cross-kind timeline — commitments, project milestones and other
   temporal objects beyond the reviewed-event route above.

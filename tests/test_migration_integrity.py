@@ -398,8 +398,9 @@ def test_due_index_migration_preserves_populated_commitment_heap(
             "SELECT to_regclass('knowledge_commitments_due_lookup')"
         ).fetchone() == (None,)
 
-    assert migrate(admin_dsn, MIGRATIONS) == ["0055_knowledge_commitment_due.sql"]
-    assert migrate(admin_dsn, MIGRATIONS) == []
+    through_due = _migrations_before(tmp_path, 56)
+    assert migrate(admin_dsn, through_due) == ["0055_knowledge_commitment_due.sql"]
+    assert migrate(admin_dsn, through_due) == []
     with psycopg.connect(admin_dsn) as conn:
         after = conn.execute(
             "SELECT id,due_at,project_id,recorded_at,ctid FROM knowledge_commitments "
@@ -419,3 +420,75 @@ def test_due_index_migration_preserves_populated_commitment_heap(
     }
     assert "due_at IS NOT NULL" in indexes["knowledge_commitments_due_lookup"]
     assert "project_id IS NOT NULL" in indexes["knowledge_commitments_project_due_lookup"]
+
+
+def test_project_dossier_indexes_preserve_populated_assertion_heaps(
+    scratch_database: tuple[str, str], tmp_path: Path
+) -> None:
+    admin_dsn, _ = scratch_database
+    earlier = _migrations_before(tmp_path, 56)
+    assert len(migrate(admin_dsn, earlier)) == 55
+    tenant_id, reviewer_id = uuid4(), uuid4()
+    project_id = "project_" + uuid4().hex
+    event_id = "event_" + uuid4().hex
+    commitment_id = "commitment_" + uuid4().hex
+    observed = datetime(2026, 10, 5, tzinfo=UTC)
+    with psycopg.connect(admin_dsn) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Synthetic dossier')", (tenant_id,))
+        conn.execute(
+            "INSERT INTO knowledge_projects(tenant_id,id,title,description,state,confidence,"
+            "source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'Fictional dossier','','active',1,'fictional',%s,%s)",
+            (tenant_id, project_id, observed, reviewer_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_events(tenant_id,id,event_type,title,description,"
+            "project_id,confidence,source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'review','Fictional undated','',%s,1,'fictional',%s,%s)",
+            (tenant_id, event_id, project_id, observed, reviewer_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_commitments(tenant_id,id,description,state,project_id,"
+            "confidence,source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'Fictional undated','open',%s,1,'fictional',%s,%s)",
+            (tenant_id, commitment_id, project_id, observed, reviewer_id),
+        )
+        before = {
+            table: conn.execute(
+                f"SELECT ctid,recorded_at FROM {table} WHERE tenant_id=%s AND id=%s",
+                (tenant_id, object_id),
+            ).fetchone()
+            for table, object_id in (
+                ("knowledge_events", event_id),
+                ("knowledge_commitments", commitment_id),
+            )
+        }
+        heaps = {
+            table: conn.execute(
+                "SELECT pg_relation_filenode(%s::regclass)", (table,),
+            ).fetchone()[0]
+            for table in before
+        }
+    assert migrate(admin_dsn, MIGRATIONS) == ["0056_knowledge_project_dossier.sql"]
+    assert migrate(admin_dsn, MIGRATIONS) == []
+    with psycopg.connect(admin_dsn) as conn:
+        for table, object_id in (
+            ("knowledge_events", event_id),
+            ("knowledge_commitments", commitment_id),
+        ):
+            assert conn.execute(
+                f"SELECT ctid,recorded_at FROM {table} WHERE tenant_id=%s AND id=%s",
+                (tenant_id, object_id),
+            ).fetchone() == before[table]
+            assert conn.execute(
+                "SELECT pg_relation_filenode(%s::regclass)", (table,),
+            ).fetchone()[0] == heaps[table]
+            index = dict(conn.execute(
+                "SELECT indexname,indexdef FROM pg_indexes WHERE tablename=%s "
+                "AND indexname=%s",
+                (table, table + "_project_recorded_lookup"),
+            ).fetchall())
+            assert len(index) == 1
+            definition = next(iter(index.values()))
+            assert "project_id IS NOT NULL" in definition
+            assert "recorded_at DESC" in definition
