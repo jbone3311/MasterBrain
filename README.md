@@ -65,6 +65,11 @@ The next in-review [ADR-163](docs/adr/163_owner_project_dossier_drilldown.md)
 adds an explicit read-only **Open reviewed project** control to `/brain` Ask and
 Search only matches. It reuses the scoped dossier API; its browser checks pass,
 but full exact-head and merged-main gates are not yet complete.
+An in-review [ADR-164](docs/adr/164_owner_reviewed_schedule.md) adds explicit
+UTC-window **Events** and **Commitments due** controls to the read-only `/brain`
+workspace, using the existing source-scoped APIs. Focused browser tests pass;
+full exact-head and merged-main gates remain open. This is not automatic chat
+intent routing or current source truth.
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
 [build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is

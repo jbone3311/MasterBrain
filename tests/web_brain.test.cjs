@@ -6,6 +6,7 @@ const test = require("node:test");
 const vm = require("node:vm");
 
 const script = fs.readFileSync(path.join(__dirname, "../src/masterbrain/web/brain.js"), "utf8");
+const html = fs.readFileSync(path.join(__dirname, "../src/masterbrain/web/brain.html"), "utf8");
 class Element {
   constructor(tag) {
     this.tag = tag; this.children = []; this.parent = null; this.events = {};
@@ -46,6 +47,30 @@ const EVIDENCE_ID = "evidence_" + "b".repeat(32);
 const EVENT_ID = "event_" + "c".repeat(32);
 const COMMITMENT_ID = "commitment_" + "d".repeat(32);
 const DOSSIER_PATH = `/v1/knowledge/projects/${PROJECT_ID}/dossier?event_limit=5&commitment_limit=5`;
+const SCHEDULE_START = "2026-10-01";
+const SCHEDULE_END = "2026-10-08";
+const scheduleQuery = `start=2026-10-01T00%3A00%3A00Z&end=2026-10-08T00%3A00%3A00Z&visibility=unsuperseded&limit=10`;
+const TIMELINE_PATH = `/v1/knowledge/timeline?${scheduleQuery}`;
+const DUE_PATH = `/v1/knowledge/commitments-due?${scheduleQuery}`;
+function timelineData() {
+  return {results: [{object_kind: "event", object_id: EVENT_ID, event_type: "review",
+    title: "<script>review</script>", starts_at: "2026-10-04T09:00:00Z",
+    ends_at: null, project_id: PROJECT_ID, evidence_ids: [EVIDENCE_ID]}],
+  next_cursor: null, recorded_cutoff_at: "2026-10-05T00:00:00Z", limit: 10,
+  visibility: "unsuperseded", untrusted_content: true,
+  coverage: {undated_events: "excluded", source_freshness: "not_asserted",
+    interpretation: "reviewed_assertions"}};
+}
+function dueData() {
+  return {results: [{object_kind: "commitment", object_id: COMMITMENT_ID,
+    summary: "Send <img> report", summary_truncated: true, state: "open",
+    due_at: "2026-10-06T12:00:00Z", project_id: PROJECT_ID,
+    owner_entity_id: null, counterparty_entity_id: null, evidence_ids: [EVIDENCE_ID]}],
+  next_cursor: null, recorded_cutoff_at: "2026-10-05T00:00:00Z", limit: 10,
+  visibility: "unsuperseded", state_filter: null, untrusted_content: true,
+  coverage: {undated_commitments: "excluded", source_freshness: "not_asserted",
+    interpretation: "reviewed_assertions"}};
+}
 function projectSearchData() {
   const data = searchData();
   data.layers.knowledge = [{object_kind: "project", object_id: PROJECT_ID,
@@ -75,9 +100,19 @@ function dossierData() {
 }
 function walk(element) { return [element, ...element.children.flatMap(walk)]; }
 const flush = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
+test("reviewed schedule controls exist once in the served static page", () => {
+  for (const id of ["schedule-start", "schedule-end", "schedule-events-button",
+    "schedule-due-button", "schedule-results"]) {
+    assert.equal(html.split(`id="${id}"`).length - 1, 1, id);
+  }
+  assert.match(html, /id="schedule-start" type="date"/);
+  assert.match(html, /id="schedule-end" type="date"/);
+  assert.match(html, /id="schedule-results"[^>]*aria-live="polite"/);
+});
 function harness(customFetch) {
   const ids = ["brain-token", "brain-question", "brain-source-focus", "ask-button", "search-button", "turns", "brain-status",
-    "ask-form", "clear-session", "clear-turns"];
+    "ask-form", "clear-session", "clear-turns", "schedule-start", "schedule-end",
+    "schedule-events-button", "schedule-due-button", "schedule-results"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element(id)]));
   elements["brain-source-focus"].value = "all";
   const calls = [];
@@ -99,6 +134,12 @@ function harness(customFetch) {
     elements["brain-source-focus"].value = value;
     elements["brain-source-focus"].events.change();
   };
+  const setSchedule = (start, end) => {
+    elements["schedule-start"].value = start;
+    elements["schedule-start"].events.input();
+    elements["schedule-end"].value = end;
+    elements["schedule-end"].events.input();
+  };
   const ask = async value => {
     elements["brain-question"].value = value;
     await elements["ask-form"].events.submit({preventDefault() {}});
@@ -109,7 +150,7 @@ function harness(customFetch) {
     await elements["search-button"].events.click();
     await flush();
   };
-  return {elements, calls, enterToken, chooseFocus, ask, searchOnly};
+  return {elements, calls, enterToken, chooseFocus, setSchedule, ask, searchOnly};
 }
 
 test("static shell makes no request and refuses a missing credential", async () => {
@@ -118,6 +159,149 @@ test("static shell makes no request and refuses a missing credential", async () 
   assert.equal(h.elements["ask-button"].disabled, true);
   await h.ask("Cedar Harbor");
   assert.equal(h.calls.length, 0);
+  assert.equal(h.elements["schedule-events-button"].disabled, true);
+});
+
+test("reviewed schedule requires an explicit valid UTC window and All focus", async () => {
+  const h = harness();
+  h.enterToken("owner-token");
+  h.setSchedule("2026-01-01", "2027-01-03");
+  assert.equal(h.elements["schedule-events-button"].disabled, true, "367 days is refused");
+  await h.elements["schedule-events-button"].events.click();
+  assert.equal(h.calls.length, 0);
+  h.setSchedule(SCHEDULE_START, SCHEDULE_END);
+  assert.equal(h.elements["schedule-events-button"].disabled, false);
+  h.chooseFocus("email");
+  assert.equal(h.elements["schedule-events-button"].disabled, true);
+  await h.elements["schedule-due-button"].events.click();
+  assert.equal(h.calls.length, 0);
+});
+
+test("explicit timeline and due reads use scoped GETs and inert evidence-linked text", async () => {
+  const h = harness(async url => ({ok: true, status: 200,
+    json: async () => url === TIMELINE_PATH ? timelineData() : dueData()}));
+  h.enterToken("owner-token");
+  h.setSchedule(SCHEDULE_START, SCHEDULE_END);
+  assert.equal(h.calls.length, 0, "entering dates must not fetch");
+  await h.elements["schedule-events-button"].events.click(); await flush();
+  assert.equal(h.calls[0].url, TIMELINE_PATH);
+  assert.equal(h.calls[0].options.method, "GET");
+  assert.equal(h.calls[0].options.credentials, "omit");
+  assert.equal(h.calls[0].options.cache, "no-store");
+  let rendered = walk(h.elements["schedule-results"]).map(item => item.textContent).join("\n");
+  assert.match(rendered, /<script>review<\/script>/);
+  assert.match(rendered, /Undated records excluded.*Source freshness/);
+  assert.equal(walk(h.elements["schedule-results"]).filter(item => item.textContent === "Open evidence").length, 1);
+  await h.elements["schedule-due-button"].events.click(); await flush();
+  assert.equal(h.calls[1].url, DUE_PATH);
+  rendered = walk(h.elements["schedule-results"]).map(item => item.textContent).join("\n");
+  assert.match(rendered, /Send <img> report/);
+  assert.match(rendered, /Preview shortened/);
+  assert.equal(h.calls.some(call => /proposals|move|rename|delete/.test(call.url)), false);
+});
+
+test("reviewed timeline pages with the exact returned cutoff and bounded cursor", async () => {
+  const firstRows = Array.from({length: 10}, (_, index) => ({...timelineData().results[0],
+    object_id: "event_" + String(index).repeat(32),
+    starts_at: `2026-10-04T09:00:0${index}Z`,
+  }));
+  const first = {...timelineData(), results: firstRows, next_cursor: firstRows[9].object_id};
+  const second = {...timelineData(), results: [{...timelineData().results[0],
+    object_id: "event_" + "a".repeat(32), starts_at: "2026-10-04T09:00:10Z"}]};
+  const h = harness(async url => ({ok: true, status: 200,
+    json: async () => url === TIMELINE_PATH ? first : second}));
+  h.enterToken("owner-token"); h.setSchedule(SCHEDULE_START, SCHEDULE_END);
+  await h.elements["schedule-events-button"].events.click(); await flush();
+  const next = walk(h.elements["schedule-results"]).find(item => item.textContent === "Next 10 reviewed records");
+  assert.ok(next);
+  await next.events.click(); await flush();
+  assert.equal(h.calls[1].url, `${TIMELINE_PATH}&recorded_cutoff_at=2026-10-05T00%3A00%3A00Z&after=${firstRows[9].object_id}`);
+  assert.match(walk(h.elements["schedule-results"]).map(item => item.textContent).join("\n"), /Reviewed events/);
+  assert.equal(walk(h.elements["schedule-results"]).filter(item => item.textContent === "Open evidence").length, 1);
+});
+
+test("reviewed schedule refuses a next page that changes its recorded cutoff", async () => {
+  const rows = Array.from({length: 10}, (_, index) => ({...timelineData().results[0],
+    object_id: "event_" + String(index).repeat(32),
+    starts_at: `2026-10-04T09:00:0${index}Z`,
+  }));
+  const first = {...timelineData(), results: rows, next_cursor: rows[9].object_id};
+  const shifted = {...timelineData(), recorded_cutoff_at: "2026-10-06T00:00:00Z"};
+  const h = harness(async url => ({ok: true, status: 200,
+    json: async () => url === TIMELINE_PATH ? first : shifted}));
+  h.enterToken("owner-token"); h.setSchedule(SCHEDULE_START, SCHEDULE_END);
+  await h.elements["schedule-events-button"].events.click(); await flush();
+  await walk(h.elements["schedule-results"]).find(item => item.textContent === "Next 10 reviewed records").events.click();
+  await flush();
+  assert.match(walk(h.elements["schedule-results"]).map(item => item.textContent).join("\n"),
+    /Reviewed schedule unavailable/);
+});
+
+test("reviewed schedule rejects malformed, mismatched and denied pages without partial content", async () => {
+  const invalid = [
+    {...timelineData(), limit: 50},
+    {...timelineData(), results: [{...timelineData().results[0], starts_at: "2026-10-08T00:00:00Z"}]},
+    {...timelineData(), results: [{...timelineData().results[0], starts_at: "2026-10-04 09:00:00Z"}]},
+    {...timelineData(), results: [{...timelineData().results[0], evidence_ids: ["evidence_bad"]}]},
+    {...timelineData(), results: [
+      {...timelineData().results[0], object_id: "event_" + "e".repeat(32), starts_at: "2026-10-05T09:00:00Z"},
+      {...timelineData().results[0], object_id: "event_" + "f".repeat(32)},
+    ]},
+    {...timelineData(), next_cursor: EVENT_ID},
+    {...timelineData(), coverage: {...timelineData().coverage, undated_events: "included"}},
+  ];
+  for (const data of invalid) {
+    const h = harness(async () => ({ok: true, status: 200, json: async () => data}));
+    h.enterToken("owner-token"); h.setSchedule(SCHEDULE_START, SCHEDULE_END);
+    await h.elements["schedule-events-button"].events.click(); await flush();
+    const rendered = walk(h.elements["schedule-results"]).map(item => item.textContent).join("\n");
+    assert.match(rendered, /Reviewed schedule unavailable/);
+    assert.doesNotMatch(rendered, /<script>review<\/script>/);
+  }
+  const denied = harness(async () => ({ok: false, status: 403}));
+  denied.enterToken("owner-token"); denied.setSchedule(SCHEDULE_START, SCHEDULE_END);
+  await denied.elements["schedule-events-button"].events.click(); await flush();
+  assert.match(walk(denied.elements["schedule-results"]).map(item => item.textContent).join("\n"),
+    /Schedule request refused \(403\)/);
+});
+
+test("commitment due pages refuse unrelated filters, invalid links and hidden cursors", async () => {
+  for (const data of [
+    {...dueData(), state_filter: "open"},
+    {...dueData(), results: [{...dueData().results[0], project_id: "project_bad"}]},
+    {...dueData(), results: [{...dueData().results[0], owner_entity_id: "entity_bad"}]},
+    {...dueData(), results: [{...dueData().results[0], state: "approved"}]},
+    {...dueData(), results: [{...dueData().results[0], summary: "x".repeat(301)}]},
+  ]) {
+    const h = harness(async () => ({ok: true, status: 200, json: async () => data}));
+    h.enterToken("owner-token"); h.setSchedule(SCHEDULE_START, SCHEDULE_END);
+    await h.elements["schedule-due-button"].events.click(); await flush();
+    assert.match(walk(h.elements["schedule-results"]).map(item => item.textContent).join("\n"),
+      /Reviewed schedule unavailable/);
+  }
+  const hidden = harness(async () => ({ok: false, status: 404}));
+  hidden.enterToken("owner-token"); hidden.setSchedule(SCHEDULE_START, SCHEDULE_END);
+  await hidden.elements["schedule-due-button"].events.click(); await flush();
+  assert.match(walk(hidden.elements["schedule-results"]).map(item => item.textContent).join("\n"),
+    /Schedule request refused \(404\)/);
+});
+
+test("date, focus and credential changes discard late reviewed schedule pages", async () => {
+  for (const change of ["date", "focus", "token", "clear"]) {
+    let release;
+    const h = harness(async () => new Promise(resolve => { release = () => resolve({ok: true, status: 200,
+      json: async () => timelineData()}); }));
+    h.enterToken("owner-token"); h.setSchedule(SCHEDULE_START, SCHEDULE_END);
+    const inFlight = h.elements["schedule-events-button"].events.click();
+    await flush();
+    if (change === "date") h.setSchedule("2026-10-02", SCHEDULE_END);
+    else if (change === "focus") h.chooseFocus("fileos");
+    else if (change === "token") h.enterToken("new-token");
+    else h.elements["clear-session"].events.click();
+    release(); await inFlight; await flush();
+    const rendered = walk(h.elements["schedule-results"]).map(item => item.textContent).join("\n");
+    assert.doesNotMatch(rendered, /<script>review<\/script>|Reviewed events/);
+  }
 });
 
 test("read-only conversation uses the scoped API and renders hostile content as text", async () => {

@@ -1,5 +1,19 @@
 # MasterBrain Build Progress
 
+## First-party reviewed schedule (2026-10-05, ADR-164 in review)
+
+[ADR-164](adr/164_owner_reviewed_schedule.md) connects the existing reviewed
+event timeline and due-commitment APIs to explicit UTC-window controls in
+`/brain`. Each ten-item page is checked before inert rendering; the Next
+control carries the server cutoff and cursor, and date/access changes clear
+stale reads. The focused browser suite passed 29/29 locally; all six browser
+files passed 164/164. Ruff, mypy, docs and diff checks passed. The local
+non-PostgreSQL Python run passed 2,663 tests with 491 database-marked skips and
+one Docker-only launcher deselected. The separate disposable PostgreSQL 17.11
+run passed 490/491 marked cases with one Docker-only skip. Exact-head CI,
+strict-runtime and restore gates remain open. No
+hosted/live-source status, source effect or FOS-Master cutover is claimed.
+
 ## First-party project drill-down (2026-10-05, ADR-163 in review)
 
 [ADR-163](adr/163_owner_project_dossier_drilldown.md) connects the existing

@@ -6,6 +6,11 @@
   const focusField = document.getElementById("brain-source-focus");
   const askButton = document.getElementById("ask-button");
   const searchButton = document.getElementById("search-button");
+  const scheduleStart = document.getElementById("schedule-start");
+  const scheduleEnd = document.getElementById("schedule-end");
+  const eventsButton = document.getElementById("schedule-events-button");
+  const dueButton = document.getElementById("schedule-due-button");
+  const scheduleResults = document.getElementById("schedule-results");
   const turns = document.getElementById("turns");
   const status = document.getElementById("brain-status");
   const groups = [
@@ -25,7 +30,10 @@
   };
   let epoch = 0;
   let busy = false;
+  let scheduleBusy = false;
+  let scheduleEpoch = 0;
   const pending = new Set();
+  const schedulePending = new Set();
 
   function node(tag, value, parent, className = "") {
     const item = document.createElement(tag);
@@ -36,15 +44,39 @@
   }
 
   function usable() { return tokenField.value.trim().length > 0; }
+  function utcDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+        value.startsWith("0000-")) return null;
+    const millis = Date.parse(`${value}T00:00:00Z`);
+    return Number.isFinite(millis) && new Date(millis).toISOString().slice(0, 10) === value ? millis : null;
+  }
+  function scheduleWindow() {
+    const start = utcDate(scheduleStart.value);
+    const end = utcDate(scheduleEnd.value);
+    if (start === null || end === null || end <= start || end - start > 366 * 86400000) return null;
+    return {start: `${scheduleStart.value}T00:00:00Z`, end: `${scheduleEnd.value}T00:00:00Z`};
+  }
   function updateButton() {
-    askButton.disabled = busy || !usable();
-    searchButton.disabled = busy || !usable();
+    askButton.disabled = busy || scheduleBusy || !usable();
+    searchButton.disabled = busy || scheduleBusy || !usable();
+    const scheduleDisabled = busy || scheduleBusy || !usable() || focusField.value !== "all" || !scheduleWindow();
+    eventsButton.disabled = scheduleDisabled;
+    dueButton.disabled = scheduleDisabled;
+  }
+  function clearSchedule() {
+    scheduleEpoch += 1;
+    for (const controller of schedulePending) controller.abort();
+    schedulePending.clear();
+    scheduleBusy = false;
+    scheduleResults.replaceChildren();
+    updateButton();
   }
   function invalidate(clearToken = false) {
     epoch += 1;
     for (const controller of pending) controller.abort();
     pending.clear();
     busy = false;
+    clearSchedule();
     if (clearToken) tokenField.value = "";
     questionField.value = "";
     turns.replaceChildren();
@@ -53,8 +85,7 @@
     updateButton();
   }
 
-  async function api(path, body, token) {
-    const controller = new AbortController();
+  async function api(path, body, token, controller = new AbortController()) {
     pending.add(controller);
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
@@ -138,7 +169,8 @@
       try { encodeURIComponent(value); return true; } catch { return false; }
     })();
   const awareTime = value => typeof value === "string" &&
-    /(?:Z|[+-][0-9]{2}:[0-9]{2})$/.test(value) && Number.isFinite(Date.parse(value));
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) &&
+    Number.isFinite(Date.parse(value));
   const links = value => Array.isArray(value) && value.length >= 1 && value.length <= 20 &&
     value.every(evidenceId) && new Set(value).size === value.length;
   const record = value => value && typeof value === "object" && !Array.isArray(value);
@@ -238,6 +270,112 @@
     button.type = "button";
     const target = node("div", "", parent, "project-panel");
     button.addEventListener("click", () => showProject(hit.object_id, target, capturedEpoch, token));
+  }
+
+  function validSchedule(data, kind, window, after, cutoff) {
+    const events = kind === "events";
+    const rows = data?.results;
+    const coverage = data?.coverage;
+    const rowId = events ? eventId : commitmentId;
+    const dateField = events ? "starts_at" : "due_at";
+    if (!record(data) || !Array.isArray(rows) || rows.length > 10 ||
+        data.limit !== 10 || data.visibility !== "unsuperseded" ||
+        data.untrusted_content !== true || !record(coverage) ||
+        coverage.source_freshness !== "not_asserted" ||
+        coverage.interpretation !== "reviewed_assertions" ||
+        coverage[events ? "undated_events" : "undated_commitments"] !== "excluded" ||
+        (!events && data.state_filter !== null) ||
+        !awareTime(data.recorded_cutoff_at) ||
+        (cutoff !== null && Date.parse(data.recorded_cutoff_at) !== Date.parse(cutoff)) ||
+        (data.next_cursor !== null &&
+          (!rowId(data.next_cursor) || rows.length !== 10 ||
+            data.next_cursor !== rows[rows.length - 1].object_id || data.next_cursor === after))) return false;
+    const start = Date.parse(window.start);
+    const end = Date.parse(window.end);
+    for (const row of rows) {
+      if (!record(row) || row.object_kind !== (events ? "event" : "commitment") ||
+          !rowId(row.object_id) || !awareTime(row[dateField]) ||
+          Date.parse(row[dateField]) < start || Date.parse(row[dateField]) >= end ||
+          (row.project_id !== null && !projectId(row.project_id)) || !links(row.evidence_ids)) return false;
+      if (events) {
+        if (typeof row.event_type !== "string" ||
+            !/^[a-z][a-z0-9_.-]{0,99}$/.test(row.event_type) ||
+            !safeText(row.title, 1, 300) ||
+            (row.ends_at !== null &&
+              (!awareTime(row.ends_at) || Date.parse(row.ends_at) <= Date.parse(row.starts_at)))) return false;
+      } else if (!safeText(row.summary, 1, 300) ||
+          typeof row.summary_truncated !== "boolean" ||
+          !["proposed", "open", "completed", "cancelled", "overdue", "unknown"].includes(row.state) ||
+          (row.owner_entity_id !== null && !entityId(row.owner_entity_id)) ||
+          (row.counterparty_entity_id !== null && !entityId(row.counterparty_entity_id))) return false;
+    }
+    if (new Set(rows.map(row => row.object_id)).size !== rows.length ||
+        rows.some(row => row.object_id === after) ||
+        rows.some((row, index) => index > 0 &&
+          (Date.parse(rows[index - 1][dateField]) > Date.parse(row[dateField]) ||
+            (Date.parse(rows[index - 1][dateField]) === Date.parse(row[dateField]) &&
+              rows[index - 1].object_id > row.object_id)))) return false;
+    return true;
+  }
+
+  async function showSchedule(kind, window, after, cutoff, capturedEpoch, capturedScheduleEpoch, token) {
+    const current = () => epoch === capturedEpoch && scheduleEpoch === capturedScheduleEpoch &&
+      tokenField.value === token && focusField.value === "all" &&
+      scheduleWindow()?.start === window.start && scheduleWindow()?.end === window.end;
+    if (!current() || busy || scheduleBusy) return;
+    scheduleBusy = true;
+    updateButton();
+    const controller = new AbortController();
+    schedulePending.add(controller);
+    scheduleResults.replaceChildren();
+    node("p", "Opening separately authorized reviewed schedule…", scheduleResults);
+    try {
+      const route = kind === "events" ? "timeline" : "commitments-due";
+      let path = `/v1/knowledge/${route}?start=${encodeURIComponent(window.start)}` +
+        `&end=${encodeURIComponent(window.end)}&visibility=unsuperseded&limit=10`;
+      if (after !== null) path += `&recorded_cutoff_at=${encodeURIComponent(cutoff)}&after=${after}`;
+      const data = await api(path, undefined, token, controller);
+      if (!current()) return;
+      if (!validSchedule(data, kind, window, after, cutoff)) throw new Error("Invalid schedule response");
+      scheduleResults.replaceChildren();
+      node("h3", kind === "events" ? "Reviewed events" : "Reviewed commitments due", scheduleResults);
+      node("p", `${window.start.slice(0, 10)} to ${window.end.slice(0, 10)} (end exclusive, UTC). ` +
+        "Undated records excluded. Source freshness and current truth are not established.",
+      scheduleResults, "notice");
+      if (!data.results.length) node("p", "No dated reviewed records on this page.", scheduleResults);
+      for (const row of data.results) {
+        const card = node("article", "", scheduleResults, "hit");
+        node("p", kind === "events" ? row.title : row.summary, card);
+        node("p", kind === "events" ?
+          `Reviewed event · ${row.event_type} · ${row.starts_at}` :
+          `Reviewed commitment · ${row.state} · ${row.due_at}`, card, "locator");
+        if (kind !== "events" && row.summary_truncated) node("p", "Preview shortened.", card, "notice");
+        for (const evidence of row.evidence_ids) addEvidenceButton(card, capturedEpoch, token, evidence);
+      }
+      if (data.next_cursor !== null) {
+        const next = node("button", "Next 10 reviewed records", scheduleResults, "project-button");
+        next.type = "button";
+        next.addEventListener("click", () => showSchedule(kind, window, data.next_cursor,
+          data.recorded_cutoff_at, capturedEpoch, capturedScheduleEpoch, token));
+      }
+    } catch (error) {
+      if (current()) {
+        scheduleResults.replaceChildren();
+        node("p", Number.isInteger(error?.status) ?
+          `Schedule request refused (${error.status}). Check your access.` :
+          "Reviewed schedule unavailable.", scheduleResults, "notice");
+      }
+    } finally {
+      schedulePending.delete(controller);
+      if (current()) { scheduleBusy = false; updateButton(); }
+    }
+  }
+
+  function beginSchedule(kind) {
+    const window = scheduleWindow();
+    if (!window || !usable() || focusField.value !== "all" || busy || scheduleBusy) return;
+    clearSchedule();
+    return showSchedule(kind, window, null, null, epoch, scheduleEpoch, tokenField.value);
   }
 
   function renderResults(data, parent, capturedEpoch, token, focus) {
@@ -423,6 +561,10 @@
   searchButton.addEventListener("click", () => runQuestion(true));
   tokenField.addEventListener("input", () => invalidate());
   focusField.addEventListener("change", () => invalidate());
+  scheduleStart.addEventListener("input", () => clearSchedule());
+  scheduleEnd.addEventListener("input", () => clearSchedule());
+  eventsButton.addEventListener("click", () => beginSchedule("events"));
+  dueButton.addEventListener("click", () => beginSchedule("due"));
   document.getElementById("clear-session").addEventListener("click", () => invalidate(true));
   document.getElementById("clear-turns").addEventListener("click", () => invalidate());
   updateButton();
