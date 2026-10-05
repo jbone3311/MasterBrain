@@ -7,7 +7,8 @@ read-only due-window view for reviewed commitments, with state/project filters,
 source-aware related-object visibility, recorded-cutoff paging, compact previews
 and direct evidence IDs. The synthetic PostgreSQL integration exercises due
 boundaries, paging, review-chain cutoff, source and tenant isolation and
-API/client transport. This tranche remains under exact-head verification;
+API/client transport. PR #152 merged at `e3826ff` after exact-head CI,
+strict-runtime and restore, and the merged-main gates passed;
 it is not an automatic overdue reducer, source freshness or hosted acceptance.
 
 ## Reviewed-event timeline (2026-10-05, PR #151)

@@ -41,8 +41,8 @@ Email or FileOS source.
   commitments with non-null `due_at`. It defaults to unsuperseded leaves and
   allows exact project/state filters. Source-scoped callers need visibility of
   direct evidence and every referenced project/owner/counterparty. Undated
-  commitments remain in search/history. This is a read-only synthetic tranche
-  under verification, not an overdue-state reducer or freshness guarantee.
+  commitments remain in search/history. Exact-head and merged-main gates passed
+  on synthetic inputs; this is not an overdue-state reducer or freshness guarantee.
 - Enrolled assistants may search, expand and page changes only for assertions
   whose directly linked evidence is nonempty and entirely in their granted
   sources (ADR-143). Mixed-source assertions are hidden in full; an ungranted

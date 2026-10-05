@@ -9,7 +9,8 @@ Actions recovered for ADR-160 [PR #151](https://github.com/jbone3311/MasterBrain
 implementation commit `d52b167` passed executed full PostgreSQL/worker CI,
 strict-runtime and restore gates. PR #151 merged at `90ee9e4` and its
 merged-main CI, strict-runtime and restore gates passed too. ADR-161's
-commitment due view is a separate under-verification tranche. The prior direct KnowledgeCore read
+commitment due view merged in PR #152 at `e3826ff`, with exact-head and
+merged-main gates green. The prior direct KnowledgeCore read
 checkpoint is ADR-158/PR #146 at `3bf21b8`, with exact-head and merged-main
 checks green. The prior Ask output-budget checkpoint is
 ADR-157/PR #144 at `96cb22b`: aggregate Ask output-text budgeting, with
@@ -52,8 +53,8 @@ production and FileOS cutover remain open.
 ## Implemented
 
 - ADR-161 introduces an additive due-time index migration and a read-only,
-  source-aware reviewed-commitment due-window API/client. It is under
-  implementation-commit verification; it does not compute overdue status,
+  source-aware reviewed-commitment due-window API/client. Exact-head and
+  merged-main gates passed; it does not compute overdue status,
   change FileOS or assert hosted/live-source acceptance.
 
 - ADR-160 adds a bounded, recorded-cutoff-paged reviewed-event occurrence timeline

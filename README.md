@@ -52,8 +52,10 @@ The reviewed-event timeline in
 `90ee9e4`; implementation-head and merged-main CI (all 489 PostgreSQL-marked
 tests, deployment and FileOS container checks), strict-runtime and restore
 gates passed after the [Actions billing incident #150](https://github.com/jbone3311/MasterBrain/issues/150).
-The next ADR-161 read-only reviewed-commitment due-window slice is under
-verification. Neither view is a hosted capability, source-freshness proof,
+The ADR-161 read-only reviewed-commitment due-window slice merged in
+[PR #152](https://github.com/jbone3311/MasterBrain/pull/152) at `e3826ff`,
+with exact-head and merged-main CI, strict-runtime and restore checks green.
+Neither view is a hosted capability, source-freshness proof,
 cross-kind timeline or FileOS cutover. See the [build receipt](docs/BUILD_RECEIPT.md).
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
