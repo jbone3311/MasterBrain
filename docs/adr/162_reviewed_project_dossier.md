@@ -1,7 +1,8 @@
 # ADR-162 — Bounded reviewed project dossier
 
-Status: accepted for implementation; exact-head CI and review remain open.
-Not a hosted or live-source acceptance claim.
+Status: merged through PR #154 at `cf6c656` after exact-head CI,
+strict-runtime and restore gates passed; merged-main checks passed too and
+are tracked in the build receipt. Not a hosted or live-source acceptance claim.
 
 ## Context
 
@@ -50,7 +51,7 @@ source-grant filtering before limits, retained/unsuperseded chains, cutoff,
 undated links, separate truncation flags, evidence links, order, tenant RLS,
 client response validation, and populated no-rewrite migration. The local
 test requires disposable PostgreSQL; exact-head CI, strict-runtime and
-restore gates remain required before merge. Rollback removes the read route
+restore gates passed before merge. Rollback removes the read route
 and client method; the additive indexes and immutable assertions may remain.
 This grants no source action, automatic candidate pipeline, hosted identity,
 or FOS-Master cutover.

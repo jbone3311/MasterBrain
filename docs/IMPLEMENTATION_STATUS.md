@@ -52,10 +52,11 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
-- ADR-162 adds an in-review, bounded, read-only exact-project dossier with
+- ADR-162 adds a merged, bounded, read-only exact-project dossier with
   source-aware linked events and commitments, including undated links. Local
-  disposable PostgreSQL behavior and migration checks passed; exact-head CI,
-  strict-runtime and restore gates remain pending. It does not reconcile
+  disposable PostgreSQL behavior and migration checks passed; PR #154 exact-head
+  CI, strict-runtime and restore gates passed, as did the merged-main checks.
+  It does not reconcile
   project truth, certify freshness or authorize FileOS effects.
 
 - ADR-161 introduces an additive due-time index migration and a read-only,
