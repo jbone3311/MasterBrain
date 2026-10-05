@@ -32,6 +32,14 @@ weakening the gate would conceal a real failure.
   not durable evidence or user-facing API content. Protected collection,
   retention and correlation remain production operations requirements.
 
+The subsequent PR #159 synthetic large-MIME recurrence narrowed one timeout to
+the pre-worker image phase, but that phase performs both a Docker daemon
+security-options query and an immutable-image inspection. Record those as
+separate fixed stages, `daemon_security` and `image_inspect`, so a future
+recurrence can distinguish them without logging the command, image ID or
+daemon output. Keep the existing timeout, resource limits and fail-closed
+behavior unchanged; this refinement is diagnostics, not a flake fix.
+
 ## Verification and rollback
 
 Inject each failure class into the offline controller/pipe tests and assert

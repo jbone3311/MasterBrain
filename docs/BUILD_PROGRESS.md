@@ -1,5 +1,19 @@
 # MasterBrain Build Progress
 
+## Isolated image-check failure diagnostics (2026-10-05, ADR-120 follow-up in review)
+
+The recurring synthetic large-MIME CI deadline is now known to occur before
+worker creation, but the existing `image` warning combines Docker daemon
+security inspection with immutable-image inspection. A focused follow-up
+separates those two fixed warning stages without logging content or changing
+timeouts, retries, isolation or public failure behavior. The offline controller
+suite passed 60/60; the broad local non-PostgreSQL run passed 2,665 tests with
+491 database-marked skips and the independent local trial launcher deselected.
+The six browser files passed 156/156; Ruff, mypy and documentation checks passed.
+The full local run and deployment gate each failed only the separate local
+trial launcher in this checkout. Hosted real-container and required PR gates
+are not yet claimed; this is diagnosis, not a resolved flake.
+
 ## First-party project drill-down (2026-10-05, ADR-163 in review)
 
 [ADR-163](adr/163_owner_project_dossier_drilldown.md) connects the existing

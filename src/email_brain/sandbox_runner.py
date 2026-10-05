@@ -281,7 +281,7 @@ class _DockerPipe:
             raise MimeUnavailable()
         return value[0]
 
-    def _image(self) -> None:
+    def _daemon_security(self) -> None:
         security = json.loads(self._invoke(["info", "--format", "{{json .SecurityOptions}}"]))
         if not isinstance(security, list) or not any(
             option in {"name=seccomp,profile=builtin", "name=seccomp,profile=default"}
@@ -289,6 +289,8 @@ class _DockerPipe:
             if isinstance(option, str)
         ):
             raise MimeUnavailable()
+
+    def _image(self) -> None:
         image = self._inspect("image", self._image_id)
         config = image["Config"]
         if image["Id"] != self._image_id or config.get("Volumes"):
@@ -364,7 +366,9 @@ class _DockerPipe:
         try:
             if not isinstance(raw, bytes) or len(raw) > self._profile.input_bytes:
                 raise MimeUnavailable()
-            stage = "image"
+            stage = "daemon_security"
+            self._daemon_security()
+            stage = "image_inspect"
             self._image()
             name = f"eb-{self._profile.name}-" + uuid4().hex
             identifier = None

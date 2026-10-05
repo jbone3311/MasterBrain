@@ -2,6 +2,20 @@
 
 Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Image-check diagnostic refinement — ADR-120 follow-up in review
+
+After PR #159's [CI run 37367874733](https://github.com/jbone3311/MasterBrain/actions/runs/37367874733) reported the fixed warning
+`profile=mime stage=image reason=deadline`, this branch splits only the trusted
+controller's warning into `daemon_security` and `image_inspect`. It does not
+change the public fail-closed exception, Docker command order, timeout, retry,
+resource policy or container isolation. Local offline controller tests passed
+60/60; the non-PostgreSQL suite passed 2,665 with 491 database tests skipped
+and one separate local trial launcher deselected. Six browser files passed
+156/156; Ruff, mypy, docs and diff checks passed. The local full
+run and deployment gate each failed that trial launcher in this checkout.
+Exact-head hosted CI, real-container behavior, strict runtime and restore
+remain open; a future recurrence is needed to distinguish the two Docker calls.
+
 ## First-party reviewed-project drill-down — ADR-163 in review
 
 The unmerged `codex/brain-project-drilldown` branch adds an explicit `/brain`
