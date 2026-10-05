@@ -37,6 +37,12 @@ content become text nodes, not HTML. Stale requests are aborted/ignored. It
 has no direct model call, source-effect control, stored transcript, direct SQL or
 provider credential. These controls do not establish hosted identity,
 revocation across future derived caches or live-source acceptance.
+ADR-163's project-dossier control is only available on a reviewed project
+match, makes no automatic request, and uses ADR-162's same source/tenant-
+filtered read route. The page validates the complete bounded response before
+rendering, inserts returned text inertly, and aborts/ignores an in-flight read
+when the token, source focus or session changes. It grants no additional scope;
+hidden or malformed responses reveal no dossier content.
 
 ADR-136 also keeps the fictional trial's excerpts as text nodes, omits generated
 PostgreSQL highlight markup and verifies that both metadata and bounded content

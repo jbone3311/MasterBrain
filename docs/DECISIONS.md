@@ -10,6 +10,12 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-163](adr/163_owner_project_dossier_drilldown.md) defines an explicit,
+read-only project-dossier drill-down in the first-party workspace. It reuses
+ADR-162's scoped route and grants, validates the complete bounded response,
+and does not infer live project state or add an action surface. Implementation
+and exact-head gates are in progress.
+
 [ADR-162](adr/162_reviewed_project_dossier.md) defines a bounded, source-aware
 reviewed project dossier with separately limited linked events and commitments,
 including undated records. Its state is an assertion, not a current-state reducer.

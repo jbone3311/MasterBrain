@@ -61,6 +61,10 @@ a bounded read of one reviewed project and its linked events
 and commitments, including undated links; it does not calculate live project
 state. None of these views proves source freshness, a cross-kind timeline,
 hosted access or FileOS cutover. See the [build receipt](docs/BUILD_RECEIPT.md).
+The next in-review [ADR-163](docs/adr/163_owner_project_dossier_drilldown.md)
+adds an explicit read-only **Open reviewed project** control to `/brain` Ask and
+Search only matches. It reuses the scoped dossier API; its browser checks pass,
+but full exact-head and merged-main gates are not yet complete.
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
 [build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is

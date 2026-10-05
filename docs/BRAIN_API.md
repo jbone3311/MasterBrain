@@ -184,6 +184,11 @@ source effects or an alternate route through KnowledgeCore.
   returns not found. This is reviewed context, not a project-state reducer,
   source-freshness claim or durable cross-request snapshot.
   `BrainReadClient.project_dossier` validates the bounded response.
+  ADR-163's first-party `/brain` control explicitly requests this same route
+  from a reviewed project match with fixed five-item limits for each linked
+  list. It does not fetch on page load, add a privileged API, or interpret
+  the reviewed project state as live truth. This UI tranche is in review;
+  exact-head and merged-main gates remain open.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
