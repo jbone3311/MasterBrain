@@ -4,7 +4,8 @@
 
 - Added an ADR-160 candidate for a bounded, recorded-cutoff-paged reviewed-event
   occurrence timeline with source-aware project filtering, explicit retained
-  history and evidence drill-down. PostgreSQL/PR verification is pending;
+  history and evidence drill-down. Implementation commit `d52b167` passed
+  PostgreSQL, full CI, strict-runtime and restore gates;
   this is not source freshness or a cross-kind timeline.
 
 - Selected unsuperseded reviewed KnowledgeCore leaves in grouped Brain

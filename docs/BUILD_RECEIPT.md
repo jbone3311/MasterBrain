@@ -1,6 +1,6 @@
 # Build and validation receipt
 
-Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Reviewed-event timeline — ADR-160 candidate
 
@@ -26,16 +26,25 @@ applied 0054 and verified unchanged rows, row locations and heap filenode,
 both partial indexes and idempotent replay. The entire migration-integrity
 module passed **5/5** locally. This is not a large-hosted-table lock-budget
 or online-index proof.
-This proves disposable local PostgreSQL behavior, not CI, container, strict
-runtime, populated restore or hosted acceptance. GitHub Actions is still unable
-to start jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
+This proves disposable local PostgreSQL behavior, not hosted acceptance.
+After the [Actions billing/limit incident #150](https://github.com/jbone3311/MasterBrain/issues/150),
+implementation commit `d52b167740d4607e957183847ba95824ff540323` passed
+[full CI 37150248668 attempt 7](https://github.com/jbone3311/MasterBrain/actions/runs/37150248668)
+with **3,105 passed, 12 skipped** and **489/489 PostgreSQL-marked executed**.
+The deployment gate repeated the 3,105 tests, and the API image, dedicated
+PDF/FileOS document/image/archive workers and their restricted extraction
+checks all passed. The same commit passed
+[strict runtime 37150248761 attempt 4](https://github.com/jbone3311/MasterBrain/actions/runs/37150248761)
+and [synthetic populated restore 37150248722 attempt 4](https://github.com/jbone3311/MasterBrain/actions/runs/37150248722).
+The documentation-only follow-up commit is separately gated;
+none of these runs prove a hosted or live-source deployment.
 The local supported-Python 3.11.13 strict-runtime subset
 (`test_strict_runtime.py`, `test_rule_control.py`, `test_review_fixes.py`)
 passed **92 tests**, including all 13 PostgreSQL-marked cases. Installed
 unsupported Python 3.12.4 refused both package entry-point imports with the
 required security-patched-parser error. The six CI browser JavaScript files
-passed **151 tests** under Node 24. These are partial local equivalents, not
-the CI interpreter matrix or Docker restore/container gates.
+passed **151 tests** under Node 24. These local checks preceded, and do not
+replace, the executed CI interpreter matrix or Docker restore/container gates.
 Pre-merge review found and corrected a page-cutoff gap: late successors and
 corrections can no longer suppress earlier eligible events on later pages.
 The new PostgreSQL regression covers both paths and passed locally;
@@ -45,12 +54,11 @@ adds closed read requests and response validation; its 11 additional transport
 cases passed. A subsequent end-to-end regression passed through
 `BrainReadClient.timeline`, the authenticated FastAPI route and real
 PostgreSQL, paging retained project events across the returned cutoff/cursor.
-This does not prove hosted assistant identity or replace exact-head CI.
-GitHub review remains
-[draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151).
+This does not prove hosted assistant identity. GitHub review is tracked in
+[PR #151](https://github.com/jbone3311/MasterBrain/pull/151).
 No live source, donor or version change.
 
-## CI execution blocker — issue #150
+## Historical CI execution blocker — issue #150
 
 At documentation-only PR #149's merged-main commit
 `168ad65e32174c328d45286e9acbf0331a85b9d4`, [CI](https://github.com/jbone3311/MasterBrain/actions/runs/37147321816),
@@ -60,10 +68,11 @@ failed **before a runner or any test step started**. Each check annotation
 reports failed account payments or an insufficient spending limit. These are
 not product test failures or passing runs. The PR head and the preceding
 functional merge had executed and passed their required checks; the
-documentation-only merge adds no runtime behavior. The owner must restore
-Actions eligibility and rerun the exact merged-main checks before that
-checkpoint can be called fully verified. Later feature PRs must not merge
-without executed exact-head gates.
+documentation-only merge adds no runtime behavior. Actions eligibility later
+recovered and PR #151's exact implementation commit passed the three required
+workflows above. The failed `168ad65` merged-main runs remain failed historical
+evidence, not passing checks; a later merge requires its own exact-head and
+merged-main verification.
 
 ## Grouped current reviewed leaves — PR #148 merged
 

@@ -45,14 +45,16 @@ disposable PostgreSQL; MasterBrain is not a hosted or live-source product, and
 FOS-Master has not been replaced, renamed, or modified. See the
 [alpha test guide](docs/ALPHA_TESTING.md) for the precise trial boundary.
 
-The latest merged KnowledgeCore read work is grouped reviewed-current
+The preceding merged KnowledgeCore read work is grouped reviewed-current
 search/Ask in [PR #148](https://github.com/jbone3311/MasterBrain/pull/148).
-The next reviewed-event timeline is an unmerged
-[draft PR #151](https://github.com/jbone3311/MasterBrain/pull/151): its local
-non-PostgreSQL checks and isolated PostgreSQL 17.11 suite passed, but required
-GitHub checks have not executed. GitHub Actions currently cannot start jobs because of the
-[account billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
-The local test result does not make the draft a merged or hosted capability.
+The next reviewed-event timeline is tracked in
+[PR #151](https://github.com/jbone3311/MasterBrain/pull/151). Its implementation
+commit `d52b167` passed executed full CI (including all 489 PostgreSQL-marked
+tests, deployment and FileOS container checks), strict-runtime and restore
+gates after the [Actions billing incident #150](https://github.com/jbone3311/MasterBrain/issues/150).
+This read-only slice is not a hosted capability, a cross-kind timeline, or
+FileOS cutover. Check the PR and [build receipt](docs/BUILD_RECEIPT.md) for the
+final merge and exact-head verification state.
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
 [build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is
