@@ -34,9 +34,15 @@ Email or FileOS source.
   filter and direct evidence IDs. It defaults to unsuperseded review-chain
   leaves; retained history is explicit. A linked project must also satisfy
   assistant source grants. Undated events remain in exact/search/history
-  reads. This candidate passed isolated local PostgreSQL but awaits CI/PR gates
-  and is not an event
-  extraction pipeline, source freshness or valid-time truth guarantee.
+  reads. The implementation and merged-main CI, strict-runtime and restore gates
+  passed. It is not an event extraction pipeline, source freshness or valid-time
+  truth guarantee.
+- ADR-161 adds a bounded, recorded-cutoff-paged due-window read for reviewed
+  commitments with non-null `due_at`. It defaults to unsuperseded leaves and
+  allows exact project/state filters. Source-scoped callers need visibility of
+  direct evidence and every referenced project/owner/counterparty. Undated
+  commitments remain in search/history. This is a read-only synthetic tranche
+  under verification, not an overdue-state reducer or freshness guarantee.
 - Enrolled assistants may search, expand and page changes only for assertions
   whose directly linked evidence is nonempty and entirely in their granted
   sources (ADR-143). Mixed-source assertions are hidden in full; an ungranted
@@ -51,6 +57,7 @@ Email or FileOS source.
 | `POST /v1/knowledge/assertions` | `knowledge.review` | Human-only reviewed append; UUID `Idempotency-Key` required |
 | `POST /v1/knowledge/search` | `knowledge.search` | Compact lexical results with evidence IDs; explicit `retained` (default) or `unsuperseded` visibility |
 | `GET /v1/knowledge/timeline` | `knowledge.search` | Bounded occurrence-window event page, recorded-time cutoff/cursor, direct evidence IDs; ADR-160 candidate |
+| `GET /v1/knowledge/commitments-due` | `knowledge.search` | Bounded due-window commitment page, recorded-time cutoff/cursor, direct evidence IDs; ADR-161 |
 | `GET /v1/knowledge/{kind}/{id}` | `knowledge.read` | One tenant-scoped assertion and its evidence links |
 | `GET /v1/knowledge/changes` | `knowledge.changes.read` | Bounded chronological change page |
 

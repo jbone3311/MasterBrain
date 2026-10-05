@@ -333,8 +333,9 @@ def test_timeline_index_migration_preserves_populated_event_heap(
             "SELECT to_regclass('knowledge_events_timeline_lookup')"
         ).fetchone() == (None,)
 
-    assert migrate(admin_dsn, MIGRATIONS) == ["0054_knowledge_event_timeline.sql"]
-    assert migrate(admin_dsn, MIGRATIONS) == []
+    through_timeline = _migrations_before(tmp_path, 55)
+    assert migrate(admin_dsn, through_timeline) == ["0054_knowledge_event_timeline.sql"]
+    assert migrate(admin_dsn, through_timeline) == []
     with psycopg.connect(admin_dsn) as conn:
         after = conn.execute(
             "SELECT id,starts_at,project_id,recorded_at,ctid "
@@ -354,3 +355,67 @@ def test_timeline_index_migration_preserves_populated_event_heap(
     }
     assert "starts_at IS NOT NULL" in indexes["knowledge_events_timeline_lookup"]
     assert "project_id IS NOT NULL" in indexes["knowledge_events_project_timeline_lookup"]
+
+
+def test_due_index_migration_preserves_populated_commitment_heap(
+    scratch_database: tuple[str, str], tmp_path: Path
+) -> None:
+    admin_dsn, _ = scratch_database
+    earlier = _migrations_before(tmp_path, 55)
+    assert len(migrate(admin_dsn, earlier)) == 54
+    tenant_id, reviewer_id = uuid4(), uuid4()
+    project_id = "project_" + uuid4().hex
+    dated_id, undated_id = "commitment_" + uuid4().hex, "commitment_" + uuid4().hex
+    observed = datetime(2026, 10, 5, tzinfo=UTC)
+    with psycopg.connect(admin_dsn) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Synthetic due')", (tenant_id,))
+        conn.execute(
+            "INSERT INTO knowledge_projects(tenant_id,id,title,description,state,confidence,"
+            "source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'Fictional project','','active',1,'fictional',%s,%s)",
+            (tenant_id, project_id, observed, reviewer_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_commitments(tenant_id,id,description,state,due_at,"
+            "project_id,confidence,source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'Dated commitment','open',%s,%s,1,'fictional',%s,%s)",
+            (tenant_id, dated_id, observed, project_id, observed, reviewer_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_commitments(tenant_id,id,description,state,"
+            "confidence,source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'Undated commitment','open',1,'fictional',%s,%s)",
+            (tenant_id, undated_id, observed, reviewer_id),
+        )
+        before = conn.execute(
+            "SELECT id,due_at,project_id,recorded_at,ctid FROM knowledge_commitments "
+            "WHERE tenant_id=%s ORDER BY id", (tenant_id,),
+        ).fetchall()
+        heap_before = conn.execute(
+            "SELECT pg_relation_filenode('knowledge_commitments'::regclass)"
+        ).fetchone()[0]
+        assert conn.execute(
+            "SELECT to_regclass('knowledge_commitments_due_lookup')"
+        ).fetchone() == (None,)
+
+    assert migrate(admin_dsn, MIGRATIONS) == ["0055_knowledge_commitment_due.sql"]
+    assert migrate(admin_dsn, MIGRATIONS) == []
+    with psycopg.connect(admin_dsn) as conn:
+        after = conn.execute(
+            "SELECT id,due_at,project_id,recorded_at,ctid FROM knowledge_commitments "
+            "WHERE tenant_id=%s ORDER BY id", (tenant_id,),
+        ).fetchall()
+        heap_after = conn.execute(
+            "SELECT pg_relation_filenode('knowledge_commitments'::regclass)"
+        ).fetchone()[0]
+        indexes = dict(conn.execute(
+            "SELECT indexname,indexdef FROM pg_indexes WHERE tablename='knowledge_commitments' "
+            "AND indexname IN ('knowledge_commitments_due_lookup',"
+            "'knowledge_commitments_project_due_lookup')"
+        ).fetchall())
+    assert after == before and heap_after == heap_before
+    assert set(indexes) == {
+        "knowledge_commitments_due_lookup", "knowledge_commitments_project_due_lookup",
+    }
+    assert "due_at IS NOT NULL" in indexes["knowledge_commitments_due_lookup"]
+    assert "project_id IS NOT NULL" in indexes["knowledge_commitments_project_due_lookup"]

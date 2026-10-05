@@ -15,6 +15,95 @@ LAYERS = (
 TIMELINE_START = datetime(2026, 10, 1, tzinfo=UTC)
 TIMELINE_EVENT = "event_" + "a" * 32
 TIMELINE_EVIDENCE = "evidence_" + "b" * 32
+DUE_COMMITMENT = "commitment_" + "c" * 32
+
+
+def due_result() -> dict[str, object]:
+    return {
+        "results": [{
+            "object_kind": "commitment", "object_id": DUE_COMMITMENT,
+            "summary": "Submit the fictional package", "summary_truncated": False,
+            "state": "open", "due_at": (TIMELINE_START + timedelta(hours=1)).isoformat(),
+            "project_id": None, "owner_entity_id": None, "counterparty_entity_id": None,
+            "evidence_ids": [TIMELINE_EVIDENCE],
+        }],
+        "next_cursor": DUE_COMMITMENT,
+        "recorded_cutoff_at": TIMELINE_START.isoformat(),
+        "limit": 1, "visibility": "unsuperseded", "state_filter": "open",
+        "coverage": {"undated_commitments": "excluded", "source_freshness": "not_asserted",
+                     "interpretation": "reviewed_assertions"},
+        "untrusted_content": True,
+    }
+
+
+def test_due_client_sends_bounded_read_and_validates_page() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json=due_result())
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler)
+    ) as client:
+        result = client.commitments_due(
+            TIMELINE_START, TIMELINE_START + timedelta(days=1), state="open", limit=1,
+            recorded_cutoff_at=TIMELINE_START, after="commitment_" + "0" * 32,
+        )
+        assert result["results"][0]["object_id"] == DUE_COMMITMENT
+        for invalid in (
+            {"start": TIMELINE_START.replace(tzinfo=None)},
+            {"end": TIMELINE_START},
+            {"end": TIMELINE_START + timedelta(days=367)},
+            {"limit": True},
+            {"limit": 51},
+            {"state": "active"},
+            {"after": DUE_COMMITMENT},
+            {"after": "event_" + "a" * 32, "recorded_cutoff_at": TIMELINE_START},
+            {"project_id": "project_bad"},
+        ):
+            arguments = {
+                "start": TIMELINE_START,
+                "end": TIMELINE_START + timedelta(days=1), **invalid,
+            }
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                client.commitments_due(**arguments)
+    assert len(calls) == 1
+    assert calls[0].method == "GET"
+    assert calls[0].url.path == "/v1/knowledge/commitments-due"
+    assert calls[0].url.params["state"] == "open"
+    assert calls[0].url.params["after"] == "commitment_" + "0" * 32
+    assert calls[0].headers["authorization"] == "Bearer token"
+
+
+@pytest.mark.parametrize("change", [
+    {"untrusted_content": False},
+    {"visibility": "retained"},
+    {"state_filter": "completed"},
+    {"recorded_cutoff_at": (TIMELINE_START + timedelta(hours=1)).isoformat()},
+    {"next_cursor": "commitment_" + "d" * 32},
+    {"coverage": {"undated_commitments": "included"}},
+    {"results": [{**due_result()["results"][0], "summary": "Private\x00text"}]},
+    {"results": [{**due_result()["results"][0], "summary_truncated": "no"}]},
+    {"results": [{**due_result()["results"][0], "evidence_ids": []}]},
+    {"results": [{**due_result()["results"][0], "project_id": "project_bad"}]},
+    {"results": [{**due_result()["results"][0], "owner_entity_id": "entity_bad"}]},
+    {"results": [{**due_result()["results"][0], "state": "completed"}]},
+    {"results": [{**due_result()["results"][0],
+                  "due_at": (TIMELINE_START - timedelta(hours=1)).isoformat()}]},
+    {"results": due_result()["results"] * 2},
+])
+def test_due_client_rejects_malformed_pages(change: dict) -> None:
+    result = {**due_result(), **change}
+    with BrainReadClient(
+        "https://brain.example", "token",
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=result)),
+    ) as client:
+        with pytest.raises(BrainClientError, match="invalid_response"):
+            client.commitments_due(
+                TIMELINE_START, TIMELINE_START + timedelta(days=1),
+                state="open", limit=1, recorded_cutoff_at=TIMELINE_START,
+            )
 
 
 def timeline_result() -> dict[str, object]:

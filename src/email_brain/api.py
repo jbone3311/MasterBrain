@@ -52,6 +52,7 @@ from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReview
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
+    DueCommitmentsRequest,
     KnowledgePublishRequest,
     KnowledgeSearchRequest,
     TimelineRequest,
@@ -983,6 +984,18 @@ def create_app(
             return knowledge.timeline(principal.context, body)
         except ValueError:
             raise HTTPException(422, "invalid_timeline") from None
+
+    @app.get("/v1/knowledge/commitments-due")
+    def knowledge_commitments_due(
+        body: Annotated[DueCommitmentsRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return knowledge.commitments_due(principal.context, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_due_commitments") from None
 
     @app.get("/v1/knowledge/{kind}/{object_id}")
     def knowledge_object(

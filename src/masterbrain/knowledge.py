@@ -19,6 +19,7 @@ from masterbrain.knowledge_schema import (
     ClaimWrite,
     CommitmentWrite,
     CorrectionWrite,
+    DueCommitmentsRequest,
     EntityWrite,
     EventWrite,
     KnowledgeAssertion,
@@ -100,6 +101,40 @@ _TIMELINE_UNSUPERSEDED_SQL = (
     + _visible_assertion_sql("r", "'event'", "r.id")
     + " AND (r.project_id IS NULL OR "
     + _visible_assertion_sql("rp", "'project'", "rp.id") + "))"
+)
+
+
+def _visible_commitment_sql(alias: str) -> str:
+    """Require direct and referenced-object source grants before due paging."""
+    parts = [_visible_assertion_sql(alias, "'commitment'", f"{alias}.id")]
+    for column, table, related_alias, kind in (
+        ("project_id", "knowledge_projects", "kp", "project"),
+        ("owner_entity_id", "knowledge_entities", "ko", "entity"),
+        ("counterparty_entity_id", "knowledge_entities", "kc", "entity"),
+    ):
+        parts.append(
+            f"({alias}.{column} IS NULL OR EXISTS (SELECT 1 FROM {table} {related_alias} "
+            f"WHERE {related_alias}.tenant_id={alias}.tenant_id "
+            f"AND {related_alias}.id={alias}.{column} AND "
+            + _visible_assertion_sql(related_alias, f"'{kind}'", f"{related_alias}.id")
+            + "))"
+        )
+    return " AND ".join(parts)
+
+
+_DUE_UNSUPERSEDED_SQL = (
+    "NOT EXISTS (SELECT 1 FROM knowledge_commitments s "
+    "WHERE s.tenant_id=cm.tenant_id AND s.supersedes_id=cm.id "
+    "AND s.recorded_at<=allowed.cutoff AND "
+    + _visible_commitment_sql("s") + ") "
+    "AND NOT EXISTS (SELECT 1 FROM knowledge_corrections c "
+    "JOIN knowledge_commitments r ON r.tenant_id=c.tenant_id "
+    "AND r.id=c.replacement_id "
+    "WHERE c.tenant_id=cm.tenant_id AND c.target_kind='commitment' "
+    "AND c.target_id=cm.id AND c.recorded_at<=allowed.cutoff "
+    "AND r.recorded_at<=allowed.cutoff AND "
+    + _visible_assertion_sql("c", "'correction'", "c.id") + " AND "
+    + _visible_commitment_sql("r") + ")"
 )
 
 
@@ -588,6 +623,115 @@ class KnowledgeCore:
             "visibility": request.visibility,
             "coverage": {
                 "undated_events": "excluded",
+                "source_freshness": "not_asserted",
+                "interpretation": "reviewed_assertions",
+            },
+            "untrusted_content": True,
+        }
+
+    def commitments_due(
+        self, ctx: TenantContext, request: DueCommitmentsRequest
+    ) -> dict[str, Any]:
+        """Page reviewed due dates without treating them as source freshness."""
+        self.store.require(ctx, "knowledge.search")
+        if not isinstance(request, DueCommitmentsRequest):
+            raise ValueError("invalid due request")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        visibility_sql = (
+            " AND (" + _DUE_UNSUPERSEDED_SQL + ")"
+            if request.visibility == "unsuperseded" else ""
+        )
+        project_sql = "AND cm.project_id=%s " if request.project_id is not None else ""
+        state_sql = "AND cm.state=%s " if request.state is not None else ""
+        where_sql = (
+            "WHERE cm.due_at>=%s AND cm.due_at<%s "
+            "AND cm.recorded_at<=allowed.cutoff "
+            + project_sql + state_sql
+            + "AND (" + _visible_commitment_sql("cm") + ")"
+            + visibility_sql
+        )
+        with self.store.transaction(ctx) as conn:
+            clock = conn.execute("SELECT transaction_timestamp() AS now").fetchone()
+            if clock is None:
+                raise RuntimeError("due database clock unavailable")
+            now = clock["now"]
+            cutoff_at = (
+                request.recorded_cutoff_at.astimezone(UTC)
+                if request.recorded_cutoff_at else now
+            )
+            if cutoff_at > now:
+                raise ValueError("invalid future due cutoff")
+            params: tuple[Any, ...] = (
+                request.start.astimezone(UTC), request.end.astimezone(UTC),
+                *((request.project_id,) if request.project_id is not None else ()),
+                *((request.state,) if request.state is not None else ()),
+            )
+            common_sql = (
+                "WITH allowed AS (SELECT %s::text[] AS sources, "
+                "%s::timestamptz AS cutoff) "
+            )
+            from_sql = "FROM knowledge_commitments cm CROSS JOIN allowed "
+            anchor = None
+            if request.after is not None:
+                anchor = conn.execute(
+                    common_sql + "SELECT cm.due_at,cm.id " + from_sql
+                    + where_sql + " AND cm.id=%s",
+                    (allowed_sources, cutoff_at, *params, request.after),
+                ).fetchone()
+                if anchor is None:
+                    raise NotFound()
+            cursor_sql = " AND (cm.due_at,cm.id)>(%s,%s)" if anchor else ""
+            rows = conn.execute(
+                common_sql
+                + "SELECT cm.id,cm.description,cm.state,cm.due_at,"
+                "cm.project_id,cm.owner_entity_id,cm.counterparty_entity_id "
+                + from_sql + where_sql + cursor_sql
+                + " ORDER BY cm.due_at,cm.id LIMIT %s",
+                (
+                    allowed_sources, cutoff_at, *params,
+                    *((anchor["due_at"], anchor["id"]) if anchor else ()),
+                    request.limit + 1,
+                ),
+            ).fetchall()
+            page = rows[:request.limit]
+            evidence_by_commitment: dict[str, list[str]] = {
+                row["id"]: [] for row in page
+            }
+            if page:
+                evidence_rows = conn.execute(
+                    "SELECT target_id,evidence_id FROM knowledge_evidence "
+                    "WHERE target_kind='commitment' AND target_id=ANY(%s) "
+                    "ORDER BY target_id,evidence_id",
+                    (list(evidence_by_commitment),),
+                ).fetchall()
+                for evidence in evidence_rows:
+                    evidence_by_commitment[evidence["target_id"]].append(
+                        evidence["evidence_id"]
+                    )
+            self.store.audit(conn, ctx, "knowledge.commitments_due_read", "due_window")
+        return {
+            "results": [
+                {
+                    "object_kind": "commitment",
+                    "object_id": row["id"],
+                    "summary": row["description"][:300],
+                    "summary_truncated": len(row["description"]) > 300,
+                    "state": row["state"],
+                    "due_at": row["due_at"],
+                    "project_id": row["project_id"],
+                    "owner_entity_id": row["owner_entity_id"],
+                    "counterparty_entity_id": row["counterparty_entity_id"],
+                    "evidence_ids": evidence_by_commitment[row["id"]],
+                }
+                for row in page
+            ],
+            "next_cursor": page[-1]["id"] if len(rows) > request.limit and page else None,
+            "recorded_cutoff_at": cutoff_at,
+            "limit": request.limit,
+            "visibility": request.visibility,
+            "state_filter": request.state,
+            "coverage": {
+                "undated_commitments": "excluded",
                 "source_freshness": "not_asserted",
                 "interpretation": "reviewed_assertions",
             },

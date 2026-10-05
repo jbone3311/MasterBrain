@@ -137,6 +137,12 @@ set. Hidden or filter-mismatched cursors return not found. The audit records
 only a fixed operation code, never event text, dates or project identities.
 Its cutoff excludes later-recorded rows, not late commits of earlier inserts;
 it is not a durable MVCC snapshot, source freshness or truth guarantee.
+ADR-161 applies the bounded window, recorded-cutoff cursor and pre-limit grant
+checks to reviewed commitments. Assistants must see all direct commitment
+evidence and the direct evidence of every referenced project, owner and
+counterparty. Hidden successors, corrections and replacements cannot suppress
+a visible older commitment. The audit uses a fixed operation code and does not
+record descriptions, due dates or linked identities. No source write is granted.
 
 ## Privacy-safe failure observability
 

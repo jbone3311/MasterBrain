@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-161](adr/161_reviewed_commitments_due.md) defines a bounded,
+recorded-cutoff-paged due view for reviewed commitments. It checks direct and
+linked-object source grants before limit; this is not current truth, source
+freshness, hosted acceptance or an action surface.
+
 [ADR-160](adr/160_reviewed_event_timeline.md) defines a bounded,
 recorded-cutoff-paged reviewed-event occurrence timeline with source-aware project
 filtering. Undated events remain in exact/history reads; this is not source

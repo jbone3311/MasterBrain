@@ -20,7 +20,7 @@ approved for private data, or production accepted. The exact-commit gates are in
 | Run a legacy Email worker with a tenant-bound database login | Add `--tenant-bound-db` to `email-brain sync-read`, `process-jobs` or `process-documents`, for check and execution | The authenticated worker tenant selects the only SQL login. ADR-110's read-only Fastmail worker uses anchored listing, bounded metadata batches and held oversized mail; provider-read opt-in, exact worker scopes and approved-processing gates remain separate. No hosted/live-source acceptance is implied. |
 | Search reviewed knowledge | `POST /v1/knowledge/search`, `GET /v1/knowledge/{kind}/{id}` | Human-reviewed, evidence-linked assertions. Search defaults to retained history; explicit `unsuperseded` returns source-authorized review-chain leaves without claiming valid-time truth or switching grouped Brain current-search. No automatic entity resolution or model-generated synthesis. |
 | Review Email evidence | Legacy `/v1/search`, selected-message reader, quarantine/retry, approved PDF jobs, narrow virtual sender rules, and travel/bill memory | Human/operator compatibility prototype, not an assistant entrance (ADR-149); no provider send, move or delete. |
-| Call the same reads from a separately authorized external program | `BrainReadClient.current_search`, `.evidence`, `.evidence_content`, `.current_coverage`, `.changes`, `.answer`; draft `.timeline`; direct Brain search and FileOS source status/search routes | Provider-neutral client; synthetic and administrator-bound OIDC assistants must enroll source IDs. Direct routes are source-filtered under ADR-142; the answer route requires four read scopes and selects local quotes by default. Timeline transport and local PostgreSQL passed; CI/PR gates remain pending. No hosted issuer enrollment, named assistant integration or source effect. |
+| Call the same reads from a separately authorized external program | `BrainReadClient.current_search`, `.evidence`, `.evidence_content`, `.current_coverage`, `.changes`, `.answer`, `.timeline`; ADR-161 draft `.commitments_due`; direct Brain search and FileOS source status/search routes | Provider-neutral client; synthetic and administrator-bound OIDC assistants must enroll source IDs. Direct routes are source-filtered under ADR-142; the answer route requires four read scopes and selects local quotes by default. Event timeline passed merged-main gates; commitment due view remains under verification. No hosted issuer enrollment, named assistant integration or source effect. |
 
 The trial is the quickest owner-facing entry point. Its
 [known-answer guide](CROSS_SOURCE_TRIAL.md) states expected counts and how to report
@@ -44,8 +44,8 @@ scopes, limits and response shapes are in [BRAIN_API.md](BRAIN_API.md).
   Results are not a single calibrated score or an AI-written answer.
 - KnowledgeCore: reviewed append-only entities, relationships, claims, events,
   projects, commitments and corrections; lexical search, exact expansion and
-  changes. ADR-160 adds a candidate bounded, recorded-cutoff-paged reviewed-event
-  occurrence timeline (local PostgreSQL passed; PR gates pending). Enrolled assistants are
+  changes. ADR-160 adds a merged, bounded, recorded-cutoff-paged reviewed-event
+  occurrence timeline. ADR-161 adds a due-window commitment read under verification. Enrolled assistants are
   limited to assertions with wholly granted
   direct evidence, including expansion and change cursors (ADR-143). These are
   base records, not a finished project-management system.

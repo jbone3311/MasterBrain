@@ -47,14 +47,14 @@ FOS-Master has not been replaced, renamed, or modified. See the
 
 The preceding merged KnowledgeCore read work is grouped reviewed-current
 search/Ask in [PR #148](https://github.com/jbone3311/MasterBrain/pull/148).
-The next reviewed-event timeline is tracked in
-[PR #151](https://github.com/jbone3311/MasterBrain/pull/151). Its implementation
-commit `d52b167` passed executed full CI (including all 489 PostgreSQL-marked
+The reviewed-event timeline in
+[PR #151](https://github.com/jbone3311/MasterBrain/pull/151) is merged at
+`90ee9e4`; implementation-head and merged-main CI (all 489 PostgreSQL-marked
 tests, deployment and FileOS container checks), strict-runtime and restore
-gates after the [Actions billing incident #150](https://github.com/jbone3311/MasterBrain/issues/150).
-This read-only slice is not a hosted capability, a cross-kind timeline, or
-FileOS cutover. Check the PR and [build receipt](docs/BUILD_RECEIPT.md) for the
-final merge and exact-head verification state.
+gates passed after the [Actions billing incident #150](https://github.com/jbone3311/MasterBrain/issues/150).
+The next ADR-161 read-only reviewed-commitment due-window slice is under
+verification. Neither view is a hosted capability, source-freshness proof,
+cross-kind timeline or FileOS cutover. See the [build receipt](docs/BUILD_RECEIPT.md).
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
 [build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is

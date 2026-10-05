@@ -100,6 +100,7 @@ from masterbrain.knowledge_schema import (
     ClaimWrite,
     CommitmentWrite,
     CorrectionWrite,
+    DueCommitmentsRequest,
     EntityWrite,
     EventWrite,
     ProjectWrite,
@@ -3526,6 +3527,8 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         "knowledge_corrections_target_lookup",
         "knowledge_events_timeline_lookup",
         "knowledge_events_project_timeline_lookup",
+        "knowledge_commitments_due_lookup",
+        "knowledge_commitments_project_due_lookup",
     }
 
     hits = knowledge.search(ctx, "October", kinds=["claim"])
@@ -3657,6 +3660,97 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert {hit.object_id for hit in knowledge.search(
         fileos_only, "Orion audit", kinds=["commitment"], visibility="unsuperseded"
     )} == {hidden_correction_old.object_id, hidden_correction_new.object_id}
+    due_start = datetime(2026, 10, 17, tzinfo=UTC)
+    due_at = due_start + timedelta(hours=9)
+    due_end = due_start + timedelta(days=1)
+    due_old = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due old", state="open", due_at=due_at,
+        project_id=old_project.object_id, owner_entity_id=concurrent[0].object_id,
+        counterparty_entity_id=acme.object_id, **common,
+    ), uuid4())
+    due_hidden_successor = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due successor", state="completed",
+        due_at=due_at, project_id=old_project.object_id,
+        supersedes_id=due_old.object_id,
+        **{**common, "evidence_ids": [current_email.evidence_id]},
+    ), uuid4())
+    due_sibling = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due sibling", state="open", due_at=due_at,
+        project_id=old_project.object_id, **common,
+    ), uuid4())
+    due_hidden_project = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due hidden project", state="open",
+        due_at=due_at, project_id=new_project.object_id, **common,
+    ), uuid4())
+    due_undated = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due undated", state="open",
+        project_id=old_project.object_id, **common,
+    ), uuid4())
+    due_query = DueCommitmentsRequest(start=due_start, end=due_end)
+    owner_due = knowledge.commitments_due(ctx, due_query)
+    assert {row["object_id"] for row in owner_due["results"]} == {
+        due_hidden_successor.object_id, due_sibling.object_id, due_hidden_project.object_id,
+    }
+    assert due_old.object_id not in str(owner_due)
+    assert due_undated.object_id not in str(owner_due)
+    assistant_due = knowledge.commitments_due(fileos_only, due_query)
+    assert {row["object_id"] for row in assistant_due["results"]} == {
+        due_old.object_id, due_sibling.object_id,
+    }
+    assert all(row["evidence_ids"] == [evidence_id] for row in assistant_due["results"])
+    assert {row["object_id"] for row in knowledge.commitments_due(
+        ctx, DueCommitmentsRequest(start=due_start, end=due_end, visibility="retained")
+    )["results"]} == {
+        due_old.object_id, due_hidden_successor.object_id,
+        due_sibling.object_id, due_hidden_project.object_id,
+    }
+    assert {row["object_id"] for row in knowledge.commitments_due(
+        fileos_only, DueCommitmentsRequest(
+            start=due_start, end=due_end, project_id=old_project.object_id, state="open",
+        ),
+    )["results"]} == {due_old.object_id, due_sibling.object_id}
+    first_due = knowledge.commitments_due(fileos_only, DueCommitmentsRequest(
+        start=due_start, end=due_end, limit=1,
+    ))
+    assert first_due["next_cursor"] is not None
+    second_due = knowledge.commitments_due(fileos_only, DueCommitmentsRequest(
+        start=due_start, end=due_end, limit=1,
+        recorded_cutoff_at=first_due["recorded_cutoff_at"], after=first_due["next_cursor"],
+    ))
+    assert second_due["next_cursor"] is None
+    assert {row["object_id"] for row in [
+        *first_due["results"], *second_due["results"],
+    ]} == {due_old.object_id, due_sibling.object_id}
+    cutoff_predecessor = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due cutoff predecessor", state="open",
+        due_at=due_start + timedelta(hours=10), project_id=old_project.object_id,
+        **common,
+    ), uuid4())
+    cutoff_page = knowledge.commitments_due(fileos_only, due_query)
+    cutoff_successor = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due cutoff successor", state="completed",
+        due_at=due_start + timedelta(hours=11), project_id=old_project.object_id,
+        supersedes_id=cutoff_predecessor.object_id, **common,
+    ), uuid4())
+    assert cutoff_predecessor.object_id in {
+        row["object_id"] for row in knowledge.commitments_due(
+            fileos_only, DueCommitmentsRequest(
+                start=due_start, end=due_end,
+                recorded_cutoff_at=cutoff_page["recorded_cutoff_at"],
+            ),
+        )["results"]
+    }
+    fresh_due_ids = {row["object_id"] for row in knowledge.commitments_due(
+        fileos_only, due_query,
+    )["results"]}
+    assert cutoff_predecessor.object_id not in fresh_due_ids
+    assert cutoff_successor.object_id in fresh_due_ids
+    with pytest.raises(NotFound):
+        knowledge.commitments_due(fileos_only, DueCommitmentsRequest(
+            start=due_start, end=due_end,
+            recorded_cutoff_at=first_due["recorded_cutoff_at"],
+            after=due_hidden_project.object_id,
+        ))
     timeline_start = datetime(2026, 10, 2, tzinfo=UTC)
     same_start = timeline_start + timedelta(hours=9)
     early_hidden_project_event = knowledge.publish(
@@ -3925,6 +4019,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert knowledge.search(other, "October") == []
     assert knowledge.search(other, "Skyline", visibility="unsuperseded") == []
     assert knowledge.timeline(other, timeline_query)["results"] == []
+    assert knowledge.commitments_due(other, due_query)["results"] == []
     assert core.current_coverage(other)["results"] == []
     with pytest.raises(NotFound):
         knowledge.get(other, "claim", second_claim.object_id)
@@ -3985,6 +4080,16 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         headers=headers,
     )
     assert timeline_api.status_code == 200, timeline_api.text
+    due_api = api.get(
+        "/v1/knowledge/commitments-due",
+        params={"start": due_start.isoformat(), "end": due_end.isoformat(),
+                "project_id": old_project.object_id, "state": "open"},
+        headers=headers,
+    )
+    assert due_api.status_code == 200, due_api.text
+    assert {row["object_id"] for row in due_api.json()["results"]} == {
+        due_sibling.object_id,
+    }
     assert timeline_api.json()["visibility"] == "unsuperseded"
     assert timeline_api.json()["results"] == []
     retained_timeline_api = api.get(
@@ -4018,6 +4123,10 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     with BrainReadClient(
         "https://brain.example", token, transport=httpx.MockTransport(serve_timeline)
     ) as read_client:
+        due_client = read_client.commitments_due(
+            due_start, due_end, project_id=old_project.object_id, state="open",
+        )
+        assert due_client["results"][0]["object_id"] == due_sibling.object_id
         first_client_page = read_client.timeline(
             timeline_start, timeline_start + timedelta(days=1),
             project_id=old_project.object_id, visibility="retained", limit=2,

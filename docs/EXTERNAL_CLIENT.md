@@ -18,6 +18,8 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 | `current_coverage()` | `GET /v1/brain/current-coverage` | `brain.changes.read` |
 | `changes(...)` | `GET /v1/brain/changes` | `brain.changes.read` |
 | `answer(question)` | `POST /v1/brain/answers` | `brain.search`, `knowledge.search`, `brain.evidence.read`, `brain.content.read`; local exact-quote selection is the default, and the operator may disable it |
+| `timeline(start, end, ...)` | `GET /v1/knowledge/timeline` | `knowledge.search`; bounded reviewed-event occurrence window (ADR-160) |
+| `commitments_due(start, end, ...)` | `GET /v1/knowledge/commitments-due` | `knowledge.search`; bounded reviewed-commitment due window (ADR-161, under verification) |
 
 The server remains the authority for identity, tenant, scopes, source visibility
 and freshness. In the synthetic bootstrap path, an assistant must be enrolled
@@ -45,6 +47,10 @@ path is certified hosted grant issuance or a named assistant. A
 successful search is not a grant to read original evidence.
 No client method changes a file or mailbox, proposes or approves an action,
 returns provider credentials, or bypasses current-source selection.
+The timeline and due-window methods return reviewed interpretations with
+direct evidence IDs, not fresh source facts. Their first page establishes a
+recorded-time cutoff; later pages need that cutoff and the returned opaque
+cursor. The cutoff is not a durable snapshot across requests.
 
 ```python
 from masterbrain.brain_client import BrainReadClient

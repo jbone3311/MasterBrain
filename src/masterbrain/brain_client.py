@@ -14,7 +14,11 @@ from typing import Any
 import httpx
 from pydantic import ValidationError
 
-from masterbrain.knowledge_schema import KnowledgeVisibility, TimelineRequest
+from masterbrain.knowledge_schema import (
+    DueCommitmentsRequest,
+    KnowledgeVisibility,
+    TimelineRequest,
+)
 from masterbrain.schemas import (
     MAX_ANSWER_TEXT_BYTES,
     CurrentGroupedSearchRequest,
@@ -26,6 +30,8 @@ from masterbrain.schemas import (
 MAX_RESPONSE_BYTES = 262_144
 _IDENTITY = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 _EVENT_ID = re.compile(r"^event_[a-f0-9]{32}$")
+_COMMITMENT_ID = re.compile(r"^commitment_[a-f0-9]{32}$")
+_ENTITY_ID = re.compile(r"^entity_[a-f0-9]{32}$")
 _PROJECT_ID = re.compile(r"^project_[a-f0-9]{32}$")
 _EVIDENCE_ID = re.compile(r"^evidence_[a-f0-9]{32}$")
 _EVENT_TYPE = re.compile(r"^[a-z][a-z0-9_.-]{0,99}$")
@@ -419,6 +425,100 @@ class BrainReadClient:
         if order != sorted(order):
             raise BrainClientError("invalid_response")
         return data
+
+    def commitments_due(
+        self,
+        start: datetime,
+        end: datetime,
+        *,
+        project_id: str | None = None,
+        state: str | None = None,
+        visibility: KnowledgeVisibility = "unsuperseded",
+        limit: int = 25,
+        recorded_cutoff_at: datetime | None = None,
+        after: str | None = None,
+    ) -> dict[str, Any]:
+        """Page evidence-linked due commitments; descriptions are untrusted."""
+        try:
+            request = DueCommitmentsRequest.model_validate({
+                "start": start, "end": end, "project_id": project_id,
+                "state": state, "visibility": visibility, "limit": limit,
+                "recorded_cutoff_at": recorded_cutoff_at, "after": after,
+            })
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        if (
+            type(limit) is not int
+            or not isinstance(start, datetime)
+            or not isinstance(end, datetime)
+            or recorded_cutoff_at is not None
+            and not isinstance(recorded_cutoff_at, datetime)
+        ):
+            raise BrainClientError("invalid_request")
+        query = httpx.QueryParams(request.model_dump(mode="json", exclude_none=True))
+        data = self._request("GET", f"/v1/knowledge/commitments-due?{query}")
+        rows = data.get("results")
+        cursor = data.get("next_cursor")
+        cutoff = self._aware_datetime(data.get("recorded_cutoff_at"))
+        coverage = data.get("coverage")
+        if (
+            type(data.get("limit")) is not int or data["limit"] != limit
+            or data.get("visibility") != visibility
+            or "state_filter" not in data or data["state_filter"] != state
+            or data.get("untrusted_content") is not True
+            or not isinstance(coverage, dict)
+            or coverage.get("undated_commitments") != "excluded"
+            or coverage.get("source_freshness") != "not_asserted"
+            or coverage.get("interpretation") != "reviewed_assertions"
+            or cutoff is None
+            or (recorded_cutoff_at is not None and cutoff != recorded_cutoff_at)
+            or not isinstance(rows, list) or len(rows) > limit
+            or any(not self._valid_due_row(row, request) for row in rows)
+            or len({row["object_id"] for row in rows}) != len(rows)
+            or any(row["object_id"] == after for row in rows)
+            or cursor is not None and (
+                not rows or len(rows) != limit or not isinstance(cursor, str)
+                or not _COMMITMENT_ID.fullmatch(cursor)
+                or cursor != rows[-1]["object_id"] or cursor == after
+            )
+        ):
+            raise BrainClientError("invalid_response")
+        order = [(self._aware_datetime(row["due_at"]), row["object_id"]) for row in rows]
+        if order != sorted(order):
+            raise BrainClientError("invalid_response")
+        return data
+
+    @classmethod
+    def _valid_due_row(cls, row: Any, request: DueCommitmentsRequest) -> bool:
+        if not isinstance(row, dict):
+            return False
+        due = cls._aware_datetime(row.get("due_at"))
+        summary = row.get("summary")
+        evidence = row.get("evidence_ids")
+        project = row.get("project_id")
+        owner = row.get("owner_entity_id")
+        counterparty = row.get("counterparty_entity_id")
+        return bool(
+            row.get("object_kind") == "commitment"
+            and isinstance(row.get("object_id"), str)
+            and _COMMITMENT_ID.fullmatch(row["object_id"])
+            and isinstance(summary, str) and 1 <= len(summary) <= 300
+            and "\x00" not in summary
+            and type(row.get("summary_truncated")) is bool
+            and row.get("state") in {
+                "proposed", "open", "completed", "cancelled", "overdue", "unknown"
+            }
+            and (request.state is None or row["state"] == request.state)
+            and due is not None and request.start <= due < request.end
+            and (project is None or isinstance(project, str) and _PROJECT_ID.fullmatch(project))
+            and (request.project_id is None or project == request.project_id)
+            and (owner is None or isinstance(owner, str) and _ENTITY_ID.fullmatch(owner))
+            and (counterparty is None or isinstance(counterparty, str)
+                 and _ENTITY_ID.fullmatch(counterparty))
+            and isinstance(evidence, list) and 1 <= len(evidence) <= 20
+            and len(set(item for item in evidence if isinstance(item, str))) == len(evidence)
+            and all(isinstance(item, str) and _EVIDENCE_ID.fullmatch(item) for item in evidence)
+        )
 
     @staticmethod
     def _aware_datetime(value: Any) -> datetime | None:
