@@ -24,8 +24,8 @@ button:disabled { background: #a4b8ad; cursor: not-allowed; }
 .hint, .empty, footer { color: #566f66; font-size: .84rem; line-height: 1.5; }
 .workspace-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .workspace-heading .eyebrow { margin: 0; }
-.workspace-heading button, .access-row button, .evidence-button { background: #e5f0e9; color: #205241; }
-.workspace-heading button:hover, .access-row button:hover, .evidence-button:hover { background: #d2e8da; }
+.workspace-heading button, .access-row button, .evidence-button, .project-button { background: #e5f0e9; color: #205241; }
+.workspace-heading button:hover, .access-row button:hover, .evidence-button:hover, .project-button:hover { background: #d2e8da; }
 .turns { min-height: 150px; max-height: 68vh; overflow-y: auto; display: grid; gap: 1rem;
   padding: .4rem .1rem 1.2rem; }
 .turn { border: 1px solid #dce8e1; border-radius: 14px; padding: 1rem; }
@@ -38,7 +38,10 @@ button:disabled { background: #a4b8ad; cursor: not-allowed; }
 .hit { border-left: 3px solid #7ab796; margin: .55rem 0; padding: .15rem .75rem; }
 .hit p { overflow-wrap: anywhere; }
 .hit .locator { color: #4d695d; font-size: .85rem; }
-.evidence-button { font-size: .82rem; margin: .45rem .35rem .25rem 0; padding: .55rem .7rem; }
+.evidence-button, .project-button { font-size: .82rem; margin: .45rem .35rem .25rem 0; padding: .55rem .7rem; }
+.project-panel { margin: .5rem 0 .75rem; }
+.project-group { border-top: 1px solid #dce8e1; margin-top: .7rem; padding-top: .5rem; }
+.project-group h5 { margin: .2rem 0 .4rem; font-size: .88rem; }
 .evidence-panel { white-space: pre-wrap; overflow-wrap: anywhere; background: #f1f6f1;
   border-radius: 9px; padding: .8rem; margin-top: .55rem; }
 .notice { color: #6c4b23; }

@@ -127,6 +127,119 @@
     button.addEventListener("click", () => showEvidence(evidenceId, target, capturedEpoch, token));
   }
 
+  const projectId = value => typeof value === "string" && /^project_[a-f0-9]{32}$/.test(value);
+  const evidenceId = value => typeof value === "string" && /^evidence_[a-f0-9]{32}$/.test(value);
+  const entityId = value => typeof value === "string" && /^entity_[a-f0-9]{32}$/.test(value);
+  const eventId = value => typeof value === "string" && /^event_[a-f0-9]{32}$/.test(value);
+  const commitmentId = value => typeof value === "string" && /^commitment_[a-f0-9]{32}$/.test(value);
+  const safeText = (value, min, max) => typeof value === "string" &&
+    value.length <= max * 2 && Array.from(value).length >= min &&
+    Array.from(value).length <= max && !value.includes("\0") && (() => {
+      try { encodeURIComponent(value); return true; } catch { return false; }
+    })();
+  const awareTime = value => typeof value === "string" &&
+    /(?:Z|[+-][0-9]{2}:[0-9]{2})$/.test(value) && Number.isFinite(Date.parse(value));
+  const links = value => Array.isArray(value) && value.length >= 1 && value.length <= 20 &&
+    value.every(evidenceId) && new Set(value).size === value.length;
+  const record = value => value && typeof value === "object" && !Array.isArray(value);
+
+  function validDossier(data, id) {
+    if (!record(data) || !record(data.project) || !record(data.coverage) ||
+        data.untrusted_content !== true || data.visibility !== "unsuperseded" ||
+        data.event_limit !== 5 || data.commitment_limit !== 5 ||
+        typeof data.events_truncated !== "boolean" || typeof data.commitments_truncated !== "boolean" ||
+        !awareTime(data.recorded_cutoff_at) || !Array.isArray(data.events) ||
+        !Array.isArray(data.commitments) || data.events.length > 5 || data.commitments.length > 5 ||
+        (data.events_truncated && data.events.length !== 5) ||
+        (data.commitments_truncated && data.commitments.length !== 5) ||
+        data.coverage.order !== "recorded_at_descending" ||
+        data.coverage.undated_links !== "included" ||
+        data.coverage.source_freshness !== "not_asserted" ||
+        data.coverage.interpretation !== "reviewed_assertions_not_current_state") return false;
+    const project = data.project;
+    if (project.object_kind !== "project" || project.object_id !== id ||
+        !safeText(project.title, 1, 300) || !safeText(project.summary, 0, 300) ||
+        typeof project.summary_truncated !== "boolean" ||
+        !["proposed", "active", "blocked", "completed", "cancelled", "unknown"].includes(project.state) ||
+        !awareTime(project.recorded_at) || Date.parse(project.recorded_at) > Date.parse(data.recorded_cutoff_at) ||
+        !links(project.evidence_ids)) return false;
+    const validRow = (row, kind) => {
+      if (!record(row) || row.object_kind !== kind || row.project_id !== id ||
+          !awareTime(row.recorded_at) || Date.parse(row.recorded_at) > Date.parse(data.recorded_cutoff_at) ||
+          !links(row.evidence_ids)) return false;
+      if (kind === "event") return eventId(row.object_id) &&
+        typeof row.event_type === "string" &&
+        /^[a-z][a-z0-9_.-]{0,99}$/.test(row.event_type) && safeText(row.title, 1, 300) &&
+        (row.starts_at === null || awareTime(row.starts_at)) &&
+        (row.ends_at === null || (awareTime(row.ends_at) && awareTime(row.starts_at) &&
+          Date.parse(row.ends_at) > Date.parse(row.starts_at)));
+      return commitmentId(row.object_id) && safeText(row.summary, 1, 300) &&
+        typeof row.summary_truncated === "boolean" &&
+        ["proposed", "open", "completed", "cancelled", "overdue", "unknown"].includes(row.state) &&
+        (row.due_at === null || awareTime(row.due_at)) &&
+        (row.owner_entity_id === null || entityId(row.owner_entity_id)) &&
+        (row.counterparty_entity_id === null || entityId(row.counterparty_entity_id));
+    };
+    for (const [rows, kind] of [[data.events, "event"], [data.commitments, "commitment"]]) {
+      if (!rows.every(row => validRow(row, kind)) ||
+          new Set(rows.map(row => row.object_id)).size !== rows.length ||
+          rows.some((row, index) => index > 0 &&
+            (Date.parse(rows[index - 1].recorded_at) < Date.parse(row.recorded_at) ||
+              (Date.parse(rows[index - 1].recorded_at) === Date.parse(row.recorded_at) &&
+                rows[index - 1].object_id < row.object_id)))) return false;
+    }
+    return true;
+  }
+
+  async function showProject(id, target, capturedEpoch, token) {
+    if (epoch !== capturedEpoch || tokenField.value !== token) return;
+    target.replaceChildren();
+    node("p", "Opening separately authorized reviewed project…", target);
+    try {
+      const data = await api(`/v1/knowledge/projects/${id}/dossier?event_limit=5&commitment_limit=5`, undefined, token);
+      if (epoch !== capturedEpoch || tokenField.value !== token) return;
+      if (!validDossier(data, id)) throw new Error("Project response could not be verified.");
+      target.replaceChildren();
+      node("h4", data.project.title, target);
+      node("p", `Reviewed project state: ${data.project.state}. This is not a live status check.`, target, "notice");
+      if (data.project.summary) node("p", data.project.summary, target);
+      if (data.project.summary_truncated) node("p", "Project preview shortened.", target, "notice");
+      for (const source of data.project.evidence_ids) addEvidenceButton(target, capturedEpoch, token, source);
+      for (const [name, rows, truncated] of [
+        ["Reviewed events", data.events, data.events_truncated],
+        ["Reviewed commitments", data.commitments, data.commitments_truncated],
+      ]) {
+        const group = node("div", "", target, "project-group");
+        node("h5", `${name} · ${rows.length}${truncated ? "+" : ""}`, group);
+        if (!rows.length) node("p", "No linked reviewed records in this bounded view.", group);
+        for (const row of rows) {
+          const card = node("article", "", group, "hit");
+          node("p", row.object_kind === "event" ? row.title : row.summary, card);
+          node("p", row.object_kind === "event" ?
+            `Reviewed event · ${row.starts_at || "undated"}` :
+            `Reviewed commitment · ${row.state} · ${row.due_at || "undated"}`, card, "locator");
+          for (const source of row.evidence_ids) addEvidenceButton(card, capturedEpoch, token, source);
+        }
+      }
+      node("p", "Latest recorded reviewed links only. Source freshness and current project truth are not established.", target, "notice");
+    } catch (error) {
+      if (epoch === capturedEpoch && tokenField.value === token) {
+        target.replaceChildren();
+        node("p", Number.isInteger(error?.status) ?
+          `Project request refused (${error.status}). Check your access.` :
+          "Project details unavailable.", target, "notice");
+      }
+    }
+  }
+
+  function addProjectButton(parent, capturedEpoch, token, hit) {
+    if (hit?.object_kind !== "project" || !projectId(hit.object_id)) return;
+    const button = node("button", "Open reviewed project", parent, "project-button");
+    button.type = "button";
+    const target = node("div", "", parent, "project-panel");
+    button.addEventListener("click", () => showProject(hit.object_id, target, capturedEpoch, token));
+  }
+
   function renderResults(data, parent, capturedEpoch, token, focus) {
     if (!data || data.mode !== "grouped_current_sources" || !data.layers ||
         !data.coverage || typeof data.coverage.complete !== "boolean" ||
@@ -158,6 +271,7 @@
           if (Array.isArray(hit.evidence_ids)) for (const id of hit.evidence_ids.slice(0, 5)) {
             addEvidenceButton(card, capturedEpoch, token, id);
           }
+          addProjectButton(card, capturedEpoch, token, hit);
         } else {
           if (typeof hit.locator === "string") node("p", hit.locator, card, "locator");
           if (typeof hit.excerpt === "string") node("p", hit.excerpt, card);
@@ -241,6 +355,7 @@
         node("p", hit.excerpt, card);
         node("p", `${hit.evidence_ids.length} of ${hit.linked_evidence_count} linked evidence IDs shown`, card, "locator");
         for (const id of hit.evidence_ids) addEvidenceButton(card, capturedEpoch, token, id);
+        addProjectButton(card, capturedEpoch, token, hit);
       }
     }
     return {quotes: data.citations.length, reviewed: reviewed.length};

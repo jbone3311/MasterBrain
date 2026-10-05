@@ -41,6 +41,38 @@ function searchData() {
   layers.knowledge = [{title: "Reviewed commitment", excerpt: "Due Friday", evidence_ids: ["ev_email"]}];
   return {mode: "grouped_current_sources", layers, coverage: {complete: false}};
 }
+const PROJECT_ID = "project_" + "a".repeat(32);
+const EVIDENCE_ID = "evidence_" + "b".repeat(32);
+const EVENT_ID = "event_" + "c".repeat(32);
+const COMMITMENT_ID = "commitment_" + "d".repeat(32);
+const DOSSIER_PATH = `/v1/knowledge/projects/${PROJECT_ID}/dossier?event_limit=5&commitment_limit=5`;
+function projectSearchData() {
+  const data = searchData();
+  data.layers.knowledge = [{object_kind: "project", object_id: PROJECT_ID,
+    title: "Fictional project", excerpt: "Reviewed plan", evidence_ids: [EVIDENCE_ID]}];
+  return data;
+}
+function dossierData() {
+  return {
+    project: {object_kind: "project", object_id: PROJECT_ID,
+      title: "<img src=x onerror=alert(1)>", summary: "Fictional reviewed notes",
+      summary_truncated: false, state: "active", recorded_at: "2026-10-04T00:00:00Z",
+      evidence_ids: [EVIDENCE_ID]},
+    events: [{object_kind: "event", object_id: EVENT_ID, project_id: PROJECT_ID,
+      event_type: "review", title: "Undated <script>event</script>",
+      starts_at: null, ends_at: null, recorded_at: "2026-10-04T00:00:00Z",
+      evidence_ids: [EVIDENCE_ID]}],
+    commitments: [{object_kind: "commitment", object_id: COMMITMENT_ID,
+      project_id: PROJECT_ID, summary: "Send <img> package", summary_truncated: false,
+      state: "open", due_at: null, owner_entity_id: null, counterparty_entity_id: null,
+      recorded_at: "2026-10-04T00:00:00Z", evidence_ids: [EVIDENCE_ID]}],
+    recorded_cutoff_at: "2026-10-05T00:00:00Z", visibility: "unsuperseded",
+    event_limit: 5, commitment_limit: 5, events_truncated: false,
+    commitments_truncated: false, untrusted_content: true,
+    coverage: {order: "recorded_at_descending", undated_links: "included",
+      source_freshness: "not_asserted", interpretation: "reviewed_assertions_not_current_state"},
+  };
+}
 function walk(element) { return [element, ...element.children.flatMap(walk)]; }
 const flush = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 function harness(customFetch) {
@@ -107,6 +139,124 @@ test("read-only conversation uses the scoped API and renders hostile content as 
   assert.match(rendered, /<img src=x onerror=alert\(1\)>/);
   assert.match(rendered, /Reviewed commitment/);
   assert.equal(h.calls.some(call => /proposals|move|rename|delete/.test(call.url)), false);
+});
+
+test("explicit project drill-down uses the scoped read route and renders bounded hostile text inertly", async () => {
+  const h = harness(async url => ({ok: true, status: 200,
+    json: async () => url === DOSSIER_PATH ? dossierData() : projectSearchData()}));
+  h.enterToken("owner-token");
+  await h.searchOnly("Fictional project");
+  assert.equal(h.calls.length, 1, "search must not fetch project context automatically");
+  const button = walk(h.elements.turns).find(item => item.textContent === "Open reviewed project");
+  assert.ok(button);
+  await button.events.click(); await flush();
+  assert.equal(h.calls.length, 2);
+  assert.equal(h.calls[1].url, DOSSIER_PATH);
+  assert.equal(h.calls[1].options.method, "GET");
+  assert.equal(h.calls[1].options.credentials, "omit");
+  assert.equal(h.calls[1].options.cache, "no-store");
+  const rendered = walk(h.elements.turns).map(item => item.textContent).join("\n");
+  assert.match(rendered, /Reviewed project state: active.*not a live status check/);
+  assert.match(rendered, /<img src=x onerror=alert\(1\)>/);
+  assert.match(rendered, /Undated <script>event<\/script>/);
+  assert.match(rendered, /Send <img> package/);
+  assert.match(rendered, /Source freshness and current project truth are not established/);
+  assert.ok(walk(h.elements.turns).filter(item => item.textContent === "Open evidence").length >= 4);
+  assert.equal(h.calls.some(call => /proposals|move|rename|delete/.test(call.url)), false);
+});
+
+test("Ask reviewed project matches can open the same read-only dossier", async () => {
+  const h = harness(async url => ({ok: true, status: 200, json: async () =>
+    url === "/v1/brain/answers" ? {
+      mode: "grounded_extractive_v1", status: "no_supported_evidence",
+      answer: "No exact source quote was selected.", citations: [],
+      reviewed_knowledge: [{object_kind: "project", object_id: PROJECT_ID,
+        title: "Fictional project", excerpt: "Reviewed project assertion",
+        evidence_ids: [EVIDENCE_ID], linked_evidence_count: 1}],
+      coverage: {complete: false}, untrusted_content: true,
+    } : dossierData()}));
+  h.enterToken("owner-token");
+  await h.ask("Fictional project");
+  assert.equal(h.calls.length, 1);
+  const button = walk(h.elements.turns).find(item => item.textContent === "Open reviewed project");
+  assert.ok(button);
+  await button.events.click(); await flush();
+  assert.equal(h.calls[1].url, DOSSIER_PATH);
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"), /Reviewed project state: active/);
+});
+
+test("project drill-down refuses mismatched data and hidden project responses", async () => {
+  for (const reply of [
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      project: {...dossierData().project, object_id: "project_" + "e".repeat(32)}})},
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      commitments: [{...dossierData().commitments[0], project_id: "project_" + "e".repeat(32)}]})},
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      events_truncated: true})},
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      events: [{...dossierData().events[0], recorded_at: "2026-10-06T00:00:00Z"}]})},
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      project: {...dossierData().project, evidence_ids: ["evidence_bad"]}})},
+    {ok: false, status: 404},
+  ]) {
+    const h = harness(async url => url === DOSSIER_PATH ? reply :
+      {ok: true, status: 200, json: async () => projectSearchData()});
+    h.enterToken("owner-token");
+    await h.searchOnly("Fictional project");
+    const button = walk(h.elements.turns).find(item => item.textContent === "Open reviewed project");
+    await button.events.click(); await flush();
+    const rendered = walk(h.elements.turns).map(item => item.textContent).join("\n");
+    assert.match(rendered, /Project details unavailable|Project request refused \(404\)/);
+    assert.doesNotMatch(rendered, /Fictional reviewed notes|Send <img> package/);
+  }
+});
+
+test("project drill-down labels independently truncated lists and rejects row reordering", async () => {
+  const fiveEvents = Array.from({length: 5}, (_, index) => ({...dossierData().events[0],
+    object_id: "event_" + String(9 - index).repeat(32),
+    recorded_at: `2026-10-04T00:00:0${5 - index}Z`,
+  }));
+  const valid = {...dossierData(), events: fiveEvents, events_truncated: true};
+  const h = harness(async url => ({ok: true, status: 200,
+    json: async () => url === DOSSIER_PATH ? valid : projectSearchData()}));
+  h.enterToken("owner-token");
+  await h.searchOnly("Fictional project");
+  await walk(h.elements.turns).find(item => item.textContent === "Open reviewed project").events.click();
+  await flush();
+  const shown = walk(h.elements.turns).map(item => item.textContent).join("\n");
+  assert.match(shown, /Reviewed events · 5\+/);
+  assert.match(shown, /Reviewed commitments · 1/);
+
+  const reordered = {...valid, events: [...fiveEvents].reverse()};
+  const bad = harness(async url => ({ok: true, status: 200,
+    json: async () => url === DOSSIER_PATH ? reordered : projectSearchData()}));
+  bad.enterToken("owner-token");
+  await bad.searchOnly("Fictional project");
+  await walk(bad.elements.turns).find(item => item.textContent === "Open reviewed project").events.click();
+  await flush();
+  assert.match(walk(bad.elements.turns).map(item => item.textContent).join("\n"),
+    /Project details unavailable/);
+});
+
+test("clearing access or changing focus prevents a late project dossier from reappearing", async () => {
+  for (const change of ["token", "focus", "clear"]) {
+    let release;
+    const h = harness(async url => url === DOSSIER_PATH ? new Promise(resolve => {
+      release = () => resolve({ok: true, status: 200, json: async () => dossierData()});
+    }) : {ok: true, status: 200, json: async () => projectSearchData()});
+    h.enterToken("owner-token");
+    await h.searchOnly("Fictional project");
+    const button = walk(h.elements.turns).find(item => item.textContent === "Open reviewed project");
+    const inFlight = button.events.click();
+    await flush();
+    if (change === "token") h.enterToken("new-token");
+    else if (change === "focus") h.chooseFocus("email");
+    else h.elements["clear-session"].events.click();
+    release(); await inFlight; await flush();
+    const rendered = walk(h.elements.turns).map(item => item.textContent).join("\n");
+    assert.doesNotMatch(rendered, /Fictional reviewed notes|Send <img> package/);
+    assert.equal(h.elements.turns.firstElementChild.className, "empty");
+  }
 });
 
 test("explicit Email focus narrows Ask and Search only without fetching Files", async () => {

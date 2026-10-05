@@ -2,6 +2,19 @@
 
 Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## First-party reviewed-project drill-down — ADR-163 in review
+
+The unmerged `codex/brain-project-drilldown` branch adds an explicit `/brain`
+project-dossier control, complete response validation and stale-read refusal.
+The focused Node browser suite passed 21/21 locally and the final six-file
+browser suite passed 156/156. Full exact-head CI,
+strict-runtime, restore and merged-main gates are not yet claimed. The existing
+ADR-162 API's merged gates are separate evidence, not proof of this UI branch.
+The local non-PostgreSQL Python run passed 2,663 tests, skipped all 491
+PostgreSQL-marked tests and deselected one Docker-backed local launcher. A
+separate real-PostgreSQL run is in progress. Ruff, source mypy, documentation
+and diff checks pass.
+
 ## Reviewed project dossier — ADR-162 merged
 
 [PR #154](https://github.com/jbone3311/MasterBrain/pull/154) merged at

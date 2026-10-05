@@ -19,6 +19,11 @@ their Email reads use source-enrolled Brain routes.
 ADR-150 adds an explicit All/Email/FileOS focus in `/brain` and the external
 read client. A focused request skips excluded source reads, labels unsearched
 groups and leaves access grants unchanged. It is not automatic intent routing.
+ADR-163 adds an in-review, explicit project-dossier drill-down from a reviewed
+project match in either Ask or Search only. It calls the same scoped read API,
+shows a bounded set of linked reviewed events and commitments with evidence
+controls, and labels project state as an assertion rather than current truth.
+No project fetch occurs until the owner opens it.
 
 ## One service, two entrances
 
@@ -106,6 +111,9 @@ credentials.
    ADR-157 separately bounds returned untrusted quote and reviewed-match text,
    keeping exact citations while visibly flagging shortened reviewed display
    text. It does not make Ask a complete AI-written conversation.
+   ADR-163's explicit project control reuses ADR-162's exact-project read with
+   fixed five-item linked lists and separate evidence drill-down. It remains
+   read-only and is not a project-state reducer or live-source proof.
 3. **External client:** a provider-neutral reference client now runs the same
    fictional current-search and evidence calls as the owner workspace, with
    source/scope parity tests. Next connect at least one separately authorized

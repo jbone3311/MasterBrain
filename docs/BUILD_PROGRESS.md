@@ -1,5 +1,19 @@
 # MasterBrain Build Progress
 
+## First-party project drill-down (2026-10-05, ADR-163 in review)
+
+[ADR-163](adr/163_owner_project_dossier_drilldown.md) connects the existing
+scoped project-dossier read to an explicit control on reviewed project matches
+in the first-party `/brain` workspace. The focused local browser suite passed
+21/21, including hostile text, independent truncation, invalid responses,
+denial and stale-result clearing. The final six-file browser suite passed
+156/156.
+The local non-PostgreSQL Python run passed 2,663 tests with 491 PostgreSQL
+tests correctly skipped and one Docker-backed local launcher deselected; the
+separate real-PostgreSQL run is in progress.
+Wider exact-head CI, strict-runtime, restore and merged-main checks remain open.
+This is a read-only orientation view, not a live project-state or hosted claim.
+
 ## Reviewed project dossier (2026-10-05, ADR-162 merged)
 
 [ADR-162](adr/162_reviewed_project_dossier.md) adds a compact, exact-project
