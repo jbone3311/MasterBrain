@@ -19,7 +19,7 @@ their Email reads use source-enrolled Brain routes.
 ADR-150 adds an explicit All/Email/FileOS focus in `/brain` and the external
 read client. A focused request skips excluded source reads, labels unsearched
 groups and leaves access grants unchanged. It is not automatic intent routing.
-ADR-163 adds an in-review, explicit project-dossier drill-down from a reviewed
+ADR-163 adds a merged, explicit project-dossier drill-down from a reviewed
 project match in either Ask or Search only. It calls the same scoped read API,
 shows a bounded set of linked reviewed events and commitments with evidence
 controls, and labels project state as an assertion rather than current truth.

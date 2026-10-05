@@ -18,8 +18,9 @@ local implementation is in review, not a live-truth or action surface.
 [ADR-163](adr/163_owner_project_dossier_drilldown.md) defines an explicit,
 read-only project-dossier drill-down in the first-party workspace. It reuses
 ADR-162's scoped route and grants, validates the complete bounded response,
-and does not infer live project state or add an action surface. Implementation
-and exact-head gates are in progress.
+and does not infer live project state or add an action surface. PR #156 merged
+after exact-head full CI, strict-runtime and restore passed; merged-main gates
+remain pending.
 
 [ADR-162](adr/162_reviewed_project_dossier.md) defines a bounded, source-aware
 reviewed project dossier with separately limited linked events and commitments,
