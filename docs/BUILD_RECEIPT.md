@@ -12,8 +12,11 @@ strict-runtime, restore and merged-main gates are not yet claimed. The existing
 ADR-162 API's merged gates are separate evidence, not proof of this UI branch.
 The local non-PostgreSQL Python run passed 2,663 tests, skipped all 491
 PostgreSQL-marked tests and deselected one Docker-backed local launcher. A
-separate real-PostgreSQL run is in progress. Ruff, source mypy, documentation
-and diff checks pass.
+separate real-PostgreSQL 17.11 run on the disposable
+`email_brain_test_dossier_20261005` database passed 490 tests, with one
+Docker-only skip and 2,664 non-PostgreSQL tests deselected (204.82 seconds).
+Ruff, source mypy, documentation and diff checks pass. Neither local run
+substitutes for exact-head container, strict-runtime or restore gates.
 
 ## Reviewed project dossier — ADR-162 merged
 

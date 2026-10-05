@@ -9,8 +9,9 @@ in the first-party `/brain` workspace. The focused local browser suite passed
 denial and stale-result clearing. The final six-file browser suite passed
 156/156.
 The local non-PostgreSQL Python run passed 2,663 tests with 491 PostgreSQL
-tests correctly skipped and one Docker-backed local launcher deselected; the
-separate real-PostgreSQL run is in progress.
+tests correctly skipped and one Docker-backed local launcher deselected. The
+separate real-PostgreSQL 17.11 run passed 490/491 marked tests; the remaining
+Docker-only case skipped locally. Exact-head GitHub gates remain open.
 Wider exact-head CI, strict-runtime, restore and merged-main checks remain open.
 This is a read-only orientation view, not a live project-state or hosted claim.
 
