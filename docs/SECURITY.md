@@ -143,6 +143,13 @@ evidence and the direct evidence of every referenced project, owner and
 counterparty. Hidden successors, corrections and replacements cannot suppress
 a visible older commitment. The audit uses a fixed operation code and does not
 record descriptions, due dates or linked identities. No source write is granted.
+ADR-162's project dossier checks the exact project's full evidence grant before
+reading separately bounded linked events and commitments. Each linked record
+is source-filtered before limiting; a commitment also checks its owner and
+counterparty grants. Hidden review-chain updates cannot suppress visible
+older links. Unknown and hidden project IDs share not-found behavior. Only a
+fixed dossier-read audit code is recorded, never project text or IDs. A
+recorded-time cutoff is not source freshness or a cross-request snapshot.
 
 ## Privacy-safe failure observability
 

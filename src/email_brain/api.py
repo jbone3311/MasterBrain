@@ -55,6 +55,7 @@ from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
     KnowledgePublishRequest,
     KnowledgeSearchRequest,
+    ProjectDossierRequest,
     TimelineRequest,
 )
 from masterbrain.schemas import (
@@ -996,6 +997,19 @@ def create_app(
             return knowledge.commitments_due(principal.context, body)
         except ValueError:
             raise HTTPException(422, "invalid_due_commitments") from None
+
+    @app.get("/v1/knowledge/projects/{project_id}/dossier")
+    def knowledge_project_dossier(
+        project_id: str,
+        body: Annotated[ProjectDossierRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return knowledge.project_dossier(principal.context, project_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_project_dossier") from None
 
     @app.get("/v1/knowledge/{kind}/{object_id}")
     def knowledge_object(

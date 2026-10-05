@@ -103,6 +103,7 @@ from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
     EntityWrite,
     EventWrite,
+    ProjectDossierRequest,
     ProjectWrite,
     RelationshipWrite,
     TimelineRequest,
@@ -3500,6 +3501,19 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         commitment.object_kind,
         correction.object_kind,
     } == {"relationship", "event", "commitment", "correction"}
+    dossier = knowledge.project_dossier(ctx, project.object_id, ProjectDossierRequest())
+    assert dossier["project"]["object_id"] == project.object_id
+    assert dossier["project"]["state"] == "active"
+    assert dossier["project"]["evidence_ids"] == [evidence_id]
+    assert [row["object_id"] for row in dossier["events"]] == [event.object_id]
+    assert [row["object_id"] for row in dossier["commitments"]] == [commitment.object_id]
+    assert dossier["coverage"]["undated_links"] == "included"
+    assert dossier["coverage"]["source_freshness"] == "not_asserted"
+    assert dossier["untrusted_content"] is True
+    assert dossier["events_truncated"] is False
+    assert dossier["commitments_truncated"] is False
+    with pytest.raises(NotFound):
+        knowledge.project_dossier(ctx, "project_" + "0" * 32, ProjectDossierRequest())
     with store.transaction(ctx) as conn:
         claims = conn.execute(
             "SELECT id,value,assertion_status,supersedes_id FROM knowledge_claims "
@@ -3710,6 +3724,49 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         kind="commitment", description="Fictional due undated", state="open",
         project_id=old_project.object_id, **common,
     ), uuid4())
+    owner_dossier = knowledge.project_dossier(
+        ctx, old_project.object_id, ProjectDossierRequest(commitment_limit=25),
+    )
+    assert {row["object_id"] for row in owner_dossier["commitments"]} == {
+        due_hidden_successor.object_id, due_sibling.object_id, due_undated.object_id,
+    }
+    restricted_dossier = knowledge.project_dossier(
+        fileos_only, old_project.object_id, ProjectDossierRequest(commitment_limit=25),
+    )
+    assert {row["object_id"] for row in restricted_dossier["commitments"]} == {
+        due_old.object_id, due_sibling.object_id, due_undated.object_id,
+    }
+    assert all(row["evidence_ids"] == [evidence_id]
+               for row in restricted_dossier["commitments"])
+    assert restricted_dossier["project"]["state"] == "active"
+    with pytest.raises(NotFound):
+        knowledge.project_dossier(
+            fileos_only, new_project.object_id, ProjectDossierRequest(),
+        )
+    compact_dossier = knowledge.project_dossier(
+        fileos_only, old_project.object_id, ProjectDossierRequest(commitment_limit=1),
+    )
+    assert len(compact_dossier["commitments"]) == 1
+    assert compact_dossier["commitments_truncated"] is True
+    retained_dossier = knowledge.project_dossier(
+        ctx, old_project.object_id, ProjectDossierRequest(
+            commitment_limit=25, visibility="retained",
+        ),
+    )
+    assert due_old.object_id in {
+        row["object_id"] for row in retained_dossier["commitments"]
+    }
+    hidden_recent_commitment = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional hidden recent project note",
+        state="open", project_id=old_project.object_id,
+        **{**common, "evidence_ids": [current_email.evidence_id]},
+    ), uuid4())
+    assert [row["object_id"] for row in knowledge.project_dossier(
+        ctx, old_project.object_id, ProjectDossierRequest(commitment_limit=1),
+    )["commitments"]] == [hidden_recent_commitment.object_id]
+    assert knowledge.project_dossier(
+        fileos_only, old_project.object_id, ProjectDossierRequest(commitment_limit=1),
+    )["commitments"][0]["evidence_ids"] == [evidence_id]
     due_query = DueCommitmentsRequest(start=due_start, end=due_end)
     owner_due = knowledge.commitments_due(ctx, due_query)
     assert {row["object_id"] for row in owner_due["results"]} == {
@@ -3760,6 +3817,17 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         due_at=due_start + timedelta(hours=11), project_id=old_project.object_id,
         supersedes_id=cutoff_predecessor.object_id, **common,
     ), uuid4())
+    frozen_dossier = knowledge.project_dossier(
+        fileos_only, old_project.object_id, ProjectDossierRequest(
+            commitment_limit=25, recorded_cutoff_at=cutoff_page["recorded_cutoff_at"],
+        ),
+    )
+    assert cutoff_predecessor.object_id in {
+        row["object_id"] for row in frozen_dossier["commitments"]
+    }
+    assert cutoff_successor.object_id not in {
+        row["object_id"] for row in frozen_dossier["commitments"]
+    }
     assert cutoff_predecessor.object_id in {
         row["object_id"] for row in knowledge.commitments_due(
             fileos_only, DueCommitmentsRequest(
@@ -3853,6 +3921,17 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         ),
         uuid4(),
     )
+    hidden_recent_event = knowledge.publish(ctx, EventWrite(
+        kind="event", event_type="decision", title="Skyline hidden recent review",
+        project_id=old_project.object_id,
+        **{**common, "evidence_ids": [current_email.evidence_id]},
+    ), uuid4())
+    assert [row["object_id"] for row in knowledge.project_dossier(
+        ctx, old_project.object_id, ProjectDossierRequest(event_limit=1),
+    )["events"]] == [hidden_recent_event.object_id]
+    assert knowledge.project_dossier(
+        fileos_only, old_project.object_id, ProjectDossierRequest(event_limit=1),
+    )["events"][0]["evidence_ids"] == [evidence_id]
     dated_old = knowledge.publish(
         ctx,
         EventWrite(
@@ -3900,6 +3979,19 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert {row["object_id"] for row in assistant_timeline["results"]} == {
         branch_event.object_id, visible_project_predecessor.object_id,
     }
+    project_dossier = knowledge.project_dossier(
+        fileos_only, old_project.object_id, ProjectDossierRequest(event_limit=25),
+    )
+    assert {row["object_id"] for row in project_dossier["events"]} == {
+        branch_event.object_id, visible_project_predecessor.object_id,
+        undated_event.object_id,
+    }
+    assert project_dossier["events_truncated"] is False
+    assert all(row["evidence_ids"] == [evidence_id]
+               for row in project_dossier["events"])
+    assert [row["recorded_at"] for row in project_dossier["events"]] == sorted(
+        (row["recorded_at"] for row in project_dossier["events"]), reverse=True,
+    )
     limited_assistant_timeline = knowledge.timeline(
         fileos_only, TimelineRequest(
             start=timeline_start, end=timeline_start + timedelta(days=1), limit=1,
@@ -4021,6 +4113,10 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
             start=timeline_start, end=timeline_start + timedelta(days=1),
             recorded_cutoff_at=datetime.now(UTC) + timedelta(days=1),
         ))
+    with pytest.raises(ValueError, match="future project dossier cutoff"):
+        knowledge.project_dossier(ctx, project.object_id, ProjectDossierRequest(
+            recorded_cutoff_at=datetime.now(UTC) + timedelta(days=1),
+        ))
     loaded = knowledge.get(ctx, "commitment", commitment.object_id)
     assert loaded["description"].startswith("Alex will submit")
     assert loaded["valid_from"] == datetime(2026, 9, 22, tzinfo=UTC)
@@ -4048,6 +4144,8 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert knowledge.search(other, "Skyline", visibility="unsuperseded") == []
     assert knowledge.timeline(other, timeline_query)["results"] == []
     assert knowledge.commitments_due(other, due_query)["results"] == []
+    with pytest.raises(NotFound):
+        knowledge.project_dossier(other, project.object_id, ProjectDossierRequest())
     assert core.current_coverage(other)["results"] == []
     with pytest.raises(NotFound):
         knowledge.get(other, "claim", second_claim.object_id)
@@ -4118,6 +4216,19 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert {row["object_id"] for row in due_api.json()["results"]} == {
         due_sibling.object_id,
     }
+    dossier_api = api.get(
+        f"/v1/knowledge/projects/{old_project.object_id}/dossier",
+        params={"event_limit": 25, "commitment_limit": 25},
+        headers=headers,
+    )
+    assert dossier_api.status_code == 200, dossier_api.text
+    assert dossier_api.json()["project"]["object_id"] == old_project.object_id
+    assert undated_event.object_id in {
+        row["object_id"] for row in dossier_api.json()["events"]
+    }
+    assert due_undated.object_id in {
+        row["object_id"] for row in dossier_api.json()["commitments"]
+    }
     assert timeline_api.json()["visibility"] == "unsuperseded"
     assert timeline_api.json()["results"] == []
     retained_timeline_api = api.get(
@@ -4151,6 +4262,10 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     with BrainReadClient(
         "https://brain.example", token, transport=httpx.MockTransport(serve_timeline)
     ) as read_client:
+        client_dossier = read_client.project_dossier(
+            old_project.object_id, event_limit=25, commitment_limit=25,
+        )
+        assert client_dossier["project"]["object_id"] == old_project.object_id
         due_client = read_client.commitments_due(
             due_start, due_end, project_id=old_project.object_id, state="open",
         )

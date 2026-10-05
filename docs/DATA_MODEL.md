@@ -99,6 +99,12 @@ tenant/project/due indexes without rewriting commitment or evidence rows.
 ADR-161 pages reviewed commitments with non-null due time under the same
 recorded-time cutoff pattern. `due_at` is a stated due time, not a computed
 overdue status or a source-freshness assertion.
+Migration `0056_knowledge_project_dossier.sql` adds partial tenant/project/
+recorded-time indexes for linked events and commitments, including undated
+ones; it rewrites no assertion or evidence row. ADR-162's exact project dossier
+uses these indexes for independently bounded, recording-time-ordered links.
+The project's stored state is still a reviewed assertion, not a derived current
+state or contradiction resolution.
 
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is

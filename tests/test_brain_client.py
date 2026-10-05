@@ -16,6 +16,103 @@ TIMELINE_START = datetime(2026, 10, 1, tzinfo=UTC)
 TIMELINE_EVENT = "event_" + "a" * 32
 TIMELINE_EVIDENCE = "evidence_" + "b" * 32
 DUE_COMMITMENT = "commitment_" + "c" * 32
+DOSSIER_PROJECT = "project_" + "d" * 32
+
+
+def dossier_result() -> dict[str, object]:
+    recorded = (TIMELINE_START - timedelta(days=1)).isoformat()
+    return {
+        "project": {
+            "object_kind": "project", "object_id": DOSSIER_PROJECT,
+            "title": "Fictional project", "summary": "Review", "summary_truncated": False,
+            "state": "active", "recorded_at": recorded,
+            "evidence_ids": [TIMELINE_EVIDENCE],
+        },
+        "events": [{
+            "object_kind": "event", "object_id": TIMELINE_EVENT,
+            "event_type": "decision", "title": "Fictional review",
+            "starts_at": None, "ends_at": None, "project_id": DOSSIER_PROJECT,
+            "recorded_at": recorded,
+            "evidence_ids": [TIMELINE_EVIDENCE],
+        }],
+        "commitments": [{
+            "object_kind": "commitment", "object_id": DUE_COMMITMENT,
+            "summary": "Submit the fictional package", "summary_truncated": False,
+            "state": "open", "due_at": None, "project_id": DOSSIER_PROJECT,
+            "owner_entity_id": None,
+            "counterparty_entity_id": None, "recorded_at": recorded,
+            "evidence_ids": [TIMELINE_EVIDENCE],
+        }],
+        "recorded_cutoff_at": TIMELINE_START.isoformat(),
+        "visibility": "unsuperseded", "event_limit": 1, "commitment_limit": 1,
+        "events_truncated": False, "commitments_truncated": False,
+        "coverage": {"order": "recorded_at_descending", "undated_links": "included",
+                     "source_freshness": "not_asserted",
+                     "interpretation": "reviewed_assertions_not_current_state"},
+        "untrusted_content": True,
+    }
+
+
+def test_project_dossier_client_sends_bounded_read_and_validates_context() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json=dossier_result())
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler),
+    ) as client:
+        result = client.project_dossier(
+            DOSSIER_PROJECT, event_limit=1, commitment_limit=1,
+            recorded_cutoff_at=TIMELINE_START,
+        )
+        assert result["project"]["object_id"] == DOSSIER_PROJECT
+        for invalid in (
+            {"project_id": "project_bad"}, {"event_limit": True},
+            {"commitment_limit": 26}, {"visibility": "current"},
+            {"recorded_cutoff_at": TIMELINE_START.replace(tzinfo=None)},
+        ):
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                arguments = {"project_id": DOSSIER_PROJECT, "event_limit": 1,
+                             "commitment_limit": 1, **invalid}
+                client.project_dossier(**arguments)
+    assert len(calls) == 1
+    assert calls[0].method == "GET"
+    assert calls[0].url.path == f"/v1/knowledge/projects/{DOSSIER_PROJECT}/dossier"
+    assert calls[0].url.params["event_limit"] == "1"
+    assert calls[0].headers["authorization"] == "Bearer token"
+
+
+@pytest.mark.parametrize("change", [
+    {"untrusted_content": False}, {"visibility": "retained"},
+    {"events_truncated": "yes"}, {"event_limit": 25},
+    {"recorded_cutoff_at": (TIMELINE_START + timedelta(hours=1)).isoformat()},
+    {"project": {**dossier_result()["project"], "object_id": "project_bad"}},
+    {"project": {**dossier_result()["project"], "evidence_ids": []}},
+    {"events": [{**dossier_result()["events"][0], "title": "Private\x00title"}]},
+    {"events": [{**dossier_result()["events"][0], "project_id":
+                 "project_" + "e" * 32}]},
+    {"events": [{**dossier_result()["events"][0], "recorded_at":
+                 (TIMELINE_START + timedelta(hours=1)).isoformat()}]},
+    {"commitments": [{**dossier_result()["commitments"][0],
+                     "owner_entity_id": "entity_bad"}]},
+    {"commitments": [{**dossier_result()["commitments"][0],
+                     "project_id": "project_" + "e" * 32}]},
+    {"commitments": dossier_result()["commitments"] * 2},
+    {"coverage": {"source_freshness": "asserted"}},
+])
+def test_project_dossier_client_rejects_malformed_context(change: dict) -> None:
+    result = {**dossier_result(), **change}
+    with BrainReadClient(
+        "https://brain.example", "token",
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=result)),
+    ) as client:
+        with pytest.raises(BrainClientError, match="invalid_response"):
+            client.project_dossier(
+                DOSSIER_PROJECT, event_limit=1, commitment_limit=1,
+                recorded_cutoff_at=TIMELINE_START,
+            )
 
 
 def due_result() -> dict[str, object]:

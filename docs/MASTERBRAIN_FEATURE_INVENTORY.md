@@ -65,7 +65,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Relationships | Typed, directional, temporal, evidence-backed | Reviewed append/read implemented |
 | Facts/claims | Assertion, value, confidence, reviewer, valid/observed time | Reviewed append/read implemented |
 | Events/timeline | Event time distinct from ingestion time | Reviewed event records and ADR-160 bounded occurrence timeline implemented; merged-main CI/restore passed. No cross-kind timeline or source freshness claim |
-| Projects | State and evidence; future members/milestones/decisions | Reviewed base record implemented |
+| Projects | State and evidence; future members/milestones/decisions | Reviewed base record implemented; ADR-162 adds an in-review compact exact-project dossier with separately bounded, source-aware linked events and commitments, including undated records. This is not a state reducer or live-currentness claim; exact-head CI remains pending. |
 | Commitments | Owner, counterparty, due state and evidence | Reviewed append/read and ADR-161 bounded due-window API/client and indexes implemented; merged-main gates passed. No automatic overdue reducer or source freshness claim |
 | Corrections | Supersede without erasing history; retain contradictions | Implemented append-only links |
 | Unified retrieval | Keyword, metadata, graph and optional semantic ranking | Grouped current FileOS + Email-family + unsuperseded reviewed Knowledge leaves (ADR-159/PR #148 exact-head verified), retained/current FileOS + historical Knowledge, and layered Email lexical slices implemented; graph/semantic planned |
@@ -77,7 +77,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 |---|---|---|
 | Search | Compact ranked hits across Email and files | Explicit current Email/FileOS routes, grouped current sources + knowledge, retained grouped search and bounded current coverage status implemented |
 | Answer | Evidence-backed synthesis with uncertainty and coverage | Bounded local exact-quote selection and separately labelled reviewed KnowledgeCore matches implemented; freeform synthesis, semantic conflict resolution and hosted acceptance remain planned |
-| Expand | Fetch selected entity/project/claim/timeline/chunk | Exact DataCore/KnowledgeCore expansion implemented |
+| Expand | Fetch selected entity/project/claim/timeline/chunk | Exact DataCore/KnowledgeCore expansion implemented; ADR-162 project dossier is in review as a bounded orientation read, with exact expansion still separately scoped. |
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |
 | Change feeds | Cursor-based non-consuming updates by layer | DataCore and KnowledgeCore feeds implemented |
 | Client neutrality | Same typed contract for Claude, Grok, ChatGPT, other LLMs | Model-neutral REST routes and a read-only reference client implemented; no certified named-assistant adapter or hosted cross-client conformance yet |

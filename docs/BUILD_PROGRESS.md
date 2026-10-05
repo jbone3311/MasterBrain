@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Reviewed project dossier (2026-10-05, ADR-162 in review)
+
+[ADR-162](adr/162_reviewed_project_dossier.md) adds a compact, exact-project
+read with independently bounded linked events and commitments, including
+undated records. The route and reference client preserve direct evidence
+drill-down and source-aware visibility before limiting. Local disposable
+PostgreSQL tests cover real API/client behavior, review chains, tenant/source
+isolation and no-rewrite migration 0056. Exact-head full CI, strict runtime
+and restore are pending; this is not a project truth reducer, hosted capability
+or FOS-Master cutover. The [build receipt](BUILD_RECEIPT.md) records the
+verification boundary and local launcher limitation.
+
 ## Reviewed-commitment due window (2026-10-05, ADR-161)
 
 [ADR-161](adr/161_reviewed_commitments_due.md) adds an additive indexed,
