@@ -1,6 +1,78 @@
 # Build and validation receipt
 
-Updated 2026-10-03 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+
+## Reviewed-event timeline — ADR-160 candidate
+
+Branch `codex/knowledge-timeline-read` adds a bounded occurrence-window event
+read and forward migration 0054. Nine local schema/API/query-construction
+tests passed; the full local non-PostgreSQL suite passed 2,627 tests, with
+488 PostgreSQL-marked tests and one host-dependent disposable launcher test
+deselected, **not passed in that run**. Ruff, source mypy, documentation and
+diff checks passed. An existing isolated local PostgreSQL 17.11 test cluster
+then allowed real database verification: the KnowledgeCore timeline integration
+test passed after correcting two test expectations for its newly added late
+successor. The first full PostgreSQL-marked run passed **487 tests, one skip**
+in 221.44 seconds. After adding the populated 0054 migration regression, the
+updated full run passed **488 tests, one skip** in 208.34 seconds. The one skip
+is the Docker-backed browser launcher, because
+Docker is unavailable locally; the separate local launcher cannot initialize
+a fresh cluster while macOS's 32 System V shared-memory slots are occupied.
+The tests used a newly created, distinct `email_brain_test_timeline151_20261003`
+database on port 55443; existing test databases and FOS-Master were untouched.
+An additional populated-upgrade regression applied migrations 0001–0053,
+inserted both dated/project-linked and undated KnowledgeCore events, then
+applied 0054 and verified unchanged rows, row locations and heap filenode,
+both partial indexes and idempotent replay. The entire migration-integrity
+module passed **5/5** locally. This is not a large-hosted-table lock-budget
+or online-index proof.
+This proves disposable local PostgreSQL behavior, not hosted acceptance.
+After the [Actions billing/limit incident #150](https://github.com/jbone3311/MasterBrain/issues/150),
+implementation commit `d52b167740d4607e957183847ba95824ff540323` passed
+[full CI 37150248668 attempt 7](https://github.com/jbone3311/MasterBrain/actions/runs/37150248668)
+with **3,105 passed, 12 skipped** and **489/489 PostgreSQL-marked executed**.
+The deployment gate repeated the 3,105 tests, and the API image, dedicated
+PDF/FileOS document/image/archive workers and their restricted extraction
+checks all passed. The same commit passed
+[strict runtime 37150248761 attempt 4](https://github.com/jbone3311/MasterBrain/actions/runs/37150248761)
+and [synthetic populated restore 37150248722 attempt 4](https://github.com/jbone3311/MasterBrain/actions/runs/37150248722).
+The documentation-only follow-up commit is separately gated;
+none of these runs prove a hosted or live-source deployment.
+The local supported-Python 3.11.13 strict-runtime subset
+(`test_strict_runtime.py`, `test_rule_control.py`, `test_review_fixes.py`)
+passed **92 tests**, including all 13 PostgreSQL-marked cases. Installed
+unsupported Python 3.12.4 refused both package entry-point imports with the
+required security-patched-parser error. The six CI browser JavaScript files
+passed **151 tests** under Node 24. These local checks preceded, and do not
+replace, the executed CI interpreter matrix or Docker restore/container gates.
+Pre-merge review found and corrected a page-cutoff gap: late successors and
+corrections can no longer suppress earlier eligible events on later pages.
+The new PostgreSQL regression covers both paths and passed locally;
+the nine focused mock/schema/API tests and the 2,627 non-PostgreSQL tests
+passed again after this change. The provider-neutral `BrainReadClient.timeline`
+adds closed read requests and response validation; its 11 additional transport
+cases passed. A subsequent end-to-end regression passed through
+`BrainReadClient.timeline`, the authenticated FastAPI route and real
+PostgreSQL, paging retained project events across the returned cutoff/cursor.
+This does not prove hosted assistant identity. GitHub review is tracked in
+[PR #151](https://github.com/jbone3311/MasterBrain/pull/151).
+No live source, donor or version change.
+
+## Historical CI execution blocker — issue #150
+
+At documentation-only PR #149's merged-main commit
+`168ad65e32174c328d45286e9acbf0331a85b9d4`, [CI](https://github.com/jbone3311/MasterBrain/actions/runs/37147321816),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37147321823)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/37147321797)
+failed **before a runner or any test step started**. Each check annotation
+reports failed account payments or an insufficient spending limit. These are
+not product test failures or passing runs. The PR head and the preceding
+functional merge had executed and passed their required checks; the
+documentation-only merge adds no runtime behavior. Actions eligibility later
+recovered and PR #151's exact implementation commit passed the three required
+workflows above. The failed `168ad65` merged-main runs remain failed historical
+evidence, not passing checks; a later merge requires its own exact-head and
+merged-main verification.
 
 ## Grouped current reviewed leaves — PR #148 merged
 
@@ -15,7 +87,7 @@ checks passed),
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37145216964)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37145216984).
 The merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37146314821)
-is running; merged-main
+passed, as did merged-main
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37146314852)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37146314751)
 passed at that exact merge commit. This selects ADR-158's unsuperseded

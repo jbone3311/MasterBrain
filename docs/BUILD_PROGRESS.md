@@ -1,5 +1,24 @@
 # MasterBrain Build Progress
 
+## Reviewed-event timeline (2026-10-05, PR #151)
+
+[ADR-160](adr/160_reviewed_event_timeline.md) adds a read-only event-time
+window under KnowledgeCore. Its first page fixes a database recorded-time cutoff;
+later pages use an event-ID cursor and the same source/project visibility,
+date range and review-chain mode. Direct evidence IDs remain available for
+drill-down, while undated events stay in search/history. A provider-neutral
+read-only client now requests this page and validates its closed response
+contract. Local schema/API/client tests passed, including 2,627 non-PostgreSQL
+tests. The isolated local PostgreSQL 17.11 suite passed 488 tests with one
+Docker-only skip. After the Actions account gate recovered, implementation
+commit `d52b167` passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37150248668)
+with all 489 PostgreSQL-marked tests, the deployment repeat and containerized
+FileOS worker checks, plus [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37150248761)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/37150248722).
+The later documentation-only head is separately gated before merge. This is
+not a cross-kind timeline, source freshness, hosted read or
+FileOS cutover.
+
 ## Grouped current reviewed leaves merged (2026-10-03)
 
 [PR #148](https://github.com/jbone3311/MasterBrain/pull/148) merged

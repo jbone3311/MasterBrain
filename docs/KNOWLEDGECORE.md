@@ -29,6 +29,14 @@ Email or FileOS source.
   and Ask; direct and unified retained-history reads remain available.
 - A cursor-bounded append-only change feed allows consumers to discover new
   assertions without scanning the knowledge tables.
+- ADR-160 adds a bounded, recorded-cutoff-paged occurrence timeline for reviewed
+  events with non-null `starts_at`, an explicit date window, optional project
+  filter and direct evidence IDs. It defaults to unsuperseded review-chain
+  leaves; retained history is explicit. A linked project must also satisfy
+  assistant source grants. Undated events remain in exact/search/history
+  reads. This candidate passed isolated local PostgreSQL but awaits CI/PR gates
+  and is not an event
+  extraction pipeline, source freshness or valid-time truth guarantee.
 - Enrolled assistants may search, expand and page changes only for assertions
   whose directly linked evidence is nonempty and entirely in their granted
   sources (ADR-143). Mixed-source assertions are hidden in full; an ungranted
@@ -42,6 +50,7 @@ Email or FileOS source.
 |---|---|---|
 | `POST /v1/knowledge/assertions` | `knowledge.review` | Human-only reviewed append; UUID `Idempotency-Key` required |
 | `POST /v1/knowledge/search` | `knowledge.search` | Compact lexical results with evidence IDs; explicit `retained` (default) or `unsuperseded` visibility |
+| `GET /v1/knowledge/timeline` | `knowledge.search` | Bounded occurrence-window event page, recorded-time cutoff/cursor, direct evidence IDs; ADR-160 candidate |
 | `GET /v1/knowledge/{kind}/{id}` | `knowledge.read` | One tenant-scoped assertion and its evidence links |
 | `GET /v1/knowledge/changes` | `knowledge.changes.read` | Bounded chronological change page |
 
@@ -59,7 +68,8 @@ entities and claims, compares all table hashes after logical restore and repeats
 positive and cross-tenant retrieval checks.
 
 This is not yet automatic knowledge extraction or unified cross-source question
-answering. Unsuperseded review-chain leaves are not guaranteed true at the
+answering. The event timeline is not a cross-kind timeline. Unsuperseded
+review-chain leaves are not guaranteed true at the
 current valid time or fresh against the underlying sources. Known-answer
 evaluation, Email memory migration, FOS fact-pipeline parity,
 semantic ranking, graph traversal, synthesis, freshness/rebuild workers and live

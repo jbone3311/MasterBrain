@@ -1,9 +1,13 @@
 # MasterBrain Implementation Status
 
-Updated 2026-10-03. The latest merged grouped Brain/Ask read checkpoint is
+Updated 2026-10-05. The preceding merged grouped Brain/Ask read checkpoint is
 ADR-159/PR #148 at `f9402d7`: unsuperseded reviewed leaves in the all-source
 Knowledge layer, with exact-head full CI, strict runtime and populated restore
-green; merged-main checks are running. The prior direct KnowledgeCore read
+green. The subsequent documentation-only merged-main checkpoint could not
+start Actions jobs because of [billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
+Actions recovered for ADR-160 [PR #151](https://github.com/jbone3311/MasterBrain/pull/151):
+implementation commit `d52b167` passed executed full PostgreSQL/worker CI,
+strict-runtime and restore gates. The prior direct KnowledgeCore read
 checkpoint is ADR-158/PR #146 at `3bf21b8`, with exact-head and merged-main
 checks green. The prior Ask output-budget checkpoint is
 ADR-157/PR #144 at `96cb22b`: aggregate Ask output-text budgeting, with
@@ -44,6 +48,15 @@ not still-open integration work. Interactive Mac acceptance, issues #7/#9,
 production and FileOS cutover remain open.
 
 ## Implemented
+
+- ADR-160 adds a bounded, recorded-cutoff-paged reviewed-event occurrence timeline
+  under `knowledge.search`, with source-aware project filtering and retained
+  or unsuperseded visibility. It excludes undated events and claims no source
+  freshness, cross-kind timeline or hosted acceptance. An isolated local
+  PostgreSQL 17.11 database passed the 488 executable PostgreSQL-marked tests;
+  the Docker browser launcher skipped locally. Exact implementation-commit CI
+  subsequently executed all 489 PostgreSQL-marked tests and the worker,
+  strict-runtime and restore gates. This does not establish hosted acceptance.
 
 - ADR-159 composes ADR-158's source-grant-aware unsuperseded projection into
   grouped Brain current-search and Ask, with explicit coverage labeling.

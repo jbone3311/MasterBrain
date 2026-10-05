@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime
 from typing import Any
 
 import httpx
 from pydantic import ValidationError
 
+from masterbrain.knowledge_schema import KnowledgeVisibility, TimelineRequest
 from masterbrain.schemas import (
     MAX_ANSWER_TEXT_BYTES,
     CurrentGroupedSearchRequest,
@@ -23,6 +25,10 @@ from masterbrain.schemas import (
 
 MAX_RESPONSE_BYTES = 262_144
 _IDENTITY = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
+_EVENT_ID = re.compile(r"^event_[a-f0-9]{32}$")
+_PROJECT_ID = re.compile(r"^project_[a-f0-9]{32}$")
+_EVIDENCE_ID = re.compile(r"^evidence_[a-f0-9]{32}$")
+_EVENT_TYPE = re.compile(r"^[a-z][a-z0-9_.-]{0,99}$")
 _CURRENT_LAYERS = frozenset(
     {
         "fileos",
@@ -353,6 +359,102 @@ class BrainReadClient:
     def changes(self, *, after: str | None = None, limit: int = 25) -> dict[str, Any]:
         """Return only changes in enrolled sources, with bounded paging."""
         return self._status_page("changes", after=after, limit=limit)
+
+    def timeline(
+        self,
+        start: datetime,
+        end: datetime,
+        *,
+        project_id: str | None = None,
+        visibility: KnowledgeVisibility = "unsuperseded",
+        limit: int = 25,
+        recorded_cutoff_at: datetime | None = None,
+        after: str | None = None,
+    ) -> dict[str, Any]:
+        """Page reviewed event occurrences; every title remains untrusted data."""
+        try:
+            request = TimelineRequest.model_validate({
+                "start": start, "end": end, "project_id": project_id,
+                "visibility": visibility, "limit": limit,
+                "recorded_cutoff_at": recorded_cutoff_at, "after": after,
+            })
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        if (
+            type(limit) is not int
+            or not isinstance(start, datetime)
+            or not isinstance(end, datetime)
+        ):
+            raise BrainClientError("invalid_request")
+        if recorded_cutoff_at is not None and not isinstance(recorded_cutoff_at, datetime):
+            raise BrainClientError("invalid_request")
+        query = httpx.QueryParams(request.model_dump(mode="json", exclude_none=True))
+        data = self._request("GET", f"/v1/knowledge/timeline?{query}")
+        rows = data.get("results")
+        cursor = data.get("next_cursor")
+        cutoff = self._aware_datetime(data.get("recorded_cutoff_at"))
+        coverage = data.get("coverage")
+        if (
+            type(data.get("limit")) is not int or data["limit"] != limit
+            or data.get("visibility") != visibility
+            or data.get("untrusted_content") is not True
+            or not isinstance(coverage, dict)
+            or coverage.get("undated_events") != "excluded"
+            or coverage.get("source_freshness") != "not_asserted"
+            or coverage.get("interpretation") != "reviewed_assertions"
+            or cutoff is None
+            or (recorded_cutoff_at is not None and cutoff != recorded_cutoff_at)
+            or not isinstance(rows, list) or len(rows) > limit
+            or any(not self._valid_timeline_row(row, request) for row in rows)
+            or len({row["object_id"] for row in rows}) != len(rows)
+            or any(row["object_id"] == after for row in rows)
+            or cursor is not None and (
+                not rows or len(rows) != limit or not isinstance(cursor, str)
+                or not _EVENT_ID.fullmatch(cursor) or cursor != rows[-1]["object_id"]
+                or cursor == after
+            )
+        ):
+            raise BrainClientError("invalid_response")
+        order = [(self._aware_datetime(row["starts_at"]), row["object_id"]) for row in rows]
+        if order != sorted(order):
+            raise BrainClientError("invalid_response")
+        return data
+
+    @staticmethod
+    def _aware_datetime(value: Any) -> datetime | None:
+        if not isinstance(value, str):
+            return None
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError:
+            return None
+        return parsed if parsed.tzinfo is not None and parsed.utcoffset() is not None else None
+
+    @classmethod
+    def _valid_timeline_row(cls, row: Any, request: TimelineRequest) -> bool:
+        if not isinstance(row, dict):
+            return False
+        starts = cls._aware_datetime(row.get("starts_at"))
+        ends = cls._aware_datetime(row.get("ends_at")) if row.get("ends_at") is not None else None
+        evidence = row.get("evidence_ids")
+        project = row.get("project_id")
+        title = row.get("title")
+        event_type = row.get("event_type")
+        return bool(
+            row.get("object_kind") == "event"
+            and isinstance(row.get("object_id"), str)
+            and _EVENT_ID.fullmatch(row["object_id"])
+            and isinstance(event_type, str) and _EVENT_TYPE.fullmatch(event_type)
+            and isinstance(title, str) and 1 <= len(title) <= 300
+            and "\x00" not in title
+            and starts is not None and request.start <= starts < request.end
+            and (row.get("ends_at") is None or ends is not None and ends > starts)
+            and (project is None or isinstance(project, str) and _PROJECT_ID.fullmatch(project))
+            and (request.project_id is None or project == request.project_id)
+            and isinstance(evidence, list) and 1 <= len(evidence) <= 20
+            and len(set(item for item in evidence if isinstance(item, str))) == len(evidence)
+            and all(isinstance(item, str) and _EVIDENCE_ID.fullmatch(item) for item in evidence)
+        )
 
     def _status_page(
         self, route: str, *, after: str | None, limit: int

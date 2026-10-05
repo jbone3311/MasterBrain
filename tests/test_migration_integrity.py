@@ -290,3 +290,67 @@ def test_forward_repair_refuses_parser_mismatch_without_partial_write(
             "SELECT count(*) FROM schema_migrations "
             "WHERE name='0029_migration_integrity_repair.sql'"
         ).fetchone() == (0,)
+
+
+def test_timeline_index_migration_preserves_populated_event_heap(
+    scratch_database: tuple[str, str], tmp_path: Path
+) -> None:
+    admin_dsn, _ = scratch_database
+    earlier = _migrations_before(tmp_path, 54)
+    assert len(migrate(admin_dsn, earlier)) == 53
+    tenant_id, reviewer_id = uuid4(), uuid4()
+    project_id = "project_" + uuid4().hex
+    dated_id, undated_id = "event_" + uuid4().hex, "event_" + uuid4().hex
+    observed = datetime(2026, 9, 22, tzinfo=UTC)
+    with psycopg.connect(admin_dsn) as conn:
+        conn.execute("INSERT INTO tenants(id,name) VALUES (%s,'Synthetic timeline')", (tenant_id,))
+        conn.execute(
+            "INSERT INTO knowledge_projects(tenant_id,id,title,description,state,confidence,"
+            "source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'Fictional project','','active',1,'fictional',%s,%s)",
+            (tenant_id, project_id, observed, reviewer_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_events(tenant_id,id,event_type,title,description,"
+            "starts_at,project_id,confidence,source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'decision','Dated event','',%s,%s,1,'fictional',%s,%s)",
+            (tenant_id, dated_id, observed, project_id, observed, reviewer_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_events(tenant_id,id,event_type,title,description,"
+            "confidence,source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'decision','Undated event','',1,'fictional',%s,%s)",
+            (tenant_id, undated_id, observed, reviewer_id),
+        )
+        before = conn.execute(
+            "SELECT id,starts_at,project_id,recorded_at,ctid "
+            "FROM knowledge_events WHERE tenant_id=%s ORDER BY id", (tenant_id,),
+        ).fetchall()
+        heap_before = conn.execute(
+            "SELECT pg_relation_filenode('knowledge_events'::regclass)"
+        ).fetchone()[0]
+        assert conn.execute(
+            "SELECT to_regclass('knowledge_events_timeline_lookup')"
+        ).fetchone() == (None,)
+
+    assert migrate(admin_dsn, MIGRATIONS) == ["0054_knowledge_event_timeline.sql"]
+    assert migrate(admin_dsn, MIGRATIONS) == []
+    with psycopg.connect(admin_dsn) as conn:
+        after = conn.execute(
+            "SELECT id,starts_at,project_id,recorded_at,ctid "
+            "FROM knowledge_events WHERE tenant_id=%s ORDER BY id", (tenant_id,),
+        ).fetchall()
+        heap_after = conn.execute(
+            "SELECT pg_relation_filenode('knowledge_events'::regclass)"
+        ).fetchone()[0]
+        indexes = dict(conn.execute(
+            "SELECT indexname,indexdef FROM pg_indexes WHERE tablename='knowledge_events' "
+            "AND indexname IN ('knowledge_events_timeline_lookup',"
+            "'knowledge_events_project_timeline_lookup')"
+        ).fetchall())
+    assert after == before and heap_after == heap_before
+    assert set(indexes) == {
+        "knowledge_events_timeline_lookup", "knowledge_events_project_timeline_lookup",
+    }
+    assert "starts_at IS NOT NULL" in indexes["knowledge_events_timeline_lookup"]
+    assert "project_id IS NOT NULL" in indexes["knowledge_events_project_timeline_lookup"]

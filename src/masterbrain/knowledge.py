@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
+from datetime import UTC
 from typing import Any
 from uuid import UUID
 
@@ -24,6 +25,7 @@ from masterbrain.knowledge_schema import (
     KnowledgeVisibility,
     ProjectWrite,
     RelationshipWrite,
+    TimelineRequest,
 )
 
 _ID = re.compile(r"^[a-z]+_[a-f0-9]{32}$")
@@ -73,6 +75,31 @@ _UNSUPERSEDED_SQL = (
         + _visible_assertion_sql("s", "'" + kind + "'", "s.id") + "))"
         for kind, table in _TABLES.items() if kind != "correction"
     )
+)
+
+# A timeline event may refer to a separately source-protected project. A hidden
+# project-linked successor must not suppress a visible predecessor in that read.
+_TIMELINE_UNSUPERSEDED_SQL = (
+    "NOT EXISTS (SELECT 1 FROM knowledge_events s "
+    "LEFT JOIN knowledge_projects sp ON sp.tenant_id=s.tenant_id "
+    "AND sp.id=s.project_id "
+    "WHERE s.tenant_id=ev.tenant_id AND s.supersedes_id=ev.id "
+    "AND s.recorded_at<=allowed.cutoff "
+    "AND " + _visible_assertion_sql("s", "'event'", "s.id")
+    + " AND (s.project_id IS NULL OR "
+    + _visible_assertion_sql("sp", "'project'", "sp.id") + ")) "
+    "AND NOT EXISTS (SELECT 1 FROM knowledge_corrections c "
+    "JOIN knowledge_events r ON r.tenant_id=c.tenant_id "
+    "AND r.id=c.replacement_id "
+    "LEFT JOIN knowledge_projects rp ON rp.tenant_id=r.tenant_id "
+    "AND rp.id=r.project_id "
+    "WHERE c.tenant_id=ev.tenant_id AND c.target_kind='event' "
+    "AND c.target_id=ev.id AND c.recorded_at<=allowed.cutoff "
+    "AND r.recorded_at<=allowed.cutoff AND "
+    + _visible_assertion_sql("c", "'correction'", "c.id") + " AND "
+    + _visible_assertion_sql("r", "'event'", "r.id")
+    + " AND (r.project_id IS NULL OR "
+    + _visible_assertion_sql("rp", "'project'", "rp.id") + "))"
 )
 
 
@@ -463,6 +490,109 @@ class KnowledgeCore:
                 )
             self.store.audit(conn, ctx, "knowledge.search", "query")
             return hits
+
+    def timeline(self, ctx: TenantContext, request: TimelineRequest) -> dict[str, Any]:
+        """Page reviewed occurrence-dated events under a recorded-time cutoff."""
+        self.store.require(ctx, "knowledge.search")
+        if not isinstance(request, TimelineRequest):
+            raise ValueError("invalid timeline request")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        visibility_sql = (
+            " AND (" + _TIMELINE_UNSUPERSEDED_SQL + ")"
+            if request.visibility == "unsuperseded" else ""
+        )
+        from_sql = (
+            "FROM knowledge_events ev "
+            "LEFT JOIN knowledge_projects p ON p.tenant_id=ev.tenant_id "
+            "AND p.id=ev.project_id CROSS JOIN allowed "
+        )
+        project_sql = "AND ev.project_id=%s " if request.project_id is not None else ""
+        where_sql = (
+            "WHERE ev.starts_at>=%s AND ev.starts_at<%s "
+            "AND ev.recorded_at<=allowed.cutoff "
+            + project_sql
+            + "AND " + _visible_assertion_sql("ev", "'event'", "ev.id") + " "
+            + "AND (ev.project_id IS NULL OR "
+            + _visible_assertion_sql("p", "'project'", "p.id") + ")"
+            + visibility_sql
+        )
+        with self.store.transaction(ctx) as conn:
+            clock = conn.execute("SELECT transaction_timestamp() AS now").fetchone()
+            if clock is None:
+                raise RuntimeError("timeline database clock unavailable")
+            now = clock["now"]
+            cutoff_at = (
+                request.recorded_cutoff_at.astimezone(UTC)
+                if request.recorded_cutoff_at else now
+            )
+            if cutoff_at > now:
+                raise ValueError("invalid future timeline cutoff")
+            params: tuple[Any, ...] = (
+                request.start.astimezone(UTC), request.end.astimezone(UTC),
+                *((request.project_id,) if request.project_id is not None else ()),
+            )
+            anchor = None
+            if request.after is not None:
+                anchor = conn.execute(
+                    "WITH allowed AS (SELECT %s::text[] AS sources, "
+                    "%s::timestamptz AS cutoff) "
+                    "SELECT ev.starts_at,ev.id " + from_sql + where_sql + " AND ev.id=%s",
+                    (allowed_sources, cutoff_at, *params, request.after),
+                ).fetchone()
+                if anchor is None:
+                    raise NotFound()
+            cursor_sql = (
+                " AND (ev.starts_at,ev.id)>(%s,%s)" if anchor is not None else ""
+            )
+            rows = conn.execute(
+                "WITH allowed AS (SELECT %s::text[] AS sources, "
+                "%s::timestamptz AS cutoff) "
+                "SELECT ev.id,ev.event_type,ev.title,ev.starts_at,ev.ends_at,"
+                "ev.project_id " + from_sql + where_sql + cursor_sql
+                + " ORDER BY ev.starts_at,ev.id LIMIT %s",
+                (
+                    allowed_sources, cutoff_at, *params,
+                    *((anchor["starts_at"], anchor["id"]) if anchor else ()),
+                    request.limit + 1,
+                ),
+            ).fetchall()
+            page = rows[:request.limit]
+            evidence_by_event: dict[str, list[str]] = {row["id"]: [] for row in page}
+            if page:
+                evidence_rows = conn.execute(
+                    "SELECT target_id,evidence_id FROM knowledge_evidence "
+                    "WHERE target_kind='event' AND target_id=ANY(%s) "
+                    "ORDER BY target_id,evidence_id",
+                    (list(evidence_by_event),),
+                ).fetchall()
+                for evidence in evidence_rows:
+                    evidence_by_event[evidence["target_id"]].append(evidence["evidence_id"])
+            self.store.audit(conn, ctx, "knowledge.timeline_read", "event_window")
+        return {
+            "results": [
+                {
+                    "object_kind": "event",
+                    "object_id": row["id"],
+                    "event_type": row["event_type"],
+                    "title": row["title"],
+                    "starts_at": row["starts_at"],
+                    "ends_at": row["ends_at"],
+                    "project_id": row["project_id"],
+                    "evidence_ids": evidence_by_event[row["id"]],
+                }
+                for row in page
+            ],
+            "next_cursor": page[-1]["id"] if len(rows) > request.limit and page else None,
+            "recorded_cutoff_at": cutoff_at,
+            "limit": request.limit,
+            "visibility": request.visibility,
+            "coverage": {
+                "undated_events": "excluded",
+                "source_freshness": "not_asserted",
+                "interpretation": "reviewed_assertions",
+            },
+            "untrusted_content": True,
+        }
 
     def changes(
         self, ctx: TenantContext, *, after: str | None = None, limit: int = 25

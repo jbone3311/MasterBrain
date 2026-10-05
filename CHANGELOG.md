@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a1
 
+- Added an ADR-160 candidate for a bounded, recorded-cutoff-paged reviewed-event
+  occurrence timeline with source-aware project filtering, explicit retained
+  history and evidence drill-down. Implementation commit `d52b167` passed
+  PostgreSQL, full CI, strict-runtime and restore gates;
+  this is not source freshness or a cross-kind timeline.
+
 - Selected unsuperseded reviewed KnowledgeCore leaves in grouped Brain
   current-search and Ask (ADR-159), with explicit coverage labeling and
   source-grant-aware suppression. Retained direct and unified searches remain

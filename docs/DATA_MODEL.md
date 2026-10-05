@@ -89,6 +89,11 @@ no assertion rows. Direct KnowledgeCore search may explicitly request the
 source-grant-aware unsuperseded review-chain leaves (ADR-158); the default
 continues to retrieve retained history. Multiple leaves and valid-time
 intervals remain independent, so this is not a single current-truth row.
+Migration `0054_knowledge_event_timeline.sql` adds tenant/time and
+tenant/project/time lookup indexes for dated event reads. ADR-160 pages
+immutable reviewed events under a recorded-at cutoff; no event or evidence
+row is rewritten. Undated events and cross-kind timelines remain outside
+that view, and source freshness is not implied.
 
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is

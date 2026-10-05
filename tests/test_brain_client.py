@@ -1,6 +1,7 @@
 """Read-only external Brain API transport and privacy boundaries."""
 
 import json
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -11,6 +12,89 @@ LAYERS = (
     "fileos", "archive_members", "archive_documents", "archive_images",
     "email_messages", "email_attachments", "email_documents", "knowledge",
 )
+TIMELINE_START = datetime(2026, 10, 1, tzinfo=UTC)
+TIMELINE_EVENT = "event_" + "a" * 32
+TIMELINE_EVIDENCE = "evidence_" + "b" * 32
+
+
+def timeline_result() -> dict[str, object]:
+    return {
+        "results": [{
+            "object_kind": "event", "object_id": TIMELINE_EVENT,
+            "event_type": "decision", "title": "Fictional review",
+            "starts_at": (TIMELINE_START + timedelta(hours=1)).isoformat(),
+            "ends_at": None, "project_id": None,
+            "evidence_ids": [TIMELINE_EVIDENCE],
+        }],
+        "next_cursor": TIMELINE_EVENT,
+        "recorded_cutoff_at": TIMELINE_START.isoformat(),
+        "limit": 1, "visibility": "unsuperseded",
+        "coverage": {"undated_events": "excluded", "source_freshness": "not_asserted",
+                     "interpretation": "reviewed_assertions"},
+        "untrusted_content": True,
+    }
+
+
+def test_timeline_client_sends_bounded_read_and_validates_page() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json=timeline_result())
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler)
+    ) as client:
+        result = client.timeline(
+            TIMELINE_START, TIMELINE_START + timedelta(days=1), limit=1,
+            recorded_cutoff_at=TIMELINE_START, after="event_" + "0" * 32,
+        )
+        assert result["results"][0]["object_id"] == TIMELINE_EVENT
+        for invalid in (
+            {"start": TIMELINE_START.replace(tzinfo=None)},
+            {"end": TIMELINE_START},
+            {"end": TIMELINE_START + timedelta(days=367)},
+            {"limit": True},
+            {"limit": 51},
+            {"after": TIMELINE_EVENT},
+            {"after": "event_bad", "recorded_cutoff_at": TIMELINE_START},
+            {"project_id": "project_bad"},
+        ):
+            arguments = {"start": TIMELINE_START,
+                         "end": TIMELINE_START + timedelta(days=1), **invalid}
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                client.timeline(**arguments)
+    assert len(calls) == 1
+    assert calls[0].method == "GET" and calls[0].url.path == "/v1/knowledge/timeline"
+    assert calls[0].url.params["limit"] == "1"
+    assert calls[0].url.params["after"] == "event_" + "0" * 32
+    assert calls[0].headers["authorization"] == "Bearer token"
+
+
+@pytest.mark.parametrize("change", [
+    {"untrusted_content": False},
+    {"visibility": "retained"},
+    {"recorded_cutoff_at": (TIMELINE_START + timedelta(hours=1)).isoformat()},
+    {"next_cursor": "event_" + "c" * 32},
+    {"coverage": {"undated_events": "included"}},
+    {"results": [{**timeline_result()["results"][0], "title": "Private\x00title"}]},
+    {"results": [{**timeline_result()["results"][0], "evidence_ids": []}]},
+    {"results": [{**timeline_result()["results"][0], "project_id": "project_bad"}]},
+    {"results": [{**timeline_result()["results"][0],
+                  "starts_at": (TIMELINE_START - timedelta(hours=1)).isoformat()}]},
+    {"results": timeline_result()["results"] * 2},
+])
+def test_timeline_client_rejects_malformed_pages(change: dict) -> None:
+    result = {**timeline_result(), **change}
+    with BrainReadClient(
+        "https://brain.example", "token",
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=result)),
+    ) as client:
+        with pytest.raises(BrainClientError, match="invalid_response"):
+            client.timeline(
+                TIMELINE_START, TIMELINE_START + timedelta(days=1), limit=1,
+                recorded_cutoff_at=TIMELINE_START,
+            )
 
 
 def current_result() -> dict[str, object]:

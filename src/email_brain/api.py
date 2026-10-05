@@ -51,7 +51,11 @@ from masterbrain.answers import (
 from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReviewer
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.knowledge import KnowledgeCore
-from masterbrain.knowledge_schema import KnowledgePublishRequest, KnowledgeSearchRequest
+from masterbrain.knowledge_schema import (
+    KnowledgePublishRequest,
+    KnowledgeSearchRequest,
+    TimelineRequest,
+)
 from masterbrain.schemas import (
     BrainSearchRequest,
     CurrentGroupedSearchRequest,
@@ -967,6 +971,18 @@ def create_app(
         limit: Annotated[int, Query(ge=1, le=50)] = 25,
     ) -> dict[str, Any]:
         return knowledge.changes(principal.context, after=after, limit=limit)
+
+    @app.get("/v1/knowledge/timeline")
+    def knowledge_timeline(
+        body: Annotated[TimelineRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return knowledge.timeline(principal.context, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_timeline") from None
 
     @app.get("/v1/knowledge/{kind}/{object_id}")
     def knowledge_object(
