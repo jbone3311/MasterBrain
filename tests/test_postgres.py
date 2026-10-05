@@ -3682,6 +3682,30 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         kind="commitment", description="Fictional due hidden project", state="open",
         due_at=due_at, project_id=new_project.object_id, **common,
     ), uuid4())
+    hidden_owner = knowledge.publish(ctx, EntityWrite(
+        kind="entity", entity_type="person", name="Fictional hidden owner",
+        **{**common, "evidence_ids": [current_email.evidence_id]},
+    ), uuid4())
+    hidden_counterparty = knowledge.publish(ctx, EntityWrite(
+        kind="entity", entity_type="organization", name="Fictional hidden counterparty",
+        **{**common, "evidence_ids": [current_email.evidence_id]},
+    ), uuid4())
+    due_hidden_owner = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due hidden owner", state="open",
+        due_at=due_at, owner_entity_id=hidden_owner.object_id, **common,
+    ), uuid4())
+    due_hidden_counterparty = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due hidden counterparty", state="open",
+        due_at=due_at, counterparty_entity_id=hidden_counterparty.object_id, **common,
+    ), uuid4())
+    due_before = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due before window", state="open",
+        due_at=due_start - timedelta(microseconds=1), **common,
+    ), uuid4())
+    due_at_end = knowledge.publish(ctx, CommitmentWrite(
+        kind="commitment", description="Fictional due at end", state="open",
+        due_at=due_end, **common,
+    ), uuid4())
     due_undated = knowledge.publish(ctx, CommitmentWrite(
         kind="commitment", description="Fictional due undated", state="open",
         project_id=old_project.object_id, **common,
@@ -3690,9 +3714,12 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     owner_due = knowledge.commitments_due(ctx, due_query)
     assert {row["object_id"] for row in owner_due["results"]} == {
         due_hidden_successor.object_id, due_sibling.object_id, due_hidden_project.object_id,
+        due_hidden_owner.object_id, due_hidden_counterparty.object_id,
     }
     assert due_old.object_id not in str(owner_due)
     assert due_undated.object_id not in str(owner_due)
+    assert due_before.object_id not in str(owner_due)
+    assert due_at_end.object_id not in str(owner_due)
     assistant_due = knowledge.commitments_due(fileos_only, due_query)
     assert {row["object_id"] for row in assistant_due["results"]} == {
         due_old.object_id, due_sibling.object_id,
@@ -3703,6 +3730,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     )["results"]} == {
         due_old.object_id, due_hidden_successor.object_id,
         due_sibling.object_id, due_hidden_project.object_id,
+        due_hidden_owner.object_id, due_hidden_counterparty.object_id,
     }
     assert {row["object_id"] for row in knowledge.commitments_due(
         fileos_only, DueCommitmentsRequest(
