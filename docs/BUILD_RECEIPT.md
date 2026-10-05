@@ -2,7 +2,25 @@
 
 Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Reviewed project dossier — ADR-162 in review
+## Reviewed project dossier — ADR-162 merged
+
+[PR #154](https://github.com/jbone3311/MasterBrain/pull/154) merged at
+`cf6c656b454141e008851c68ab5477487503d789` from exact head
+`88e16a9793dffe08c5b92a3f517e723cdc750940`. Exact-head
+[CI 37351772063](https://github.com/jbone3311/MasterBrain/actions/runs/37351772063)
+passed **3,143 tests, 12 skipped** twice (regular and deployment repeat),
+including **491/491 PostgreSQL-marked executed** in each run. Documentation,
+API image and dedicated PDF/FileOS document, image and archive worker checks
+passed. Exact-head [strict runtime 37351772156](https://github.com/jbone3311/MasterBrain/actions/runs/37351772156)
+and [restore 37351772055](https://github.com/jbone3311/MasterBrain/actions/runs/37351772055)
+also passed. Merged `main` at the commit above passed
+[strict runtime 37353642367](https://github.com/jbone3311/MasterBrain/actions/runs/37353642367)
+and [restore 37353642413](https://github.com/jbone3311/MasterBrain/actions/runs/37353642413).
+[Full CI 37353642249](https://github.com/jbone3311/MasterBrain/actions/runs/37353642249)
+also passed **3,143 tests, 12 skipped** twice, with **491/491
+PostgreSQL-marked tests executed** in each run; docs, API image and restricted
+PDF/FileOS worker container checks passed. These synthetic checks do not
+expand the boundary into hosted or live-source acceptance.
 
 Branch `codex/knowledge-project-dossier` adds one read-only, exact-project
 KnowledgeCore dossier, independently bounded linked event and commitment
@@ -23,8 +41,7 @@ attempted and failed while `initdb` requested another System V shared-memory
 ID on this Mac (`shmget: No space left on device`, not disk exhaustion); it is
 not counted as passed. The final future-cutoff assertion was then rechecked
 in the focused real-PostgreSQL path (2/2 passed). The six browser test files
-passed 151/151 Node tests. Exact final-head full CI, strict-runtime, restore and
-container gates remain pending. Ruff, source mypy, docs and diff checks pass.
+passed 151/151 Node tests. Ruff, source mypy, docs and diff checks pass.
 No hosted source, FileOS effect, FOS-Master mutation or release tag is claimed.
 
 ## Reviewed-commitment due view — ADR-161 merged
