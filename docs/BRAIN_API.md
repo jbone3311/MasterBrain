@@ -158,6 +158,18 @@ source effects or an alternate route through KnowledgeCore.
   enrollment or turn this into a hosted capability. Local disposable PostgreSQL
   and executed implementation-commit CI, strict-runtime, container and restore
   verification passed; exact runs are in the build receipt.
+- `GET /v1/knowledge/commitments-due` — ADR-161 read-only due-window view of
+  reviewed commitments. Requires `knowledge.search`, an aware `[start,end)`
+  window no wider than 366 days, and optional exact `project_id`, `state`,
+  `visibility` (`unsuperseded` default or `retained`) and 1–50 result limit.
+  Orders by `(due_at,id)` and returns a compact description preview, state,
+  related IDs and direct evidence IDs. A later page supplies the first page's
+  `recorded_cutoff_at` and an opaque commitment-ID `after` anchor; hidden or
+  mismatched anchors return not found. Source grants cover direct commitment
+  evidence and each linked project, owner and counterparty before limiting.
+  Undated commitments stay in search/history. The cutoff is not a durable MVCC
+  snapshot, and the view does not infer overdue status, source freshness or
+  real-world truth. `BrainReadClient.commitments_due` validates the transport.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change

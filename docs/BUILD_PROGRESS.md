@@ -1,5 +1,15 @@
 # MasterBrain Build Progress
 
+## Reviewed-commitment due window (2026-10-05, ADR-161)
+
+[ADR-161](adr/161_reviewed_commitments_due.md) adds an additive indexed,
+read-only due-window view for reviewed commitments, with state/project filters,
+source-aware related-object visibility, recorded-cutoff paging, compact previews
+and direct evidence IDs. The synthetic PostgreSQL integration exercises due
+boundaries, paging, review-chain cutoff, source and tenant isolation and
+API/client transport. This tranche remains under exact-head verification;
+it is not an automatic overdue reducer, source freshness or hosted acceptance.
+
 ## Reviewed-event timeline (2026-10-05, PR #151)
 
 [ADR-160](adr/160_reviewed_event_timeline.md) adds a read-only event-time

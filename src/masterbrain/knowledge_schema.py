@@ -12,6 +12,7 @@ from email_brain.schemas import ClosedModel
 Identity = Annotated[str, Field(pattern=r"^[a-z]+_[a-f0-9]{32}$")]
 EvidenceIdentity = Annotated[str, Field(pattern=r"^evidence_[a-f0-9]{32}$")]
 EventIdentity = Annotated[str, Field(pattern=r"^event_[a-f0-9]{32}$")]
+CommitmentIdentity = Annotated[str, Field(pattern=r"^commitment_[a-f0-9]{32}$")]
 ProjectIdentity = Annotated[str, Field(pattern=r"^project_[a-f0-9]{32}$")]
 Predicate = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,99}$")]
 KnowledgeKind = Literal[
@@ -190,4 +191,23 @@ class TimelineRequest(ClosedModel):
             raise ValueError("timeline window must be positive and at most 366 days")
         if self.after is not None and self.recorded_cutoff_at is None:
             raise ValueError("timeline cursor requires recorded_cutoff_at")
+        return self
+
+
+class DueCommitmentsRequest(ClosedModel):
+    start: AwareDatetime
+    end: AwareDatetime
+    project_id: ProjectIdentity | None = None
+    state: Literal["proposed", "open", "completed", "cancelled", "overdue", "unknown"] | None = None
+    visibility: KnowledgeVisibility = "unsuperseded"
+    limit: int = Field(default=25, ge=1, le=50)
+    recorded_cutoff_at: AwareDatetime | None = None
+    after: CommitmentIdentity | None = None
+
+    @model_validator(mode="after")
+    def window_and_cursor(self) -> Self:
+        if self.end <= self.start or self.end - self.start > timedelta(days=366):
+            raise ValueError("due window must be positive and at most 366 days")
+        if self.after is not None and self.recorded_cutoff_at is None:
+            raise ValueError("due cursor requires recorded_cutoff_at")
         return self

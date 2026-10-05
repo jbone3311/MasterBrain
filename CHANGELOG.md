@@ -2,10 +2,16 @@
 
 ## Unreleased — after v0.2.0a1
 
-- Added an ADR-160 candidate for a bounded, recorded-cutoff-paged reviewed-event
+- Added an ADR-161 bounded, recorded-cutoff-paged reviewed-commitment due view,
+  with additive lookup indexes, source-aware related-object filtering, compact
+  API results and a validated read client. Synthetic/local verification is in
+  progress. It does not compute overdue state or enable source actions.
+
+- Added an ADR-160 bounded, recorded-cutoff-paged reviewed-event
   occurrence timeline with source-aware project filtering, explicit retained
   history and evidence drill-down. Implementation commit `d52b167` passed
-  PostgreSQL, full CI, strict-runtime and restore gates;
+  PostgreSQL, full CI, strict-runtime and restore gates, and merged-main
+  gates passed after PR #151 merged;
   this is not source freshness or a cross-kind timeline.
 
 - Selected unsuperseded reviewed KnowledgeCore leaves in grouped Brain

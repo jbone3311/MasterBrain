@@ -1,7 +1,8 @@
 # ADR-160 — Bounded reviewed-event timeline
 
-Status: accepted for a synthetic/disposable read-only candidate, pending PR
-verification. No live-source or hosted acceptance follows.
+Status: accepted and merged through PR #151 with exact-head and merged-main
+CI, strict-runtime and restore gates passed. No live-source or hosted
+acceptance follows.
 
 ## Context
 

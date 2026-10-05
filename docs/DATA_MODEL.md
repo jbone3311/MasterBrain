@@ -94,6 +94,11 @@ tenant/project/time lookup indexes for dated event reads. ADR-160 pages
 immutable reviewed events under a recorded-at cutoff; no event or evidence
 row is rewritten. Undated events and cross-kind timelines remain outside
 that view, and source freshness is not implied.
+Migration `0055_knowledge_commitment_due.sql` adds partial tenant/due and
+tenant/project/due indexes without rewriting commitment or evidence rows.
+ADR-161 pages reviewed commitments with non-null due time under the same
+recorded-time cutoff pattern. `due_at` is a stated due time, not a computed
+overdue status or a source-freshness assertion.
 
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is

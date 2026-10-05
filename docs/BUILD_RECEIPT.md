@@ -2,7 +2,36 @@
 
 Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Reviewed-event timeline — ADR-160 candidate
+## Reviewed-commitment due view — ADR-161 work in progress
+
+Branch `codex/knowledge-commitments-due` adds a bounded, read-only due-window
+view, additive partial indexes (migration 0055), provider-neutral client method
+and PostgreSQL visibility/paging regressions. The focused schema/API/client
+suite passed 67 tests; source mypy and targeted Ruff passed. A disposable local
+PostgreSQL 17.11 case passed the end-to-end KnowledgeCore/API/client path and
+the populated no-row-rewrite migration regression. After repairing the local
+virtual environment's subprocess import path, the full non-PostgreSQL run
+passed **2,645 tests** with the Docker-backed launcher excluded; the full
+PostgreSQL-marked run passed **489 tests, one Docker-only skip** in 143.50
+seconds. The isolated base was `email_brain_test_due161_20261005` on port
+55443. Ruff, mypy, documentation and diff checks passed. Exact-head GitHub
+checks remain pending at this writing. No FOS-Master mutation, hosted
+acceptance, overdue computation or source effect is implied.
+
+## Reviewed-event timeline — ADR-160 merged
+
+PR #151 was merged to `main` at
+`90ee9e41cff101fcb30ce6ce99f988f8e01d84a4`; the exact PR head
+`8cc4feca6ea47a30aaa815c60c206db9f5d51079` passed
+[CI 37264285649](https://github.com/jbone3311/MasterBrain/actions/runs/37264285649),
+[strict runtime 37264285699](https://github.com/jbone3311/MasterBrain/actions/runs/37264285699)
+and [restore 37264285656](https://github.com/jbone3311/MasterBrain/actions/runs/37264285656).
+Merged `main` separately passed
+[CI 37265330633](https://github.com/jbone3311/MasterBrain/actions/runs/37265330633),
+[strict runtime 37265330664](https://github.com/jbone3311/MasterBrain/actions/runs/37265330664)
+and [restore 37265330609](https://github.com/jbone3311/MasterBrain/actions/runs/37265330609).
+Both CI runs executed 489/489 PostgreSQL-marked tests and the deployment
+repeat/container checks. This is synthetic CI evidence, not hosted acceptance.
 
 Branch `codex/knowledge-timeline-read` adds a bounded occurrence-window event
 read and forward migration 0054. Nine local schema/API/query-construction
