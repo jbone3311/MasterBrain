@@ -12,7 +12,13 @@ resource policy or container isolation. Local offline controller tests passed
 60/60; the non-PostgreSQL suite passed 2,665 with 491 database tests skipped
 and one separate local trial launcher deselected. Six browser files passed
 156/156; Ruff, mypy, docs and diff checks passed. The local full
-run and deployment gate each failed that trial launcher in this checkout.
+run and deployment gate each failed that trial launcher before application
+assertions: Homebrew PostgreSQL 17.11 `initdb` could not allocate a 56-byte
+System V shared-memory segment because this Mac's segment table was full
+(`shmget: No space left on device`, not disk exhaustion). Two detached
+segments from failed retries were removed after verification; older segments
+with uncertain ownership were left untouched. No later green launcher run is
+claimed.
 Exact-head hosted CI, real-container behavior, strict runtime and restore
 remain open; a future recurrence is needed to distinguish the two Docker calls.
 

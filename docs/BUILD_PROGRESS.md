@@ -11,8 +11,13 @@ suite passed 60/60; the broad local non-PostgreSQL run passed 2,665 tests with
 491 database-marked skips and the independent local trial launcher deselected.
 The six browser files passed 156/156; Ruff, mypy and documentation checks passed.
 The full local run and deployment gate each failed only the separate local
-trial launcher in this checkout. Hosted real-container and required PR gates
-are not yet claimed; this is diagnosis, not a resolved flake.
+trial launcher before application assertions: Homebrew PostgreSQL 17.11
+`initdb` could not allocate a 56-byte System V shared-memory segment because
+this Mac's segment table was full (`shmget: No space left on device`, not disk
+exhaustion). Two detached segments from failed retries were removed after
+verification; older segments with uncertain ownership were left untouched.
+The launcher was not subsequently proven green. Hosted real-container and
+required PR gates are not yet claimed; this is diagnosis, not a resolved flake.
 
 ## First-party project drill-down (2026-10-05, ADR-163 in review)
 
