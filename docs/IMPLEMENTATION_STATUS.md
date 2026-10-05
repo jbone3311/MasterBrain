@@ -53,8 +53,8 @@ production and FileOS cutover remain open.
 ## Implemented
 
 - ADR-163 adds an explicit, read-only reviewed-project dossier control in the
-  first-party `/brain` Ask and Search only results. The local browser regression
-  suite passes; broader exact-head and merged-main gates remain open. It uses
+  first-party `/brain` Ask and Search only results. PR #156 exact-head full CI,
+  strict-runtime and restore passed; merged-main checks remain pending. It uses
   the existing scoped API and cannot claim live project truth or source effects.
 
 - ADR-162 adds a merged, bounded, read-only exact-project dossier with

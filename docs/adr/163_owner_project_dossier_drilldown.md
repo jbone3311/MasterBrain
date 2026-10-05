@@ -1,7 +1,7 @@
 # ADR-163 — Owner workspace project drill-down
 
-Status: accepted for implementation; exact-head and merged-main gates remain
-open. No hosted or live-source acceptance is implied.
+Status: merged through PR #156; exact-head gates passed, merged-main gates
+pending. No hosted or live-source acceptance is implied.
 
 ## Context
 
