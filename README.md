@@ -76,8 +76,8 @@ strict-runtime, restore and merged-main gates passed. This is not automatic chat
 intent routing or current source truth.
 The merged [ADR-120 diagnostic follow-up](docs/adr/120_sandbox_failure_stage_diagnostics.md)
 separates fixed, content-safe Docker daemon-security and image-inspection
-failure stages. PR #160's exact-head gates passed; merged-main full CI is
-pending. This is instrumentation, not a resolution of [intermittent large-MIME
+failure stages. PR #160's exact-head and merged-main gates passed. This is
+instrumentation, not a resolution of [intermittent large-MIME
 issue #64](https://github.com/jbone3311/MasterBrain/issues/64).
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and

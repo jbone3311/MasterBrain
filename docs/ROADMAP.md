@@ -6,8 +6,8 @@ ADR-163's merged first-party project drill-down (merged-main restore passed;
 full CI and final strict gate were blocked before execution by hosted runners),
 and ADR-164's merged reviewed schedule (exact-head and merged-main gates passed).
 The ADR-120 image-check diagnostic follow-up merged through PR #160 after
-exact-head gates passed; its merged-main full CI is pending, while strict-runtime
-and restore passed. It does not resolve intermittent large-MIME issue #64.
+exact-head and merged-main gates passed. It does not resolve intermittent
+large-MIME issue #64.
 ADR-159's grouped Brain/Ask reviewed-leaf
 projection (PR #148 at `f9402d7`), ADR-158's optional direct KnowledgeCore
 unsuperseded search (PR #146 at `3bf21b8`), ADR-155's separate-cluster restore

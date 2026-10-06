@@ -25,7 +25,7 @@ with 3,145 tests and all 491 PostgreSQL-marked cases each time; restricted
 large-MIME and FileOS worker checks, strict-runtime and restore passed. The
 final PR head `2a604a5` passed full CI twice with the same 3,145/491 results,
 plus strict-runtime, restore and restricted container checks; PR #160 merged at
-`28991f8`. Merged-main checks are pending. The intermittent
+`28991f8`. Merged-main full CI, strict-runtime and restore passed. The intermittent
 large-MIME deadline did not recur and is not resolved by this diagnostic change.
 On the reconciled tree, 2,665 non-PostgreSQL Python tests and all 164 browser
 tests passed; 491 PostgreSQL-marked tests and the separate local trial launcher

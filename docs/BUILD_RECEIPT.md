@@ -41,8 +41,15 @@ executed both times, including restricted worker containers. Its
 [strict runtime 37396202533](https://github.com/jbone3311/MasterBrain/actions/runs/37396202533)
 and [restore 37396202282](https://github.com/jbone3311/MasterBrain/actions/runs/37396202282)
 passed. PR [#160](https://github.com/jbone3311/MasterBrain/pull/160) merged
-at `28991f8ed8c7f73ec06402ec1032baf34e1fbf9b`. Merged-main checks are
-pending.
+at `28991f8ed8c7f73ec06402ec1032baf34e1fbf9b`. Merged-main
+[CI 37397176955](https://github.com/jbone3311/MasterBrain/actions/runs/37397176955)
+passed, including real restricted large-MIME and FileOS worker checks. Its
+deployment repeat explicitly reported 3,145 tests passed, 12 skipped and all
+491 PostgreSQL-marked tests executed; the first-pass summary was unavailable
+in the retrieved log, so no separate count is claimed for it.
+[Strict runtime 37397176993](https://github.com/jbone3311/MasterBrain/actions/runs/37397176993)
+and [restore 37397176809](https://github.com/jbone3311/MasterBrain/actions/runs/37397176809)
+passed.
 On its combined local
 tree, 2,665 non-PostgreSQL Python tests passed with 491 PostgreSQL-marked tests
 and the separate local trial launcher deselected; all six browser files passed
