@@ -447,6 +447,21 @@ def serve_trial(admin: str, port: int, self_test: bool) -> int:
                         or len(knowledge_answer.json().get("reviewed_knowledge", [])) != 1
                     ):
                         raise RuntimeError("Synthetic startup knowledge Ask failed")
+                    insurance = client.post(
+                        "/v1/brain/answers",
+                        json={"question": "Find the insurance certificate for Cedar Harbor"},
+                    )
+                    if (
+                        insurance.status_code != 200
+                        or insurance.json().get("status") != "quoted_evidence"
+                        or {item["source_kind"] for item in insurance.json()["citations"]}
+                        != {"email", "fileos"}
+                        or any(
+                            "insurance certificate" not in item["quote"].casefold()
+                            for item in insurance.json()["citations"]
+                        )
+                    ):
+                        raise RuntimeError("Synthetic startup Ask quote relevance failed")
                     conflict = client.post(
                         "/v1/brain/answers",
                         json={"question": "When is Maple Arcade closing?"},

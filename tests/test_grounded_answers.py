@@ -477,6 +477,29 @@ def test_local_selector_is_deterministic_bounded_and_ignores_source_instructions
     assert "insurance" in first[0].quote
 
 
+def test_local_selector_prefers_specific_question_sentence_over_repeated_project_name() -> None:
+    passage = AnswerPassage(
+        EVIDENCE, DOCUMENT, SOURCE, "fileos",
+        "Cedar Harbor closing checklist. Insurance certificate remains outstanding. ",
+        "a" * 64,
+    )
+    context = AnswerPassage(
+        "evidence_" + "b" * 32, DOCUMENT, SOURCE, "email",
+        "Cedar Harbor insurance certificate is outstanding.", "b" * 64,
+    )
+    selected = LocalExtractiveSelector().select(
+        "Find the insurance certificate for Cedar Harbor",
+        (passage, context),
+    )
+    assert selected[0] == QuoteSelection(
+        context.evidence_id, "Cedar Harbor insurance certificate is outstanding."
+    )
+    file_quote = next(item for item in selected if item.evidence_id == passage.evidence_id)
+    assert file_quote == QuoteSelection(
+        passage.evidence_id, "Insurance certificate remains outstanding."
+    )
+
+
 @pytest.mark.parametrize("question, expected", [
     ("Find the insurance certificate for Cedar Harbor", "insurance certificate Cedar Harbor"),
     ("What's the status of insurance?", "insurance"),

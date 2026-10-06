@@ -102,37 +102,61 @@ class LocalExtractiveSelector:
         }
         if not terms:
             return []
-        ranked: list[tuple[int, int, QuoteSelection]] = []
-        for ordinal, passage in enumerate(passages[:MAX_PASSAGES]):
-            best_score = 0
-            best_quote = ""
+        # In a "find X for Y" question, X is the requested item and Y is
+        # usually identifying context. This is only a deterministic lexical
+        # tie-breaker, not a claim that we understood the user's intent.
+        before_for, separator, _ = question.casefold().partition(" for ")
+        target_terms = (
+            {term for term in re.findall(r"\w+", before_for) if term in terms}
+            if separator else terms
+        ) or terms
+        # Prefer a sentence containing the rarer question words when overlap
+        # ties. A repeated project name should not outrank the sentence about
+        # the specific document or event the person asked for.
+        sentences_by_passage: list[list[tuple[str, set[str]]]] = []
+        term_frequency = dict.fromkeys(terms, 0)
+        for passage in passages[:MAX_PASSAGES]:
+            sentences: list[tuple[str, set[str]]] = []
             for match in re.finditer(r"[^.!?\n]+(?:[.!?]+|$)", passage.content):
                 sentence = match.group().strip()
                 if not sentence:
                     continue
-                words = set(re.findall(r"\w+", sentence.casefold()))
-                score = len(terms & words)
-                if score <= best_score:
+                matched = terms & set(re.findall(r"\w+", sentence.casefold()))
+                sentences.append((sentence, matched))
+                for term in matched:
+                    term_frequency[term] += 1
+            sentences_by_passage.append(sentences)
+        ranked: list[tuple[int, int, int, int, QuoteSelection]] = []
+        for ordinal, (passage, sentences) in enumerate(
+            zip(passages[:MAX_PASSAGES], sentences_by_passage, strict=True)
+        ):
+            best_rank = (0, 0, 0)
+            best_quote = ""
+            for sentence, matched in sentences:
+                rank = (
+                    len(target_terms & matched), len(matched),
+                    sum(-term_frequency[term] for term in matched),
+                )
+                if rank <= best_rank:
                     continue
                 if len(sentence) > MAX_QUOTE_CHARS:
                     # Keep the matching term inside an exact, bounded slice.
-                    first = next((word for word in sorted(terms) if word in words), None)
-                    if first is None:
-                        continue
+                    first = min(matched, key=lambda term: (term_frequency[term], term))
                     found = re.search(r"\b" + re.escape(first) + r"\b", sentence, re.IGNORECASE)
                     if found is None:
                         continue
                     position = found.start()
                     start = max(0, position - MAX_QUOTE_CHARS // 3)
                     sentence = sentence[start:start + MAX_QUOTE_CHARS].strip()
-                best_score = score
+                best_rank = rank
                 best_quote = sentence
             if best_quote:
                 ranked.append((
-                    best_score, ordinal, QuoteSelection(passage.evidence_id, best_quote)
+                    -best_rank[0], -best_rank[1], -best_rank[2], ordinal,
+                    QuoteSelection(passage.evidence_id, best_quote)
                 ))
-        ranked.sort(key=lambda item: (-item[0], item[1]))
-        return [item[2] for item in ranked[:MAX_SELECTIONS]]
+        ranked.sort(key=lambda item: item[:4])
+        return [item[4] for item in ranked[:MAX_SELECTIONS]]
 
 
 class GroundedAnswerService:

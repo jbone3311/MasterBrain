@@ -557,6 +557,10 @@ def test_default_local_answer_quotes_both_sources_and_client_matches(preview):
         assert {item["source_kind"] for item in natural.json()["citations"]} == {
             "email", "fileos"
         }
+        assert all(
+            "insurance certificate" in item["quote"].casefold()
+            for item in natural.json()["citations"]
+        )
         with BrainReadClient(
             "http://127.0.0.1", preview.token,
             allow_insecure_loopback=True, transport=external_transport(direct),
