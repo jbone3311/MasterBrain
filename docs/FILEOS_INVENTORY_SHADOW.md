@@ -172,9 +172,11 @@ exact on-disk locators, independent SHA-256 values and JSON round-trip. The
 same-directory sibling variant is conditional on the filesystem actually
 representing four distinct files. This Mac folded a pair, so its two sibling
 tests skipped rather than claiming parity; the 37 focused tests that ran passed.
-The shared snapshot/shadow sibling probe runs on a capable CI filesystem, but
-CI has no FOS-Master checkout, so it does not prove donor sibling behavior on
-Linux. No filename policy, publication authority or donor code changes here.
+The shared snapshot/shadow sibling probe passed on the capable hosted CI
+filesystem in PR #164's exact-head run (3,149 tests passed twice, all 491
+PostgreSQL-marked tests executed each time). CI has no FOS-Master checkout, so
+its two donor-dependent tests skipped and donor sibling behavior on Linux is
+not proved. No filename policy, publication authority or donor code changes here.
 
 ## Limits and next gate
 

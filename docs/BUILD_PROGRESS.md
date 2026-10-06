@@ -10,9 +10,12 @@ them. The two focused modules passed 37 tests locally; two sibling tests
 skipped on this collision-folding Mac. The broader non-PostgreSQL suite passed
 2,669 tests with those two skips, 491 PostgreSQL-marked tests and the separate
 local trial launcher deselected. Six browser files passed 164/164; Ruff, mypy,
-docs and diff checks passed. Hosted Linux CI, where the shared
-sibling corpus can run, and exact-head gates remain open. Hosted CI has no
-donor checkout, so donor-on-Linux parity is not claimed. No live root, policy
+docs and diff checks passed. PR #164 code head `e4e8c0e` passed hosted full CI
+twice with 3,149 tests, 14 skips and all 491 PostgreSQL-marked cases executed
+each time, plus restricted workers, strict runtime and restore. The added
+shared-path sibling probe passed on the hosted filesystem; the two new
+donor-dependent tests skipped because CI has no FOS-Master checkout.
+Donor-on-Linux collision parity is not claimed. No live root, policy
 switch, FileOS effects or FOS-Master mutation is authorized.
 
 ## Selected answer-citation recheck (2026-10-06, ADR-165 merged)

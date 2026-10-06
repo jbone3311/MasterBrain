@@ -172,8 +172,10 @@ stress files and the 9,994-stress-file maximum (10,000 prior v1 rows), with
 zero unexplained membership differences; 44 focused donor tests passed.
 The in-review filename probe adds a pinned-donor cross-directory case/Unicode
 corpus and conditional same-directory sibling probes. The former passed on
-this Mac; the latter could not run on its collision-folding filesystem and
-needs capable-platform evidence. It does not close platform parity.
+this Mac; the latter could not run on its collision-folding filesystem. A
+shared-path sibling probe passed on hosted Linux, but the pinned donor is not
+checked out there; donor-on-Linux collision parity still needs evidence. It
+does not close platform parity.
 This is capacity evidence for the synthetic, nonpublishing path only. The six
 known policy gaps, real cloud placeholders, permission faults, platform/name
 behavior, owner-authorized live shadow, later v2 current/absence semantics and

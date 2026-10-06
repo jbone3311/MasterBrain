@@ -13,10 +13,18 @@ this Mac filesystem could not represent four distinct sibling files. The
 broader non-PostgreSQL suite passed 2,669 with those two skips, 491
 PostgreSQL-marked tests and the separate local launcher deselected. Six
 browser files passed 164/164; Ruff, mypy, docs and diff checks passed. The
-hosted shared-path test can exercise that corpus on a capable filesystem, but
-hosted CI does not check out FOS-Master; donor collision parity there is not
-claimed. Full exact-head CI, strict runtime and restore remain open. No
-production source or donor data was read or changed.
+hosted shared-path sibling test ran on the capable CI filesystem: on PR
+[#164](https://github.com/jbone3311/MasterBrain/pull/164) code head
+`e4e8c0e62e01e108e8343f4c613bd30eb700d8cd`,
+[full CI 37409396292](https://github.com/jbone3311/MasterBrain/actions/runs/37409396292)
+passed twice with 3,149 tests and 14 skips each time; all 491
+PostgreSQL-marked cases executed in both passes. Browser, documentation,
+runtime-image, restricted-worker and deployment checks passed. The two
+donor-dependent new tests skipped in hosted CI because it does not check out
+FOS-Master. [Strict runtime 37409396280](https://github.com/jbone3311/MasterBrain/actions/runs/37409396280)
+and [restore 37409396389](https://github.com/jbone3311/MasterBrain/actions/runs/37409396389)
+passed. This is not donor collision parity on Linux or a live-source gate.
+No production source or donor data was read or changed.
 
 ## Selected answer-citation recheck — ADR-165 merged
 
