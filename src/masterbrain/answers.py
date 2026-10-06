@@ -141,7 +141,8 @@ class LocalExtractiveSelector:
                     continue
                 if len(sentence) > MAX_QUOTE_CHARS:
                     # Keep the matching term inside an exact, bounded slice.
-                    first = min(matched, key=lambda term: (term_frequency[term], term))
+                    priority = target_terms & matched or matched
+                    first = min(priority, key=lambda term: (term_frequency[term], term))
                     found = re.search(r"\b" + re.escape(first) + r"\b", sentence, re.IGNORECASE)
                     if found is None:
                         continue

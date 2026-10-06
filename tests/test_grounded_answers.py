@@ -498,6 +498,17 @@ def test_local_selector_prefers_specific_question_sentence_over_repeated_project
     assert file_quote == QuoteSelection(
         passage.evidence_id, "Insurance certificate remains outstanding."
     )
+    long_sentence = AnswerPassage(
+        EVIDENCE, DOCUMENT, SOURCE, "fileos",
+        "Cedar Harbor " + "context " * 90 + "insurance certificate is outstanding.",
+        "a" * 64,
+    )
+    bounded = LocalExtractiveSelector().select(
+        "Find the insurance certificate for Cedar Harbor", (long_sentence,)
+    )
+    assert len(bounded) == 1
+    assert "insurance" in bounded[0].quote
+    assert len(bounded[0].quote) <= 400
 
 
 @pytest.mark.parametrize("question, expected", [
