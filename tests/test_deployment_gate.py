@@ -1,11 +1,21 @@
 """The CI structural gate must not duplicate its preceding full test step."""
 
+import importlib.util
+from pathlib import Path
 from types import SimpleNamespace
 
-from scripts import deployment_gate
+
+def load_gate():
+    path = Path(__file__).resolve().parents[1] / "scripts" / "deployment_gate.py"
+    spec = importlib.util.spec_from_file_location("deployment_gate_for_test", path)
+    assert spec is not None and spec.loader is not None
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    return gate
 
 
 def test_structural_gate_skips_only_its_duplicate_pytest_run(monkeypatch, capsys) -> None:
+    deployment_gate = load_gate()
     calls = []
 
     def fake_run(command, **kwargs):
