@@ -20,7 +20,10 @@ The launcher was not subsequently proven green. PR #160's earlier head
 `0543633` passed exact-head full CI twice with 3,145 tests and all 491
 PostgreSQL-marked cases each time, including restricted large-MIME and FileOS
 worker containers. Its strict-runtime and restore reruns passed after runner
-recovery. This reconciled head still needs its own gates; the intermittent
+recovery. The reconciled head `291d3cb` also passed exact-head full CI twice
+with 3,145 tests and all 491 PostgreSQL-marked cases each time; restricted
+large-MIME and FileOS worker checks, strict-runtime and restore passed. The
+next documentation-only head still needs its own gates. The intermittent
 large-MIME deadline did not recur and is not resolved by this diagnostic change.
 On the reconciled tree, 2,665 non-PostgreSQL Python tests and all 164 browser
 tests passed; 491 PostgreSQL-marked tests and the separate local trial launcher

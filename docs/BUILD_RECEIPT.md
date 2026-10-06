@@ -1,6 +1,6 @@
 # Build and validation receipt
 
-Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Image-check diagnostic refinement — ADR-120 follow-up in review
 
@@ -27,7 +27,14 @@ Its [strict-runtime 37373525897](https://github.com/jbone3311/MasterBrain/action
 and [restore 37373525881](https://github.com/jbone3311/MasterBrain/actions/runs/37373525881)
 reruns passed after hosted-runner recovery. The earlier cancelled attempts
 remain in [issue #158](https://github.com/jbone3311/MasterBrain/issues/158).
-This reconciled head needs separate exact-head gates. On its combined local
+The reconciled head `291d3cbd91c705fc5f063d7595bb6a5edec6b27c` passed
+[full CI 37395189024](https://github.com/jbone3311/MasterBrain/actions/runs/37395189024):
+3,145 tests and 12 skips twice, with 491/491 PostgreSQL-marked tests executed
+both times. Docs, browser, restricted large-MIME and FileOS container checks
+passed. [Strict runtime 37395189130](https://github.com/jbone3311/MasterBrain/actions/runs/37395189130)
+and [restore 37395188747](https://github.com/jbone3311/MasterBrain/actions/runs/37395188747)
+passed. This documentation-only follow-up head still needs exact-head gates.
+On its combined local
 tree, 2,665 non-PostgreSQL Python tests passed with 491 PostgreSQL-marked tests
 and the separate local trial launcher deselected; all six browser files passed
 164/164. Ruff, mypy and docs checks passed. The large-MIME deadline did not
