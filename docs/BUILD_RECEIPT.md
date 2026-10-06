@@ -2,6 +2,31 @@
 
 Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Case-sensitive pinned-donor collision stress
+
+The branch adds a conditional, 260-file same-directory case-variant corpus:
+128 numbered upper/lowercase pairs plus four named variants. A temporary
+case-sensitive APFS image let the pinned donor scanner, snapshot v1 and
+nonpublishing donor-policy shadow process all 260 paths, hashes and IDs without
+collapsing distinct names. The two focused modules passed 38 tests there;
+the two combined composed/decomposed sibling tests skipped because that APFS
+volume could not represent distinct Unicode-normalization siblings. The new
+case test skipped on the Mac's ordinary collision-folding filesystem. This
+does not prove donor Unicode-name parity on Linux or authorize publication,
+live-source access or FileOS cutover. The broader local non-PostgreSQL suite
+passed 2,669 tests with three expected filesystem skips, 491 PostgreSQL-marked
+tests and the separate local launcher deselected. Ruff, mypy, docs and diff
+checks passed. The temporary image was unmounted and removed after testing.
+PR [#166](https://github.com/jbone3311/MasterBrain/pull/166) code head
+`fdd2896f93c9db2db2e3ce2e451bbc3a9226458d` passed
+[full CI 37413787127](https://github.com/jbone3311/MasterBrain/actions/runs/37413787127)
+twice with 3,149 passed and 15 skipped each time; all 491 PostgreSQL-marked
+cases executed in both passes. Browser, docs, runtime image, deployment and
+restricted-worker checks passed. The added donor-specific test skipped on
+hosted CI because it has no FOS-Master checkout. [Strict runtime 37413787136](https://github.com/jbone3311/MasterBrain/actions/runs/37413787136)
+and [restore 37413787277](https://github.com/jbone3311/MasterBrain/actions/runs/37413787277)
+passed. The final documentation-head result is separately recorded on PR #166.
+
 ## FileOS filename representation probe — PR #164 merged
 
 The branch adds fictional case and NFC/NFD spelling variants to the pinned

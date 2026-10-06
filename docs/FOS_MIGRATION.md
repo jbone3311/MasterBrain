@@ -176,6 +176,11 @@ this Mac; the latter could not run on its collision-folding filesystem. A
 shared-path sibling probe passed on hosted Linux, but the pinned donor is not
 checked out there; donor-on-Linux collision parity still needs evidence. It
 does not close platform parity.
+The follow-up 260-file case-collision corpus passed locally against the pinned
+donor on a temporary case-sensitive APFS volume. That closes a local
+same-directory case-variant comparison only; APFS still folded Unicode
+normalization siblings, and hosted CI has no pinned donor checkout. No
+donor-on-Linux Unicode claim or policy switch follows from it.
 This is capacity evidence for the synthetic, nonpublishing path only. The six
 known policy gaps, real cloud placeholders, permission faults, platform/name
 behavior, owner-authorized live shadow, later v2 current/absence semantics and

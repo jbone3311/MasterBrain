@@ -414,6 +414,30 @@ def test_live_pinned_donor_distinct_case_and_normalization_names(
     _assert_live_name_parity(scanner, root, payloads)
 
 
+def test_live_pinned_donor_same_directory_case_variants(tmp_path: Path) -> None:
+    scanner = _pinned_scanner_or_skip()
+    root = tmp_path / "synthetic_case_variants"
+    root.mkdir()
+    payloads = {
+        "Ledger.txt": b"fictional uppercase ledger",
+        "ledger.txt": b"fictional lowercase ledger",
+        "Report.PDF": b"fictional uppercase extension",
+        "report.pdf": b"fictional lowercase extension",
+    }
+    for index in range(128):
+        payloads[f"Record{index:04d}.txt"] = f"fictional uppercase {index}".encode()
+        payloads[f"record{index:04d}.txt"] = f"fictional lowercase {index}".encode()
+    for locator, payload in payloads.items():
+        (root / locator).write_bytes(payload)
+    if (
+        {entry.name for entry in root.iterdir()} != set(payloads)
+        or any((root / locator).read_bytes() != payload for locator, payload in payloads.items())
+    ):
+        pytest.skip("this filesystem cannot represent distinct case-variant siblings")
+
+    _assert_live_name_parity(scanner, root, payloads)
+
+
 def test_live_pinned_donor_case_and_normalization_across_directories(
     tmp_path: Path,
 ) -> None:
