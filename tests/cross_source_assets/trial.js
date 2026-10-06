@@ -6,6 +6,8 @@
   const results = document.getElementById("results");
   const evidence = document.getElementById("evidence");
   const input = document.getElementById("query");
+  const accessToggle = document.getElementById("access-toggle");
+  const accessCode = document.getElementById("access-code");
   let searchVersion = 0;
   let evidenceVersion = 0;
   function element(tag, text, parent) {
@@ -100,6 +102,20 @@
     document.getElementById("search-button").disabled = true;
     return;
   }
+  accessToggle.disabled = false;
+  accessToggle.addEventListener("click", () => {
+    if (accessCode.hidden) {
+      accessCode.textContent = token;
+      accessCode.hidden = false;
+      accessToggle.setAttribute("aria-expanded", "true");
+      accessToggle.textContent = "Hide temporary access code";
+    } else {
+      accessCode.textContent = "";
+      accessCode.hidden = true;
+      accessToggle.setAttribute("aria-expanded", "false");
+      accessToggle.textContent = "Show temporary access code";
+    }
+  });
   Promise.all([
     api("/v1/brain/current-coverage"),
     api("/v1/brain/sources/trial_files/freshness"),

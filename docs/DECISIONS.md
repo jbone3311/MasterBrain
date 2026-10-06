@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-166](adr/166_synthetic_trial_workspace_handoff.md) lets the fictional
+loopback trial explicitly reveal its temporary read-only code for manual entry
+into `/brain`. It prints or persists no secret and changes no production grant.
+
 [ADR-165](adr/165_answer_citation_recheck.md) reopens only selected answer
 evidence after final scoped search, refusing a changed body, digest, source or
 revoked read grant before any quote is returned. It is a bounded read-only

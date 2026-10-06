@@ -55,6 +55,11 @@ ADR-136 also keeps the fictional trial's excerpts as text nodes, omits generated
 PostgreSQL highlight markup and verifies that both metadata and bounded content
 name the selected evidence before displaying source text. That trial remains
 synthetic and does not establish a production browser identity boundary.
+ADR-166 lets that loopback-only trial reveal its temporary read-only code only
+after an explicit click, for manual entry into the separate `/brain` workspace.
+The launcher still does not print the code; neither page persists it, and the
+workspace never accepts it from a URL. A displayed code should be hidden when
+finished. This is not a hosted credential handoff pattern.
 
 ADR-134 adds an optional read-only answer route. An explicitly configured
 selector receives only bounded, currently authorized excerpts, with no tool or

@@ -843,6 +843,8 @@ def test_browser_assets_do_not_embed_credentials_or_execute_source_text():
     assert 'redirect: "error"' in script
     html = (ASSETS / "index.html").read_text()
     assert 'src="/trial.js"' in html
+    assert 'href="/brain"' in html
+    assert 'id="access-code" hidden' in html
     assert "FICTIONAL DATA" in html
     assert "other-tenant-canary" not in html
 
