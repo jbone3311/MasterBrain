@@ -42,6 +42,10 @@ button:disabled { background: #a4b8ad; cursor: not-allowed; }
 .project-panel { margin: .5rem 0 .75rem; }
 .project-group { border-top: 1px solid #dce8e1; margin-top: .7rem; padding-top: .5rem; }
 .project-group h5 { margin: .2rem 0 .4rem; font-size: .88rem; }
+.schedule-row { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }
+.schedule-row input { width: auto; }
+.schedule-results { margin-top: .8rem; }
+.schedule-results .hit { overflow-wrap: anywhere; }
 .evidence-panel { white-space: pre-wrap; overflow-wrap: anywhere; background: #f1f6f1;
   border-radius: 9px; padding: .8rem; margin-top: .55rem; }
 .notice { color: #6c4b23; }

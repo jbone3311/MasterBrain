@@ -2,6 +2,19 @@
 
 Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## First-party reviewed schedule — ADR-164 in review
+
+The unmerged `codex/brain-reviewed-schedule` branch adds explicit first-party
+UTC-window reads of the existing ADR-160/161 event and due APIs. The focused
+Node browser suite passed 29/29 locally and all six browser files passed
+164/164. Ruff, source mypy, docs and diff checks passed. The local
+non-PostgreSQL run passed 2,663 tests, with 491 database tests skipped and
+one Docker-only launcher deselected. The separate disposable PostgreSQL 17.11
+run passed 490/491 marked cases, with one Docker-only skip and 2,664 other
+tests deselected (245.66 seconds). Exact-head CI, strict-runtime, restore and
+merged-main gates are not claimed. This UI read
+does not make the reviewed dates or states live-current facts.
+
 ## First-party reviewed-project drill-down — ADR-163 merged
 
 PR [#156](https://github.com/jbone3311/MasterBrain/pull/156) merged at

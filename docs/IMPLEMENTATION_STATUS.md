@@ -52,6 +52,12 @@ production and FileOS cutover remain open.
 
 ## Implemented
 
+- ADR-164 adds an explicit read-only reviewed schedule panel in `/brain` over
+  the existing event timeline and due-commitment APIs. It requires a bounded
+  UTC window and All focus, validates each compact page, and provides separate
+  evidence drill-down. Focused browser tests pass locally; exact-head and
+  merged-main gates remain open. It is not live source status or an action.
+
 - ADR-163 adds an explicit, read-only reviewed-project dossier control in the
   first-party `/brain` Ask and Search only results. PR #156 exact-head full CI,
   strict-runtime and restore passed. Merged-main restore passed; full CI and

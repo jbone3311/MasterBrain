@@ -170,6 +170,10 @@ source effects or an alternate route through KnowledgeCore.
   Undated commitments stay in search/history. The cutoff is not a durable MVCC
   snapshot, and the view does not infer overdue status, source freshness or
   real-world truth. `BrainReadClient.commitments_due` validates the transport.
+  ADR-164's in-review `/brain` Reviewed schedule panel makes explicit,
+  date-bounded calls to these existing timeline and due routes with fixed
+  10-item pages. Next-page requests carry the returned cutoff and cursor;
+  they do not establish a durable snapshot, current truth or new API grant.
 - `GET /v1/knowledge/projects/{project_id}/dossier` — ADR-162 compact,
   read-only context for one reviewed project assertion and its linked events
   and commitments. Requires `knowledge.search`; each list has an independent
