@@ -191,8 +191,11 @@ pinned scanner and classifier under `tests/fixtures/pinned_fos_master/`.
 The normal local comparison still uses the untouched sibling checkout;
 hosted CI uses only the fixed test snapshot, not a cross-repository token.
 The Linux gate explicitly requires the donor case and normalization sibling
-corpora to execute instead of skipping. The snapshot is not shipped with the
-MasterBrain runtime or adopted as the FileOS inventory policy. The exact
+corpora to execute instead of skipping. PR #167's code-head CI passed all
+three such tests and both full suites, including all 491 PostgreSQL-marked
+cases each time. The snapshot was absent from the API runtime image. This is
+synthetic Linux parity for those filename cases, not a live cloud-placeholder,
+fault-permission, invalid-byte-name or policy-cutover acceptance. The exact
 hosted result is recorded in the build receipt.
 
 ## Limits and next gate

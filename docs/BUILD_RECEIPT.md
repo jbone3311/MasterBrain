@@ -15,9 +15,17 @@ mode passed the donor module with the same two name-representation skips.
 The broader non-PostgreSQL suite passed 2,672 tests, with three filesystem
 skips, 491 PostgreSQL-marked tests and the separate local launcher deselected.
 Forcing snapshot mode across that same suite produced the same result.
-Ruff, mypy, docs, workflow YAML parsing and diff checks passed. A dedicated
-hosted Linux step requires same-directory case and Unicode-name donor parity
-to run without skipping. Its exact-head result is recorded on the PR.
+Ruff, mypy, docs, workflow YAML parsing and diff checks passed. PR
+[#167](https://github.com/jbone3311/MasterBrain/pull/167) code head
+`6407d603787741ce517843525d131daeda84c77b` passed
+[full CI 37417739134](https://github.com/jbone3311/MasterBrain/actions/runs/37417739134)
+twice with 3,162 passed and 5 skipped per pass; all 491 PostgreSQL-marked
+tests executed both times. The dedicated Linux filename gate executed the
+pinned donor snapshot and passed 3/3 case/Unicode sibling tests with no
+skip. Browser, docs, deployment, runtime-image exclusion and restricted
+worker checks passed. [Strict runtime 37417739064](https://github.com/jbone3311/MasterBrain/actions/runs/37417739064)
+and [restore 37417739052](https://github.com/jbone3311/MasterBrain/actions/runs/37417739052)
+passed. The final documentation-head result is separately recorded on PR #167.
 No runtime image, source policy, live root or FOS-Master file is changed.
 
 ## Case-sensitive pinned-donor collision stress

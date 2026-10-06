@@ -12,6 +12,12 @@ ADR-165's selected answer-citation recheck merged through PR #162 after
 exact-head and merged-main gates passed. It narrows a
 selection-time evidence race but does not add generated chat or a durable
 current-source snapshot.
+The test-only pinned donor snapshot in PR #167 let hosted Linux run the
+FOS-Master scanner against case and Unicode-normalization sibling corpora:
+the dedicated three-test gate and both full code-head suites passed. That
+narrows synthetic platform parity; the six donor-policy differences, real
+cloud placeholders, permission faults, authorized live shadow and FileOS
+cutover remain open.
 ADR-159's grouped Brain/Ask reviewed-leaf
 projection (PR #148 at `f9402d7`), ADR-158's optional direct KnowledgeCore
 unsuperseded search (PR #146 at `3bf21b8`), ADR-155's separate-cluster restore
@@ -41,7 +47,7 @@ FileOS cutover acceptance is implied.
 
 | Milestone | Current position | What is still missing |
 |---|---|---|
-| Product identity and donor baseline | MasterBrain identity, source-layer boundaries, pinned FOS-Master provenance, first hash/dedupe parity and synthetic shadow corpus are in the repo | Full semantic and operational parity, owner cutover decision |
+| Product identity and donor baseline | MasterBrain identity, source-layer boundaries, pinned FOS-Master provenance, first hash/dedupe parity and synthetic shadow corpus are in the repo; PR #167 adds exact-source Linux case/Unicode-name parity tests | Full semantic and operational parity, owner cutover decision |
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
 | KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work; optional direct and grouped current-search/Ask unsuperseded review-chain leaves passed exact-head PostgreSQL, strict-runtime and restore gates; ADR-160 reviewed-event timeline, ADR-161 due-window commitment read and ADR-162 exact-project dossier passed merged-main gates | Cross-kind/valid-time timeline, project/commitment reducers, automatic candidate pipeline, evaluated resolution, rebuild and freshness proof |
 | Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search with explicit All/Email/FileOS focus, evidence drill-down and partial coverage work; extractive Ask has separate 8-KiB selector-input and returned-untrusted-text caps with visible truncation; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads; ADR-149 denies unfenced legacy Email routes to assistants | Hosted issuer enrollment and derived-cache revocation, cited answer synthesis, named-assistant adapter and full prompt/token/whole-response budgets |
