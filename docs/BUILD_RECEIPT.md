@@ -2,6 +2,24 @@
 
 Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Exact pinned-donor Linux parity fixture
+
+The scanner and classifier fixtures are unmodified copies from FOS-Master
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`, with their original SHA-256
+values verified before import. The loader accepts only the fixed test fixture
+path or an exact-commit donor checkout, restores import state and never calls
+the donor CLI. A local byte/output comparison and explicit snapshot shadow
+passed on fictional files. The focused modules passed 40 tests with three
+expected skips on this Mac's collision-folding filesystem; forcing snapshot
+mode passed the donor module with the same two name-representation skips.
+The broader non-PostgreSQL suite passed 2,672 tests, with three filesystem
+skips, 491 PostgreSQL-marked tests and the separate local launcher deselected.
+Forcing snapshot mode across that same suite produced the same result.
+Ruff, mypy, docs, workflow YAML parsing and diff checks passed. A dedicated
+hosted Linux step requires same-directory case and Unicode-name donor parity
+to run without skipping. Its exact-head result is recorded on the PR.
+No runtime image, source policy, live root or FOS-Master file is changed.
+
 ## Case-sensitive pinned-donor collision stress
 
 The branch adds a conditional, 260-file same-directory case-variant corpus:

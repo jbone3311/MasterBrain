@@ -186,6 +186,15 @@ values; all 38 focused tests that could run passed. The two combined
 composed/decomposed sibling tests still skipped on APFS. The conditional case
 test skips on the ordinary Mac volume. Linux donor/Unicode parity remains open.
 
+The next parity-harness tranche checks in exact, SHA-verified copies of the
+pinned scanner and classifier under `tests/fixtures/pinned_fos_master/`.
+The normal local comparison still uses the untouched sibling checkout;
+hosted CI uses only the fixed test snapshot, not a cross-repository token.
+The Linux gate explicitly requires the donor case and normalization sibling
+corpora to execute instead of skipping. The snapshot is not shipped with the
+MasterBrain runtime or adopted as the FileOS inventory policy. The exact
+hosted result is recorded in the build receipt.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,

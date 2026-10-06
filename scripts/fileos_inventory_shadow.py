@@ -25,6 +25,9 @@ from masterbrain.datacore.fileos import snapshot_tree
 PINNED_FOS_COMMIT = "218d5caec2f20b9047fd3eb8e027dc671acf0c15"
 PINNED_SCANNER_SHA256 = "bf4a9bb46275bb3d9ae429335520b333541dfbbddbd0c2ec4ddef2d9873d1073"
 PINNED_FILTER_SHA256 = "12110b1b5404c31172d65878a9327bf8f415f8d343b668aa5982948c840da437"
+PINNED_SNAPSHOT_ROOT = (
+    Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "pinned_fos_master"
+)
 OBSERVED_AT = datetime(2026, 9, 23, tzinfo=UTC)
 DOMAIN = "shadow"
 
@@ -34,13 +37,18 @@ def _sha256(path: Path) -> str:
 
 
 def load_pinned_scanner(repo: Path) -> ModuleType:
-    """Import only checked source; never call the donor CLI or path resolver."""
+    """Import checked donor source or its exact test-only snapshot.
+
+    Never call the donor CLI or path resolver. The snapshot is allowed only at
+    the one checked-in test path, never from a caller-chosen lookalike root.
+    """
     repo = repo.resolve(strict=True)
-    commit = subprocess.check_output(
-        ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
-    ).strip()
-    if commit != PINNED_FOS_COMMIT:
-        raise ValueError(f"donor commit is not pinned: {commit}")
+    if repo != PINNED_SNAPSHOT_ROOT.resolve(strict=False):
+        commit = subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
+        ).strip()
+        if commit != PINNED_FOS_COMMIT:
+            raise ValueError(f"donor commit is not pinned: {commit}")
     tools = repo / "_SYSTEM" / "tools"
     scanner = tools / "scan_domains.py"
     classifier = tools / "junk_filter.py"
@@ -53,13 +61,19 @@ def load_pinned_scanner(repo: Path) -> ModuleType:
         raise RuntimeError("cannot load pinned donor scanner")
     module = importlib.util.module_from_spec(spec)
     old_bytecode_policy = sys.dont_write_bytecode
+    old_import_path = sys.path[:]
+    old_classifier = sys.modules.pop("junk_filter", None)
     sys.dont_write_bytecode = True
     try:
         spec.loader.exec_module(module)
+        if Path(module.junk_filter.__file__).resolve() != classifier.resolve():
+            raise RuntimeError("donor scanner imported a different classifier")
     finally:
         sys.dont_write_bytecode = old_bytecode_policy
-    if Path(module.junk_filter.__file__).resolve() != classifier.resolve():
-        raise RuntimeError("donor scanner imported a different classifier")
+        sys.path[:] = old_import_path
+        sys.modules.pop("junk_filter", None)
+        if old_classifier is not None:
+            sys.modules["junk_filter"] = old_classifier
     return module
 
 

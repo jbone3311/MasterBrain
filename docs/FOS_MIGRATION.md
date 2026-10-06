@@ -181,6 +181,11 @@ donor on a temporary case-sensitive APFS volume. That closes a local
 same-directory case-variant comparison only; APFS still folded Unicode
 normalization siblings, and hosted CI has no pinned donor checkout. No
 donor-on-Linux Unicode claim or policy switch follows from it.
+The next test-only tranche pins exact donor scanner/classifier source copies
+with SHA-256 checks so hosted Linux can run the golden corpus without access
+to the private FOS-Master repository. The original checkout remains the local
+authority and is not edited; the copied files are not runtime code. A
+dedicated CI step refuses silent skips of distinct case/Unicode siblings.
 This is capacity evidence for the synthetic, nonpublishing path only. The six
 known policy gaps, real cloud placeholders, permission faults, platform/name
 behavior, owner-authorized live shadow, later v2 current/absence semantics and
