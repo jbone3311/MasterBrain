@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from masterbrain.datacore import fileos as shared_fileos
+from masterbrain.datacore import fileos_donor_shadow as donor_profile
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "fileos_inventory_shadow.py"
 SPEC = importlib.util.spec_from_file_location("fileos_inventory_shadow", SCRIPT)
@@ -128,6 +129,31 @@ def _pinned_scanner_or_skip():
     if not repo.is_dir():
         pytest.skip("pinned donor checkout is not present on this runner")
     return shadow.load_pinned_scanner(repo)
+
+
+def _assert_live_name_parity(scanner, root: Path, payloads: dict[str, bytes]) -> None:
+    with sqlite3.connect(":memory:") as conn:
+        scanner.ensure_schema(conn)
+        assert shadow.donor_scan(scanner, root, conn)["added"] == len(payloads)
+        rows = shadow.donor_rows(conn)
+    manifest = shadow.snapshot_tree(root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT)
+    profile = donor_profile.scan_donor_policy_shadow(root)
+    assert set(rows) == set(payloads)
+    assert {item["locator"] for item in manifest["items"]} == set(payloads)
+    assert {item["locator"] for item in profile["rows"]} == set(payloads)
+    assert profile["errors"] == []
+    assert shadow.compare_inventory(root, rows, manifest) == {
+        "common": len(payloads), "differences": [],
+    }
+    for locator, payload in payloads.items():
+        expected_sha = hashlib.sha256(payload).hexdigest()
+        assert rows[locator]["sha256"] == expected_sha
+        assert next(item for item in profile["rows"] if item["locator"] == locator)[
+            "sha256"
+        ] == expected_sha
+    assert {item["locator"] for item in json.loads(json.dumps(profile))["rows"]} == set(
+        payloads
+    )
 
 
 def test_live_pinned_donor_sparse_size_boundaries(
@@ -363,3 +389,52 @@ def test_live_pinned_donor_unusual_valid_filenames_round_trip(tmp_path: Path) ->
         "differences": [],
     }
     assert {item["locator"] for item in json.loads(json.dumps(manifest))["items"]} == locators
+
+
+def test_live_pinned_donor_distinct_case_and_normalization_names(
+    tmp_path: Path,
+) -> None:
+    scanner = _pinned_scanner_or_skip()
+    root = tmp_path / "synthetic_distinct_names"
+    root.mkdir()
+    payloads = {
+        "Ledger.txt": b"fictional uppercase record",
+        "ledger.txt": b"fictional lowercase record",
+        "caf\u00e9.txt": b"fictional composed record",
+        "cafe\u0301.txt": b"fictional decomposed record",
+    }
+    for locator, payload in payloads.items():
+        (root / locator).write_bytes(payload)
+    if (
+        {entry.name for entry in root.iterdir()} != set(payloads)
+        or any((root / locator).read_bytes() != payload for locator, payload in payloads.items())
+    ):
+        pytest.skip("this filesystem cannot represent the distinct filename pairs")
+
+    _assert_live_name_parity(scanner, root, payloads)
+
+
+def test_live_pinned_donor_case_and_normalization_across_directories(
+    tmp_path: Path,
+) -> None:
+    scanner = _pinned_scanner_or_skip()
+    root = tmp_path / "synthetic_spelling_variants"
+    payloads = {
+        "upper/Ledger.txt": b"fictional uppercase record",
+        "lower/ledger.txt": b"fictional lowercase record",
+        "composed/caf\u00e9.txt": b"fictional composed record",
+        "decomposed/cafe\u0301.txt": b"fictional decomposed record",
+    }
+    for locator, payload in payloads.items():
+        path = root / locator
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(payload)
+    # Compare the actual names returned by this platform, not an assumed
+    # Unicode storage form. Every file is in a separate directory, so this
+    # corpus still runs when same-directory collisions cannot be represented.
+    observed = {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*.txt")
+    }
+    assert len(observed) == len(payloads)
+    _assert_live_name_parity(scanner, root, observed)

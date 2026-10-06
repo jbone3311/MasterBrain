@@ -163,6 +163,21 @@ review packet cannot silently acquire the new policy. Ordinary donor parity
 is unchanged. This still does not establish real cloud-placeholder or live
 root acceptance.
 
+## Filename representation probe (2026-10-06, in review)
+
+A new fictional corpus compares case variants and composed/decomposed Unicode
+names. The cross-directory variant runs against the pinned FOS-Master scanner,
+snapshot v1 and the nonpublishing donor-policy shadow on this Mac, checking
+exact on-disk locators, independent SHA-256 values and JSON round-trip. The
+same-directory sibling variant is conditional on the filesystem actually
+representing four distinct files. This Mac folded a pair, so its two sibling
+tests skipped rather than claiming parity; the 37 focused tests that ran passed.
+The shared snapshot/shadow sibling probe passed on the capable hosted CI
+filesystem in PR #164's exact-head run (3,149 tests passed twice, all 491
+PostgreSQL-marked tests executed each time). CI has no FOS-Master checkout, so
+its two donor-dependent tests skipped and donor sibling behavior on Linux is
+not proved. No filename policy, publication authority or donor code changes here.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,
