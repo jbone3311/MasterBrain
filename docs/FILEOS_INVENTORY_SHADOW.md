@@ -186,6 +186,18 @@ values; all 38 focused tests that could run passed. The two combined
 composed/decomposed sibling tests still skipped on APFS. The conditional case
 test skips on the ordinary Mac volume. Linux donor/Unicode parity remains open.
 
+The next parity-harness tranche checks in exact, SHA-verified copies of the
+pinned scanner and classifier under `tests/fixtures/pinned_fos_master/`.
+The normal local comparison still uses the untouched sibling checkout;
+hosted CI uses only the fixed test snapshot, not a cross-repository token.
+The Linux gate explicitly requires the donor case and normalization sibling
+corpora to execute instead of skipping. PR #167's code-head CI passed all
+three such tests and both full suites, including all 491 PostgreSQL-marked
+cases each time. The snapshot was absent from the API runtime image. This is
+synthetic Linux parity for those filename cases, not a live cloud-placeholder,
+fault-permission, invalid-byte-name or policy-cutover acceptance. The exact
+hosted result is recorded in the build receipt.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,

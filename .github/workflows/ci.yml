@@ -39,6 +39,15 @@ jobs:
       - run: uv run ruff check .
       - run: uv run mypy src
       - run: uv run pytest -q
+      - name: Pinned donor Linux filename parity (test-only snapshot)
+        env:
+          MASTERBRAIN_TEST_PINNED_SNAPSHOT: "1"
+          MASTERBRAIN_REQUIRE_DISTINCT_FILENAMES: "1"
+        run: >-
+          uv run pytest -q
+          tests/test_fileos_inventory_shadow.py::test_live_pinned_donor_distinct_case_and_normalization_names
+          tests/test_fileos_inventory_shadow.py::test_live_pinned_donor_same_directory_case_variants
+          tests/test_fileos_donor_policy_shadow.py::test_distinct_case_and_normalization_siblings_remain_distinct
       - run: node --test tests/web_session.test.cjs
       - run: node --test tests/web_processing.test.cjs
       - run: node --test tests/web_documents.test.cjs
@@ -53,6 +62,10 @@ jobs:
         run: >-
           docker run --rm --network none --entrypoint /app/.venv/bin/python email-brain-ci
           -c "import importlib.util; assert all(importlib.util.find_spec(name) is None for name in ('pypdf', 'openpyxl', 'docx', 'lxml', 'PIL', 'pytesseract'))"
+      - name: Pinned donor test source stays out of the runtime image
+        run: >-
+          docker run --rm --network none --entrypoint /app/.venv/bin/python email-brain-ci
+          -c "from pathlib import Path; assert not Path('/app/tests/fixtures/pinned_fos_master').exists()"
       - name: Actual isolated large-MIME recovery
         run: |
           image_id="$(docker image inspect email-brain-ci --format '{{.Id}}')"

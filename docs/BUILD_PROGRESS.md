@@ -1,5 +1,27 @@
 # MasterBrain Build Progress
 
+## Exact pinned-donor Linux parity fixture (2026-10-06)
+
+The pinned scanner and its classifier now have byte-for-byte, hash-checked
+test-only copies in MasterBrain. A fixed-path loader uses those copies only
+when the sibling FOS-Master checkout is absent, so hosted Linux can execute
+the existing donor comparison instead of skipping it. The same loader still
+requires the exact donor commit for a local checkout. A new CI step requires
+the case and composed/decomposed Unicode sibling tests to execute on Linux;
+an incapable filesystem fails that step rather than silently skipping it.
+The copies are outside the installable package and runtime image. On this
+Mac, source bytes and fictional scanner output matched the pinned checkout;
+the direct snapshot shadow passed. The local non-PostgreSQL suite passed
+2,672 tests with three filesystem skips and the separate local launcher
+deselected; 491 PostgreSQL-marked tests were not run locally. Ruff, mypy,
+docs, workflow YAML parsing and diff checks passed. Hosted exact-head results
+are now available: PR #167 code head `6407d60` passed full CI twice with
+3,162 tests, 5 skips and all 491 PostgreSQL-marked cases executed each
+time. Its dedicated Linux donor gate passed 3/3 distinct case/Unicode
+siblings with no skip, and the API image excluded the test source. Restricted
+workers, strict runtime and restore passed. This enables golden CI parity,
+not a donor-policy switch, live shadow or cutover.
+
 ## Case-sensitive pinned-donor collision stress (2026-10-06)
 
 A separate conditional corpus now compares 260 same-directory, case-distinct

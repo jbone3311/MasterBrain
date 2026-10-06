@@ -113,10 +113,7 @@ def test_shadow_refuses_file_backed_donor_database(tmp_path: Path) -> None:
 
 
 def test_live_pinned_donor_full_inventory_shadow() -> None:
-    repo = Path(__file__).resolve().parents[2] / "FOS-Master"
-    if not repo.is_dir():
-        pytest.skip("pinned donor checkout is not present on this runner")
-    result = shadow.run_shadow(repo, 100)
+    result = shadow.run_shadow(_pinned_scanner_root(), 100)
     assert result["baseline_common"] == 102
     assert result["changed_updated"] == 1
     assert result["single_removed"] == 1
@@ -124,11 +121,56 @@ def test_live_pinned_donor_full_inventory_shadow() -> None:
     assert result["symlink_policy_differences"] == 2
 
 
-def _pinned_scanner_or_skip():
+def _pinned_scanner_root() -> Path:
+    if os.environ.get("MASTERBRAIN_TEST_PINNED_SNAPSHOT") == "1":
+        return shadow.PINNED_SNAPSHOT_ROOT
     repo = Path(__file__).resolve().parents[2] / "FOS-Master"
-    if not repo.is_dir():
-        pytest.skip("pinned donor checkout is not present on this runner")
-    return shadow.load_pinned_scanner(repo)
+    return repo if repo.is_dir() else shadow.PINNED_SNAPSHOT_ROOT
+
+
+def _pinned_scanner():
+    return shadow.load_pinned_scanner(_pinned_scanner_root())
+
+
+def test_pinned_snapshot_exact_source_and_local_equivalence() -> None:
+    copied_tools = shadow.PINNED_SNAPSHOT_ROOT / "_SYSTEM" / "tools"
+    expected = {
+        "scan_domains.py": shadow.PINNED_SCANNER_SHA256,
+        "junk_filter.py": shadow.PINNED_FILTER_SHA256,
+    }
+    for name, digest in expected.items():
+        copied = (copied_tools / name).read_bytes()
+        assert hashlib.sha256(copied).hexdigest() == digest
+        local_repo = Path(__file__).resolve().parents[2] / "FOS-Master"
+        if local_repo.is_dir():
+            assert copied == (local_repo / "_SYSTEM" / "tools" / name).read_bytes()
+
+
+def test_pinned_snapshot_refuses_source_hash_drift(monkeypatch: pytest.MonkeyPatch) -> None:
+    with monkeypatch.context() as patch:
+        patch.setattr(shadow, "PINNED_SCANNER_SHA256", "0" * 64)
+        with pytest.raises(ValueError, match="scanner source hash changed"):
+            shadow.load_pinned_scanner(shadow.PINNED_SNAPSHOT_ROOT)
+    with monkeypatch.context() as patch:
+        patch.setattr(shadow, "PINNED_FILTER_SHA256", "0" * 64)
+        with pytest.raises(ValueError, match="classifier source hash changed"):
+            shadow.load_pinned_scanner(shadow.PINNED_SNAPSHOT_ROOT)
+
+
+def test_pinned_snapshot_scanner_matches_local_donor(tmp_path: Path) -> None:
+    local_repo = Path(__file__).resolve().parents[2] / "FOS-Master"
+    if not local_repo.is_dir():
+        pytest.skip("local donor checkout is not present for source-to-snapshot comparison")
+    root = tmp_path / "fictional_source_comparison"
+    root.mkdir()
+    shadow.make_synthetic_tree(root, 100)
+    observed = []
+    for source in (local_repo, shadow.PINNED_SNAPSHOT_ROOT):
+        scanner = shadow.load_pinned_scanner(source)
+        with sqlite3.connect(":memory:") as conn:
+            scanner.ensure_schema(conn)
+            observed.append((shadow.donor_scan(scanner, root, conn), shadow.donor_rows(conn)))
+    assert observed[0] == observed[1]
 
 
 def _assert_live_name_parity(scanner, root: Path, payloads: dict[str, bytes]) -> None:
@@ -159,7 +201,7 @@ def _assert_live_name_parity(scanner, root: Path, payloads: dict[str, bytes]) ->
 def test_live_pinned_donor_sparse_size_boundaries(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_size_boundaries"
     root.mkdir()
     shared_limit = shared_fileos.DEFAULT_CONFIG["max_file_size_mb"] * 1024 * 1024
@@ -203,7 +245,7 @@ def test_live_pinned_donor_sparse_size_boundaries(
 def test_live_pinned_donor_read_failure_retains_old_row(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_read_failure"
     root.mkdir()
     path = root / "readfail.txt"
@@ -241,7 +283,7 @@ def test_live_pinned_donor_read_failure_retains_old_row(
 def test_live_pinned_donor_snapshot_race_and_broken_link(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_race"
     root.mkdir()
     path = root / "changing.txt"
@@ -281,7 +323,7 @@ def test_live_pinned_donor_snapshot_race_and_broken_link(
 def test_live_pinned_donor_dataless_placeholder_simulation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_placeholder"
     root.mkdir()
     path = root / "placeholder.txt"
@@ -307,7 +349,7 @@ def test_live_pinned_donor_dataless_placeholder_simulation(
 def test_live_pinned_donor_unreadable_directory_is_not_a_complete_scan(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_unreadable_directory"
     hidden = root / "inaccessible"
     hidden.mkdir(parents=True)
@@ -344,7 +386,7 @@ def test_live_pinned_donor_unreadable_directory_is_not_a_complete_scan(
 def test_live_pinned_donor_hash_time_mutation_can_record_stale_size(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_donor_race"
     root.mkdir()
     path = root / "changing.txt"
@@ -371,7 +413,7 @@ def test_live_pinned_donor_hash_time_mutation_can_record_stale_size(
 
 
 def test_live_pinned_donor_unusual_valid_filenames_round_trip(tmp_path: Path) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_filenames"
     root.mkdir()
     locators = {" leading space.txt", "emoji-🧪.txt", "café.txt", "line\nbreak.txt"}
@@ -394,7 +436,7 @@ def test_live_pinned_donor_unusual_valid_filenames_round_trip(tmp_path: Path) ->
 def test_live_pinned_donor_distinct_case_and_normalization_names(
     tmp_path: Path,
 ) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_distinct_names"
     root.mkdir()
     payloads = {
@@ -409,13 +451,16 @@ def test_live_pinned_donor_distinct_case_and_normalization_names(
         {entry.name for entry in root.iterdir()} != set(payloads)
         or any((root / locator).read_bytes() != payload for locator, payload in payloads.items())
     ):
-        pytest.skip("this filesystem cannot represent the distinct filename pairs")
+        reason = "this filesystem cannot represent the distinct filename pairs"
+        if os.environ.get("MASTERBRAIN_REQUIRE_DISTINCT_FILENAMES") == "1":
+            pytest.fail(reason)
+        pytest.skip(reason)
 
     _assert_live_name_parity(scanner, root, payloads)
 
 
 def test_live_pinned_donor_same_directory_case_variants(tmp_path: Path) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_case_variants"
     root.mkdir()
     payloads = {
@@ -433,7 +478,10 @@ def test_live_pinned_donor_same_directory_case_variants(tmp_path: Path) -> None:
         {entry.name for entry in root.iterdir()} != set(payloads)
         or any((root / locator).read_bytes() != payload for locator, payload in payloads.items())
     ):
-        pytest.skip("this filesystem cannot represent distinct case-variant siblings")
+        reason = "this filesystem cannot represent distinct case-variant siblings"
+        if os.environ.get("MASTERBRAIN_REQUIRE_DISTINCT_FILENAMES") == "1":
+            pytest.fail(reason)
+        pytest.skip(reason)
 
     _assert_live_name_parity(scanner, root, payloads)
 
@@ -441,7 +489,7 @@ def test_live_pinned_donor_same_directory_case_variants(tmp_path: Path) -> None:
 def test_live_pinned_donor_case_and_normalization_across_directories(
     tmp_path: Path,
 ) -> None:
-    scanner = _pinned_scanner_or_skip()
+    scanner = _pinned_scanner()
     root = tmp_path / "synthetic_spelling_variants"
     payloads = {
         "upper/Ledger.txt": b"fictional uppercase record",

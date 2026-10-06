@@ -68,7 +68,10 @@ def test_distinct_case_and_normalization_siblings_remain_distinct(tmp_path: Path
             for locator, payload in payloads.items()
         )
     ):
-        pytest.skip("this filesystem cannot represent the distinct filename pairs")
+        reason = "this filesystem cannot represent the distinct filename pairs"
+        if os.environ.get("MASTERBRAIN_REQUIRE_DISTINCT_FILENAMES") == "1":
+            pytest.fail(reason)
+        pytest.skip(reason)
 
     profile = shadow.scan_donor_policy_shadow(tmp_path)
     manifest = snapshot_tree(
