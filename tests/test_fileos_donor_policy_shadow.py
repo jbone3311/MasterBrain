@@ -8,6 +8,7 @@ import os
 import sqlite3
 import sys
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -49,6 +50,43 @@ def test_donor_membership_is_distinct_from_publishable_v1(tmp_path: Path) -> Non
     with pytest.raises((KeyError, ValueError, TypeError)):
         validate_fileos_manifest(result)
     assert INVENTORY_POLICY_VERSION == "fileos-inventory-policy-v1"
+
+
+def test_distinct_case_and_normalization_siblings_remain_distinct(tmp_path: Path) -> None:
+    payloads = {
+        "Ledger.txt": b"fictional uppercase record",
+        "ledger.txt": b"fictional lowercase record",
+        "caf\u00e9.txt": b"fictional composed record",
+        "cafe\u0301.txt": b"fictional decomposed record",
+    }
+    for locator, payload in payloads.items():
+        (tmp_path / locator).write_bytes(payload)
+    if (
+        {entry.name for entry in tmp_path.iterdir()} != set(payloads)
+        or any(
+            (tmp_path / locator).read_bytes() != payload
+            for locator, payload in payloads.items()
+        )
+    ):
+        pytest.skip("this filesystem cannot represent the distinct filename pairs")
+
+    profile = shadow.scan_donor_policy_shadow(tmp_path)
+    manifest = snapshot_tree(
+        tmp_path, source_id="fictional_fileos", observed_at=datetime(2026, 10, 6, tzinfo=UTC)
+    )
+    assert profile["errors"] == []
+    assert manifest["errors"] == []
+    assert {row["locator"] for row in profile["rows"]} == set(payloads)
+    assert {item["locator"] for item in manifest["items"]} == set(payloads)
+    assert len({item["item_id"] for item in manifest["items"]}) == len(payloads)
+    for locator, payload in payloads.items():
+        expected_sha = hashlib.sha256(payload).hexdigest()
+        assert next(row for row in profile["rows"] if row["locator"] == locator)[
+            "sha256"
+        ] == expected_sha
+        assert next(item for item in manifest["items"] if item["locator"] == locator)[
+            "digest"
+        ]["value"] == expected_sha
 
 
 def test_metadata_only_never_reads_content(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -2,6 +2,22 @@
 
 Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## FileOS filename representation probe — in review
+
+The branch adds fictional case and NFC/NFD spelling variants to the pinned
+FOS-Master in-memory scanner comparison and the nonpublishing DataCore shadow.
+The cross-directory corpus passed against the unchanged donor checkout at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`. The two focused modules
+passed 37 tests locally; two same-directory collision tests skipped because
+this Mac filesystem could not represent four distinct sibling files. The
+broader non-PostgreSQL suite passed 2,669 with those two skips, 491
+PostgreSQL-marked tests and the separate local launcher deselected. Six
+browser files passed 164/164; Ruff, mypy, docs and diff checks passed. The
+hosted shared-path test can exercise that corpus on a capable filesystem, but
+hosted CI does not check out FOS-Master; donor collision parity there is not
+claimed. Full exact-head CI, strict runtime and restore remain open. No
+production source or donor data was read or changed.
+
 ## Selected answer-citation recheck — ADR-165 merged
 
 The branch reopens at most four cited evidence records after scoped search and

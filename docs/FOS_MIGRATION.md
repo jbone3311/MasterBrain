@@ -170,6 +170,10 @@ acceptance still need separate work. None of these changes proves FileOS cutover
 The latest local pinned-donor comparison on 2026-10-03 passed at both 3,000
 stress files and the 9,994-stress-file maximum (10,000 prior v1 rows), with
 zero unexplained membership differences; 44 focused donor tests passed.
+The in-review filename probe adds a pinned-donor cross-directory case/Unicode
+corpus and conditional same-directory sibling probes. The former passed on
+this Mac; the latter could not run on its collision-folding filesystem and
+needs capable-platform evidence. It does not close platform parity.
 This is capacity evidence for the synthetic, nonpublishing path only. The six
 known policy gaps, real cloud placeholders, permission faults, platform/name
 behavior, owner-authorized live shadow, later v2 current/absence semantics and
