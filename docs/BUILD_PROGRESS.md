@@ -1,5 +1,21 @@
 # MasterBrain Build Progress
 
+## Case-sensitive pinned-donor collision stress (2026-10-06, in review)
+
+A separate conditional corpus now compares 260 same-directory, case-distinct
+fictional files (128 numbered upper/lower pairs plus four named variants)
+through the pinned FOS-Master scanner, DataCore snapshot v1 and the
+nonpublishing donor-policy shadow. On a temporary case-sensitive APFS image,
+the donor comparison passed and the two focused modules passed 38 tests;
+two composed/decomposed sibling tests still skipped because APFS could not
+represent their distinct names. The case test correctly skipped on this Mac's
+ordinary collision-folding filesystem. This is local case-sensitive donor
+evidence, not donor-on-Linux Unicode parity, a live-root trial, a policy
+switch or FOS-Master cutover. The broader non-PostgreSQL suite passed 2,669
+tests with three expected filesystem skips, 491 PostgreSQL-marked tests and
+the separate local launcher deselected. Ruff, mypy, docs and diff checks
+passed; hosted exact-head gates remain open.
+
 ## Pinned-donor FileOS filename parity (2026-10-06, PR #164 merged)
 
 The synthetic read-only shadow now probes case and composed/decomposed Unicode

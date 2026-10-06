@@ -178,6 +178,14 @@ PostgreSQL-marked tests executed each time). CI has no FOS-Master checkout, so
 its two donor-dependent tests skipped and donor sibling behavior on Linux is
 not proved. No filename policy, publication authority or donor code changes here.
 
+The follow-up case-sensitive probe adds 128 numbered upper/lowercase filename
+pairs plus four named variants in one directory (260 fictional files). On a
+temporary case-sensitive APFS image, the pinned donor scanner, snapshot v1 and
+the nonpublishing donor-policy shadow agreed on exact locators and SHA-256
+values; all 38 focused tests that could run passed. The two combined
+composed/decomposed sibling tests still skipped on APFS. The conditional case
+test skips on the ordinary Mac volume. Linux donor/Unicode parity remains open.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,
