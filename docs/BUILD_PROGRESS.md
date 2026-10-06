@@ -1,6 +1,6 @@
 # MasterBrain Build Progress
 
-## Case-sensitive pinned-donor collision stress (2026-10-06, in review)
+## Case-sensitive pinned-donor collision stress (2026-10-06)
 
 A separate conditional corpus now compares 260 same-directory, case-distinct
 fictional files (128 numbered upper/lower pairs plus four named variants)
@@ -14,7 +14,11 @@ evidence, not donor-on-Linux Unicode parity, a live-root trial, a policy
 switch or FOS-Master cutover. The broader non-PostgreSQL suite passed 2,669
 tests with three expected filesystem skips, 491 PostgreSQL-marked tests and
 the separate local launcher deselected. Ruff, mypy, docs and diff checks
-passed; hosted exact-head gates remain open.
+passed. PR #166 code head `fdd2896` passed hosted full CI twice with 3,149
+tests, 15 skips and all 491 PostgreSQL-marked cases executed each time;
+restricted workers, strict runtime and restore passed. Hosted CI has no
+private FOS-Master checkout, so its added donor test skipped there rather
+than proving donor-on-Linux parity.
 
 ## Pinned-donor FileOS filename parity (2026-10-06, PR #164 merged)
 
