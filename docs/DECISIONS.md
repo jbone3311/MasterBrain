@@ -19,8 +19,10 @@ local implementation is in review, not a live-truth or action surface.
 read-only project-dossier drill-down in the first-party workspace. It reuses
 ADR-162's scoped route and grants, validates the complete bounded response,
 and does not infer live project state or add an action surface. PR #156 merged
-after exact-head full CI, strict-runtime and restore passed; merged-main gates
-remain pending.
+after exact-head full CI, strict-runtime and restore passed. Merged-main
+restore passed, but full CI and the final strict gate were blocked before
+execution by hosted-runner acquisition
+([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
 
 [ADR-162](adr/162_reviewed_project_dossier.md) defines a bounded, source-aware
 reviewed project dossier with separately limited linked events and commitments,

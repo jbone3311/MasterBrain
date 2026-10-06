@@ -29,11 +29,14 @@ passed 3,143 tests, 12 skipped twice (regular and deployment repeat), with
 restricted PDF/FileOS worker container checks passed.
 [Strict runtime 37359290672](https://github.com/jbone3311/MasterBrain/actions/runs/37359290672)
 and [restore 37359290433](https://github.com/jbone3311/MasterBrain/actions/runs/37359290433)
-also passed. Merged `main` CI
-[37362023408](https://github.com/jbone3311/MasterBrain/actions/runs/37362023408),
-strict runtime [37362023414](https://github.com/jbone3311/MasterBrain/actions/runs/37362023414)
-and restore [37362023248](https://github.com/jbone3311/MasterBrain/actions/runs/37362023248)
-are queued or in progress; no merged-main result is claimed yet. The existing
+also passed. Merged `main` [restore 37362023248](https://github.com/jbone3311/MasterBrain/actions/runs/37362023248)
+passed. [Full CI 37362023408](https://github.com/jbone3311/MasterBrain/actions/runs/37362023408)
+attempts 1 and 2 were cancelled before test steps when GitHub-hosted runners
+could not acquire the job. [Strict runtime 37362023414](https://github.com/jbone3311/MasterBrain/actions/runs/37362023414)
+passed seven matrix jobs, but one unsupported-runtime job and the final gate
+were cancelled without steps. These are infrastructure failures tracked in
+[issue #158](https://github.com/jbone3311/MasterBrain/issues/158), not
+merged-main code passes or test failures. The existing
 ADR-162 API's gates are separate evidence, not proof of this UI merge.
 The local non-PostgreSQL Python run passed 2,663 tests, skipped all 491
 PostgreSQL-marked tests and deselected one Docker-backed local launcher. A

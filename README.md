@@ -65,7 +65,9 @@ hosted access or FileOS cutover. See the [build receipt](docs/BUILD_RECEIPT.md).
 [PR #156](https://github.com/jbone3311/MasterBrain/pull/156), adding an explicit
 read-only **Open reviewed project** control to `/brain` Ask and Search only
 matches. It reuses the scoped dossier API; exact-head full CI, strict-runtime
-and restore passed. Merged-main gates are pending in the
+and restore passed. Merged-main restore passed, while full CI and the final
+strict gate were blocked before execution by hosted-runner acquisition in
+[issue #158](https://github.com/jbone3311/MasterBrain/issues/158); see the
 [build receipt](docs/BUILD_RECEIPT.md).
 An in-review [ADR-164](docs/adr/164_owner_reviewed_schedule.md) adds explicit
 UTC-window **Events** and **Commitments due** controls to the read-only `/brain`
