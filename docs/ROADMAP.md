@@ -8,7 +8,8 @@ and ADR-164's merged reviewed schedule (exact-head and merged-main gates passed)
 The ADR-120 image-check diagnostic follow-up merged through PR #160 after
 exact-head and merged-main gates passed. It does not resolve intermittent
 large-MIME issue #64.
-ADR-165's selected answer-citation recheck passed exact-head gates on PR #162: it narrows a
+ADR-165's selected answer-citation recheck merged through PR #162 after
+exact-head and merged-main gates passed. It narrows a
 selection-time evidence race but does not add generated chat or a durable
 current-source snapshot.
 ADR-159's grouped Brain/Ask reviewed-leaf

@@ -2,7 +2,7 @@
 
 Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Selected answer-citation recheck — ADR-165 exact-head verified
+## Selected answer-citation recheck — ADR-165 merged
 
 The branch reopens at most four cited evidence records after scoped search and
 selector output, comparing document, source, kind, digest and selected passage
@@ -17,8 +17,18 @@ with 3,148 tests and 12 skips twice, including all 491 PostgreSQL-marked
 tests both times, docs, browser and restricted worker container checks.
 [Strict runtime 37401801026](https://github.com/jbone3311/MasterBrain/actions/runs/37401801026)
 and [restore 37401801062](https://github.com/jbone3311/MasterBrain/actions/runs/37401801062)
-passed. This documentation-only follow-up head still needs its own gates;
-no production or named-assistant acceptance is claimed.
+passed. The final PR head `c3fff5658cb47b22c6003fceff51290e8a4c2130`
+passed [full CI 37403404535](https://github.com/jbone3311/MasterBrain/actions/runs/37403404535)
+with the same 3,148/12 and 491/491 results twice, plus restricted workers;
+[strict runtime 37403404569](https://github.com/jbone3311/MasterBrain/actions/runs/37403404569)
+and [restore 37403404581](https://github.com/jbone3311/MasterBrain/actions/runs/37403404581)
+passed. PR #162 merged at `fe7f2b28d3804f059624d5765ca115fd1c442dbc`.
+Merged-main [CI 37404832175](https://github.com/jbone3311/MasterBrain/actions/runs/37404832175)
+passed 3,148 tests and 12 skips twice with all 491 PostgreSQL-marked cases
+executed each time, plus restricted worker checks;
+[strict runtime 37404832130](https://github.com/jbone3311/MasterBrain/actions/runs/37404832130)
+and [restore 37404832127](https://github.com/jbone3311/MasterBrain/actions/runs/37404832127)
+passed. No production or named-assistant acceptance is claimed.
 
 ## Image-check diagnostic refinement — ADR-120 follow-up merged
 
