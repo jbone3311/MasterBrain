@@ -1,6 +1,6 @@
 # MasterBrain Feature Inventory
 
-Updated 2026-10-05 through merged ADR-163 and in-review ADR-164.
+Updated 2026-10-05 through merged ADR-163 and ADR-164.
 For ADR-163, merged-main restore passed, while
 full CI and the final strict gate were blocked before execution by hosted
 runner acquisition ([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
@@ -84,7 +84,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Evidence | Drill from claim/chunk to immutable original | Shared evidence metadata/content plus Email original reader implemented |
 | Change feeds | Cursor-based non-consuming updates by layer | DataCore and KnowledgeCore feeds implemented |
 | Client neutrality | Same typed contract for Claude, Grok, ChatGPT, other LLMs | Model-neutral REST routes and a read-only reference client implemented; no certified named-assistant adapter or hosted cross-client conformance yet |
-| First-party chat | Ask across Email, FileOS and KnowledgeCore through the same scoped Brain API, with cited answers and evidence drill-down | Read-only question workspace shows verified exact source quotes and separate reviewed matches with evidence drill-down. ADR-163's explicit reviewed-project dossier merged with exact-head gates green; merged-main restore passed but full CI and final strict gate were blocked before execution by hosted runners (#158). ADR-164 adds a locally tested explicit event/due schedule with wider gates pending. No stateful conversation, freeform synthesis or hosted acceptance |
+| First-party chat | Ask across Email, FileOS and KnowledgeCore through the same scoped Brain API, with cited answers and evidence drill-down | Read-only question workspace shows verified exact source quotes and separate reviewed matches with evidence drill-down. ADR-163's explicit reviewed-project dossier merged with exact-head gates green; merged-main restore passed but full CI and final strict gate were blocked before execution by hosted runners (#158). ADR-164's explicit event/due schedule merged after exact-head full CI, strict-runtime and restore passed; merged-main gates remain open. No stateful conversation, freeform synthesis or hosted acceptance |
 | External assistant access | Separately authorized API/adapter with the same grants, freshness and evidence behavior as first-party chat | Source-scoped REST/reference-client prototype only; ADR-149 denies unfenced legacy Email routes to assistants; no certified Grok/Claude/ChatGPT connection or hosted access |
 | Budget controls | max results/bytes/tokens, field selection, continuation | Selected result/text/page bounds implemented; common token/field-budget contract planned |
 | Effects | Typed proposal → policy → preview → approval → separate executor, with receipts and recovery | Designed; no source-write authority enabled for chat or external assistants |

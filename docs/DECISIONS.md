@@ -13,7 +13,8 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 [ADR-164](adr/164_owner_reviewed_schedule.md) defines explicit, bounded
 reviewed-event and commitment-due windows in the first-party workspace. It
 reuses ADR-160/161's scoped reads, validates pages and clears stale requests;
-local implementation is in review, not a live-truth or action surface.
+PR #159 merged after exact-head full CI, strict-runtime and restore passed;
+this is not a live-truth or action surface.
 
 [ADR-163](adr/163_owner_project_dossier_drilldown.md) defines an explicit,
 read-only project-dossier drill-down in the first-party workspace. It reuses

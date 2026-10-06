@@ -1,18 +1,64 @@
 # Build and validation receipt
 
-Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## First-party reviewed schedule — ADR-164 in review
+## Image-check diagnostic refinement — ADR-120 follow-up in review
 
-The unmerged `codex/brain-reviewed-schedule` branch adds explicit first-party
+After PR #159's [CI run 37367874733](https://github.com/jbone3311/MasterBrain/actions/runs/37367874733) reported the fixed warning
+`profile=mime stage=image reason=deadline`, this branch splits only the trusted
+controller's warning into `daemon_security` and `image_inspect`. It does not
+change the public fail-closed exception, Docker command order, timeout, retry,
+resource policy or container isolation. Local offline controller tests passed
+60/60; the non-PostgreSQL suite passed 2,665 with 491 database tests skipped
+and one separate local trial launcher deselected. Six browser files passed
+156/156; Ruff, mypy, docs and diff checks passed. The local full
+run and deployment gate each failed that trial launcher before application
+assertions: Homebrew PostgreSQL 17.11 `initdb` could not allocate a 56-byte
+System V shared-memory segment because this Mac's segment table was full
+(`shmget: No space left on device`, not disk exhaustion). Two detached
+segments from failed retries were removed after verification; older segments
+with uncertain ownership were left untouched. No later green launcher run is
+claimed.
+PR #160's prior head `05436330ab46dbfeadc2ced955573d7fd0191ca2`
+passed [full CI 37373525789](https://github.com/jbone3311/MasterBrain/actions/runs/37373525789)
+twice with 3,145 tests, 12 skips and all 491 PostgreSQL-marked cases executed
+each time; actual restricted large-MIME and FileOS worker containers passed.
+Its [strict-runtime 37373525897](https://github.com/jbone3311/MasterBrain/actions/runs/37373525897)
+and [restore 37373525881](https://github.com/jbone3311/MasterBrain/actions/runs/37373525881)
+reruns passed after hosted-runner recovery. The earlier cancelled attempts
+remain in [issue #158](https://github.com/jbone3311/MasterBrain/issues/158).
+The reconciled head `291d3cbd91c705fc5f063d7595bb6a5edec6b27c` passed
+[full CI 37395189024](https://github.com/jbone3311/MasterBrain/actions/runs/37395189024):
+3,145 tests and 12 skips twice, with 491/491 PostgreSQL-marked tests executed
+both times. Docs, browser, restricted large-MIME and FileOS container checks
+passed. [Strict runtime 37395189130](https://github.com/jbone3311/MasterBrain/actions/runs/37395189130)
+and [restore 37395188747](https://github.com/jbone3311/MasterBrain/actions/runs/37395188747)
+passed. This documentation-only follow-up head still needs exact-head gates.
+On its combined local
+tree, 2,665 non-PostgreSQL Python tests passed with 491 PostgreSQL-marked tests
+and the separate local trial launcher deselected; all six browser files passed
+164/164. Ruff, mypy and docs checks passed. The large-MIME deadline did not
+recur, so a future recurrence is still needed to distinguish the two Docker
+calls; issue #64 stays open.
+
+## First-party reviewed schedule — ADR-164 merged
+
+PR [#159](https://github.com/jbone3311/MasterBrain/pull/159) merged at
+`cfbdac9192f50ea80832ce570e1e27c352db8ee7` from exact head
+`4563bd8068c4ff95b7b96d06eed92b758d9cbf2a`. It adds explicit first-party
 UTC-window reads of the existing ADR-160/161 event and due APIs. The focused
 Node browser suite passed 29/29 locally and all six browser files passed
 164/164. Ruff, source mypy, docs and diff checks passed. The local
 non-PostgreSQL run passed 2,663 tests, with 491 database tests skipped and
 one Docker-only launcher deselected. The separate disposable PostgreSQL 17.11
 run passed 490/491 marked cases, with one Docker-only skip and 2,664 other
-tests deselected (245.66 seconds). Exact-head CI, strict-runtime, restore and
-merged-main gates are not claimed. This UI read
+tests deselected (245.66 seconds). Exact-head
+[CI 37393493295](https://github.com/jbone3311/MasterBrain/actions/runs/37393493295)
+passed 3,143 tests, 12 skipped twice with all 491 PostgreSQL-marked tests
+executed both times; docs, browser and restricted worker container checks
+passed. [Strict runtime 37393493727](https://github.com/jbone3311/MasterBrain/actions/runs/37393493727)
+and [restore 37393493596](https://github.com/jbone3311/MasterBrain/actions/runs/37393493596)
+passed. Merged-main gates are pending. This UI read
 does not make the reviewed dates or states live-current facts.
 
 ## First-party reviewed-project drill-down — ADR-163 merged

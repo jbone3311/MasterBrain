@@ -69,10 +69,10 @@ and restore passed. Merged-main restore passed, while full CI and the final
 strict gate were blocked before execution by hosted-runner acquisition in
 [issue #158](https://github.com/jbone3311/MasterBrain/issues/158); see the
 [build receipt](docs/BUILD_RECEIPT.md).
-An in-review [ADR-164](docs/adr/164_owner_reviewed_schedule.md) adds explicit
+A merged [ADR-164](docs/adr/164_owner_reviewed_schedule.md) adds explicit
 UTC-window **Events** and **Commitments due** controls to the read-only `/brain`
-workspace, using the existing source-scoped APIs. Focused browser tests pass;
-full exact-head and merged-main gates remain open. This is not automatic chat
+workspace, using the existing source-scoped APIs. PR #159 exact-head full CI,
+strict-runtime and restore passed; merged-main gates are pending. This is not automatic chat
 intent routing or current source truth.
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and

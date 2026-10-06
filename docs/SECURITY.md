@@ -181,6 +181,9 @@ only fixed profile/stage/reason codes. Raw MIME, filesystem paths, container
 or image IDs, commands, stdout/stderr, exception messages and tracebacks remain
 excluded. The public `MimeUnavailable` response is unchanged; a warning is
 diagnostic evidence, not proof of a safe retry or a resolved failure.
+The image-validation stage distinguishes the daemon security-options check
+from inspection of the immutable image, still without logging Docker output
+or changing its timeout.
 
 ## Required controls
 

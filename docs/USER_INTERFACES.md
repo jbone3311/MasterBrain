@@ -24,7 +24,7 @@ project match in either Ask or Search only. It calls the same scoped read API,
 shows a bounded set of linked reviewed events and commitments with evidence
 controls, and labels project state as an assertion rather than current truth.
 No project fetch occurs until the owner opens it.
-ADR-164 adds an in-review, explicit Reviewed schedule panel: the owner selects
+ADR-164 adds a merged, explicit Reviewed schedule panel: the owner selects
 a UTC date window, then separately requests occurrence-dated reviewed events
 or due-dated reviewed commitments. It uses the existing scoped Brain API,
 shows one ten-item page with an explicit continuation and evidence controls,

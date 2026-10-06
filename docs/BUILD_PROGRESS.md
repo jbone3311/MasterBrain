@@ -1,6 +1,35 @@
 # MasterBrain Build Progress
 
-## First-party reviewed schedule (2026-10-05, ADR-164 in review)
+## Isolated image-check failure diagnostics (2026-10-05, ADR-120 follow-up in review)
+
+The recurring synthetic large-MIME CI deadline is now known to occur before
+worker creation, but the existing `image` warning combines Docker daemon
+security inspection with immutable-image inspection. A focused follow-up
+separates those two fixed warning stages without logging content or changing
+timeouts, retries, isolation or public failure behavior. The offline controller
+suite passed 60/60; the broad local non-PostgreSQL run passed 2,665 tests with
+491 database-marked skips and the independent local trial launcher deselected.
+The six browser files passed 156/156; Ruff, mypy and documentation checks passed.
+The full local run and deployment gate each failed only the separate local
+trial launcher before application assertions: Homebrew PostgreSQL 17.11
+`initdb` could not allocate a 56-byte System V shared-memory segment because
+this Mac's segment table was full (`shmget: No space left on device`, not disk
+exhaustion). Two detached segments from failed retries were removed after
+verification; older segments with uncertain ownership were left untouched.
+The launcher was not subsequently proven green. PR #160's earlier head
+`0543633` passed exact-head full CI twice with 3,145 tests and all 491
+PostgreSQL-marked cases each time, including restricted large-MIME and FileOS
+worker containers. Its strict-runtime and restore reruns passed after runner
+recovery. The reconciled head `291d3cb` also passed exact-head full CI twice
+with 3,145 tests and all 491 PostgreSQL-marked cases each time; restricted
+large-MIME and FileOS worker checks, strict-runtime and restore passed. The
+next documentation-only head still needs its own gates. The intermittent
+large-MIME deadline did not recur and is not resolved by this diagnostic change.
+On the reconciled tree, 2,665 non-PostgreSQL Python tests and all 164 browser
+tests passed; 491 PostgreSQL-marked tests and the separate local trial launcher
+were not run locally. Ruff, mypy and docs checks passed.
+
+## First-party reviewed schedule (2026-10-05, ADR-164 merged)
 
 [ADR-164](adr/164_owner_reviewed_schedule.md) connects the existing reviewed
 event timeline and due-commitment APIs to explicit UTC-window controls in
@@ -10,8 +39,10 @@ stale reads. The focused browser suite passed 29/29 locally; all six browser
 files passed 164/164. Ruff, mypy, docs and diff checks passed. The local
 non-PostgreSQL Python run passed 2,663 tests with 491 database-marked skips and
 one Docker-only launcher deselected. The separate disposable PostgreSQL 17.11
-run passed 490/491 marked cases with one Docker-only skip. Exact-head CI,
-strict-runtime and restore gates remain open. No
+run passed 490/491 marked cases with one Docker-only skip. PR #159 exact head
+`4563bd8` passed full CI twice with 3,143 tests and all 491 PostgreSQL-marked
+cases each time, plus strict-runtime and restore; it merged at `cfbdac9`.
+Merged-main checks are pending. No
 hosted/live-source status, source effect or FOS-Master cutover is claimed.
 
 ## First-party project drill-down (2026-10-05, ADR-163 merged)

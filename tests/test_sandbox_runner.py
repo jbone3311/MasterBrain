@@ -269,6 +269,34 @@ def test_pipe_timeout_is_reported_only_as_fixed_stage_and_reason(monkeypatch, ca
     assert RAW.decode() not in caplog.text
 
 
+@pytest.mark.parametrize(
+    ("command", "stage"),
+    [("info", "daemon_security"), ("image", "image_inspect")],
+)
+def test_image_validation_deadlines_identify_only_fixed_substage(
+    monkeypatch, caplog, command, stage
+):
+    processor, calls, decode = fake_docker(monkeypatch)
+    invoke = processor._invoke
+
+    def timed_out(args, raw=b"", **kwargs):
+        if args[0] == command:
+            raise runner._SandboxFailure("deadline")
+        return invoke(args, raw, **kwargs)
+
+    monkeypatch.setattr(processor, "_invoke", timed_out)
+    with pytest.raises(MimeUnavailable):
+        processor.prepare(RAW)
+    assert all(args[0] != "container" and raw == b"" for args, raw, _ in calls)
+    decode.assert_not_called()
+    assert [record.getMessage() for record in caplog.records] == [
+        f"isolated_processor_failure profile=mime stage={stage} reason=deadline"
+    ]
+    assert IMAGE not in caplog.text
+    assert CID not in caplog.text
+    assert RAW.decode() not in caplog.text
+
+
 def test_worker_exit_and_decode_failures_have_distinct_scrubbed_stages(monkeypatch, caplog):
     def mutate(state):
         if state["State"]["Status"] == "exited":
