@@ -39,14 +39,16 @@ jobs:
       - run: uv run ruff check .
       - run: uv run mypy src
       - run: uv run pytest -q
-      - name: Pinned donor Linux filename parity (test-only snapshot)
+      - name: Pinned donor Linux filename and invalid-byte safety (test-only snapshot)
         env:
           MASTERBRAIN_TEST_PINNED_SNAPSHOT: "1"
           MASTERBRAIN_REQUIRE_DISTINCT_FILENAMES: "1"
+          MASTERBRAIN_REQUIRE_INVALID_BYTE_FILENAMES: "1"
         run: >-
           uv run pytest -q
           tests/test_fileos_inventory_shadow.py::test_live_pinned_donor_distinct_case_and_normalization_names
           tests/test_fileos_inventory_shadow.py::test_live_pinned_donor_same_directory_case_variants
+          tests/test_fileos_inventory_shadow.py::test_live_pinned_donor_invalid_byte_names_fail_closed
           tests/test_fileos_donor_policy_shadow.py::test_distinct_case_and_normalization_siblings_remain_distinct
       - run: node --test tests/web_session.test.cjs
       - run: node --test tests/web_processing.test.cjs

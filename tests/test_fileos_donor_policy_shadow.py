@@ -15,6 +15,7 @@ from types import SimpleNamespace
 import pytest
 
 from masterbrain.datacore import confined_files
+from masterbrain.datacore import fileos_donor_candidate as candidate
 from masterbrain.datacore import fileos_donor_shadow as shadow
 from masterbrain.datacore.fileos import INVENTORY_POLICY_VERSION, snapshot_tree
 from masterbrain.datacore.persistence import validate_fileos_manifest
@@ -352,6 +353,50 @@ def test_unreadable_directory_is_a_coverage_error(
         {"locator": "unreadable", "code": "directory_unreadable"}
     ]
     assert result["publishable"] is False
+
+
+def test_unencodable_shadow_names_are_blockers_without_target_inspection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class InvalidEntry:
+        name = "invalid-\udcff"
+
+        def is_symlink(self) -> bool:
+            raise AssertionError("unencodable names must not be inspected")
+
+    @contextmanager
+    def invalid_scandir(_directory: int):
+        yield iter([InvalidEntry(), InvalidEntry()])
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(shadow.os, "scandir", invalid_scandir)
+        result = shadow.scan_donor_policy_shadow(tmp_path)
+    assert result["rows"] == []
+    assert result["exclusions"] == []
+    assert result["errors"] == [{"locator": ".", "code": "invalid_locator_encoding"}]
+    assert result["publishable"] is False
+
+
+def test_unencodable_shadow_name_refuses_transition_candidate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        candidate,
+        "scan_donor_policy_shadow",
+        lambda _root, *, metadata_only: {
+            "shadow_profile": shadow.SHADOW_PROFILE,
+            "publishable": False,
+            "rows": [],
+            "exclusions": [],
+            "errors": [{"locator": ".", "code": "invalid_locator_encoding"}],
+        },
+    )
+    with pytest.raises(ValueError, match="unencodable filename"):
+        candidate.build_fileos_donor_candidate(
+            tmp_path,
+            source_id="fictional_source",
+            observed_at=datetime(2026, 10, 6, tzinfo=UTC),
+        )
 
 
 def test_descendant_symlink_swap_does_not_enumerate_outside_names(

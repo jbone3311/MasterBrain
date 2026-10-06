@@ -18,6 +18,9 @@ the dedicated three-test gate and both full code-head suites passed. That
 narrows synthetic platform parity; the six donor-policy differences, real
 cloud placeholders, permission faults, authorized live shadow and FileOS
 cutover remain open.
+ADR-167 adds a fail-closed synthetic invalid-byte-name guard and a required
+Linux donor probe. It is a safety divergence, not a donor-policy switch or
+live-root acceptance.
 ADR-159's grouped Brain/Ask reviewed-leaf
 projection (PR #148 at `f9402d7`), ADR-158's optional direct KnowledgeCore
 unsuperseded search (PR #146 at `3bf21b8`), ADR-155's separate-cluster restore

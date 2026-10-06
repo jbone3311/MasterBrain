@@ -22,6 +22,7 @@ from masterbrain.datacore.contracts import (
     SourceItemVersion,
     SourceKind,
     SourceRef,
+    is_utf8_encodable,
     stable_id,
 )
 from masterbrain.datacore.dedup import DEFAULT_CONFIG, is_excluded_path, should_include
@@ -117,6 +118,13 @@ def snapshot_tree(
     errors: list[SnapshotError] = []
     exclusions: list[SnapshotExclusion] = []
     excluded = 0
+    invalid_name_directories: set[str] = set()
+
+    def record_invalid_name(directory: Path) -> None:
+        locator = _relative(directory, root)
+        if locator not in invalid_name_directories:
+            invalid_name_directories.add(locator)
+            errors.append(SnapshotError(locator, "invalid_locator_encoding"))
 
     def record_exclusion(path: Path, kind: str, reason: str) -> None:
         nonlocal excluded
@@ -132,12 +140,18 @@ def snapshot_tree(
             locator = _relative(filename, root)
         except ValueError:
             locator = "."
+        if not is_utf8_encodable(locator):
+            record_invalid_name(root)
+            return
         errors.append(SnapshotError(locator, "directory_unreadable"))
 
     for directory, dirnames, filenames in os.walk(root, topdown=True, onerror=onerror):
         current = Path(directory)
         kept_dirs = []
         for name in sorted(dirnames):
+            if not is_utf8_encodable(name):
+                record_invalid_name(current)
+                continue
             candidate = current / name
             if candidate.is_symlink():
                 record_exclusion(candidate, "directory", "symlink_directory")
@@ -148,6 +162,9 @@ def snapshot_tree(
         dirnames[:] = kept_dirs
 
         for name in sorted(filenames):
+            if not is_utf8_encodable(name):
+                record_invalid_name(current)
+                continue
             path = current / name
             locator = _relative(path, root)
             is_symlink = path.is_symlink()

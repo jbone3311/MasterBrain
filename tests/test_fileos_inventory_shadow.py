@@ -13,6 +13,8 @@ import pytest
 
 from masterbrain.datacore import fileos as shared_fileos
 from masterbrain.datacore import fileos_donor_shadow as donor_profile
+from masterbrain.datacore.fileos_donor_candidate import build_fileos_donor_candidate
+from masterbrain.datacore.persistence import validate_fileos_completion_coverage
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "fileos_inventory_shadow.py"
 SPEC = importlib.util.spec_from_file_location("fileos_inventory_shadow", SCRIPT)
@@ -431,6 +433,82 @@ def test_live_pinned_donor_unusual_valid_filenames_round_trip(tmp_path: Path) ->
         "differences": [],
     }
     assert {item["locator"] for item in json.loads(json.dumps(manifest))["items"]} == locators
+
+
+def test_snapshot_refuses_unencodable_names_without_opening_them(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "valid.txt").write_bytes(b"fictional valid sibling")
+
+    def names_with_surrogates(_root: Path, *, topdown: bool, onerror):
+        assert topdown and onerror is not None
+        directories = ["invalid-\udcff"]
+        yield str(tmp_path), directories, ["invalid-\udcfe.txt", "valid.txt"]
+        assert directories == []
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(shared_fileos.os, "walk", names_with_surrogates)
+        manifest = shared_fileos.snapshot_tree(
+            tmp_path, source_id="shadow_source", observed_at=shadow.OBSERVED_AT
+        )
+    assert [item["locator"] for item in manifest["items"]] == ["valid.txt"]
+    assert manifest["errors"] == [{"locator": ".", "code": "invalid_locator_encoding"}]
+    with pytest.raises(ValueError, match="incomplete FileOS snapshot coverage"):
+        validate_fileos_completion_coverage(manifest)
+
+
+def test_snapshot_sanitizes_unencodable_walk_error_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def walk_error(root: Path, *, topdown: bool, onerror):
+        assert topdown
+        onerror(PermissionError(13, "synthetic denial", str(root / "bad-\udcff")))
+        yield str(root), [], []
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(shared_fileos.os, "walk", walk_error)
+        manifest = shared_fileos.snapshot_tree(
+            tmp_path, source_id="shadow_source", observed_at=shadow.OBSERVED_AT
+        )
+    assert manifest["errors"] == [{"locator": ".", "code": "invalid_locator_encoding"}]
+
+
+def test_live_pinned_donor_invalid_byte_names_fail_closed(tmp_path: Path) -> None:
+    root = tmp_path / "synthetic_invalid_byte_names"
+    root.mkdir()
+    (root / "valid.txt").write_bytes(b"fictional valid sibling")
+    raw_root = os.fsencode(root)
+    try:
+        os.mkdir(raw_root + b"/invalid-\xfe")
+        descriptor = os.open(
+            raw_root + b"/invalid-\xff.txt", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600
+        )
+    except OSError:
+        reason = "this filesystem refuses invalid-byte filenames"
+        if os.environ.get("MASTERBRAIN_REQUIRE_INVALID_BYTE_FILENAMES") == "1":
+            pytest.fail(reason)
+        pytest.skip(reason)
+    try:
+        os.write(descriptor, b"fictional invalid-name sibling")
+    finally:
+        os.close(descriptor)
+
+    scanner = _pinned_scanner()
+    with sqlite3.connect(":memory:") as conn:
+        scanner.ensure_schema(conn)
+        with pytest.raises((UnicodeEncodeError, sqlite3.ProgrammingError)):
+            shadow.donor_scan(scanner, root, conn)
+
+    manifest = shadow.snapshot_tree(root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT)
+    profile = donor_profile.scan_donor_policy_shadow(root)
+    assert [item["locator"] for item in manifest["items"]] == ["valid.txt"]
+    assert manifest["errors"] == [{"locator": ".", "code": "invalid_locator_encoding"}]
+    assert [row["locator"] for row in profile["rows"]] == ["valid.txt"]
+    assert profile["errors"] == [{"locator": ".", "code": "invalid_locator_encoding"}]
+    with pytest.raises(ValueError, match="unencodable filename"):
+        build_fileos_donor_candidate(
+            root, source_id="shadow_source", observed_at=shadow.OBSERVED_AT
+        )
 
 
 def test_live_pinned_donor_distinct_case_and_normalization_names(
