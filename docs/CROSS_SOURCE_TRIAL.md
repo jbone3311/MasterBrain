@@ -123,7 +123,10 @@ uv run pytest -q tests/test_cross_source_preview.py
 ```
 
 The tests check known answers, cited bounded content, freshness/coverage, source
-hash preservation, two nonempty tenants and authorization. Without PostgreSQL,
+hash preservation, two nonempty tenants and authorization. The local startup
+self-test also requires both Email and FileOS Ask quotes for the natural
+insurance-certificate question to contain the requested phrase; merely citing
+the right checklist is insufficient. Without PostgreSQL,
 marked database tests skip locally; that is not full acceptance. Hosted CI supplies
 PostgreSQL and requires them. A passed API/static suite is not a claim that the
 interactive browser was tested on your Mac.
