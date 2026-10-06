@@ -39,6 +39,7 @@ from email_brain.schemas import (
     SearchRequest,
 )
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
+from masterbrain import __version__ as MASTERBRAIN_VERSION
 from masterbrain.answers import (
     AnswerRejected,
     AnswerSelector,
@@ -139,7 +140,8 @@ def create_app(
     if browser_auth is not None and browser_auth.authenticator is not registry:
         raise ValueError("browser and API must share the same authenticator")
     app = FastAPI(
-        title="MasterBrain — local prototype", version="0.1.0", docs_url=None, redoc_url=None
+        title="MasterBrain — local prototype", version=MASTERBRAIN_VERSION,
+        docs_url=None, redoc_url=None,
     )
     app.add_middleware(BodyLimit)
     bearer = HTTPBearer(auto_error=False)

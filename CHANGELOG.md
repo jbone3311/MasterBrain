@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased — after v0.2.0a1
+## Unreleased — after v0.2.0a2
+
+## v0.2.0a2 — synthetic-only alpha checkpoint (2026-10-06)
+
+- Consolidates the read-only first-party Ask workspace, grounded Email/FileOS
+  quotes, reviewed KnowledgeCore timeline/commitment/project views, and the
+  provider-neutral Brain API client. The fictional insurance-certificate trial
+  now rejects a citation whose selected quote omits the requested passage.
+- Includes private, nonpublishing FileOS v2 comparison and expanded pinned-donor
+  filename/fault parity gates. FOS-Master remains unchanged; no FileOS cutover.
+- Removes a duplicate full Python-suite invocation in CI while retaining the
+  standalone exhaustive deployment gate. Exact release-commit CI and restore
+  run IDs belong in the prerelease record after tagging, not in this candidate.
+- Still excludes live-source enrollment, hosted production identity, source
+  effects, model-written answers, and owner interactive acceptance.
 
 - Added an ADR-161 bounded, recorded-cutoff-paged reviewed-commitment due view,
   with additive lookup indexes, source-aware related-object filtering, compact
