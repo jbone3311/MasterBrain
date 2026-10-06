@@ -2,7 +2,7 @@
 
 Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## FileOS filename representation probe — in review
+## FileOS filename representation probe — PR #164 merged
 
 The branch adds fictional case and NFC/NFD spelling variants to the pinned
 FOS-Master in-memory scanner comparison and the nonpublishing DataCore shadow.
@@ -24,6 +24,7 @@ donor-dependent new tests skipped in hosted CI because it does not check out
 FOS-Master. [Strict runtime 37409396280](https://github.com/jbone3311/MasterBrain/actions/runs/37409396280)
 and [restore 37409396389](https://github.com/jbone3311/MasterBrain/actions/runs/37409396389)
 passed. This is not donor collision parity on Linux or a live-source gate.
+PR #164 merged at `01f3b2bac5455c48b33286395897655fbdceb08e`.
 No production source or donor data was read or changed.
 
 ## Selected answer-citation recheck — ADR-165 merged
