@@ -16,10 +16,33 @@ trial launcher before application assertions: Homebrew PostgreSQL 17.11
 this Mac's segment table was full (`shmget: No space left on device`, not disk
 exhaustion). Two detached segments from failed retries were removed after
 verification; older segments with uncertain ownership were left untouched.
-The launcher was not subsequently proven green. Hosted real-container and
-required PR gates are not yet claimed; this is diagnosis, not a resolved flake.
+The launcher was not subsequently proven green. PR #160's earlier head
+`0543633` passed exact-head full CI twice with 3,145 tests and all 491
+PostgreSQL-marked cases each time, including restricted large-MIME and FileOS
+worker containers. Its strict-runtime and restore reruns passed after runner
+recovery. This reconciled head still needs its own gates; the intermittent
+large-MIME deadline did not recur and is not resolved by this diagnostic change.
+On the reconciled tree, 2,665 non-PostgreSQL Python tests and all 164 browser
+tests passed; 491 PostgreSQL-marked tests and the separate local trial launcher
+were not run locally. Ruff, mypy and docs checks passed.
 
-## First-party project drill-down (2026-10-05, ADR-163 in review)
+## First-party reviewed schedule (2026-10-05, ADR-164 merged)
+
+[ADR-164](adr/164_owner_reviewed_schedule.md) connects the existing reviewed
+event timeline and due-commitment APIs to explicit UTC-window controls in
+`/brain`. Each ten-item page is checked before inert rendering; the Next
+control carries the server cutoff and cursor, and date/access changes clear
+stale reads. The focused browser suite passed 29/29 locally; all six browser
+files passed 164/164. Ruff, mypy, docs and diff checks passed. The local
+non-PostgreSQL Python run passed 2,663 tests with 491 database-marked skips and
+one Docker-only launcher deselected. The separate disposable PostgreSQL 17.11
+run passed 490/491 marked cases with one Docker-only skip. PR #159 exact head
+`4563bd8` passed full CI twice with 3,143 tests and all 491 PostgreSQL-marked
+cases each time, plus strict-runtime and restore; it merged at `cfbdac9`.
+Merged-main checks are pending. No
+hosted/live-source status, source effect or FOS-Master cutover is claimed.
+
+## First-party project drill-down (2026-10-05, ADR-163 merged)
 
 [ADR-163](adr/163_owner_project_dossier_drilldown.md) connects the existing
 scoped project-dossier read to an explicit control on reviewed project matches
@@ -30,8 +53,11 @@ denial and stale-result clearing. The final six-file browser suite passed
 The local non-PostgreSQL Python run passed 2,663 tests with 491 PostgreSQL
 tests correctly skipped and one Docker-backed local launcher deselected. The
 separate real-PostgreSQL 17.11 run passed 490/491 marked tests; the remaining
-Docker-only case skipped locally. Exact-head GitHub gates remain open.
-Wider exact-head CI, strict-runtime, restore and merged-main checks remain open.
+Docker-only case skipped locally. PR #156 exact-head full CI passed 3,143 tests
+twice, including all 491 PostgreSQL-marked cases each time; strict-runtime and
+restore passed. Merged-main restore passed; full CI and the final strict gate
+did not execute because GitHub-hosted runners were unavailable
+([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
 This is a read-only orientation view, not a live project-state or hosted claim.
 
 ## Reviewed project dossier (2026-10-05, ADR-162 merged)

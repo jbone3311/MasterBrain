@@ -10,11 +10,20 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-164](adr/164_owner_reviewed_schedule.md) defines explicit, bounded
+reviewed-event and commitment-due windows in the first-party workspace. It
+reuses ADR-160/161's scoped reads, validates pages and clears stale requests;
+PR #159 merged after exact-head full CI, strict-runtime and restore passed;
+this is not a live-truth or action surface.
+
 [ADR-163](adr/163_owner_project_dossier_drilldown.md) defines an explicit,
 read-only project-dossier drill-down in the first-party workspace. It reuses
 ADR-162's scoped route and grants, validates the complete bounded response,
-and does not infer live project state or add an action surface. Implementation
-and exact-head gates are in progress.
+and does not infer live project state or add an action surface. PR #156 merged
+after exact-head full CI, strict-runtime and restore passed. Merged-main
+restore passed, but full CI and the final strict gate were blocked before
+execution by hosted-runner acquisition
+([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
 
 [ADR-162](adr/162_reviewed_project_dossier.md) defines a bounded, source-aware
 reviewed project dossier with separately limited linked events and commitments,

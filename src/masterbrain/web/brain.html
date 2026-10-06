@@ -63,6 +63,23 @@
     <p id="brain-status" role="status" aria-live="polite">Enter an authorized credential to begin.</p>
   </section>
 
+  <section class="workspace" aria-labelledby="schedule-heading">
+    <p class="eyebrow">REVIEWED KNOWLEDGE · READ ONLY</p>
+    <h2 id="schedule-heading">Reviewed schedule</h2>
+    <p class="hint">Choose a UTC date window. Events use occurrence start; commitments use
+      stated due dates. The end date is exclusive. Undated records are not in these
+      views, and reviewed assertions do not prove current source status.</p>
+    <div class="schedule-row">
+      <label for="schedule-start">Start (UTC)</label>
+      <input id="schedule-start" type="date">
+      <label for="schedule-end">End, exclusive (UTC)</label>
+      <input id="schedule-end" type="date">
+      <button id="schedule-events-button" type="button" disabled>Events</button>
+      <button id="schedule-due-button" type="button" disabled>Commitments due</button>
+    </div>
+    <div id="schedule-results" class="schedule-results" aria-live="polite"></div>
+  </section>
+
   <footer>Current indexed sources only · Partial coverage is shown · No sending,
     renaming, moving, deleting, or hidden model calls. The original FOS-Master is unchanged.</footer>
 </main>

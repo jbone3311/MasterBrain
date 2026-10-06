@@ -19,17 +19,64 @@ System V shared-memory segment because this Mac's segment table was full
 segments from failed retries were removed after verification; older segments
 with uncertain ownership were left untouched. No later green launcher run is
 claimed.
-Exact-head hosted CI, real-container behavior, strict runtime and restore
-remain open; a future recurrence is needed to distinguish the two Docker calls.
+PR #160's prior head `05436330ab46dbfeadc2ced955573d7fd0191ca2`
+passed [full CI 37373525789](https://github.com/jbone3311/MasterBrain/actions/runs/37373525789)
+twice with 3,145 tests, 12 skips and all 491 PostgreSQL-marked cases executed
+each time; actual restricted large-MIME and FileOS worker containers passed.
+Its [strict-runtime 37373525897](https://github.com/jbone3311/MasterBrain/actions/runs/37373525897)
+and [restore 37373525881](https://github.com/jbone3311/MasterBrain/actions/runs/37373525881)
+reruns passed after hosted-runner recovery. The earlier cancelled attempts
+remain in [issue #158](https://github.com/jbone3311/MasterBrain/issues/158).
+This reconciled head needs separate exact-head gates. On its combined local
+tree, 2,665 non-PostgreSQL Python tests passed with 491 PostgreSQL-marked tests
+and the separate local trial launcher deselected; all six browser files passed
+164/164. Ruff, mypy and docs checks passed. The large-MIME deadline did not
+recur, so a future recurrence is still needed to distinguish the two Docker
+calls; issue #64 stays open.
 
-## First-party reviewed-project drill-down — ADR-163 in review
+## First-party reviewed schedule — ADR-164 merged
 
-The unmerged `codex/brain-project-drilldown` branch adds an explicit `/brain`
+PR [#159](https://github.com/jbone3311/MasterBrain/pull/159) merged at
+`cfbdac9192f50ea80832ce570e1e27c352db8ee7` from exact head
+`4563bd8068c4ff95b7b96d06eed92b758d9cbf2a`. It adds explicit first-party
+UTC-window reads of the existing ADR-160/161 event and due APIs. The focused
+Node browser suite passed 29/29 locally and all six browser files passed
+164/164. Ruff, source mypy, docs and diff checks passed. The local
+non-PostgreSQL run passed 2,663 tests, with 491 database tests skipped and
+one Docker-only launcher deselected. The separate disposable PostgreSQL 17.11
+run passed 490/491 marked cases, with one Docker-only skip and 2,664 other
+tests deselected (245.66 seconds). Exact-head
+[CI 37393493295](https://github.com/jbone3311/MasterBrain/actions/runs/37393493295)
+passed 3,143 tests, 12 skipped twice with all 491 PostgreSQL-marked tests
+executed both times; docs, browser and restricted worker container checks
+passed. [Strict runtime 37393493727](https://github.com/jbone3311/MasterBrain/actions/runs/37393493727)
+and [restore 37393493596](https://github.com/jbone3311/MasterBrain/actions/runs/37393493596)
+passed. Merged-main gates are pending. This UI read
+does not make the reviewed dates or states live-current facts.
+
+## First-party reviewed-project drill-down — ADR-163 merged
+
+PR [#156](https://github.com/jbone3311/MasterBrain/pull/156) merged at
+`c50c3972261f3fbaaea15dcc5354a2dddf1f158b` from exact head
+`6ea7888d20befcfa383769914bd9287c16e2f9bf`. It adds an explicit `/brain`
 project-dossier control, complete response validation and stale-read refusal.
 The focused Node browser suite passed 21/21 locally and the final six-file
-browser suite passed 156/156. Full exact-head CI,
-strict-runtime, restore and merged-main gates are not yet claimed. The existing
-ADR-162 API's merged gates are separate evidence, not proof of this UI branch.
+browser suite passed 156/156. Exact-head
+[CI 37359290556](https://github.com/jbone3311/MasterBrain/actions/runs/37359290556)
+passed 3,143 tests, 12 skipped twice (regular and deployment repeat), with
+491/491 PostgreSQL-marked cases executed both times; docs, API image and
+restricted PDF/FileOS worker container checks passed.
+[Strict runtime 37359290672](https://github.com/jbone3311/MasterBrain/actions/runs/37359290672)
+and [restore 37359290433](https://github.com/jbone3311/MasterBrain/actions/runs/37359290433)
+also passed. Merged `main` [restore 37362023248](https://github.com/jbone3311/MasterBrain/actions/runs/37362023248)
+passed. [Full CI 37362023408](https://github.com/jbone3311/MasterBrain/actions/runs/37362023408)
+attempts 1 and 2 were cancelled before test steps when GitHub-hosted runners
+could not acquire the job. [Strict runtime 37362023414](https://github.com/jbone3311/MasterBrain/actions/runs/37362023414)
+passed seven matrix jobs, but one unsupported-runtime job and the final gate
+were cancelled without steps. These are infrastructure failures tracked in
+[issue #158](https://github.com/jbone3311/MasterBrain/issues/158), not
+merged-main code passes or test failures. The existing
+ADR-162 API's gates are separate evidence, not proof of this UI merge.
 The local non-PostgreSQL Python run passed 2,663 tests, skipped all 491
 PostgreSQL-marked tests and deselected one Docker-backed local launcher. A
 separate real-PostgreSQL 17.11 run on the disposable

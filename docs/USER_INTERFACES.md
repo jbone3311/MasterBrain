@@ -19,11 +19,17 @@ their Email reads use source-enrolled Brain routes.
 ADR-150 adds an explicit All/Email/FileOS focus in `/brain` and the external
 read client. A focused request skips excluded source reads, labels unsearched
 groups and leaves access grants unchanged. It is not automatic intent routing.
-ADR-163 adds an in-review, explicit project-dossier drill-down from a reviewed
+ADR-163 adds a merged, explicit project-dossier drill-down from a reviewed
 project match in either Ask or Search only. It calls the same scoped read API,
 shows a bounded set of linked reviewed events and commitments with evidence
 controls, and labels project state as an assertion rather than current truth.
 No project fetch occurs until the owner opens it.
+ADR-164 adds a merged, explicit Reviewed schedule panel: the owner selects
+a UTC date window, then separately requests occurrence-dated reviewed events
+or due-dated reviewed commitments. It uses the existing scoped Brain API,
+shows one ten-item page with an explicit continuation and evidence controls,
+and excludes undated assertions. It is not automatic chat intent routing,
+source freshness or an inferred current status.
 
 ## One service, two entrances
 
@@ -114,6 +120,8 @@ credentials.
    ADR-163's explicit project control reuses ADR-162's exact-project read with
    fixed five-item linked lists and separate evidence drill-down. It remains
    read-only and is not a project-state reducer or live-source proof.
+   ADR-164's separate schedule controls reuse ADR-160/161's source-aware
+   date-window reads; editing the window clears an in-flight schedule page.
 3. **External client:** a provider-neutral reference client now runs the same
    fictional current-search and evidence calls as the owner workspace, with
    source/scope parity tests. Next connect at least one separately authorized

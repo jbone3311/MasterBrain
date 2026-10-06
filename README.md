@@ -61,10 +61,19 @@ a bounded read of one reviewed project and its linked events
 and commitments, including undated links; it does not calculate live project
 state. None of these views proves source freshness, a cross-kind timeline,
 hosted access or FileOS cutover. See the [build receipt](docs/BUILD_RECEIPT.md).
-The next in-review [ADR-163](docs/adr/163_owner_project_dossier_drilldown.md)
-adds an explicit read-only **Open reviewed project** control to `/brain` Ask and
-Search only matches. It reuses the scoped dossier API; its browser checks pass,
-but full exact-head and merged-main gates are not yet complete.
+[ADR-163](docs/adr/163_owner_project_dossier_drilldown.md) merged through
+[PR #156](https://github.com/jbone3311/MasterBrain/pull/156), adding an explicit
+read-only **Open reviewed project** control to `/brain` Ask and Search only
+matches. It reuses the scoped dossier API; exact-head full CI, strict-runtime
+and restore passed. Merged-main restore passed, while full CI and the final
+strict gate were blocked before execution by hosted-runner acquisition in
+[issue #158](https://github.com/jbone3311/MasterBrain/issues/158); see the
+[build receipt](docs/BUILD_RECEIPT.md).
+A merged [ADR-164](docs/adr/164_owner_reviewed_schedule.md) adds explicit
+UTC-window **Events** and **Commitments due** controls to the read-only `/brain`
+workspace, using the existing source-scoped APIs. PR #159 exact-head full CI,
+strict-runtime and restore passed; merged-main gates are pending. This is not automatic chat
+intent routing or current source truth.
 
 For work in progress, use the [roadmap](docs/ROADMAP.md) and
 [build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is

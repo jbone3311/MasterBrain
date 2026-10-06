@@ -43,6 +43,13 @@ filtered read route. The page validates the complete bounded response before
 rendering, inserts returned text inertly, and aborts/ignores an in-flight read
 when the token, source focus or session changes. It grants no additional scope;
 hidden or malformed responses reveal no dossier content.
+ADR-164's schedule controls require an explicit valid UTC window and All focus.
+They use the existing `knowledge.search` source-filtered routes, fixed ten-item
+pages and cutoff-bound cursors. The browser validates each complete response
+before inert rendering, clears its page on date/token/focus/session changes,
+and keeps evidence expansion separately authorized. A malformed or denied page
+does not render partial rows or fall back to another read. No source effect,
+provider credential or new grant is introduced.
 
 ADR-136 also keeps the fictional trial's excerpts as text nodes, omits generated
 PostgreSQL highlight markup and verifies that both metadata and bounded content

@@ -170,6 +170,10 @@ source effects or an alternate route through KnowledgeCore.
   Undated commitments stay in search/history. The cutoff is not a durable MVCC
   snapshot, and the view does not infer overdue status, source freshness or
   real-world truth. `BrainReadClient.commitments_due` validates the transport.
+  ADR-164's merged `/brain` Reviewed schedule panel makes explicit,
+  date-bounded calls to these existing timeline and due routes with fixed
+  10-item pages. Next-page requests carry the returned cutoff and cursor;
+  they do not establish a durable snapshot, current truth or new API grant.
 - `GET /v1/knowledge/projects/{project_id}/dossier` — ADR-162 compact,
   read-only context for one reviewed project assertion and its linked events
   and commitments. Requires `knowledge.search`; each list has an independent
@@ -187,8 +191,10 @@ source effects or an alternate route through KnowledgeCore.
   ADR-163's first-party `/brain` control explicitly requests this same route
   from a reviewed project match with fixed five-item limits for each linked
   list. It does not fetch on page load, add a privileged API, or interpret
-  the reviewed project state as live truth. This UI tranche is in review;
-  exact-head and merged-main gates remain open.
+  the reviewed project state as live truth. PR #156 merged after exact-head
+  gates passed. Merged-main restore passed; full CI and the final strict gate
+  were blocked before execution by hosted-runner acquisition
+  ([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
