@@ -34,10 +34,14 @@ open a new authenticated tab. Do not enter a real token. A port conflict can be
 resolved with `--port 8767`; binding remains loopback-only.
 
 To try the first-party read-only question workspace against the same fictional
-data, keep the launcher running, open `http://127.0.0.1:8766/brain`, and paste
-the temporary trial credential from the URL printed in the launcher's terminal
-into its access field. The trial page removes that fragment from its own URL;
-the `/brain` workspace never reads a URL fragment or stores the credential.
+data, keep the launcher running. On the trial page, select **Show temporary
+access code**, copy the displayed code, then select **Open Ask MasterBrain in a
+new tab** and paste the code into its access field. Hide the code in the trial
+tab when finished. The launcher does not print it. The trial page removes its
+initial fragment from the address bar; the `/brain` workspace never reads a URL
+fragment or stores the credential. If the trial tab was reloaded, restart the
+launcher to obtain a new authenticated tab.
+
 Ask on this screen selects bounded, exact source quotes locally and opens
 supporting evidence. It also lists reviewed KnowledgeCore matches separately;
 those are interpretations, not exact quotations. Search only shows grouped current results. Neither path

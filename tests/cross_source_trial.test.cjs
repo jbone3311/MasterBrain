@@ -6,15 +6,18 @@ const test = require("node:test");
 const vm = require("node:vm");
 const script = fs.readFileSync(path.join(__dirname, "cross_source_assets/trial.js"), "utf8");
 class Element {
-  constructor(tag) {this.tag = tag; this.children = []; this.events = {}; this.dataset = {}; this.value = ""; this.textContent = "";}
+  constructor(tag) {this.tag = tag; this.children = []; this.events = {}; this.dataset = {}; this.value = ""; this.textContent = ""; this.attributes = {};}
   appendChild(node) {this.children.push(node); return node;}
   replaceChildren(...nodes) {this.children = nodes;}
   addEventListener(event, fn) {this.events[event] = fn;}
+  setAttribute(name, value) {this.attributes[name] = value;}
   set innerHTML(value) {throw new Error("Source HTML execution is forbidden");}
 }
 function harness(token = "a".repeat(54), customFetch) {
   const nodes = {};
-  for (const id of ["status", "results", "evidence", "query", "coverage", "freshness", "search-form", "search-button"]) nodes[id] = new Element(id);
+  for (const id of ["status", "results", "evidence", "query", "coverage", "freshness", "search-form", "search-button", "access-toggle", "access-code"]) nodes[id] = new Element(id);
+  nodes["access-toggle"].disabled = true;
+  nodes["access-code"].hidden = true;
   nodes.query.value = "Cedar Harbor";
   const examples = ["insurance", "nonexistentcanary"].map(query => {const e = new Element("button"); e.dataset.query = query; return e;});
   const calls = [];
@@ -40,7 +43,25 @@ test("missing fragment never makes an initial authenticated request", async () =
   const h = harness(""); await flush();
   assert.equal(h.calls.length, 0);
   assert.equal(h.nodes["search-button"].disabled, true);
+  assert.equal(h.nodes["access-toggle"].disabled, true);
+  assert.equal(h.nodes["access-code"].textContent, "");
   assert.match(h.nodes.status.textContent, /credential missing/);
+});
+test("trial access code is visible only after explicit reveal and is cleared on hide", async () => {
+  const token = "a".repeat(54);
+  const h = harness(token); await flush();
+  assert.equal(h.nodes["access-toggle"].disabled, false);
+  assert.equal(h.nodes["access-code"].hidden, true);
+  assert.equal(h.nodes["access-code"].textContent, "");
+  h.nodes["access-toggle"].events.click();
+  assert.equal(h.nodes["access-code"].hidden, false);
+  assert.equal(h.nodes["access-code"].textContent, token);
+  assert.equal(h.nodes["access-toggle"].attributes["aria-expanded"], "true");
+  h.nodes["access-toggle"].events.click();
+  assert.equal(h.nodes["access-code"].hidden, true);
+  assert.equal(h.nodes["access-code"].textContent, "");
+  assert.equal(h.nodes["access-toggle"].attributes["aria-expanded"], "false");
+  assert.deepEqual(h.replacements[0], [null, "", "/trial"]);
 });
 test("search renders untrusted text and uses memory-only non-redirected authorization", async () => {
   const h = harness(); await flush();
