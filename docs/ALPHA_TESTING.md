@@ -1,8 +1,9 @@
 # Test the MasterBrain synthetic alpha
 
-This guide is for tagged `v0.2.0a1` at
-`c0a531d8a7d0991be0a0f1ea717479c07cc20feb`. It is a synthetic-only
-checkpoint, not production acceptance. Use fictional files and a disposable
+This guide applies to the current `0.2.0a2` synthetic alpha. The first tagged
+checkpoint, `v0.2.0a1`, remains at
+`c0a531d8a7d0991be0a0f1ea717479c07cc20feb`. Neither is production
+acceptance. Use fictional files and a disposable
 database only. Do not connect real mail, grant live roots,
 upload private documents, expose the server, or delete/rename FOS-Master.
 
@@ -60,9 +61,10 @@ PostgreSQL skips marked database tests and is not an equivalent pass.
 ## Trial D — fictional Email/FileOS together
 
 Use the [cross-source browser walkthrough](CROSS_SOURCE_TRIAL.md) after a locked
-install and Docker Desktop setup. It starts its own disposable PostgreSQL 17
-container, seeds only fictional Email and file evidence, and opens the loopback
-browser. Check the five known-answer queries, citations, separate source layers
+install and either Docker Desktop or local PostgreSQL 17 setup. It starts its
+own disposable PostgreSQL 17 database, seeds only fictional Email and file
+evidence, and opens the loopback browser. Check the five known-answer queries,
+citations, separate source layers
 and partial coverage. The exact merged code passed hosted CI, but the owner's
 interactive Mac acceptance is not recorded yet. Stop with Ctrl-C and verify the
 run-specific container is removed; follow the guide if cleanup warns.

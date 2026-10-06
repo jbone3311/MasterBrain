@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "masterbrain"
-version = "0.2.0a1"
+version = "0.2.0a2"
 description = "Evidence-first intelligence across email and files"
 readme = "README.md"
 requires-python = ">=3.11.10,!=3.12.0,!=3.12.1,!=3.12.2,!=3.12.3,!=3.12.4,!=3.12.5"

@@ -5,87 +5,28 @@ combines Email and FileOS source capabilities behind shared ingestion and knowle
 layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compact,
 progressive access with drill-down to original evidence.
 
-**Status:** [`v0.2.0a1`](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
-is a tagged, synthetic-only alpha checkpoint at `c0a531d` (2026-10-01), not
-the current product release. The latest Email functional checkpoint is
-[PR #133](https://github.com/jbone3311/MasterBrain/pull/133): read-only Fastmail
-sync resilience with bounded metadata batching and held oversized mail. It is
-synthetic/disposable-database verified, not a live mailbox acceptance. The
-latest FileOS shadow-hardening checkpoint is
-[PR #141](https://github.com/jbone3311/MasterBrain/pull/141) at `082b0e8`:
-the nonpublishing FileOS donor shadow stops inspecting symlink targets and
-requires fresh v2 shadow packets before staging. Earlier
-[PR #130](https://github.com/jbone3311/MasterBrain/pull/130) at `c834fef`
-confined directory enumeration against descendant symlink swaps. Both
-changes passed their exact-head and merged-main CI,
-strict runtime and restore gates; exact runs are tracked in the
-[build receipt](docs/BUILD_RECEIPT.md). This is not FileOS cutover. A prior
-owner-facing change, [PR #144](https://github.com/jbone3311/MasterBrain/pull/144),
-bounds the total returned exact quote and reviewed-match text and visibly
-reports shortened output. Earlier
-[PR #128](https://github.com/jbone3311/MasterBrain/pull/128) bounded
-selector-visible source passages and marked shortened context. Neither is a
-model-token or whole-response budget. [PR #126](https://github.com/jbone3311/MasterBrain/pull/126)
-added explicit All/Email/FileOS read focus; these changes do not close hosted
-assistant issue #88. Earlier [PR #118](https://github.com/jbone3311/MasterBrain/pull/118)
-refuses implicit populated legacy migration rewrites but does not make upgrades
-online or close issue #9. The latest user-facing FileOS slice is
-[PR #116](https://github.com/jbone3311/MasterBrain/pull/116) at `b6ebcbf`:
-the human-only historical v2 search comparison API. PRs #118 and #116 passed
-exact-head and merged-main full CI, strict runtime and populated restore. The fictional
-cross-source browser trial is merged, but interactive Mac acceptance is still
-pending. See
-[current functions](docs/CURRENT_FUNCTIONS.md) and the
-[exact-commit receipt](docs/BUILD_RECEIPT.md). The
-Email capability has executable read-only ingestion, evidence storage, search,
-review, recovery, and narrow structured-memory functions. Shared DataCore also
-has read-only FileOS intake, extraction, archive derivatives, lexical retrieval,
-and a pinned-donor parity harness. These paths are tested on fictional inputs and
-disposable PostgreSQL; MasterBrain is not a hosted or live-source product, and
-FOS-Master has not been replaced, renamed, or modified. See the
-[alpha test guide](docs/ALPHA_TESTING.md) for the precise trial boundary.
+**Status:** `0.2.0a2` is a synthetic-only alpha, not a live or production
+release. The earlier tagged
+[v0.2.0a1](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
+checkpoint remains at `c0a531d`. The package, API and manifest share the new
+version identity; the release tag is made only after the exact `main` commit
+passes its gates.
 
-The preceding merged KnowledgeCore read work is grouped reviewed-current
-search/Ask in [PR #148](https://github.com/jbone3311/MasterBrain/pull/148).
-The reviewed-event timeline in
-[PR #151](https://github.com/jbone3311/MasterBrain/pull/151) is merged at
-`90ee9e4`; implementation-head and merged-main CI (all 489 PostgreSQL-marked
-tests, deployment and FileOS container checks), strict-runtime and restore
-gates passed after the [Actions billing incident #150](https://github.com/jbone3311/MasterBrain/issues/150).
-The ADR-161 read-only reviewed-commitment due-window slice merged in
-[PR #152](https://github.com/jbone3311/MasterBrain/pull/152) at `e3826ff`,
-with exact-head and merged-main CI, strict-runtime and restore checks green.
-The [ADR-162 project dossier](docs/adr/162_reviewed_project_dossier.md)
-merged through [PR #154](https://github.com/jbone3311/MasterBrain/pull/154):
-a bounded read of one reviewed project and its linked events
-and commitments, including undated links; it does not calculate live project
-state. None of these views proves source freshness, a cross-kind timeline,
-hosted access or FileOS cutover. See the [build receipt](docs/BUILD_RECEIPT.md).
-[ADR-163](docs/adr/163_owner_project_dossier_drilldown.md) merged through
-[PR #156](https://github.com/jbone3311/MasterBrain/pull/156), adding an explicit
-read-only **Open reviewed project** control to `/brain` Ask and Search only
-matches. It reuses the scoped dossier API; exact-head full CI, strict-runtime
-and restore passed. Merged-main restore passed, while full CI and the final
-strict gate were blocked before execution by hosted-runner acquisition in
-[issue #158](https://github.com/jbone3311/MasterBrain/issues/158); see the
-[build receipt](docs/BUILD_RECEIPT.md).
-A merged [ADR-164](docs/adr/164_owner_reviewed_schedule.md) adds explicit
-UTC-window **Events** and **Commitments due** controls to the read-only `/brain`
-workspace, using the existing source-scoped APIs. PR #159 exact-head full CI,
-strict-runtime, restore and merged-main gates passed. This is not automatic chat
-intent routing or current source truth.
-The merged [ADR-120 diagnostic follow-up](docs/adr/120_sandbox_failure_stage_diagnostics.md)
-separates fixed, content-safe Docker daemon-security and image-inspection
-failure stages. PR #160's exact-head and merged-main gates passed. This is
-instrumentation, not a resolution of [intermittent large-MIME
-issue #64](https://github.com/jbone3311/MasterBrain/issues/64).
+Today, fictional data can flow through read-only Email and FileOS intake,
+shared DataCore extraction and indexing, reviewed KnowledgeCore records, and a
+scoped Brain API. The first-party `/brain` workspace and provider-neutral client
+can search current evidence, show exact source quotes, and drill down to the
+original; reviewed events, due commitments and project dossiers are separate
+read-only views. The pinned FOS-Master donor remains untouched and its FileOS
+shadow comparison is nonpublishing.
 
-For work in progress, use the [roadmap](docs/ROADMAP.md) and
-[build progress](docs/BUILD_PROGRESS.md). The Fastmail resilience work is
-tracked under [ADR-110](docs/adr/110_fastmail_sync_resilience.md); its original
-external proposal is [Claude's PR #45](https://github.com/jbone3311/MasterBrain/pull/45).
-The [build receipt](docs/BUILD_RECEIPT.md) distinguishes integrated, tested
-behavior from the original draft. Neither path authorizes a live mailbox.
+This is a testable prototype, **not** a hosted service, live mailbox or folder
+enrollment, AI-written conversation, source-write API, or FileOS replacement.
+The owner still needs to complete the
+[fictional cross-source browser trial](docs/CROSS_SOURCE_TRIAL.md). See
+[current functions](docs/CURRENT_FUNCTIONS.md), the
+[roadmap](docs/ROADMAP.md), [changelog](CHANGELOG.md) and
+[exact-commit build receipt](docs/BUILD_RECEIPT.md) for details and limits.
 
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 Its `main` branch requires full CI, strict-runtime and populated-restore checks

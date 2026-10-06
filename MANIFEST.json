@@ -3,7 +3,7 @@
   "product": {
     "id": "masterbrain",
     "name": "MasterBrain",
-    "version": "0.2.0a1",
+    "version": "0.2.0a2",
     "status": "synthetic-alpha",
     "repository": "jbone3311/MasterBrain",
     "repository_rename": "completed-2026-09-25"
@@ -38,6 +38,8 @@
     "DataCore persistence, lexical retrieval and progressive Brain API",
     "first-party read-only question workspace and provider-neutral reference client",
     "bounded extractive source quotes and separately reviewed KnowledgeCore matches",
+    "read-only reviewed-event timeline, commitment due view and exact-project dossier",
+    "first-party reviewed schedule and project evidence drill-down",
     "reviewed KnowledgeCore assertions, retrieval and changes",
     "grouped DataCore and KnowledgeCore search",
     "source and provenance contracts",

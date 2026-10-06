@@ -1,10 +1,11 @@
 # MasterBrain Documentation
 
-Status: target architecture plus a `0.2.0a1` synthetic alpha candidate;
-not a production or live-source release. The functional baseline reviewed here is
-`1e081ea` (2026-09-25), with full CI, strict-runtime and populated restore
-passed. Exact results are in the build receipt; the fictional cross-source
-browser trial still needs the owner's interactive Mac acceptance.
+Status: target architecture plus a `0.2.0a2` synthetic alpha;
+not a production or live-source release. The pre-version `main` baseline is
+`4dd9cba` (2026-10-06), with full CI, strict-runtime and populated restore
+passed. The release tag is made only after its own merged-main gates;
+the fictional cross-source browser trial still needs the owner's interactive
+Mac acceptance. Historical results are in the build receipt.
 Source health measurements and historical validation retain their own dates.
 
 MasterBrain is the final product: a private, multi-user intelligence layer across

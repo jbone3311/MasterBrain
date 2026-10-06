@@ -2,6 +2,24 @@
 
 Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## 0.2.0a2 synthetic-alpha candidate
+
+The preceding functional `main` checkpoint is [PR #170](https://github.com/jbone3311/MasterBrain/pull/170)
+at `4dd9cba7a5d137a7b06f09b029e2c52069ebe4a8`. Its
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/37433503929)
+passed 3,169 tests, including all 491 PostgreSQL-marked cases; the
+[strict-runtime](https://github.com/jbone3311/MasterBrain/actions/runs/37433503850)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/37433503848)
+runs also passed on that exact merge SHA. The Ask quote-relevance acceptance
+regression and CI de-duplication are included. On the candidate version branch,
+2,679 non-PostgreSQL tests passed with four platform skips, the local launcher
+deselected after this Mac exhausted System V shared-memory IDs; Ruff, mypy,
+documentation inventory and offline lockfile check passed. Read-only DataCore
+parity against unchanged FOS-Master `218d5cae` passed on 3,000 fictional base
+files plus edges. The version is not tagged until its own exact merged-main
+CI, strict-runtime and restore checks pass. This checkpoint does not certify
+the owner's browser trial, live sources, hosted production or FileOS cutover.
+
 ## Exact pinned-donor Linux parity fixture
 
 The scanner and classifier fixtures are unmodified copies from FOS-Master

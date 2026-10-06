@@ -13,6 +13,12 @@ Record exact commit/run IDs and label database skips. The guide must use fiction
 inputs and disposable PostgreSQL. Passing this subsection does not satisfy the
 production or FileOS cutover gates below.
 
+Subsequent synthetic alpha tags, including `v0.2.0a2`, require the same gates
+on their exact `main` commit, plus a version/manifest/lockfile match and a
+prerelease note listing newly implemented capabilities and remaining limits.
+An agent-run browser check or green API test does not replace the owner's
+interactive trial. Do not move an earlier tag to a later commit.
+
 ## Product and source gates
 
 - Email and FileOS are presented as capabilities under MasterBrain, not competing
