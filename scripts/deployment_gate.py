@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -33,7 +34,7 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
-def main() -> None:
+def main(*, structural_only: bool = False) -> None:
     missing = [path for path in REQUIRED if not (ROOT / path).is_file()]
     if missing:
         fail(f"missing required files: {', '.join(missing)}")
@@ -50,21 +51,28 @@ def main() -> None:
     if forbidden:
         fail(f"forbidden private-data file types present: {forbidden}")
 
-    environment = os.environ.copy()
-    environment["PYTHONPATH"] = str(ROOT / "src")
-    completed = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q"],
-        cwd=ROOT,
-        env=environment,
-        check=False,
-    )
-    if completed.returncode:
-        fail("tests failed")
+    if not structural_only:
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(ROOT / "src")
+        completed = subprocess.run(
+            [sys.executable, "-m", "pytest", "-q"],
+            cwd=ROOT,
+            env=environment,
+            check=False,
+        )
+        if completed.returncode:
+            fail("tests failed")
 
     print(
-        "PASS: repository quality gate; production launch gates remain in IMPLEMENTATION_STATUS.md"
+        "PASS: repository " + ("structural" if structural_only else "quality")
+        + " gate; production launch gates remain in IMPLEMENTATION_STATUS.md"
     )
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--structural-only", action="store_true",
+        help="CI only: run after the preceding full pytest step succeeded",
+    )
+    main(structural_only=parser.parse_args().structural_only)

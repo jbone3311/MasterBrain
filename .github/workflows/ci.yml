@@ -56,7 +56,9 @@ jobs:
       - run: node --test tests/web_reader.test.cjs
       - run: node --test tests/web_memory.test.cjs
       - run: node --test tests/web_brain.test.cjs
-      - run: uv run python scripts/deployment_gate.py
+      # The preceding pytest step is required and stops the job on failure.
+      # Keep the gate's standalone default exhaustive without running it twice here.
+      - run: uv run python scripts/deployment_gate.py --structural-only
       - run: uv run python scripts/check_docs.py
       - run: docker build -t email-brain-ci .
       - run: docker run --rm email-brain-ci --help
