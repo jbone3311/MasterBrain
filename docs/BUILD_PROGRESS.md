@@ -1,6 +1,6 @@
 # MasterBrain Build Progress
 
-## Isolated image-check failure diagnostics (2026-10-05, ADR-120 follow-up in review)
+## Isolated image-check failure diagnostics (2026-10-06, ADR-120 follow-up merged)
 
 The recurring synthetic large-MIME CI deadline is now known to occur before
 worker creation, but the existing `image` warning combines Docker daemon
@@ -23,7 +23,9 @@ worker containers. Its strict-runtime and restore reruns passed after runner
 recovery. The reconciled head `291d3cb` also passed exact-head full CI twice
 with 3,145 tests and all 491 PostgreSQL-marked cases each time; restricted
 large-MIME and FileOS worker checks, strict-runtime and restore passed. The
-next documentation-only head still needs its own gates. The intermittent
+final PR head `2a604a5` passed full CI twice with the same 3,145/491 results,
+plus strict-runtime, restore and restricted container checks; PR #160 merged at
+`28991f8`. Merged-main full CI, strict-runtime and restore passed. The intermittent
 large-MIME deadline did not recur and is not resolved by this diagnostic change.
 On the reconciled tree, 2,665 non-PostgreSQL Python tests and all 164 browser
 tests passed; 491 PostgreSQL-marked tests and the separate local trial launcher
@@ -42,7 +44,7 @@ one Docker-only launcher deselected. The separate disposable PostgreSQL 17.11
 run passed 490/491 marked cases with one Docker-only skip. PR #159 exact head
 `4563bd8` passed full CI twice with 3,143 tests and all 491 PostgreSQL-marked
 cases each time, plus strict-runtime and restore; it merged at `cfbdac9`.
-Merged-main checks are pending. No
+Merged-main full CI, strict-runtime and restore passed. No
 hosted/live-source status, source effect or FOS-Master cutover is claimed.
 
 ## First-party project drill-down (2026-10-05, ADR-163 merged)
