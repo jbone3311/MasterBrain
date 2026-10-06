@@ -1,6 +1,6 @@
 # MasterBrain Build Progress
 
-## First-party project drill-down (2026-10-05, ADR-163 in review)
+## First-party project drill-down (2026-10-05, ADR-163 merged)
 
 [ADR-163](adr/163_owner_project_dossier_drilldown.md) connects the existing
 scoped project-dossier read to an explicit control on reviewed project matches
@@ -11,8 +11,11 @@ denial and stale-result clearing. The final six-file browser suite passed
 The local non-PostgreSQL Python run passed 2,663 tests with 491 PostgreSQL
 tests correctly skipped and one Docker-backed local launcher deselected. The
 separate real-PostgreSQL 17.11 run passed 490/491 marked tests; the remaining
-Docker-only case skipped locally. Exact-head GitHub gates remain open.
-Wider exact-head CI, strict-runtime, restore and merged-main checks remain open.
+Docker-only case skipped locally. PR #156 exact-head full CI passed 3,143 tests
+twice, including all 491 PostgreSQL-marked cases each time; strict-runtime and
+restore passed. Merged-main restore passed; full CI and the final strict gate
+did not execute because GitHub-hosted runners were unavailable
+([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
 This is a read-only orientation view, not a live project-state or hosted claim.
 
 ## Reviewed project dossier (2026-10-05, ADR-162 merged)

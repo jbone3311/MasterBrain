@@ -2,14 +2,29 @@
 
 Updated 2026-10-05 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## First-party reviewed-project drill-down — ADR-163 in review
+## First-party reviewed-project drill-down — ADR-163 merged
 
-The unmerged `codex/brain-project-drilldown` branch adds an explicit `/brain`
+PR [#156](https://github.com/jbone3311/MasterBrain/pull/156) merged at
+`c50c3972261f3fbaaea15dcc5354a2dddf1f158b` from exact head
+`6ea7888d20befcfa383769914bd9287c16e2f9bf`. It adds an explicit `/brain`
 project-dossier control, complete response validation and stale-read refusal.
 The focused Node browser suite passed 21/21 locally and the final six-file
-browser suite passed 156/156. Full exact-head CI,
-strict-runtime, restore and merged-main gates are not yet claimed. The existing
-ADR-162 API's merged gates are separate evidence, not proof of this UI branch.
+browser suite passed 156/156. Exact-head
+[CI 37359290556](https://github.com/jbone3311/MasterBrain/actions/runs/37359290556)
+passed 3,143 tests, 12 skipped twice (regular and deployment repeat), with
+491/491 PostgreSQL-marked cases executed both times; docs, API image and
+restricted PDF/FileOS worker container checks passed.
+[Strict runtime 37359290672](https://github.com/jbone3311/MasterBrain/actions/runs/37359290672)
+and [restore 37359290433](https://github.com/jbone3311/MasterBrain/actions/runs/37359290433)
+also passed. Merged `main` [restore 37362023248](https://github.com/jbone3311/MasterBrain/actions/runs/37362023248)
+passed. [Full CI 37362023408](https://github.com/jbone3311/MasterBrain/actions/runs/37362023408)
+attempts 1 and 2 were cancelled before test steps when GitHub-hosted runners
+could not acquire the job. [Strict runtime 37362023414](https://github.com/jbone3311/MasterBrain/actions/runs/37362023414)
+passed seven matrix jobs, but one unsupported-runtime job and the final gate
+were cancelled without steps. These are infrastructure failures tracked in
+[issue #158](https://github.com/jbone3311/MasterBrain/issues/158), not
+merged-main code passes or test failures. The existing
+ADR-162 API's gates are separate evidence, not proof of this UI merge.
 The local non-PostgreSQL Python run passed 2,663 tests, skipped all 491
 PostgreSQL-marked tests and deselected one Docker-backed local launcher. A
 separate real-PostgreSQL 17.11 run on the disposable
