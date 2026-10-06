@@ -1,11 +1,13 @@
 # MasterBrain Roadmap
 
-Updated 2026-10-05 through ADR-160's merged event timeline, ADR-161's
+Updated 2026-10-06 through ADR-160's merged event timeline, ADR-161's
 merged reviewed-commitment due view, ADR-162's merged project dossier, and
 ADR-163's merged first-party project drill-down (merged-main restore passed;
 full CI and final strict gate were blocked before execution by hosted runners),
-and ADR-164's merged reviewed schedule (exact-head gates passed; merged-main
-checks pending).
+and ADR-164's merged reviewed schedule (exact-head and merged-main gates passed).
+The ADR-120 image-check diagnostic follow-up merged through PR #160 after
+exact-head gates passed; its merged-main full CI is pending, while strict-runtime
+and restore passed. It does not resolve intermittent large-MIME issue #64.
 ADR-159's grouped Brain/Ask reviewed-leaf
 projection (PR #148 at `f9402d7`), ADR-158's optional direct KnowledgeCore
 unsuperseded search (PR #146 at `3bf21b8`), ADR-155's separate-cluster restore
@@ -39,7 +41,7 @@ FileOS cutover acceptance is implied.
 | DataCore read path | Shared persistence, FileOS snapshot/publication, confined extraction, archive derivatives, generation activation/rollback and additive Email bridges work on synthetic/disposable data | Donor inventory-policy decision, live shadow, automatic/supervised work, hosted evidence storage and retention |
 | KnowledgeCore | Reviewed evidence-linked base assertions, corrections, lexical search and change feed work; optional direct and grouped current-search/Ask unsuperseded review-chain leaves passed exact-head PostgreSQL, strict-runtime and restore gates; ADR-160 reviewed-event timeline, ADR-161 due-window commitment read and ADR-162 exact-project dossier passed merged-main gates | Cross-kind/valid-time timeline, project/commitment reducers, automatic candidate pipeline, evaluated resolution, rebuild and freshness proof |
 | Brain API | Scoped progressive reads, grouped current Email/FileOS/knowledge search with explicit All/Email/FileOS focus, evidence drill-down and partial coverage work; extractive Ask has separate 8-KiB selector-input and returned-untrusted-text caps with visible truncation; a read-only reference client has fictional API parity; enrolled assistants have source-scoped Brain and direct Knowledge/unified reads; ADR-149 denies unfenced legacy Email routes to assistants | Hosted issuer enrollment and derived-cache revocation, cited answer synthesis, named-assistant adapter and full prompt/token/whole-response budgets |
-| Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; Ask returns exact quotes and a separate reviewed KnowledgeCore match list. ADR-163's explicit project-dossier drill-down merged with exact-head gates green; merged-main restore passed but full CI and final strict gate were blocked before execution by hosted runners (#158). ADR-164's explicit reviewed schedule merged with exact-head gates green and merged-main checks pending | Run the owner's interactive trial, evaluate held-out natural questions, corrections and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
+| Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; Ask returns exact quotes and a separate reviewed KnowledgeCore match list. ADR-163's explicit project-dossier drill-down merged with exact-head gates green; its original merged-main full CI and final strict gate were blocked before execution by hosted runners (#158), with later main commits green. ADR-164's explicit reviewed schedule merged with exact-head and merged-main gates green | Run the owner's interactive trial, evaluate held-out natural questions, corrections and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
 | FileOS replacement and effects | Private v2 generation plus human-only historical v1/v2 comparison API are merged; no cutover or source effects | Decide donor-policy edge behavior, prove sustained live shadow and v2 current/absence/rollback semantics, then a bounded rollback-ready cohort and owner sign-off; effects require a separate later approval |
 

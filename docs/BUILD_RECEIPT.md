@@ -2,7 +2,7 @@
 
 Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Image-check diagnostic refinement — ADR-120 follow-up in review
+## Image-check diagnostic refinement — ADR-120 follow-up merged
 
 After PR #159's [CI run 37367874733](https://github.com/jbone3311/MasterBrain/actions/runs/37367874733) reported the fixed warning
 `profile=mime stage=image reason=deadline`, this branch splits only the trusted
@@ -33,7 +33,16 @@ The reconciled head `291d3cbd91c705fc5f063d7595bb6a5edec6b27c` passed
 both times. Docs, browser, restricted large-MIME and FileOS container checks
 passed. [Strict runtime 37395189130](https://github.com/jbone3311/MasterBrain/actions/runs/37395189130)
 and [restore 37395188747](https://github.com/jbone3311/MasterBrain/actions/runs/37395188747)
-passed. This documentation-only follow-up head still needs exact-head gates.
+passed. The final documentation-receipt head
+`2a604a52fb6f38c79a9af8784a859b75d47d655f` passed
+[full CI 37396202307](https://github.com/jbone3311/MasterBrain/actions/runs/37396202307)
+with 3,145 tests and 12 skips twice and all 491 PostgreSQL-marked tests
+executed both times, including restricted worker containers. Its
+[strict runtime 37396202533](https://github.com/jbone3311/MasterBrain/actions/runs/37396202533)
+and [restore 37396202282](https://github.com/jbone3311/MasterBrain/actions/runs/37396202282)
+passed. PR [#160](https://github.com/jbone3311/MasterBrain/pull/160) merged
+at `28991f8ed8c7f73ec06402ec1032baf34e1fbf9b`. Merged-main checks are
+pending.
 On its combined local
 tree, 2,665 non-PostgreSQL Python tests passed with 491 PostgreSQL-marked tests
 and the separate local trial launcher deselected; all six browser files passed
@@ -58,7 +67,12 @@ passed 3,143 tests, 12 skipped twice with all 491 PostgreSQL-marked tests
 executed both times; docs, browser and restricted worker container checks
 passed. [Strict runtime 37393493727](https://github.com/jbone3311/MasterBrain/actions/runs/37393493727)
 and [restore 37393493596](https://github.com/jbone3311/MasterBrain/actions/runs/37393493596)
-passed. Merged-main gates are pending. This UI read
+passed. Merged `main` [CI 37394900549](https://github.com/jbone3311/MasterBrain/actions/runs/37394900549)
+passed 3,143 tests and 12 skips twice, with all 491 PostgreSQL-marked tests
+executed both times and restricted worker container checks passed;
+[strict runtime 37394900498](https://github.com/jbone3311/MasterBrain/actions/runs/37394900498)
+and [restore 37394900676](https://github.com/jbone3311/MasterBrain/actions/runs/37394900676)
+passed. This UI read
 does not make the reviewed dates or states live-current facts.
 
 ## First-party reviewed-project drill-down — ADR-163 merged

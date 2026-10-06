@@ -1,7 +1,7 @@
 # ADR-164 — Explicit reviewed schedule in the owner workspace
 
 Status: merged through PR #159 after exact-head full CI, strict-runtime and
-restore passed; merged-main gates remain open. This grants no hosted,
+restore and merged-main gates passed. This grants no hosted,
 live-source or action acceptance.
 
 ## Context
