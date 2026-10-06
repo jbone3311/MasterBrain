@@ -1,7 +1,9 @@
 # ADR-163 — Owner workspace project drill-down
 
-Status: merged through PR #156; exact-head gates passed, merged-main gates
-pending. No hosted or live-source acceptance is implied.
+Status: merged through PR #156; exact-head gates passed. Merged-main restore
+passed, while full CI and the final strict gate were blocked before execution
+by hosted-runner acquisition ([issue #158](https://github.com/jbone3311/MasterBrain/issues/158)).
+No hosted or live-source acceptance is implied.
 
 ## Context
 
