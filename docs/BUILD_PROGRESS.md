@@ -1,6 +1,6 @@
 # MasterBrain Build Progress
 
-## Selected answer-citation recheck (2026-10-06, ADR-165 in review)
+## Selected answer-citation recheck (2026-10-06, ADR-165 exact-head verified)
 
 An unchanged current-search hit is not enough to prove a selected quote still
 matches separately fetched evidence. The read-only answer service now reopens
@@ -11,8 +11,11 @@ revoked access fails closed. Service and HTTP regressions cover those races.
 The local focused suite passed 35/35, the broader non-PostgreSQL suite passed
 2,668 tests with 491 PostgreSQL-marked tests and the separate Mac trial launcher
 deselected, all six browser files passed 164/164, and Ruff, mypy, docs and diff
-checks passed. Exact-head hosted PostgreSQL, container, strict-runtime and
-restore gates remain open. This is not a durable snapshot or generated chat.
+checks passed. PR #162's code head `91b64d8` passed hosted full CI twice with
+3,148 tests and all 491 PostgreSQL-marked cases executed each time, plus
+restricted worker containers, strict-runtime and restore. The final
+documentation head still needs its own gates. This is not a durable snapshot
+or generated chat.
 
 ## Isolated image-check failure diagnostics (2026-10-06, ADR-120 follow-up merged)
 

@@ -8,14 +8,12 @@ The documentation refresh changes explanations/navigation, not runtime privilege
 ADR-035 now defines the separate approved PDF source-to-search channel for ready
 mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion.
 
-## In review
+## Accepted
 
 [ADR-165](adr/165_answer_citation_recheck.md) reopens only selected answer
 evidence after final scoped search, refusing a changed body, digest, source or
 revoked read grant before any quote is returned. It is a bounded read-only
 race hardening step, not a durable snapshot or generated-chat acceptance.
-
-## Accepted
 
 [ADR-164](adr/164_owner_reviewed_schedule.md) defines explicit, bounded
 reviewed-event and commitment-due windows in the first-party workspace. It

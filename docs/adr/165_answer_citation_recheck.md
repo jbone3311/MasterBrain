@@ -1,6 +1,6 @@
 # ADR-165 — Recheck selected answer evidence before disclosure
 
-Status: in review. This is a read-only hardening increment, not generated-chat,
+Status: accepted for the read-only answer service. This is a hardening increment, not generated-chat,
 hosted-access or source-effect acceptance.
 
 ## Problem
