@@ -454,6 +454,28 @@ class GroundedAnswerService:
         }
         if any((item["evidence_id"], item["document_id"]) not in current for item in citations):
             raise AnswerStale()
+        # Search membership alone cannot prove that a cited body or its source
+        # grant stayed the same while the selector was working. Reopen only the
+        # selected evidence, bounded to the original passage size, before reply.
+        for item in citations:
+            passage = by_id[item["evidence_id"]]
+            try:
+                metadata = self.brain.evidence(ctx, passage.evidence_id)
+                content = self.brain.evidence_content(
+                    ctx, passage.evidence_id, max_chars=MAX_PASSAGE_CHARS
+                )
+            except NotFound:
+                raise AnswerStale() from None
+            if (
+                metadata.get("document_id") != passage.document_id
+                or metadata.get("source_id") != passage.source_id
+                or metadata.get("source_kind") != passage.source_kind
+                or content.get("document_id") != passage.document_id
+                or content.get("body_sha256") != passage.body_sha256
+                or not isinstance(content.get("content"), str)
+                or not content["content"].startswith(passage.content)
+            ):
+                raise AnswerStale()
         bounded_reviewed, output_truncated = self._bound_answer_text(
             citations, [item for item, _ in reviewed]
         )

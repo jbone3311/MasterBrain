@@ -97,7 +97,12 @@ source effects or an alternate route through KnowledgeCore.
   Requires `brain.search`, `knowledge.search`, `brain.evidence.read` and
   `brain.content.read`, plus assistant source enrollment. A configured selector
   may choose at most four exact quotes from at most eight bounded passages;
-  the server verifies citations and rechecks current visibility. ADR-144 makes
+  the server verifies citations and rechecks current visibility.
+  ADR-165's in-review hardening additionally reopens each selected evidence
+  body and source under the caller's grants after selection, refusing changed
+  bytes, digest, metadata or revoked access before returning a quote. This is
+  a bounded race check, not a durable snapshot or live-source freshness proof.
+  ADR-144 makes
   a local deterministic excerpt selector the default; explicit `None` disables
   it and returns 503. ADR-145 removes fixed question boilerplate before both
   current-search calls; the original question reaches the selector, and Search

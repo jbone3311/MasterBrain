@@ -12,7 +12,7 @@ from test_service import TOKEN, registry
 
 from email_brain.api import create_app
 from email_brain.domain.models import TenantContext
-from email_brain.store import AccessDenied, Store
+from email_brain.store import AccessDenied, NotFound, Store
 from masterbrain.answers import (
     MAX_ANSWER_TEXT_BYTES,
     AnswerPassage,
@@ -233,6 +233,43 @@ def test_stale_evidence_or_revoked_authority_cannot_return_quotes() -> None:
         GroundedAnswerService(brain_mock(), Selector()).answer(
             context(), "Question?", revoked
         )
+
+
+def test_selected_quote_rechecks_its_evidence_body_and_source() -> None:
+    for changed_content, digest in (
+        ("The certificate was withdrawn.",
+         hashlib.sha256(b"The certificate was withdrawn.").hexdigest()),
+        ("The certificate was withdrawn.", hashlib.sha256(BODY.encode()).hexdigest()),
+        (BODY, hashlib.sha256(b"A different body").hexdigest()),
+    ):
+        brain = brain_mock()
+        initial = dict(brain.evidence_content.return_value)
+        changed = {**initial, "content": changed_content, "body_sha256": digest}
+        brain.evidence_content.side_effect = [initial, changed]
+        with pytest.raises(AnswerStale):
+            GroundedAnswerService(brain, Selector()).answer(context(), "insurance", grouped)
+        assert brain.evidence_content.call_count == 2
+
+    brain = brain_mock()
+    initial_metadata = dict(brain.evidence.return_value)
+    brain.evidence.side_effect = [initial_metadata, {**initial_metadata, "source_id": "other"}]
+    with pytest.raises(AnswerStale):
+        GroundedAnswerService(brain, Selector()).answer(context(), "insurance", grouped)
+    assert brain.evidence.call_count == 2
+
+
+def test_selected_quote_rechecks_content_access_after_selection() -> None:
+    brain = brain_mock()
+    initial = dict(brain.evidence_content.return_value)
+    brain.evidence_content.side_effect = [initial, AccessDenied("source grant revoked")]
+    with pytest.raises(AccessDenied):
+        GroundedAnswerService(brain, Selector()).answer(context(), "insurance", grouped)
+    assert brain.evidence_content.call_count == 2
+
+    brain = brain_mock()
+    brain.evidence.side_effect = [dict(brain.evidence.return_value), NotFound()]
+    with pytest.raises(AnswerStale):
+        GroundedAnswerService(brain, Selector()).answer(context(), "insurance", grouped)
 
 
 def test_model_failure_is_scrubbed_and_no_selector_never_searches() -> None:
@@ -599,3 +636,32 @@ def test_api_requires_all_read_scopes_and_selector() -> None:
     assert response.headers["Cache-Control"] == "no-store"
     for bad in ({"question": " "}, {"question": "bad\x00question"}, {"question": "Q", "extra": 1}):
         assert app.post("/v1/brain/answers", json=bad, headers=headers).status_code == 422
+
+
+def test_api_refuses_quote_when_cited_body_changes_after_selection() -> None:
+    store = MagicMock(spec=Store)
+    brain = brain_mock()
+    knowledge = MagicMock(spec=KnowledgeCore)
+    brain.search_current_fileos.return_value = [
+        SearchHit("chunk_" + "c" * 32, DOCUMENT, EVIDENCE, SOURCE, "file.txt", BODY, 1.0)
+    ]
+    brain.search_current_archive_members.return_value = []
+    brain.search_current_archive_documents.return_value = []
+    brain.search_current_archive_images.return_value = []
+    brain.search_current_email_family.return_value = EmailFamilySearch((), (), ())
+    knowledge.search.return_value = []
+    initial = dict(brain.evidence_content.return_value)
+    brain.evidence_content.side_effect = [
+        initial, {**initial, "content": "The certificate was withdrawn."}
+    ]
+    with TestClient(create_app(
+        store, registry(set(context().scopes)), brain_store=brain,
+        knowledge_store=knowledge, answer_selector=Selector(),
+    )) as client:
+        response = client.post(
+            "/v1/brain/answers", json={"question": "insurance"},
+            headers={"Authorization": "Bearer " + TOKEN},
+        )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "answer_stale"}
+    assert BODY not in response.text

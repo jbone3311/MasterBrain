@@ -1,5 +1,19 @@
 # MasterBrain Build Progress
 
+## Selected answer-citation recheck (2026-10-06, ADR-165 in review)
+
+An unchanged current-search hit is not enough to prove a selected quote still
+matches separately fetched evidence. The read-only answer service now reopens
+only cited evidence after the final scoped search, checking its document,
+source, kind, body digest and bounded passage prefix before returning a quote.
+Changed or missing evidence returns the existing scrubbed stale response;
+revoked access fails closed. Service and HTTP regressions cover those races.
+The local focused suite passed 35/35, the broader non-PostgreSQL suite passed
+2,668 tests with 491 PostgreSQL-marked tests and the separate Mac trial launcher
+deselected, all six browser files passed 164/164, and Ruff, mypy, docs and diff
+checks passed. Exact-head hosted PostgreSQL, container, strict-runtime and
+restore gates remain open. This is not a durable snapshot or generated chat.
+
 ## Isolated image-check failure diagnostics (2026-10-06, ADR-120 follow-up merged)
 
 The recurring synthetic large-MIME CI deadline is now known to occur before
