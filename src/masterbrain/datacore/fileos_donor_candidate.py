@@ -72,6 +72,11 @@ def build_fileos_donor_candidate(
         or len(rows) + len(raw_exclusions) + len(raw_errors) > MAX_SHADOW_RECORDS
     ):
         raise ValueError("invalid donor shadow ledgers")
+    if any(
+        isinstance(entry, dict) and entry.get("code") == "invalid_locator_encoding"
+        for entry in raw_errors
+    ):
+        raise ValueError("FileOS transition refused: unencodable filename in source root")
     hashed: list[dict[str, Any]] = []
     deferred: list[dict[str, Any]] = []
     exclusions: list[dict[str, str]] = []

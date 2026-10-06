@@ -79,6 +79,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | DC-002W human v2 review API | Existing ADR-128 reviewer and pinned donor; no donor edit | `api.py`, `schemas.py`, ADR-147 | closed bounded request, human/three-scope gate, direct library/API parity, stale/unknown refusal and nonactivation | Merged via PR #116; final-head and merged-main CI/strict/restore green; historical preview only, with no current v2 visibility, source effects or cutover |
 | DC-002X confined shadow directory walk | Pinned FOS-Master `218d5cae` scanner; no donor edit | `fileos_donor_shadow.py`, ADR-152 | descendant/ancestor symlink swaps cannot enumerate outside filenames; ordinary 3,004-row and maximum 9,998-row donor comparisons unchanged | Merged via PR #130 with exact-head CI/strict/restore green; nonpublishing security correction, not policy acceptance or cutover |
 | DC-002Y shadow symlink-target boundary | Same pinned scanner; no donor edit | `fileos_donor_shadow.py`, `fileos_donor_candidate.py`, ADR-156 | all symlink target kinds become coverage errors without target-type inspection; v2 profile/candidate refuse stale v1 staging; ordinary donor golden parity unchanged | Merged via PR #141; corrected exact-head CI/strict/restore and 9,994-file local donor stress passed; merged-main results in build receipt; no v1 switch or cutover |
+| DC-002Z unencodable locator boundary | Same pinned scanner; no donor edit | `fileos.py`, `fileos_donor_shadow.py`, `fileos_donor_candidate.py`, ADR-167 | synthetic surrogate and Linux-required invalid-byte fixture; valid siblings remain visible, affected parent gets one opaque error, v1 completion and v2 candidacy refuse | Fail-closed safety divergence from donor SQLite text behavior; does not establish live platform acceptance or cutover |
 | DC-002U readiness scaling correction | Same immutable shared generation and pinned donor; no donor edit | migration 0048, ADR-131 | indexed exact chunk/base closure, existing five-second statement limit, direct-SQL wrong-text and activation refusal, fresh full suite plus two populated 3,000-row repeats | Merged via PR #90 with exact-head and merged-main CI/strict/restore green; issue #84 closed, no current v2 visibility or cutover |
 | DC-005N linear v1 completed ledger | Existing v1 FileOS run semantics; no donor edit | migration 0043, `persistence.py`, ADR-122 | items-before-receipt, one deferred whole-run check, source-locked item and receipt triggers, replay/direct SQL/3,000-item stress | Merged via PR #73; exact-head CI/strict/restore green; [controlled trigger-cost comparison](FILEOS_COMPLETION_BENCHMARK.md) passed on local and container PostgreSQL 17.11, broader load remains issue #71; no v2 publication or FileOS cutover |
 | DC-003 persistence/index | FOS SQLite schema studied; source-neutral PostgreSQL implementation | `persistence.py`, migration 0015 | replay/drift/concurrency/RLS/immutability/search and populated restore | Complete; hosted gate and restore green |
@@ -191,8 +192,14 @@ snapshot; both full suites executed all 491 PostgreSQL-marked tests. This
 closes synthetic donor-vs-DataCore parity for those filename cases on hosted
 Linux, not real placeholder/permission behavior, the six policy gaps, live
 shadow or cutover.
+ADR-167 treats a name that cannot become UTF-8 text as incomplete scan
+coverage before reading its bytes. A Linux-required test compares the pinned
+donor's SQLite-text failure with MasterBrain's opaque parent error; the
+transition candidate refuses that error rather than staging a partial source.
+This is a deliberate safety difference, not a new claim of donor parity or
+permission to modify the source name automatically.
 This is capacity evidence for the synthetic, nonpublishing path only. The six
-known policy gaps, real cloud placeholders, permission faults, platform/name
+known policy gaps, real cloud placeholders, permission faults, live platform/name
 behavior, owner-authorized live shadow, later v2 current/absence semantics and
 rollback still require review. No v2 activation or FOS-Master change is
 authorized by this result; see the [exact receipt](BUILD_RECEIPT.md).

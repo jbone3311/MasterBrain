@@ -26,6 +26,15 @@ class EvidenceStorage(StrEnum):
     SOURCE_BOUND = "source_bound"
 
 
+def is_utf8_encodable(value: str) -> bool:
+    """Reject surrogate-escaped filesystem bytes before creating portable locators."""
+    try:
+        value.encode("utf-8", errors="strict")
+    except UnicodeEncodeError:
+        return False
+    return True
+
+
 def stable_id(namespace: str, *parts: str) -> str:
     """Produce a stable opaque identifier without exposing source text."""
     if not _ID.fullmatch(namespace):

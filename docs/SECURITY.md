@@ -252,6 +252,11 @@ listing or opening it. ADR-156 removes that probe: all symlinks are coverage
 errors before no-follow directory classification, and the shadow/candidate
 versions advance so older packets cannot be silently reused as new-policy
 evidence. Live-root privacy and cloud-placeholder behavior remain separate gates.
+ADR-167 also refuses surrogate-escaped, non-UTF-8 FileOS names before
+classification or byte reads. It records only an encodable parent coverage
+error, blocks v1 completion and donor-transition candidacy, and never sends
+the malformed name to IDs, SQL, API output or logs. This is a fail-closed
+platform boundary, not pinned-donor parity or live-root acceptance.
 
 ADR-100 requires FileOS snapshot hashing and text/PDF/Office extraction to read
 through the authorized root with no-follow directory/file descriptors. Pathname

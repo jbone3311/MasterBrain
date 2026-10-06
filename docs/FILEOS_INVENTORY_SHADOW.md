@@ -198,14 +198,27 @@ synthetic Linux parity for those filename cases, not a live cloud-placeholder,
 fault-permission, invalid-byte-name or policy-cutover acceptance. The exact
 hosted result is recorded in the build receipt.
 
+## Invalid-byte name safety boundary
+
+ADR-167 keeps surrogate-escaped, non-UTF-8 names out of portable DataCore
+locators. Snapshot v1 and the nonpublishing donor shadow do not inspect the
+affected file or descend into the affected directory. They report one opaque
+`invalid_locator_encoding` error for its encodable parent, while preserving
+valid siblings. V1 completion refuses this partial coverage; the donor-policy
+transition candidate also refuses before any stage or approval. The pinned
+FOS-Master scanner is unchanged. A Linux-required synthetic test creates
+actual invalid-byte names and records its SQLite-text behavior; a Mac skip is
+not counted as a parity pass. This is an intentional fail-closed difference,
+not source-name repair or live FileOS cutover acceptance.
+
 ## Limits and next gate
 
 The comparator covers paths, sizes, hashes, ordinary change/removal, replay,
 metadata-only hashing, and the donor mass-prune tripwire on synthetic files. Donor
 document labels/CRC and MasterBrain media types/IDs are not equivalent fields.
 Real cloud dataless placeholders, permission-driven unreadable directories,
-cross-platform normalization/case collisions and invalid-byte filenames still
-need platform-appropriate acceptance before any
+cross-platform normalization/case collisions and live invalid-byte-name
+behavior still need platform-appropriate acceptance before any
 integrated inventory-policy change. ADR-096 now versions the current snapshot
 policy and refuses policy-only absence inference across complete runs; it does not
 adopt the donor policy. A future integration decision must represent metadata-only/

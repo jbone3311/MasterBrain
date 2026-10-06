@@ -18,6 +18,7 @@ from masterbrain.datacore.confined_files import (
     read_confined_file,
     stat_confined_leaf,
 )
+from masterbrain.datacore.contracts import is_utf8_encodable
 from masterbrain.datacore.fileos_junk_filter import classify_dir, is_junk_file
 
 DONOR_HASH_LIMIT = 2 * 1024**3
@@ -83,6 +84,7 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
     rows: list[dict[str, Any]] = []
     exclusions: list[dict[str, str]] = []
     errors: list[dict[str, str]] = []
+    invalid_name_directories: set[str] = set()
 
     def locator(path: Path) -> str:
         return path.relative_to(root).as_posix()
@@ -149,6 +151,11 @@ def scan_donor_policy_shadow(root: Path, *, metadata_only: bool = False) -> dict
             dirnames: list[str] = []
             filenames: list[str] = []
             for entry in entries:
+                if not is_utf8_encodable(entry.name):
+                    if directory not in invalid_name_directories:
+                        invalid_name_directories.add(directory)
+                        record(errors, {"locator": directory, "code": "invalid_locator_encoding"})
+                    continue
                 if entry.is_symlink():
                     relative = entry.name if directory == "." else f"{directory}/{entry.name}"
                     record(errors, {"locator": relative, "code": "symlink_skipped"})

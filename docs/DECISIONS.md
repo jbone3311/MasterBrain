@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-167](adr/167_fileos_unencodable_locator_boundary.md) makes v1 FileOS
+snapshot and nonpublishing donor shadow reject unencodable names with an
+opaque parent coverage error. The transition candidate refuses the fault;
+this is a safety divergence, not donor cutover parity.
+
 [ADR-166](adr/166_synthetic_trial_workspace_handoff.md) lets the fictional
 loopback trial explicitly reveal its temporary read-only code for manual entry
 into `/brain`. It prints or persists no secret and changes no production grant.
