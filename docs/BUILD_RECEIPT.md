@@ -2,6 +2,24 @@
 
 Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Selected answer-citation recheck — ADR-165 exact-head verified
+
+The branch reopens at most four cited evidence records after scoped search and
+selector output, comparing document, source, kind, digest and selected passage
+prefix. A changed record returns a scrubbed `answer_stale` HTTP 409, and a
+revoked read grant fails closed. The focused service/API suite passed 35/35;
+the non-PostgreSQL suite passed 2,668 tests with 491 database-marked tests and
+the separate local trial launcher deselected. Six browser files passed 164/164.
+Ruff, mypy, docs and diff checks passed. PR [#162](https://github.com/jbone3311/MasterBrain/pull/162)
+at code head `91b64d8a1b8242526a61080825a330074eb0c14c` passed
+[full CI 37401801082](https://github.com/jbone3311/MasterBrain/actions/runs/37401801082)
+with 3,148 tests and 12 skips twice, including all 491 PostgreSQL-marked
+tests both times, docs, browser and restricted worker container checks.
+[Strict runtime 37401801026](https://github.com/jbone3311/MasterBrain/actions/runs/37401801026)
+and [restore 37401801062](https://github.com/jbone3311/MasterBrain/actions/runs/37401801062)
+passed. This documentation-only follow-up head still needs its own gates;
+no production or named-assistant acceptance is claimed.
+
 ## Image-check diagnostic refinement — ADR-120 follow-up merged
 
 After PR #159's [CI run 37367874733](https://github.com/jbone3311/MasterBrain/actions/runs/37367874733) reported the fixed warning
