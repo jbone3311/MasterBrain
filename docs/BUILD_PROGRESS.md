@@ -1,6 +1,6 @@
 # MasterBrain Build Progress
 
-## Pinned-donor FileOS filename parity (2026-10-06, in review)
+## Pinned-donor FileOS filename parity (2026-10-06, PR #164 merged)
 
 The synthetic read-only shadow now probes case and composed/decomposed Unicode
 spelling variants in separate directories against the pinned FOS-Master scanner,
@@ -15,7 +15,7 @@ twice with 3,149 tests, 14 skips and all 491 PostgreSQL-marked cases executed
 each time, plus restricted workers, strict runtime and restore. The added
 shared-path sibling probe passed on the hosted filesystem; the two new
 donor-dependent tests skipped because CI has no FOS-Master checkout.
-Donor-on-Linux collision parity is not claimed. No live root, policy
+PR #164 merged at `01f3b2b`. Donor-on-Linux collision parity is not claimed. No live root, policy
 switch, FileOS effects or FOS-Master mutation is authorized.
 
 ## Selected answer-citation recheck (2026-10-06, ADR-165 merged)

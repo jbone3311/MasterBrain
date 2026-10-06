@@ -163,7 +163,7 @@ review packet cannot silently acquire the new policy. Ordinary donor parity
 is unchanged. This still does not establish real cloud-placeholder or live
 root acceptance.
 
-## Filename representation probe (2026-10-06, in review)
+## Filename representation probe (2026-10-06, PR #164 merged)
 
 A new fictional corpus compares case variants and composed/decomposed Unicode
 names. The cross-directory variant runs against the pinned FOS-Master scanner,
