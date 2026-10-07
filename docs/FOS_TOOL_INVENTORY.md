@@ -27,6 +27,7 @@ later tranche identifies shared behavior.
 | Concern | Exact donor files | Existing donor tests | Migration note |
 |---|---|---|---|
 | Entities/facts | `extract_facts.py`, `fact_db.py`, `fact_verify.py`, `extract_all_domains.py` | No complete known-answer suite found | Import as claims with evidence/confidence, not truth |
+| Statement holdings/transactions | `statement_extract.py`, `statement_line_items` and `statement_extraction_runs` schema; `CMD_INTELLIGENCE.md` | No dedicated checked-in statement recipe test module found; donor command records per-recipe operational outcomes | Keep each date/symbol/quantity/price/amount row together, preserve reconciliation status, and build synthetic golden cases before extraction |
 | Cross-domain reports | `reporting.py`, `report_data_collector.py` | No complete semantic suite found | Use as query/evaluation reference |
 | Routing knowledge | `routing_engine.py`, `naming_classifier.py`, `spoke_config.py` | intake suites cover portions | Separate learned pattern from effect authority |
 | Freshness/lineage | `ssot_freshness.py`, `ssot_drift_check.py`, `source_registry`/`output_lineage` schema | Operational checks | Map to KnowledgeCore freshness and provenance |
@@ -43,6 +44,11 @@ patterns, entities/mentions, document facts and fact type registry inform the sh
 model. They are not copied wholesale because MasterBrain requires hosted tenancy/RLS,
 immutable evidence versions and source-neutral provenance.
 
+The investment dossier is not a plain entity lookup or sum of `document_facts`.
+The donor's `Q: Intelligence` runs generic extraction alongside statement recipes,
+whose repeating line items and reconciliation outcomes need a distinct KnowledgeCore
+projection. See [the live-alpha/FOS preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md).
+
 ## Baseline content hashes
 
 The exact first-tranche source hash is:
@@ -57,6 +63,16 @@ The migration ledger pins the Git commit as the primary provenance. The extracti
 hashes cover the DC-004 text/Markdown/HTML/CSV candidate and its donor test suite;
 optional PDF/Office/image dependencies remain outside that tranche. Each later tranche
 must add source hashes for all transitive candidate files before adaptation.
+
+Read-only 2026-10-07 intelligence audit hashes at the same pinned donor commit
+(candidate provenance, not an extracted implementation):
+
+```text
+f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe  _SYSTEM/tools/statement_extract.py
+be835390822f27a6a5103e667a3ebbf3b840dec8680653cdbfea5791a52ca29d  _SYSTEM/tools/extract_facts.py
+e52ee7672121a609171a827eab086080dcea159ef987e21f0793e32528521cc9  _SYSTEM/tools/reporting.py
+c2f4c38c8a6bd783e726cebde1f555586d5675639aab2beb45c50128898feb8b  _SYSTEM/tools/fact_verify.py
+```
 
 DC-004C archive audit adds:
 

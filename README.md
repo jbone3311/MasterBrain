@@ -27,6 +27,9 @@ The owner still needs to complete the
 [current functions](docs/CURRENT_FUNCTIONS.md), the
 [roadmap](docs/ROADMAP.md), [changelog](CHANGELOG.md) and
 [exact-commit build receipt](docs/BUILD_RECEIPT.md) for details and limits.
+The next owner decision is a bounded Fastmail read pilot and preservation of
+FOS-Master's statement/financial intelligence; see the
+[live-alpha integration assessment](docs/LIVE_ALPHA_AND_FOS_PRESERVATION.md).
 
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 Its `main` branch requires full CI, strict-runtime and populated-restore checks

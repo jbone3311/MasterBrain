@@ -28,6 +28,7 @@ The detailed file/test catalog is [FOS_TOOL_INVENTORY.md](FOS_TOOL_INVENTORY.md)
 | Database primitives | `db_connect.py`, `db_migrate.py`, schema tables, `db_audit.py` | `test_db_audit.py` | DataCore persistence | Reconcile SQLite donor behavior with PostgreSQL tenancy/RLS |
 | Provenance/audit | `lineage_tracker.py`, `audit_history.py`, `file_history` schema | audit/invariant tests | DataCore provenance | Preserve append-only receipts and source hashes |
 | Knowledge extraction | `extract_facts.py`, `fact_db.py`, `fact_verify.py`, `reporting.py` | operational corpus tests needed | KnowledgeCore | Convert extracted values into claims, never unquestioned facts |
+| Statement intelligence | `statement_extract.py`, `statement_line_items`/`statement_extraction_runs` schema, `CMD_INTELLIGENCE.md` | no dedicated checked-in recipe suite; synthetic golden cases needed | KnowledgeCore typed financial line-item projection | Preserve row grouping and reconciliation outcomes; do not infer a holding from a money mention or sum successive statements |
 | Email utilities in FOS | `email_core.py`, `email_ingest_adapter.py`, `email_sanitizer.py` | three email suites | Compare with Email capability | Inventory for lessons; do not create competing Email stack |
 
 This inventory is code-level but not yet a complete semantic audit of every helper.
@@ -224,6 +225,12 @@ authorized by this result; see the [exact receipt](BUILD_RECEIPT.md).
    visibility before redirecting existing DataCore or unified search.
 4. **KC-001 claim/entity projection:** import donor lessons without treating model
    output as truth.
+   Preserve the donor's separate statement recipe/line-item/reconciliation path and
+   source-tier/hash confirmation behavior; build a synthetic golden corpus before
+   extraction. The [live-alpha preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md)
+   defines the cross-source company-dossier known answer. This KnowledgeCore track
+   can be developed while the FileOS inventory policy remains in shadow; it does
+   not authorize a donor cutover.
 5. **FileOS effect broker:** last, after read-side parity and explicit safety ADRs.
 
 ## Cutover and rollback

@@ -19,6 +19,9 @@ mail forever, share it with others, or disclose it to remote models.
 | Q11 | Approvals for drafts/moves/bulk changes | No effects; approval records decision only | Action executor |
 | Q12 | Hosted extraction packaging under the current Factory contract | Staged proposal, no copied Factory runtime | Shared binary extractor deployment |
 | Q13 | Live document coverage, scanner policy and accepted unsupported-file behavior | Fixed unscanned synthetic PDF policy only; never relabel real mail synthetic | Live PDF intake and first-pilot coverage approval |
+| Q14 | First live Fastmail scope: account, folder/date window and revocation test | No real token, provider request or mailbox enrollment until selected | Bounded read-only owner pilot |
+| Q15 | First FileOS read-only shadow root and acceptable donor-policy differences | Keep FOS-Master operating unchanged; use synthetic roots only | Live shadow and eventual v2 current-read decision |
+| Q16 | Remote client access: approved identity/client, where the database lives, device uptime and API exposure | No remote client or public database; central private PostgreSQL/API is a target, not provisioned | Grokbot or other named-assistant pilot |
 
 Repository is private/proprietary by default. No OSS license has been granted to
 this Product. Dependency license review remains part of release acceptance.
