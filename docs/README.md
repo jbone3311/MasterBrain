@@ -24,6 +24,7 @@ selection/approval/history/cancellation and cited pages; live acceptance is pend
 ## Reading paths
 
 - **MasterBrain foundation:** [product contract](../PRODUCT.md), [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md), [architecture](ARCHITECTURE.md), [data model](DATA_MODEL.md), [Brain API](BRAIN_API.md), [FOS migration](FOS_MIGRATION.md), and [roadmap](ROADMAP.md).
+- **Next live-alpha decision:** [Fastmail pilot, FOS intelligence preservation and private database/API shape](LIVE_ALPHA_AND_FOS_PRESERVATION.md).
 - **FileOS migration boundary:** [nonpublishing donor candidate](FILEOS_DONOR_CANDIDATE.md) explains hashed versus deferred observations and why current v1 publication is unchanged.
 - **Policy transition review:** [read-only v1-to-donor preview](FILEOS_DONOR_TRANSITION.md) exposes policy gaps without inferring deletion or switching FileOS.
 - **Naming and compatibility:** [product identity](PRODUCT_IDENTITY.md) and machine-readable [manifest](../MANIFEST.json).
