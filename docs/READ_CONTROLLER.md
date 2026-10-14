@@ -9,6 +9,9 @@ responses and disposable SQL, not a live Fastmail mailbox or cloud deployment.
 `sync-read` runs the existing [read worker](READ_WORKER.md) for one already
 configured Fastmail account. It adds no enrollment, token discovery, OAuth flow,
 provider writes, background service installation or administrative pause reset.
+It still uses the **account-wide** worker mode. ADR-176's filtered library
+worker is not exposed here, has no durable account-level SQL scope fence, and
+must not be treated as permission for a private folder/date pilot.
 `--allow-provider-read` must be supplied for execution; it is an invocation guard,
 not permission from the owner to connect a real account. Obtain that permission
 and complete the live-pilot gates before using real credentials.

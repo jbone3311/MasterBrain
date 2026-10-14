@@ -2,6 +2,22 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Scoped Fastmail query primitive — ADR-175
+
+[PR #195](https://github.com/jbone3311/MasterBrain/pull/195) final head
+`22c14892bb60b9c1a0481c62abcd587de4d0a489` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38554559769)
+with 3,235 passes, six skips and 507/507 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38554559749)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38554559806)
+passed. Squash merge `b8b5a9ce5a86c0c826e442919d05d36952d893ff`
+passed [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38555607451)
+with the same counts, plus
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38555607474)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38555607799).
+This is a typed JMAP filter/metadata primitive, not an account-bound worker or
+approval to read personal Fastmail. No donor or live-source state changed.
+
 ## Isolated Fidelity donor recipe parity — ADR-174
 
 [PR #194](https://github.com/jbone3311/MasterBrain/pull/194) final head

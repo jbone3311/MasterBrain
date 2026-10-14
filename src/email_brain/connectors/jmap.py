@@ -5,6 +5,8 @@ Notifications are hints. Returned state becomes a checkpoint only after ingestio
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -58,6 +60,11 @@ class ScopedMailWindow:
             "after": self.after.astimezone(UTC).isoformat().replace("+00:00", "Z"),
             "before": self.before.astimezone(UTC).isoformat().replace("+00:00", "Z"),
         }
+
+    def fingerprint(self) -> str:
+        """Stable identity for a durable cursor; the typed filter is the authority."""
+        encoded = json.dumps(self.query_filter(), sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
     def accepts_metadata(self, row: dict[str, Any]) -> bool:
         """Fail closed if Email/get does not confirm the provider's query scope."""

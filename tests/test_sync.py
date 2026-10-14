@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -8,7 +9,7 @@ from pydantic import ValidationError
 
 from email_brain.blobs import BlobError
 from email_brain.connectors.fastmail import MAIL, ControlTooLarge, FastmailReadClient
-from email_brain.connectors.jmap import JmapReader, ProtocolError
+from email_brain.connectors.jmap import JmapReader, ProtocolError, ScopedMailWindow
 from email_brain.domain.models import TenantContext
 from email_brain.normalize import MAX_RAW_BYTES
 from email_brain.store import Conflict, IngestItem
@@ -174,6 +175,7 @@ def worker_harness(
     mails=("first", "second"),
     sizes=None,
     monotonic=None,
+    scope=None,
 ):
     """Only synthetic provider and durable-store doubles; no network/database access."""
     store = SimpleNamespace(cursor=None, commits=[], outcomes=[], retained={}, raws={})
@@ -272,13 +274,136 @@ def worker_harness(
     )
     ctx = TenantContext(uuid4(), uuid4(), frozenset({"email.ingest"}), uuid4())
     kwargs = {"monotonic": monotonic} if monotonic is not None else {}
-    worker = ReadWorker(store, client, **kwargs)
+    worker = ReadWorker(store, client, scope=scope, **kwargs)
     store.mailbox, store.downloads, store.jobs = mailbox, downloads, jobs
     return worker, store, calls, ctx, uuid4()
 
 
 def cursor(store):
     return Checkpoint.model_validate_json(store.cursor)
+
+
+def scoped_window() -> ScopedMailWindow:
+    return ScopedMailWindow(
+        "inbox", datetime(2026, 9, 19, tzinfo=UTC), datetime(2026, 9, 21, tzinfo=UTC)
+    )
+
+
+def test_scoped_inventory_repeats_without_account_wide_changes(monkeypatch):
+    scope = scoped_window()
+    worker, store, calls, ctx, account = worker_harness(monkeypatch, scope=scope)
+    assert worker.step(ctx, account) == "progress"
+    first = cursor(store)
+    assert first.schema_version == 4 and first.scope_sha256 == scope.fingerprint()
+    assert calls == [], "a scoped baseline needs no account-wide Email/get state"
+    assert worker.step(ctx, account) == "progress"
+    assert cursor(store).phase == "reconcile"
+    assert worker.step(ctx, account) == "caught_up"
+    second = cursor(store)
+    assert second.schema_version == 4 and second.phase == "listing"
+    assert second.generation != first.generation
+    assert worker.step(ctx, account) == "progress"
+    assert [method for method, _ in calls] == ["Email/query", "Email/query"]
+    assert all(args["filter"] == scope.query_filter() for _, args in calls)
+    assert [len(items) for items, _ in store.commits] == [0, 2, 0, 2]
+
+
+def test_scoped_cursor_rejects_legacy_and_changed_scope_before_provider(monkeypatch):
+    worker, store, calls, ctx, account = worker_harness(monkeypatch, scope=scoped_window())
+    store.cursor = Checkpoint(
+        generation=uuid4(), phase="changes", email_state="legacy"
+    ).encode()
+    assert worker.step(ctx, account) == "protocol_error"
+    assert not calls and not store.downloads and not store.commits
+    store.cursor = Checkpoint(
+        schema_version=4, generation=uuid4(), phase="listing",
+        email_state="scoped-inventory", scope_sha256="0" * 64,
+    ).encode()
+    assert worker.step(ctx, account) == "protocol_error"
+    assert not calls and not store.downloads and not store.commits
+
+
+def test_unscoped_worker_refuses_scoped_cursor_before_provider(monkeypatch):
+    _, store, calls, ctx, account = worker_harness(monkeypatch)
+    store.cursor = Checkpoint(
+        schema_version=4, generation=uuid4(), phase="listing",
+        email_state="scoped-inventory", scope_sha256=scoped_window().fingerprint(),
+    ).encode()
+    worker = ReadWorker(store, SimpleNamespace(discover=lambda: pytest.fail("no provider")))
+    assert worker.step(ctx, account) == "protocol_error"
+    assert not calls and not store.downloads and not store.commits
+
+
+def test_scoped_deleted_anchor_restarts_same_scope_without_changes(monkeypatch):
+    scope = scoped_window()
+    worker, store, calls, ctx, account = worker_harness(
+        monkeypatch, scope=scope, page_size=1
+    )
+    assert worker.step(ctx, account) == "progress"
+    assert worker.step(ctx, account) == "progress"
+    old = cursor(store)
+    assert old.anchor == "first"
+    store.mailbox.remove("first")
+    assert worker.step(ctx, account) == "progress"
+    restarted = cursor(store)
+    assert restarted.schema_version == 4 and restarted.scope_sha256 == scope.fingerprint()
+    assert restarted.generation != old.generation and restarted.anchor is None
+    assert worker.step(ctx, account) == "progress"
+    assert worker.step(ctx, account) == "caught_up"
+    assert all(method == "Email/query" for method, _ in calls)
+    assert all(args["filter"] == scope.query_filter() for _, args in calls)
+
+
+def test_scoped_thousand_message_inventory_is_bounded_and_exact(monkeypatch):
+    scope = scoped_window()
+    mails = tuple(f"fixture-{i:04d}" for i in range(1000))
+    worker, store, calls, ctx, account = worker_harness(
+        monkeypatch, scope=scope, mails=mails, page_size=50
+    )
+    assert worker.step(ctx, account) == "progress"
+    for _ in range(100):
+        assert worker.step(ctx, account) == "progress"
+        if cursor(store).phase == "reconcile":
+            break
+    else:
+        pytest.fail("bounded scoped inventory did not finish")
+    assert store.commits[-1][1]["inventory_total"] == 1000
+    listed = [item.provider_id for items, _ in store.commits for item in items]
+    assert listed == list(mails)
+    assert all(len(items) <= LISTING_LIMIT for items, _ in store.commits)
+    assert all(
+        sum(len(item.raw) for item in items if item.raw is not None) <= MAX_PAGE_BYTES
+        for items, _ in store.commits
+    )
+    assert all(method == "Email/query" and args["filter"] == scope.query_filter()
+               for method, args in calls)
+    assert worker.step(ctx, account) == "caught_up"
+    assert cursor(store).phase == "listing"
+
+
+@pytest.mark.parametrize("mailboxes,stamp", [
+    ({"elsewhere": True}, "2026-09-20T00:00:00Z"),
+    ({"inbox": True}, "2026-09-21T00:00:00Z"),
+    ({"inbox": False}, "2026-09-20T00:00:00Z"),
+])
+def test_scoped_metadata_refusal_precedes_every_blob_download(
+    monkeypatch, mailboxes, stamp
+):
+    worker, store, calls, ctx, account = worker_harness(monkeypatch, scope=scoped_window())
+    assert worker.step(ctx, account) == "progress"
+    previous = store.cursor
+    original = worker.client.metadata
+
+    def metadata(ids):
+        response = original(ids)
+        response["list"][0]["mailboxIds"] = mailboxes
+        response["list"][0]["receivedAt"] = stamp
+        return response
+
+    worker.client.metadata = metadata
+    assert worker.step(ctx, account) == "protocol_error"
+    assert store.cursor == previous and store.downloads == []
+    assert [method for method, _ in calls] == ["Email/query"]
 
 
 @pytest.mark.parametrize("expired", [False, True])

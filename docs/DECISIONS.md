@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-176](adr/176_scoped_fastmail_inventory_worker.md) adds a synthetic-only
+version-4 scoped inventory worker that never uses account-wide changes and
+rechecks metadata before bytes. The account/lease SQL fence and operator
+configuration are still missing; live scoped reads remain unauthorized.
+
 [ADR-175](adr/175_scoped_fastmail_query_boundary.md) adds a synthetic-only,
 typed mailbox/date `Email/query` filter and independent metadata check. The
 account-wide `sync-read` worker is unchanged; a durable scoped pilot is not

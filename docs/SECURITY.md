@@ -7,12 +7,12 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
 
 ## Trust boundaries
 
-ADR-175's typed Fastmail `Email/query` mailbox/date filter is only a protocol
-primitive. Its separate `Email/get` metadata check fails closed on malformed
-membership/date fields, but neither is yet connected to the worker. The
-existing `sync-read` command remains account-wide; no live scoped-read
-security claim is made until scope is durably bound through changes and
-reconciliation.
+ADR-175's typed Fastmail `Email/query` mailbox/date filter and separate
+`Email/get` metadata check are now used by ADR-176's synthetic-only scoped
+worker. That worker avoids `Email/changes` and refuses out-of-scope metadata
+before any blob read. The existing `sync-read` command remains account-wide;
+the scoped library path lacks an account-level SQL scope/lease fence and
+operator binding, so it must not be used for a real pilot.
 
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.

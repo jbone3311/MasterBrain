@@ -27,6 +27,7 @@ from email_brain.connectors.jmap import (
     JmapReader,
     ProtocolError,
     ResyncRequired,
+    ScopedMailWindow,
     id_list,
     identifier,
 )
@@ -53,10 +54,10 @@ MAX_CHANGES = 16
 
 
 class Checkpoint(BaseModel):
-    """Versioned durable position. Version 3 lists by anchor; version 2 by position."""
+    """Versioned durable position. Version 4 binds a scoped inventory."""
 
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
-    schema_version: Literal[1, 2, 3] = 3
+    schema_version: Literal[1, 2, 3, 4] = 3
     generation: UUID
     phase: Literal["listing", "reconcile", "changes"]
     email_state: str = Field(min_length=1, max_length=512)
@@ -65,6 +66,7 @@ class Checkpoint(BaseModel):
     total: int | None = Field(default=None, ge=0, le=2**31 - 1)
     anchor: str | None = Field(default=None, min_length=1, max_length=512)
     listed: int = Field(default=0, ge=0, le=2**31 - 1)
+    scope_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
     @model_validator(mode="after")
     def consistent(self) -> Checkpoint:
@@ -73,12 +75,16 @@ class Checkpoint(BaseModel):
             identifier(self.query_state)
         if self.anchor is not None:
             identifier(self.anchor)
+        if (self.schema_version == 4) != (self.scope_sha256 is not None):
+            raise ValueError("scope and checkpoint version disagree")
+        if self.schema_version == 4 and self.phase == "changes":
+            raise ValueError("scoped checkpoints cannot use account-wide changes")
         positional = self.position or self.total is not None or self.query_state is not None
         anchored = self.anchor is not None or self.listed
         if self.phase != "listing" and (positional or anchored):
             raise ValueError("unexpected listing fields")
         if self.phase == "listing":
-            if self.schema_version == 3:
+            if self.schema_version in {3, 4}:
                 if positional or (self.anchor is None) != (self.listed == 0):
                     raise ValueError("inconsistent anchored listing checkpoint")
             elif anchored or (
@@ -159,6 +165,7 @@ class ReadWorker:
         monotonic: Callable[[], float] = time.monotonic,
         jitter: Callable[[], float] | None = None,
         authorize: Callable[[], None] | None = None,
+        scope: ScopedMailWindow | None = None,
     ) -> None:
         import random
 
@@ -174,6 +181,9 @@ class ReadWorker:
         self.monotonic = monotonic
         self.jitter = jitter or random.random
         self.authorize = authorize or (lambda: None)
+        if scope is not None and not isinstance(scope, ScopedMailWindow):
+            raise ValueError("invalid scoped mail window")
+        self.scope = scope
 
     def step(self, ctx: TenantContext, account_id: UUID) -> str:
         self.authorize()
@@ -193,6 +203,14 @@ class ReadWorker:
 
         try:
             checkpoint = Checkpoint.model_validate_json(lease.cursor) if lease.cursor else None
+            if checkpoint is not None:
+                if self.scope is None and checkpoint.schema_version == 4:
+                    raise ProtocolError("scoped cursor cannot run account-wide")
+                if self.scope is not None and (
+                    checkpoint.schema_version != 4
+                    or checkpoint.scope_sha256 != self.scope.fingerprint()
+                ):
+                    raise ProtocolError("stored cursor does not match scoped read")
             heartbeat()
             if self.client.discover() != lease.provider_account_id:
                 raise ProtocolError("configured provider account mismatch")
@@ -203,15 +221,17 @@ class ReadWorker:
             inventory_total = None
             outcome: Outcome = "progress"
             if checkpoint is None or checkpoint.schema_version == 1:
-                next_checkpoint = self._baseline(reader)
+                next_checkpoint = self._baseline(reader, self.scope)
             elif checkpoint.phase == "listing":
-                if checkpoint.schema_version != 3:
+                if checkpoint.schema_version not in {3, 4}:
                     # Positional listings restart as anchored ones; the Email baseline
                     # is preserved so any deletion meanwhile is replayed later.
                     next_checkpoint = self._relist(checkpoint)
                 else:
                     try:
-                        page = reader.query_page(checkpoint.anchor, limit=LISTING_LIMIT)
+                        page = reader.query_page(
+                            checkpoint.anchor, limit=LISTING_LIMIT, scope=self.scope
+                        )
                     except AnchorNotFound:
                         next_checkpoint = self._relist(checkpoint)
                     else:
@@ -224,17 +244,20 @@ class ReadWorker:
                             lease.provider_account_id,
                             heartbeat,
                             partial=listing_budget_spent,
+                            scope=self.scope,
                         )
                         inventory_generation = checkpoint.generation
                         listed = checkpoint.listed + consumed
                         if consumed < len(page.ids) or page.has_more:
                             anchor = page.ids[consumed - 1] if consumed else checkpoint.anchor
                             next_checkpoint = Checkpoint(
+                                schema_version=checkpoint.schema_version,
                                 generation=checkpoint.generation,
                                 phase="listing",
                                 email_state=checkpoint.email_state,
                                 anchor=anchor,
                                 listed=listed,
+                                scope_sha256=checkpoint.scope_sha256,
                             )
                         else:
                             # Every ID listed in this generation is durable before the
@@ -242,9 +265,11 @@ class ReadWorker:
                             # the provider total moves while the mailbox changes.
                             inventory_total = listed
                             next_checkpoint = Checkpoint(
+                                schema_version=checkpoint.schema_version,
                                 generation=checkpoint.generation,
                                 phase="reconcile",
                                 email_state=checkpoint.email_state,
+                                scope_sha256=checkpoint.scope_sha256,
                             )
             elif checkpoint.phase == "reconcile":
                 missing = self.jobs.reconciliation_candidates(
@@ -253,15 +278,17 @@ class ReadWorker:
                 items, _ = self._fetch(
                     ctx, account_id, checkpoint, (), missing, lease.provider_account_id, heartbeat
                 )
-                next_checkpoint = (
-                    checkpoint
-                    if missing
-                    else Checkpoint(
+                if missing:
+                    next_checkpoint = checkpoint
+                elif self.scope is not None:
+                    next_checkpoint = self._baseline(reader, self.scope)
+                    outcome = "caught_up"
+                else:
+                    next_checkpoint = Checkpoint(
                         generation=checkpoint.generation,
                         phase="changes",
                         email_state=checkpoint.email_state,
                     )
-                )
             else:
                 try:
                     changes = reader.changes(checkpoint.email_state, limit=self._changes_limit)
@@ -339,12 +366,21 @@ class ReadWorker:
             return "protocol_error"
 
     @staticmethod
-    def _baseline(reader: JmapReader) -> Checkpoint:
+    def _baseline(reader: JmapReader, scope: ScopedMailWindow | None = None) -> Checkpoint:
+        if scope is not None:
+            return Checkpoint(
+                schema_version=4, generation=uuid4(), phase="listing",
+                email_state="scoped-inventory", scope_sha256=scope.fingerprint(),
+            )
         return Checkpoint(generation=uuid4(), phase="listing", email_state=reader.baseline_state())
 
     @staticmethod
     def _relist(checkpoint: Checkpoint) -> Checkpoint:
-        return Checkpoint(generation=uuid4(), phase="listing", email_state=checkpoint.email_state)
+        return Checkpoint(
+            schema_version=4 if checkpoint.schema_version == 4 else 3,
+            generation=uuid4(), phase="listing", email_state=checkpoint.email_state,
+            scope_sha256=checkpoint.scope_sha256,
+        )
 
     def _metadata_rows(
         self, ids: tuple[str, ...], account: str, heartbeat: Callable[[], None]
@@ -375,6 +411,7 @@ class ReadWorker:
         heartbeat: Callable[[], None],
         *,
         partial: Callable[[], bool] | None = None,
+        scope: ScopedMailWindow | None = None,
     ) -> tuple[list[IngestItem], int]:
         """Build ingest items for ``ids`` plus tombstones for ``deleted``.
 
@@ -411,6 +448,8 @@ class ReadWorker:
                 items.append(tombstone(key))
                 consumed += 1
                 continue
+            if scope is not None and not scope.accepts_metadata(row):
+                raise ProtocolError("provider metadata escaped scoped query")
             blob = identifier(row.get("blobId"))
             thread = identifier(row.get("threadId"))
             mailboxes = true_keys(row.get("mailboxIds"))

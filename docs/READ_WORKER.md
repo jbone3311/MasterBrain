@@ -3,6 +3,12 @@
 This library now has a separate [bounded operator command](READ_CONTROLLER.md),
 `sync-read`, with private preflight and explicit execution. Tests use synthetic
 HTTP and real PostgreSQL; the command is not live-accepted or a hosted supervisor.
+ADR-176 adds a distinct synthetic-only scoped library mode: version-4 cursors
+bind the exact mailbox/date filter, repeated filtered inventories replace
+account-wide changes, and every metadata row is checked before bytes. It is not
+wired to `sync-read` or a database enrollment fence, so no real folder/date
+pilot is authorized. The rest of this document describes the existing
+account-wide operator.
 The library does not
 discover credentials, enroll accounts, start a background process or contact a
 mailbox on installation. A caller explicitly supplies a read client and a trusted

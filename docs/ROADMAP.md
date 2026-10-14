@@ -1,9 +1,15 @@
 # MasterBrain Roadmap
 
-ADR-175 adds a typed, synthetic-only Fastmail mailbox/date query and
-metadata-recheck primitive. A private pilot still requires durable scope
-binding across cursors, reconciliation and change tracking before any real
-provider request. The existing `sync-read` command remains account-wide.
+ADR-176 makes scoped Fastmail reading executable as a synthetic library worker:
+version-4 scope-bound checkpoints, repeated filtered inventories, and
+pre-download metadata refusal. Next is the durable account/lease database
+fence plus private operator binding, followed by fictional HTTPS/PostgreSQL
+restart, pause, and revocation tests. No live pilot is approved yet.
+
+ADR-175 adds the typed Fastmail mailbox/date query and metadata-recheck
+primitive used by ADR-176. A private pilot still requires account-bound scope
+and a database lease fence before any real provider request. The existing
+`sync-read` command remains account-wide.
 
 ADR-174 extends the pinned, synthetic-only statement donor comparison to the
 low-confidence Fidelity recipe. Six fictional goldens preserve its exact

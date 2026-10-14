@@ -27,10 +27,13 @@ JMAP inventory is account-wide; it does **not** implement a folder/date filter.
 Do not describe an iteration limit as a safe folder/date enrollment. Add and test
 source-scope filtering or obtain explicit approval for an account-wide read
 before any real Fastmail request.
-ADR-175 now supplies a synthetic-only typed JMAP folder/date query and
-independent metadata check, but it is deliberately not wired into `sync-read`:
-the account-wide change feed, durable cursor and inventory reconciliation still
-need scope binding. Therefore the real pilot is **still not approved**.
+ADR-175 supplies a typed JMAP folder/date query and independent metadata check.
+It is deliberately not wired into `sync-read`, which remains account-wide.
+Therefore the real pilot is **still not approved**.
+ADR-176 adds a synthetic-only scoped worker using repeated filtered inventories
+instead of the account-wide change feed. It rechecks metadata before raw bytes,
+but the account/lease database fence and operator binding still do not exist;
+no real folder/date read is authorized.
 
 ## What must survive from FOS-Master
 

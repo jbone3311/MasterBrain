@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add a synthetic-only scoped Fastmail inventory worker with scope-bound
+  version-4 checkpoints, repeated filtered scans, and pre-download metadata
+  refusal (ADR-176). `sync-read` remains account-wide; no live pilot is approved.
+
 - Pinned a second fictional FOS-Master statement recipe baseline (Fidelity)
   with its known low-confidence and missed-row behavior; it is not a runtime
   holding extractor (ADR-174, PR #194).
