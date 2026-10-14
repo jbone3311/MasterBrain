@@ -2,6 +2,12 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Current-search and extractive Ask now report Email and FileOS registration
+  independently, including absent, focus-excluded and assistant-unavailable
+  kinds (ADR-168). Either source can be omitted without breaking read queries.
+  Registration is not provider connectivity or current-index readiness; the
+  per-source coverage read remains available for those details.
+
 ## v0.2.0a2 — synthetic-only alpha checkpoint (2026-10-06)
 
 - Consolidates the read-only first-party Ask workspace, grounded Email/FileOS
