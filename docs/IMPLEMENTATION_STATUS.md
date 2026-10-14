@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-187 adds a fifth isolated, exact-hash donor statement recipe baseline for
+Jefferies. Fictional category holdings, lower-confidence security details and
+transactions preserve negative cash, multi-lot grand totals, subtotal skips,
+zero fallback and wrapped-continuation loss. The pure parser is not called by
+runtime intake, KnowledgeCore publication or Brain API. It does not establish
+portfolio completeness, investment truth, a live source or FileOS cutover.
+Verification and merge status are recorded in the [build receipt](BUILD_RECEIPT.md).
+
 ADR-186 adds a synthetic-only private batch queue for 1–50 source-stated
 Knowledge assertions. It checks exact quotes against current, granted,
 nonexcluded DataCore evidence at stage, preview and review; 40-row fictional

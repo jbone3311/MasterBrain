@@ -73,7 +73,11 @@ publish bank facts. The remaining recipes and donor intelligence reports still
 require comparison before any replacement claim.
 ADR-181 now compares Morgan Stanley too. Its cash-bucket detail exclusion and
 OCR-date loss are preserved as donor behavior, not product-grade investment
-analysis. Jefferies, Wells Fargo, Schwab and donor reports still lack parity.
+analysis. ADR-187 adds a fifth isolated Jefferies baseline, preserving
+category-vs-security detail, negative cash and multi-lot grand totals while
+exposing unpriced positions and wrapped-activity omissions. Wells Fargo,
+Schwab and donor reports still lack parity; none of the five is a live
+investment analysis path.
 ADR-172 stores selected current-document candidates in an immutable tenant-fenced
 ledger, and ADR-173 permits a human owner to inspect bounded, source-rechecked
 unreviewed rows through the API. Neither proves a live holding, supplies a

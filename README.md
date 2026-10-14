@@ -142,7 +142,7 @@ FileOS sources ┘       │              │                │
 | Grouped current FileOS + Email-family + KnowledgeCore search | Implemented; hosted PostgreSQL and restore gates green |
 | Current-source coverage/readiness status | Implemented; hosted PostgreSQL and restore gates green |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
-| Pinned donor statement recipe comparison | Fictional Streetbeat and low-confidence Fidelity goldens with optional exact-hash FOS-Master replay; isolated from runtime and not verified holdings |
+| Pinned donor statement recipe comparison | Five fictional baselines: Streetbeat, low-confidence Fidelity, OCR bank, Morgan Stanley and Jefferies. Optional exact-hash FOS-Master replay; isolated from runtime and not verified holdings |
 | Private statement proposal ledger | Worker-only, additive exact-decimal rows for one current normalized Email/FileOS document; exact-head and merged-main PostgreSQL/restore gates passed; storage itself creates no reviewed holding or live source |
 | Owner statement proposal preview | Human-only, paged API read of current, source-rechecked unreviewed rows and bounded source quotes; the fictional browser trial now opens one proposed row on explicit click. No assistant access, approval, investment total or live source |
 | Private Knowledge proposal batch and review | Human-only, source-stated 1–50 rows with exact current evidence quotes; explicit per-row approval/rejection is atomic and idempotent. No Markdown parser, inferred claim, assistant proposal read or live source |

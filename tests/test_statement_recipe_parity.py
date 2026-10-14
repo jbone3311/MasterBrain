@@ -1,4 +1,4 @@
-"""Fictional goldens for four pure recipes from the pinned FOS-Master donor."""
+"""Fictional goldens for five pure recipes from the pinned FOS-Master donor."""
 
 from __future__ import annotations
 
@@ -14,10 +14,12 @@ import pytest
 
 from masterbrain.statement_recipe_parity import (
     parse_fidelity,
+    parse_jefferies,
     parse_ocr_bank,
     parse_morgan_stanley,
     parse_streetbeat,
     reconcile_fidelity,
+    reconcile_jefferies,
     reconcile_ocr_bank,
     reconcile_morgan_stanley,
     reconcile_streetbeat,
@@ -239,6 +241,96 @@ MS_CASES: dict[
     ),
 }
 
+JEF_CASES: dict[
+    str, tuple[str, dict[str, Any], list[dict[str, Any]], tuple[float, float] | None]
+] = {
+    "negative_cash_multilot_and_transactions": (
+        "Account Number: SYN-000001\n"
+        "April 1, 2024 - April 30, 2024\n"
+        "ENDING ACCOUNT VALUE $80.00\n"
+        "Total Portfolio Holdings $80.00 $80.00\n"
+        "TOTAL EQUITIES $100.00 $100.00\n"
+        "TOTAL CASH, MONEY FUNDS AND BANK DEPOSITS -$20.00 -$20.00\n"
+        "EQUITIES 100.00% of Portfolio\n"
+        "ALPHA FICTIONAL CORP Security Identifier: ALFA\n"
+        "01/02/24 1.0000 40.0000 40.00 50.0000 $50.00 10.00\n"
+        "Total Covered 1.0000 40.00 50.00 10.00\n"
+        "01/03/24 1.0000 40.0000 40.00 50.0000 $50.00 10.00\n"
+        "Total 2.0000 $80.00 $100.00 $20.00\n"
+        "04/15/24 04/16/24 PURCHASED ALPHA FICTIONAL 2.0000 50.00 -100.00 USD\n"
+        "04/20/24 FDIC INSURED CASH SWEEP -20.00 USD\n"
+        "CONTINUATION FICTIONAL IDENTIFIER\n",
+        {"account_number": "SYN-000001", "period": "2024-04",
+         "ending_account_value": 80.0, "total_portfolio_cost_basis": 80.0,
+         "total_portfolio_market_value": 80.0},
+        [
+            {"row_type": "holding", "description": "EQUITIES", "category": "EQUITIES",
+             "amount": 100.0, "account_number": "SYN-000001", "period": "2024-04",
+             "extraction_method": "regex:jefferies_category", "confidence": 1.0},
+            {"row_type": "holding", "description": "CASH, MONEY FUNDS AND BANK DEPOSITS",
+             "category": "CASH, MONEY FUNDS AND BANK DEPOSITS", "amount": -20.0,
+             "account_number": "SYN-000001", "period": "2024-04",
+             "extraction_method": "regex:jefferies_category", "confidence": 1.0},
+            {"row_type": "holding_detail", "description": "ALPHA FICTIONAL CORP",
+             "symbol": "ALFA", "amount": 100.0, "category": "EQUITIES",
+             "account_number": "SYN-000001", "period": "2024-04",
+             "extraction_method": "regex:jefferies_security_detail", "confidence": 0.6},
+            {"row_type": "transaction", "line_date": "04/15/24",
+             "description": "PURCHASED ALPHA FICTIONAL", "quantity": 2.0,
+             "price": 50.0, "amount": -100.0, "currency": "USD",
+             "account_number": "SYN-000001", "period": "2024-04",
+             "extraction_method": "regex:jefferies", "confidence": 0.85},
+            {"row_type": "transaction", "line_date": "04/20/24",
+             "description": "FDIC INSURED CASH SWEEP", "quantity": None,
+             "price": None, "amount": -20.0, "currency": "USD",
+             "account_number": "SYN-000001", "period": "2024-04",
+             "extraction_method": "regex:jefferies", "confidence": 0.85},
+        ],
+        (80.0, 80.0),
+    ),
+    "single_lot_and_unpriced_position": (
+        "ENDING ACCOUNT VALUE $30.00\n"
+        "TOTAL ALTERNATIVE INVESTMENTS $20.00 $30.00\n"
+        "ALTERNATIVE INVESTMENTS 100.00% of Portfolio\n"
+        "GAMMA FICTIONAL FUND Security Identifier: GAMA\n"
+        "Please Provide*,1 9,878.000 N/A Pending Receipt N/A N/A N/A\n"
+        "BETA FICTIONAL FUND Security Identifier: BETA\n"
+        "02/02/24 1.0000 20.0000 20.00 30.0000 $30.00 10.00\n"
+        "Total Alternative Investments\n",
+        {"account_number": None, "period": None, "ending_account_value": 30.0,
+         "total_portfolio_cost_basis": None, "total_portfolio_market_value": None},
+        [
+            {"row_type": "holding", "description": "ALTERNATIVE INVESTMENTS",
+             "category": "ALTERNATIVE INVESTMENTS", "amount": 30.0,
+             "account_number": None, "period": None,
+             "extraction_method": "regex:jefferies_category", "confidence": 1.0},
+            {"row_type": "holding_detail", "description": "BETA FICTIONAL FUND",
+             "symbol": "BETA", "amount": 30.0, "category": "ALTERNATIVE INVESTMENTS",
+             "account_number": None, "period": None,
+             "extraction_method": "regex:jefferies_security_detail", "confidence": 0.6},
+        ],
+        (30.0, 30.0),
+    ),
+    "zero_fallback": (
+        "ENDING ACCOUNT VALUE $5.00\nTotal Portfolio Holdings $0.00 $0.00\n",
+        {"account_number": None, "period": None, "ending_account_value": 5.0,
+         "total_portfolio_cost_basis": 0.0, "total_portfolio_market_value": 0.0},
+        [], (5.0, 0),
+    ),
+    "invalid_period": (
+        "Foo 1, 2024 - Foo 30, 2024\nENDING ACCOUNT VALUE $0.00\n",
+        {"account_number": None, "period": None, "ending_account_value": 0.0,
+         "total_portfolio_cost_basis": None, "total_portfolio_market_value": None},
+        [], (0.0, 0),
+    ),
+    "empty": (
+        "Unrelated fictional document.",
+        {"account_number": None, "period": None, "ending_account_value": None,
+         "total_portfolio_cost_basis": None, "total_portfolio_market_value": None},
+        [], None,
+    ),
+}
+
 
 @pytest.mark.parametrize("name", CASES)
 def test_pinned_golden(name: str) -> None:
@@ -277,6 +369,15 @@ def test_morgan_stanley_pinned_golden(name: str) -> None:
     )
 
 
+@pytest.mark.parametrize("name", JEF_CASES)
+def test_jefferies_pinned_golden(name: str) -> None:
+    content, expected_summary, expected_items, expected_reconciliation = JEF_CASES[name]
+    summary, items = parse_jefferies(content)
+    assert (summary, items, reconcile_jefferies(summary, items)) == (
+        expected_summary, expected_items, expected_reconciliation,
+    )
+
+
 def _donor_functions(path: Path) -> tuple[Any, ...]:
     """Run only pure pinned recipe AST nodes, never donor module imports or DB code."""
     source = path.read_bytes()
@@ -285,12 +386,18 @@ def _donor_functions(path: Path) -> tuple[Any, ...]:
                  "_parse_fidelity", "_reconcile_fidelity", "_jlb_section",
                  "_jlb_rows", "_jlb_row_date", "_parse_ocr_bank",
                  "_reconcile_ocr_bank", "_ms_num", "_parse_morgan_stanley",
-                 "_reconcile_morgan_stanley"}
+                 "_reconcile_morgan_stanley", "_parse_jefferies",
+                 "_reconcile_jefferies"}
     constants = {"_MONTHS", "_SB_TXN", "_SB_HOLDING_ROW", "_SB_CASH_ROW",
                  "_FID_HOLDING_ROW", "_FID_ACTIVITY_ROW", "_FID_NON_HOLDING_LABELS",
                  "_JLB_BOILERPLATE", "_JLB_TXN_TYPE", "_MS_MONTHS", "_MS_ACCOUNT",
                  "_MS_PERIOD", "_MS_TOTAL_ENDING", "_MS_TOTAL_COVER", "_MS_CASH_BUCKET",
                  "_MS_BANK_DEPOSIT", "_MS_ACTIVITY_ROW"}
+    constants.update({
+        "_JEF_CATEGORY_TOTAL", "_JEF_SECTION_HEADER", "_JEF_SECURITY_HEADER",
+        "_JEF_SKIP_SUBTOTAL", "_JEF_LOT_LINE", "_JEF_SECURITY_TOTAL",
+        "_JEF_TXN", "_JEF_TXN_QTY_PRICE",
+    })
     nodes = []
     for node in ast.parse(source, filename=str(path)).body:
         if isinstance(node, ast.FunctionDef) and node.name in functions:
@@ -305,7 +412,8 @@ def _donor_functions(path: Path) -> tuple[Any, ...]:
     return (namespace["_parse_streetbeat"], namespace["_reconcile_streetbeat"],
             namespace["_parse_fidelity"], namespace["_reconcile_fidelity"],
             namespace["_parse_ocr_bank"], namespace["_reconcile_ocr_bank"],
-            namespace["_parse_morgan_stanley"], namespace["_reconcile_morgan_stanley"])
+            namespace["_parse_morgan_stanley"], namespace["_reconcile_morgan_stanley"],
+            namespace["_parse_jefferies"], namespace["_reconcile_jefferies"])
 
 
 def test_local_pinned_donor_parity() -> None:
@@ -313,7 +421,8 @@ def test_local_pinned_donor_parity() -> None:
     if donor is None:
         pytest.skip("Set FOS_MASTER_STATEMENT_EXTRACT for optional pinned donor replay")
     (donor_parse, donor_reconcile, donor_fidelity, donor_fidelity_reconcile,
-     donor_jlb, donor_jlb_reconcile, donor_ms, donor_ms_reconcile) = _donor_functions(
+     donor_jlb, donor_jlb_reconcile, donor_ms, donor_ms_reconcile,
+     donor_jef, donor_jef_reconcile) = _donor_functions(
         Path(donor)
     )
     stress_content = (
@@ -359,6 +468,23 @@ def test_local_pinned_donor_parity() -> None:
         )
         if content == ms_stress:
             assert len(items) == 1000
+    jefferies_stress = (
+        "ENDING ACCOUNT VALUE $1000.00\nTOTAL EQUITIES $1000.00 $1000.00\n"
+        "EQUITIES 100.00% of Portfolio\n"
+        + "".join(
+            f"FICTIONAL SECURITY {index:04d} Security Identifier: SYM{index:04d}\n"
+            "02/02/24 1.0000 1.0000 1.00 1.0000 $1.00 0.00\n"
+            for index in range(1000)
+        )
+    )
+    for content in [*(case[0] for case in JEF_CASES.values()), jefferies_stress]:
+        donor_summary, donor_items = donor_jef(content)
+        summary, items = parse_jefferies(content)
+        assert (summary, items, reconcile_jefferies(summary, items)) == (
+            donor_summary, donor_items, donor_jef_reconcile(donor_summary, donor_items),
+        )
+        if content == jefferies_stress:
+            assert len(items) == 1001
 
 
 def test_many_fictional_rows_are_repeatable() -> None:
@@ -400,3 +526,19 @@ def test_morgan_stanley_many_fictional_rows_are_repeatable() -> None:
     assert len(first[1]) == 1000
     assert first == parse_morgan_stanley(content)
     assert reconcile_morgan_stanley(*first) is None  # Donor treats a zero total as absent.
+
+
+def test_jefferies_many_fictional_details_are_repeatable() -> None:
+    content = (
+        "ENDING ACCOUNT VALUE $1000.00\nTOTAL EQUITIES $1000.00 $1000.00\n"
+        "EQUITIES 100.00% of Portfolio\n"
+        + "".join(
+            f"FICTIONAL SECURITY {index:04d} Security Identifier: SYM{index:04d}\n"
+            "02/02/24 1.0000 1.0000 1.00 1.0000 $1.00 0.00\n"
+            for index in range(1000)
+        )
+    )
+    first = parse_jefferies(content)
+    assert len(first[1]) == 1001
+    assert first == parse_jefferies(content)
+    assert reconcile_jefferies(*first) == (1000.0, 1000.0)

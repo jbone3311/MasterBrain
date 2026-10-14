@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Pin a fifth, nonpublishing FOS-Master statement recipe baseline for Jefferies
+  (ADR-187). Fictional goldens preserve negative cash, category-versus-security
+  detail, multi-lot subtotals and wrapped transaction limits; no investment
+  claim or live-source read follows.
+
 - Add private, source-stated KnowledgeCore proposal batches with exact-evidence
   quotes and one atomic, explicit human decision per row (ADR-186). This is a
   synthetic-only staging/review path, not Markdown import or inference approval.

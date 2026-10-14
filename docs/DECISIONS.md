@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-187](adr/187_jefferies_recipe_parity_baseline.md) pins the Jefferies donor
+category/detail/transaction behavior, including negative cash and multi-lot
+subtotals, for fictional nonpublishing comparison only. It does not verify a
+holding or connect the recipe to runtime intake.
+
 [ADR-186](adr/186_private_knowledge_proposal_batches.md) stages bounded,
 source-stated Knowledge assertions outside reviewed search and requires an
 explicit per-row human decision in one atomic transaction. It adds no Markdown

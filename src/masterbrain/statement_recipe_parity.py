@@ -4,7 +4,7 @@ Extracted from FOS-Master at 218d5caec2f20b9047fd3eb8e027dc671acf0c15,
 _SYSTEM/tools/statement_extract.py
 (SHA-256 f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe).
 The parsing and reconciliation semantics are intentionally unchanged. See
-ADR-170, ADR-174, ADR-180 and ADR-181.
+ADR-170, ADR-174, ADR-180, ADR-181 and ADR-187.
 """
 
 from __future__ import annotations
@@ -387,5 +387,146 @@ def reconcile_morgan_stanley(
         item["amount"] for item in items
         if item["row_type"] == "holding" and item["amount"] is not None
         and item.get("category") != "bank_deposit_detail"
+    ), 2)
+    return expected, actual
+
+
+# Jefferies category rows reconcile the statement; lower-confidence security
+# details are supplemental and must never be summed with their parent category.
+# Keep the pinned donor's subtotal and unavailable-value behavior unchanged.
+_JEF_CATEGORY_TOTAL = re.compile(
+    r"^TOTAL ([A-Z][A-Z,\- ]+?)\s+(-?\$?[\d,]+\.\d{2})\s+(-?\$?[\d,]+\.\d{2})",
+    re.MULTILINE,
+)
+_JEF_SECTION_HEADER = re.compile(
+    r"^([A-Z][A-Z,\- ]+?)\s+[\d.]+% of Portfolio\s*$"
+)
+_JEF_SECURITY_HEADER = re.compile(
+    r"^\d*([A-Z][A-Za-z0-9&.,'/#\-\* ]{2,80}?)\s+Security Identifier:\s*(.+?)\s*$"
+)
+_JEF_SKIP_SUBTOTAL = re.compile(r"^Total (?:Covered|Noncovered|Unallocated)\b")
+_JEF_LOT_LINE = re.compile(
+    r"^(?:\d{2}/\d{2}/\d{2}\*?(?:,\d)?|Please Provide\*(?:,\d)?|Average\d?)\s+"
+    r"[\d,]+\.\d+\s+(?:N/A|Please Provide|[\d,]+\.\d+)\s+"
+    r"(?:N/A|Please Provide|Pending Receipt|[\d,]+\.\d+)\s+"
+    r"(?:N/A|[\d,]+\.\d+)\s+\$?([\d,]+\.\d+)\s+"
+)
+_JEF_SECURITY_TOTAL = re.compile(
+    r"^Total\s+[\d,]+\.\d+\s+(?:N/A|\$?[\d,]+\.\d+)\s+\$?([\d,]+\.\d+)"
+)
+_JEF_TXN = re.compile(
+    r"^(\d{2}/\d{2}/\d{2})(?:\s+\d{2}/\d{2}/\d{2})?\s+(.+?)\s+(-?[\d,]+\.\d{2})\s+USD\s*$",
+    re.MULTILINE,
+)
+_JEF_TXN_QTY_PRICE = re.compile(
+    r"^(.*?)\s+(-?[\d,]+\.\d{3,4})\s+([\d,]+\.\d{2,4})$"
+)
+
+
+def parse_jefferies(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Return pinned donor category, detail and transaction rows without publication."""
+    summary: dict[str, Any] = {}
+    match = re.search(r"Account Number:\s*([A-Za-z0-9\-]+)", text)
+    summary["account_number"] = match.group(1) if match else None
+    match = re.search(r"([A-Za-z]+ \d{1,2}, \d{4})\s*-\s*([A-Za-z]+ \d{1,2}, \d{4})", text)
+    if match:
+        try:
+            end = datetime.strptime(match.group(2), "%B %d, %Y")
+            summary["period"] = end.strftime("%Y-%m")
+        except ValueError:
+            summary["period"] = None
+    else:
+        summary["period"] = None
+    match = re.search(r"ENDING ACCOUNT VALUE\s+\$([\d,.]+)", text)
+    summary["ending_account_value"] = _num(match.group(1)) if match else None
+    match = re.search(r"Total Portfolio Holdings\s+(-?\$?[\d,.]+)\s+(-?\$?[\d,.]+)", text)
+    summary["total_portfolio_cost_basis"] = _num(match.group(1)) if match else None
+    summary["total_portfolio_market_value"] = _num(match.group(2)) if match else None
+
+    items: list[dict[str, Any]] = []
+    for category, _cost_basis, market_value in _JEF_CATEGORY_TOTAL.findall(text):
+        items.append({
+            "row_type": "holding", "description": category.strip(),
+            "category": category.strip(), "amount": _num(market_value),
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": "regex:jefferies_category", "confidence": 1.0,
+        })
+
+    current_name = current_symbol = current_category = None
+    pending_value = None
+
+    def _flush() -> None:
+        nonlocal current_name, current_symbol, pending_value
+        if current_name and pending_value is not None:
+            items.append({
+                "row_type": "holding_detail", "description": current_name,
+                "symbol": current_symbol, "amount": pending_value,
+                "category": current_category, "account_number": summary["account_number"],
+                "period": summary["period"],
+                "extraction_method": "regex:jefferies_security_detail",
+                "confidence": 0.6,
+            })
+        current_name = current_symbol = None
+        pending_value = None
+
+    for raw_line in text.split("\n"):
+        line = raw_line.strip()
+        if not line:
+            continue
+        section = _JEF_SECTION_HEADER.match(line)
+        if section:
+            current_category = section.group(1).strip()
+            continue
+        if _JEF_SKIP_SUBTOTAL.match(line):
+            continue
+        header = _JEF_SECURITY_HEADER.match(line)
+        if header:
+            _flush()
+            current_name, current_symbol = header.group(1).strip(), header.group(2).strip()
+            continue
+        total = _JEF_SECURITY_TOTAL.match(line)
+        if total and current_name:
+            pending_value = _num(total.group(1))
+            _flush()
+            continue
+        if line.startswith("Total ") or line.startswith("TOTAL "):
+            _flush()
+            continue
+        lot = _JEF_LOT_LINE.match(line)
+        if lot and current_name:
+            pending_value = _num(lot.group(1))
+    _flush()
+
+    for line_date, description, amount in _JEF_TXN.findall(text):
+        description = description.strip()
+        quantity = price = None
+        qty_price = _JEF_TXN_QTY_PRICE.match(description)
+        if qty_price:
+            description, quantity, price = (
+                qty_price.group(1).strip(), _num(qty_price.group(2)),
+                _num(qty_price.group(3)),
+            )
+        items.append({
+            "row_type": "transaction", "line_date": line_date,
+            "description": description[:120], "quantity": quantity, "price": price,
+            "amount": _num(amount), "currency": "USD",
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": "regex:jefferies", "confidence": 0.85,
+        })
+    return summary, items
+
+
+def reconcile_jefferies(
+    summary: dict[str, Any], items: list[dict[str, Any]],
+) -> tuple[float, float] | None:
+    """Reconcile category totals only; preserve the donor's zero-value fallback."""
+    expected = summary.get("total_portfolio_market_value") or summary.get(
+        "ending_account_value"
+    )
+    if expected is None:
+        return None
+    actual = round(sum(
+        item["amount"] for item in items
+        if item["row_type"] == "holding" and item["amount"] is not None
     ), 2)
     return expected, actual
