@@ -4658,6 +4658,31 @@ class DataCoreStore:
             "limit": limit,
         }
 
+    def source_availability(
+        self, ctx: TenantContext, *, source_focus: Literal["all", "email", "fileos"] = "all"
+    ) -> dict[str, str]:
+        """Describe visible source registration without enumerating source grants."""
+        self.store.require(ctx, "brain.search")
+        if source_focus not in {"all", "email", "fileos"}:
+            raise ValueError("invalid source focus")
+        result = {"email": "not_searched", "fileos": "not_searched"}
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        with self.store.transaction(ctx) as conn:
+            for kind in ("email", "fileos"):
+                if source_focus not in {"all", kind}:
+                    continue
+                registered = conn.execute(
+                    "SELECT 1 FROM brain_sources WHERE kind=%s "
+                    "AND (%s::text[] IS NULL OR id=ANY(%s::text[])) LIMIT 1",
+                    (kind, allowed_sources, allowed_sources),
+                ).fetchone()
+                result[kind] = (
+                    "registered" if registered else
+                    "not_available" if ctx.source_ids is not None else "not_registered"
+                )
+            self.store.audit(conn, ctx, "brain.source_availability_read", "brain_source", "kinds")
+        return result
+
     def fileos_inventory(self, ctx: TenantContext, source_id: str) -> dict[str, Any]:
         """Summarize membership and newly observed absence for the latest complete run."""
         self.store.require(ctx, "brain.changes.read")

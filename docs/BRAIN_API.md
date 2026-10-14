@@ -88,6 +88,14 @@ source effects or an alternate route through KnowledgeCore.
   response groups remain present but empty, and `coverage.source_focus` plus
   `coverage.knowledge=not_searched` distinguishes exclusion from no matches.
   Focus narrows retrieval only; it never broadens scopes or source grants.
+  ADR-168 adds `coverage.source_availability` for independent optional Email
+  and FileOS sources. Each kind is `registered`, `not_registered` (tenant-wide
+  human only), `not_available` (enrolled assistant with no visible grant), or
+  `not_searched` (focus-excluded). `registered` means a visible MasterBrain
+  source record exists; it does not certify current indexed evidence, provider
+  connectivity or a query match. Use `/v1/brain/current-coverage` for per-source
+  current bridge/generation readiness. Empty layers with `registered` mean no
+  hits in the bounded query, not necessarily an empty source.
   ADR-159 makes the all-source Knowledge layer a source-grant-aware
   `unsuperseded` review-chain leaf projection before rank/limit and labels
   `coverage.knowledge=reviewed_unsuperseded_assertions`. It does not resolve
@@ -115,6 +123,7 @@ source effects or an alternate route through KnowledgeCore.
   It accepts the same `source_focus`; quote selection and final currentness
   recheck must remain within that focus. Focused Ask returns no reviewed
   KnowledgeCore matches, while still requiring its existing scopes.
+  Ask carries the same `coverage.source_availability` map as current-search.
   ADR-151 additionally caps selector-visible passage text at 2,048 UTF-8
   bytes per passage and 8,192 bytes total. `coverage.answer_context_truncated`
   is true if the upstream character cap or this byte budget shortened text,

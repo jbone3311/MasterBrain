@@ -133,6 +133,13 @@ production and FileOS cutover remain open.
   use the same contract. This is local/fictional read behavior, not an access
   grant, hosted assistant integration or model-based source selection.
 
+- ADR-168 makes Email and FileOS independently optional in the grouped current
+  search and extractive Ask coverage response. The source-kind map distinguishes
+  a registered visible source from no registered source, a hidden/ungranted
+  source, and a focus-excluded source. It does not claim a live connector,
+  current index or complete query coverage; detailed readiness remains in
+  `/v1/brain/current-coverage`.
+
 - ADR-149 excludes assistants from legacy `email.*` API dependencies before
   route work, refuses bootstrap assistant Email scopes and rejects old OIDC
   Email-only assistant bindings at each Store transaction. Enrolled assistants

@@ -540,6 +540,7 @@ class GroundedAnswerService:
                 "answer_output_truncated": output_truncated,
                 "source_focus": coverage.get("source_focus", "all"),
                 "source_access": coverage.get("source_access"),
+                "source_availability": coverage.get("source_availability"),
                 "knowledge": (
                     "reviewed_assertions_listed_not_synthesized"
                     if coverage.get("source_focus", "all") == "all" else "not_searched"

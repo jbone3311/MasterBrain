@@ -1326,6 +1326,51 @@ def test_email_attachment_batch_fail_stop_account_fence_and_exact_retry(
         )
 
 
+@pytest.mark.parametrize(
+    "kinds",
+    [(), ("email",), ("fileos",), ("email", "fileos")],
+)
+def test_optional_source_registration_is_scoped_and_focus_aware(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], kinds: tuple[str, ...]
+) -> None:
+    store, _ = database
+    ctx, _ = tenant
+    ctx = datacore_context(ctx)
+    core = DataCoreStore(store)
+    source_ids = {kind: f"optional_{kind}" for kind in kinds}
+    with store.transaction(ctx) as conn:
+        for kind, source_id in source_ids.items():
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
+                "VALUES (%s,%s,%s,'Synthetic optional source')",
+                (ctx.tenant_id, source_id, kind),
+            )
+    expected = {
+        kind: "registered" if kind in kinds else "not_registered"
+        for kind in ("email", "fileos")
+    }
+    assert core.source_availability(ctx) == expected
+    assert core.source_availability(ctx, source_focus="email") == {
+        "email": expected["email"], "fileos": "not_searched"
+    }
+    assert core.source_availability(ctx, source_focus="fileos") == {
+        "email": "not_searched", "fileos": expected["fileos"]
+    }
+    hidden = replace(ctx, source_ids=frozenset())
+    assert core.source_availability(hidden) == {
+        "email": "not_available", "fileos": "not_available"
+    }
+    if source_ids:
+        one = next(iter(source_ids.values()))
+        granted = replace(ctx, source_ids=frozenset({one}))
+        assert core.source_availability(granted) == {
+            kind: "registered" if source_id == one else "not_available"
+            for kind, source_id in source_ids.items()
+        } | {
+            kind: "not_available" for kind in ("email", "fileos") if kind not in source_ids
+        }
+
+
 def test_current_email_search_tracks_legacy_update_and_delete(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID]
 ) -> None:

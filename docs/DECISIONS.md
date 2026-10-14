@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-168](adr/168_optional_source_availability.md) labels independently optional
+Email and FileOS current-search availability without revealing ungranted sources.
+An empty result is not mistaken for an absent or unindexed source, and no provider
+connectivity or full coverage is implied.
+
 [ADR-167](adr/167_fileos_unencodable_locator_boundary.md) makes v1 FileOS
 snapshot and nonpublishing donor shadow reject unencodable names with an
 opaque parent coverage error. The transition candidate refuses the fault;

@@ -136,6 +136,11 @@ fails authentication rather than using unfenced compatibility reads. Human
 and worker Email paths are unchanged; hosted issuer and derived-cache
 acceptance remain open.
 
+ADR-168's optional-source status follows the visible-source filter: an
+assistant with no granted Email or FileOS source receives `not_available`,
+never a tenant-wide `not_registered` assertion or hidden-source count. The
+status only states MasterBrain registration, not live provider connectivity.
+
 ADR-158's optional unsuperseded KnowledgeCore search checks the full direct
 source-grant set on each predecessor, successor, correction and replacement
 before a newer record may suppress an older result. A hidden-source update
