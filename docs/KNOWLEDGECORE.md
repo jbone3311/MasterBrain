@@ -82,6 +82,14 @@ evaluation, Email memory migration, FOS fact-pipeline parity,
 semantic ranking, graph traversal, synthesis, freshness/rebuild workers and live
 source acceptance remain later gates.
 
+For file-based Librarian exchange, [ADR-169](adr/169_code_first_librarian_interop.md)
+requires deterministic parsing and proposal-only import before any reviewed
+publication. The [twelve-gap review](LIBRARIAN_INTEROP.md) separates already
+implemented FileOS CSV/XLSX and Email attachment occurrence evidence from the
+missing table locators, project roles/aliases, inference basis, proposal queue and
+Markdown export. None of those proposed behaviors is included in the current
+KnowledgeCore runtime; human review and source-grant checks remain mandatory.
+
 ## Rollback
 
 Stop issuing KnowledgeCore scopes and stop publishing assertions. Migration `0016`

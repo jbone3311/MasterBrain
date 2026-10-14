@@ -106,6 +106,15 @@ uses these indexes for independently bounded, recording-time-ordered links.
 The project's stored state is still a reviewed assertion, not a derived current
 state or contradiction resolution.
 
+The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
+[ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions,
+not existing columns or routes: private import proposals, derivation/basis links,
+reviewed project aliases and memberships, typed monetary units and uncertain due
+windows, project-artifact associations and a compatible fact-name registry.
+New basis links must preserve transitive source grants. Existing Email attachment
+occurrences remain distinct even when their content hashes match. No migration
+for these proposed KnowledgeCore additions has landed.
+
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is
 represented explicitly.

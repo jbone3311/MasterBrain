@@ -35,6 +35,9 @@ The owner still needs to complete the
 The next owner decision is a bounded Fastmail read pilot and preservation of
 FOS-Master's statement/financial intelligence; see the
 [live-alpha integration assessment](docs/LIVE_ALPHA_AND_FOS_PRESERVATION.md).
+The [Librarian Markdown interop review](docs/LIBRARIAN_INTEROP.md) now records
+the proposed import/export path and its twelve verified or corrected gaps;
+it is a design plan, not a working importer or exporter.
 
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 Its `main` branch requires full CI, strict-runtime and populated-restore checks
