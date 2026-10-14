@@ -4,16 +4,28 @@ Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Narrow statement source-text derivation primitive — ADR-188
 
-The branch `codex/statement-source-derivation-contract` adds only a pure,
-synthetic `fileos-text-v1` replay check; it does not change statement storage,
-APIs, source access or FOS-Master. The disposable local Python 3.14/PostgreSQL
-17.11 suite passed 3,364 tests with six skips (545 of 546 PostgreSQL-marked
-cases executed; one platform-local skip). The six browser suites passed
-165/165, and Ruff, mypy (104 source files), documentation links, repository
-structural gate and diff check passed. Fourteen focused derivation tests cover
-exact replay and mismatch/unsupported boundaries. This is branch-local
-evidence, not a hosted CI or merge receipt; exact head and PR gates must be
-recorded after publication.
+[PR #216](https://github.com/jbone3311/MasterBrain/pull/216) final head
+`acd4025d4596135e02c352fee5d197067206fd86` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38634467962)
+on attempt 2, [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38634467925)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38634467927).
+The first full-CI attempt failed only in the already-tracked intermittent
+isolated large-MIME check at `daemon_security` deadline (issue #64); its
+[failure and retry receipt](https://github.com/jbone3311/MasterBrain/pull/216#issuecomment-6178241174)
+remain visible. Squash merge `b4db6cac776ca09678a8d018e2dd1fd1f17e18ea`
+landed on `main`; independent [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38637482850),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38637483051)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38637482866)
+all passed on attempt 1.
+
+This adds only a pure, synthetic `fileos-text-v1` replay check; it does not
+change statement storage, APIs, source access or FOS-Master. The disposable
+local Python 3.14/PostgreSQL 17.11 suite passed 3,364 tests with six skips
+(545 of 546 PostgreSQL-marked cases executed; one platform-local skip).
+The six browser suites passed 165/165, and Ruff, mypy (104 source files),
+documentation links, repository structural gate and diff check passed.
+Fourteen focused derivation tests cover exact replay and mismatch/unsupported
+boundaries.
 
 The old proposal fixture deliberately pairs one valid fictional source digest
 with unrelated valid text; ADR-188's function refuses it. No existing
