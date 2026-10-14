@@ -67,6 +67,10 @@ interactive trial. Do not move an earlier tag to a later commit.
 
 ## Brain API gates
 
+- Email-only, FileOS-only, both and neither-source tenants retain a usable,
+  bounded read API. Current-search and Ask distinguish registered, absent,
+  ungranted and focus-excluded source kinds without source enumeration or a
+  false claim that registered means indexed, connected or query-matched.
 - Search/answer/expand/evidence pagination and byte/token budgets are enforced.
 - Citations resolve to hash-verified evidence; revocation invalidates all derived access.
 - Claude, Grok, ChatGPT and reference clients pass one provider-neutral contract suite.

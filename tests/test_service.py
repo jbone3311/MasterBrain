@@ -519,6 +519,7 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
     brain.search_current_archive_documents.return_value = [archive_document_hit]
     brain.search_current_archive_images.return_value = [archive_image_hit]
     brain.search_current_email_family.return_value = EmailFamilySearch((email_hit,), (), ())
+    brain.source_availability.return_value = {"email": "registered", "fileos": "registered"}
     knowledge.search.return_value = [
         KnowledgeHit(
             "project",
@@ -574,6 +575,9 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
     assert body["ranking"] == "within_group_only"
     assert body["consistency"] == "independent_layer_reads"
     assert body["coverage"]["complete"] is False
+    assert body["coverage"]["source_availability"] == {
+        "email": "registered", "fileos": "registered"
+    }
     assert set(body["layers"]) == {
         "fileos",
         "archive_members",
@@ -628,6 +632,37 @@ def test_current_search_groups_sources_and_knowledge_with_explicit_coverage() ->
             client.post("/v1/brain/current-search", json=invalid, headers=headers).status_code
             == 422
         )
+
+
+@pytest.mark.parametrize(
+    "availability",
+    [
+        {"email": "not_registered", "fileos": "not_registered"},
+        {"email": "registered", "fileos": "not_registered"},
+        {"email": "not_registered", "fileos": "registered"},
+        {"email": "registered", "fileos": "registered"},
+    ],
+)
+def test_current_search_empty_results_report_optional_sources(
+    availability: dict[str, str],
+) -> None:
+    store = MagicMock(spec=Store)
+    brain = MagicMock(spec=DataCoreStore)
+    brain.search_current_email_family.return_value = EmailFamilySearch((), (), ())
+    brain.source_availability.return_value = availability
+    knowledge = MagicMock(spec=KnowledgeCore)
+    knowledge.search.return_value = []
+    client = TestClient(create_app(
+        store, registry({"brain.search", "knowledge.search"}),
+        brain_store=brain, knowledge_store=knowledge,
+    ))
+    response = client.post(
+        "/v1/brain/current-search", json={"query": "absentterm"},
+        headers={"Authorization": f"Bearer {TOKEN}"},
+    )
+    assert response.status_code == 200
+    assert response.json()["coverage"]["source_availability"] == availability
+    assert all(not group for group in response.json()["layers"].values())
 
 
 def test_expiry_and_bad_token() -> None:

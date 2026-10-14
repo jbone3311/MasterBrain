@@ -584,6 +584,9 @@ def test_explicit_source_focus_has_api_client_and_assistant_parity(preview, data
                 assert search.json()["coverage"]["source_focus"] == focus
                 assert search.json()["coverage"]["knowledge"] == "not_searched"
                 excluded = "email" if focus == "fileos" else "fileos"
+                assert search.json()["coverage"]["source_availability"] == {
+                    focus: "registered", excluded: "not_searched"
+                }
                 assert search.json()["coverage"][excluded] == "not_searched"
                 assert layers["knowledge"] == []
                 assert bool(layers["email_messages"]) == (focus == "email")
@@ -594,6 +597,9 @@ def test_explicit_source_focus_has_api_client_and_assistant_parity(preview, data
                 )
                 assert answer.status_code == 200, answer.text
                 assert answer.json()["status"] == "quoted_evidence"
+                assert answer.json()["coverage"]["source_availability"] == {
+                    focus: "registered", excluded: "not_searched"
+                }
                 assert answer.json()["coverage"]["answer_context_truncated"] is False
                 assert answer.json()["reviewed_knowledge"] == []
                 assert {hit["source_kind"] for hit in answer.json()["citations"]} == {
@@ -616,6 +622,9 @@ def test_explicit_source_focus_has_api_client_and_assistant_parity(preview, data
         assert hidden.status_code == 200, hidden.text
         assert hidden.json()["status"] == "no_supported_evidence"
         assert hidden.json()["citations"] == []
+        assert hidden.json()["coverage"]["source_availability"] == {
+            "email": "not_available", "fileos": "not_searched"
+        }
         visible = scoped.post(
             "/v1/brain/answers",
             json={"question": "insurance", "source_focus": "fileos"},
@@ -623,7 +632,9 @@ def test_explicit_source_focus_has_api_client_and_assistant_parity(preview, data
         )
         assert visible.status_code == 200, visible.text
         assert {hit["source_kind"] for hit in visible.json()["citations"]} == {"fileos"}
-        assert "email" not in visible.text
+        assert visible.json()["coverage"]["source_availability"] == {
+            "email": "not_searched", "fileos": "registered"
+        }
 
 
 @pytest.mark.postgres

@@ -24,6 +24,12 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 The server remains the authority for identity, tenant, scopes, source visibility
 and freshness. In the synthetic bootstrap path, an assistant must be enrolled
 for explicit source IDs; routes without reviewed source semantics remain denied.
+The current-search and extractive Ask responses include
+`coverage.source_availability` for Email and FileOS independently: `registered`,
+`not_registered` for a tenant-wide human, `not_available` for an assistant with
+no visible grant, or `not_searched` for a focus-excluded kind. Empty hits from a
+registered source are not proof that the source has no relevant content; use
+`current_coverage()` for bridge/generation readiness and respect its paging.
 ADR-133 adds two source-scoped status reads. ADR-134 adds the bounded answer
 read over the same current, separately authorized evidence; ADR-144 supplies
 a local deterministic default selector and retains explicit disablement.

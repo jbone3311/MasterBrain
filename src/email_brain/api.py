@@ -572,6 +572,9 @@ def create_app(
                 visibility="unsuperseded",
             ) if body.source_focus == "all" else []
         )
+        source_availability = brain.source_availability(
+            principal.context, source_focus=body.source_focus
+        )
 
         def evidence(hits: tuple[SearchHit, ...] | list[SearchHit]) -> list[dict[str, Any]]:
             return [
@@ -593,6 +596,7 @@ def create_app(
             "consistency": "independent_layer_reads",
             "coverage": {
                 "source_focus": body.source_focus,
+                "source_availability": source_availability,
                 "source_access": (
                     "enrolled_sources_only"
                     if principal.context.source_ids is not None else "tenant_sources"

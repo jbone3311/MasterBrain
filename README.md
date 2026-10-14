@@ -20,6 +20,11 @@ original; reviewed events, due commitments and project dossiers are separate
 read-only views. The pinned FOS-Master donor remains untouched and its FileOS
 shadow comparison is nonpublishing.
 
+Email and FileOS are independently optional: a tenant can register either,
+both or neither. Current-search and extractive Ask still respond when one is
+absent and report visible source-kind registration in scoped coverage. A
+registered source does not imply a live connector, current index or query match.
+
 This is a testable prototype, **not** a hosted service, live mailbox or folder
 enrollment, AI-written conversation, source-write API, or FileOS replacement.
 The owner still needs to complete the

@@ -44,6 +44,9 @@ shortcut to the database, mail provider or filesystem. See the
 - Keep common queries compact while allowing bounded drill-down to source evidence.
 - Learn through typed, reviewed proposals rather than self-modifying behavior.
 - Operate usefully when external models are unavailable.
+- Operate with Email only, FileOS only, both, or neither. A missing source does
+  not make the Brain API fail; scoped coverage tells a client which source kinds
+  are registered without exposing ungranted sources or implying index readiness.
 
 ## Non-negotiable invariants
 
