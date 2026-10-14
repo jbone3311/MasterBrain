@@ -1,5 +1,10 @@
 # MasterBrain Implementation Status
 
+ADR-171 adds private, in-memory exact-decimal Streetbeat row candidates for
+fictional Email/FileOS evidence references, with extracted-text SHA-256 and
+row spans. They are not ingested, stored, source-grant checked, reviewed or served.
+The donor's other recipes and investment reports are not preserved yet.
+
 ADR-170 adds an isolated Streetbeat statement-recipe parity candidate
 with fictional donor goldens. It is not connected to ingestion, KnowledgeCore,
 Brain API or real statements, and does not make investment analysis operational.

@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-171](adr/171_typed_statement_candidate_boundary.md) adds a bounded,
+source-neutral, exact-decimal and text-span-bound *private candidate* for the
+first statement recipe. It does not publish rows or assert verified holdings.
+
 [ADR-170](adr/170_statement_recipe_parity_seed.md) pins and compares one pure
 FOS-Master statement recipe on fictional inputs only. It does not add a runtime
 investment feature, database table, reviewed fact or live-source authority.

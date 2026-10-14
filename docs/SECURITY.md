@@ -9,6 +9,10 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
 
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.
+- ADR-171's private statement candidates are likewise untrusted proposals. Their
+  exact extracted-text spans and digest do not prove the source-byte-to-text
+  derivation, current source grant, source tier, independent corroboration or a
+  financial holding. They have no runtime publisher or API read path.
 - Source adapters, extraction workers, DataCore, KnowledgeCore, Brain API, and effect
   executors use separate identities and least-privilege scopes.
 - Brain API clients receive typed operations only—never general SQL, arbitrary HTTP,

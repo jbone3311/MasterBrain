@@ -1,6 +1,29 @@
 # Build and validation receipt
 
-Updated 2026-10-06 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+
+## Isolated FOS statement-recipe parity seed — ADR-170
+
+[PR #188](https://github.com/jbone3311/MasterBrain/pull/188) final head
+`be0e86008f7b4b8afa0a10c3e683f155f49ecd12` compared four fictional
+Streetbeat cases and a 1,000-row repeat against the exact pinned FOS-Master
+recipe SHA-256. Local pinned-donor replay passed 6/6 focused tests; Ruff,
+mypy, documentation check, 164 browser tests and the local deployment gate
+passed. The non-PostgreSQL local suite passed 2,689 with 500 skips, including
+495 database-marked cases. The [final-head full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38533673449)
+executed all 495 PostgreSQL-marked cases and passed 3,183 tests with six
+skips; [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38533673575)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38533673601)
+passed. Squash merge `3765cce15cae45e7e89c0e1e720c0eb2ae315825` passed
+[merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38534823085)
+with the same 3,183/6 and 495/495 PostgreSQL results, plus
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38534823166)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38534823088).
+The sandboxed local PostgreSQL launcher could not bind/start under process/IPC
+restrictions; it passed unsandboxed on fictional data. No real statement,
+runtime publisher, reviewed holding, Brain API route or FOS-Master mutation was
+involved. ADR-171's later typed candidate is a separate tranche, not covered
+by this receipt.
 
 ## 0.2.0a2 synthetic-alpha candidate
 

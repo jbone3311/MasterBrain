@@ -54,6 +54,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 
 | Tranche | Donor baseline | MasterBrain location | Parity | Status |
 |---|---|---|---|---|
+| KC-001B typed private statement candidate | ADR-170 pinned Streetbeat syntax and rows, no donor edit | `statement_candidates.py`, ADR-171 | exact decimal, text-span/hash, incomplete/mismatch, Email/FileOS reference, 1,000-row stress | Private in-memory proposal only; deliberate fail-closed divergences, no DB/API/reviewed holding |
 | KC-001A statement recipe seed | FOS-Master `218d5cae`, `_SYSTEM/tools/statement_extract.py` SHA-256 `f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe` | `statement_recipe_parity.py`, ADR-170 | Four fictional golden cases, optional exact-hash donor AST replay, 1,000-row repeatability | Isolated candidate; not runtime, typed financial model, live-source parity or cutover |
 | DC-001 read-only hashing/dedupe | FOS-Master `218d5cae`, `_SYSTEM/tools/dedup_tool.py` | `src/masterbrain/datacore/dedup.py` | `scripts/datacore_parity.py`; hash/name/both synthetic corpus | Complete; 3,000-file parity and hosted gate green |
 | DC-002 contracts/snapshot foundation | FOS inventory/index behavior reviewed; new source-neutral contract | `contracts.py`, `fileos.py`, `masterbrain` CLI | contract/fault/symlink/no-mutation tests; donor exclusion/hash behavior | Complete; hosted gate green |
@@ -233,8 +234,10 @@ authorized by this result; see the [exact receipt](BUILD_RECEIPT.md).
    can be developed while the FileOS inventory policy remains in shadow; it does
    not authorize a donor cutover.
    KC-001A (ADR-170) seeds one isolated Streetbeat recipe and four fictional donor
-   goldens. Next: extend vendor and fault corpus, define exact-decimal typed rows
-   and source-tier/hash gates, then design a private evidence-linked projection.
+   goldens. KC-001B (ADR-171) adds a private typed/text-span candidate with
+   deliberate fail-closed coverage checks. Next: extend vendor and fault corpus,
+   verify source-tier/hash derivation under tenant grants, and design an atomic,
+   reviewable evidence-linked projection. Neither slice authorizes live intake.
 5. **FileOS effect broker:** last, after read-side parity and explicit safety ADRs.
 
 ## Cutover and rollback

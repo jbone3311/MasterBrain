@@ -67,6 +67,19 @@ explicit, not inferred from filename.
 
 ## KnowledgeCore
 
+ADR-171 introduces an in-memory `StatementCandidate` and grouped `StatementRow`
+for one fictional Streetbeat recipe. Rows carry exact `Decimal` quantity, price,
+amount, cost basis and unrealized value where present; a source-kind/evidence
+reference, donor commit and transform version, verified extracted-text SHA-256;
+and precise character spans back
+into that text. Separate status and content-free coverage codes distinguish a
+within-tolerance row sum from mismatches, absent totals and incomplete parsing.
+The source-byte evidence digest is *not* the extracted-text digest. Neither
+these candidates nor the donor float rows are stored in KnowledgeCore, exposed
+by Brain API or represented as reviewed holdings. A future relational model
+must bind tenant/source version, immutable evidence and reviewable provenance
+before publication.
+
 Migration `0016_knowledgecore.sql` implements append-only tenant-scoped tables for
 all objects below, evidence links, lexical search documents, change events and
 idempotency receipts. The first service requires human-reviewed writes and existing

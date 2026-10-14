@@ -6,6 +6,13 @@ relationships, claims, projects, events, commitments and corrections over immuta
 DataCore evidence. It does not call a model, infer facts automatically, or alter an
 Email or FileOS source.
 
+ADR-171's exact-decimal statement candidates are a separate *private in-memory*
+projection from fictional extracted text. They are not reviewed KnowledgeCore
+assertions or live investment analysis. Each row preserves a text span and the
+candidate reports incomplete coverage separately from sum tolerance. Runtime
+ingestion, tenant/source-grant enforcement, independent source-tier/hash checks,
+other vendor recipes and database/API publication remain open gates.
+
 ## Implemented contract
 
 - Every assertion is tenant-scoped, explicitly reviewed and linked to at least one
