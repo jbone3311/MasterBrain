@@ -1341,9 +1341,12 @@ def test_optional_source_registration_is_scoped_and_focus_aware(
     with store.transaction(ctx) as conn:
         for kind, source_id in source_ids.items():
             conn.execute(
-                "INSERT INTO brain_sources(tenant_id,id,kind,display_name) "
-                "VALUES (%s,%s,%s,'Synthetic optional source')",
-                (ctx.tenant_id, source_id, kind),
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name,root_binding_sha256) "
+                "VALUES (%s,%s,%s,'Synthetic optional source',%s)",
+                (
+                    ctx.tenant_id, source_id, kind,
+                    hashlib.sha256(source_id.encode()).hexdigest() if kind == "fileos" else None,
+                ),
             )
     expected = {
         kind: "registered" if kind in kinds else "not_registered"
