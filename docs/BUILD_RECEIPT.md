@@ -2,6 +2,35 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Jefferies donor statement recipe parity — ADR-187
+
+[PR #214](https://github.com/jbone3311/MasterBrain/pull/214) final head
+`6dd6d807f2904db565df67c77f237139802852c1` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38628437929),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38628437964)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38628438005).
+Squash merge `2fc06cea9d63dda0e265cc71169eef6ccb5b2900` landed on `main`;
+its independent [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38630014013),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38630013912)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38630013887)
+all passed.
+
+The disposable local Python 3.14/PostgreSQL 17.11 full suite passed 3,351
+tests with five skips, including 545 of 546 PostgreSQL-marked cases (one
+platform-local skip). Unlike hosted CI, the local run enabled the optional
+exact-hash donor AST replay against unchanged FOS-Master commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`; the source file SHA-256 was
+`f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe`.
+Five fictional Jefferies goldens and a 1,000-security repeatability case
+matched summary, ordered rows and category-only reconciliation. Browser
+tests passed 165/165; Ruff, mypy (103 source files), docs links, structural
+gate and diff check passed. The donor checkout remained clean and the local
+test database was stopped afterward.
+
+This is an isolated nonpublishing comparison, not typed Jefferies intake,
+source-byte derivation proof, a reviewed investment, complete portfolio or
+FileOS cutover. Wells Fargo, Schwab and donor reports remain unported.
+
 ## Private Knowledge proposal batches — ADR-186
 
 [PR #212](https://github.com/jbone3311/MasterBrain/pull/212) final head
