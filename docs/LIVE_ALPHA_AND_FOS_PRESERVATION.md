@@ -49,6 +49,9 @@ outcomes, including a weak Fidelity extraction path. These are donor claims to
 measure, not MasterBrain acceptance. There is no dedicated checked-in statement
 or intelligence-report test module in the pinned donor; build a synthetic golden
 suite before extracting runtime behavior. Do not copy real statements into Git.
+ADR-170 now provides a first isolated, fictional Streetbeat recipe candidate and
+golden comparison. It is not a runtime ingestion or investment feature, and the
+other recipes and reports still lack that corpus.
 
 ## Investment dossier acceptance example
 

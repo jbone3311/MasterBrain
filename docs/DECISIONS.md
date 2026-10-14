@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-170](adr/170_statement_recipe_parity_seed.md) pins and compares one pure
+FOS-Master statement recipe on fictional inputs only. It does not add a runtime
+investment feature, database table, reviewed fact or live-source authority.
+
 [ADR-169](adr/169_code_first_librarian_interop.md) fixes the code-first,
 proposal-only and evidence-preserving boundary for future Librarian Markdown
 import/export. It changes no schema or runtime behavior. The twelve issue

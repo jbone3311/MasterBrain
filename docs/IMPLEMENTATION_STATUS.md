@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-170 adds an isolated Streetbeat statement-recipe parity candidate
+with fictional donor goldens. It is not connected to ingestion, KnowledgeCore,
+Brain API or real statements, and does not make investment analysis operational.
+The float-based donor semantics are preserved only for comparison; a typed decimal,
+evidence-linked projection needs a separate reviewed tranche.
+
 Updated 2026-10-05. The preceding merged grouped Brain/Ask read checkpoint is
 ADR-159/PR #148 at `f9402d7`: unsuperseded reviewed leaves in the all-source
 Knowledge layer, with exact-head full CI, strict runtime and populated restore
