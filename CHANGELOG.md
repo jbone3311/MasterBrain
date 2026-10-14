@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Preserve a third pinned FOS-Master statement recipe baseline for OCR-derived
+  bank text, with fictional wrapped-amount, year-rollover and mismatch goldens
+  plus donor replay (ADR-180). No runtime bank ingestion or facts are enabled.
+
 - Add a local, human-owner-scoped `fastmail-source` check/enroll/disconnect
   workflow for a brand-new exact pinned account (ADR-179). Fictional CLI/SQL
   tests cover no-provider preflight, binding refusals and mid-download

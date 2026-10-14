@@ -1,4 +1,4 @@
-"""Fictional goldens for two pure recipes from the pinned FOS-Master donor."""
+"""Fictional goldens for three pure recipes from the pinned FOS-Master donor."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import ast
 import hashlib
 import os
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,8 +14,10 @@ import pytest
 
 from masterbrain.statement_recipe_parity import (
     parse_fidelity,
+    parse_ocr_bank,
     parse_streetbeat,
     reconcile_fidelity,
+    reconcile_ocr_bank,
     reconcile_streetbeat,
 )
 
@@ -118,6 +121,54 @@ FIDELITY_CASES: dict[
     ),
 }
 
+JLB_HEADER = (
+    "Account number XXXXXX0000\nLast statement: December 11, 2023\n"
+    "This statement: January 11, 2024\nBeginning balance $100.00\n"
+    "Total additions 30.00\nTotal subtractions 20.00\n"
+    "Ending balance $110.00\nLow balance $80.00\nAverage balance $95.00\n"
+)
+JLB_CASES: dict[str, tuple[str, list[dict[str, Any]], tuple[float, float] | None]] = {
+    "year_rollover_and_wrapped_ocr_amount": (
+        JLB_HEADER + "DEBITS\n12-30 ' Online Transfer Dr\n\n20.00\nREF fictional\n"
+        "CREDITS\n01-02 ACH Credit $30.00\nDAILY BALANCES\n",
+        [
+            {"row_type": "debit", "line_date": "2023-12-30",
+             "description": "Online Transfer Dr REF fictional", "amount": 20.0,
+             "category": "Online Transfer Dr", "period": "2024-01",
+             "extraction_method": "regex:ocr_bank(ocr)", "confidence": 0.85},
+            {"row_type": "credit", "line_date": "2024-01-02",
+             "description": "ACH Credit", "amount": 30.0,
+             "category": "ACH Credit", "period": "2024-01",
+             "extraction_method": "regex:ocr_bank(ocr)", "confidence": 0.85},
+        ],
+        (110.0, 110.0),
+    ),
+    "mismatch": (
+        JLB_HEADER + "DEBITS\n12-30 Fee 25.00\nCREDITS\n01-02 Remote Deposit 30.00\n"
+        "DAILY BALANCES\n",
+        [
+            {"row_type": "debit", "line_date": "2023-12-30", "description": "Fee",
+             "amount": 25.0, "category": "Fee", "period": "2024-01",
+             "extraction_method": "regex:ocr_bank(ocr)", "confidence": 0.85},
+            {"row_type": "credit", "line_date": "2024-01-02",
+             "description": "Remote Deposit", "amount": 30.0,
+             "category": "Remote Deposit", "period": "2024-01",
+             "extraction_method": "regex:ocr_bank(ocr)", "confidence": 0.85},
+        ],
+        (110.0, 105.0),
+    ),
+    "empty": ("Unrelated fictional document.", [], None),
+    "invalid_dates": (
+        "Beginning balance $100.00\nEnding balance $100.00\n"
+        "Last statement: Foo 1, 2024\nThis statement: Foo 30, 2024\n"
+        "DEBITS\n01-02 Imaginary Debit $5.00\nCREDITS\nDAILY BALANCES\n",
+        [{"row_type": "debit", "line_date": None, "description": "Imaginary Debit",
+          "amount": 5.0, "category": None, "period": None,
+          "extraction_method": "regex:ocr_bank(ocr)", "confidence": 0.85}],
+        (100.0, 95.0),
+    ),
+}
+
 
 @pytest.mark.parametrize("name", CASES)
 def test_pinned_golden(name: str) -> None:
@@ -137,14 +188,27 @@ def test_fidelity_pinned_golden(name: str) -> None:
     )
 
 
-def _donor_functions(path: Path) -> tuple[Any, Any, Any, Any]:
+@pytest.mark.parametrize("name", JLB_CASES)
+def test_ocr_bank_pinned_golden(name: str) -> None:
+    content, expected_items, expected_reconciliation = JLB_CASES[name]
+    summary, items = parse_ocr_bank(content)
+    assert items == expected_items
+    assert reconcile_ocr_bank(summary, items) == expected_reconciliation
+    assert summary["period"] == ("2024-01" if name in (
+        "year_rollover_and_wrapped_ocr_amount", "mismatch") else None)
+
+
+def _donor_functions(path: Path) -> tuple[Any, Any, Any, Any, Any, Any]:
     """Run only pure pinned recipe AST nodes, never donor module imports or DB code."""
     source = path.read_bytes()
     assert hashlib.sha256(source).hexdigest() == DONOR_SHA256
     functions = {"num", "_parse_streetbeat", "_reconcile_streetbeat",
-                 "_parse_fidelity", "_reconcile_fidelity"}
+                 "_parse_fidelity", "_reconcile_fidelity", "_jlb_section",
+                 "_jlb_rows", "_jlb_row_date", "_parse_ocr_bank",
+                 "_reconcile_ocr_bank"}
     constants = {"_MONTHS", "_SB_TXN", "_SB_HOLDING_ROW", "_SB_CASH_ROW",
-                 "_FID_HOLDING_ROW", "_FID_ACTIVITY_ROW", "_FID_NON_HOLDING_LABELS"}
+                 "_FID_HOLDING_ROW", "_FID_ACTIVITY_ROW", "_FID_NON_HOLDING_LABELS",
+                 "_JLB_BOILERPLATE", "_JLB_TXN_TYPE"}
     nodes = []
     for node in ast.parse(source, filename=str(path)).body:
         if isinstance(node, ast.FunctionDef) and node.name in functions:
@@ -154,17 +218,19 @@ def _donor_functions(path: Path) -> tuple[Any, Any, Any, Any]:
         ):
             nodes.append(node)
     assert len(nodes) == len(functions) + len(constants)
-    namespace: dict[str, Any] = {"re": re}
+    namespace: dict[str, Any] = {"re": re, "datetime": datetime}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), namespace)
     return (namespace["_parse_streetbeat"], namespace["_reconcile_streetbeat"],
-            namespace["_parse_fidelity"], namespace["_reconcile_fidelity"])
+            namespace["_parse_fidelity"], namespace["_reconcile_fidelity"],
+            namespace["_parse_ocr_bank"], namespace["_reconcile_ocr_bank"])
 
 
 def test_local_pinned_donor_parity() -> None:
     donor = os.environ.get("FOS_MASTER_STATEMENT_EXTRACT")
     if donor is None:
         pytest.skip("Set FOS_MASTER_STATEMENT_EXTRACT for optional pinned donor replay")
-    donor_parse, donor_reconcile, donor_fidelity, donor_fidelity_reconcile = _donor_functions(
+    (donor_parse, donor_reconcile, donor_fidelity, donor_fidelity_reconcile,
+     donor_jlb, donor_jlb_reconcile) = _donor_functions(
         Path(donor)
     )
     stress_content = (
@@ -188,6 +254,17 @@ def test_local_pinned_donor_parity() -> None:
         )
         if content == fidelity_stress:
             assert len(items) == 1000
+    jlb_stress = JLB_HEADER + "DEBITS\n" + "".join(
+        f"12-30 Fictional Debit {index}.00\n" for index in range(1, 1001)
+    ) + "CREDITS\nDAILY BALANCES\n"
+    for content in [*(case[0] for case in JLB_CASES.values()), jlb_stress]:
+        donor_summary, donor_items = donor_jlb(content)
+        summary, items = parse_ocr_bank(content)
+        assert (summary, items, reconcile_ocr_bank(summary, items)) == (
+            donor_summary, donor_items, donor_jlb_reconcile(donor_summary, donor_items),
+        )
+        if content == jlb_stress:
+            assert len(items) == 1000
 
 
 def test_many_fictional_rows_are_repeatable() -> None:
@@ -209,3 +286,13 @@ def test_fidelity_many_distinct_fictional_rows_are_repeatable() -> None:
     assert len(first[1]) == 1000
     assert first == parse_fidelity(content)
     assert reconcile_fidelity(*first) == (1000.0, 1000.0)
+
+
+def test_ocr_bank_many_fictional_rows_are_repeatable() -> None:
+    content = JLB_HEADER + "DEBITS\n" + "".join(
+        f"12-30 Fictional Debit {index}.00\n" for index in range(1, 1001)
+    ) + "CREDITS\nDAILY BALANCES\n"
+    first = parse_ocr_bank(content)
+    assert len(first[1]) == 1000
+    assert first == parse_ocr_bank(content)
+    assert reconcile_ocr_bank(*first) == (110.0, -500400.0)

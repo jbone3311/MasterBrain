@@ -64,6 +64,10 @@ ADR-174 adds a separate fictional Fidelity donor baseline, preserving its
 low-confidence two-column missed-row and zero-total fallback behavior exactly.
 It is not connected to the typed candidate or proposal ledger; a reconciliation
 mismatch is a warning about incomplete coverage, not a verified account total.
+ADR-180 adds a third, isolated bank-statement recipe baseline for OCR text,
+including wrapped amounts and statement-year rollover. It does not run OCR or
+publish bank facts; Morgan Stanley, Jefferies, Wells Fargo, Schwab and donor
+intelligence reports still require comparison before any replacement claim.
 ADR-172 stores selected current-document candidates in an immutable tenant-fenced
 ledger, and ADR-173 permits a human owner to inspect bounded, source-rechecked
 unreviewed rows through the API. Neither proves a live holding, supplies a

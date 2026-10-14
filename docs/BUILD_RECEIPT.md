@@ -2,6 +2,21 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## OCR bank recipe comparison — ADR-180
+
+On a clean pinned FOS-Master donor source, the fictional three-recipe parity
+module passed 18/18 focused tests, including exact-hash AST replay of the bank
+recipe's summary, ordered rows and reconciliation across four cases and 1,000
+rows. Ruff, mypy (102 source files) and the documentation checker (281 Markdown
+files, 1,500 local references) passed locally. This is a pure comparison:
+no OCR engine, real statement, database or source effect was invoked. Exact
+branch-head and merged-main hosted gates remain authoritative at PR time.
+The full local deployment gate passed 2,756 tests with 541 skips when its
+disposable PostgreSQL launcher ran with local-process permission. Its first
+sandboxed invocation failed only that launcher with `PermissionError`; the
+isolated launcher and complete gate passed outside that sandbox. This gate
+executes one of 537 PostgreSQL-marked tests; hosted full CI must run all 537.
+
 ## Local scoped source management — ADR-179
 
 The synthetic/disposable local Python 3.14/PostgreSQL 17.11 full suite passed

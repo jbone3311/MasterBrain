@@ -36,6 +36,9 @@ low-confidence Fidelity recipe. Six fictional goldens preserve its exact
 duplicate, missed-row, zero-fallback and period behavior. This is not a second
 typed proposal path or a completeness claim; source-byte-to-text proof,
 explicit incomplete coverage, remaining recipes and owner review remain ahead.
+ADR-180 adds the donor's OCR-bank recipe as a third isolated comparison, with
+fictional wrapped-amount and year-rollover cases. It does not prove OCR input
+quality, bank-fact publication or the remaining donor recipes and reports.
 
 ADR-173 adds a human-only, read-only preview of source-rechecked ADR-172
 statement proposals. It is an inspectable synthetic API slice, not a reviewer

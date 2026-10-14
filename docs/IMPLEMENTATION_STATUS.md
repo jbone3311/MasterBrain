@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-180 adds a third isolated, donor-matched statement recipe baseline for
+OCR-derived bank text. Fictional cases exercise a wrapped amount, December to
+January date assignment, mismatch, invalid dates and 1,000-row repeatability.
+It is not runtime OCR, bank-account intake, a reviewed financial fact or a
+FileOS cutover. Other donor recipes and intelligence reports still need parity.
+
 ADR-179 adds a local owner-managed `fastmail-source` command to check, atomically
 create a previously absent exact pinned Fastmail account, or disconnect it
 without changing its pin or evidence. It requires a human-only management
