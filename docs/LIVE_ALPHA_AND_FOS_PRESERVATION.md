@@ -50,10 +50,14 @@ measure, not MasterBrain acceptance. There is no dedicated checked-in statement
 or intelligence-report test module in the pinned donor; build a synthetic golden
 suite before extracting runtime behavior. Do not copy real statements into Git.
 ADR-170 now provides a first isolated, fictional Streetbeat recipe candidate and
-golden comparison. It is not a runtime ingestion or investment feature, and the
-other recipes and reports still lack that corpus.
+golden comparison. It is not a runtime ingestion or investment feature; ADR-174
+adds Fidelity goldens, while the remaining recipes and reports still lack that corpus.
 ADR-171 adds private exact-decimal/text-span candidates for that one recipe; it
 does not validate a source's bytes-to-text derivation, tenant grant or live holding.
+ADR-174 adds a separate fictional Fidelity donor baseline, preserving its
+low-confidence two-column missed-row and zero-total fallback behavior exactly.
+It is not connected to the typed candidate or proposal ledger; a reconciliation
+mismatch is a warning about incomplete coverage, not a verified account total.
 ADR-172 stores selected current-document candidates in an immutable tenant-fenced
 ledger, and ADR-173 permits a human owner to inspect bounded, source-rechecked
 unreviewed rows through the API. Neither proves a live holding, supplies a

@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-174](adr/174_fidelity_recipe_parity_baseline.md) pins a second, deliberately
+low-confidence Fidelity statement recipe against fictional donor goldens. It
+does not publish or verify holdings, relax ADR-171/172's Streetbeat-only
+boundary, or authorize a FileOS cutover.
+
 [ADR-173](adr/173_owner_statement_proposal_preview.md) adds a human-only,
 read-only, source-rechecked and paged preview of ADR-172's unreviewed rows.
 It neither approves claims nor opens the rows to assistants.

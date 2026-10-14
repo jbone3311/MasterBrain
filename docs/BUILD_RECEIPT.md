@@ -2,6 +2,23 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Fictional browser statement-proposal trial — ADR-173
+
+[PR #193](https://github.com/jbone3311/MasterBrain/pull/193) final head
+`762e006788327ef7bd5dca9acee8a75a88cebf7d` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38548884937)
+with 3,209 tests, six skips and 507/507 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38548884520)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38548884560)
+passed. Squash merge `f2202dc5e0162349e12f0fcacea4c18da44289a3` passed
+[merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38549874035)
+with the same counts, plus
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38549873986)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38549874143).
+The loopback fictional trial opens one current unreviewed row only on click;
+owner interactive acceptance and private Fastmail scope remain open. No donor
+or live-source state changed.
+
 ## Owner-only statement proposal preview — ADR-173
 
 [PR #192](https://github.com/jbone3311/MasterBrain/pull/192) merged as

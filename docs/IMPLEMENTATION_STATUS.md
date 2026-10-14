@@ -1,11 +1,18 @@
 # MasterBrain Implementation Status
 
+ADR-174 adds an isolated, behavior-matched Fidelity recipe baseline with six
+fictional goldens, optional exact-hash donor replay and 1,000-row stress. The
+donor's two-column missed-row and zero-total fallback limitations remain
+visible. This is not runtime intake, a typed Fidelity proposal, verified
+investment data or FileOS cutover.
+
 ADR-173 adds a human-only, source-rechecked and paged read-only API preview of
 ADR-172's private statement proposals. Each returned row has a bounded quote
 from its immutable normalized document and an explicit proposed-extraction
-label. It is not a first-party UI, assistant route, approval, reviewed holding,
-live source or investment dossier. Synthetic PostgreSQL/API verification is
-tracked in its PR; hosted acceptance remains separate.
+label. The fictional browser trial opens one such row on explicit click through
+the same API. It is not a live first-party investment dossier, assistant route,
+approval, reviewed holding or live source. Synthetic PostgreSQL/API verification
+is tracked in PRs #192 and #193; owner interactive acceptance remains separate.
 
 ADR-172 adds an additive private PostgreSQL ledger for one explicitly selected,
 current normalized Email/FileOS statement. A scoped worker verifies the
