@@ -2,6 +2,18 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Owner-only statement proposal preview — ADR-173
+
+[PR #192](https://github.com/jbone3311/MasterBrain/pull/192) merged as
+`0c47d4cc1da758be8f3598bd3580a79cfbbe3e64`. Its
+[exact-head full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38546649070)
+passed 3,208 tests with six skips, including all 506 PostgreSQL-marked tests;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38546649136)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38546649174)
+passed. The same three gates passed again on merged `main`. The route is
+human-only, paged, source-rechecked and unreviewed. This does not approve a
+holding or enroll a live source.
+
 ## Evidence-bound private statement proposal ledger — ADR-172
 
 [PR #190](https://github.com/jbone3311/MasterBrain/pull/190) final head

@@ -66,6 +66,19 @@ source quotes: the file says November 12, 2026 and the Email says November 19,
 text is not a resolution. This is a deliberate evaluation case, not current
 project advice.
 
+## Inspect a proposed statement row
+
+On the trial page, select **Open proposed row**. The launcher has already
+published a fifth, fictional FileOS text file and run the private deterministic
+statement extractor against its current normalized document. The page obtains
+only that proposal's random locator with the owner's temporary credential,
+then uses the normal human-only, source-rechecked proposal API. It should show
+one ACME Fictional Corporation row, an exact bounded source quote, and a zero
+arithmetic difference. The row is **unreviewed**; “reconciled” means only that
+the extracted numbers add up. It does not establish a real holding, approve a
+claim, or change a file. A second trial tenant cannot access the locator or
+proposal. The page does not fetch proposal text before you click the button.
+
 ## Known answers
 
 | Search | Email | Files | Reviewed knowledge | What to inspect |

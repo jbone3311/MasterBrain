@@ -8,8 +8,11 @@
   const input = document.getElementById("query");
   const accessToggle = document.getElementById("access-toggle");
   const accessCode = document.getElementById("access-code");
+  const statement = document.getElementById("statement");
+  const statementButton = document.getElementById("statement-button");
   let searchVersion = 0;
   let evidenceVersion = 0;
+  let statementVersion = 0;
   function element(tag, text, parent) {
     const node = document.createElement(tag);
     node.textContent = text;
@@ -51,6 +54,45 @@
       if (version !== evidenceVersion) return;
       evidence.replaceChildren();
       element("p", error.message, evidence);
+    }
+  }
+  async function showStatement() {
+    const version = ++statementVersion;
+    statementButton.disabled = true;
+    statement.replaceChildren();
+    element("p", "Checking the current fictional source…", statement);
+    try {
+      const locator = await api("/trial/statement-id");
+      const id = locator && locator.proposal_id;
+      if (typeof id !== "string" || !/^[A-Za-z0-9_-]{8,128}$/.test(id)) {
+        throw new Error("Statement locator could not be verified.");
+      }
+      const data = await api(`/v1/knowledge/statement-proposals/${encodeURIComponent(id)}`);
+      if (version !== statementVersion) return;
+      if (!data || data.proposal_id !== id || data.source_id !== "trial_files" ||
+          data.source_kind !== "fileos" || data.source_current !== true ||
+          data.reviewed !== false || data.source_effects !== false ||
+          data.status !== "reconciled" || data.row_count !== 1 ||
+          !Array.isArray(data.rows) || data.rows.length !== 1 ||
+          !data.page || data.page.next_after !== null || data.page.truncated !== false ||
+          !data.reconciliation || data.reconciliation.delta !== "0" ||
+          data.rows[0].ordinal !== 0 || data.rows[0].assertion_status !== "proposed_extraction" ||
+          typeof data.rows[0].quote !== "string" || data.rows[0].quote.length > 300 ||
+          data.rows[0].quote_truncated !== false ||
+          typeof data.rows[0].description !== "string") {
+        throw new Error("Statement response could not be verified.");
+      }
+      statement.replaceChildren();
+      element("p", `Status: ${data.status}. Arithmetic difference: ${data.reconciliation.delta}. Unreviewed extraction only.`, statement);
+      element("h3", data.rows[0].description, statement);
+      element("pre", data.rows[0].quote, statement);
+      element("p", "Source: fictional FileOS document. No approval, holdings ledger, or file change.", statement);
+    } catch (error) {
+      if (version !== statementVersion) return;
+      statement.replaceChildren();
+      element("p", error.message, statement);
+    } finally {
+      if (version === statementVersion) statementButton.disabled = false;
     }
   }
   async function search() {
@@ -102,6 +144,8 @@
     document.getElementById("search-button").disabled = true;
     return;
   }
+  statementButton.disabled = false;
+  statementButton.addEventListener("click", showStatement);
   accessToggle.disabled = false;
   accessToggle.addEventListener("click", () => {
     if (accessCode.hidden) {

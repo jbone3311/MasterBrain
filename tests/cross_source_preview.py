@@ -27,8 +27,8 @@ from uuid import UUID, uuid4
 
 import psycopg
 import uvicorn
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
@@ -45,13 +45,14 @@ from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import CommitmentWrite
+from masterbrain.statement_persistence import StatementProposalStore
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = Path(__file__).with_name("cross_source_assets")
 REVISION = "synthetic-cross-source-v1"
 READ_SCOPES = frozenset({
     "brain.search", "brain.evidence.read", "brain.content.read",
-    "brain.changes.read", "knowledge.search",
+    "brain.changes.read", "knowledge.search", "knowledge.read",
 })
 WRITE_SCOPES = frozenset({
     "email.ingest", "email.search", "email.evidence.read",
@@ -71,6 +72,12 @@ FILES = {
         "Maple Arcade closing target is November 12, 2026. "
         "This fictional memo has not been reconciled with email correspondence."
     ),
+    "cobalt-statement.txt": (
+        "Account No: 000000\nPeriod: April - 2024\nLong $100.00\n"
+        "Symbol Description Quantity Market Price Market Value Cost Price "
+        "Unrealized TD Cost Basis\n"
+        "ACME Fictional Corporation 2 $50.00 $100.00 $40.00 $20.00 $80.00"
+    ),
 }
 MAIL = [
     ("Cedar Harbor appraisal", "Cedar Harbor appraisal received. Please review the valuation."),
@@ -88,6 +95,7 @@ class Preview:
     context: TenantContext
     other_context: TenantContext
     file_hashes: dict[str, str]
+    statement_proposal_id: str
 
 
 def new_tenant(admin: str) -> tuple[TenantContext, UUID]:
@@ -108,7 +116,9 @@ def new_tenant(admin: str) -> tuple[TenantContext, UUID]:
     return TenantContext(tenant, actor, READ_SCOPES | WRITE_SCOPES, uuid4()), account
 
 
-def publish_files(store: Store, ctx: TenantContext, root: Path, files: dict[str, str]) -> None:
+def publish_files(
+    store: Store, ctx: TenantContext, root: Path, files: dict[str, str]
+) -> dict[str, str]:
     root.mkdir()
     # Match the private controller: canonicalize our newly created synthetic root.
     root = root.resolve(strict=True)
@@ -136,6 +146,10 @@ def publish_files(store: Store, ctx: TenantContext, root: Path, files: dict[str,
         ctx, "trial_files", receipt.run_id, code_revision=REVISION
     )
     core.activate_fileos_index_generation(ctx, "trial_files", generation.generation_id, uuid4())
+    return {
+        result.extraction.locator: result.publication.document_id
+        for result in published.results if result.publication is not None
+    }
 
 
 def publish_reviewed_knowledge(store: Store, ctx: TenantContext) -> None:
@@ -202,7 +216,12 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
             core.bridge_current_email_version(
                 ctx, hit["evidence_id"], uuid4(), code_revision=REVISION
             )
-    publish_files(store, ctx, temporary_root / "owner", FILES)
+    file_documents = publish_files(store, ctx, temporary_root / "owner", FILES)
+    statement = StatementProposalStore(store).project_current_document(
+        ctx, file_documents["cobalt-statement.txt"], uuid4()
+    )
+    if statement["row_count"] != 1 or statement["status"] != "reconciled":
+        raise RuntimeError("Fictional statement proposal did not reconcile")
     publish_reviewed_knowledge(store, ctx)
     publish_files(store, other, temporary_root / "other", {
         "other-private.txt": "Cedar Harbor other-tenant-canary must not appear for the first user."
@@ -216,6 +235,15 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
     def trial() -> FileResponse:
         return FileResponse(ASSETS / "index.html", media_type="text/html")
 
+    @app.get("/trial/statement-id", include_in_schema=False)
+    def statement_id(request: Request) -> JSONResponse:
+        # The random locator is disclosed only to the owner trial credential.
+        if not secrets.compare_digest(request.headers.get("authorization", ""), f"Bearer {token}"):
+            raise HTTPException(status_code=404)
+        return JSONResponse(
+            {"proposal_id": statement["proposal_id"]}, headers={"Cache-Control": "no-store"}
+        )
+
     @app.get("/trial.js", include_in_schema=False)
     def javascript() -> FileResponse:
         return FileResponse(ASSETS / "trial.js", media_type="application/javascript")
@@ -226,7 +254,7 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
 
     hashes = {name: hashlib.sha256(text.encode()).hexdigest() for name, text in FILES.items()}
     return Preview(app, token, other_token, replace(ctx, scopes=READ_SCOPES),
-                   replace(other, scopes=READ_SCOPES), hashes)
+                   replace(other, scopes=READ_SCOPES), hashes, statement["proposal_id"])
 
 
 def docker(*args: str, env: dict[str, str] | None = None) -> str:

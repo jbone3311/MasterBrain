@@ -749,6 +749,29 @@ def test_citations_content_coverage_and_no_source_mutation(preview, tmp_path):
 
 
 @pytest.mark.postgres
+def test_fictional_statement_proposal_is_owner_only_and_source_bound(preview):
+    with client_for(preview) as owner, client_for(preview, preview.other_token) as other:
+        locator = owner.get("/trial/statement-id")
+        assert locator.status_code == 200
+        assert locator.headers["cache-control"] == "no-store"
+        proposal_id = locator.json()["proposal_id"]
+        assert proposal_id == preview.statement_proposal_id
+        path = f"/v1/knowledge/statement-proposals/{proposal_id}"
+        proposal = owner.get(path)
+        assert proposal.status_code == 200
+        body = proposal.json()
+        assert body["source_kind"] == "fileos" and body["source_id"] == "trial_files"
+        assert body["source_current"] is True
+        assert body["row_count"] == 1 and body["status"] == "reconciled"
+        assert body["reviewed"] is False and body["source_effects"] is False
+        assert body["rows"][0]["assertion_status"] == "proposed_extraction"
+        assert "ACME Fictional Corporation" in body["rows"][0]["quote"]
+        assert other.get("/trial/statement-id").status_code == 404
+        assert other.get(path).status_code == 404
+        assert owner.get("/trial/statement-id", headers={"Authorization": ""}).status_code == 404
+
+
+@pytest.mark.postgres
 def test_two_nonempty_tenants_cannot_read_each_others_evidence(preview):
     with client_for(preview) as owner, client_for(preview, preview.other_token) as other:
         original = owner.post("/v1/brain/current-search", json={"query": "Cedar Harbor"}).json()
@@ -862,6 +885,7 @@ def test_browser_assets_do_not_embed_credentials_or_execute_source_text():
     assert 'id="access-code" hidden' in html
     assert "FICTIONAL DATA" in html
     assert "other-tenant-canary" not in html
+    assert 'id="statement-button"' in html
 
 
 @pytest.mark.parametrize("dsn", [

@@ -31,6 +31,12 @@ statement or every row in one request would also defeat progressive access.
   unreviewed. `reconciled` means only donor-tolerance arithmetic; USD is a
   recipe assumption. No aggregation, inferred holding, account total,
   financial recommendation, or source effect is returned.
+- The disposable fictional browser trial may create one proposal from its own
+  published FileOS fixture. Its trial-only locator route discloses only the
+  random proposal ID to that trial owner's temporary credential; the normal
+  source-rechecked API still authorizes the content. The page fetches and
+  displays it only after an explicit click, rendering quotes as inert text.
+  This does not create a production proposal-list endpoint.
 
 ## Verification and rollback
 
@@ -40,3 +46,5 @@ current-version refusal and absence of reviewed claims. The full repository,
 strict-runtime and populated-restore gates remain release checks. No test uses
 personal data. Rollback removes the route and reader while retaining the
 immutable proposal ledger and audit history.
+The trial integration adds a second-tenant denial and browser tests for
+click-only reads, inert rendering and rejection of malformed responses.

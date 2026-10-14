@@ -15,8 +15,9 @@ class Element {
 }
 function harness(token = "a".repeat(54), customFetch) {
   const nodes = {};
-  for (const id of ["status", "results", "evidence", "query", "coverage", "freshness", "search-form", "search-button", "access-toggle", "access-code"]) nodes[id] = new Element(id);
+  for (const id of ["status", "results", "evidence", "query", "coverage", "freshness", "search-form", "search-button", "access-toggle", "access-code", "statement-button", "statement"]) nodes[id] = new Element(id);
   nodes["access-toggle"].disabled = true;
+  nodes["statement-button"].disabled = true;
   nodes["access-code"].hidden = true;
   nodes.query.value = "Cedar Harbor";
   const examples = ["insurance", "nonexistentcanary"].map(query => {const e = new Element("button"); e.dataset.query = query; return e;});
@@ -44,8 +45,42 @@ test("missing fragment never makes an initial authenticated request", async () =
   assert.equal(h.calls.length, 0);
   assert.equal(h.nodes["search-button"].disabled, true);
   assert.equal(h.nodes["access-toggle"].disabled, true);
+  assert.equal(h.nodes["statement-button"].disabled, true);
   assert.equal(h.nodes["access-code"].textContent, "");
   assert.match(h.nodes.status.textContent, /credential missing/);
+});
+test("fictional proposal is fetched only on click and renders source text inertly", async () => {
+  const id = "stmt_fictional123";
+  const h = harness("a".repeat(54), async (url, _options, data) => {
+    const body = url === "/v1/brain/current-search" ? data :
+      url === "/trial/statement-id" ? {proposal_id: id} :
+      url.endsWith(id) ? {
+        proposal_id: id, source_id: "trial_files", source_kind: "fileos", source_current: true,
+        reviewed: false, source_effects: false, row_count: 1, status: "reconciled",
+        reconciliation: {delta: "0"}, page: {next_after: null, truncated: false},
+        rows: [{ordinal: 0, assertion_status: "proposed_extraction", description: "<script>fictional</script>",
+          quote: "<img src=x onerror=alert(1)>", quote_truncated: false}],
+      } : {};
+    return {ok: true, json: async () => body};
+  });
+  await flush();
+  assert.equal(h.calls.some(call => call.url.includes("statement")), false);
+  assert.equal(h.nodes["statement-button"].disabled, false);
+  await h.nodes["statement-button"].events.click(); await flush();
+  assert.deepEqual(h.calls.filter(call => call.url.includes("statement")).map(call => call.url),
+    ["/trial/statement-id", `/v1/knowledge/statement-proposals/${id}`]);
+  assert.equal(h.nodes.statement.children[1].textContent, "<script>fictional</script>");
+  assert.equal(h.nodes.statement.children[2].textContent, "<img src=x onerror=alert(1)>");
+});
+test("incomplete proposal response never renders a row", async () => {
+  const h = harness("a".repeat(54), async (url, _options, data) => ({ok: true, json: async () =>
+    url === "/v1/brain/current-search" ? data :
+      url === "/trial/statement-id" ? {proposal_id: "stmt_fictional123"} :
+        {proposal_id: "stmt_fictional123", rows: [{quote: "private text"}]}}));
+  await flush();
+  await h.nodes["statement-button"].events.click(); await flush();
+  assert.equal(h.nodes.statement.children.length, 1);
+  assert.match(h.nodes.statement.children[0].textContent, /could not be verified/);
 });
 test("trial access code is visible only after explicit reveal and is cleared on hide", async () => {
   const token = "a".repeat(54);
