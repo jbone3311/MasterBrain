@@ -37,6 +37,14 @@ attachment and approved-document evidence. This is a visibility rule, not a
 purge: the explicitly human-scoped historical Email evidence route remains
 available under its existing audit/retention policy pending an owner decision.
 
+ADR-186 keeps Knowledge proposal batches in private forced-RLS tables, outside
+reviewed search, dossiers and assistant routes. Human staging, preview and
+atomic row-by-row review recheck current source grants, excluded evidence and
+an exact quote in normalized text. Preview additionally requires content-read
+scope. A proposed row is untrusted and cannot authorize its own publication;
+the reviewer must make every decision explicitly. This is synthetic-only and
+does not establish a safe Markdown parser or source-byte derivation proof.
+
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their

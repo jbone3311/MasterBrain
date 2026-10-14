@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-186](adr/186_private_knowledge_proposal_batches.md) stages bounded,
+source-stated Knowledge assertions outside reviewed search and requires an
+explicit per-row human decision in one atomic transaction. It adds no Markdown
+parser, inference route or live-source authority.
+
 [ADR-185](adr/185_excluded_email_evidence_visibility.md) closes the retained
 Brain and reviewed KnowledgeCore read paths for already-ingested Email that
 later becomes mailbox-excluded. It preserves immutable history and existing

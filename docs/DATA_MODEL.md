@@ -85,6 +85,17 @@ explicit, not inferred from filename.
 
 ## KnowledgeCore
 
+Migration `0063_private_knowledge_proposal_batches.sql` adds ADR-186's
+`knowledge_proposal_batches`, ordered `knowledge_proposals`, per-proposal
+`knowledge_proposal_evidence`, immutable `knowledge_proposal_decisions`, and
+one `knowledge_proposal_review_receipts` row per completed batch. Canonical
+JSON/digests and actor-scoped idempotency bind 1–50 source-stated proposals;
+the per-evidence links and row/decision closure are SQL-checked. Forced RLS,
+tenant-login fencing, runtime insert/select-only grants and protected TRUNCATE
+apply. Only explicit approved rows enter the existing reviewed Knowledge
+tables, in the same transaction as all decisions. These private rows are not
+inferred claims, Markdown imports, or reviewed search material.
+
 Migration `0057_private_statement_proposals.sql` implements ADR-172's separate
 append-only `knowledge_statement_proposals`, ordered
 `knowledge_statement_rows`, and actor-scoped idempotency
@@ -171,7 +182,7 @@ current roster or a strict role registry, and historical rows are unchanged.
 
 The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
 [ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions,
-not existing columns or routes: private import proposals, derivation/basis links,
+not existing columns or routes: a Markdown proposal importer, derivation/basis links,
 typed monetary units and uncertain due
 windows, project-artifact associations and a compatible fact-name registry.
 New basis links must preserve transitive source grants. Existing Email attachment

@@ -238,6 +238,20 @@ source effects or an alternate route through KnowledgeCore.
   inconsistent evidence returns 409. Every row is labeled proposed extraction,
   not a reviewed holding or investment total. No source effect or approval is
   available here.
+- `POST /v1/knowledge/proposal-batches` — ADR-186 human-only staging of 1–50
+  source-stated assertions under `knowledge.review` and a UUID idempotency key.
+  No `reviewed` marker is accepted in a proposal. Every evidence ID must be
+  current, granted and nonexcluded; the exact quote must occur in linked
+  normalized text. Staging creates no reviewed assertion.
+- `GET /v1/knowledge/proposal-batches/{batch_id}` — human-only private preview
+  requiring `knowledge.review` and `brain.content.read`. Rechecks current
+  evidence/grants and returns ordered untrusted proposals plus decision status;
+  never available to assistant search or ordinary Knowledge reads.
+- `POST /v1/knowledge/proposal-batches/{batch_id}/review` — human-only atomic
+  decision over every row, binding the exact batch digest and a UUID key.
+  Approval uses the existing reviewed publication path; rejection records a
+  reason. One invalid row rolls back the entire decision. No Markdown parser,
+  inferred-claim approval or live-source operation is exposed.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
   feed; enrolled assistants see only directly source-authorized assertions and
   cannot use an ungranted event as a cursor.

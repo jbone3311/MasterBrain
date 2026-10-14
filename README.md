@@ -53,7 +53,10 @@ owner authorization, disposable live acceptance and operational/retention
 decisions.
 The [Librarian Markdown interop review](docs/LIBRARIAN_INTEROP.md) now records
 the proposed import/export path and its twelve verified or corrected gaps;
-it is a design plan, not a working importer or exporter.
+it is a design plan, not a working importer or exporter. ADR-186 adds a
+synthetic-only private queue for 1–50 source-stated Knowledge proposals and
+atomic explicit human decisions. It does not parse Librarian Markdown, accept
+inference without a source quote, or expose proposals to assistants.
 
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 Its `main` branch requires full CI, strict-runtime and populated-restore checks
@@ -142,6 +145,7 @@ FileOS sources ┘       │              │                │
 | Pinned donor statement recipe comparison | Fictional Streetbeat and low-confidence Fidelity goldens with optional exact-hash FOS-Master replay; isolated from runtime and not verified holdings |
 | Private statement proposal ledger | Worker-only, additive exact-decimal rows for one current normalized Email/FileOS document; exact-head and merged-main PostgreSQL/restore gates passed; storage itself creates no reviewed holding or live source |
 | Owner statement proposal preview | Human-only, paged API read of current, source-rechecked unreviewed rows and bounded source quotes; the fictional browser trial now opens one proposed row on explicit click. No assistant access, approval, investment total or live source |
+| Private Knowledge proposal batch and review | Human-only, source-stated 1–50 rows with exact current evidence quotes; explicit per-row approval/rejection is atomic and idempotent. No Markdown parser, inferred claim, assistant proposal read or live source |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |
 | First-party read-only question workspace | Implemented prototype at `/brain`; grouped indexed evidence, not generated answers or live acceptance |
 | Certified external-AI clients and cited answer synthesis | Planned; neither is deployed or accepted |

@@ -267,63 +267,76 @@ class KnowledgeCore:
         self.store.require(ctx, "knowledge.review")
         if not isinstance(idempotency_key, UUID):
             raise ValueError("UUID idempotency key required")
+        with self.store.transaction(ctx) as conn:
+            return self._publish_in_transaction(conn, ctx, assertion, idempotency_key)
+
+    def _publish_in_transaction(
+        self,
+        conn: psycopg.Connection[dict[str, Any]],
+        ctx: TenantContext,
+        assertion: KnowledgeAssertion,
+        idempotency_key: UUID,
+    ) -> KnowledgeResult:
+        """Existing reviewed publication, also used by one atomic batch review."""
+        self.store.require(ctx, "knowledge.review")
+        if not isinstance(idempotency_key, UUID):
+            raise ValueError("UUID idempotency key required")
         kind = assertion.kind
         object_id = stable_id(kind, str(ctx.tenant_id), str(ctx.actor_id), str(idempotency_key))
         request_hash = _digest(assertion)
         evidence_ids = self._evidence_ids(assertion)
-        with self.store.transaction(ctx) as conn:
-            conn.execute(
-                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
-                (f"{ctx.tenant_id}:knowledge:{ctx.actor_id}:{idempotency_key}",),
-            )
-            old = conn.execute(
-                "SELECT request_hash,object_kind,object_id FROM knowledge_receipts "
-                "WHERE actor_id=%s AND idempotency_key=%s",
-                (ctx.actor_id, idempotency_key),
-            ).fetchone()
-            if old:
-                if old["request_hash"] != request_hash:
-                    raise Conflict("knowledge idempotency key reused")
-                return KnowledgeResult(old["object_kind"], old["object_id"], False)
-            rows = conn.execute(
-                "SELECT id FROM brain_evidence WHERE id=ANY(%s) "
-                "AND NOT public.brain_email_evidence_is_excluded(tenant_id,id)",
-                (evidence_ids,),
-            ).fetchall()
-            if {row["id"] for row in rows} != set(evidence_ids):
-                raise NotFound()
-            supersedes = getattr(assertion, "supersedes_id", None)
-            if supersedes is not None:
-                if not supersedes.startswith(kind + "_"):
-                    raise ValueError("supersedes identity has the wrong kind")
-                self._require_object(conn, kind, supersedes)
+        conn.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+            (f"{ctx.tenant_id}:knowledge:{ctx.actor_id}:{idempotency_key}",),
+        )
+        old = conn.execute(
+            "SELECT request_hash,object_kind,object_id FROM knowledge_receipts "
+            "WHERE actor_id=%s AND idempotency_key=%s",
+            (ctx.actor_id, idempotency_key),
+        ).fetchone()
+        if old:
+            if old["request_hash"] != request_hash:
+                raise Conflict("knowledge idempotency key reused")
+            return KnowledgeResult(old["object_kind"], old["object_id"], False)
+        rows = conn.execute(
+            "SELECT id FROM brain_evidence WHERE id=ANY(%s) "
+            "AND NOT public.brain_email_evidence_is_excluded(tenant_id,id)",
+            (evidence_ids,),
+        ).fetchall()
+        if {row["id"] for row in rows} != set(evidence_ids):
+            raise NotFound()
+        supersedes = getattr(assertion, "supersedes_id", None)
+        if supersedes is not None:
+            if not supersedes.startswith(kind + "_"):
+                raise ValueError("supersedes identity has the wrong kind")
+            self._require_object(conn, kind, supersedes)
 
-            title, body = self._insert(conn, ctx, object_id, assertion)
-            for evidence_id in evidence_ids:
-                conn.execute(
-                    "INSERT INTO knowledge_evidence(tenant_id,target_kind,target_id,evidence_id,"
-                    "stance,locator) VALUES (%s,%s,%s,%s,'supports','{}')",
-                    (ctx.tenant_id, kind, object_id, evidence_id),
-                )
+        title, body = self._insert(conn, ctx, object_id, assertion)
+        for evidence_id in evidence_ids:
             conn.execute(
-                "INSERT INTO knowledge_search_documents(tenant_id,object_kind,object_id,"
-                "title,body) "
-                "VALUES (%s,%s,%s,%s,%s)",
-                (ctx.tenant_id, kind, object_id, title, body),
+                "INSERT INTO knowledge_evidence(tenant_id,target_kind,target_id,evidence_id,"
+                "stance,locator) VALUES (%s,%s,%s,%s,'supports','{}')",
+                (ctx.tenant_id, kind, object_id, evidence_id),
             )
-            change_id = stable_id("kchange", kind, object_id)
-            conn.execute(
-                "INSERT INTO knowledge_change_events(tenant_id,id,object_kind,object_id) "
-                "VALUES (%s,%s,%s,%s)",
-                (ctx.tenant_id, change_id, kind, object_id),
-            )
-            conn.execute(
-                "INSERT INTO knowledge_receipts(tenant_id,actor_id,idempotency_key,request_hash,"
-                "object_kind,object_id) VALUES (%s,%s,%s,%s,%s,%s)",
-                (ctx.tenant_id, ctx.actor_id, idempotency_key, request_hash, kind, object_id),
-            )
-            self.store.audit(conn, ctx, "knowledge.published", kind, object_id)
-            return KnowledgeResult(kind, object_id, True)
+        conn.execute(
+            "INSERT INTO knowledge_search_documents(tenant_id,object_kind,object_id,"
+            "title,body) "
+            "VALUES (%s,%s,%s,%s,%s)",
+            (ctx.tenant_id, kind, object_id, title, body),
+        )
+        change_id = stable_id("kchange", kind, object_id)
+        conn.execute(
+            "INSERT INTO knowledge_change_events(tenant_id,id,object_kind,object_id) "
+            "VALUES (%s,%s,%s,%s)",
+            (ctx.tenant_id, change_id, kind, object_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_receipts(tenant_id,actor_id,idempotency_key,request_hash,"
+            "object_kind,object_id) VALUES (%s,%s,%s,%s,%s,%s)",
+            (ctx.tenant_id, ctx.actor_id, idempotency_key, request_hash, kind, object_id),
+        )
+        self.store.audit(conn, ctx, "knowledge.published", kind, object_id)
+        return KnowledgeResult(kind, object_id, True)
 
     def _insert(
         self,

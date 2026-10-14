@@ -9,6 +9,13 @@ and the retention, credential and operating boundaries are decided. FileOS
 roots retain their separate approval gate. Existing scoped code is not
 authorization for either source.
 
+ADR-186 supplies the first private KnowledgeCore proposal batch and atomic
+per-row human review for source-stated assertions over current, granted,
+nonexcluded evidence. It does not ingest Markdown or admit inferred claims.
+Next: an owner-approved sanitized Librarian layout, proposal-only parser,
+typed inference/basis model, and evidence-safe round-trip tests; keep the
+source exclusion and synthetic-only gates intact.
+
 ADR-184 now supplies the first synthetic pre-index Email exclusion tranche:
 exact JMAP mailbox memberships, a policy-bound cursor, count-only public
 status, and current-visibility suppression with preserved history. ADR-185
@@ -112,7 +119,8 @@ The [Librarian interoperability review](LIBRARIAN_INTEROP.md) refines
 children. ADR-169 records the code-first, proposal-only boundary; it adds no
 working Markdown import/export. In particular, bounded FileOS CSV/XLSX extraction
 already exists, attachment occurrences must not be collapsed by hash, and source
-exclusions must precede any live fetch. The reviewed proposal queue, derivation
+exclusions must precede any live fetch. ADR-186 adds the private source-stated
+proposal queue and atomic human review; the Markdown importer, inference
 basis, table locators and export remain implementation gates, not current
 functions. ADR-182 adds reviewed project aliases; ADR-183 adds reviewed
 project/entity roles, but not a current roster or role registry.
@@ -158,7 +166,7 @@ Each lane must pass its own acceptance gate before the next dependent step:
 | Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Deferred by the owner's synthetic-only decision. Continue fictional/disposable scope and exclusion proof; seek new explicit authorization and region, budget, retention, identity and exact-source decisions before any private pilot | No live source, hosted identity, recovery or operations acceptance exists |
 | FileOS migration ([migration plan](FOS_MIGRATION.md)) | Review the six recorded donor-policy differences and fault/platform cases, then run an owner-authorized read-only shadow on a bounded root | No v2 current publication, FileOS effect, donor cutover or retirement is approved |
 | FOS intelligence ([preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md)) | Extend synthetic donor goldens beyond the four isolated recipes; design source-derivation proof, reviewer-visible rows and an atomic human approval path over the private proposal ledger | No donor-equivalent investment dossier, owner-approved row or verified holdings claim exists yet |
-| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | Specify and test a fictional Markdown import that creates only private proposals, with exact citations and no model dependency; then separately review derivation/basis links and atomic human approval | ADR-182/183 add reviewed project aliases and roles, but no Markdown importer/exporter, KnowledgeCore proposal queue or automatic dossier generation exists; live-source exclusions remain a prerequisite |
+| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds a private source-stated proposal queue and atomic human per-row review. Next specify and test a fictional Markdown importer that stages only proposals with exact citations and no model dependency; separately review derivation/basis links | ADR-182/183 add reviewed aliases and roles, but no Markdown importer/exporter, inferred proposal path or automatic dossier generation exists; live-source exclusions remain a prerequisite |
 | Reviewed actions ([#93](https://github.com/jbone3311/MasterBrain/issues/93)) | Specify typed propose/preview/approve/execute contracts and reversible first actions | The existing Brain API stays read-only until separate grants, safety tests and approval exist |
 
 The donor remains pinned at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`

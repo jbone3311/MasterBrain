@@ -52,8 +52,11 @@ from masterbrain.answers import (
 from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReviewer
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_proposals import KnowledgeProposalBatches
 from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
+    KnowledgeProposalReviewRequest,
+    KnowledgeProposalStageRequest,
     KnowledgePublishRequest,
     KnowledgeSearchRequest,
     ProjectAliasLookupRequest,
@@ -156,6 +159,7 @@ def create_app(
     brain = brain_store or DataCoreStore(store)
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
+    knowledge_proposals = KnowledgeProposalBatches(store)
     statement_proposals = StatementProposalReader(store)
     answers = GroundedAnswerService(brain, answer_selector)
     if browser_auth is not None:
@@ -944,6 +948,40 @@ def create_app(
             "changed": result.changed,
             "reviewed": True,
         }
+
+    @app.post("/v1/knowledge/proposal-batches", status_code=201)
+    def stage_knowledge_proposals(
+        body: KnowledgeProposalStageRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        try:
+            return knowledge_proposals.stage(principal.context, body, idempotency_key)
+        except ValueError:
+            raise HTTPException(422, "invalid_knowledge_proposals") from None
+
+    @app.get("/v1/knowledge/proposal-batches/{batch_id}")
+    def preview_knowledge_proposals(
+        batch_id: str,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        return knowledge_proposals.preview(principal.context, batch_id)
+
+    @app.post("/v1/knowledge/proposal-batches/{batch_id}/review")
+    def review_knowledge_proposals(
+        batch_id: str,
+        body: KnowledgeProposalReviewRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        try:
+            return knowledge_proposals.review(
+                principal.context, batch_id, body, idempotency_key,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_knowledge_proposal_review") from None
 
     @app.post("/v1/knowledge/search")
     def search_knowledge(

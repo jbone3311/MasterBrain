@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import unicodedata
 from datetime import timedelta
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import AwareDatetime, Field, field_validator, model_validator
 
@@ -213,6 +213,49 @@ KnowledgeAssertion = Annotated[
 
 class KnowledgePublishRequest(ClosedModel):
     assertion: KnowledgeAssertion
+
+
+class KnowledgeProposalStageRequest(ClosedModel):
+    """Unreviewed source-stated rows; `reviewed` is forbidden in every payload."""
+
+    proposals: list[dict[str, Any]] = Field(min_length=1, max_length=50)
+
+    @field_validator("proposals")
+    @classmethod
+    def no_review_marker(cls, values: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if any("reviewed" in value for value in values):
+            raise ValueError("proposal payload cannot claim review")
+        return values
+
+
+class KnowledgeProposalDecision(ClosedModel):
+    proposal_id: Annotated[str, Field(pattern=r"^kproposal_[a-f0-9]{32}$")]
+    decision: Literal["approved", "rejected"]
+    reason: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def reason_contract(self) -> Self:
+        if self.decision == "approved" and self.reason is not None:
+            raise ValueError("approval does not take a reason")
+        if self.decision == "rejected" and (
+            self.reason is None or not self.reason.strip()
+        ):
+            raise ValueError("rejection requires a reason")
+        return self
+
+
+class KnowledgeProposalReviewRequest(ClosedModel):
+    batch_sha256: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    decisions: list[KnowledgeProposalDecision] = Field(min_length=1, max_length=50)
+
+    @field_validator("decisions")
+    @classmethod
+    def unique_rows(
+        cls, values: list[KnowledgeProposalDecision]
+    ) -> list[KnowledgeProposalDecision]:
+        if len({item.proposal_id for item in values}) != len(values):
+            raise ValueError("duplicate proposal decision")
+        return values
 
 
 class KnowledgeSearchRequest(ClosedModel):

@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add private, source-stated KnowledgeCore proposal batches with exact-evidence
+  quotes and one atomic, explicit human decision per row (ADR-186). This is a
+  synthetic-only staging/review path, not Markdown import or inference approval.
+
 - Hide retained Brain results and reviewed KnowledgeCore assertions grounded in
   subsequently mailbox-excluded Email, including parent/attachment/document
   evidence (ADR-185). Synthetic SQL proof only; history and privileged

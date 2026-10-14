@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-186 adds a synthetic-only private batch queue for 1–50 source-stated
+Knowledge assertions. It checks exact quotes against current, granted,
+nonexcluded DataCore evidence at stage, preview and review; 40-row fictional
+approval/rejection, rollback and RLS cases exercise atomic explicit decisions.
+Only approved rows pass through the existing reviewed publication path. No
+Markdown importer, inferred claim, automatic model approval, live source or
+FileOS cutover is implied. Final exact-head and merged-main gates are tracked
+in the [build receipt](BUILD_RECEIPT.md).
+
 ADR-185 adds a synthetic/disposable SQL visibility fence for retained Brain
 search, direct evidence/content and changes, plus reviewed KnowledgeCore
 assertions, when previously ingested Email later becomes mailbox-excluded.
