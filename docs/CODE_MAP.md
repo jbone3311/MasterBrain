@@ -1,6 +1,6 @@
 # Current MasterBrain code map
 
-Updated 2026-10-02. Existing files, not a proposed directory tree. Python modular
+Updated 2026-10-14. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without

@@ -4,7 +4,8 @@ ADR-172 adds an additive private PostgreSQL ledger for one explicitly selected,
 current normalized Email/FileOS statement. A scoped worker verifies the
 document/evidence/source-version binding and records exact-decimal candidate
 rows, coverage status and idempotency receipts; tenant isolation and direct-SQL
-guards are tested on disposable PostgreSQL. This does not expose an API/CLI,
+guards passed disposable PostgreSQL, exact-head and merged-main full CI,
+strict-runtime and populated restore via PR #190. This does not expose an API/CLI,
 owner review, verified holdings, a live source or FileOS cutover. Hosted gates
 for this tranche are tracked in the [build receipt](BUILD_RECEIPT.md).
 

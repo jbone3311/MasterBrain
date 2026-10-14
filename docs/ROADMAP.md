@@ -1,7 +1,8 @@
 # MasterBrain Roadmap
 
-ADR-172 adds a worker-only, evidence-bound and tenant-fenced statement proposal
-ledger for one current normalized Email/FileOS document. It narrows the
+ADR-172/PR #190 adds a worker-only, evidence-bound and tenant-fenced statement
+proposal ledger for one current normalized Email/FileOS document; its exact-head
+and merged-main full CI, strict-runtime and restore gates passed. It narrows the
 durable-line-item gap, but owner review/read, explicit currency verification,
 other donor recipes and reports, source-byte-to-text derivation proof and a
 cross-source company dossier remain open. No live source or FileOS cutover is

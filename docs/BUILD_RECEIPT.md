@@ -2,6 +2,31 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Evidence-bound private statement proposal ledger — ADR-172
+
+[PR #190](https://github.com/jbone3311/MasterBrain/pull/190) final head
+`3b3fd752dbf478f9492a41aa48b568324bfd4ead` adds an append-only,
+tenant-fenced worker proposal ledger for one current normalized Email/FileOS
+document. Disposable local PostgreSQL passed the six new focused tests and
+500/501 database-marked tests; the one local skip was environment-dependent.
+The non-database local suite passed 2,703 with 506 skips, including all 501
+database-marked cases, which are not claimed as passes in that run. Browser
+tests passed 169/169, along with Ruff, mypy, documentation inventory and the
+structural deployment gate. The restricted sandbox alone prevented the
+existing disposable trial launcher; the same test passed with host process/IPC
+access. The [final-head full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38540114187)
+passed 3,203 tests with six skips and all 501 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38540114224)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38540114192)
+passed. Squash merge `a6a0893d6129e7d2899b1bc88261f0d4342481dc`
+passed [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38541310171)
+with the same 3,203/6 and 501/501 PostgreSQL results, plus
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38541310203)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38541310253).
+No personal source, reviewed holding, owner/API read, source effect or
+FOS-Master mutation was involved. This verifies private proposal storage,
+not investment truth or FileOS replacement.
+
 ## Private typed statement candidate — ADR-171
 
 [PR #189](https://github.com/jbone3311/MasterBrain/pull/189) final head
