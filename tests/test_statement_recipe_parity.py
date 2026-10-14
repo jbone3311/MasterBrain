@@ -1,4 +1,4 @@
-"""Fictional goldens for five pure recipes from the pinned FOS-Master donor."""
+"""Fictional goldens for six pure recipes from the pinned FOS-Master donor."""
 
 from __future__ import annotations
 
@@ -18,11 +18,13 @@ from masterbrain.statement_recipe_parity import (
     parse_ocr_bank,
     parse_morgan_stanley,
     parse_streetbeat,
+    parse_wells_fargo_savings,
     reconcile_fidelity,
     reconcile_jefferies,
     reconcile_ocr_bank,
     reconcile_morgan_stanley,
     reconcile_streetbeat,
+    reconcile_wells_fargo_savings,
 )
 
 DONOR_SHA256 = "f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe"
@@ -332,6 +334,172 @@ JEF_CASES: dict[
 }
 
 
+def _wfs_document(
+    rows: str, *, ending: str, beginning: str | None = "100.00",
+    fee_period: bool = True,
+) -> str:
+    """Only fictional text in the donor's flattened savings-statement shape."""
+    header = "Account number: 000000\n"
+    if fee_period:
+        header += "Fee period 07/01/2024 - 07/31/2024\n"
+    if beginning is not None:
+        header += f"Beginning balance on 7/1 ${beginning}\n"
+    return (
+        header + f"Ending balance on 7/31 ${ending}\n"
+        "Deposits/Credits 30.00\nWithdrawals/Debits - 25.00\n"
+        "Interest paid this statement $0.00\nTransaction history\n"
+        + rows + "\nThe Ending Daily Balance\n"
+    )
+
+
+WFS_CASES = {
+    "single_row_deltas": (
+        _wfs_document(
+            "7/2 Credit Fictional 10.00 110.00\n"
+            "7/3 Debit Fictional 20.00 90.00\n"
+            "7/4 Fee Fictional 5.00 85.00", ending="85.00",
+        ),
+        [("7/2", "Credit Fictional", 10.0, 0.9),
+         ("7/3", "Debit Fictional", -20.0, 0.9),
+         ("7/4", "Fee Fictional", -5.0, 0.9)],
+        (-15.0, -15.0), "2024-07", 100.0,
+    ),
+    "same_direction_days": (
+        _wfs_document(
+            "7/2 Neutral A 10.00\n7/2 Neutral B 20.00 130.00\n"
+            "7/3 Neutral C 5.00\n7/3 Neutral D 5.00 120.00", ending="120.00",
+        ),
+        [("7/2", "Neutral A", 10.0, 0.8),
+         ("7/2", "Neutral B", 20.0, 0.8),
+         ("7/3", "Neutral C", -5.0, 0.8),
+         ("7/3", "Neutral D", -5.0, 0.8)],
+        (20.0, 20.0), "2024-07", 100.0,
+    ),
+    "mixed_keyword_and_residual": (
+        _wfs_document(
+            "7/2 Debit Fictional 20.00\n7/2 Neutral Fictional 10.00 90.00",
+            ending="90.00",
+        ),
+        [("7/2", "Debit Fictional", -20.0, 0.85),
+         ("7/2", "Neutral Fictional", 10.0, 0.65)],
+        (-10.0, -10.0), "2024-07", 100.0,
+    ),
+    "misleading_transfer_from_into": (
+        _wfs_document(
+            "7/2 Transfer From Fictional Into Vault 10.00\n"
+            "7/2 Neutral Fictional 20.00 110.00", ending="110.00",
+        ),
+        [("7/2", "Transfer From Fictional Into Vault", -10.0, 0.85),
+         ("7/2", "Neutral Fictional", 20.0, 0.65)],
+        (10.0, 10.0), "2024-07", 100.0,
+    ),
+    "wire_originator_and_beneficiary": (
+        _wfs_document(
+            "7/2 WT /Org=Fictional 10.00\n"
+            "7/2 WT /Bnf=Fictional 20.00 90.00", ending="90.00",
+        ),
+        [("7/2", "WT /Org=Fictional", 10.0, 0.85),
+         ("7/2", "WT /Bnf=Fictional", -20.0, 0.85)],
+        (-10.0, -10.0), "2024-07", 100.0,
+    ),
+    "unique_subset_solution": (
+        _wfs_document(
+            "7/2 Neutral A 5.00\n7/2 Neutral B 10.00\n"
+            "7/2 Neutral C 20.00 105.00", ending="105.00",
+        ),
+        [("7/2", "Neutral A", -5.0, 0.5),
+         ("7/2", "Neutral B", -10.0, 0.5),
+         ("7/2", "Neutral C", 20.0, 0.5)],
+        (5.0, 5.0), "2024-07", 100.0,
+    ),
+    "ambiguous_equal_amounts": (
+        _wfs_document(
+            "7/2 Neutral A 10.00\n7/2 Neutral B 10.00 100.00", ending="100.00",
+        ),
+        [("7/2", "Neutral A", 10.0, 0.3),
+         ("7/2", "Neutral B", 10.0, 0.3)],
+        (0.0, 20.0), "2024-07", 100.0,
+    ),
+    "no_subset_solution": (
+        _wfs_document(
+            "7/2 Neutral A 10.00\n7/2 Neutral B 10.00 105.00", ending="105.00",
+        ),
+        [("7/2", "Neutral A", 10.0, 0.2),
+         ("7/2", "Neutral B", 10.0, 0.2)],
+        (5.0, 20.0), "2024-07", 100.0,
+    ),
+    "twelve_unknown_bound": (
+        _wfs_document(
+            "\n".join(f"7/2 Neutral {index:02d} 1.00" for index in range(11))
+            + "\n7/2 Neutral 11 1.00 100.00", ending="100.00",
+        ),
+        [("7/2", f"Neutral {index:02d}", 1.0, 0.3) for index in range(12)],
+        (0.0, 12.0), "2024-07", 100.0,
+    ),
+    "thirteen_unknown_cap": (
+        _wfs_document(
+            "\n".join(f"7/2 Neutral {index:02d} 1.00" for index in range(12))
+            + "\n7/2 Neutral 12 1.00 101.00", ending="101.00",
+        ),
+        [("7/2", f"Neutral {index:02d}", 1.0, 0.15) for index in range(13)],
+        (1.0, 13.0), "2024-07", 100.0,
+    ),
+    "missing_daily_balance": (
+        _wfs_document("7/2 Neutral A 5.00", ending="100.00"),
+        [("7/2", "Neutral A", 5.0, 0.2)],
+        (0.0, 5.0), "2024-07", 100.0,
+    ),
+    "missing_beginning_balance": (
+        _wfs_document("7/2 Neutral A 5.00 105.00", ending="105.00", beginning=None),
+        [], None, "2024-07", None,
+    ),
+    "missing_fee_period": (
+        _wfs_document("7/2 Neutral A 5.00 105.00", ending="105.00", fee_period=False),
+        [("7/2", "Neutral A", 5.0, 0.9)],
+        (5.0, 5.0), None, 100.0,
+    ),
+}
+WFS_ENDINGS = {
+    "single_row_deltas": 85.0,
+    "same_direction_days": 120.0,
+    "mixed_keyword_and_residual": 90.0,
+    "misleading_transfer_from_into": 110.0,
+    "wire_originator_and_beneficiary": 90.0,
+    "unique_subset_solution": 105.0,
+    "ambiguous_equal_amounts": 100.0,
+    "no_subset_solution": 105.0,
+    "twelve_unknown_bound": 100.0,
+    "thirteen_unknown_cap": 101.0,
+    "missing_daily_balance": 100.0,
+    "missing_beginning_balance": 105.0,
+    "missing_fee_period": 105.0,
+}
+
+
+@pytest.mark.parametrize("name", WFS_CASES)
+def test_wells_fargo_savings_pinned_golden(name: str) -> None:
+    content, expected_rows, expected_reconciliation, period, beginning = WFS_CASES[name]
+    summary, items = parse_wells_fargo_savings(content)
+    assert summary == {
+        "account_number": "000000", "period": period,
+        "beginning_balance": beginning,
+        "ending_balance": WFS_ENDINGS[name],
+        "deposits_total": 30.0, "withdrawals_total": 25.0, "interest_paid": 0.0,
+    }
+    assert items == [
+        {
+            "row_type": "transaction", "line_date": line_date,
+            "description": description, "amount": amount,
+            "category": "deposit" if amount >= 0 else "withdrawal",
+            "account_number": "000000", "period": period,
+            "currency": "USD", "confidence": confidence,
+            "extraction_method": "regex:wells_fargo_savings",
+        }
+        for line_date, description, amount, confidence in expected_rows
+    ]
+    assert reconcile_wells_fargo_savings(summary, items) == expected_reconciliation
+
+
 @pytest.mark.parametrize("name", CASES)
 def test_pinned_golden(name: str) -> None:
     content, expected_summary, expected_items, expected_reconciliation = CASES[name]
@@ -387,7 +555,8 @@ def _donor_functions(path: Path) -> tuple[Any, ...]:
                  "_jlb_rows", "_jlb_row_date", "_parse_ocr_bank",
                  "_reconcile_ocr_bank", "_ms_num", "_parse_morgan_stanley",
                  "_reconcile_morgan_stanley", "_parse_jefferies",
-                 "_reconcile_jefferies"}
+                 "_reconcile_jefferies", "_wf_sign_keyword", "_wf_resolve_group",
+                 "_parse_wells_fargo_savings", "_reconcile_wells_fargo_savings"}
     constants = {"_MONTHS", "_SB_TXN", "_SB_HOLDING_ROW", "_SB_CASH_ROW",
                  "_FID_HOLDING_ROW", "_FID_ACTIVITY_ROW", "_FID_NON_HOLDING_LABELS",
                  "_JLB_BOILERPLATE", "_JLB_TXN_TYPE", "_MS_MONTHS", "_MS_ACCOUNT",
@@ -397,6 +566,7 @@ def _donor_functions(path: Path) -> tuple[Any, ...]:
         "_JEF_CATEGORY_TOTAL", "_JEF_SECTION_HEADER", "_JEF_SECURITY_HEADER",
         "_JEF_SKIP_SUBTOTAL", "_JEF_LOT_LINE", "_JEF_SECURITY_TOTAL",
         "_JEF_TXN", "_JEF_TXN_QTY_PRICE",
+        "_WFS_TXN_SECTION", "_WFS_TXN_ROW",
     })
     nodes = []
     for node in ast.parse(source, filename=str(path)).body:
@@ -413,7 +583,9 @@ def _donor_functions(path: Path) -> tuple[Any, ...]:
             namespace["_parse_fidelity"], namespace["_reconcile_fidelity"],
             namespace["_parse_ocr_bank"], namespace["_reconcile_ocr_bank"],
             namespace["_parse_morgan_stanley"], namespace["_reconcile_morgan_stanley"],
-            namespace["_parse_jefferies"], namespace["_reconcile_jefferies"])
+            namespace["_parse_jefferies"], namespace["_reconcile_jefferies"],
+            namespace["_parse_wells_fargo_savings"],
+            namespace["_reconcile_wells_fargo_savings"])
 
 
 def test_local_pinned_donor_parity() -> None:
@@ -422,7 +594,7 @@ def test_local_pinned_donor_parity() -> None:
         pytest.skip("Set FOS_MASTER_STATEMENT_EXTRACT for optional pinned donor replay")
     (donor_parse, donor_reconcile, donor_fidelity, donor_fidelity_reconcile,
      donor_jlb, donor_jlb_reconcile, donor_ms, donor_ms_reconcile,
-     donor_jef, donor_jef_reconcile) = _donor_functions(
+     donor_jef, donor_jef_reconcile, donor_wfs, donor_wfs_reconcile) = _donor_functions(
         Path(donor)
     )
     stress_content = (
@@ -485,6 +657,19 @@ def test_local_pinned_donor_parity() -> None:
         )
         if content == jefferies_stress:
             assert len(items) == 1001
+    wfs_stress = _wfs_document(
+        "\n".join(f"7/2 Fictional Credit {index:04d} 1.00" for index in range(999))
+        + "\n7/2 Fictional Credit 0999 1.00 1100.00",
+        ending="1100.00",
+    )
+    for content in [*(case[0] for case in WFS_CASES.values()), wfs_stress]:
+        donor_summary, donor_items = donor_wfs(content)
+        summary, items = parse_wells_fargo_savings(content)
+        assert (summary, items, reconcile_wells_fargo_savings(summary, items)) == (
+            donor_summary, donor_items, donor_wfs_reconcile(donor_summary, donor_items),
+        )
+        if content == wfs_stress:
+            assert len(items) == 1000
 
 
 def test_many_fictional_rows_are_repeatable() -> None:
@@ -542,3 +727,16 @@ def test_jefferies_many_fictional_details_are_repeatable() -> None:
     assert len(first[1]) == 1001
     assert first == parse_jefferies(content)
     assert reconcile_jefferies(*first) == (1000.0, 1000.0)
+
+
+def test_wells_fargo_savings_many_fictional_rows_are_repeatable() -> None:
+    content = _wfs_document(
+        "\n".join(f"7/2 Fictional Credit {index:04d} 1.00" for index in range(999))
+        + "\n7/2 Fictional Credit 0999 1.00 1100.00",
+        ending="1100.00",
+    )
+    first = parse_wells_fargo_savings(content)
+    assert len(first[1]) == 1000
+    assert first == parse_wells_fargo_savings(content)
+    assert all(row["confidence"] == 0.8 for row in first[1])
+    assert reconcile_wells_fargo_savings(*first) == (1000.0, 1000.0)

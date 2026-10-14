@@ -2,6 +2,19 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Pin a sixth, nonpublishing FOS-Master recipe baseline for Wells Fargo savings
+  (ADR-191). Fictional daily-balance, mixed-sign and low-confidence goldens,
+  exact-hash donor replay, and 1,000-row stress do not establish bank truth.
+
+- Exercise the private FileOS statement source replay in the disposable
+  cross-source browser trial (ADR-190). Startup fails if the fictional file
+  cannot be replayed; the owner row remains an unreviewed proposal.
+
+- Add a private, append-only worker-observed current FileOS text replay receipt
+  for one statement proposal (ADR-189), using the exact byte transform from
+  ADR-188. Neither operation proves PDF/OCR/Email derivation, a separately
+  attested worker, a reviewed investment or live-source acceptance.
+
 - Pin a fifth, nonpublishing FOS-Master statement recipe baseline for Jefferies
   (ADR-187). Fictional goldens preserve negative cash, category-versus-security
   detail, multi-lot subtotals and wrapped transaction limits; no investment

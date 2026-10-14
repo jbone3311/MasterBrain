@@ -10,6 +10,10 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-191](adr/191_wells_fargo_savings_recipe_parity.md) pins a sixth isolated
+donor statement recipe: Wells Fargo savings daily-balance sign resolution,
+including low-confidence ambiguous groups. It publishes no financial claim.
+
 [ADR-190](adr/190_synthetic_trial_statement_replay.md) exercises ADR-189's
 private FileOS byte replay during the disposable fictional browser trial. It
 does not change the owner API, review status or live-source authorization.

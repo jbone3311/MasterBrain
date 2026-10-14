@@ -2,11 +2,38 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Wells Fargo savings donor recipe parity — ADR-191
+
+The branch `codex/wells-savings-parity` adds an isolated, fictional-only sixth
+recipe comparison against pinned FOS-Master. Thirteen savings goldens cover
+daily-balance sign resolution, all-one-direction and mixed days, unique,
+ambiguous and absent subset solutions, the twelve-unknown boundary and
+thirteen-unknown cap, misleading transfer/wire keywords, missing daily/beginning
+balance, and absent fee period.
+The 1,000-row repeatability case and optional exact-hash donor AST replay
+passed locally: 44/44 focused tests. The final disposable Python
+3.14/PostgreSQL 17.11 repository quality gate passed 3,384 tests with five
+skips (550 of 551 PostgreSQL-marked cases executed). All six browser suites
+passed 165/165; Ruff, mypy (105 source files), docs links, structural and
+diff checks passed. The exact local test cluster was stopped. No real
+statement, donor database, runtime financial claim, source effect or
+FOS-Master edit was involved. Exact-head hosted gates are not yet claimed for
+this branch.
+
 ## Fictional trial statement replay integration — ADR-190
 
-The branch `codex/synthetic-trial-statement-replay` connects ADR-189's private
+Merged [PR #220](https://github.com/jbone3311/MasterBrain/pull/220) connects ADR-189's private
 FileOS text replay receipt to the existing disposable cross-source browser
 trial. It does not expose a verified-investment flag or touch real sources.
+Exact PR head `c2cbc8569b50b8acd41e71006738326282946abd` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38644292226),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38644292204)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38644292299).
+Squash merge `b116f01ace82b52aa8f6a5f23ea23b92ee6f4378` landed on `main`;
+independent merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38645254436),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38645256054)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38645254771)
+all passed.
 The isolated launcher self-test passed against a temporary local PostgreSQL 17
 cluster and confirmed that the fictional Cedar/Maple/Knowledge cases plus the
 private statement receipt can be created and read. The focused browser-trial
@@ -17,8 +44,7 @@ cases executed). All six browser suites passed 165/165; Ruff, mypy (105 source
 files), docs links, diff check and the repository deployment gate passed. The
 test cluster was stopped afterward. An initial sandboxed gate attempt failed
 only because the sandbox denied the launcher's disposable PostgreSQL process;
-the permitted rerun passed the full gate. These are local branch results;
-exact-head hosted checks are not yet claimed.
+the permitted rerun passed the full gate.
 
 ## Private FileOS statement replay receipt — ADR-189
 
@@ -105,7 +131,8 @@ test database was stopped afterward.
 
 This is an isolated nonpublishing comparison, not typed Jefferies intake,
 source-byte derivation proof, a reviewed investment, complete portfolio or
-FileOS cutover. Wells Fargo, Schwab and donor reports remain unported.
+FileOS cutover. At this Jefferies checkpoint, Wells Fargo, Schwab and donor
+reports remained unported; ADR-191 later adds savings-only comparison.
 
 ## Private Knowledge proposal batches — ADR-186
 

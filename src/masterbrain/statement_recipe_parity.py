@@ -4,14 +4,14 @@ Extracted from FOS-Master at 218d5caec2f20b9047fd3eb8e027dc671acf0c15,
 _SYSTEM/tools/statement_extract.py
 (SHA-256 f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe).
 The parsing and reconciliation semantics are intentionally unchanged. See
-ADR-170, ADR-174, ADR-180, ADR-181 and ADR-187.
+ADR-170, ADR-174, ADR-180, ADR-181, ADR-187 and ADR-191.
 """
 
 from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 
 def _num(value: object) -> float | None:
@@ -528,5 +528,179 @@ def reconcile_jefferies(
     actual = round(sum(
         item["amount"] for item in items
         if item["row_type"] == "holding" and item["amount"] is not None
+    ), 2)
+    return expected, actual
+
+
+# Wells Fargo savings is a deposit-account recipe, not a securities holding
+# parser. Preserve donor balance-delta direction and low-confidence fallbacks.
+_WFS_TXN_SECTION = re.compile(
+    r"Transaction\s+(?:history|hi\s*story).*?\n(.*?)(?:\nThe Ending Daily Balance|\Z)", re.S
+)
+_WFS_TXN_ROW = re.compile(
+    r"^(\d{1,2}/\d{1,2})\s+(.+?)\s+([\d,]+\.\d{2})(?:\s+([\d,]+\.\d{2}))?\s*$",
+    re.MULTILINE,
+)
+
+
+def _wf_sign_keyword(desc: str) -> int | None:
+    """Donor tie-breaker only; wording alone never establishes direction."""
+    if re.search(r"\bCredit\b", desc, re.I):
+        return 1
+    if re.search(r"\bDebit\b", desc, re.I):
+        return -1
+    if "/Org=" in desc:
+        return 1
+    if "/Bnf=" in desc:
+        return -1
+    if re.search(r"Reversal of.*Charge", desc, re.I):
+        return 1
+    if re.search(r"Wire Trans.*Svc Charge|Service Charge", desc, re.I):
+        return -1
+    if re.search(r"Interest Rebate", desc, re.I):
+        return 1
+    if re.search(r"Interest Payment", desc, re.I) and not re.search(
+        r"Obligation#|Customer#", desc
+    ):
+        return 1
+    if re.search(r"(Interest|Principal) Payment.*(Obligation#|Customer#)", desc, re.I):
+        return -1
+    if re.search(r"Transfer to\b", desc, re.I):
+        return -1
+    if re.search(r"Transfer From\b", desc, re.I) and "Into" not in desc:
+        return 1
+    if "Into" in desc:
+        return -1
+    return None
+
+
+def _wf_resolve_group(
+    group: list[tuple[str, str, str, str]], running_balance: float,
+) -> tuple[list[tuple[str, str, float, float]], float]:
+    amounts = [cast(float, _num(a)) for (_, _, a, _) in group]
+    bal_str = group[-1][3]
+    if not bal_str:
+        return (
+            [
+                (d, desc, (_wf_sign_keyword(desc) or 1) * a, 0.2)
+                for (d, desc, _, _), a in zip(group, amounts, strict=True)
+            ],
+            running_balance,
+        )
+
+    new_balance = cast(float, _num(bal_str))
+    delta = round(new_balance - running_balance, 2)
+    if len(group) == 1:
+        sign = 1 if delta >= 0 else -1
+        conf = 0.9 if abs(abs(delta) - amounts[0]) < 0.01 else 0.5
+        return ([(group[0][0], group[0][1], sign * amounts[0], conf)], new_balance)
+
+    total = round(sum(amounts), 2)
+    if abs(total - delta) < 0.01:
+        return (
+            [(d, desc, a, 0.8) for (d, desc, _, _), a in zip(group, amounts, strict=True)],
+            new_balance,
+        )
+    if abs(-total - delta) < 0.01:
+        return (
+            [(d, desc, -a, 0.8) for (d, desc, _, _), a in zip(group, amounts, strict=True)],
+            new_balance,
+        )
+
+    signs = [_wf_sign_keyword(desc) for (_, desc, _, _) in group]
+    known_sum = sum(s * a for s, a in zip(signs, amounts, strict=True) if s is not None)
+    unresolved = [k for k, s in enumerate(signs) if s is None]
+    if len(unresolved) == 1:
+        residual = round(delta - known_sum, 2)
+        signs[unresolved[0]] = 1 if residual >= 0 else -1
+        fallback_conf = {unresolved[0]: 0.65}
+    elif 2 <= len(unresolved) <= 12:
+        target = round(delta - known_sum, 2)
+        solutions = []
+        for bits in range(1 << len(unresolved)):
+            trial = [1 if (bits >> b) & 1 else -1 for b in range(len(unresolved))]
+            trial_sum = sum(t * amounts[k] for t, k in zip(trial, unresolved, strict=True))
+            if abs(trial_sum - target) < 0.01:
+                solutions.append(trial)
+        fallback_conf = {}
+        if len(solutions) == 1:
+            for k, t in zip(unresolved, solutions[0], strict=True):
+                signs[k] = t
+                fallback_conf[k] = 0.5
+        else:
+            for k in unresolved:
+                signs[k] = 1
+                fallback_conf[k] = 0.2 if not solutions else 0.3
+    else:
+        fallback_conf = {}
+        for k in unresolved:
+            signs[k] = 1
+            fallback_conf[k] = 0.15
+    out = [
+        (
+            d, desc, cast(int, s) * a,
+            0.85 if _wf_sign_keyword(desc) is not None else fallback_conf.get(k, 0.65),
+        )
+        for k, ((d, desc, _, _), s, a) in enumerate(zip(group, signs, amounts, strict=True))
+    ]
+    return out, new_balance
+
+
+def parse_wells_fargo_savings(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Return pinned donor savings summary and unsigned-row resolution."""
+    summary: dict[str, Any] = {}
+    match = re.search(r"Account number:\s*(\d+)", text)
+    summary["account_number"] = match.group(1) if match else None
+    match = re.search(
+        r"Fee period\s+(\d{2})/(\d{2})/(\d{4})\s*-\s*(\d{2})/(\d{2})/(\d{4})",
+        text,
+    )
+    summary["period"] = f"{match.group(6)}-{match.group(4)}" if match else None
+    for field, pattern in (
+        ("beginning_balance", r"Beginning balance on \d{1,2}/\d{1,2}\s+\$([\d,.]+)"),
+        ("ending_balance", r"Ending balance on \d{1,2}/\d{1,2}\s+\$([\d,.]+)"),
+        ("deposits_total", r"Deposits/Credits\s+([\d,.]+)"),
+        ("withdrawals_total", r"Withdrawals/Debits\s*-?\s*([\d,.]+)"),
+        ("interest_paid", r"Interest paid this statement\s*\$([\d,.]+)"),
+    ):
+        match = re.search(pattern, text)
+        summary[field] = _num(match.group(1)) if match else None
+
+    items: list[dict[str, Any]] = []
+    section = _WFS_TXN_SECTION.search(text)
+    if section and summary["beginning_balance"] is not None:
+        rows = _WFS_TXN_ROW.findall(section.group(1))
+        running = summary["beginning_balance"]
+        i = 0
+        while i < len(rows):
+            j = i
+            while j < len(rows) and rows[j][0] == rows[i][0]:
+                j += 1
+            group = rows[i:j]
+            resolved, running = _wf_resolve_group(group, running)
+            for line_date, desc, signed_amt, confidence in resolved:
+                items.append({
+                    "row_type": "transaction", "line_date": line_date,
+                    "description": desc.strip()[:200], "amount": signed_amt,
+                    "category": "deposit" if signed_amt >= 0 else "withdrawal",
+                    "account_number": summary["account_number"], "period": summary["period"],
+                    "currency": "USD", "confidence": confidence,
+                    "extraction_method": "regex:wells_fargo_savings",
+                })
+            i = j
+    return summary, items
+
+
+def reconcile_wells_fargo_savings(
+    summary: dict[str, Any], items: list[dict[str, Any]],
+) -> tuple[float, float] | None:
+    """Preserve donor ending-minus-beginning and transaction-sum comparison."""
+    beginning, ending = summary.get("beginning_balance"), summary.get("ending_balance")
+    if beginning is None or ending is None:
+        return None
+    expected = round(ending - beginning, 2)
+    actual = round(sum(
+        item["amount"] for item in items
+        if item["row_type"] == "transaction" and item["amount"] is not None
     ), 2)
     return expected, actual

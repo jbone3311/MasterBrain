@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-191 adds a sixth isolated, exact-hash donor recipe comparison for Wells
+Fargo savings. Fictional daily-balance groups preserve single-row signs,
+whole-day direction, mixed keyword/residual and bounded subset resolution,
+ambiguous/no-solution low-confidence defaults, missing balances and a
+1,000-row repeat. This pure float parser is not called by runtime intake or
+financial publication and is not a verified bank balance, live statement,
+FileOS cutover or donor-equivalent investment analysis.
+
 ADR-190 connects the existing private FileOS text replay to the disposable
 fictional browser trial. Startup reopens its own synthetic statement file and
 fails closed if the private receipt cannot be recorded. The trial self-test
