@@ -1,5 +1,14 @@
 # MasterBrain Roadmap
 
+Owner decision, 2026-10-14: **synthetic-only Fastmail testing for now**. Do not
+enroll a real Fastmail account or read personal mail. Continue fictional/
+disposable scope and pre-fetch exclusion tests, pinned-donor FileOS/statement
+parity, and the owner-run fictional cross-source trial. A real mailbox pilot is
+deferred until a new explicit owner authorization names its exact account/window
+and the retention, credential and operating boundaries are decided. FileOS
+roots retain their separate approval gate. Existing scoped code is not
+authorization for either source.
+
 ADR-179 provides a local owner-reviewed, administrator-assisted check/enroll/
 disconnect path for a brand-new exact pinned Fastmail account, tested without
 provider contact. Next is an explicitly authorized disposable live-provider
@@ -134,7 +143,7 @@ Each lane must pass its own acceptance gate before the next dependent step:
 | Lane | Next concrete step | Gate that remains open |
 |---|---|---|
 | Product chat ([#92](https://github.com/jbone3311/MasterBrain/issues/92)) | Record the owner's fictional cross-source question trial, then test held-out questions, contradiction handling, answer/citation budgets and first-party versus API behavior | No model-written answer or named-assistant parity is accepted yet |
-| Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Obtain region, budget, retention, identity and authorized-source decisions; then exercise a private, reversible pilot | No live source, hosted identity, recovery or operations acceptance exists |
+| Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Deferred by the owner's synthetic-only decision. Continue fictional/disposable scope and exclusion proof; seek new explicit authorization and region, budget, retention, identity and exact-source decisions before any private pilot | No live source, hosted identity, recovery or operations acceptance exists |
 | FileOS migration ([migration plan](FOS_MIGRATION.md)) | Review the six recorded donor-policy differences and fault/platform cases, then run an owner-authorized read-only shadow on a bounded root | No v2 current publication, FileOS effect, donor cutover or retirement is approved |
 | FOS intelligence ([preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md)) | Extend synthetic donor goldens beyond the four isolated recipes; design source-derivation proof, reviewer-visible rows and an atomic human approval path over the private proposal ledger | No donor-equivalent investment dossier, owner-approved row or verified holdings claim exists yet |
 | Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | Specify and test a fictional Markdown import that creates only private proposals, with exact citations and no model dependency; then separately review derivation/basis links and atomic human approval | ADR-182 adds reviewed project aliases, but no Markdown importer/exporter, KnowledgeCore proposal queue, project roles or automatic dossier generation exists; live-source exclusions remain a prerequisite |

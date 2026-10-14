@@ -1,7 +1,8 @@
 # Test the MasterBrain synthetic alpha
 
-This guide applies to the current `0.2.0a2` synthetic alpha. The first tagged
-checkpoint, `v0.2.0a1`, remains at
+This guide applies to the current `0.2.0a2` synthetic alpha. Tagged
+`v0.2.0a2` remains at `89bd8a1`; later `main` work is unreleased. The first
+tagged checkpoint, `v0.2.0a1`, remains at
 `c0a531d8a7d0991be0a0f1ea717479c07cc20feb`. Neither is production
 acceptance. Use fictional files and a disposable
 database only. Do not connect real mail, grant live roots,

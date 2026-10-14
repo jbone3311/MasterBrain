@@ -3,6 +3,9 @@
 Status: plan and donor audit, not authorization to read personal data or to retire
 FOS-Master. The code checkpoint is the synthetic `v0.2.0a2` alpha. FOS-Master is
 pinned at `218d5caec2f20b9047fd3eb8e027dc671acf0c15` and stays operational.
+The owner chose synthetic-only Fastmail testing on 2026-10-14; the live pilot
+sequence below is a future acceptance plan, not current permission to use a real
+account or mailbox. A live FileOS root has its own separate approval gate.
 
 ## Product boundary
 
@@ -98,6 +101,11 @@ An initial lexical dossier may satisfy discovery only; it must not be labeled a
 complete portfolio, verified balance or tax/financial advice.
 
 ## Sequenced pilot
+
+The real Fastmail steps are deferred by the synthetic-only decision. Complete
+fictional/disposable tests and donor parity first; resume real-mail planning
+only after new explicit owner authorization. FileOS live-shadow approval remains
+a separate decision.
 
 1. Finish the owner's fictional Email/FileOS browser walkthrough on the tagged
    alpha and record failures before adding personal sources.

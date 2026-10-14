@@ -34,16 +34,20 @@ The owner still needs to complete the
 [current functions](docs/CURRENT_FUNCTIONS.md), the
 [roadmap](docs/ROADMAP.md), [changelog](CHANGELOG.md) and
 [exact-commit build receipt](docs/BUILD_RECEIPT.md) for details and limits.
-The next owner decision is a bounded Fastmail read pilot and preservation of
-FOS-Master's statement/financial intelligence; see the
+The owner chose **synthetic-only Fastmail testing for now** on 2026-10-14.
+No real account or mailbox pilot is authorized; FileOS roots remain subject to
+their own separate approval. Work can continue on fictional/disposable
+source-scope and exclusion tests and on FOS-Master statement/financial-
+intelligence parity; see the
 [live-alpha integration assessment](docs/LIVE_ALPHA_AND_FOS_PRESERVATION.md).
 ADR-175/176 add a synthetic scoped-query worker, ADR-177 adds a database
 scope/lease fence, and ADR-178 connects one exact pinned window to private
 `sync-read` version-2 configuration. ADR-179 adds a local owner-reviewed,
 administrator-assisted way to create a new pinned source or disconnect it,
 with no provider request. Version 1 remains account-wide and refuses pinned
-accounts. A real folder/date pilot still needs separate owner authorization,
-disposable live acceptance and operational/retention decisions.
+accounts. A real folder/date pilot is deferred and would require a new explicit
+owner authorization, disposable live acceptance and operational/retention
+decisions.
 The [Librarian Markdown interop review](docs/LIBRARIAN_INTEROP.md) now records
 the proposed import/export path and its twelve verified or corrected gaps;
 it is a design plan, not a working importer or exporter.
