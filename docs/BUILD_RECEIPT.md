@@ -4,7 +4,7 @@ Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Project-proposal alias citation gate — ADR-192
 
-This branch requires each proposed project alias quote to occur exactly in its
+Merged [PR #222](https://github.com/jbone3311/MasterBrain/pull/222) requires each proposed project alias quote to occur exactly in its
 own current, granted, nonexcluded normalized evidence. It does not change
 direct reviewed publication or certify a complete Markdown dossier. Seven
 focused fictional PostgreSQL proposal tests passed locally, including
@@ -16,8 +16,17 @@ with six skips (551 of 552 PostgreSQL-marked cases executed). All six browser
 suites passed 165/165; Ruff, mypy (105 source files), docs links and diff
 checks passed. The local repository deployment gate passed (2,834 tests, 556
 skips; its PostgreSQL coverage is intentionally separate from the full suite).
-The new two-evidence case passed locally; final-head hosted CI and merged-main
-gates are pending. No live source was used.
+The new two-evidence case passed locally. Exact PR head
+`adda78b7349d900a4715caca32f95ae74c4a8930` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38651973092),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38651972995)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38651972968).
+Squash merge `22cc823b10b2a602506ee12a6eb6cf0c54a8f6a8` landed on `main`;
+independent merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38652974982),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38652974975)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38652975003)
+all passed. The feature branch was removed after its tree matched `main`.
+No live source was used and FOS-Master was unchanged.
 
 ## Wells Fargo savings donor recipe parity — ADR-191
 
