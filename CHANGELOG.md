@@ -2,14 +2,21 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add version-2 private scoped Fastmail read configuration, exact SQL-pin
+  preflight and guarded fictional HTTPS/PostgreSQL restart, exclusion and
+  revocation proof (ADR-178). Version 1 remains account-wide; no live mail was
+  read or approved.
+
 - Bind synthetic scoped Fastmail worker leases and cursors to an
   administrator-pinned, previously unused account in PostgreSQL; old
   `sync-read` refuses a pinned account before provider I/O (ADR-177).
-  Private scoped operation and live acceptance are still pending.
+  At that checkpoint, private scoped operation and live acceptance were pending;
+  ADR-178 adds synthetic scoped operation but not live acceptance.
 
 - Add a synthetic-only scoped Fastmail inventory worker with scope-bound
   version-4 checkpoints, repeated filtered scans, and pre-download metadata
-  refusal (ADR-176). `sync-read` remains account-wide; no live pilot is approved.
+  refusal (ADR-176). At that checkpoint, `sync-read` remained account-wide;
+  no live pilot is approved.
 
 - Pinned a second fictional FOS-Master statement recipe baseline (Fidelity)
   with its known low-confidence and missed-row behavior; it is not a runtime

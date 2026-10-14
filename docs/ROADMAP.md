@@ -1,21 +1,26 @@
 # MasterBrain Roadmap
 
+ADR-178 connects the exact pinned mailbox/date window to a version-2 private
+`sync-read` command and tests fictional restart, out-of-scope metadata, pause
+and revocation. Version 1 remains account-wide. Next is a reviewed account
+enrollment/revocation workflow and a disposable live-provider acceptance plan;
+neither this code nor a green synthetic check approves real Fastmail access.
+
 ADR-177 adds the synthetic/disposable database scope fence: an administrator
 pins one exact window on an unused Fastmail account, worker leases and cursors
 must match it, and old `sync-read` refuses pinned accounts before provider I/O.
-Next is a private scoped operator configuration/enrollment workflow with
-fictional restart, pause and revocation proof. This is not live-pilot approval.
+ADR-178 supplies a private scoped operator and fictional restart/revocation
+proof; reviewed enrollment and live acceptance remain open.
 
 ADR-176 makes scoped Fastmail reading executable as a synthetic library worker:
 version-4 scope-bound checkpoints, repeated filtered inventories, and
 pre-download metadata refusal. ADR-177 supplies the durable account/lease
-database fence; private operator binding remains open. No live pilot is
-approved yet.
+database fence; ADR-178 supplies operator binding. No live pilot is approved.
 
 ADR-175 adds the typed Fastmail mailbox/date query and metadata-recheck
 primitive used by ADR-176. ADR-177 supplies account-bound scope and a database
-lease fence, but private operator binding and live acceptance remain open. The
-existing `sync-read` command remains account-wide and refuses pinned accounts.
+lease fence, and ADR-178 supplies operator binding. Live acceptance remains
+open. Version-1 `sync-read` remains account-wide and refuses pinned accounts.
 
 ADR-174 extends the pinned, synthetic-only statement donor comparison to the
 low-confidence Fidelity recipe. Six fictional goldens preserve its exact

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hmac
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from threading import Event
 from typing import Any, Literal
@@ -15,7 +16,7 @@ from pydantic import ConfigDict, Field, field_validator, model_validator
 from email_brain.auth import Principal
 from email_brain.blobs import EncryptedBlobStore
 from email_brain.connectors.fastmail import MAX_BLOB_BYTES, FastmailReadClient
-from email_brain.connectors.jmap import ProtocolError, identifier
+from email_brain.connectors.jmap import ProtocolError, ScopedMailWindow, identifier
 from email_brain.normalize import MAX_RAW_BYTES
 from email_brain.processing_controller import (
     ControllerError,
@@ -32,11 +33,38 @@ from email_brain.store import Store
 from email_brain.sync import ReadWorker
 from masterbrain.datacore.worker_db import worker_store
 
+UTC_SECOND_PATTERN = r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+
+
+class ScopedReadWindowConfig(ClosedModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
+
+    mailbox_id: str = Field(strict=True, min_length=1, max_length=512)
+    after: str = Field(strict=True, pattern=UTC_SECOND_PATTERN)
+    before: str = Field(strict=True, pattern=UTC_SECOND_PATTERN)
+
+    def window(self) -> ScopedMailWindow:
+        window = ScopedMailWindow(
+            self.mailbox_id,
+            datetime.fromisoformat(self.after.replace("Z", "+00:00")),
+            datetime.fromisoformat(self.before.replace("Z", "+00:00")),
+        )
+        if window.query_filter() != {
+            "inMailbox": self.mailbox_id, "after": self.after, "before": self.before,
+        }:
+            raise ValueError("noncanonical scoped mail window")
+        return window
+
+    @model_validator(mode="after")
+    def exact_window(self) -> ScopedReadWindowConfig:
+        self.window()
+        return self
+
 
 class ReadControllerConfig(ClosedModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
 
-    version: Literal[1]
+    version: Literal[1, 2]
     job_kind: Literal["fastmail-read"]
     account_id: UUID
     provider_account_id: str
@@ -44,6 +72,7 @@ class ReadControllerConfig(ClosedModel):
     credentials_file: Path
     token_file: Path
     provider_token_file: Path
+    read_scope: ScopedReadWindowConfig | None = None
     max_raw_bytes: int = Field(
         default=MAX_RAW_BYTES, strict=True, ge=MAX_RAW_BYTES, le=MAX_BLOB_BYTES
     )
@@ -54,7 +83,7 @@ class ReadControllerConfig(ClosedModel):
     @field_validator("version", mode="before")
     @classmethod
     def exact_version(cls, value: Any) -> Any:
-        if type(value) is not int or value != 1:
+        if type(value) is not int or value not in (1, 2):
             raise ControllerError()
         return value
 
@@ -83,6 +112,10 @@ class ReadControllerConfig(ClosedModel):
 
     @model_validator(mode="after")
     def storage_fields(self) -> ReadControllerConfig:
+        if (self.version == 1 and "read_scope" in self.model_fields_set) or (
+            self.version == 2 and self.read_scope is None
+        ):
+            raise ControllerError()
         selected = (
             self.blob_root is not None,
             self.keys_file is not None,
@@ -108,6 +141,9 @@ def _provider_token(config: ReadControllerConfig) -> str:
 
 def _binding(store: Store, principal: Principal, config: ReadControllerConfig) -> bool:
     """Read-only preflight/guard: no enrollment, lease acquisition or pause reset."""
+    expected_scope = (
+        config.read_scope.window().fingerprint() if config.read_scope is not None else None
+    )
     with store.transaction(principal.context) as conn:
         row = conn.execute(
             "SELECT a.provider_account_id,a.secret_ref,a.read_scope_sha256,"
@@ -121,7 +157,7 @@ def _binding(store: Store, principal: Principal, config: ReadControllerConfig) -
             row is None
             or row["provider_account_id"] != config.provider_account_id
             or row["secret_ref"] != config.provider_secret_ref
-            or row["read_scope_sha256"] is not None
+            or row["read_scope_sha256"] != expected_scope
             or type(row["paused"]) is not bool
         ):
             raise ControllerError()
@@ -272,9 +308,13 @@ def run_read_controller(
                 max_raw_bytes=config.max_raw_bytes,
             )
             try:
-                outcome = ReadWorker(store, client, authorize=guard).step(
-                    principal.context, config.account_id
-                )
+                if config.read_scope is None:
+                    worker = ReadWorker(store, client, authorize=guard)
+                else:
+                    worker = ReadWorker(
+                        store, client, authorize=guard, scope=config.read_scope.window()
+                    )
+                outcome = worker.step(principal.context, config.account_id)
             finally:
                 client.close()
             polls += 1

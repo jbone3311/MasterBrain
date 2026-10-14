@@ -22,18 +22,15 @@ application boundary, not a provider-enforced read-only token. Keep that token i
 a private connector process and never give it to Brain API or an LLM client.
 Fastmail documents personal JMAP API tokens and the `mail` scope in its
 [developer guide](https://www.fastmail.com/dev/).
-The existing `sync-read` command can bound iterations and bytes, but its initial
-JMAP inventory is account-wide; it does **not** implement a folder/date filter.
-Do not describe an iteration limit as a safe folder/date enrollment. Add and test
-source-scope filtering or obtain explicit approval for an account-wide read
-before any real Fastmail request.
-ADR-175 supplies a typed JMAP folder/date query and independent metadata check.
-It is deliberately not wired into `sync-read`, which remains account-wide.
-Therefore the real pilot is **still not approved**.
-ADR-176 adds a synthetic-only scoped worker using repeated filtered inventories
-instead of the account-wide change feed. It rechecks metadata before raw bytes,
-but the account/lease database fence and operator binding still do not exist;
-no real folder/date read is authorized.
+Version-1 `sync-read` can bound iterations and bytes, but its inventory is
+account-wide; an iteration limit is not folder/date enrollment. ADR-175/176
+add a typed JMAP folder/date filter, metadata recheck and repeated filtered
+inventories without the account-wide change feed. ADR-177 pins the account,
+lease and cursor in SQL. ADR-178 adds version-2 private operator configuration
+for that exact pin, with fictional HTTPS/disposable-database restart and
+revocation proof. The real pilot is **still not approved**: reviewed source
+enrollment, an authorized disposable live test, retention and operational
+acceptance remain separate gates. No real folder/date read has occurred.
 
 ## What must survive from FOS-Master
 

@@ -35,10 +35,11 @@ The owner still needs to complete the
 The next owner decision is a bounded Fastmail read pilot and preservation of
 FOS-Master's statement/financial intelligence; see the
 [live-alpha integration assessment](docs/LIVE_ALPHA_AND_FOS_PRESERVATION.md).
-ADR-175/176 add a synthetic scoped-query worker, and ADR-177 adds a
-database scope/lease fence. The existing `sync-read` command remains
-account-wide, now refuses pinned scoped accounts, and must not be used as a
-folder/date pilot.
+ADR-175/176 add a synthetic scoped-query worker, ADR-177 adds a database
+scope/lease fence, and ADR-178 connects one exact pinned window to private
+`sync-read` version-2 configuration. Version 1 remains account-wide and
+refuses pinned accounts. Neither mode is accepted for a real folder/date
+pilot; reviewed enrollment and live-source acceptance are still missing.
 The [Librarian Markdown interop review](docs/LIBRARIAN_INTEROP.md) now records
 the proposed import/export path and its twelve verified or corrected gaps;
 it is a design plan, not a working importer or exporter.

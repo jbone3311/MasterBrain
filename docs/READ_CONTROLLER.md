@@ -1,6 +1,7 @@
 # Bounded read-worker operator
 
-Implemented under [ADR-039](adr/039_read_worker_controller.md). Exact verification
+Implemented under [ADR-039](adr/039_read_worker_controller.md) and
+[ADR-178](adr/178_private_scoped_fastmail_read_operator.md). Exact verification
 is recorded in [BUILD_RECEIPT.md](BUILD_RECEIPT.md). Tests use fictional HTTPS
 responses and disposable SQL, not a live Fastmail mailbox or cloud deployment.
 
@@ -9,10 +10,11 @@ responses and disposable SQL, not a live Fastmail mailbox or cloud deployment.
 `sync-read` runs the existing [read worker](READ_WORKER.md) for one already
 configured Fastmail account. It adds no enrollment, token discovery, OAuth flow,
 provider writes, background service installation or administrative pause reset.
-It still uses the **account-wide** worker mode. ADR-176's filtered library
-worker is not exposed here. ADR-177 adds a durable SQL scope/lease fence; this
-unscoped command refuses pinned accounts during preflight and at lease claim.
-It must not be used as a private folder/date pilot.
+Version-1 configuration remains **account-wide** and refuses a pinned account.
+Version 2 requires one exact mailbox/date window; its preflight and guarded
+worker requests must match ADR-177's administrator-pinned SQL fingerprint.
+Neither mode has live-source acceptance. Do not use this as permission for a
+private folder/date pilot.
 `--allow-provider-read` must be supplied for execution; it is an invocation guard,
 not permission from the owner to connect a real account. Obtain that permission
 and complete the live-pilot gates before using real credentials.
@@ -47,6 +49,28 @@ Illustrative shape only, not an enrollment recipe or real credential:
 }
 ```
 
+For the synthetic scoped path, use version 2 with the same private fields plus:
+
+```json
+{
+  "version": 2,
+  "read_scope": {
+    "mailbox_id": "fictional-mailbox-id",
+    "after": "2026-09-18T00:00:00Z",
+    "before": "2026-09-21T00:00:00Z"
+  }
+}
+```
+
+This is a fragment to combine with the complete version-1 example, not a
+standalone config. `read_scope` is required for version 2 and forbidden for
+version 1. Dates are exact whole-second UTC, `after` inclusive and `before`
+exclusive, at most 31 days apart. The mailbox ID is an exact opaque JMAP ID,
+not a display name. The administrator must separately pin the canonical filter
+fingerprint on a **previously unused** Fastmail account; this command does not
+set or change that pin. A wrong or missing pin fails preflight before any
+provider request or lease claim. Never put a real private config in Git.
+
 The account UUID, provider account ID and secret reference must match the existing
 active Fastmail row. A secret reference is compared, not resolved through a vault
 or interpreted as a path. The separate private provider-token file supplies the
@@ -75,7 +99,8 @@ email-brain sync-read --config /private/operator-state/read.json --check
 ```
 
 Preflight reads configuration/credentials, checks current ownership, enrollment,
-runtime role, pinned-scope absence and keyring/root. It performs **zero provider requests and zero lease
+runtime role, the exact version-1 absence or version-2 match of the account pin,
+and keyring/root. It performs **zero provider requests and zero lease
 claims**, writes no enrollment/checkpoint/object and constructs no HTTP client.
 `configuration_valid` is not a provider-login, connectivity, full-key-recovery or
 hosted-security certificate. A paused worker may pass preflight and still need repair.
@@ -124,7 +149,9 @@ mid-step rotation stops it without publishing that page. Same-identity worker an
 provider-token rotation can be loaded at the next step/run. Keyring reload occurs
 between steps; changing the config itself, including active key, requires restart.
 
-Private-file revocation is not atomic with SQL commit and cannot retract an
+Version-2 requests recheck the exact account pin as well as the legacy binding,
+worker identity and token. A paused or disconnected account cannot start a
+scoped page. Private-file revocation is not atomic with SQL commit and cannot retract an
 already committed page. Existing current-owner/account and lease fences remain
 authoritative. A guard failure can leave its lease to expire normally (90 seconds),
 not create a malformed-MIME pause. Do not manually advance a cursor or reset a
@@ -139,7 +166,7 @@ progress. Restart uses the stored checkpoint; no new controller checkpoint file.
 ## Deployment and rollback
 
 ADR-177 adds migration 0058 with account/worker scope columns and database
-guards; it adds no runtime SQL grants. Apply the repository's full migration
+guards; ADR-178 adds no migration or runtime SQL grant. Apply the full migration
 set/grants using the existing administrator workflow. API and processing-worker
 permissions do not expand. Keep this command's provider token out of the API and
 document/MIME workers. Stop the command to disable reads, preserve objects/keys and
@@ -147,6 +174,9 @@ checkpoints, and deploy only a checkpoint-compatible worker; no down-migration.
 
 Tests cover configuration, private files, scopes, flag/preflight, stop, token changes,
 scrubbed output, actual fake-HTTPS-to-SQL restart/search, pauses/retries, source
-binding/lease loss and encrypted large messages. Hosted supervision, explicit
+binding/lease loss and encrypted large messages. The version-2 corpus also covers
+canonical-window refusal, exact pin, filtered restart, no account-wide changes,
+out-of-scope metadata before blob, tenant denial, pause and mid-step revocation.
+Hosted supervision, explicit
 service identity, enrollment/resume UX, alerts, OIDC, cloud storage/key recovery,
 disposable live acceptance and sustained soak are still required.

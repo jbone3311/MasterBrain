@@ -2,6 +2,32 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Scoped private read operator — ADR-178 (local pre-PR)
+
+On the ADR-178 branch, the final sequential synthetic run passed 3,270 tests
+with six skips (519 of 520 PostgreSQL-marked tests executed; one skipped) on
+Python 3.14/PostgreSQL 17.11. Browser tests passed 164/164. The repository
+deployment gate passed 2,751 tests with 525 skips; PostgreSQL tests were not
+executed by that gate. Ruff, mypy, documentation links and diff checks passed.
+These are local results, not hosted CI or real-provider acceptance.
+
+## Fastmail account/lease scope fence — ADR-177
+
+[PR #197](https://github.com/jbone3311/MasterBrain/pull/197) final head
+`70f122c89fcec73afc20b0c4cfd67c35211f555d` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38561411597)
+with 3,249 passes, six skips and 513/513 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38561411666)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38561411602)
+passed. Squash merge `9e59f96c790e2a0c91a1fad4dbe5734b09134ebd`
+passed [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38562531680)
+with the same counts, plus
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38562532250)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38562531754).
+The [receipt comment](https://github.com/jbone3311/MasterBrain/pull/197#issuecomment-6168298122)
+records these exact commits. This is a synthetic/disposable SQL safety fence,
+not a live Fastmail read or FileOS change. ADR-178 is a separate operator tranche.
+
 ## Scoped Fastmail inventory worker — ADR-176
 
 [PR #196](https://github.com/jbone3311/MasterBrain/pull/196) merged at

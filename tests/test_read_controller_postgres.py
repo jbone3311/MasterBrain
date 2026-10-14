@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import subprocess
+import sys
 from threading import Event
 from uuid import uuid4
 
@@ -13,6 +15,7 @@ from test_read_controller import private_write, read_files
 
 from email_brain import read_controller as control
 from email_brain.schemas import SearchRequest
+from email_brain.sync import Checkpoint
 
 database, tenant = pg.database, pg.tenant
 pytestmark = pytest.mark.postgres
@@ -57,6 +60,164 @@ def snapshot(store, ctx):
             "events": conn.execute("SELECT count(*) AS n FROM provider_events").fetchone()["n"],
             "runs": conn.execute("SELECT count(*) AS n FROM sync_runs").fetchone()["n"],
         }
+
+
+def scoped_setup(database, tenant, tmp_path):
+    path, config, creds, mail, transports, run = setup(database, tenant, tmp_path)
+    config["version"] = 2
+    config["read_scope"] = {
+        "mailbox_id": "inbox",
+        "after": "2026-09-18T00:00:00Z",
+        "before": "2026-09-21T00:00:00Z",
+    }
+    private_write(path, config)
+    window = control.ScopedReadWindowConfig.model_validate(config["read_scope"]).window()
+    with psycopg.connect(database[1]) as conn:
+        conn.execute(
+            "UPDATE mail_accounts SET read_scope_sha256=%s WHERE id=%s",
+            (window.fingerprint(), tenant[1]),
+        )
+    return path, config, creds, mail, transports, run, window
+
+
+def test_scoped_operator_preflight_and_fictional_restart(database, tenant, tmp_path):
+    _, _, _, mail, transports, run, window = scoped_setup(database, tenant, tmp_path)
+    store, _ = database
+    ctx, account = tenant
+    before = snapshot(store, ctx)
+    assert run(check=True)["provider_requests"] == 0
+    assert snapshot(store, ctx) == before and not transports and not mail.calls
+    methods = []
+    original = mail.handle
+
+    def tracked(request):
+        if request.method == "POST":
+            method, args, _ = json.loads(request.content)["methodCalls"][0]
+            methods.append(method)
+            if method == "Email/query":
+                assert args["filter"] == window.query_filter()
+            assert method != "Email/changes"
+        return original(request)
+
+    mail.handle = tracked
+    for expected in ("progress", "progress", "caught_up"):
+        assert run()["results"][expected] == 1
+    assert methods == ["Email/query", "Email/get"]
+    assert mail.downloads == ["m1"] and all(t.closed for t in transports)
+    with store.transaction(ctx) as conn:
+        cursor = conn.execute(
+            "SELECT opaque_cursor FROM sync_cursors WHERE account_id=%s AND scope='email'",
+            (account,),
+        ).fetchone()["opaque_cursor"]
+        checkpoint = Checkpoint.model_validate_json(cursor)
+        assert checkpoint.schema_version == 4
+        assert checkpoint.scope_sha256 == window.fingerprint()
+    hits = store.search(ctx, SearchRequest(query="Melron"))
+    assert len(hits) == 1
+
+
+def test_scoped_cli_check_has_no_provider_or_lease(database, tenant, tmp_path):
+    path, _, _, mail, transports, _, _ = scoped_setup(database, tenant, tmp_path)
+    store, _ = database
+    ctx, _ = tenant
+    before = snapshot(store, ctx)
+    result = subprocess.run(
+        [sys.executable, "-m", "email_brain.cli", "sync-read", "--config", str(path), "--check"],
+        env={"PATH": "/usr/bin:/bin", "EMAIL_BRAIN_DSN": store.dsn},
+        text=True,
+        capture_output=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0 and not result.stderr
+    assert json.loads(result.stdout)["provider_requests"] == 0
+    assert snapshot(store, ctx) == before and not transports and not mail.calls
+
+
+def test_scoped_operator_refuses_pin_drift_before_provider(database, tenant, tmp_path):
+    path, config, _, mail, transports, run, _ = scoped_setup(database, tenant, tmp_path)
+    store, _ = database
+    ctx, _ = tenant
+    config["read_scope"]["mailbox_id"] = "other"
+    private_write(path, config)
+    before = snapshot(store, ctx)
+    with pytest.raises(control.ControllerError):
+        run(check=True)
+    assert snapshot(store, ctx) == before
+    assert not transports and not mail.calls
+
+
+def test_scoped_operator_cannot_cross_tenant(database, tenant, tmp_path):
+    path, config, _, mail, transports, run, _ = scoped_setup(database, tenant, tmp_path)
+    _, foreign_account = pg.tenant.__wrapped__(database)
+    config["account_id"] = str(foreign_account)
+    private_write(path, config)
+    with pytest.raises(control.ControllerError):
+        run(check=True)
+    assert not transports and not mail.calls
+
+
+def test_scoped_operator_paused_before_provider(database, tenant, tmp_path):
+    _, _, _, mail, transports, run, _ = scoped_setup(database, tenant, tmp_path)
+    assert run()["results"]["progress"] == 1
+    before_calls, before_transports = len(mail.calls), len(transports)
+    with psycopg.connect(database[1]) as conn:
+        conn.execute("UPDATE sync_workers SET paused=true WHERE account_id=%s", (tenant[1],))
+    result = run()
+    assert result["results"]["paused"] == 1 and result["polls"] == 0
+    assert len(mail.calls) == before_calls and len(transports) == before_transports
+
+
+def test_scoped_operator_rejects_out_of_scope_metadata_before_blob(database, tenant, tmp_path):
+    _, _, _, mail, transports, run, _ = scoped_setup(database, tenant, tmp_path)
+    store, _ = database
+    ctx, _ = tenant
+    assert run()["results"]["progress"] == 1  # Baseline, no Email/get yet.
+    before = snapshot(store, ctx)
+    original = mail.handle
+
+    def out_of_scope(request):
+        response = original(request)
+        if (
+            request.method == "POST"
+            and json.loads(request.content)["methodCalls"][0][0] == "Email/get"
+        ):
+            payload = response.json()
+            payload["methodResponses"][0][1]["list"][0]["mailboxIds"] = {"other": True}
+            return httpx.Response(200, json=payload)
+        return response
+
+    mail.handle = out_of_scope
+    result = run()
+    assert result["results"]["protocol_error"] == 1 and result["attention_required"]
+    assert not mail.downloads and all(t.closed for t in transports)
+    after = snapshot(store, ctx)
+    assert after["cursor"] == before["cursor"] and after["messages"] == 0
+
+
+def test_scoped_operator_mid_blob_revocation_cannot_publish(database, tenant, tmp_path):
+    _, _, _, mail, transports, run, _ = scoped_setup(database, tenant, tmp_path)
+    store, admin = database
+    ctx, account = tenant
+    assert run()["results"]["progress"] == 1
+    before = snapshot(store, ctx)
+    original = mail.handle
+
+    def revoke(request):
+        response = original(request)
+        if request.url.path.startswith("/jmap/download/"):
+            with psycopg.connect(admin) as conn:
+                conn.execute(
+                    "UPDATE mail_accounts SET status='disconnected' WHERE id=%s", (account,)
+                )
+        return response
+
+    mail.handle = revoke
+    with pytest.raises(control.ControllerError):
+        run()
+    assert mail.downloads == ["m1"] and all(t.closed for t in transports)
+    after = snapshot(store, ctx)
+    assert after["cursor"] == before["cursor"] and after["messages"] == 0
 
 
 def test_preflight_restart_catchup_and_no_duplicate(database, tenant, tmp_path):

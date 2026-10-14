@@ -1,23 +1,31 @@
 # MasterBrain Implementation Status
 
+ADR-178 adds version-2 private `sync-read` configuration for one exact
+mailbox/date window and binds preflight, every guarded request and worker
+construction to ADR-177's account pin. Fictional HTTPS/disposable PostgreSQL
+tests cover restart, wrong pin, out-of-scope metadata, tenant denial, pause and
+mid-step revocation. Version 1 stays account-wide. No reviewed live enrollment,
+real Fastmail acceptance or hosted service is supplied by this operator.
+
 ADR-177 adds a synthetic/disposable PostgreSQL account pin and worker
 lease/cursor fence for the ADR-176 scoped Fastmail mode. The old account-wide
 `sync-read` preflight refuses a pinned account before constructing a provider
-client, and its database lease path is independently fenced. A private scoped
-operator, reviewed enrollment and real-provider acceptance remain absent.
+client, and its database lease path is independently fenced. ADR-178 adds the
+private scoped operator; reviewed enrollment and real-provider acceptance
+remain absent.
 
 ADR-176 adds a synthetic-only scoped Fastmail inventory worker with version-4
 scope-bound checkpoints, repeated filtered scans and pre-download metadata
 checks. ADR-177 binds its lease and cursor to an administrator-pinned account
 fingerprint but does not connect it to `sync-read`; a real folder/date pilot
-remains unapproved.
+remains unapproved. ADR-178 separately connects the scoped worker to version-2
+private configuration.
 
 ADR-175 adds a typed Fastmail mailbox/date query filter and a separate metadata
-scope check, now used by ADR-176's opt-in library worker. The existing CLI
-still instantiates the unscoped account-wide worker. Account-level scope
-binding and database fencing are supplied by ADR-177; scoped operator
-configuration and provider-read acceptance remain required before a private
-Fastmail pilot.
+scope check, now used by ADR-176's opt-in library worker. Version-1 CLI
+configuration instantiates the unscoped account-wide worker; version 2 uses
+the exact scoped worker under ADR-177's SQL fence. Reviewed enrollment and
+provider-read acceptance remain required before a private Fastmail pilot.
 
 ADR-174 adds an isolated, behavior-matched Fidelity recipe baseline with six
 fictional goldens, optional exact-hash donor replay and 1,000-row stress. The

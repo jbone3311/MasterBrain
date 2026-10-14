@@ -14,6 +14,7 @@ from test_processing_controller import controller_files, private_write
 
 from email_brain import cli
 from email_brain import read_controller as control
+from email_brain.connectors.jmap import ScopedMailWindow
 from email_brain.processing_controller import ControllerError
 
 
@@ -56,6 +57,94 @@ def configured(tmp_path, monkeypatch):
 
 def run(path, **options):
     return control.run_read_controller(path, "synthetic", allow_provider_read=True, **options)
+
+
+def scoped(configured):
+    (path, config, _, _), store, _, _ = configured
+    config["version"] = 2
+    config["read_scope"] = {
+        "mailbox_id": "inbox",
+        "after": "2026-09-18T00:00:00Z",
+        "before": "2026-09-21T00:00:00Z",
+    }
+    private_write(path, config)
+    window = control.ScopedReadWindowConfig.model_validate(config["read_scope"]).window()
+    store.transaction.return_value.__enter__.return_value.execute.return_value.fetchone.return_value[
+        "read_scope_sha256"
+    ] = window.fingerprint()
+    return path, config, store, window
+
+
+def test_scoped_preflight_and_worker_bind_exact_window(configured):
+    path, _, _, window = scoped(configured)
+    assert control.run_read_controller(path, "synthetic", check=True)["provider_requests"] == 0
+    control._GuardedFastmail.assert_not_called()
+    control.ReadWorker.assert_not_called()
+    assert run(path)["results"]["progress"] == 1
+    selected = control.ReadWorker.call_args.kwargs["scope"]
+    assert isinstance(selected, ScopedMailWindow)
+    assert selected == window
+
+
+@pytest.mark.parametrize(
+    "scope",
+    [
+        None,
+        {},
+        {"mailbox_id": 1, "after": "2026-09-18T00:00:00Z", "before": "2026-09-21T00:00:00Z"},
+        {"mailbox_id": " inbox", "after": "2026-09-18T00:00:00Z", "before": "2026-09-21T00:00:00Z"},
+        {
+            "mailbox_id": "inbox", "after": "2026-09-18T00:00:00+00:00",
+            "before": "2026-09-21T00:00:00Z",
+        },
+        {
+            "mailbox_id": "inbox", "after": "2026-09-18T00:00:00.000Z",
+            "before": "2026-09-21T00:00:00Z",
+        },
+        {"mailbox_id": "inbox", "after": "2026-09-32T00:00:00Z", "before": "2026-09-21T00:00:00Z"},
+        {"mailbox_id": "inbox", "after": "2026-09-21T00:00:00Z", "before": "2026-09-18T00:00:00Z"},
+        {"mailbox_id": "inbox", "after": "2026-09-18T00:00:00Z", "before": "2026-10-20T00:00:00Z"},
+        {
+            "mailbox_id": "inbox", "after": "2026-09-18T00:00:00Z",
+            "before": "2026-09-21T00:00:00Z", "extra": True,
+        },
+    ],
+)
+def test_invalid_scoped_config_never_opens_database(configured, scope):
+    (path, config, _, _), _, _, _ = configured
+    config["version"] = 2
+    if scope is not None:
+        config["read_scope"] = scope
+    private_write(path, config)
+    with pytest.raises(ControllerError):
+        run(path)
+    control.Store.assert_not_called()
+
+
+@pytest.mark.parametrize("scope", [None, {
+    "mailbox_id": "inbox",
+    "after": "2026-09-18T00:00:00Z",
+    "before": "2026-09-21T00:00:00Z",
+}])
+def test_version_one_cannot_carry_scoped_window(configured, scope):
+    (path, config, _, _), _, _, _ = configured
+    config["read_scope"] = scope
+    private_write(path, config)
+    with pytest.raises(ControllerError):
+        run(path)
+    control.Store.assert_not_called()
+
+
+def test_scoped_preflight_rejects_unpinned_or_wrong_pin(configured):
+    path, _, store, _ = scoped(configured)
+    conn = store.transaction.return_value.__enter__.return_value
+    row = conn.execute.return_value.fetchone.return_value
+    for digest in (None, "0" * 64):
+        row["read_scope_sha256"] = digest
+        with pytest.raises(ControllerError):
+            control.run_read_controller(path, "synthetic", check=True)
+    control._GuardedFastmail.assert_not_called()
+    control.ReadWorker.assert_not_called()
 
 
 def test_preflight_does_not_construct_client_claim_or_advance(configured):

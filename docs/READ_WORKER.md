@@ -5,11 +5,12 @@ This library now has a separate [bounded operator command](READ_CONTROLLER.md),
 HTTP and real PostgreSQL; the command is not live-accepted or a hosted supervisor.
 ADR-176 adds a distinct synthetic-only scoped library mode: version-4 cursors
 bind the exact mailbox/date filter, repeated filtered inventories replace
-account-wide changes, and every metadata row is checked before bytes. It is not
-wired to `sync-read`. ADR-177 adds a database enrollment/lease/cursor fence;
-the old command refuses a pinned account. No real folder/date pilot is
-authorized. The rest of this document describes the existing
-account-wide operator.
+account-wide changes, and every metadata row is checked before bytes. ADR-177
+adds a database enrollment/lease/cursor fence, and ADR-178 wires the scoped
+worker to version-2 private `sync-read` configuration. Version 1 remains
+account-wide and refuses a pinned account. No real folder/date pilot is
+authorized. The rest of this document describes the version-1
+account-wide mode; the version-2 contract is in [READ_CONTROLLER.md](READ_CONTROLLER.md).
 The library does not
 discover credentials, enroll accounts, start a background process or contact a
 mailbox on installation. A caller explicitly supplies a read client and a trusted

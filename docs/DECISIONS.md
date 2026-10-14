@@ -10,16 +10,22 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-178](adr/178_private_scoped_fastmail_read_operator.md) adds closed
+version-2 private `sync-read` configuration for one exact SQL-pinned Fastmail
+window. It checks the pin before provider I/O and at each guarded request,
+then uses ADR-176's scoped worker. Version 1 stays account-wide; reviewed live
+enrollment and provider acceptance remain open.
+
 [ADR-177](adr/177_fastmail_account_scope_lease_fence.md) pins an exact
 Fastmail mailbox/date fingerprint on an unused account and fences worker leases
 and cursors in PostgreSQL. The old account-wide operator refuses a pinned
-account at preflight. This is synthetic/disposable proof only; scoped operator
-configuration, owner enrollment and live approval remain separate gates.
+account at preflight. This is synthetic/disposable proof only; ADR-178 adds
+the scoped operator, while owner enrollment and live approval remain separate.
 
 [ADR-176](adr/176_scoped_fastmail_inventory_worker.md) adds a synthetic-only
 version-4 scoped inventory worker that never uses account-wide changes and
-rechecks metadata before bytes. ADR-177 adds its SQL fence; operator
-configuration is still missing and live scoped reads remain unauthorized.
+rechecks metadata before bytes. ADR-177 adds its SQL fence and ADR-178 adds
+private operator configuration. Live scoped reads remain unauthorized.
 
 [ADR-175](adr/175_scoped_fastmail_query_boundary.md) adds a synthetic-only,
 typed mailbox/date `Email/query` filter and independent metadata check. The
