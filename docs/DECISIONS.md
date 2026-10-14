@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-188](adr/188_statement_source_text_derivation_contract.md) adds a pure,
+synthetic-only exact-byte replay for bounded FileOS text transforms. It is not
+yet connected to statement proposals and does not prove PDF/OCR/Email source
+derivation, source authorization or a reviewed investment.
+
 [ADR-187](adr/187_jefferies_recipe_parity_baseline.md) pins the Jefferies donor
 category/detail/transaction behavior, including negative cash and multi-lot
 subtotals, for fictional nonpublishing comparison only. It does not verify a

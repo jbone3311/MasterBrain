@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-188 adds a synthetic-only pure byte-to-text replay check for the exact
+`fileos-text-v1` transform. It rejects a source digest paired with unrelated
+normalized text and leaves a digest-only proof value; it is not yet wired to
+statement proposals or the owner preview. PDF/Office/OCR, Email attachments,
+authorized source reacquisition, durable proof binding, and reviewed financial
+publication remain open. The existing statement preview is **not** verified
+source-byte derivation or investment truth.
+
 ADR-187 adds a fifth isolated, exact-hash donor statement recipe baseline for
 Jefferies. Fictional category holdings, lower-confidence security details and
 transactions preserve negative cash, multi-lot grand totals, subtotal skips,

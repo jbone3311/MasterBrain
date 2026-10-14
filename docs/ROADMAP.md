@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+ADR-188 provides only the first narrow deterministic source-byte replay
+primitive for bounded FileOS text/Markdown/HTML/CSV. The next statement gate
+is a tenant-fenced, current-source worker that reacquires authorized bytes,
+records an immutable proof linked to each proposal, and refuses unproved rows
+before any financial assertion can be reviewed. PDF/Office/OCR and Email
+attachments need separate exact-transform proofs. No existing proposal is
+retroactively upgraded from hash-consistent to source-derived.
+
 Owner decision, 2026-10-14: **synthetic-only Fastmail testing for now**. Do not
 enroll a real Fastmail account or read personal mail. Continue fictional/
 disposable scope and pre-fetch exclusion tests, pinned-donor FileOS/statement

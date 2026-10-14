@@ -2,6 +2,25 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Narrow statement source-text derivation primitive — ADR-188
+
+The branch `codex/statement-source-derivation-contract` adds only a pure,
+synthetic `fileos-text-v1` replay check; it does not change statement storage,
+APIs, source access or FOS-Master. The disposable local Python 3.14/PostgreSQL
+17.11 suite passed 3,364 tests with six skips (545 of 546 PostgreSQL-marked
+cases executed; one platform-local skip). The six browser suites passed
+165/165, and Ruff, mypy (104 source files), documentation links, repository
+structural gate and diff check passed. Fourteen focused derivation tests cover
+exact replay and mismatch/unsupported boundaries. This is branch-local
+evidence, not a hosted CI or merge receipt; exact head and PR gates must be
+recorded after publication.
+
+The old proposal fixture deliberately pairs one valid fictional source digest
+with unrelated valid text; ADR-188's function refuses it. No existing
+proposal is thereby upgraded to verified source derivation. Authorized byte
+reacquisition, immutable proposal-bound proof and PDF/Office/OCR/Email
+transform verification remain open.
+
 ## Jefferies donor statement recipe parity — ADR-187
 
 [PR #214](https://github.com/jbone3311/MasterBrain/pull/214) final head
