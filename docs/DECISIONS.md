@@ -10,6 +10,12 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-169](adr/169_code_first_librarian_interop.md) fixes the code-first,
+proposal-only and evidence-preserving boundary for future Librarian Markdown
+import/export. It changes no schema or runtime behavior. The twelve issue
+proposals, corrections and staged gates are in the
+[interop review](LIBRARIAN_INTEROP.md).
+
 [ADR-168](adr/168_optional_source_availability.md) labels independently optional
 Email and FileOS current-search availability without revealing ungranted sources.
 An empty result is not mistaken for an absent or unindexed source, and no provider

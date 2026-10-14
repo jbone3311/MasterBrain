@@ -30,6 +30,14 @@ Fastmail resilience is ADR-110/PR #133. ADR-157/PR #144 at `96cb22b`
 adds a bounded Ask output-text slice; full response/token and grounded-chat
 acceptance remain open.
 This is a dependency-ordered plan, not a release claim.
+The [Librarian interoperability review](LIBRARIAN_INTEROP.md) refines
+[issue #174](https://github.com/jbone3311/MasterBrain/issues/174) and its twelve
+children. ADR-169 records the code-first, proposal-only boundary; it adds no
+working Markdown import/export. In particular, bounded FileOS CSV/XLSX extraction
+already exists, attachment occurrences must not be collapsed by hash, and source
+exclusions must precede any live fetch. The reviewed proposal queue, derivation
+basis, project roles/aliases, table locators and export remain implementation
+gates, not current functions.
 The documentation-only `main` checkpoint encountered
 [Actions billing/limit issue #150](https://github.com/jbone3311/MasterBrain/issues/150).
 After recovery, ADR-160 [PR #151](https://github.com/jbone3311/MasterBrain/pull/151)
@@ -72,6 +80,7 @@ Each lane must pass its own acceptance gate before the next dependent step:
 | Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Obtain region, budget, retention, identity and authorized-source decisions; then exercise a private, reversible pilot | No live source, hosted identity, recovery or operations acceptance exists |
 | FileOS migration ([migration plan](FOS_MIGRATION.md)) | Review the six recorded donor-policy differences and fault/platform cases, then run an owner-authorized read-only shadow on a bounded root | No v2 current publication, FileOS effect, donor cutover or retirement is approved |
 | FOS intelligence ([preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md)) | Capture synthetic golden outputs for donor statement recipes and reports, then project reconciled line items and evidence-linked candidate claims into KnowledgeCore | No donor-equivalent investment dossier or verified holdings claim exists yet |
+| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | Specify and test a fictional Markdown import that creates only private proposals, with exact citations and no model dependency; then separately review derivation/basis links and atomic human approval | No Markdown importer/exporter, KnowledgeCore proposal queue, project roles/aliases, or automatic dossier generation is implemented; live-source exclusions remain a prerequisite |
 | Reviewed actions ([#93](https://github.com/jbone3311/MasterBrain/issues/93)) | Specify typed propose/preview/approve/execute contracts and reversible first actions | The existing Brain API stays read-only until separate grants, safety tests and approval exist |
 
 The donor remains pinned at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
