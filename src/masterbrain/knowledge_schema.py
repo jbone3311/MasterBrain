@@ -15,9 +15,10 @@ EvidenceIdentity = Annotated[str, Field(pattern=r"^evidence_[a-f0-9]{32}$")]
 EventIdentity = Annotated[str, Field(pattern=r"^event_[a-f0-9]{32}$")]
 CommitmentIdentity = Annotated[str, Field(pattern=r"^commitment_[a-f0-9]{32}$")]
 ProjectIdentity = Annotated[str, Field(pattern=r"^project_[a-f0-9]{32}$")]
+EntityIdentity = Annotated[str, Field(pattern=r"^entity_[a-f0-9]{32}$")]
 Predicate = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,99}$")]
 KnowledgeKind = Literal[
-    "entity", "relationship", "claim", "event", "project", "commitment", "correction"
+    "entity", "relationship", "claim", "event", "project", "commitment", "member", "correction"
 ]
 KnowledgeVisibility = Literal["retained", "unsuperseded"]
 
@@ -164,9 +165,19 @@ class CommitmentWrite(AssertionBase):
     due_at: AwareDatetime | None = None
 
 
+class MemberWrite(AssertionBase):
+    kind: Literal["member"]
+    project_id: ProjectIdentity
+    entity_id: EntityIdentity
+    role: Predicate
+    assertion_status: Literal["asserted", "disputed", "retracted"] = "asserted"
+
+
 class CorrectionWrite(ClosedModel):
     kind: Literal["correction"]
-    target_kind: Literal["entity", "relationship", "claim", "event", "project", "commitment"]
+    target_kind: Literal[
+        "entity", "relationship", "claim", "event", "project", "commitment", "member"
+    ]
     target_id: Identity
     replacement_id: Identity
     reason: str = Field(min_length=1, max_length=2000)
@@ -194,6 +205,7 @@ KnowledgeAssertion = Annotated[
     | ProjectWrite
     | EventWrite
     | CommitmentWrite
+    | MemberWrite
     | CorrectionWrite,
     Field(discriminator="kind"),
 ]
@@ -206,7 +218,7 @@ class KnowledgePublishRequest(ClosedModel):
 class KnowledgeSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     limit: int = Field(default=10, ge=1, le=50, strict=True)
-    kinds: list[KnowledgeKind] = Field(default_factory=list, max_length=7)
+    kinds: list[KnowledgeKind] = Field(default_factory=list, max_length=8)
     visibility: KnowledgeVisibility = "retained"
 
     @field_validator("kinds")
@@ -258,9 +270,10 @@ class ProjectDossierRequest(ClosedModel):
     visibility: KnowledgeVisibility = "unsuperseded"
     event_limit: int = Field(default=10, ge=1, le=25)
     commitment_limit: int = Field(default=10, ge=1, le=25)
+    member_limit: int = Field(default=10, ge=1, le=25)
     recorded_cutoff_at: AwareDatetime | None = None
 
-    @field_validator("event_limit", "commitment_limit", mode="before")
+    @field_validator("event_limit", "commitment_limit", "member_limit", mode="before")
     @classmethod
     def integer_limit(cls, value: object) -> object:
         if isinstance(value, bool):

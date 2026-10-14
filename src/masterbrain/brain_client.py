@@ -292,7 +292,7 @@ class BrainReadClient:
         return bool(
             kind in {
                 "entity", "relationship", "claim", "event", "project", "commitment",
-                "correction",
+                "member", "correction",
             }
             and isinstance(item.get("object_id"), str)
             and re.fullmatch(rf"{kind}_[a-f0-9]{{32}}", item["object_id"])
@@ -498,12 +498,13 @@ class BrainReadClient:
         visibility: KnowledgeVisibility = "unsuperseded",
         event_limit: int = 10,
         commitment_limit: int = 10,
+        member_limit: int = 10,
         recorded_cutoff_at: datetime | None = None,
     ) -> dict[str, Any]:
         """Read compact reviewed project context with bounded linked assertions."""
         if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
             raise BrainClientError("invalid_request")
-        if type(event_limit) is not int or type(commitment_limit) is not int:
+        if any(type(value) is not int for value in (event_limit, commitment_limit, member_limit)):
             raise BrainClientError("invalid_request")
         if recorded_cutoff_at is not None and not isinstance(recorded_cutoff_at, datetime):
             raise BrainClientError("invalid_request")
@@ -511,6 +512,7 @@ class BrainReadClient:
             request = ProjectDossierRequest.model_validate({
                 "visibility": visibility, "event_limit": event_limit,
                 "commitment_limit": commitment_limit,
+                "member_limit": member_limit,
                 "recorded_cutoff_at": recorded_cutoff_at,
             })
         except ValidationError:
@@ -523,6 +525,7 @@ class BrainReadClient:
         project = data.get("project")
         events = data.get("events")
         commitments = data.get("commitments")
+        members = data.get("members")
         coverage = data.get("coverage")
         if (
             cutoff is None
@@ -532,8 +535,11 @@ class BrainReadClient:
             or data["event_limit"] != event_limit
             or type(data.get("commitment_limit")) is not int
             or data["commitment_limit"] != commitment_limit
+            or type(data.get("member_limit")) is not int
+            or data["member_limit"] != member_limit
             or type(data.get("events_truncated")) is not bool
             or type(data.get("commitments_truncated")) is not bool
+            or type(data.get("members_truncated")) is not bool
             or data.get("untrusted_content") is not True
             or not isinstance(coverage, dict)
             or coverage.get("order") != "recorded_at_descending"
@@ -543,21 +549,55 @@ class BrainReadClient:
             or not self._valid_project_dossier_project(project, project_id, cutoff)
             or not isinstance(events, list) or len(events) > event_limit
             or not isinstance(commitments, list) or len(commitments) > commitment_limit
+            or not isinstance(members, list) or len(members) > member_limit
             or data["events_truncated"] and len(events) != event_limit
             or data["commitments_truncated"] and len(commitments) != commitment_limit
+            or data["members_truncated"] and len(members) != member_limit
             or any(not self._valid_project_dossier_event(row, project_id, cutoff)
                    for row in events)
             or any(not self._valid_project_dossier_commitment(row, project_id, cutoff)
                    for row in commitments)
+            or any(not self._valid_project_dossier_member(row, project_id, cutoff)
+                   for row in members)
         ):
             raise BrainClientError("invalid_response")
-        for rows in (events, commitments):
+        for rows in (events, commitments, members):
             ids = [row["object_id"] for row in rows]
             order = [(self._aware_datetime(row["recorded_at"]), row["object_id"])
                      for row in rows]
             if len(set(ids)) != len(ids) or order != sorted(order, reverse=True):
                 raise BrainClientError("invalid_response")
         return data
+
+    @classmethod
+    def _valid_project_dossier_member(
+        cls, row: Any, project_id: str, cutoff: datetime
+    ) -> bool:
+        if not isinstance(row, dict):
+            return False
+        recorded = cls._aware_datetime(row.get("recorded_at"))
+        valid_from = (cls._aware_datetime(row.get("valid_from"))
+                      if row.get("valid_from") else None)
+        valid_to = (cls._aware_datetime(row.get("valid_to"))
+                    if row.get("valid_to") else None)
+        name = row.get("entity_name")
+        return bool(
+            row.get("object_kind") == "member"
+            and isinstance(row.get("object_id"), str)
+            and re.fullmatch(r"member_[a-f0-9]{32}", row["object_id"])
+            and row.get("project_id") == project_id
+            and isinstance(row.get("entity_id"), str)
+            and _ENTITY_ID.fullmatch(row["entity_id"])
+            and isinstance(name, str) and 1 <= len(name) <= 300 and "\x00" not in name
+            and row.get("entity_type") in {"person", "organization"}
+            and isinstance(row.get("role"), str) and _EVENT_TYPE.fullmatch(row["role"])
+            and row.get("assertion_status") in {"asserted", "disputed", "retracted"}
+            and recorded is not None and recorded <= cutoff
+            and (row.get("valid_from") is None or valid_from is not None)
+            and (row.get("valid_to") is None or (valid_from is not None
+                 and valid_to is not None and valid_to > valid_from))
+            and cls._valid_dossier_evidence(row.get("evidence_ids"))
+        )
 
     def resolve_project_alias(self, name: str, *, limit: int = 25) -> dict[str, Any]:
         """Return bounded reviewed candidates without choosing or merging one."""

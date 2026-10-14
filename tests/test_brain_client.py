@@ -17,6 +17,8 @@ TIMELINE_EVENT = "event_" + "a" * 32
 TIMELINE_EVIDENCE = "evidence_" + "b" * 32
 DUE_COMMITMENT = "commitment_" + "c" * 32
 DOSSIER_PROJECT = "project_" + "d" * 32
+DOSSIER_MEMBER = "member_" + "e" * 32
+DOSSIER_ENTITY = "entity_" + "f" * 32
 
 
 def dossier_result() -> dict[str, object]:
@@ -43,9 +45,18 @@ def dossier_result() -> dict[str, object]:
             "counterparty_entity_id": None, "recorded_at": recorded,
             "evidence_ids": [TIMELINE_EVIDENCE],
         }],
+        "members": [{
+            "object_kind": "member", "object_id": DOSSIER_MEMBER,
+            "project_id": DOSSIER_PROJECT, "entity_id": DOSSIER_ENTITY,
+            "entity_name": "Pat Example", "entity_type": "person",
+            "role": "broker", "assertion_status": "asserted",
+            "valid_from": None, "valid_to": None, "recorded_at": recorded,
+            "evidence_ids": [TIMELINE_EVIDENCE],
+        }],
         "recorded_cutoff_at": TIMELINE_START.isoformat(),
         "visibility": "unsuperseded", "event_limit": 1, "commitment_limit": 1,
-        "events_truncated": False, "commitments_truncated": False,
+        "member_limit": 1, "events_truncated": False, "commitments_truncated": False,
+        "members_truncated": False,
         "coverage": {"order": "recorded_at_descending", "undated_links": "included",
                      "source_freshness": "not_asserted",
                      "interpretation": "reviewed_assertions_not_current_state"},
@@ -64,18 +75,18 @@ def test_project_dossier_client_sends_bounded_read_and_validates_context() -> No
         "https://brain.example", "token", transport=httpx.MockTransport(handler),
     ) as client:
         result = client.project_dossier(
-            DOSSIER_PROJECT, event_limit=1, commitment_limit=1,
+            DOSSIER_PROJECT, event_limit=1, commitment_limit=1, member_limit=1,
             recorded_cutoff_at=TIMELINE_START,
         )
         assert result["project"]["object_id"] == DOSSIER_PROJECT
         for invalid in (
             {"project_id": "project_bad"}, {"event_limit": True},
-            {"commitment_limit": 26}, {"visibility": "current"},
+            {"commitment_limit": 26}, {"member_limit": True}, {"visibility": "current"},
             {"recorded_cutoff_at": TIMELINE_START.replace(tzinfo=None)},
         ):
             with pytest.raises(BrainClientError, match="invalid_request"):
                 arguments = {"project_id": DOSSIER_PROJECT, "event_limit": 1,
-                             "commitment_limit": 1, **invalid}
+                             "commitment_limit": 1, "member_limit": 1, **invalid}
                 client.project_dossier(**arguments)
     assert len(calls) == 1
     assert calls[0].method == "GET"
@@ -100,6 +111,8 @@ def test_project_dossier_client_sends_bounded_read_and_validates_context() -> No
     {"commitments": [{**dossier_result()["commitments"][0],
                      "project_id": "project_" + "e" * 32}]},
     {"commitments": dossier_result()["commitments"] * 2},
+    {"members": [{**dossier_result()["members"][0], "entity_id": "entity_bad"}]},
+    {"members": dossier_result()["members"] * 2},
     {"coverage": {"source_freshness": "asserted"}},
 ])
 def test_project_dossier_client_rejects_malformed_context(change: dict) -> None:
@@ -110,7 +123,7 @@ def test_project_dossier_client_rejects_malformed_context(change: dict) -> None:
     ) as client:
         with pytest.raises(BrainClientError, match="invalid_response"):
             client.project_dossier(
-                DOSSIER_PROJECT, event_limit=1, commitment_limit=1,
+                DOSSIER_PROJECT, event_limit=1, commitment_limit=1, member_limit=1,
                 recorded_cutoff_at=TIMELINE_START,
             )
 
@@ -329,6 +342,22 @@ def test_answer_client_uses_same_read_only_origin_and_validates_response() -> No
     assert calls[0].url.path == "/v1/brain/answers"
     assert calls[0].headers["authorization"] == "Bearer synthetic-token"
     assert b'"question":"What is pending?"' in calls[0].content
+
+
+def test_answer_client_accepts_bounded_reviewed_member_match() -> None:
+    result = answer_result()
+    result["reviewed_knowledge"] = [{
+        "object_kind": "member", "object_id": DOSSIER_MEMBER,
+        "title": "broker", "excerpt": "Pat Example broker",
+        "evidence_ids": [TIMELINE_EVIDENCE], "linked_evidence_count": 1,
+    }]
+    with BrainReadClient(
+        "https://brain.example", "synthetic-token",
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=result)),
+    ) as client:
+        assert client.answer("Who brokers the project?")["reviewed_knowledge"][0][
+            "object_kind"
+        ] == "member"
 
 
 @pytest.mark.parametrize("change", [

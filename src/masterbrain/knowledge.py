@@ -24,6 +24,7 @@ from masterbrain.knowledge_schema import (
     EventWrite,
     KnowledgeAssertion,
     KnowledgeVisibility,
+    MemberWrite,
     ProjectDossierRequest,
     ProjectWrite,
     RelationshipWrite,
@@ -39,11 +40,12 @@ _TABLES = {
     "project": "knowledge_projects",
     "event": "knowledge_events",
     "commitment": "knowledge_commitments",
+    "member": "knowledge_project_members",
     "correction": "knowledge_corrections",
 }
 
 
-def _visible_assertion_sql(alias: str, kind_sql: str, id_sql: str) -> str:
+def _visible_direct_sql(alias: str, kind_sql: str, id_sql: str) -> str:
     """Closed SQL fragment for an assertion's full direct-source grant set."""
     return (
         "(allowed.sources IS NULL OR ("
@@ -58,6 +60,40 @@ def _visible_assertion_sql(alias: str, kind_sql: str, id_sql: str) -> str:
         f"WHERE ke.tenant_id={alias}.tenant_id AND ke.target_kind={kind_sql} "
         f"AND ke.target_id={id_sql} "
         "AND v.source_id<>ALL(allowed.sources))))"
+    )
+
+
+def _visible_member_sql(tenant_sql: str, id_sql: str) -> str:
+    """One member and both referenced assertions must be wholly source-visible."""
+    return (
+        "EXISTS ("
+        "SELECT 1 FROM knowledge_project_members member_ref "
+        "JOIN knowledge_projects kp ON kp.tenant_id=member_ref.tenant_id "
+        "AND kp.id=member_ref.project_id "
+        "JOIN knowledge_entities ke_ref ON ke_ref.tenant_id=member_ref.tenant_id "
+        "AND ke_ref.id=member_ref.entity_id "
+        f"WHERE member_ref.tenant_id={tenant_sql} AND member_ref.id={id_sql} AND "
+        + _visible_direct_sql("member_ref", "'member'", "member_ref.id") + " AND "
+        + _visible_direct_sql("kp", "'project'", "kp.id") + " AND "
+        + _visible_direct_sql("ke_ref", "'entity'", "ke_ref.id") + ")"
+    )
+
+
+def _visible_assertion_sql(alias: str, kind_sql: str, id_sql: str) -> str:
+    """Source grants include transitive member links and member corrections."""
+    return (
+        "(" + _visible_direct_sql(alias, kind_sql, id_sql)
+        + f" AND ({kind_sql}<>'member' OR "
+        + _visible_member_sql(f"{alias}.tenant_id", id_sql) + ")"
+        + f" AND ({kind_sql}<>'correction' OR NOT EXISTS ("
+        "SELECT 1 FROM knowledge_corrections correction_ref "
+        f"WHERE correction_ref.tenant_id={alias}.tenant_id "
+        f"AND correction_ref.id={id_sql} AND correction_ref.target_kind='member' "
+        "AND NOT ("
+        + _visible_member_sql("correction_ref.tenant_id", "correction_ref.target_id")
+        + " AND "
+        + _visible_member_sql("correction_ref.tenant_id", "correction_ref.replacement_id")
+        + "))))"
     )
 
 
@@ -137,6 +173,21 @@ _DUE_UNSUPERSEDED_SQL = (
     "AND r.recorded_at<=allowed.cutoff AND "
     + _visible_assertion_sql("c", "'correction'", "c.id") + " AND "
     + _visible_commitment_sql("r") + ")"
+)
+
+_MEMBER_UNSUPERSEDED_SQL = (
+    "NOT EXISTS (SELECT 1 FROM knowledge_project_members s "
+    "WHERE s.tenant_id=km.tenant_id AND s.supersedes_id=km.id "
+    "AND s.recorded_at<=allowed.cutoff AND "
+    + _visible_assertion_sql("s", "'member'", "s.id") + ") "
+    "AND NOT EXISTS (SELECT 1 FROM knowledge_corrections c "
+    "JOIN knowledge_project_members r ON r.tenant_id=c.tenant_id "
+    "AND r.id=c.replacement_id "
+    "WHERE c.tenant_id=km.tenant_id AND c.target_kind='member' "
+    "AND c.target_id=km.id AND c.recorded_at<=allowed.cutoff "
+    "AND r.recorded_at<=allowed.cutoff AND "
+    + _visible_assertion_sql("c", "'correction'", "c.id") + " AND "
+    + _visible_assertion_sql("r", "'member'", "r.id") + ")"
 )
 
 
@@ -457,6 +508,32 @@ class KnowledgeCore:
                 ),
             )
             return "commitment", f"{assertion.state} {assertion.description}"
+        if isinstance(assertion, MemberWrite):
+            self._require_object(conn, "project", assertion.project_id)
+            entity = conn.execute(
+                "SELECT name,entity_type FROM knowledge_entities WHERE id=%s",
+                (assertion.entity_id,),
+            ).fetchone()
+            if entity is None or entity["entity_type"] not in {"person", "organization"}:
+                raise ValueError("member entity must be a reviewed person or organization")
+            if assertion.supersedes_id:
+                prior = conn.execute(
+                    "SELECT project_id,entity_id FROM knowledge_project_members WHERE id=%s",
+                    (assertion.supersedes_id,),
+                ).fetchone()
+                if (prior is None or prior["project_id"] != assertion.project_id
+                        or prior["entity_id"] != assertion.entity_id):
+                    raise ValueError("member supersession must keep project and entity")
+            conn.execute(
+                "INSERT INTO knowledge_project_members(tenant_id,id,project_id,entity_id,role,"
+                "assertion_status,confidence,source_quote,observed_at,valid_from,valid_to,"
+                "supersedes_id,reviewer_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (ctx.tenant_id, object_id, assertion.project_id, assertion.entity_id,
+                 assertion.role, assertion.assertion_status, assertion.confidence,
+                 assertion.source_quote, assertion.observed_at, assertion.valid_from,
+                 assertion.valid_to, assertion.supersedes_id, ctx.actor_id),
+            )
+            return assertion.role.replace("_", " "), f"{entity['name']} {assertion.role}"
         assert isinstance(assertion, CorrectionWrite)
         self._require_object(conn, assertion.target_kind, assertion.target_id)
         self._require_object(conn, assertion.target_kind, assertion.replacement_id)
@@ -489,18 +566,10 @@ class KnowledgeCore:
         allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         with self.store.transaction(ctx) as conn:
             row = conn.execute(
-                f"SELECT k.* FROM {table} k WHERE k.id=%s "
-                "AND (%s::text[] IS NULL OR ("
-                "EXISTS (SELECT 1 FROM knowledge_evidence ke "
-                "WHERE ke.tenant_id=k.tenant_id AND ke.target_kind=%s "
-                "AND ke.target_id=k.id) AND NOT EXISTS ("
-                "SELECT 1 FROM knowledge_evidence ke JOIN brain_evidence e "
-                "ON e.tenant_id=ke.tenant_id AND e.id=ke.evidence_id "
-                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
-                "AND v.id=e.source_version_id WHERE ke.tenant_id=k.tenant_id "
-                "AND ke.target_kind=%s AND ke.target_id=k.id "
-                "AND v.source_id<>ALL(%s::text[]))))",
-                (object_id, allowed_sources, kind, kind, allowed_sources),
+                "WITH allowed AS (SELECT %s::text[] AS sources) "
+                f"SELECT k.* FROM {table} k CROSS JOIN allowed WHERE k.id=%s AND "
+                + _visible_assertion_sql("k", f"'{kind}'", "k.id"),
+                (allowed_sources, object_id),
             ).fetchone()
             if not row:
                 raise NotFound()
@@ -867,6 +936,10 @@ class KnowledgeCore:
             " AND (" + _DUE_UNSUPERSEDED_SQL + ")"
             if request.visibility == "unsuperseded" else ""
         )
+        member_visibility = (
+            " AND (" + _MEMBER_UNSUPERSEDED_SQL + ")"
+            if request.visibility == "unsuperseded" else ""
+        )
         common = (
             "WITH allowed AS (SELECT %s::text[] AS sources, "
             "%s::timestamptz AS cutoff) "
@@ -916,12 +989,26 @@ class KnowledgeCore:
                     request.commitment_limit + 1,
                 ),
             ).fetchall()
+            members = conn.execute(
+                common + "SELECT km.id,km.project_id,km.entity_id,ke_ref.name AS entity_name,"
+                "ke_ref.entity_type,km.role,km.assertion_status,km.valid_from,km.valid_to,"
+                "km.recorded_at FROM knowledge_project_members km "
+                "JOIN knowledge_entities ke_ref ON ke_ref.tenant_id=km.tenant_id "
+                "AND ke_ref.id=km.entity_id CROSS JOIN allowed "
+                "WHERE km.project_id=%s AND km.recorded_at<=allowed.cutoff AND "
+                + _visible_assertion_sql("km", "'member'", "km.id")
+                + member_visibility
+                + " ORDER BY km.recorded_at DESC,km.id DESC LIMIT %s",
+                (allowed_sources, cutoff_at, project_id, request.member_limit + 1),
+            ).fetchall()
             event_page = events[:request.event_limit]
             commitment_page = commitments[:request.commitment_limit]
+            member_page = members[:request.member_limit]
             ids_by_kind = {
                 "project": [project_id],
                 "event": [row["id"] for row in event_page],
                 "commitment": [row["id"] for row in commitment_page],
+                "member": [row["id"] for row in member_page],
             }
             evidence_by_kind: dict[str, dict[str, list[str]]] = {}
             for kind, ids in ids_by_kind.items():
@@ -977,12 +1064,31 @@ class KnowledgeCore:
                 }
                 for row in commitment_page
             ],
+            "members": [
+                {
+                    "object_kind": "member",
+                    "object_id": row["id"],
+                    "project_id": row["project_id"],
+                    "entity_id": row["entity_id"],
+                    "entity_name": row["entity_name"],
+                    "entity_type": row["entity_type"],
+                    "role": row["role"],
+                    "assertion_status": row["assertion_status"],
+                    "valid_from": row["valid_from"],
+                    "valid_to": row["valid_to"],
+                    "recorded_at": row["recorded_at"],
+                    "evidence_ids": evidence_by_kind["member"][row["id"]],
+                }
+                for row in member_page
+            ],
             "recorded_cutoff_at": cutoff_at,
             "visibility": request.visibility,
             "event_limit": request.event_limit,
             "commitment_limit": request.commitment_limit,
+            "member_limit": request.member_limit,
             "events_truncated": len(events) > request.event_limit,
             "commitments_truncated": len(commitments) > request.commitment_limit,
+            "members_truncated": len(members) > request.member_limit,
             "coverage": {
                 "order": "recorded_at_descending",
                 "undated_links": "included",
@@ -1005,42 +1111,26 @@ class KnowledgeCore:
             anchor = None
             if after:
                 anchor = conn.execute(
-                    "SELECT c.recorded_at,c.id FROM knowledge_change_events c WHERE c.id=%s "
-                    "AND (%s::text[] IS NULL OR ("
-                    "EXISTS (SELECT 1 FROM knowledge_evidence ke "
-                    "WHERE ke.tenant_id=c.tenant_id AND ke.target_kind=c.object_kind "
-                    "AND ke.target_id=c.object_id) AND NOT EXISTS ("
-                    "SELECT 1 FROM knowledge_evidence ke JOIN brain_evidence e "
-                    "ON e.tenant_id=ke.tenant_id AND e.id=ke.evidence_id "
-                    "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
-                    "AND v.id=e.source_version_id WHERE ke.tenant_id=c.tenant_id "
-                    "AND ke.target_kind=c.object_kind AND ke.target_id=c.object_id "
-                    "AND v.source_id<>ALL(%s::text[]))))",
-                    (after, allowed_sources, allowed_sources),
+                    "WITH allowed AS (SELECT %s::text[] AS sources) "
+                    "SELECT c.recorded_at,c.id FROM knowledge_change_events c "
+                    "CROSS JOIN allowed WHERE c.id=%s AND "
+                    + _visible_assertion_sql("c", "c.object_kind", "c.object_id"),
+                    (allowed_sources, after),
                 ).fetchone()
                 if not anchor:
                     raise NotFound()
             rows = conn.execute(
+                "WITH allowed AS (SELECT %s::text[] AS sources) "
                 "SELECT c.id,c.object_kind,c.object_id,c.recorded_at "
-                "FROM knowledge_change_events c "
+                "FROM knowledge_change_events c CROSS JOIN allowed "
                 "WHERE (%s::timestamptz IS NULL OR (c.recorded_at,c.id)>(%s,%s)) "
-                "AND (%s::text[] IS NULL OR ("
-                "EXISTS (SELECT 1 FROM knowledge_evidence ke "
-                "WHERE ke.tenant_id=c.tenant_id AND ke.target_kind=c.object_kind "
-                "AND ke.target_id=c.object_id) AND NOT EXISTS ("
-                "SELECT 1 FROM knowledge_evidence ke JOIN brain_evidence e "
-                "ON e.tenant_id=ke.tenant_id AND e.id=ke.evidence_id "
-                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
-                "AND v.id=e.source_version_id WHERE ke.tenant_id=c.tenant_id "
-                "AND ke.target_kind=c.object_kind AND ke.target_id=c.object_id "
-                "AND v.source_id<>ALL(%s::text[])))) "
+                "AND " + _visible_assertion_sql("c", "c.object_kind", "c.object_id") + " "
                 "ORDER BY c.recorded_at,c.id LIMIT %s",
                 (
+                    allowed_sources,
                     anchor["recorded_at"] if anchor else None,
                     anchor["recorded_at"] if anchor else None,
                     after,
-                    allowed_sources,
-                    allowed_sources,
                     limit + 1,
                 ),
             ).fetchall()

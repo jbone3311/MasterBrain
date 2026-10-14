@@ -27,7 +27,7 @@ MAX_REVIEWED_EVIDENCE_IDS = 5
 _SHA256 = re.compile(r"^[a-f0-9]{64}$")
 _EVIDENCE_ID = re.compile(r"^evidence_[a-f0-9]{32}$")
 _KNOWLEDGE_KINDS = frozenset({
-    "entity", "relationship", "claim", "event", "project", "commitment", "correction"
+    "entity", "relationship", "claim", "event", "project", "commitment", "member", "correction"
 })
 _LAYERS = (
     "email_messages", "fileos", "email_attachments", "email_documents",

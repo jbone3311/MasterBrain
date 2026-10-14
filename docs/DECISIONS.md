@@ -10,6 +10,17 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-183](adr/183_reviewed_project_members.md) adds reviewed, immutable
+person/organization-to-project role assertions and a bounded, source-grant-safe
+dossier section. Roles never confer access or imply a current roster.
+
+[ADR-182](adr/182_reviewed_project_alias_resolution.md) adds evidence-linked
+project aliases and ambiguous, candidate-only lookup without automatic merging.
+
+[ADR-181](adr/181_morgan_stanley_recipe_parity_baseline.md) and
+[ADR-180](adr/180_ocr_bank_recipe_parity_baseline.md) pin further fictional,
+nonpublishing donor statement recipe baselines; neither is a runtime holding.
+
 [ADR-179](adr/179_reviewed_fastmail_scope_enrollment.md) adds a private
 human-owner-managed check/enroll/disconnect command. It creates only a new,
 already-pinned Fastmail account, or disconnects the exact one while preserving

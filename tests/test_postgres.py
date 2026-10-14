@@ -56,6 +56,7 @@ from masterbrain.datacore.archive_member_text import (
 )
 from masterbrain.datacore.archive_member_worker import process_request as read_archive_member
 from masterbrain.datacore.archive_worker import inventory_archive
+from masterbrain.datacore.contracts import stable_id
 from masterbrain.datacore.extraction import ExtractionResult, ExtractionStatus, FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.fileos_donor_transition import (
@@ -103,6 +104,7 @@ from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
     EntityWrite,
     EventWrite,
+    MemberWrite,
     ProjectDossierRequest,
     ProjectWrite,
     RelationshipWrite,
@@ -3657,6 +3659,43 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         ),
         uuid4(),
     )
+    first_member = knowledge.publish(
+        ctx,
+        MemberWrite(
+            kind="member", project_id=project.object_id,
+            entity_id=concurrent[0].object_id, role="broker",
+            valid_from=datetime(2026, 9, 22, tzinfo=UTC), **common,
+        ),
+        uuid4(),
+    )
+    counsel = knowledge.publish(
+        ctx,
+        MemberWrite(
+            kind="member", project_id=project.object_id,
+            entity_id=acme.object_id, role="counsel", **common,
+        ),
+        uuid4(),
+    )
+    changed_member = knowledge.publish(
+        ctx,
+        MemberWrite(
+            kind="member", project_id=project.object_id,
+            entity_id=concurrent[0].object_id, role="operator",
+            supersedes_id=first_member.object_id,
+            **{**common, "evidence_ids": [current_email.evidence_id]},
+        ),
+        uuid4(),
+    )
+    with pytest.raises(ValueError, match="must keep project and entity"):
+        knowledge.publish(
+            ctx,
+            MemberWrite(
+                kind="member", project_id=project.object_id,
+                entity_id=acme.object_id, role="counsel",
+                supersedes_id=first_member.object_id, **common,
+            ),
+            uuid4(),
+        )
     correction = knowledge.publish(
         ctx,
         CorrectionWrite(
@@ -3684,6 +3723,129 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     assert dossier["project"]["evidence_ids"] == [evidence_id]
     assert [row["object_id"] for row in dossier["events"]] == [event.object_id]
     assert [row["object_id"] for row in dossier["commitments"]] == [commitment.object_id]
+    assert {row["object_id"] for row in dossier["members"]} == {
+        counsel.object_id, changed_member.object_id,
+    }
+    assert {row["role"] for row in dossier["members"]} == {"counsel", "operator"}
+    assert knowledge.get(ctx, "member", changed_member.object_id)["role"] == "operator"
+    fileos_member_view = knowledge.project_dossier(
+        replace(ctx, source_ids=frozenset({"files_knowledge"})),
+        project.object_id, ProjectDossierRequest(),
+    )
+    assert {row["object_id"] for row in fileos_member_view["members"]} == {
+        counsel.object_id, first_member.object_id,
+    }
+    with pytest.raises(NotFound):
+        knowledge.get(
+            replace(ctx, source_ids=frozenset({"files_knowledge"})),
+            "member", changed_member.object_id,
+        )
+    fileos_only_members = knowledge.search(
+        replace(ctx, source_ids=frozenset({"files_knowledge"})),
+        "broker", kinds=["member"], visibility="unsuperseded",
+    )
+    assert [hit.object_id for hit in fileos_only_members] == [first_member.object_id]
+    assert knowledge.search(
+        replace(ctx, source_ids=frozenset({"files_knowledge"})),
+        "operator", kinds=["member"],
+    ) == []
+    email_entity = knowledge.publish(
+        ctx,
+        EntityWrite(
+            kind="entity", entity_type="person", name="Pat Email Only",
+            **{**common, "evidence_ids": [current_email.evidence_id]},
+        ),
+        uuid4(),
+    )
+    linked_hidden = knowledge.publish(
+        ctx,
+        MemberWrite(
+            kind="member", project_id=project.object_id,
+            entity_id=email_entity.object_id, role="lender", **common,
+        ),
+        uuid4(),
+    )
+    assert any(row["object_id"] == linked_hidden.object_id for row in
+               knowledge.project_dossier(ctx, project.object_id,
+                                         ProjectDossierRequest())["members"])
+    assert all(row["object_id"] != linked_hidden.object_id for row in
+               knowledge.project_dossier(
+                   replace(ctx, source_ids=frozenset({"files_knowledge"})),
+                   project.object_id, ProjectDossierRequest(),
+               )["members"])
+    with pytest.raises(NotFound):
+        knowledge.get(
+            replace(ctx, source_ids=frozenset({"files_knowledge"})),
+            "member", linked_hidden.object_id,
+        )
+    assert knowledge.search(
+        replace(ctx, source_ids=frozenset({"files_knowledge"})),
+        "lender", kinds=["member"],
+    ) == []
+    restricted_ctx = replace(ctx, source_ids=frozenset({"files_knowledge"}))
+    hidden_change = stable_id("kchange", "member", linked_hidden.object_id)
+    with pytest.raises(NotFound):
+        knowledge.changes(restricted_ctx, after=hidden_change)
+    assert all(row["object_id"] != linked_hidden.object_id for row in
+               knowledge.changes(restricted_ctx, limit=50)["results"])
+    member_correction = knowledge.publish(
+        ctx,
+        CorrectionWrite(
+            kind="correction", target_kind="member",
+            target_id=first_member.object_id,
+            replacement_id=changed_member.object_id,
+            reason="Reviewed role change for fictional Alex.",
+            evidence_ids=[evidence_id], source_quote=common["source_quote"],
+            observed_at=common["observed_at"], reviewed=True,
+        ),
+        uuid4(),
+    )
+    assert knowledge.get(ctx, "correction", member_correction.object_id)["target_kind"] == (
+        "member"
+    )
+    with pytest.raises(NotFound):
+        knowledge.get(restricted_ctx, "correction", member_correction.object_id)
+    assert knowledge.search(
+        restricted_ctx, "fictional role change", kinds=["correction"],
+    ) == []
+    artifact_entity = knowledge.publish(
+        ctx,
+        EntityWrite(
+            kind="entity", entity_type="artifact", name="Not a person",
+            **common,
+        ),
+        uuid4(),
+    )
+    with pytest.raises(ValueError, match="person or organization"):
+        knowledge.publish(
+            ctx,
+            MemberWrite(
+                kind="member", project_id=project.object_id,
+                entity_id=artifact_entity.object_id, role="broker", **common,
+            ),
+            uuid4(),
+        )
+    with store.transaction(ctx) as conn:
+        with pytest.raises(psycopg.Error):
+            with conn.transaction():
+                conn.execute(
+                    "INSERT INTO knowledge_project_members(tenant_id,id,project_id,"
+                    "entity_id,role,assertion_status,confidence,source_quote,"
+                    "observed_at,reviewer_id) VALUES (%s,%s,%s,%s,'broker','asserted',"
+                    "0.9,%s,%s,%s)",
+                    (ctx.tenant_id, stable_id("member", str(uuid4())),
+                     project.object_id, artifact_entity.object_id,
+                     common["source_quote"], common["observed_at"], ctx.actor_id),
+                )
+        with pytest.raises(psycopg.Error):
+            with conn.transaction():
+                conn.execute(
+                    "UPDATE knowledge_project_members SET role='operator' WHERE id=%s",
+                    (counsel.object_id,),
+                )
+        with pytest.raises(psycopg.Error):
+            with conn.transaction():
+                conn.execute("TRUNCATE knowledge_project_members")
     assert dossier["coverage"]["undated_links"] == "included"
     assert dossier["coverage"]["source_freshness"] == "not_asserted"
     assert dossier["untrusted_content"] is True

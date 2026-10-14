@@ -2,7 +2,7 @@
 
 KnowledgeCore is MasterBrain's reviewed, evidence-linked interpretation layer. The
 first runtime slice is additive and append-only: it publishes entities, aliases,
-relationships, claims, projects, events, commitments and corrections over immutable
+relationships, claims, projects, events, commitments, project members and corrections over immutable
 DataCore evidence. It does not call a model, infer facts automatically, or alter an
 Email or FileOS source.
 
@@ -26,6 +26,12 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
   never auto-merges a shared name; retained review-chain versions can coexist.
 - Events preserve event time; commitments preserve state, due time, owners,
   counterparties and project links.
+- ADR-183 adds human-reviewed, evidence-backed person/organization roles on an
+  exact project assertion. Valid-time intervals, disputed/retracted status,
+  supersession and correction preserve history. Role slugs are bounded but the
+  later registry is not yet enforced; a role never confers access. The project
+  dossier returns a separately limited member list. Source-scoped reads require
+  the member and both linked assertions to be visible before limit or cursor.
 - Corrections link an old assertion to a replacement without updating or deleting
   either assertion. Conflicting claims can coexist and are returned independently.
 - All knowledge and evidence-link tables use forced PostgreSQL row-level security,
@@ -71,7 +77,8 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
 | `GET /v1/knowledge/timeline` | `knowledge.search` | Bounded occurrence-window event page, recorded-time cutoff/cursor, direct evidence IDs; ADR-160 candidate |
 | `GET /v1/knowledge/commitments-due` | `knowledge.search` | Bounded due-window commitment page, recorded-time cutoff/cursor, direct evidence IDs; ADR-161 |
 | `GET /v1/knowledge/{kind}/{id}` | `knowledge.read` | One tenant-scoped assertion and its evidence links |
-| `GET /v1/knowledge/changes` | `knowledge.changes.read` | Bounded chronological change page |
+| `GET /v1/knowledge/changes` | `knowledge.changes.read` | Bounded chronological change page, with member linked-source filtering |
+| `GET /v1/knowledge/projects/{project_id}/dossier` | `knowledge.search` | Independently bounded reviewed events, commitments and members; no current-roster claim |
 | `GET /v1/knowledge/projects/resolve` | `knowledge.search` | Bounded, source-scoped reviewed candidates for an exact normalized alias; ambiguous names are not merged |
 
 Returned titles, excerpts, values and source quotes are untrusted source-derived
@@ -80,7 +87,7 @@ granted to assistant/service credentials by the bootstrap registry.
 
 ## Verification boundary
 
-The PostgreSQL integration suite exercises all seven assertion types, concurrent
+The PostgreSQL integration suite exercises the reviewed assertion types, concurrent
 idempotent publication, replay conflicts, temporal supersession, contradictory
 claims, correction history, API publication/retrieval, RLS isolation and immutable
 row enforcement. The synthetic restore drill seeds two tenants with evidence-backed
@@ -99,8 +106,8 @@ For file-based Librarian exchange, [ADR-169](adr/169_code_first_librarian_intero
 requires deterministic parsing and proposal-only import before any reviewed
 publication. The [twelve-gap review](LIBRARIAN_INTEROP.md) separates already
 implemented FileOS CSV/XLSX and Email attachment occurrence evidence from the
-missing table locators, project roles, inference basis, proposal queue and
-Markdown export. ADR-182 implements the reviewed project-alias portion only;
+missing table locators, inference basis, proposal queue and Markdown export.
+ADR-182/183 implement aliases and reviewed role assertions;
 the other proposed behaviors remain outside runtime. Human review and source-
 grant checks remain mandatory.
 

@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add reviewed, immutable person/organization roles on exact projects
+  (ADR-183), with valid-time/supersession history, transitive source-grant
+  filtering, and bounded dossier/client/browser views. Roles are not access
+  permissions or a computed current roster; no live source was used.
+
 - Add evidence-linked, human-reviewed project aliases and a bounded,
   source-scoped candidate lookup for multiple names of one deal (ADR-182).
   Ambiguous names never auto-merge; existing projects retain exact-title

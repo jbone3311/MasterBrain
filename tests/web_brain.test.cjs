@@ -46,7 +46,9 @@ const PROJECT_ID = "project_" + "a".repeat(32);
 const EVIDENCE_ID = "evidence_" + "b".repeat(32);
 const EVENT_ID = "event_" + "c".repeat(32);
 const COMMITMENT_ID = "commitment_" + "d".repeat(32);
-const DOSSIER_PATH = `/v1/knowledge/projects/${PROJECT_ID}/dossier?event_limit=5&commitment_limit=5`;
+const MEMBER_ID = "member_" + "e".repeat(32);
+const ENTITY_ID = "entity_" + "f".repeat(32);
+const DOSSIER_PATH = `/v1/knowledge/projects/${PROJECT_ID}/dossier?event_limit=5&commitment_limit=5&member_limit=5`;
 const SCHEDULE_START = "2026-10-01";
 const SCHEDULE_END = "2026-10-08";
 const scheduleQuery = `start=2026-10-01T00%3A00%3A00Z&end=2026-10-08T00%3A00%3A00Z&visibility=unsuperseded&limit=10`;
@@ -91,9 +93,13 @@ function dossierData() {
       project_id: PROJECT_ID, summary: "Send <img> package", summary_truncated: false,
       state: "open", due_at: null, owner_entity_id: null, counterparty_entity_id: null,
       recorded_at: "2026-10-04T00:00:00Z", evidence_ids: [EVIDENCE_ID]}],
+    members: [{object_kind: "member", object_id: MEMBER_ID, project_id: PROJECT_ID,
+      entity_id: ENTITY_ID, entity_name: "Pat <Example>", entity_type: "person",
+      role: "broker", assertion_status: "asserted", valid_from: null, valid_to: null,
+      recorded_at: "2026-10-04T00:00:00Z", evidence_ids: [EVIDENCE_ID]}],
     recorded_cutoff_at: "2026-10-05T00:00:00Z", visibility: "unsuperseded",
-    event_limit: 5, commitment_limit: 5, events_truncated: false,
-    commitments_truncated: false, untrusted_content: true,
+    event_limit: 5, commitment_limit: 5, member_limit: 5, events_truncated: false,
+    commitments_truncated: false, members_truncated: false, untrusted_content: true,
     coverage: {order: "recorded_at_descending", undated_links: "included",
       source_freshness: "not_asserted", interpretation: "reviewed_assertions_not_current_state"},
   };
@@ -344,6 +350,8 @@ test("explicit project drill-down uses the scoped read route and renders bounded
   assert.match(rendered, /<img src=x onerror=alert\(1\)>/);
   assert.match(rendered, /Undated <script>event<\/script>/);
   assert.match(rendered, /Send <img> package/);
+  assert.match(rendered, /Pat <Example>/);
+  assert.match(rendered, /Reviewed role · broker · asserted/);
   assert.match(rendered, /Source freshness and current project truth are not established/);
   assert.ok(walk(h.elements.turns).filter(item => item.textContent === "Open evidence").length >= 4);
   assert.equal(h.calls.some(call => /proposals|move|rename|delete/.test(call.url)), false);
@@ -381,6 +389,10 @@ test("project drill-down refuses mismatched data and hidden project responses", 
       events: [{...dossierData().events[0], recorded_at: "2026-10-06T00:00:00Z"}]})},
     {ok: true, status: 200, json: async () => ({...dossierData(),
       project: {...dossierData().project, evidence_ids: ["evidence_bad"]}})},
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      members: [{...dossierData().members[0], entity_id: "entity_bad"}]})},
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      members: [{...dossierData().members[0], role: "admin permission"}]})},
     {ok: false, status: 404},
   ]) {
     const h = harness(async url => url === DOSSIER_PATH ? reply :
@@ -605,6 +617,24 @@ test("Ask keeps reviewed knowledge distinct and renders it as inert text", async
   assert.ok(h.calls.some(call => call.url === `/v1/brain/evidence/${evidenceId}`));
   h.elements["clear-session"].events.click();
   assert.doesNotMatch(walk(h.elements.turns).map(item => item.textContent).join("\n"), /inert/);
+});
+
+test("Ask accepts a reviewed role match without treating it as a permission", async () => {
+  const h = harness(async url => ({ok: true, status: 200, json: async () =>
+    url === "/v1/brain/answers" ? {
+      mode: "grounded_extractive_v1", status: "no_supported_evidence",
+      answer: "No exact source quote was selected.", citations: [],
+      reviewed_knowledge: [{object_kind: "member", object_id: MEMBER_ID,
+        title: "broker", excerpt: "Pat <Example> is the reviewed broker.",
+        evidence_ids: [EVIDENCE_ID], linked_evidence_count: 1}],
+      coverage: {complete: false}, untrusted_content: true,
+    } : {id: EVIDENCE_ID}}));
+  h.enterToken("owner-token");
+  await h.ask("Who brokers the project?");
+  const rendered = walk(h.elements.turns).map(item => item.textContent).join("\n");
+  assert.match(rendered, /Pat <Example> is the reviewed broker/);
+  assert.match(rendered, /interpretations, not exact source quotes/);
+  assert.equal(h.calls.length, 1);
 });
 
 test("malformed reviewed knowledge is rejected without search fallback", async () => {

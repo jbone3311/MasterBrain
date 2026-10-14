@@ -2,6 +2,25 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed project members — ADR-183 (branch candidate)
+
+Local Python 3.14/PostgreSQL 17.11 disposable full suite passed 3,312 tests,
+six skips; 537 of 538 PostgreSQL-marked tests executed (one platform-local
+skip). That run included the new person/organization roles, supersession,
+source-grant-safe dossier/search/exact/change reads, direct-SQL guards and
+protected-table counts. A first run used a Unix socket rejected by the
+cross-source harness, and a second found stale protected-table test counts;
+both were corrected. The fictional local trial initially hit Mac shared-memory
+exhaustion; after the owner's previously approved, exact orphan cleanup it
+passed. No test fixture read live mail or a real FileOS root.
+
+After the full suite, focused Answer/client/schema tests passed 128/128 and the
+first-party browser suite passed 30/30, covering the new member kind in
+reviewed matches. Ruff, mypy (102 source files), structural deployment gate,
+documentation validation and diff checks passed. Exact-branch CI, strict-runtime
+and populated-restore gates remain pending; this section does **not** claim a
+merge or release. The pinned FOS-Master donor was not edited.
+
 ## Reviewed project-alias candidate lookup — ADR-182
 
 [PR #203](https://github.com/jbone3311/MasterBrain/pull/203) final head

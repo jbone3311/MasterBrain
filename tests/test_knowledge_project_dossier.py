@@ -60,16 +60,18 @@ def test_project_dossier_sql_checks_grants_and_cutoff_before_both_limits() -> No
     events.fetchall.return_value = []
     commitments = MagicMock()
     commitments.fetchall.return_value = []
+    members = MagicMock()
+    members.fetchall.return_value = []
     evidence = MagicMock()
     evidence.fetchall.return_value = []
-    conn.execute.side_effect = [clock, project, events, commitments, evidence]
+    conn.execute.side_effect = [clock, project, events, commitments, members, evidence]
     ctx = TenantContext(uuid4(), uuid4(), frozenset({"knowledge.search"}), uuid4())
     result = KnowledgeCore(store).project_dossier(
         ctx, PROJECT, ProjectDossierRequest(event_limit=2, commitment_limit=3),
     )
     assert result["project"]["object_id"] == PROJECT
-    assert result["events"] == result["commitments"] == []
-    for call in conn.execute.call_args_list[1:4]:
+    assert result["events"] == result["commitments"] == result["members"] == []
+    for call in conn.execute.call_args_list[1:5]:
         query, params = call.args
         assert query.count("%s") == len(params)
         assert "recorded_at<=allowed.cutoff" in query
@@ -85,6 +87,11 @@ def test_project_dossier_sql_checks_grants_and_cutoff_before_both_limits() -> No
     assert "NOT EXISTS (SELECT 1 FROM knowledge_commitments s" in due_sql
     assert "v.source_id<>ALL(allowed.sources)" in due_sql
     assert due_params[-1] == 4
+    member_sql, member_params = conn.execute.call_args_list[4].args
+    assert "km.project_id=%s" in member_sql
+    assert "ORDER BY km.recorded_at DESC,km.id DESC LIMIT %s" in member_sql
+    assert "knowledge_entities ke_ref" in member_sql
+    assert member_params[-1] == 11
     store.audit.assert_called_once_with(
         conn, ctx, "knowledge.project_dossier_read", "project",
     )

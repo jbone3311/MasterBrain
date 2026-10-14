@@ -149,16 +149,24 @@ key. New project rows bind the complete alias set with a SHA-256 manifest;
 deferred checks reject appended or unrelated-evidence aliases. Existing project
 rows are not rewritten and keep exact-title fallback. A name may map to more
 than one reviewed project candidate; neither uniqueness nor truth is inferred.
+Migration `0060_reviewed_project_members.sql` adds immutable, tenant-fenced
+person/organization-to-project `knowledge_project_members` role assertions.
+Each has a bounded role slug, status, optional valid interval, direct evidence,
+reviewer and same-kind supersession. The role is never an access grant. The
+member kind is admitted to evidence, search and correction checks. Exact-project
+dossiers include independently bounded members; source-scoped reads require
+visibility of the member and both linked assertions. This is not a computed
+current roster or a strict role registry, and historical rows are unchanged.
 
 The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
 [ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions,
 not existing columns or routes: private import proposals, derivation/basis links,
-reviewed project memberships, typed monetary units and uncertain due
+typed monetary units and uncertain due
 windows, project-artifact associations and a compatible fact-name registry.
 New basis links must preserve transitive source grants. Existing Email attachment
 occurrences remain distinct even when their content hashes match. No migration
 for these other proposed KnowledgeCore additions has landed; project aliases
-are the separate ADR-182 exception.
+and reviewed members are the separate ADR-182/183 exceptions.
 
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is

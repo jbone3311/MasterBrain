@@ -148,11 +148,12 @@ source effects or an alternate route through KnowledgeCore.
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required
   append with a UUID idempotency key.
 - `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
-  relationship, claim, event, project, commitment and correction records.
+  relationship, claim, event, project, commitment, member and correction records.
   ADR-158 adds an optional `visibility` of `retained` (default) or
   `unsuperseded`. The latter excludes correction records and review-chain
-  predecessors before rank/limit, considering only successors/corrections and
-  replacements whose direct evidence is fully source-authorized to the caller.
+  predecessors before rank/limit, considering only source-authorized successors,
+  corrections and replacements. Members also require grants to their linked
+  project and entity assertions.
   It is not a real-world-current or valid-time guarantee. ADR-159 later
   selects this mode only in grouped Brain current-search and Ask; direct
   search still defaults to retained history.
@@ -189,8 +190,9 @@ source effects or an alternate route through KnowledgeCore.
   10-item pages. Next-page requests carry the returned cutoff and cursor;
   they do not establish a durable snapshot, current truth or new API grant.
 - `GET /v1/knowledge/projects/{project_id}/dossier` — ADR-162 compact,
-  read-only context for one reviewed project assertion and its linked events
-  and commitments. Requires `knowledge.search`; each list has an independent
+  read-only context for one reviewed project assertion and its linked events,
+  commitments and ADR-183 reviewed members/roles. Requires `knowledge.search`;
+  each list has an independent
   1–25 limit (default 10), a truncation flag and direct evidence IDs. An
   optional aware recorded-time cutoff and `unsuperseded` (default) or
   `retained` visibility apply to both lists; the project is always the exact
@@ -198,7 +200,9 @@ source effects or an alternate route through KnowledgeCore.
   Results are ordered by recording
   time, not occurrence/due time; undated links are included. Assistants must
   have grants to the project, every returned assertion and every referenced
-  commitment owner/counterparty. A hidden, missing or cutoff-invisible project
+  commitment owner/counterparty, and every member's linked project and entity.
+  Roles are descriptive assertions, never permission grants. A hidden, missing
+  or cutoff-invisible project
   returns not found. This is reviewed context, not a project-state reducer,
   source-freshness claim or durable cross-request snapshot.
   `BrainReadClient.project_dossier` validates the bounded response.

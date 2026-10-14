@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-183 adds evidence-backed, reviewed person/organization roles on a project,
+with immutable history, source-grant-safe exact/project-dossier/search/change
+reads and separately bounded members in the reference client and first-party
+workspace. This is a synthetic implementation tranche, not a current roster,
+access-control role, automatic Librarian import, or live-source acceptance.
+Its branch verification and merge status are recorded in the build receipt.
+
 ADR-182 adds reviewed, evidence-linked project aliases, a candidate-only
 source-scoped lookup API and provider-neutral client method. A shared address
 returns multiple candidates rather than merging deals. The append-only SQL

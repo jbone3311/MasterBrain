@@ -19,6 +19,9 @@ can search current evidence, show exact source quotes, and drill down to the
 original; reviewed events, due commitments and project dossiers are separate
 read-only views. Reviewed project aliases can return multiple source-scoped
 deal candidates; they do not merge projects or select a current truth. The
+reviewed project dossier also shows bounded, evidence-linked people and
+organizations with roles; these are historical assertions, not a current
+roster or access permissions. The
 pinned FOS-Master donor remains untouched and its FileOS
 shadow comparison is nonpublishing.
 
@@ -82,7 +85,8 @@ FileOS sources ┘       │              │                │
   extraction, OCR orchestration, normalization, metadata, provenance, chunking,
   indexing, and common database primitives.
 - **KnowledgeCore:** evidence-backed entities, relationships, facts/claims, events,
-  timelines, projects, commitments, corrections, and unified retrieval.
+  timelines, projects, reviewed members/roles, commitments, corrections, and
+  unified retrieval.
 - **Brain API:** one scoped service for the first-party read-only workspace and
   future authorized external assistants; compact summaries first, explicit
   expansion second, original evidence last. Reviewed effects are a later,

@@ -163,6 +163,7 @@
   const entityId = value => typeof value === "string" && /^entity_[a-f0-9]{32}$/.test(value);
   const eventId = value => typeof value === "string" && /^event_[a-f0-9]{32}$/.test(value);
   const commitmentId = value => typeof value === "string" && /^commitment_[a-f0-9]{32}$/.test(value);
+  const memberId = value => typeof value === "string" && /^member_[a-f0-9]{32}$/.test(value);
   const safeText = (value, min, max) => typeof value === "string" &&
     value.length <= max * 2 && Array.from(value).length >= min &&
     Array.from(value).length <= max && !value.includes("\0") && (() => {
@@ -178,12 +179,15 @@
   function validDossier(data, id) {
     if (!record(data) || !record(data.project) || !record(data.coverage) ||
         data.untrusted_content !== true || data.visibility !== "unsuperseded" ||
-        data.event_limit !== 5 || data.commitment_limit !== 5 ||
+        data.event_limit !== 5 || data.commitment_limit !== 5 || data.member_limit !== 5 ||
         typeof data.events_truncated !== "boolean" || typeof data.commitments_truncated !== "boolean" ||
+        typeof data.members_truncated !== "boolean" ||
         !awareTime(data.recorded_cutoff_at) || !Array.isArray(data.events) ||
-        !Array.isArray(data.commitments) || data.events.length > 5 || data.commitments.length > 5 ||
+        !Array.isArray(data.commitments) || !Array.isArray(data.members) ||
+        data.events.length > 5 || data.commitments.length > 5 || data.members.length > 5 ||
         (data.events_truncated && data.events.length !== 5) ||
         (data.commitments_truncated && data.commitments.length !== 5) ||
+        (data.members_truncated && data.members.length !== 5) ||
         data.coverage.order !== "recorded_at_descending" ||
         data.coverage.undated_links !== "included" ||
         data.coverage.source_freshness !== "not_asserted" ||
@@ -205,6 +209,13 @@
         (row.starts_at === null || awareTime(row.starts_at)) &&
         (row.ends_at === null || (awareTime(row.ends_at) && awareTime(row.starts_at) &&
           Date.parse(row.ends_at) > Date.parse(row.starts_at)));
+      if (kind === "member") return memberId(row.object_id) && entityId(row.entity_id) &&
+        safeText(row.entity_name, 1, 300) && ["person", "organization"].includes(row.entity_type) &&
+        typeof row.role === "string" && /^[a-z][a-z0-9_.-]{0,99}$/.test(row.role) &&
+        ["asserted", "disputed", "retracted"].includes(row.assertion_status) &&
+        (row.valid_from === null || awareTime(row.valid_from)) &&
+        (row.valid_to === null || (awareTime(row.valid_from) && awareTime(row.valid_to) &&
+          Date.parse(row.valid_to) > Date.parse(row.valid_from)));
       return commitmentId(row.object_id) && safeText(row.summary, 1, 300) &&
         typeof row.summary_truncated === "boolean" &&
         ["proposed", "open", "completed", "cancelled", "overdue", "unknown"].includes(row.state) &&
@@ -212,7 +223,7 @@
         (row.owner_entity_id === null || entityId(row.owner_entity_id)) &&
         (row.counterparty_entity_id === null || entityId(row.counterparty_entity_id));
     };
-    for (const [rows, kind] of [[data.events, "event"], [data.commitments, "commitment"]]) {
+    for (const [rows, kind] of [[data.events, "event"], [data.commitments, "commitment"], [data.members, "member"]]) {
       if (!rows.every(row => validRow(row, kind)) ||
           new Set(rows.map(row => row.object_id)).size !== rows.length ||
           rows.some((row, index) => index > 0 &&
@@ -228,7 +239,7 @@
     target.replaceChildren();
     node("p", "Opening separately authorized reviewed project…", target);
     try {
-      const data = await api(`/v1/knowledge/projects/${id}/dossier?event_limit=5&commitment_limit=5`, undefined, token);
+      const data = await api(`/v1/knowledge/projects/${id}/dossier?event_limit=5&commitment_limit=5&member_limit=5`, undefined, token);
       if (epoch !== capturedEpoch || tokenField.value !== token) return;
       if (!validDossier(data, id)) throw new Error("Project response could not be verified.");
       target.replaceChildren();
@@ -240,16 +251,20 @@
       for (const [name, rows, truncated] of [
         ["Reviewed events", data.events, data.events_truncated],
         ["Reviewed commitments", data.commitments, data.commitments_truncated],
+        ["Reviewed people and organizations", data.members, data.members_truncated],
       ]) {
         const group = node("div", "", target, "project-group");
         node("h5", `${name} · ${rows.length}${truncated ? "+" : ""}`, group);
         if (!rows.length) node("p", "No linked reviewed records in this bounded view.", group);
         for (const row of rows) {
           const card = node("article", "", group, "hit");
-          node("p", row.object_kind === "event" ? row.title : row.summary, card);
+          node("p", row.object_kind === "event" ? row.title :
+            row.object_kind === "member" ? row.entity_name : row.summary, card);
           node("p", row.object_kind === "event" ?
             `Reviewed event · ${row.starts_at || "undated"}` :
-            `Reviewed commitment · ${row.state} · ${row.due_at || "undated"}`, card, "locator");
+            row.object_kind === "member" ?
+              `Reviewed role · ${row.role} · ${row.assertion_status}` :
+              `Reviewed commitment · ${row.state} · ${row.due_at || "undated"}`, card, "locator");
           for (const source of row.evidence_ids) addEvidenceButton(card, capturedEpoch, token, source);
         }
       }
@@ -451,7 +466,7 @@
       }
     }
     for (const hit of reviewed) {
-      if (!hit || !["entity", "relationship", "claim", "event", "project", "commitment", "correction"].includes(hit.object_kind) ||
+      if (!hit || !["entity", "relationship", "claim", "event", "project", "commitment", "member", "correction"].includes(hit.object_kind) ||
           typeof hit.object_id !== "string" || !new RegExp(`^${hit.object_kind}_[a-f0-9]{32}$`).test(hit.object_id) ||
           typeof hit.title !== "string" || !hit.title.length || !validUnicode(hit.title) || Array.from(hit.title).length > 300 || hit.title.includes("\0") ||
           typeof hit.excerpt !== "string" || !hit.excerpt.length || !validUnicode(hit.excerpt) || Array.from(hit.excerpt).length > 1200 || hit.excerpt.includes("\0") ||
