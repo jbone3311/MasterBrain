@@ -2,6 +2,25 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Private FileOS statement replay receipt — ADR-189
+
+The branch `codex/statement-fileos-replay-receipt` adds a synthetic-only,
+private worker library and migration 0064. Its disposable local Python
+3.14/PostgreSQL 17.11 full suite passed 3,369 tests with six skips; 550 of
+551 PostgreSQL-marked cases executed (one platform-local skip). The focused
+statement replay cases passed 5/5, migration/protected-table/restore cases
+40/40, and six browser suites 165/165. Ruff, mypy (105 source files), docs
+links, structural gate and diff check passed. No FOS-Master file, real mail,
+personal FileOS root or source effect was touched. This is branch-local
+evidence; exact-head and merged-main hosted gates are not yet claimed.
+
+The receipt proves only that a worker observed a bounded exact byte replay
+for a current fictional FileOS text source. The owner preview still labels
+every row `proposed_extraction`; no review, investment truth, separate worker
+attestation against compromised runtime SQL, PDF/OCR/Email proof or donor
+cutover follows. [Issue #217](https://github.com/jbone3311/MasterBrain/issues/217)
+remains open for the complete source-to-reviewed-financial gate.
+
 ## Narrow statement source-text derivation primitive — ADR-188
 
 [PR #216](https://github.com/jbone3311/MasterBrain/pull/216) final head

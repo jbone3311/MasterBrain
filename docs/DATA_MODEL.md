@@ -85,6 +85,16 @@ explicit, not inferred from filename.
 
 ## KnowledgeCore
 
+Migration `0064_private_statement_fileos_replay.sql` adds one append-only
+`knowledge_statement_fileos_replays` row per proposal. Its tenant-composite
+links and SQL basis guard bind the existing proposal/document/evidence/current
+FileOS version, exact source/text digests, source size, text normalizer and
+physical-root digest. Forced RLS, tenant-login fencing, immutable-row and
+protected-TRUNCATE controls apply. The row is a private worker-observed replay
+receipt, not a reviewed holding, cryptographic attestation against a compromised
+runtime SQL login, or a general PDF/OCR/Email derivation record. The owner
+statement preview does not consume it yet.
+
 Migration `0063_private_knowledge_proposal_batches.sql` adds ADR-186's
 `knowledge_proposal_batches`, ordered `knowledge_proposals`, per-proposal
 `knowledge_proposal_evidence`, immutable `knowledge_proposal_decisions`, and

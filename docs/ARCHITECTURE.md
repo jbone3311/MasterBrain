@@ -48,6 +48,13 @@ ADR-100 strengthens the source side of this boundary: snapshot and text/document
 reads open every path component beneath the authorized root with no-follow
 descriptors, then recheck the same locator after bounded reading. A pathname
 precheck is not the authority to open bytes.
+ADR-189 reuses that boundary for one private statement replay receipt: it
+selects a current FileOS proposal, reads bounded source bytes outside the
+database transaction, rechecks the complete current basis in a second
+transaction, and records only the exact text-transform digests and identity.
+It neither equips Brain API with filesystem authority nor marks the proposal
+as a verified investment. A separate worker-login attestation boundary and
+non-text transform proofs remain required.
 
 The first operator boundary is a one-shot authenticated publisher, separate from the
 Brain API. It binds a private config to one root/source/snapshot, requires exact worker

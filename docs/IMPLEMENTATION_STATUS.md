@@ -1,12 +1,21 @@
 # MasterBrain Implementation Status
 
+ADR-189 adds a synthetic-only private worker library that reacquires exact
+current FileOS bytes through the no-follow DataCore reader, reruns ADR-188's
+bounded text transform and records an immutable, tenant-fenced replay receipt
+for one existing statement proposal. It double-checks the source/version/root
+basis around the read; direct SQL can only insert a row matching stored basis,
+not prove the worker ran. The public owner preview and reviewed KnowledgeCore
+remain unchanged: there is no user-facing verified holding or live-source
+acceptance. PDF/Office/OCR/Email proof, a separate worker-login attestation
+boundary and explicit financial review/publication are still open.
+
 ADR-188 adds a synthetic-only pure byte-to-text replay check for the exact
 `fileos-text-v1` transform. It rejects a source digest paired with unrelated
-normalized text and leaves a digest-only proof value; it is not yet wired to
-statement proposals or the owner preview. PDF/Office/OCR, Email attachments,
-authorized source reacquisition, durable proof binding, and reviewed financial
-publication remain open. The existing statement preview is **not** verified
-source-byte derivation or investment truth.
+normalized text and leaves a digest-only proof value; ADR-189 now uses it in
+the private FileOS receipt path, but not the owner preview. PDF/Office/OCR,
+Email attachments, robust worker attestation and reviewed financial publication
+remain open. The existing statement preview is **not** verified investment truth.
 
 ADR-187 adds a fifth isolated, exact-hash donor statement recipe baseline for
 Jefferies. Fictional category holdings, lower-confidence security details and

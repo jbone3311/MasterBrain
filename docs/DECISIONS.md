@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-189](adr/189_private_fileos_statement_replay_receipt.md) adds a private,
+source-reacquired FileOS text replay receipt bound to one current statement
+proposal. It grants no public verified-investment status, Email/PDF/OCR proof,
+live source or donor cutover.
+
 [ADR-188](adr/188_statement_source_text_derivation_contract.md) adds a pure,
 synthetic-only exact-byte replay for bounded FileOS text transforms. It is not
 yet connected to statement proposals and does not prove PDF/OCR/Email source

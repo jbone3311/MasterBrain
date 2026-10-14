@@ -45,6 +45,15 @@ scope. A proposed row is untrusted and cannot authorize its own publication;
 the reviewer must make every decision explicitly. This is synthetic-only and
 does not establish a safe Markdown parser or source-byte derivation proof.
 
+ADR-189 adds a separate, synthetic-only FileOS statement replay boundary. A
+worker, never a public API reader, selects one current proposal under tenant
+and source grants, then uses the no-follow bounded FileOS reader and ADR-188's
+exact text transform. It rechecks source version and root before sealing an
+append-only receipt, and never stores raw bytes or paths in that receipt.
+The general runtime SQL login could still forge a same-basis receipt if
+compromised; issue #7 and a dedicated worker attestation/login boundary remain
+open. Consequently no public verified-source or investment claim is exposed.
+
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their
