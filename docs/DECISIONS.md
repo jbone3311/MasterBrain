@@ -10,10 +10,16 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-177](adr/177_fastmail_account_scope_lease_fence.md) pins an exact
+Fastmail mailbox/date fingerprint on an unused account and fences worker leases
+and cursors in PostgreSQL. The old account-wide operator refuses a pinned
+account at preflight. This is synthetic/disposable proof only; scoped operator
+configuration, owner enrollment and live approval remain separate gates.
+
 [ADR-176](adr/176_scoped_fastmail_inventory_worker.md) adds a synthetic-only
 version-4 scoped inventory worker that never uses account-wide changes and
-rechecks metadata before bytes. The account/lease SQL fence and operator
-configuration are still missing; live scoped reads remain unauthorized.
+rechecks metadata before bytes. ADR-177 adds its SQL fence; operator
+configuration is still missing and live scoped reads remain unauthorized.
 
 [ADR-175](adr/175_scoped_fastmail_query_boundary.md) adds a synthetic-only,
 typed mailbox/date `Email/query` filter and independent metadata check. The

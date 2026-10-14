@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID, uuid4
 
+from email_brain.connectors.jmap import ScopedMailWindow
 from email_brain.domain.models import TenantContext
 from email_brain.store import Conflict, InventoryError, NotFound, Store
 
@@ -64,7 +65,9 @@ class SyncStore:
     def retained_raw(self, ctx: TenantContext, account_id: UUID, sha: str) -> bytes:
         return self.store.retained_raw_for_ingest(ctx, account_id, sha)
 
-    def acquire(self, ctx: TenantContext, account_id: UUID) -> Lease | None:
+    def acquire(
+        self, ctx: TenantContext, account_id: UUID, *, scope: ScopedMailWindow | None = None
+    ) -> Lease | None:
         self.store.require(ctx, "email.ingest")
         with self.store.transaction(ctx) as conn:
             conn.execute(
@@ -72,24 +75,32 @@ class SyncStore:
                 (f"{ctx.tenant_id}:{account_id}",),
             )
             account = conn.execute(
-                "SELECT provider_account_id FROM mail_accounts WHERE id=%s "
+                "SELECT provider_account_id,read_scope_sha256 FROM mail_accounts WHERE id=%s "
                 "AND provider='fastmail' AND status='active'",
                 (account_id,),
             ).fetchone()
             if not account or not account["provider_account_id"]:
                 raise NotFound("active enrolled account required")
+            scope_sha256 = scope.fingerprint() if scope is not None else None
+            if account["read_scope_sha256"] != scope_sha256:
+                raise InventoryError("worker scope does not match enrolled account")
             conn.execute(
-                "INSERT INTO sync_workers(tenant_id,account_id) VALUES (%s,%s) "
+                "INSERT INTO sync_workers(tenant_id,account_id,read_scope_sha256) "
+                "VALUES (%s,%s,%s) "
                 "ON CONFLICT DO NOTHING",
-                (ctx.tenant_id, account_id),
+                (ctx.tenant_id, account_id, scope_sha256),
             )
             token = uuid4()
             worker = conn.execute(
                 "UPDATE sync_workers SET lease_token=%s,provider_account_id=%s,"
+                "read_scope_sha256=%s,scope_claim_token=%s,"
                 "lease_until=clock_timestamp()+make_interval(secs=>%s),updated_at=now() "
                 "WHERE account_id=%s AND NOT paused AND lease_until<=clock_timestamp() "
                 "AND next_attempt_at<=clock_timestamp() RETURNING failures",
-                (token, account["provider_account_id"], LEASE_SECONDS, account_id),
+                (
+                    token, account["provider_account_id"], scope_sha256,
+                    token if scope is not None else None, LEASE_SECONDS, account_id,
+                ),
             ).fetchone()
             if not worker:
                 return None
@@ -132,7 +143,8 @@ class SyncStore:
         paused = outcome in {"auth_required", "protocol_error", "parse_error", "resync_required"}
         with self.store.transaction(ctx) as conn:
             row = conn.execute(
-                "UPDATE sync_workers SET lease_token=NULL,lease_until=clock_timestamp(),"
+                "UPDATE sync_workers SET lease_token=NULL,scope_claim_token=NULL,"
+                "lease_until=clock_timestamp(),"
                 "next_attempt_at=clock_timestamp()+make_interval(secs=>%s),"
                 "failures=CASE WHEN %s THEN least(failures+1,1000) ELSE 0 END,"
                 "paused=%s,last_outcome=%s,updated_at=now() WHERE account_id=%s "

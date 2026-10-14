@@ -38,6 +38,13 @@ implemented remain logical targets.
 
 ## Source and evidence
 
+Migration 0058 adds `mail_accounts.read_scope_sha256` for an administrator-
+pinned canonical Fastmail mailbox/date window on a previously unused account.
+`sync_workers.read_scope_sha256` and `scope_claim_token` bind a fresh scoped
+lease to that pin; the Email cursor must carry version 4 and the same digest.
+Database triggers reject drift or unscoped worker takeover. The window itself
+is not stored here, and no live enrollment workflow is implemented.
+
 - **source**: kind (`email`, `fileos`, future), provider, account/root, configuration.
 - **source_item**: stable logical item ID and source-native ID/path; current observation.
 - **source_version**: immutable observed version, source cursor/revision, timestamps.

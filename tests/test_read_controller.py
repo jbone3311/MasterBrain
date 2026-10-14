@@ -42,6 +42,7 @@ def configured(tmp_path, monkeypatch):
     conn.execute.return_value.fetchone.return_value = {
         "provider_account_id": "provider-a",
         "secret_ref": "synthetic:none",
+        "read_scope_sha256": None,
         "paused": False,
     }
     monkeypatch.setattr(control, "Store", Mock(return_value=store))

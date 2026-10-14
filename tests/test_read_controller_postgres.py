@@ -80,7 +80,10 @@ def test_preflight_restart_catchup_and_no_duplicate(database, tenant, tmp_path):
 
 @pytest.mark.parametrize(
     "denial",
-    ["unenrolled", "foreign", "nonowner", "disabled", "binding", "secret", "provider", "admin"],
+    [
+        "unenrolled", "foreign", "nonowner", "disabled", "binding", "secret",
+        "provider", "scoped", "admin",
+    ],
 )
 def test_preflight_denial_before_provider_or_lease(database, tenant, tmp_path, denial):
     path, config, creds, mail, transports, run = setup(database, tenant, tmp_path)
@@ -100,6 +103,7 @@ def test_preflight_denial_before_provider_or_lease(database, tenant, tmp_path, d
             "binding": "UPDATE mail_accounts SET provider_account_id='other' WHERE id=%s",
             "secret": "UPDATE mail_accounts SET secret_ref='other' WHERE id=%s",
             "provider": "UPDATE mail_accounts SET provider='gmail' WHERE id=%s",
+            "scoped": "UPDATE mail_accounts SET read_scope_sha256=repeat('a',64) WHERE id=%s",
         }
         with psycopg.connect(admin) as conn:
             conn.execute(statements[denial], (account,))

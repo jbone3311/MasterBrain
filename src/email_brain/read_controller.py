@@ -110,7 +110,8 @@ def _binding(store: Store, principal: Principal, config: ReadControllerConfig) -
     """Read-only preflight/guard: no enrollment, lease acquisition or pause reset."""
     with store.transaction(principal.context) as conn:
         row = conn.execute(
-            "SELECT a.provider_account_id,a.secret_ref,coalesce(w.paused,false) AS paused "
+            "SELECT a.provider_account_id,a.secret_ref,a.read_scope_sha256,"
+            "coalesce(w.paused,false) AS paused "
             "FROM mail_accounts a LEFT JOIN sync_workers w ON w.account_id=a.id "
             "AND w.tenant_id=a.tenant_id WHERE a.id=%s AND a.provider='fastmail' "
             "AND a.status='active'",
@@ -120,6 +121,7 @@ def _binding(store: Store, principal: Principal, config: ReadControllerConfig) -
             row is None
             or row["provider_account_id"] != config.provider_account_id
             or row["secret_ref"] != config.provider_secret_ref
+            or row["read_scope_sha256"] is not None
             or type(row["paused"]) is not bool
         ):
             raise ControllerError()

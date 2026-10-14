@@ -6,8 +6,9 @@ HTTP and real PostgreSQL; the command is not live-accepted or a hosted superviso
 ADR-176 adds a distinct synthetic-only scoped library mode: version-4 cursors
 bind the exact mailbox/date filter, repeated filtered inventories replace
 account-wide changes, and every metadata row is checked before bytes. It is not
-wired to `sync-read` or a database enrollment fence, so no real folder/date
-pilot is authorized. The rest of this document describes the existing
+wired to `sync-read`. ADR-177 adds a database enrollment/lease/cursor fence;
+the old command refuses a pinned account. No real folder/date pilot is
+authorized. The rest of this document describes the existing
 account-wide operator.
 The library does not
 discover credentials, enroll accounts, start a background process or contact a

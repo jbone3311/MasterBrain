@@ -187,7 +187,10 @@ class ReadWorker:
 
     def step(self, ctx: TenantContext, account_id: UUID) -> str:
         self.authorize()
-        lease = self.jobs.acquire(ctx, account_id)
+        lease = (
+            self.jobs.acquire(ctx, account_id, scope=self.scope)
+            if self.scope is not None else self.jobs.acquire(ctx, account_id)
+        )
         if lease is None:
             return "not_due"
         started = self.monotonic()

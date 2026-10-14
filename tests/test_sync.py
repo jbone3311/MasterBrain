@@ -191,7 +191,7 @@ def worker_harness(
     store.ingest_page = ingest
     lease_token = uuid4()
     jobs = SimpleNamespace(
-        acquire=lambda ctx, account: Lease(lease_token, "a", store.cursor, 0),
+        acquire=lambda ctx, account, **kwargs: Lease(lease_token, "a", store.cursor, 0),
         renew=lambda *args: None,
         reconciliation_candidates=lambda *args: (),
         finish=lambda ctx, account, token, outcome, *args, **kwargs: store.outcomes.append(outcome),

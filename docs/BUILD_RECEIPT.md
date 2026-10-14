@@ -2,6 +2,22 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Scoped Fastmail inventory worker — ADR-176
+
+[PR #196](https://github.com/jbone3311/MasterBrain/pull/196) merged at
+`4b8e4274a09a0154091f607f38844f83fc34f171`. Its final head passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38557520613)
+with 3,243 passes, six skips and 507/507 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38557520661)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38557520641)
+passed. The merge commit passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38558387097)
+with the same counts, plus
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38558387155)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38558387052).
+This proves only the fictional scoped library worker. The account-level SQL
+fence, scoped operator and live mailbox pilot were not part of PR #196.
+
 ## Scoped Fastmail query primitive — ADR-175
 
 [PR #195](https://github.com/jbone3311/MasterBrain/pull/195) final head

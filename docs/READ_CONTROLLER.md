@@ -10,8 +10,9 @@ responses and disposable SQL, not a live Fastmail mailbox or cloud deployment.
 configured Fastmail account. It adds no enrollment, token discovery, OAuth flow,
 provider writes, background service installation or administrative pause reset.
 It still uses the **account-wide** worker mode. ADR-176's filtered library
-worker is not exposed here, has no durable account-level SQL scope fence, and
-must not be treated as permission for a private folder/date pilot.
+worker is not exposed here. ADR-177 adds a durable SQL scope/lease fence; this
+unscoped command refuses pinned accounts during preflight and at lease claim.
+It must not be used as a private folder/date pilot.
 `--allow-provider-read` must be supplied for execution; it is an invocation guard,
 not permission from the owner to connect a real account. Obtain that permission
 and complete the live-pilot gates before using real credentials.
@@ -74,7 +75,7 @@ email-brain sync-read --config /private/operator-state/read.json --check
 ```
 
 Preflight reads configuration/credentials, checks current ownership, enrollment,
-runtime role and keyring/root. It performs **zero provider requests and zero lease
+runtime role, pinned-scope absence and keyring/root. It performs **zero provider requests and zero lease
 claims**, writes no enrollment/checkpoint/object and constructs no HTTP client.
 `configuration_valid` is not a provider-login, connectivity, full-key-recovery or
 hosted-security certificate. A paused worker may pass preflight and still need repair.
@@ -137,7 +138,8 @@ progress. Restart uses the stored checkpoint; no new controller checkpoint file.
 
 ## Deployment and rollback
 
-No migration, dependency or SQL grant change. Apply the repository's full migration
+ADR-177 adds migration 0058 with account/worker scope columns and database
+guards; it adds no runtime SQL grants. Apply the repository's full migration
 set/grants using the existing administrator workflow. API and processing-worker
 permissions do not expand. Keep this command's provider token out of the API and
 document/MIME workers. Stop the command to disable reads, preserve objects/keys and

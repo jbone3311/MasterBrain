@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Bind synthetic scoped Fastmail worker leases and cursors to an
+  administrator-pinned, previously unused account in PostgreSQL; old
+  `sync-read` refuses a pinned account before provider I/O (ADR-177).
+  Private scoped operation and live acceptance are still pending.
+
 - Add a synthetic-only scoped Fastmail inventory worker with scope-bound
   version-4 checkpoints, repeated filtered scans, and pre-download metadata
   refusal (ADR-176). `sync-read` remains account-wide; no live pilot is approved.

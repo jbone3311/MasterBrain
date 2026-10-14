@@ -472,6 +472,7 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
     assert migrate(admin_dsn, MIGRATIONS) == [
         "0056_knowledge_project_dossier.sql",
         "0057_private_statement_proposals.sql",
+        "0058_fastmail_scoped_lease.sql",
     ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:

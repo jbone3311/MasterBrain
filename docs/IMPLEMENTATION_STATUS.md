@@ -1,15 +1,23 @@
 # MasterBrain Implementation Status
 
+ADR-177 adds a synthetic/disposable PostgreSQL account pin and worker
+lease/cursor fence for the ADR-176 scoped Fastmail mode. The old account-wide
+`sync-read` preflight refuses a pinned account before constructing a provider
+client, and its database lease path is independently fenced. A private scoped
+operator, reviewed enrollment and real-provider acceptance remain absent.
+
 ADR-176 adds a synthetic-only scoped Fastmail inventory worker with version-4
 scope-bound checkpoints, repeated filtered scans and pre-download metadata
-checks. It is not connected to account enrollment, the database scope fence or
-`sync-read`; a real folder/date pilot remains unapproved.
+checks. ADR-177 binds its lease and cursor to an administrator-pinned account
+fingerprint but does not connect it to `sync-read`; a real folder/date pilot
+remains unapproved.
 
 ADR-175 adds a typed Fastmail mailbox/date query filter and a separate metadata
 scope check, now used by ADR-176's opt-in library worker. The existing CLI
 still instantiates the unscoped account-wide worker. Account-level scope
-binding, database fencing, operator configuration and provider-read acceptance
-remain required before a private Fastmail pilot.
+binding and database fencing are supplied by ADR-177; scoped operator
+configuration and provider-read acceptance remain required before a private
+Fastmail pilot.
 
 ADR-174 adds an isolated, behavior-matched Fidelity recipe baseline with six
 fictional goldens, optional exact-hash donor replay and 1,000-row stress. The
