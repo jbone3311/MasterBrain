@@ -2,24 +2,38 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Reviewed project members — ADR-183 (branch candidate)
+## Reviewed project members — ADR-183
 
-Local Python 3.14/PostgreSQL 17.11 disposable full suite passed 3,312 tests,
-six skips; 537 of 538 PostgreSQL-marked tests executed (one platform-local
-skip). That run included the new person/organization roles, supersession,
-source-grant-safe dossier/search/exact/change reads, direct-SQL guards and
-protected-table counts. A first run used a Unix socket rejected by the
-cross-source harness, and a second found stale protected-table test counts;
-both were corrected. The fictional local trial initially hit Mac shared-memory
-exhaustion; after the owner's previously approved, exact orphan cleanup it
-passed. No test fixture read live mail or a real FileOS root.
+[PR #206](https://github.com/jbone3311/MasterBrain/pull/206) final head
+`d92fc9ae6a3504955443bb43bc5c07ca7de8e9cc` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38600738771)
+with 3,313 passes, six skips and all 538 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38600738922)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38600739065)
+passed. Squash merge `38df6e50563d82968111470e0462fdde05fe2c0c`
+closed [issue #176](https://github.com/jbone3311/MasterBrain/issues/176).
+The [PR receipt](https://github.com/jbone3311/MasterBrain/pull/206#issuecomment-6173676994)
+preserves the exact-head evidence. Merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38602244735)
+passed the same 3,313 tests, six skips and all 538 PostgreSQL-marked tests,
+including browser and isolated-worker/container checks;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38602245089)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38602244453)
+passed independently.
 
-After the full suite, focused Answer/client/schema tests passed 128/128 and the
-first-party browser suite passed 30/30, covering the new member kind in
-reviewed matches. Ruff, mypy (102 source files), structural deployment gate,
-documentation validation and diff checks passed. Exact-branch CI, strict-runtime
-and populated-restore gates remain pending; this section does **not** claim a
-merge or release. The pinned FOS-Master donor was not edited.
+The committed-head local Python 3.14/PostgreSQL 17.11 disposable quality gate
+passed 3,313 tests, six skips; 537 of 538 PostgreSQL-marked tests executed
+(one platform-local skip). Browser tests passed 30/30, Ruff, mypy (102 source
+files), documentation validation (284 Markdown files, 1,511 references),
+structural gate and diff checks passed. Synthetic regression includes roles,
+supersession/corrections, linked-source grant filtering before dossier/search/
+exact/change limits and cursors, direct-SQL guards, protected-table counts,
+and inert first-party display. Early local setup attempts used a Unix socket
+disallowed by the cross-source harness and hit Mac shared-memory exhaustion;
+the corrected loopback run and owner's approved exact-orphan cleanup resolved
+those environmental faults. No live mail or real FileOS root was read, and the
+pinned FOS-Master donor was not edited. This is not a current roster, live
+source acceptance, strict role registry or FileOS cutover.
 
 ## Reviewed project-alias candidate lookup — ADR-182
 
