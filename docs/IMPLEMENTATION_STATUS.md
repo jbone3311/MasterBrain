@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-173 adds a human-only, source-rechecked and paged read-only API preview of
+ADR-172's private statement proposals. Each returned row has a bounded quote
+from its immutable normalized document and an explicit proposed-extraction
+label. It is not a first-party UI, assistant route, approval, reviewed holding,
+live source or investment dossier. Synthetic PostgreSQL/API verification is
+tracked in its PR; hosted acceptance remains separate.
+
 ADR-172 adds an additive private PostgreSQL ledger for one explicitly selected,
 current normalized Email/FileOS statement. A scoped worker verifies the
 document/evidence/source-version binding and records exact-decimal candidate

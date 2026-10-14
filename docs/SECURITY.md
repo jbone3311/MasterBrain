@@ -14,9 +14,13 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
   derivation, current source grant, source tier, independent corroboration or a
   financial holding. ADR-172 adds a worker-only, tenant-fenced immutable proposal
   ledger with current-document and source-hash checks; it does not prove the
-  source-byte-to-text transform, independently verify currency, grant an API read
-  path, or promote a row to a reviewed holding. Stored offsets must be rechecked
-  under the reader's current grants before any future disclosure.
+  source-byte-to-text transform, independently verify currency, or promote a row
+  to a reviewed holding. It does not itself grant an API read path; stored offsets
+  must be rechecked under the reader's current grants before disclosure.
+- ADR-173 is that separate human-only disclosure boundary: it requires both
+  Knowledge read and Brain content read, rechecks the current source and hashes,
+  pages immutable rows and caps source quotes. Assistants and workers cannot use
+  it. The text remains untrusted; a preview is not approval or financial truth.
 - Source adapters, extraction workers, DataCore, KnowledgeCore, Brain API, and effect
   executors use separate identities and least-privilege scopes.
 - Brain API clients receive typed operations only—never general SQL, arbitrary HTTP,

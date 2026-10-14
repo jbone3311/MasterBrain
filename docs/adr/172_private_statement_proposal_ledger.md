@@ -2,6 +2,8 @@
 
 Status: accepted for a synthetic/disposable worker-only tranche. It does not
 authorize a live source, reviewed holding, Brain API read, or FOS-Master cutover.
+ADR-173 later adds a separate human-only read preview; it does not change this
+worker write boundary or authorize review/publication.
 
 ## Context
 

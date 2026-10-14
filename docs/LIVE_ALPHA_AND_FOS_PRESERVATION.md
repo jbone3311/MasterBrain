@@ -54,6 +54,10 @@ golden comparison. It is not a runtime ingestion or investment feature, and the
 other recipes and reports still lack that corpus.
 ADR-171 adds private exact-decimal/text-span candidates for that one recipe; it
 does not validate a source's bytes-to-text derivation, tenant grant or live holding.
+ADR-172 stores selected current-document candidates in an immutable tenant-fenced
+ledger, and ADR-173 permits a human owner to inspect bounded, source-rechecked
+unreviewed rows through the API. Neither proves a live holding, supplies a
+first-party investment dossier, grants assistant access or approves a fact.
 
 ## Investment dossier acceptance example
 

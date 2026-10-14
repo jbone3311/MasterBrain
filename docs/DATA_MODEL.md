@@ -77,9 +77,13 @@ exact decimal values and character offsets into the immutable document, not a
 second copy of the text. Tenant-composite foreign keys, forced tenant RLS, the
 tenant-login fence, direct-SQL basis/row/completion guards and runtime
 SELECT/INSERT-only privileges protect this private ledger. It is deliberately
-separate from reviewed `knowledge_claims`; no row is a verified holding,
-current balance, or API result. `USD` and `reconciled` describe the donor recipe
+separate from reviewed `knowledge_claims`; no row is a verified holding or
+current balance. `USD` and `reconciled` describe the donor recipe
 assumption and within-tolerance arithmetic only.
+ADR-173 adds no table: a human-only API reader rechecks current source grants,
+version and hashes, then pages these unreviewed rows with bounded source quotes.
+The stored model still has no reviewed investment assertion or automated
+promotion path.
 
 ADR-171 introduces an in-memory `StatementCandidate` and grouped `StatementRow`
 for one fictional Streetbeat recipe. Rows carry exact `Decimal` quantity, price,

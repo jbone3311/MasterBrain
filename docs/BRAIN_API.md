@@ -211,6 +211,15 @@ source effects or an alternate route through KnowledgeCore.
   ([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
+- `GET /v1/knowledge/statement-proposals/{proposal_id}` — ADR-173 owner-only,
+  read-only inspection of one unreviewed ADR-172 proposal. Requires both
+  `knowledge.read` and `brain.content.read`; assistants/workers are denied.
+  `after` is an ordinal cursor (-1 initially), `limit` is 1–25, and quotes are
+  capped at 300 characters with visible truncation. The route rechecks current
+  source grants/version and stored hashes; hidden IDs return 404 and stale or
+  inconsistent evidence returns 409. Every row is labeled proposed extraction,
+  not a reviewed holding or investment total. No source effect or approval is
+  available here.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
   feed; enrolled assistants see only directly source-authorized assertions and
   cannot use an ungranted event as a cursor.

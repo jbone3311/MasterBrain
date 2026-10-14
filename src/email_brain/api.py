@@ -68,6 +68,7 @@ from masterbrain.schemas import (
     GroundedAnswerRequest,
     UnifiedSearchRequest,
 )
+from masterbrain.statement_persistence import StatementProposalReader
 
 log = logging.getLogger("email_brain.requests")
 WEB = Path(__file__).parent / "web"
@@ -154,6 +155,7 @@ def create_app(
     brain = brain_store or DataCoreStore(store)
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
+    statement_proposals = StatementProposalReader(store)
     answers = GroundedAnswerService(brain, answer_selector)
     if browser_auth is not None:
         if browser_auth.authenticator.store is not store:
@@ -1016,6 +1018,19 @@ def create_app(
             return knowledge.project_dossier(principal.context, project_id, body)
         except ValueError:
             raise HTTPException(422, "invalid_project_dossier") from None
+
+    @app.get("/v1/knowledge/statement-proposals/{proposal_id}")
+    def knowledge_statement_proposal(
+        proposal_id: str,
+        principal: Annotated[Principal, Depends(require("knowledge.read", human=True))],
+        after: Annotated[int, Query(ge=-1, le=1999)] = -1,
+        limit: Annotated[int, Query(ge=1, le=25)] = 25,
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        return statement_proposals.read_page(
+            principal.context, proposal_id, after=after, limit=limit
+        )
 
     @app.get("/v1/knowledge/{kind}/{object_id}")
     def knowledge_object(

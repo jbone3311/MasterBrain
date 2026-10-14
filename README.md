@@ -122,7 +122,8 @@ FileOS sources ┘       │              │                │
 | Grouped current FileOS + Email-family + KnowledgeCore search | Implemented; hosted PostgreSQL and restore gates green |
 | Current-source coverage/readiness status | Implemented; hosted PostgreSQL and restore gates green |
 | Reviewed KnowledgeCore assertions and lexical retrieval | Working shared prototype |
-| Private statement proposal ledger | Worker-only, additive exact-decimal rows for one current normalized Email/FileOS document; exact-head and merged-main PostgreSQL/restore gates passed; no owner/API read, reviewed holding or live source |
+| Private statement proposal ledger | Worker-only, additive exact-decimal rows for one current normalized Email/FileOS document; exact-head and merged-main PostgreSQL/restore gates passed; storage itself creates no reviewed holding or live source |
+| Owner statement proposal preview | Human-only, paged API read of current, source-rechecked unreviewed rows and bounded source quotes; synthetic tests; no assistant access, approval, investment total or live source |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |
 | First-party read-only question workspace | Implemented prototype at `/brain`; grouped indexed evidence, not generated answers or live acceptance |
 | Certified external-AI clients and cited answer synthesis | Planned; neither is deployed or accepted |

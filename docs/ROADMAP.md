@@ -1,9 +1,15 @@
 # MasterBrain Roadmap
 
+ADR-173 adds a human-only, read-only preview of source-rechecked ADR-172
+statement proposals. It is an inspectable synthetic API slice, not a reviewer
+approval workflow, first-party dossier, assistant read or live investment claim.
+The next dependency is explicit owner review/approval design and source-byte-
+to-text derivation proof before any KnowledgeCore fact publication.
+
 ADR-172/PR #190 adds a worker-only, evidence-bound and tenant-fenced statement
 proposal ledger for one current normalized Email/FileOS document; its exact-head
 and merged-main full CI, strict-runtime and restore gates passed. It narrows the
-durable-line-item gap, but owner review/read, explicit currency verification,
+durable-line-item gap, but owner approval, explicit currency verification,
 other donor recipes and reports, source-byte-to-text derivation proof and a
 cross-source company dossier remain open. No live source or FileOS cutover is
 authorized by this tranche.
@@ -73,7 +79,7 @@ FileOS cutover acceptance is implied.
 | Owner chat and external assistants | A first-party read-only question workspace and external read client use the same Brain API; Ask returns exact quotes and a separate reviewed KnowledgeCore match list. ADR-163's explicit project-dossier drill-down merged with exact-head gates green; its original merged-main full CI and final strict gate were blocked before execution by hosted runners (#158), with later main commits green. ADR-164's explicit reviewed schedule merged with exact-head and merged-main gates green | Run the owner's interactive trial, evaluate held-out natural questions, corrections and contradictions, review any privacy-approved model adapter separately, then prove named-assistant identity/citation/revocation and hosted acceptance |
 | Hosted read-only product | Local/CI synthetic paths and restore drills only | Owner-approved identity, source enrollment, operations, retention, alerts, incident/restore drills and live acceptance |
 | FileOS replacement and effects | Private v2 generation plus human-only historical v1/v2 comparison API are merged; no cutover or source effects | Decide donor-policy edge behavior, prove sustained live shadow and v2 current/absence/rollback semantics, then a bounded rollback-ready cohort and owner sign-off; effects require a separate later approval |
-| FOS intelligence preservation | Donor generic facts, statement recipe factory, reconciliation states and cross-domain reports are inventoried; ADR-170 pins one Streetbeat recipe, ADR-171 adds decimal/text-span candidates, and ADR-172 records selected current documents in a private proposal ledger, not runtime investment analysis | Extend known-answer/parity corpus across recipes and reports; prove source-byte-to-text derivation and source tier; owner-reviewed read/publication; then an evidence-linked cross-source company dossier |
+| FOS intelligence preservation | Donor generic facts, statement recipe factory, reconciliation states and cross-domain reports are inventoried; ADR-170 pins one Streetbeat recipe, ADR-171 adds decimal/text-span candidates, ADR-172 records selected current documents, and ADR-173 allows owner-only proposal inspection, not runtime investment analysis | Extend known-answer/parity corpus across recipes and reports; prove source-byte-to-text derivation and source tier; explicit owner review/publication; then an evidence-linked cross-source company dossier |
 
 ## Next verified sequence
 

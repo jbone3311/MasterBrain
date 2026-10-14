@@ -1,6 +1,6 @@
-"""Private worker projection from current DataCore text to immutable proposals.
+"""Private projection and owner preview of immutable statement proposals.
 
-No API, source effect, or reviewed KnowledgeCore assertion is created here.
+No source effect or reviewed KnowledgeCore assertion is created here.
 """
 
 from __future__ import annotations
@@ -29,7 +29,9 @@ from masterbrain.statement_candidates import (
 )
 
 _ID = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
+_PROPOSAL_ID = re.compile(r"^statement_[a-f0-9]{32}$")
 _SCALE = Decimal("0.000000000001")
+_QUOTE_CHARS = 300
 
 
 def _decimal_text(value: Decimal | None) -> str | None:
@@ -220,3 +222,125 @@ class StatementProposalStore:
             "row_count": len(rows), "coverage_errors": candidate.coverage_errors,
             "source_effects": False, "reviewed": False,
         }
+
+
+@dataclass(slots=True)
+class StatementProposalReader:
+    """Human-only, read-only preview; never promotes an extraction to a fact."""
+
+    store: Store
+
+    def read_page(
+        self, ctx: TenantContext, proposal_id: str, *, after: int = -1, limit: int = 25,
+    ) -> dict[str, Any]:
+        self.store.require(ctx, "knowledge.read")
+        self.store.require(ctx, "brain.content.read")
+        if ctx.identity is not None and ctx.identity.client_kind != "human":
+            raise AccessDenied("human identity required")
+        if not isinstance(proposal_id, str) or not _PROPOSAL_ID.fullmatch(proposal_id):
+            raise NotFound()
+        if type(after) is not int or not -1 <= after <= 1999:
+            raise ValueError("invalid_statement_cursor")
+        if type(limit) is not int or not 1 <= limit <= 25:
+            raise ValueError("invalid_statement_limit")
+
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        with self.store.transaction(ctx) as conn:
+            proposal = conn.execute(
+                "SELECT p.*,d.body,d.body_sha256,d.evidence_id AS actual_evidence_id,"
+                "e.source_version_id AS evidence_version_id,"
+                "e.sha256 AS evidence_sha,v.sha256 AS version_sha,"
+                "i.current_version_id,s.id AS actual_source_id,"
+                "s.status AS source_status,s.kind AS actual_source_kind "
+                "FROM knowledge_statement_proposals p "
+                "JOIN brain_normalized_documents d ON d.tenant_id=p.tenant_id "
+                "AND d.id=p.document_id "
+                "JOIN brain_evidence e ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id "
+                "JOIN brain_source_items i ON i.tenant_id=v.tenant_id "
+                "AND i.id=v.item_id AND i.source_id=v.source_id "
+                "JOIN brain_sources s ON s.tenant_id=i.tenant_id AND s.id=i.source_id "
+                "WHERE p.id=%s AND (%s::text[] IS NULL OR "
+                "(p.source_id=ANY(%s::text[]) AND s.id=ANY(%s::text[]))) "
+                "FOR SHARE OF i,s",
+                (proposal_id, allowed_sources, allowed_sources, allowed_sources),
+            ).fetchone()
+            if proposal is None:
+                raise NotFound()
+            if (
+                proposal["source_id"] != proposal["actual_source_id"]
+                or proposal["source_kind"] != proposal["actual_source_kind"]
+                or proposal["evidence_id"] != proposal["actual_evidence_id"]
+                or proposal["source_version_id"] != proposal["evidence_version_id"]
+                or proposal["source_version_id"] != proposal["current_version_id"]
+                or proposal["source_status"] != "active"
+                or proposal["source_sha256"] != proposal["evidence_sha"]
+                or proposal["source_sha256"] != proposal["version_sha"]
+                or proposal["text_sha256"] != proposal["body_sha256"]
+                or hashlib.sha256(proposal["body"].encode("utf-8")).hexdigest()
+                != proposal["text_sha256"]
+            ):
+                raise Conflict("statement evidence is not current or intact")
+            rows = conn.execute(
+                "SELECT ordinal,row_type,description,symbol,line_date,quantity,price,"
+                "amount,cost_basis,unrealized,currency,text_start,text_end "
+                "FROM knowledge_statement_rows WHERE proposal_id=%s ORDER BY ordinal",
+                (proposal_id,),
+            ).fetchall()
+            if len(rows) != proposal["row_count"] or [
+                row["ordinal"] for row in rows
+            ] != list(range(len(rows))):
+                raise Conflict("statement rows are incomplete")
+            payloads = [_row_payload(row, row["ordinal"]) for row in rows]
+            if _rows_sha256(payloads) != proposal["rows_sha256"]:
+                raise Conflict("statement rows differ from recorded digest")
+            body = proposal["body"]
+            page: list[dict[str, Any]] = []
+            for item in payloads[after + 1:after + 1 + limit]:
+                start, end = item["text_start"], item["text_end"]
+                if start < 0 or end > len(body) or end <= start:
+                    raise Conflict("statement row locator is invalid")
+                quote = body[start:end]
+                page.append({
+                    **item,
+                    "quote": quote[:_QUOTE_CHARS],
+                    "quote_truncated": len(quote) > _QUOTE_CHARS,
+                    "assertion_status": "proposed_extraction",
+                })
+            next_after = (
+                page[-1]["ordinal"]
+                if page and page[-1]["ordinal"] < len(rows) - 1 else None
+            )
+            self.store.audit(
+                conn, ctx, "knowledge.statement_proposal_read", "statement_proposal",
+                proposal_id,
+            )
+            return {
+                "proposal_id": proposal_id,
+                "document_id": proposal["document_id"],
+                "evidence_id": proposal["evidence_id"],
+                "source_version_id": proposal["source_version_id"],
+                "source_id": proposal["source_id"],
+                "source_kind": proposal["source_kind"],
+                "account_number": proposal["account_number"],
+                "period": proposal["period"],
+                "status": proposal["status"],
+                "coverage_errors": proposal["coverage_errors"],
+                "recipe": proposal["recipe"],
+                "donor_commit": proposal["donor_commit"],
+                "transform_version": proposal["transform_version"],
+                "reconciliation": {
+                    "expected": _decimal_text(proposal["expected"]),
+                    "actual": _decimal_text(proposal["actual"]),
+                    "delta": _decimal_text(proposal["delta"]),
+                },
+                "row_count": proposal["row_count"],
+                "rows": page,
+                "page": {"next_after": next_after, "truncated": next_after is not None},
+                "reviewed": False,
+                "source_effects": False,
+                "source_current": True,
+                "currency_assumption": "USD from donor recipe, unverified",
+                "untrusted_content": True,
+            }

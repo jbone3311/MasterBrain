@@ -6,12 +6,13 @@ relationships, claims, projects, events, commitments and corrections over immuta
 DataCore evidence. It does not call a model, infer facts automatically, or alter an
 Email or FileOS source.
 
-ADR-171's exact-decimal statement candidates are a separate *private in-memory*
-projection from fictional extracted text. They are not reviewed KnowledgeCore
-assertions or live investment analysis. Each row preserves a text span and the
-candidate reports incomplete coverage separately from sum tolerance. Runtime
-ingestion, tenant/source-grant enforcement, independent source-tier/hash checks,
-other vendor recipes and database/API publication remain open gates.
+ADR-171's exact-decimal statement candidates begin as a separate in-memory
+projection. ADR-172 stores selected current-document proposals privately, and
+ADR-173 lets a human owner inspect bounded rows and source quotes through a
+source-rechecked API. These rows remain unreviewed extraction, not KnowledgeCore
+assertions or live investment analysis. Independent source-byte-to-text proof,
+source tier, other vendor recipes, explicit human approval and publication as
+reviewed facts remain open gates; assistants cannot use the proposal preview.
 
 ## Implemented contract
 
