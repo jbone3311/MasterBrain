@@ -2,6 +2,32 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Private Knowledge proposal batches — ADR-186
+
+[PR #212](https://github.com/jbone3311/MasterBrain/pull/212) final head
+`bc6d83ee95a38c47190268e2343bdc3561b3abb2` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38623045184),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38623045220)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38623045061).
+Squash merge `25ca50fbcaa399b127a826519222569a7eabe7a7` landed on `main`.
+Its independent [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38624092068),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38624092149)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38624092278)
+all passed.
+The disposable local Python 3.14/PostgreSQL 17.11 full suite passed 3,344
+tests with six skips; 545 of 546 PostgreSQL-marked tests executed (one
+platform-local skip). Browser tests passed 56/56; Ruff, mypy (103 source
+files), documentation links, structural gate and diff checks passed. The
+first full run exposed only protected-table inventory counts from five new
+tables; after correcting all three expectations, the repeated full run
+passed. A fictional 40-row batch produced zero reviewed rows before human
+decision, then 38 approved and two rejected rows; rollback, replay, source
+grant/exclusion, API scope and direct-SQL guards were exercised.
+
+This is a private source-stated staging/review slice, not Librarian Markdown
+import, inferred-claim handling, real-source acceptance, or FOS-Master cutover.
+[Issue #178](https://github.com/jbone3311/MasterBrain/issues/178) remains open.
+
 ## Excluded Email retained-read visibility — ADR-185
 
 [PR #210](https://github.com/jbone3311/MasterBrain/pull/210) final head
