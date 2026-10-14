@@ -1,16 +1,25 @@
 # MasterBrain Roadmap
 
+ADR-179 provides a local owner-reviewed, administrator-assisted check/enroll/
+disconnect path for a brand-new exact pinned Fastmail account, tested without
+provider contact. Next is an explicitly authorized disposable live-provider
+acceptance plan and the retention, credential, alerting and hosting decisions
+needed before a private alpha uses real mail. It is not a hosted enrollment or
+production rollout.
+
 ADR-178 connects the exact pinned mailbox/date window to a version-2 private
 `sync-read` command and tests fictional restart, out-of-scope metadata, pause
 and revocation. Version 1 remains account-wide. Next is a reviewed account
-enrollment/revocation workflow and a disposable live-provider acceptance plan;
-neither this code nor a green synthetic check approves real Fastmail access.
+enrollment/revocation workflow, supplied locally and synthetically by ADR-179,
+and a disposable live-provider acceptance plan. Neither this code nor a green
+synthetic check approves real Fastmail access.
 
 ADR-177 adds the synthetic/disposable database scope fence: an administrator
 pins one exact window on an unused Fastmail account, worker leases and cursors
 must match it, and old `sync-read` refuses pinned accounts before provider I/O.
 ADR-178 supplies a private scoped operator and fictional restart/revocation
-proof; reviewed enrollment and live acceptance remain open.
+proof; ADR-179 adds local reviewed enrollment/disconnect. Live acceptance
+remains open.
 
 ADR-176 makes scoped Fastmail reading executable as a synthetic library worker:
 version-4 scope-bound checkpoints, repeated filtered inventories, and

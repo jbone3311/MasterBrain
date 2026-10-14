@@ -37,9 +37,11 @@ FOS-Master's statement/financial intelligence; see the
 [live-alpha integration assessment](docs/LIVE_ALPHA_AND_FOS_PRESERVATION.md).
 ADR-175/176 add a synthetic scoped-query worker, ADR-177 adds a database
 scope/lease fence, and ADR-178 connects one exact pinned window to private
-`sync-read` version-2 configuration. Version 1 remains account-wide and
-refuses pinned accounts. Neither mode is accepted for a real folder/date
-pilot; reviewed enrollment and live-source acceptance are still missing.
+`sync-read` version-2 configuration. ADR-179 adds a local owner-reviewed,
+administrator-assisted way to create a new pinned source or disconnect it,
+with no provider request. Version 1 remains account-wide and refuses pinned
+accounts. A real folder/date pilot still needs separate owner authorization,
+disposable live acceptance and operational/retention decisions.
 The [Librarian Markdown interop review](docs/LIBRARIAN_INTEROP.md) now records
 the proposed import/export path and its twelve verified or corrected gaps;
 it is a design plan, not a working importer or exporter.

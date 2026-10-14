@@ -2,6 +2,19 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Local scoped source management — ADR-179
+
+The synthetic/disposable local Python 3.14/PostgreSQL 17.11 full suite passed
+3,287 tests with six skips (536 of 537 PostgreSQL-marked tests executed; one
+local skip). Browser tests passed 164/164. The deployment gate passed 2,752
+tests with 541 skips; only one PostgreSQL-marked pure test ran in that gate.
+After the full run, final audit assertions for no check-time worker/cursor and
+content-free enrollment audit passed the focused 17/17 PostgreSQL-marked
+suite; hosted CI must execute the exact final branch head. Ruff, mypy,
+documentation links and diff checks passed. These local results prove neither
+real Fastmail enrollment nor provider acceptance. The PR discussion is the
+authority for later exact-head and merged-main hosted runs.
+
 ## Scoped private read operator — ADR-178
 
 [PR #198](https://github.com/jbone3311/MasterBrain/pull/198) final head

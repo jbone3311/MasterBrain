@@ -13,6 +13,8 @@ provider writes, background service installation or administrative pause reset.
 Version-1 configuration remains **account-wide** and refuses a pinned account.
 Version 2 requires one exact mailbox/date window; its preflight and guarded
 worker requests must match ADR-177's administrator-pinned SQL fingerprint.
+ADR-179's separate [local source-management command](FASTMAIL_SCOPE_ENROLLMENT.md)
+can create a fresh pinned row or disconnect it without contacting Fastmail.
 Neither mode has live-source acceptance. Do not use this as permission for a
 private folder/date pilot.
 `--allow-provider-read` must be supplied for execution; it is an invocation guard,
@@ -67,8 +69,9 @@ standalone config. `read_scope` is required for version 2 and forbidden for
 version 1. Dates are exact whole-second UTC, `after` inclusive and `before`
 exclusive, at most 31 days apart. The mailbox ID is an exact opaque JMAP ID,
 not a display name. The administrator must separately pin the canonical filter
-fingerprint on a **previously unused** Fastmail account; this command does not
-set or change that pin. A wrong or missing pin fails preflight before any
+fingerprint on a **previously unused** Fastmail account; ADR-179 provides a
+reviewed local path for a new row. `sync-read` itself does not set or change
+that pin. A wrong or missing pin fails preflight before any
 provider request or lease claim. Never put a real private config in Git.
 
 The account UUID, provider account ID and secret reference must match the existing

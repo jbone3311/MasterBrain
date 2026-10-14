@@ -1,18 +1,28 @@
 # MasterBrain Implementation Status
 
+ADR-179 adds a local owner-managed `fastmail-source` command to check, atomically
+create a previously absent exact pinned Fastmail account, or disconnect it
+without changing its pin or evidence. It requires a human-only management
+credential, current owner membership, an exact worker tenant and explicit
+account/scope confirmations. Fictional CLI/disposable PostgreSQL tests include
+mid-download disconnect refusal. It does not contact Fastmail, revoke its
+token, reactivate a source, hide retained history, approve a live mailbox pilot
+or provide hosted enrollment.
+
 ADR-178 adds version-2 private `sync-read` configuration for one exact
 mailbox/date window and binds preflight, every guarded request and worker
 construction to ADR-177's account pin. Fictional HTTPS/disposable PostgreSQL
 tests cover restart, wrong pin, out-of-scope metadata, tenant denial, pause and
-mid-step revocation. Version 1 stays account-wide. No reviewed live enrollment,
-real Fastmail acceptance or hosted service is supplied by this operator.
+mid-step revocation. Version 1 stays account-wide. ADR-179 adds a separate
+synthetic local enrollment/disconnect command; real Fastmail acceptance and
+hosted service remain absent.
 
 ADR-177 adds a synthetic/disposable PostgreSQL account pin and worker
 lease/cursor fence for the ADR-176 scoped Fastmail mode. The old account-wide
 `sync-read` preflight refuses a pinned account before constructing a provider
 client, and its database lease path is independently fenced. ADR-178 adds the
-private scoped operator; reviewed enrollment and real-provider acceptance
-remain absent.
+private scoped operator and ADR-179 adds local reviewed enrollment/disconnect;
+real-provider acceptance remains absent.
 
 ADR-176 adds a synthetic-only scoped Fastmail inventory worker with version-4
 scope-bound checkpoints, repeated filtered scans and pre-download metadata

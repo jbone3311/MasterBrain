@@ -24,6 +24,7 @@ SCOPES = frozenset(
         "email.proposal.create",
         "email.proposal.read",
         "email.review",
+        "email.source.manage",
         "email.ingest",
         "email.process",
         "email.document.process",
@@ -124,6 +125,7 @@ class TokenRegistry:
             c.client_kind != "human"
             and {
                 "email.review",
+                "email.source.manage",
                 "knowledge.review",
                 "brain.fileos.transition.review",
                 "brain.fileos.transition.authorize",

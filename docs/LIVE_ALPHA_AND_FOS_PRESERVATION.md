@@ -28,9 +28,11 @@ add a typed JMAP folder/date filter, metadata recheck and repeated filtered
 inventories without the account-wide change feed. ADR-177 pins the account,
 lease and cursor in SQL. ADR-178 adds version-2 private operator configuration
 for that exact pin, with fictional HTTPS/disposable-database restart and
-revocation proof. The real pilot is **still not approved**: reviewed source
-enrollment, an authorized disposable live test, retention and operational
-acceptance remain separate gates. No real folder/date read has occurred.
+revocation proof. ADR-179 adds a local owner-reviewed, administrator-assisted
+create/disconnect path without provider contact. The real pilot is **still
+not approved**: an authorized disposable live test, retention, credential
+handling and operational acceptance remain separate gates. No real folder/date
+read has occurred.
 
 ## What must survive from FOS-Master
 
@@ -94,8 +96,9 @@ complete portfolio, verified balance or tax/financial advice.
    alpha and record failures before adding personal sources.
 2. Decide one Fastmail account, bounded initial folder/date window, retention and
    deletion/export policy, and local-versus-hosted pilot location. The owner creates
-   a private Fastmail API token; never paste it into chat or Git. Add an audited
-   enrollment/revocation path and run `sync-read --check` without provider access
+   a private Fastmail API token; never paste it into chat or Git. Review the
+   [local audited source workflow](FASTMAIL_SCOPE_ENROLLMENT.md), then run
+   `sync-read --check` without provider access
    before one explicitly authorized bounded read. Verify counts, held items,
    resume, pause/revoke and evidence in a private environment.
 3. Preserve FOS-Master and its SQLite/index/history in place. With a separately

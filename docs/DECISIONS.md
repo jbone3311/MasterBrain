@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-179](adr/179_reviewed_fastmail_scope_enrollment.md) adds a private
+human-owner-managed check/enroll/disconnect command. It creates only a new,
+already-pinned Fastmail account, or disconnects the exact one while preserving
+its pin and evidence. Fictional verification is not a live-provider approval.
+
 [ADR-178](adr/178_private_scoped_fastmail_read_operator.md) adds closed
 version-2 private `sync-read` configuration for one exact SQL-pinned Fastmail
 window. It checks the pin before provider I/O and at each guarded request,
@@ -20,7 +25,8 @@ enrollment and provider acceptance remain open.
 Fastmail mailbox/date fingerprint on an unused account and fences worker leases
 and cursors in PostgreSQL. The old account-wide operator refuses a pinned
 account at preflight. This is synthetic/disposable proof only; ADR-178 adds
-the scoped operator, while owner enrollment and live approval remain separate.
+the scoped operator and ADR-179 adds local owner-managed enrollment/disconnect.
+Live approval remains separate.
 
 [ADR-176](adr/176_scoped_fastmail_inventory_worker.md) adds a synthetic-only
 version-4 scoped inventory worker that never uses account-wide changes and

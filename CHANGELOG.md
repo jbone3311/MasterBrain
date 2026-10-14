@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add a local, human-owner-scoped `fastmail-source` check/enroll/disconnect
+  workflow for a brand-new exact pinned account (ADR-179). Fictional CLI/SQL
+  tests cover no-provider preflight, binding refusals and mid-download
+  disconnect. No live account was enrolled or mail read.
+
 - Add version-2 private scoped Fastmail read configuration, exact SQL-pin
   preflight and guarded fictional HTTPS/PostgreSQL restart, exclusion and
   revocation proof (ADR-178). Version 1 remains account-wide; no live mail was

@@ -12,9 +12,12 @@ ADR-175's typed Fastmail `Email/query` mailbox/date filter and separate
 worker. That worker avoids `Email/changes` and refuses out-of-scope metadata
 before any blob read. ADR-177 adds an account-level SQL scope/lease/cursor
 fence; ADR-178 binds version-2 private `sync-read` to it while version 1
-remains account-wide and refuses pinned accounts. Both modes retain exact
-worker credentials and guarded requests. Reviewed live enrollment and
-provider acceptance are still absent, so this is not a real pilot.
+remains account-wide and refuses pinned accounts. ADR-179 adds a local
+human-owner-scoped, administrator-assisted check/enroll/disconnect path that
+creates only a fresh pinned source and never contacts Fastmail. Both worker
+modes retain exact credentials and guarded requests. Live-provider acceptance,
+hosted enrollment and provider-token revocation remain absent, so this is not
+a real pilot.
 
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.

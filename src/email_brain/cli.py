@@ -10,6 +10,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Event
+from typing import Literal
 from uuid import UUID, uuid4
 
 import psycopg
@@ -22,6 +23,7 @@ from email_brain.browser_auth import BrowserAuth, BrowserConfig
 from email_brain.browser_operator import tls_options
 from email_brain.document_controller import run_document_controller
 from email_brain.domain.models import TenantContext
+from email_brain.fastmail_enrollment import run_fastmail_enrollment
 from email_brain.migrate import grant_runtime, migrate
 from email_brain.oidc import AccessTokenVerifier, OIDCAuthenticator, OIDCConfig
 from email_brain.processing_controller import private_bytes, run_controller, shutdown_signals
@@ -208,6 +210,17 @@ def main() -> None:
     corpus = commands.add_parser("seed-corpus", help="Import fictional emails, no provider calls")
     corpus.add_argument("--state-dir", type=Path, required=True)
     corpus.add_argument("--count", type=int, default=256)
+    source = commands.add_parser(
+        "fastmail-source", help="Owner-reviewed local Fastmail scope enrollment/disconnect"
+    )
+    source.add_argument("--config", type=Path, required=True)
+    source_actions = source.add_mutually_exclusive_group(required=True)
+    source_actions.add_argument("--check", action="store_true")
+    source_actions.add_argument("--enroll", action="store_true")
+    source_actions.add_argument("--disconnect", action="store_true")
+    source.add_argument("--confirm-account", type=UUID)
+    source.add_argument("--confirm-scope")
+    source.add_argument("--confirm-binding")
     serve = commands.add_parser("serve", help="Loopback-only developer server")
     serve.add_argument("--port", type=int, default=8080)
     serve.add_argument("--oidc-config", type=Path, default=None)
@@ -309,6 +322,23 @@ def main() -> None:
             print(json.dumps(result, sort_keys=True))
             if result.get("attention_required"):
                 parser.exit(2, "Read worker paused; operator attention required.\n")
+        elif args.command == "fastmail-source":
+            action: Literal["check", "enroll", "disconnect"] = (
+                "check" if args.check else "enroll" if args.enroll else "disconnect"
+            )
+            print(
+                json.dumps(
+                    run_fastmail_enrollment(
+                        args.config,
+                        _env("EMAIL_BRAIN_ADMIN_DSN"),
+                        action=action,
+                        confirmed_account_id=args.confirm_account,
+                        confirmed_scope_sha256=args.confirm_scope,
+                        confirmed_binding_sha256=args.confirm_binding,
+                    ),
+                    sort_keys=True,
+                )
+            )
         elif args.command in {"process-jobs", "process-documents"}:
             stop = Event()
             controller = (
