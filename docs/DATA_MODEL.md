@@ -51,6 +51,10 @@ is retained only in the tenant-isolated sync/inventory ledger, with no new raw
 object, message projection or DataCore document. An older `messages` row is
 marked noncurrent in the same transaction; its immutable versions remain.
 `excluded` is not a provider deletion or a retention purge.
+Migration 0062 adds tenant/evidence lookup indexes on all three Email bridge
+receipt families and a security-invoker predicate that maps a Brain evidence ID
+to its current Email sync exclusion state under forced RLS. Read routes use it
+without modifying immutable evidence, change rows or Knowledge assertions.
 
 - **source**: kind (`email`, `fileos`, future), provider, account/root, configuration.
 - **source_item**: stable logical item ID and source-native ID/path; current observation.

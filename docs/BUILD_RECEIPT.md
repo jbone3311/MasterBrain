@@ -2,6 +2,21 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Excluded Email retained-read visibility — ADR-185
+
+Synthetic-only candidate on `codex/excluded-evidence-visibility`. A disposable
+local PostgreSQL 17.11/Python 3.14 full run passed 3,339 tests with six skips;
+540 of 541 PostgreSQL-marked cases executed (one platform-local skip). The
+expanded fictional parent/attachment/document, project timeline/commitment,
+and tenant-RLS regression cases then passed 2/2 targeted after test-only
+assertion corrections. Browser tests passed 165/165; Ruff, mypy (102 source
+files), documentation links and the structural gate passed. Exact-head hosted
+CI, independent runtime/restore gates and merged-main proof remain pending.
+No real mail or FileOS root was read; FOS-Master was not changed. This narrows
+but does not close [issue #184](https://github.com/jbone3311/MasterBrain/issues/184):
+privileged historical Email retention, policy changes on used accounts,
+sender/category rules, complete cross-route audit and live acceptance remain.
+
 ## Scoped mailbox exclusion — ADR-184
 
 [PR #208](https://github.com/jbone3311/MasterBrain/pull/208) final head

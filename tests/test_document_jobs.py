@@ -159,7 +159,7 @@ def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(
         parent_id = conn.execute(
             "SELECT evidence_id FROM attachment_receipts WHERE id=%s", (receipt,)
         ).fetchone()["evidence_id"]
-    core.bridge_current_email_version(
+    parent = core.bridge_current_email_version(
         bridge_ctx, parent_id, uuid4(), code_revision="pdf-derivative-test-v1"
     )
     with pytest.raises(Conflict, match="bridged current attachment"):
@@ -228,6 +228,25 @@ def test_approved_pdf_derivative_bridge_replay_rls_and_immutability(
             "WHERE tenant_id=%s",
             (ctx.tenant_id,),
         )
+    with store.transaction(bridge_ctx) as conn:
+        for evidence_id in (parent.evidence_id, attachment["evidence_id"], derived["evidence_id"]):
+            assert conn.execute(
+                "SELECT public.brain_email_evidence_is_excluded(%s,%s) AS excluded",
+                (ctx.tenant_id, evidence_id),
+            ).fetchone()["excluded"] is False
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE message_sync_state SET status='excluded' "
+            "WHERE tenant_id=%s AND account_id=%s",
+            (ctx.tenant_id, account),
+        )
+    with store.transaction(bridge_ctx) as conn:
+        for evidence_id in (parent.evidence_id, attachment["evidence_id"], derived["evidence_id"]):
+            assert conn.execute(
+                "SELECT public.brain_email_evidence_is_excluded(%s,%s) AS excluded",
+                (ctx.tenant_id, evidence_id),
+            ).fetchone()["excluded"] is True
+    assert core.search(bridge_ctx, "pdfonlyproof") == []
 
 
 def test_email_part_bridge_preview_preserves_dependencies_and_current_state(

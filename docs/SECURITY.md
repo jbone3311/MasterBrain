@@ -29,6 +29,14 @@ public sync status reports only an excluded count. This is not a retroactive
 purge or a general sender/path policy, and the owner has selected synthetic-only
 testing for now.
 
+ADR-185 additionally hides an older excluded message's retained Brain
+evidence/content/change results and any reviewed KnowledgeCore assertion
+grounded in that evidence. SQL filters apply before ranking or pagination,
+alongside source grants, and use tenant-RLS-respecting receipt links for parent,
+attachment and approved-document evidence. This is a visibility rule, not a
+purge: the explicitly human-scoped historical Email evidence route remains
+available under its existing audit/retention policy pending an owner decision.
+
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their

@@ -11,9 +11,11 @@ authorization for either source.
 
 ADR-184 now supplies the first synthetic pre-index Email exclusion tranche:
 exact JMAP mailbox memberships, a policy-bound cursor, count-only public
-status, and current-visibility suppression with preserved history. Remaining
-before a private pilot: transitive KnowledgeCore and cross-route visibility
-audit, reviewed policy changes
+status, and current-visibility suppression with preserved history. ADR-185
+adds SQL-level retained Brain and reviewed KnowledgeCore visibility denial for
+an older message subsequently excluded, including attachment/document bridges.
+Remaining before a private pilot: complete cross-route audit (including
+privileged historical Email routes), reviewed policy changes
 for already-used accounts, sender/category policy choices, retention/purge
 decision, and a separate owner-authorized disposable live-provider gate.
 FileOS keeps its independently pinned donor exclusion semantics.

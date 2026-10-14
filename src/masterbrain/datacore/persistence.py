@@ -5678,6 +5678,7 @@ class DataCoreStore:
                 "AND v.id=e.source_version_id JOIN brain_source_items i ON "
                 "i.tenant_id=v.tenant_id AND i.id=v.item_id "
                 "WHERE (%s::text[] IS NULL OR v.source_id=ANY(%s::text[])) "
+                "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
                 "AND c.search_vector @@ plainto_tsquery('simple',%s) "
                 "ORDER BY rank DESC,c.id LIMIT %s",
                 (query, query, allowed_sources, allowed_sources, query, limit),
@@ -5706,6 +5707,7 @@ class DataCoreStore:
                 "FROM brain_normalized_documents nd WHERE nd.tenant_id=e.tenant_id "
                 "AND nd.evidence_id=e.id ORDER BY nd.created_at DESC,nd.id DESC LIMIT 1) d "
                 "ON true WHERE e.id=%s "
+                "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
                 "AND (%s::text[] IS NULL OR v.source_id=ANY(%s::text[]))",
                 (evidence_id, allowed_sources, allowed_sources),
             ).fetchone()
@@ -5728,6 +5730,7 @@ class DataCoreStore:
                 "JOIN brain_evidence e ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id "
                 "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
                 "AND v.id=e.source_version_id WHERE d.evidence_id=%s "
+                "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
                 "AND (%s::text[] IS NULL OR v.source_id=ANY(%s::text[])) "
                 "ORDER BY d.created_at DESC,d.id DESC LIMIT 1",
                 (evidence_id, allowed_sources, allowed_sources),
@@ -5762,18 +5765,24 @@ class DataCoreStore:
             anchor = None
             if after is not None:
                 anchor = conn.execute(
-                    "SELECT recorded_at,id FROM brain_change_events WHERE id=%s "
-                    "AND (%s::text[] IS NULL OR source_id=ANY(%s::text[]))",
+                    "SELECT ce.recorded_at,ce.id FROM brain_change_events ce WHERE ce.id=%s "
+                    "AND (%s::text[] IS NULL OR ce.source_id=ANY(%s::text[])) "
+                    "AND NOT EXISTS (SELECT 1 FROM brain_evidence e "
+                    "WHERE e.tenant_id=ce.tenant_id AND e.source_version_id=ce.version_id "
+                    "AND public.brain_email_evidence_is_excluded(e.tenant_id,e.id))",
                     (after, allowed_sources, allowed_sources),
                 ).fetchone()
                 if not anchor:
                     raise NotFound()
             rows = conn.execute(
-                "SELECT id,source_id,item_id,version_id,kind,recorded_at "
-                "FROM brain_change_events WHERE (%s::timestamptz IS NULL OR "
-                "(recorded_at,id)>(%s,%s)) "
-                "AND (%s::text[] IS NULL OR source_id=ANY(%s::text[])) "
-                "ORDER BY recorded_at,id LIMIT %s",
+                "SELECT ce.id,ce.source_id,ce.item_id,ce.version_id,ce.kind,ce.recorded_at "
+                "FROM brain_change_events ce WHERE (%s::timestamptz IS NULL OR "
+                "(ce.recorded_at,ce.id)>(%s,%s)) "
+                "AND (%s::text[] IS NULL OR ce.source_id=ANY(%s::text[])) "
+                "AND NOT EXISTS (SELECT 1 FROM brain_evidence e "
+                "WHERE e.tenant_id=ce.tenant_id AND e.source_version_id=ce.version_id "
+                "AND public.brain_email_evidence_is_excluded(e.tenant_id,e.id)) "
+                "ORDER BY ce.recorded_at,ce.id LIMIT %s",
                 (
                     anchor["recorded_at"] if anchor else None,
                     anchor["recorded_at"] if anchor else None,

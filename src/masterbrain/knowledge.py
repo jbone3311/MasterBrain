@@ -48,6 +48,12 @@ _TABLES = {
 def _visible_direct_sql(alias: str, kind_sql: str, id_sql: str) -> str:
     """Closed SQL fragment for an assertion's full direct-source grant set."""
     return (
+        "(NOT EXISTS (SELECT 1 FROM knowledge_evidence excluded_basis "
+        f"WHERE excluded_basis.tenant_id={alias}.tenant_id "
+        f"AND excluded_basis.target_kind={kind_sql} "
+        f"AND excluded_basis.target_id={id_sql} "
+        "AND public.brain_email_evidence_is_excluded("
+        "excluded_basis.tenant_id,excluded_basis.evidence_id)) AND "
         "(allowed.sources IS NULL OR ("
         "EXISTS (SELECT 1 FROM knowledge_evidence ke "
         f"WHERE ke.tenant_id={alias}.tenant_id AND ke.target_kind={kind_sql} "
@@ -59,7 +65,7 @@ def _visible_direct_sql(alias: str, kind_sql: str, id_sql: str) -> str:
         "AND v.id=e.source_version_id "
         f"WHERE ke.tenant_id={alias}.tenant_id AND ke.target_kind={kind_sql} "
         f"AND ke.target_id={id_sql} "
-        "AND v.source_id<>ALL(allowed.sources))))"
+        "AND v.source_id<>ALL(allowed.sources)))))"
     )
 
 
@@ -280,7 +286,9 @@ class KnowledgeCore:
                     raise Conflict("knowledge idempotency key reused")
                 return KnowledgeResult(old["object_kind"], old["object_id"], False)
             rows = conn.execute(
-                "SELECT id FROM brain_evidence WHERE id=ANY(%s)", (evidence_ids,)
+                "SELECT id FROM brain_evidence WHERE id=ANY(%s) "
+                "AND NOT public.brain_email_evidence_is_excluded(tenant_id,id)",
+                (evidence_ids,),
             ).fetchall()
             if {row["id"] for row in rows} != set(evidence_ids):
                 raise NotFound()

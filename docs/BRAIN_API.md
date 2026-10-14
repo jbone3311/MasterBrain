@@ -35,6 +35,12 @@ objects, general SQL, or an unbounded corpus dump.
 - `GET /v1/brain/changes` — implemented cursor-bounded DataCore change feed.
   Enrolled assistants with `brain.changes.read` see only granted sources;
   ungranted event cursors return not found (ADR-133).
+
+ADR-185 applies the current Email mailbox-exclusion state to these retained
+Brain routes before ranking/pagination. Excluded direct evidence/content IDs
+and change cursors return not found; reviewed KnowledgeCore results grounded
+in excluded Email evidence are also hidden. This does not delete history or
+change privileged historical Email routes, and is synthetic-only proof.
 - `GET /v1/brain/sources/{source_id}/freshness` — implemented latest fully accounted
   FileOS run or explicit `no_completed_run`; requires `brain.changes.read`.
 - `GET /v1/brain/sources/{source_id}/inventory` — implemented latest completed

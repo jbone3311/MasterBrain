@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-185 adds a synthetic/disposable SQL visibility fence for retained Brain
+search, direct evidence/content and changes, plus reviewed KnowledgeCore
+assertions, when previously ingested Email later becomes mailbox-excluded.
+Parent, attachment and approved-document bridge receipts resolve to the same
+current exclusion state. The filter is applied before ranking/pagination and
+conjoined with source grants. No immutable history is purged; privileged
+historical Email access, policy changes on used accounts, and real-provider
+acceptance still require separate owner decisions and tests.
+
 ADR-184 adds a synthetic scoped Email mailbox exclusion: an exact, sorted
 private-mailbox set is bound to the account/cursor fingerprint, checked against
 `Email/get` membership before provider or retained-byte access, and recorded
@@ -7,8 +16,8 @@ as `excluded` rather than a false deletion. Existing current Email/Brain search
 is hidden in the same transaction; immutable evidence is not purged. Internal
 reconciliation retains an opaque provider ID; user-facing sync status exposes
 only an excluded count. Sender/category policies, retroactive purge, policy
-changes on a used account, transitive KnowledgeCore visibility and live
-Fastmail acceptance remain open.
+changes on a used account and live Fastmail acceptance remain open. ADR-185
+subsequently adds the retained Brain/reviewed KnowledgeCore read fence.
 
 ADR-183 adds evidence-backed, reviewed person/organization roles on a project,
 with immutable history, source-grant-safe exact/project-dossier/search/change

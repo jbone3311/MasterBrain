@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-185](adr/185_excluded_email_evidence_visibility.md) closes the retained
+Brain and reviewed KnowledgeCore read paths for already-ingested Email that
+later becomes mailbox-excluded. It preserves immutable history and existing
+human historical access pending an owner retention decision; synthetic only.
+
 [ADR-184](adr/184_scoped_mailbox_exclusion.md) adds a policy-fingerprinted,
 pre-download exact mailbox exclusion to synthetic scoped Email intake. It
 hides a formerly current message without claiming provider deletion; immutable

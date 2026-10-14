@@ -1,7 +1,8 @@
 """Disposable SQL and fictional Fastmail proof of the scoped lease boundary."""
 
 import json
-from datetime import UTC, datetime
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import httpx
@@ -15,6 +16,15 @@ from email_brain.schemas import SearchRequest
 from email_brain.store import Conflict, IngestItem, InventoryError, NotFound
 from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import (
+    CommitmentWrite,
+    DueCommitmentsRequest,
+    EventWrite,
+    ProjectDossierRequest,
+    ProjectWrite,
+    TimelineRequest,
+)
 
 pytestmark = pytest.mark.postgres
 database, tenant = pg.database, pg.tenant
@@ -219,10 +229,78 @@ def test_scoped_mailbox_exclusion_hides_old_projection_without_new_content(datab
     assert len(hits) == 1
     bridge_ctx = pg.datacore_context(ctx)
     core = pg.DataCoreStore(store)
-    core.bridge_current_email_version(
+    bridged = core.bridge_current_email_version(
         bridge_ctx, hits[0]["evidence_id"], uuid4(), code_revision="exclusion-test-v1"
     )
     assert len(core.search_current_email(bridge_ctx, "Melron")) == 1
+    knowledge_ctx = replace(
+        bridge_ctx,
+        scopes=bridge_ctx.scopes | frozenset({
+            "knowledge.review", "knowledge.search", "knowledge.read",
+            "brain.evidence.read", "brain.content.read",
+        }),
+    )
+    knowledge = KnowledgeCore(store)
+    project = knowledge.publish(
+        knowledge_ctx,
+        ProjectWrite(
+            kind="project", title="Private Melron project", state="active",
+            aliases=[{
+                "alias": "Private Example", "alias_kind": "name",
+                "evidence_id": bridged.evidence_id,
+                "source_quote": "Synthetic investment",
+            }],
+            evidence_ids=[bridged.evidence_id], source_quote="Synthetic investment",
+            confidence=0.9, observed_at=datetime(2026, 9, 19, tzinfo=UTC),
+            reviewed=True,
+        ),
+        uuid4(),
+    )
+    event = knowledge.publish(
+        knowledge_ctx,
+        EventWrite(
+            kind="event", event_type="test.milestone", title="Private Melron milestone",
+            project_id=project.object_id, starts_at=datetime(2026, 9, 19, tzinfo=UTC),
+            evidence_ids=[bridged.evidence_id], source_quote="Synthetic investment",
+            confidence=0.9, observed_at=datetime(2026, 9, 19, tzinfo=UTC),
+            reviewed=True,
+        ),
+        uuid4(),
+    )
+    commitment = knowledge.publish(
+        knowledge_ctx,
+        CommitmentWrite(
+            kind="commitment", description="Private Melron follow-up", state="open",
+            project_id=project.object_id, due_at=datetime(2026, 9, 20, tzinfo=UTC),
+            evidence_ids=[bridged.evidence_id], source_quote="Synthetic investment",
+            confidence=0.9, observed_at=datetime(2026, 9, 19, tzinfo=UTC),
+            reviewed=True,
+        ),
+        uuid4(),
+    )
+    timeline_window = TimelineRequest(
+        start=datetime(2026, 9, 19, tzinfo=UTC) - timedelta(days=1),
+        end=datetime(2026, 9, 21, tzinfo=UTC), project_id=project.object_id,
+    )
+    due_window = DueCommitmentsRequest(
+        start=datetime(2026, 9, 19, tzinfo=UTC) - timedelta(days=1),
+        end=datetime(2026, 9, 21, tzinfo=UTC), project_id=project.object_id,
+    )
+    assert {hit.object_id for hit in knowledge.search(knowledge_ctx, "Private Melron")} == {
+        project.object_id, event.object_id, commitment.object_id,
+    }
+    assert core.search(knowledge_ctx, "Melron")
+    assert core.evidence(knowledge_ctx, bridged.evidence_id)["id"] == bridged.evidence_id
+    assert "Melron" in core.evidence_content(knowledge_ctx, bridged.evidence_id)["content"]
+    change_id = core.changes(bridge_ctx)["results"][0]["id"]
+    assert knowledge.get(knowledge_ctx, "project", project.object_id)["id"] == project.object_id
+    assert knowledge.project_dossier(
+        knowledge_ctx, project.object_id, ProjectDossierRequest()
+    )["project"]["object_id"] == project.object_id
+    timeline_results = knowledge.timeline(knowledge_ctx, timeline_window)["results"]
+    assert [row["object_id"] for row in timeline_results] == [event.object_id]
+    due_results = knowledge.commitments_due(knowledge_ctx, due_window)["results"]
+    assert [row["object_id"] for row in due_results] == [commitment.object_id]
     assert mailbox.downloads == ["m1"]
 
     private = True
@@ -234,6 +312,35 @@ def test_scoped_mailbox_exclusion_hides_old_projection_without_new_content(datab
     assert store.search(ctx, SearchRequest(query="Melron")) == []
     assert core.search_current_email(bridge_ctx, "Melron") == []
     assert core.search_current_email_family(bridge_ctx, "Melron").messages == ()
+    assert core.search(knowledge_ctx, "Melron") == []
+    assert knowledge.search(knowledge_ctx, "Private Melron") == []
+    assert knowledge.resolve_project_alias(knowledge_ctx, "Private Example")["candidates"] == []
+    assert knowledge.timeline(knowledge_ctx, timeline_window)["results"] == []
+    assert knowledge.commitments_due(knowledge_ctx, due_window)["results"] == []
+    assert core.changes(bridge_ctx)["results"] == []
+    with pytest.raises(NotFound):
+        core.changes(bridge_ctx, after=change_id)
+    with pytest.raises(NotFound):
+        core.evidence(knowledge_ctx, bridged.evidence_id)
+    with pytest.raises(NotFound):
+        core.evidence_content(knowledge_ctx, bridged.evidence_id)
+    with pytest.raises(NotFound):
+        knowledge.get(knowledge_ctx, "project", project.object_id)
+    with pytest.raises(NotFound):
+        knowledge.project_dossier(
+            knowledge_ctx, project.object_id, ProjectDossierRequest()
+        )
+    with pytest.raises(NotFound):
+        knowledge.publish(
+            knowledge_ctx,
+            ProjectWrite(
+                kind="project", title="New private project", state="active",
+                evidence_ids=[bridged.evidence_id], source_quote="Synthetic investment",
+                confidence=0.9, observed_at=datetime(2026, 9, 19, tzinfo=UTC),
+                reviewed=True,
+            ),
+            uuid4(),
+        )
     assert mailbox.downloads == ["m1"]
     assert store.sync_status(ctx, account)["message_counts"] == {
         "ready": 0, "quarantined": 0, "deleted": 0, "excluded": 1,
@@ -244,12 +351,22 @@ def test_scoped_mailbox_exclusion_hides_old_projection_without_new_content(datab
         ).fetchone()
         assert state == {"status": "excluded"}
         assert conn.execute(
+            "SELECT public.brain_email_evidence_is_excluded(%s,%s) AS excluded",
+            (ctx.tenant_id, bridged.evidence_id),
+        ).fetchone()["excluded"] is True
+        assert conn.execute(
             "SELECT count(*) AS n FROM raw_objects WHERE account_id=%s", (account,)
         ).fetchone()["n"] == 1
         assert conn.execute(
             "SELECT count(*) AS n FROM provider_events WHERE account_id=%s "
             "AND kind='exclude_message'", (account,)
         ).fetchone()["n"] == 1
+    foreign_ctx, _ = pg.tenant.__wrapped__(database)
+    with store.transaction(foreign_ctx) as conn:
+        assert conn.execute(
+            "SELECT public.brain_email_evidence_is_excluded(%s,%s) AS excluded",
+            (ctx.tenant_id, bridged.evidence_id),
+        ).fetchone()["excluded"] is False
     step("caught_up")
 
     private = False
@@ -260,6 +377,9 @@ def test_scoped_mailbox_exclusion_hides_old_projection_without_new_content(datab
     step("progress")
     assert len(store.search(ctx, SearchRequest(query="Melron"))) == 1
     assert len(core.search_current_email(bridge_ctx, "Melron")) == 1
+    assert len(core.search(knowledge_ctx, "Melron")) == 1
+    assert len(knowledge.search(knowledge_ctx, "Private Melron")) == 3
+    assert core.evidence(knowledge_ctx, bridged.evidence_id)["id"] == bridged.evidence_id
     assert store.sync_status(ctx, account)["message_counts"]["ready"] == 1
 
 

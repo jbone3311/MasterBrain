@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Hide retained Brain results and reviewed KnowledgeCore assertions grounded in
+  subsequently mailbox-excluded Email, including parent/attachment/document
+  evidence (ADR-185). Synthetic SQL proof only; history and privileged
+  historical Email access are not purged.
+
 - Add synthetic scoped-mailbox exclusion before provider download or retained
   byte reuse (ADR-184). An explicit excluded status hides older current Email
   and Brain search results without claiming deletion or purging history; no
