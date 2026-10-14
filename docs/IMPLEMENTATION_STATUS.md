@@ -4,7 +4,9 @@ ADR-182 adds reviewed, evidence-linked project aliases, a candidate-only
 source-scoped lookup API and provider-neutral client method. A shared address
 returns multiple candidates rather than merging deals. The append-only SQL
 manifest prevents later direct alias additions to a reviewed project; old
-projects retain exact-title fallback without a heap rewrite. This is not
+projects retain exact-title fallback without a heap rewrite. PR #203 passed
+exact-head and merged-main full PostgreSQL CI, strict-runtime and populated
+restore gates; see the [build receipt](BUILD_RECEIPT.md). This is not
 automatic entity matching, current-project truth or a complete dossier.
 
 ADR-181 adds a fourth isolated FOS-Master statement recipe baseline for Morgan

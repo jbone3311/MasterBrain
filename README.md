@@ -5,12 +5,12 @@ combines Email and FileOS source capabilities behind shared ingestion and knowle
 layers, then gives Claude, Grok, ChatGPT, and other authorized assistants compact,
 progressive access with drill-down to original evidence.
 
-**Status:** `0.2.0a2` is a synthetic-only alpha, not a live or production
-release. The earlier tagged
+**Status:** [v0.2.0a2](https://github.com/jbone3311/MasterBrain/releases/tag/v0.2.0a2)
+is a tagged synthetic-only alpha, not a live or production release. It points
+to `89bd8a1`; subsequent `main` work is unreleased. The earlier tagged
 [v0.2.0a1](https://github.com/jbone3311/MasterBrain/tree/v0.2.0a1)
-checkpoint remains at `c0a531d`. The package, API and manifest share the new
-version identity; the release tag is made only after the exact `main` commit
-passes its gates.
+checkpoint remains at `c0a531d`. The package, API and manifest share the
+`0.2.0a2` identity; neither tag implies live-source acceptance.
 
 Today, fictional data can flow through read-only Email and FileOS intake,
 shared DataCore extraction and indexing, reviewed KnowledgeCore records, and a

@@ -4,6 +4,22 @@ Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Reviewed project-alias candidate lookup — ADR-182
 
+[PR #203](https://github.com/jbone3311/MasterBrain/pull/203) final head
+`b7da05927791c74d34a57718f830ef1c1c0900c3` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38588317593)
+with 3,309 passes, six skips and all 538 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38588317966)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38588317587)
+passed. Squash merge `d413f4bfe8cfa4238a120597422f8950df5a88ff`
+passed [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38589817617)
+with the same counts and PostgreSQL denominator, plus
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38589817313)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38589817317).
+The [PR receipt](https://github.com/jbone3311/MasterBrain/pull/203#issuecomment-6172178255)
+and [closed issue #175](https://github.com/jbone3311/MasterBrain/issues/175)
+retain the verification trail. These are synthetic/disposable gates, not live
+deal resolution or FileOS cutover.
+
 Local Python 3.14/PostgreSQL 17 disposable full suite passed 3,309 tests with
 six skips; 537 of 538 PostgreSQL-marked tests executed (one platform-local
 skip). The first full run exposed old migration-inventory expectations; after
@@ -15,8 +31,7 @@ punctuation, tenant/source grants, legacy exact-title fallback, immutable alias
 rows, direct-SQL evidence/manifest refusal and populated forward migration.
 After the full run, the existing real API/PostgreSQL KnowledgeCore integration
 test also passed with an added resolver-route assertion.
-Exact PR-head and merged-main hosted gates remain required. No real deal, mail
-or FileOS data was used; the donor checkout was not changed.
+No real deal, mail or FileOS data was used; the donor checkout was not changed.
 
 ## Morgan Stanley donor recipe comparison — ADR-181
 
