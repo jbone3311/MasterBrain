@@ -2,6 +2,22 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed project-alias candidate lookup — ADR-182
+
+Local Python 3.14/PostgreSQL 17 disposable full suite passed 3,309 tests with
+six skips; 537 of 538 PostgreSQL-marked tests executed (one platform-local
+skip). The first full run exposed old migration-inventory expectations; after
+updating those tests, the repeated full run passed. Browser tests passed
+164/164. Ruff, mypy (102 source files), structural deployment gate,
+documentation validation (283 Markdown files, 1,500 local references) and
+diff checks passed. Targeted tests also covered ambiguous names, Unicode and
+punctuation, tenant/source grants, legacy exact-title fallback, immutable alias
+rows, direct-SQL evidence/manifest refusal and populated forward migration.
+After the full run, the existing real API/PostgreSQL KnowledgeCore integration
+test also passed with an added resolver-route assertion.
+Exact PR-head and merged-main hosted gates remain required. No real deal, mail
+or FileOS data was used; the donor checkout was not changed.
+
 ## Morgan Stanley donor recipe comparison — ADR-181
 
 The local exact-hash FOS-Master AST replay and fictional recipe goldens passed

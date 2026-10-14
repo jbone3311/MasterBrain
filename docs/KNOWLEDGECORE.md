@@ -20,6 +20,10 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
   existing `brain_evidence` record from the same tenant.
 - Entities, relationships, claims and projects support valid-time intervals and
   explicit supersession. Observed time and database-recorded time remain separate.
+- ADR-182 adds reviewed project title/address/legal-entity/folder aliases, each
+  with a direct supporting evidence ID and quote. The alias set is bound to
+  the immutable project row. Exact lookup returns all visible candidates and
+  never auto-merges a shared name; retained review-chain versions can coexist.
 - Events preserve event time; commitments preserve state, due time, owners,
   counterparties and project links.
 - Corrections link an old assertion to a replacement without updating or deleting
@@ -68,6 +72,7 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
 | `GET /v1/knowledge/commitments-due` | `knowledge.search` | Bounded due-window commitment page, recorded-time cutoff/cursor, direct evidence IDs; ADR-161 |
 | `GET /v1/knowledge/{kind}/{id}` | `knowledge.read` | One tenant-scoped assertion and its evidence links |
 | `GET /v1/knowledge/changes` | `knowledge.changes.read` | Bounded chronological change page |
+| `GET /v1/knowledge/projects/resolve` | `knowledge.search` | Bounded, source-scoped reviewed candidates for an exact normalized alias; ambiguous names are not merged |
 
 Returned titles, excerpts, values and source quotes are untrusted source-derived
 content. Clients must not treat them as instructions. `knowledge.review` cannot be
@@ -94,9 +99,10 @@ For file-based Librarian exchange, [ADR-169](adr/169_code_first_librarian_intero
 requires deterministic parsing and proposal-only import before any reviewed
 publication. The [twelve-gap review](LIBRARIAN_INTEROP.md) separates already
 implemented FileOS CSV/XLSX and Email attachment occurrence evidence from the
-missing table locators, project roles/aliases, inference basis, proposal queue and
-Markdown export. None of those proposed behaviors is included in the current
-KnowledgeCore runtime; human review and source-grant checks remain mandatory.
+missing table locators, project roles, inference basis, proposal queue and
+Markdown export. ADR-182 implements the reviewed project-alias portion only;
+the other proposed behaviors remain outside runtime. Human review and source-
+grant checks remain mandatory.
 
 ## Rollback
 

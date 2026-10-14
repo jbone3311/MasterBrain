@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import unicodedata
 from datetime import timedelta
 from typing import Annotated, Literal, Self
 
@@ -90,11 +91,51 @@ class ClaimWrite(AssertionBase):
     assertion_status: Literal["asserted", "disputed", "retracted"] = "asserted"
 
 
+def normalize_project_alias(value: str) -> str:
+    """Casefold and separate Unicode punctuation; never infer semantic equivalence."""
+    folded = unicodedata.normalize("NFKC", value).casefold()
+    separated = "".join(
+        " " if char.isspace() or unicodedata.category(char).startswith("P") else char
+        for char in folded
+    )
+    return " ".join(separated.split())
+
+
+class ProjectAliasWrite(ClosedModel):
+    alias: str = Field(min_length=1, max_length=300)
+    alias_kind: Literal["name", "address", "legal_entity", "folder", "other"]
+    evidence_id: EvidenceIdentity
+    source_quote: str = Field(min_length=1, max_length=2000)
+
+    @model_validator(mode="after")
+    def meaningful(self) -> Self:
+        if ("\x00" in self.alias or "\x00" in self.source_quote
+                or not 1 <= len(normalize_project_alias(self.alias)) <= 300):
+            raise ValueError("invalid project alias")
+        return self
+
+
 class ProjectWrite(AssertionBase):
     kind: Literal["project"]
     title: str = Field(min_length=1, max_length=300)
     description: str = Field(default="", max_length=4000)
     state: Literal["proposed", "active", "blocked", "completed", "cancelled", "unknown"]
+    aliases: list[ProjectAliasWrite] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def alias_evidence(self) -> Self:
+        normalized_title = normalize_project_alias(self.title)
+        if not 1 <= len(normalized_title) <= 300:
+            raise ValueError("invalid project title for lookup")
+        seen = {normalized_title}
+        for item in self.aliases:
+            if item.evidence_id not in self.evidence_ids:
+                raise ValueError("project alias evidence must belong to the assertion")
+            normalized = normalize_project_alias(item.alias)
+            if normalized in seen:
+                raise ValueError("duplicate project alias")
+            seen.add(normalized)
+        return self
 
 
 class EventWrite(AssertionBase):
@@ -224,4 +265,23 @@ class ProjectDossierRequest(ClosedModel):
     def integer_limit(cls, value: object) -> object:
         if isinstance(value, bool):
             raise ValueError("boolean limit is invalid")
+        return value
+
+
+class ProjectAliasLookupRequest(ClosedModel):
+    name: str = Field(min_length=1, max_length=300)
+    limit: int = Field(default=25, ge=1, le=25)
+
+    @field_validator("limit", mode="before")
+    @classmethod
+    def integer_limit(cls, value: object) -> object:
+        if isinstance(value, bool):
+            raise ValueError("boolean limit is invalid")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def meaningful_name(cls, value: str) -> str:
+        if "\x00" in value or not 1 <= len(normalize_project_alias(value)) <= 300:
+            raise ValueError("invalid project alias query")
         return value

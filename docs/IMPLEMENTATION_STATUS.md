@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-182 adds reviewed, evidence-linked project aliases, a candidate-only
+source-scoped lookup API and provider-neutral client method. A shared address
+returns multiple candidates rather than merging deals. The append-only SQL
+manifest prevents later direct alias additions to a reviewed project; old
+projects retain exact-title fallback without a heap rewrite. This is not
+automatic entity matching, current-project truth or a complete dossier.
+
 ADR-181 adds a fourth isolated FOS-Master statement recipe baseline for Morgan
 Stanley OCR text. Fictional exact-donor comparison preserves a cash-bucket
 sub-component exclusion, parenthesized debits, OCR confidence/date loss and

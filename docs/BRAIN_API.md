@@ -209,6 +209,14 @@ source effects or an alternate route through KnowledgeCore.
   gates passed. Merged-main restore passed; full CI and the final strict gate
   were blocked before execution by hosted-runner acquisition
   ([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
+- `GET /v1/knowledge/projects/resolve?name=...&limit=25` — ADR-182
+  candidate-only lookup of a reviewed project's canonical title or typed
+  aliases. Names are Unicode-normalized, casefolded and punctuation-separated;
+  a duplicate name across projects returns ambiguous candidates, never an
+  automatic merge. Source grants cover the project and each returned alias
+  before limit. Existing pre-alias projects retain exact case-insensitive title
+  fallback. Results are retained reviewed history, not a current-project
+  reducer. `BrainReadClient.resolve_project_alias` validates the bounded read.
 - `GET /v1/knowledge/{kind}/{id}` — implemented assertion/evidence expansion;
   enrolled assistants cannot resolve mixed or hidden-source assertions.
 - `GET /v1/knowledge/statement-proposals/{proposal_id}` — ADR-173 owner-only,

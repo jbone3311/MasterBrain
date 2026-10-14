@@ -17,7 +17,9 @@ shared DataCore extraction and indexing, reviewed KnowledgeCore records, and a
 scoped Brain API. The first-party `/brain` workspace and provider-neutral client
 can search current evidence, show exact source quotes, and drill down to the
 original; reviewed events, due commitments and project dossiers are separate
-read-only views. The pinned FOS-Master donor remains untouched and its FileOS
+read-only views. Reviewed project aliases can return multiple source-scoped
+deal candidates; they do not merge projects or select a current truth. The
+pinned FOS-Master donor remains untouched and its FileOS
 shadow comparison is nonpublishing.
 
 Email and FileOS are independently optional: a tenant can register either,

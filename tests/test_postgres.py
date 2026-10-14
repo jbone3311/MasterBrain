@@ -3373,6 +3373,135 @@ def knowledge_context(ctx: TenantContext) -> TenantContext:
     )
 
 
+def test_reviewed_project_alias_candidates_source_grants_and_immutability(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID],
+) -> None:
+    """Fictional colliding deal names remain reviewed, source-scoped candidates."""
+    store, admin = database
+    ctx = knowledge_context(tenant[0])
+    source_a, source_b = "fileos_alias_a_" + uuid4().hex[:12], "fileos_alias_b_" + uuid4().hex[:12]
+    evidences: list[str] = []
+    with psycopg.connect(admin) as conn:
+        for source_id in (source_a, source_b):
+            item_id = "item_" + uuid4().hex
+            version_id = "version_" + uuid4().hex
+            evidence_id = "evidence_" + uuid4().hex
+            evidences.append(evidence_id)
+            digest = hashlib.sha256(source_id.encode()).hexdigest()
+            conn.execute(
+                "INSERT INTO brain_sources(tenant_id,id,kind,display_name,root_binding_sha256) "
+                "VALUES (%s,%s,'fileos','Fictional deal source',%s)",
+                (ctx.tenant_id, source_id, hashlib.sha256(source_id.encode()).hexdigest()),
+            )
+            conn.execute(
+                "INSERT INTO brain_source_items(tenant_id,source_id,id,locator,"
+                "first_seen_at,last_seen_at) VALUES (%s,%s,%s,'fictional.txt',now(),now())",
+                (ctx.tenant_id, source_id, item_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_source_versions(tenant_id,source_id,item_id,id,"
+                "observed_at,sha256,size_bytes,media_type,metadata) "
+                "VALUES (%s,%s,%s,%s,now(),%s,10,'text/plain','{}'::jsonb)",
+                (ctx.tenant_id, source_id, item_id, version_id, digest),
+            )
+            conn.execute(
+                "INSERT INTO brain_evidence(tenant_id,id,source_version_id,sha256,"
+                "storage,retained) VALUES (%s,%s,%s,%s,'inline',true)",
+                (ctx.tenant_id, evidence_id, version_id, digest),
+            )
+    knowledge = KnowledgeCore(store)
+    project_ids: list[str] = []
+    for index, evidence_id in enumerate(evidences):
+        assertion = ProjectWrite(
+            kind="project", title=f"Deal Example {index}", state="active",
+            aliases=[
+                {"alias": "123 Main St." if index == 0 else "123-MAIN, St",
+                 "alias_kind": "address", "evidence_id": evidence_id,
+                 "source_quote": "Fictional deal at 123 Main St."},
+                *([{"alias": "Éxample—LLC", "alias_kind": "legal_entity",
+                    "evidence_id": evidence_id, "source_quote": "Éxample LLC"}]
+                  if index == 0 else []),
+            ],
+            evidence_ids=[evidence_id], source_quote="Fictional deal at 123 Main St.",
+            confidence=0.9, observed_at=datetime(2026, 10, 14, tzinfo=UTC), reviewed=True,
+        )
+        key = uuid4()
+        published = knowledge.publish(ctx, assertion, key)
+        assert knowledge.publish(ctx, assertion, key).changed is False
+        project_ids.append(published.object_id)
+    found = knowledge.resolve_project_alias(ctx, " 123 MAIN, St ")
+    assert {row["object_id"] for row in found["candidates"]} == set(project_ids)
+    assert found["ambiguous"] is True and found["truncated"] is False
+    assert all(row["alias_kind"] == "address" for row in found["candidates"])
+    limited = knowledge.resolve_project_alias(ctx, "123 Main St.", limit=1)
+    assert len(limited["candidates"]) == 1
+    assert limited["ambiguous"] is True and limited["truncated"] is True
+    restricted = replace(ctx, source_ids=frozenset({source_a}))
+    scoped = knowledge.resolve_project_alias(restricted, "123-Main St.")
+    assert [row["object_id"] for row in scoped["candidates"]] == [project_ids[0]]
+    assert scoped["ambiguous"] is False
+    other_tenant = uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenants(id,name) VALUES (%s,'Other fictional owner')",
+            (other_tenant,),
+        )
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) VALUES (%s,%s,'owner')",
+            (other_tenant, ctx.actor_id),
+        )
+    assert knowledge.resolve_project_alias(
+        replace(ctx, tenant_id=other_tenant), "123 Main St."
+    )["candidates"] == []
+    assert knowledge.resolve_project_alias(ctx, "Deal Example 0")["candidates"][0][
+        "object_id"
+    ] == project_ids[0]
+    assert knowledge.resolve_project_alias(ctx, "éxample llc")["candidates"][0][
+        "object_id"
+    ] == project_ids[0]
+    legacy_id = "project_" + uuid4().hex
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_projects(tenant_id,id,title,description,state,confidence,"
+            "source_quote,observed_at,reviewer_id) "
+            "VALUES (%s,%s,'Legacy Example','','active',0.9,'Fictional legacy deal',now(),%s)",
+            (ctx.tenant_id, legacy_id, ctx.actor_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_evidence(tenant_id,target_kind,target_id,evidence_id,stance) "
+            "VALUES (%s,'project',%s,%s,'supports')",
+            (ctx.tenant_id, legacy_id, evidences[0]),
+        )
+    historical = knowledge.resolve_project_alias(ctx, "legacy example")
+    assert historical["candidates"][0]["object_id"] == legacy_id
+    assert historical["candidates"][0]["alias_kind"] == "legacy_title"
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_project_aliases(tenant_id,id,project_id,alias,"
+            "normalized_alias,alias_kind,evidence_id,source_quote,reviewer_id) "
+            "VALUES (%s,%s,%s,'False link','false link','other',%s,'fictional',%s)",
+            (
+                ctx.tenant_id, "palias_" + uuid4().hex, project_ids[0],
+                evidences[1], ctx.actor_id,
+            ),
+        )
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_project_aliases(tenant_id,id,project_id,alias,"
+            "normalized_alias,alias_kind,evidence_id,source_quote,reviewer_id) "
+            "VALUES (%s,%s,%s,'Unreviewed','unreviewed','other',%s,'fictional',%s)",
+            (
+                ctx.tenant_id, "palias_" + uuid4().hex, project_ids[0],
+                evidences[0], ctx.actor_id,
+            ),
+        )
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE knowledge_project_aliases SET alias='changed' WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        )
+
+
 def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path
 ) -> None:
@@ -4233,6 +4362,13 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     )
     assert searched.status_code == 200 and searched.json()["results"]
     assert searched.json()["visibility"] == "retained"
+    resolved = api.get(
+        "/v1/knowledge/projects/resolve",
+        params={"name": "project atlas"}, headers=headers,
+    )
+    assert resolved.status_code == 200, resolved.text
+    assert {row["object_id"] for row in resolved.json()["candidates"]} == {project.object_id}
+    assert resolved.json()["resolution"] == "reviewed_candidates_only"
     current_reviewed = api.post(
         "/v1/knowledge/search",
         json={"query": "Skyline renewal", "kinds": ["project"],

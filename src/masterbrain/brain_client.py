@@ -17,8 +17,10 @@ from pydantic import ValidationError
 from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
     KnowledgeVisibility,
+    ProjectAliasLookupRequest,
     ProjectDossierRequest,
     TimelineRequest,
+    normalize_project_alias,
 )
 from masterbrain.schemas import (
     MAX_ANSWER_TEXT_BYTES,
@@ -555,6 +557,56 @@ class BrainReadClient:
                      for row in rows]
             if len(set(ids)) != len(ids) or order != sorted(order, reverse=True):
                 raise BrainClientError("invalid_response")
+        return data
+
+    def resolve_project_alias(self, name: str, *, limit: int = 25) -> dict[str, Any]:
+        """Return bounded reviewed candidates without choosing or merging one."""
+        try:
+            request = ProjectAliasLookupRequest(name=name, limit=limit)
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        query = httpx.QueryParams(request.model_dump(mode="json"))
+        data = self._request("GET", f"/v1/knowledge/projects/resolve?{query}")
+        candidates = data.get("candidates")
+        if (
+            not isinstance(candidates, list) or len(candidates) > limit
+            or type(data.get("ambiguous")) is not bool
+            or type(data.get("truncated")) is not bool
+            or data["ambiguous"] != (len(candidates) > 1 or data["truncated"])
+            or data["truncated"] and len(candidates) != limit
+            or data.get("resolution") != "reviewed_candidates_only"
+            or data.get("visibility") != "retained"
+            or data.get("untrusted_content") is not True
+        ):
+            raise BrainClientError("invalid_response")
+        names: list[str] = []
+        order: list[tuple[datetime, str]] = []
+        for item in candidates:
+            if not isinstance(item, dict):
+                raise BrainClientError("invalid_response")
+            object_id = item.get("object_id")
+            title = item.get("title")
+            matched = item.get("matched_alias")
+            recorded_at = self._aware_datetime(item.get("recorded_at"))
+            if (
+                item.get("object_kind") != "project"
+                or not isinstance(object_id, str) or not _PROJECT_ID.fullmatch(object_id)
+                or not isinstance(title, str) or not 1 <= len(title) <= 300
+                or not isinstance(matched, str) or not 1 <= len(matched) <= 300
+                or normalize_project_alias(matched) != normalize_project_alias(name)
+                or item.get("alias_kind") not in (
+                    "title", "name", "address", "legal_entity", "folder", "other",
+                    "legacy_title",
+                )
+                or not isinstance(item.get("evidence_id"), str)
+                or not _EVIDENCE_ID.fullmatch(item["evidence_id"])
+                or recorded_at is None
+            ):
+                raise BrainClientError("invalid_response")
+            names.append(object_id)
+            order.append((recorded_at, object_id))
+        if len(set(names)) != len(names) or order != sorted(order, reverse=True):
+            raise BrainClientError("invalid_response")
         return data
 
     @staticmethod

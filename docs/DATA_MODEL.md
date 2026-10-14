@@ -143,15 +143,22 @@ ones; it rewrites no assertion or evidence row. ADR-162's exact project dossier
 uses these indexes for independently bounded, recording-time-ordered links.
 The project's stored state is still a reviewed assertion, not a derived current
 state or contradiction resolution.
+Migration `0059_reviewed_project_aliases.sql` adds immutable, tenant-fenced
+project aliases with alias kind, evidence, quote, reviewer and normalized lookup
+key. New project rows bind the complete alias set with a SHA-256 manifest;
+deferred checks reject appended or unrelated-evidence aliases. Existing project
+rows are not rewritten and keep exact-title fallback. A name may map to more
+than one reviewed project candidate; neither uniqueness nor truth is inferred.
 
 The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
 [ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions,
 not existing columns or routes: private import proposals, derivation/basis links,
-reviewed project aliases and memberships, typed monetary units and uncertain due
+reviewed project memberships, typed monetary units and uncertain due
 windows, project-artifact associations and a compatible fact-name registry.
 New basis links must preserve transitive source grants. Existing Email attachment
 occurrences remain distinct even when their content hashes match. No migration
-for these proposed KnowledgeCore additions has landed.
+for these other proposed KnowledgeCore additions has landed; project aliases
+are the separate ADR-182 exception.
 
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is

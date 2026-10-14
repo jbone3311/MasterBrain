@@ -1,7 +1,8 @@
 # Librarian Markdown interoperability review
 
-Status: design review, not an implemented importer or exporter. Reviewed against
-`main` at `8d053d8` on 2026-10-14. The [umbrella issue](https://github.com/jbone3311/MasterBrain/issues/174)
+Status: design review, not an implemented importer or exporter. Originally reviewed
+against `main` at `8d053d8` on 2026-10-14; ADR-182 later implements the
+project-alias slice. The [umbrella issue](https://github.com/jbone3311/MasterBrain/issues/174)
 and its twelve children are proposals, not evidence that a capability works. This
 review keeps ADR-051's human-review requirement, source-scoped reads, immutable
 evidence, and synthetic-only acceptance intact.
@@ -27,7 +28,7 @@ excluded content into an indexed artifact.
 
 | Issue | Verified baseline | Refined direction |
 |---|---|---|
-| [#175](https://github.com/jbone3311/MasterBrain/issues/175) Project aliases | Partial: `knowledge_entity_aliases` exists; projects have no alias table. | Add reviewed, evidence-linked project aliases, with a kind and ambiguity result. A legal entity remains an organization; an alias must not silently equate it with a project or merge projects. |
+| [#175](https://github.com/jbone3311/MasterBrain/issues/175) Project aliases | ADR-182 adds reviewed, evidence-linked project aliases and ambiguous, source-scoped candidate lookup. Older projects keep exact-title fallback. | Project roles and a complete dossier are still missing. An alias names a project; it does not assert that a legal-entity record is the same object or auto-merge projects. |
 | [#176](https://github.com/jbone3311/MasterBrain/issues/176) Deal roles | Missing as a project membership record; entity-to-entity relationships do not provide it. | Add append-only project/entity/role assertions with valid time, reviewer, evidence, supersession, and source-grant checks. Start with a small role vocabulary; no permissions derive from a business role. |
 | [#177](https://github.com/jbone3311/MasterBrain/issues/177) Derivation | Missing as a first-class attribute; confidence/status are not derivation. | Cover all relevant assertion kinds, not only four. Keep source-stated quotes mandatory. An inference without a direct quote needs typed links to reviewed basis assertions *and* their evidence, with transitive source-grant checks. Never put an assertion ID in `knowledge_evidence.evidence_id` or use `stance=context` as a substitute for a typed basis link. |
 | [#178](https://github.com/jbone3311/MasterBrain/issues/178) Proposal queue | Missing for KnowledgeCore; Email has a different rule-proposal workflow. | Stage imported/model suggestions in a separate private table. A human explicitly selects and reviews each row, even in one batch request; the batch transaction is atomic, idempotent, and records per-row decisions. No proposal enters reviewed search, dossier, or assistant retrieval. |
@@ -55,9 +56,11 @@ excluded content into an indexed artifact.
    atomic human batch approval through the existing reviewed publication path.
    Test cross-tenant and revoked-source basis links, replay, rollback, malformed
    citations, and direct unreviewed-write denial.
-4. Add project aliases and membership/role assertions, then the compatible
-   predicate registry. Test ambiguous aliases and superseded roles before any
-   automated entity matching.
+4. ADR-182 adds project aliases independently because it is an additive,
+   reviewed write and read boundary with no import path. Add membership/role
+   assertions next, then the compatible predicate registry. Test superseded
+   roles before any automated entity matching. The proposal-only importer in
+   step 2 remains the first *import* tranche and still needs a sanitized layout.
 5. Add typed amounts, multi-owner commitments and an explicit uncertain-due
    query; preserve exact due-window compatibility. Reuse FileOS CSV/XLSX
    extraction to add bounded table/cell locators and a separate Email route.
@@ -69,6 +72,6 @@ excluded content into an indexed artifact.
 
 Each behavior tranche requires its own ADR, additive migration where needed,
 PostgreSQL/RLS and restore tests, exact-head CI, rollback notes, and independent
-review before merging. The first code tranche is the proposal-only importer; it
-must not bypass ADR-051 or contact live mail, files, or a remote model. FOS-Master
+review before merging. The proposal-only importer must not bypass ADR-051 or
+contact live mail, files, or a remote model. FOS-Master
 remains unchanged and retains its separate parity/cutover gates.

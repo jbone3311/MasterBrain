@@ -11,8 +11,11 @@ from masterbrain.knowledge_schema import (
     EventWrite,
     KnowledgePublishRequest,
     KnowledgeSearchRequest,
+    ProjectAliasLookupRequest,
     ProjectDossierRequest,
+    ProjectWrite,
     TimelineRequest,
+    normalize_project_alias,
 )
 
 NOW = datetime(2026, 9, 22, tzinfo=UTC)
@@ -68,6 +71,33 @@ def test_aliases_evidence_and_event_intervals_are_strict() -> None:
                 "reviewed": True,
             }
         )
+
+
+def test_reviewed_project_aliases_require_cited_distinct_names() -> None:
+    base = {
+        "kind": "project", "title": "Deal Example", "state": "active",
+        "evidence_ids": [EVIDENCE], "source_quote": "Deal Example at 123 Main St.",
+        "confidence": 0.9, "observed_at": NOW, "reviewed": True,
+    }
+    alias = {
+        "alias": "123 Main St.", "alias_kind": "address",
+        "evidence_id": EVIDENCE, "source_quote": "123 Main St.",
+    }
+    assert normalize_project_alias(" 123-MAIN, St. ") == "123 main st"
+    assert ProjectWrite.model_validate({**base, "aliases": [alias]}).aliases[0].alias_kind == (
+        "address"
+    )
+    for bad in (
+        {**base, "aliases": [alias], "reviewed": False},
+        {**base, "aliases": [alias, {**alias, "alias": "123-Main St"}]},
+        {**base, "aliases": [{**alias, "evidence_id": "evidence_" + "b" * 32}]},
+        {**base, "aliases": [{**alias, "alias": "!!!"}]},
+        {**base, "aliases": [{**alias, "source_quote": ""}]},
+    ):
+        with pytest.raises(ValidationError):
+            ProjectWrite.model_validate(bad)
+    with pytest.raises(ValidationError):
+        ProjectAliasLookupRequest(name="!!!")
 
 
 def test_correction_requires_same_kind_replacement() -> None:

@@ -12,6 +12,7 @@ from psycopg import sql
 RUNTIME_SELECT = (
     "knowledge_entities",
     "knowledge_entity_aliases",
+    "knowledge_project_aliases",
     "knowledge_relationships",
     "knowledge_claims",
     "knowledge_projects",
@@ -98,6 +99,7 @@ RUNTIME_SELECT = (
 RUNTIME_INSERT = (
     "knowledge_entities",
     "knowledge_entity_aliases",
+    "knowledge_project_aliases",
     "knowledge_relationships",
     "knowledge_claims",
     "knowledge_projects",

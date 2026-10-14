@@ -56,6 +56,7 @@ from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
     KnowledgePublishRequest,
     KnowledgeSearchRequest,
+    ProjectAliasLookupRequest,
     ProjectDossierRequest,
     TimelineRequest,
 )
@@ -1018,6 +1019,20 @@ def create_app(
             return knowledge.project_dossier(principal.context, project_id, body)
         except ValueError:
             raise HTTPException(422, "invalid_project_dossier") from None
+
+    @app.get("/v1/knowledge/projects/resolve")
+    def knowledge_project_alias_lookup(
+        body: Annotated[ProjectAliasLookupRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return knowledge.resolve_project_alias(
+                principal.context, body.name, limit=body.limit,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_project_resolution") from None
 
     @app.get("/v1/knowledge/statement-proposals/{proposal_id}")
     def knowledge_statement_proposal(

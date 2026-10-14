@@ -28,6 +28,7 @@ from masterbrain.knowledge_schema import (
     ProjectWrite,
     RelationshipWrite,
     TimelineRequest,
+    normalize_project_alias,
 )
 
 _ID = re.compile(r"^[a-z]+_[a-f0-9]{32}$")
@@ -164,6 +165,23 @@ def _digest(assertion: KnowledgeAssertion) -> str:
 
 def _normalized_alias(value: str) -> str:
     return " ".join(value.casefold().split())
+
+
+def _project_alias_manifest(
+    rows: list[tuple[str, str, str, str]],
+) -> str:
+    """Length-prefix fields so SQL can verify the exact immutable alias set."""
+    def field(value: str) -> str:
+        return f"{len(value)}:{value}"
+
+    canonical = "".join(
+        field(normalize_project_alias(alias)) + field(kind) + field(evidence_id)
+        + field(quote)
+        for alias, kind, evidence_id, quote in sorted(
+            rows, key=lambda item: normalize_project_alias(item[0]),
+        )
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 class KnowledgeCore:
@@ -340,10 +358,16 @@ class KnowledgeCore:
             )
             return assertion.predicate.replace("_", " "), assertion.value
         if isinstance(assertion, ProjectWrite):
+            alias_rows = [
+                (assertion.title, "title", assertion.evidence_ids[0], assertion.source_quote),
+                *((item.alias, item.alias_kind, item.evidence_id, item.source_quote)
+                  for item in assertion.aliases),
+            ]
             conn.execute(
                 "INSERT INTO knowledge_projects(tenant_id,id,title,description,state,confidence,"
-                "source_quote,observed_at,valid_from,valid_to,supersedes_id,reviewer_id) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "source_quote,observed_at,valid_from,valid_to,supersedes_id,reviewer_id,"
+                "alias_manifest_sha256) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     ctx.tenant_id,
                     object_id,
@@ -357,9 +381,25 @@ class KnowledgeCore:
                     assertion.valid_to,
                     assertion.supersedes_id,
                     ctx.actor_id,
+                    _project_alias_manifest(alias_rows),
                 ),
             )
-            return assertion.title, f"{assertion.state} {assertion.description}"
+            for alias, alias_kind, evidence_id, source_quote in alias_rows:
+                normalized = normalize_project_alias(alias)
+                conn.execute(
+                    "INSERT INTO knowledge_project_aliases(tenant_id,id,project_id,alias,"
+                    "normalized_alias,alias_kind,evidence_id,source_quote,reviewer_id) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id, stable_id("palias", object_id, normalized),
+                        object_id, alias, normalized, alias_kind, evidence_id,
+                        source_quote, ctx.actor_id,
+                    ),
+                )
+            return assertion.title, " ".join([
+                assertion.state, assertion.description,
+                *(item.alias for item in assertion.aliases),
+            ])[:8000]
         if isinstance(assertion, EventWrite):
             if assertion.project_id:
                 self._require_object(conn, "project", assertion.project_id)
@@ -736,6 +776,74 @@ class KnowledgeCore:
                 "source_freshness": "not_asserted",
                 "interpretation": "reviewed_assertions",
             },
+            "untrusted_content": True,
+        }
+
+    def resolve_project_alias(
+        self, ctx: TenantContext, name: str, *, limit: int = 25,
+    ) -> dict[str, Any]:
+        """Return reviewed candidate projects; never merge or choose one implicitly."""
+        self.store.require(ctx, "knowledge.search")
+        if not isinstance(name, str) or not 1 <= len(name) <= 300 or "\x00" in name:
+            raise ValueError("invalid_project_name")
+        normalized = normalize_project_alias(name)
+        if not 1 <= len(normalized) <= 300 or type(limit) is not int or not 1 <= limit <= 25:
+            raise ValueError("invalid_project_resolution")
+        allowed_sources = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        with self.store.transaction(ctx) as conn:
+            aliases = conn.execute(
+                "WITH allowed AS (SELECT %s::text[] AS sources) "
+                "SELECT p.id,p.title,p.recorded_at,a.alias,a.alias_kind,a.evidence_id "
+                "FROM knowledge_project_aliases a "
+                "JOIN knowledge_projects p ON p.tenant_id=a.tenant_id AND p.id=a.project_id "
+                "JOIN brain_evidence e ON e.tenant_id=a.tenant_id AND e.id=a.evidence_id "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id CROSS JOIN allowed "
+                "WHERE a.normalized_alias=%s AND "
+                + _visible_assertion_sql("p", "'project'", "p.id")
+                + " AND (allowed.sources IS NULL OR v.source_id=ANY(allowed.sources)) "
+                "ORDER BY p.recorded_at DESC,p.id DESC LIMIT %s",
+                (allowed_sources, normalized, limit + 1),
+            ).fetchall()
+            # Historical projects predate alias rows. Preserve exact-title
+            # lookup without mutating their immutable reviewed assertions.
+            legacy = conn.execute(
+                "WITH allowed AS (SELECT %s::text[] AS sources) "
+                "SELECT p.id,p.title,p.recorded_at,ke.evidence_id "
+                "FROM knowledge_projects p CROSS JOIN allowed "
+                "JOIN LATERAL (SELECT evidence_id FROM knowledge_evidence "
+                "WHERE tenant_id=p.tenant_id AND target_kind='project' AND target_id=p.id "
+                "ORDER BY evidence_id LIMIT 1) ke ON true "
+                "WHERE lower(btrim(p.title))=lower(btrim(%s)) "
+                "AND NOT EXISTS (SELECT 1 FROM knowledge_project_aliases a "
+                "WHERE a.tenant_id=p.tenant_id AND a.project_id=p.id) AND "
+                + _visible_assertion_sql("p", "'project'", "p.id")
+                + " ORDER BY p.recorded_at DESC,p.id DESC LIMIT %s",
+                (allowed_sources, name, limit + 1),
+            ).fetchall()
+            candidates = [
+                {"object_kind": "project", "object_id": row["id"],
+                 "title": row["title"], "matched_alias": row["alias"],
+                 "alias_kind": row["alias_kind"], "evidence_id": row["evidence_id"],
+                 "recorded_at": row["recorded_at"]}
+                for row in aliases
+            ] + [
+                {"object_kind": "project", "object_id": row["id"],
+                 "title": row["title"], "matched_alias": row["title"],
+                 "alias_kind": "legacy_title", "evidence_id": row["evidence_id"],
+                 "recorded_at": row["recorded_at"]}
+                for row in legacy
+            ]
+            candidates.sort(
+                key=lambda item: (item["recorded_at"], item["object_id"]), reverse=True
+            )
+            self.store.audit(conn, ctx, "knowledge.project_alias_lookup", "project")
+        return {
+            "candidates": candidates[:limit],
+            "ambiguous": len(candidates) > 1,
+            "truncated": len(candidates) > limit,
+            "resolution": "reviewed_candidates_only",
+            "visibility": "retained",
             "untrusted_content": True,
         }
 

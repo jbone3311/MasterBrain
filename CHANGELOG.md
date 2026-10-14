@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add evidence-linked, human-reviewed project aliases and a bounded,
+  source-scoped candidate lookup for multiple names of one deal (ADR-182).
+  Ambiguous names never auto-merge; existing projects retain exact-title
+  fallback without rewriting history.
+
 - Add a fourth pinned, nonpublishing FOS-Master statement recipe baseline for
   Morgan Stanley OCR text and cash-detail double-count protection (ADR-181).
   Fictional donor replay and 1,000-row stress do not enable investment claims.
