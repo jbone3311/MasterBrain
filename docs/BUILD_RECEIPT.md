@@ -2,25 +2,37 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Scoped mailbox exclusion — ADR-184 branch candidate
+## Scoped mailbox exclusion — ADR-184
+
+[PR #208](https://github.com/jbone3311/MasterBrain/pull/208) final head
+`718a8758a1603604ff09318f0017e7d8a6871039` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38608322620)
+with 3,339 tests, six skips and all 541 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38608323433)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38608322714)
+passed. Squash merge `7a34d48066b2e3c32d251b907da4d471ffd98611`
+passed [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38610085106)
+with the same 3,339 tests, six skips and all 541 PostgreSQL-marked tests,
+plus [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38610085104)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38610085305).
+The [exact-head PR receipt](https://github.com/jbone3311/MasterBrain/pull/208#issuecomment-6174712256)
+and open [issue #184](https://github.com/jbone3311/MasterBrain/issues/184)
+preserve the implementation scope and unfinished privacy gates.
 
 The disposable local Python 3.14/PostgreSQL 17.11 full suite passed 3,337
 tests, six skips; 540 of 541 PostgreSQL-marked tests executed (one
-platform-local skip). The synthetic mixed-membership and re-entry tests prove
-no excluded provider download, no new raw/message content, transactional
-suppression of older Email and bridged Brain current search, and ordinary
-re-publication when the membership is removed. After a readability-only
-event-state cleanup, the touched PostgreSQL cases passed 4/4. Browser tests
-passed 165/165; Ruff, mypy (102 source files), documentation links and the
-structural deployment gate passed. The first local full run exposed pinned
-migration-inventory test expectations; after updating those tests, the second
-full run passed. Two subsequent targeted tests passed a 1,000-row exclusion
-inventory and malformed mixed-membership fail-closed case. Exact final-head
-hosted CI, strict runtime, restore, and
-merged-main receipts are still required. No real Fastmail account or FileOS
-root was read and FOS-Master remains unchanged. Sender/category exclusion,
-retroactive purge, policy changes on an already-used account, transitive
-KnowledgeCore visibility and live-source acceptance remain open.
+platform-local skip). After a readability-only event-state cleanup, the
+touched PostgreSQL cases passed 4/4; two later 1,000-row/fault tests passed
+targeted and are included in the hosted exact-head total above. Browser tests
+passed 165/165; Ruff, mypy (102 source files), docs links and the structural
+gate passed. The first local full run exposed pinned migration-inventory test
+expectations; after updating them, the repeated full run passed. Synthetic
+mixed-membership and re-entry tests prove no excluded byte lookup, no new
+raw/message content, and suppression of older current Email/bridged Brain
+search. No real Fastmail account or FileOS root was read; FOS-Master remains
+unchanged. Sender/category exclusion, retroactive purge, policy changes on an
+already-used account, transitive KnowledgeCore visibility and live-source
+acceptance remain open.
 
 ## Reviewed project members — ADR-183
 
