@@ -45,6 +45,7 @@ from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import CommitmentWrite
+from masterbrain.statement_fileos_replay import StatementFileOSReplayStore
 from masterbrain.statement_persistence import StatementProposalStore
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -222,6 +223,11 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
     )
     if statement["row_count"] != 1 or statement["status"] != "reconciled":
         raise RuntimeError("Fictional statement proposal did not reconcile")
+    replay = StatementFileOSReplayStore(store).record_current_text_replay(
+        ctx, statement["proposal_id"], (temporary_root / "owner").resolve(strict=True)
+    )
+    if not replay["worker_observed_text_replay"] or replay["reviewed"]:
+        raise RuntimeError("Fictional statement source replay did not remain private")
     publish_reviewed_knowledge(store, ctx)
     publish_files(store, other, temporary_root / "other", {
         "other-private.txt": "Cedar Harbor other-tenant-canary must not appear for the first user."
@@ -444,6 +450,16 @@ def serve_trial(admin: str, port: int, self_test: bool) -> int:
         with tempfile.TemporaryDirectory(prefix="masterbrain-fictional-") as folder:
             preview = build_preview(Store(runtime), admin, Path(folder))
             if self_test:
+                with Store(runtime).transaction(preview.context) as conn:
+                    receipt = conn.execute(
+                        "SELECT source_sha256,text_sha256 FROM "
+                        "knowledge_statement_fileos_replays WHERE proposal_id=%s",
+                        (preview.statement_proposal_id,),
+                    ).fetchone()
+                if receipt is None or receipt["source_sha256"] != preview.file_hashes[
+                    "cobalt-statement.txt"
+                ]:
+                    raise RuntimeError("Synthetic statement source replay was not recorded")
                 with TestClient(
                     preview.app, base_url="http://127.0.0.1",
                     headers={"Authorization": "Bearer " + preview.token},
@@ -508,7 +524,8 @@ def serve_trial(admin: str, port: int, self_test: bool) -> int:
                         raise RuntimeError("Synthetic startup conflict evidence failed")
                 print(
                     "Synthetic browser-trial self-test passed: "
-                    "Cedar evidence, reviewed knowledge, conflicting Maple evidence."
+                    "Cedar evidence, reviewed knowledge, conflicting Maple evidence, "
+                    "private statement source replay."
                 )
                 return 0
             url = f"http://127.0.0.1:{port}/trial#{preview.token}"

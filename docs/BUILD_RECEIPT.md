@@ -2,17 +2,43 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Fictional trial statement replay integration — ADR-190
+
+The branch `codex/synthetic-trial-statement-replay` connects ADR-189's private
+FileOS text replay receipt to the existing disposable cross-source browser
+trial. It does not expose a verified-investment flag or touch real sources.
+The isolated launcher self-test passed against a temporary local PostgreSQL 17
+cluster and confirmed that the fictional Cedar/Maple/Knowledge cases plus the
+private statement receipt can be created and read. The focused browser-trial
+module passed 29 tests with one platform skip; the final tightened receipt
+assertion passed separately. The disposable local Python 3.14/PostgreSQL 17.11
+full suite passed 3,369 tests with six skips (550 of 551 PostgreSQL-marked
+cases executed). All six browser suites passed 165/165; Ruff, mypy (105 source
+files), docs links, diff check and the repository deployment gate passed. The
+test cluster was stopped afterward. An initial sandboxed gate attempt failed
+only because the sandbox denied the launcher's disposable PostgreSQL process;
+the permitted rerun passed the full gate. These are local branch results;
+exact-head hosted checks are not yet claimed.
+
 ## Private FileOS statement replay receipt — ADR-189
 
-The branch `codex/statement-fileos-replay-receipt` adds a synthetic-only,
-private worker library and migration 0064. Its disposable local Python
+Merged [PR #219](https://github.com/jbone3311/MasterBrain/pull/219) adds a synthetic-only,
+private worker library and migration 0064. Its exact PR head
+`36a79b2a5254ada870ebffe1ddd54b55c0e47494` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38641694741),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38641694779)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38641694709).
+Squash merge `929cb451982dc70254a1a653d4809f8a7d0d98d5` landed on `main`;
+independent merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38642942404),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38642942738)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38642942506)
+all passed. The disposable local Python
 3.14/PostgreSQL 17.11 full suite passed 3,369 tests with six skips; 550 of
 551 PostgreSQL-marked cases executed (one platform-local skip). The focused
 statement replay cases passed 5/5, migration/protected-table/restore cases
 40/40, and six browser suites 165/165. Ruff, mypy (105 source files), docs
 links, structural gate and diff check passed. No FOS-Master file, real mail,
-personal FileOS root or source effect was touched. This is branch-local
-evidence; exact-head and merged-main hosted gates are not yet claimed.
+personal FileOS root or source effect was touched.
 
 The receipt proves only that a worker observed a bounded exact byte replay
 for a current fictional FileOS text source. The owner preview still labels

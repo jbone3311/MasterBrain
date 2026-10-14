@@ -749,7 +749,20 @@ def test_citations_content_coverage_and_no_source_mutation(preview, tmp_path):
 
 
 @pytest.mark.postgres
-def test_fictional_statement_proposal_is_owner_only_and_source_bound(preview):
+def test_fictional_statement_proposal_is_owner_only_and_source_bound(preview, database):
+    store, _ = database
+    with store.transaction(preview.context) as conn:
+        receipt = conn.execute(
+            "SELECT source_sha256,text_sha256,source_size_bytes FROM "
+            "knowledge_statement_fileos_replays WHERE proposal_id=%s",
+            (preview.statement_proposal_id,),
+        ).fetchone()
+    assert receipt is not None
+    assert receipt["source_sha256"] == preview.file_hashes["cobalt-statement.txt"]
+    assert receipt["source_size_bytes"] == len(FILES["cobalt-statement.txt"].encode())
+    assert receipt["text_sha256"] == hashlib.sha256(
+        FILES["cobalt-statement.txt"].encode()
+    ).hexdigest()
     with client_for(preview) as owner, client_for(preview, preview.other_token) as other:
         locator = owner.get("/trial/statement-id")
         assert locator.status_code == 200
@@ -764,6 +777,7 @@ def test_fictional_statement_proposal_is_owner_only_and_source_bound(preview):
         assert body["source_current"] is True
         assert body["row_count"] == 1 and body["status"] == "reconciled"
         assert body["reviewed"] is False and body["source_effects"] is False
+        assert "worker_observed_text_replay" not in body
         assert body["rows"][0]["assertion_status"] == "proposed_extraction"
         assert "ACME Fictional Corporation" in body["rows"][0]["quote"]
         assert other.get("/trial/statement-id").status_code == 404

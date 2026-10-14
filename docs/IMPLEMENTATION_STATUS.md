@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-190 connects the existing private FileOS text replay to the disposable
+fictional browser trial. Startup reopens its own synthetic statement file and
+fails closed if the private receipt cannot be recorded. The trial self-test
+checks the saved source digest; the owner still sees only an unreviewed
+proposal. No live root or public verified-investment claim is enabled.
+
 ADR-189 adds a synthetic-only private worker library that reacquires exact
 current FileOS bytes through the no-follow DataCore reader, reruns ADR-188's
 bounded text transform and records an immutable, tenant-fenced replay receipt

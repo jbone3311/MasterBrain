@@ -10,15 +10,19 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-190](adr/190_synthetic_trial_statement_replay.md) exercises ADR-189's
+private FileOS byte replay during the disposable fictional browser trial. It
+does not change the owner API, review status or live-source authorization.
+
 [ADR-189](adr/189_private_fileos_statement_replay_receipt.md) adds a private,
 source-reacquired FileOS text replay receipt bound to one current statement
 proposal. It grants no public verified-investment status, Email/PDF/OCR proof,
 live source or donor cutover.
 
 [ADR-188](adr/188_statement_source_text_derivation_contract.md) adds a pure,
-synthetic-only exact-byte replay for bounded FileOS text transforms. It is not
-yet connected to statement proposals and does not prove PDF/OCR/Email source
-derivation, source authorization or a reviewed investment.
+synthetic-only exact-byte replay for bounded FileOS text transforms. ADR-189
+now binds it privately to one current proposal; neither decision proves
+PDF/OCR/Email source derivation or a reviewed investment.
 
 [ADR-187](adr/187_jefferies_recipe_parity_baseline.md) pins the Jefferies donor
 category/detail/transaction behavior, including negative cash and multi-lot

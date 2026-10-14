@@ -75,8 +75,11 @@ only that proposal's random locator with the owner's temporary credential,
 then uses the normal human-only, source-rechecked proposal API. It should show
 one ACME Fictional Corporation row, an exact bounded source quote, and a zero
 arithmetic difference. The row is **unreviewed**; “reconciled” means only that
-the extracted numbers add up. It does not establish a real holding, approve a
-claim, or change a file. A second trial tenant cannot access the locator or
+the extracted numbers add up. Trial startup now also reopens the same fictional
+FileOS source under its confined root and seals a **private** exact-byte text
+replay receipt. The receipt is not shown as verified investment truth in the
+browser. It does not establish a real holding, approve a claim, or change a
+file. A second trial tenant cannot access the locator or
 proposal. The page does not fetch proposal text before you click the button.
 
 ## Known answers

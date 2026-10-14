@@ -1,8 +1,10 @@
 # MasterBrain Roadmap
 
 ADR-189 now supplies a private, source-reacquired FileOS text replay receipt
-bound to one statement proposal. The next financial gate is to establish a
-separately trusted worker attestation/storage boundary, expose the receipt only
+bound to one statement proposal. ADR-190 exercises it in the disposable
+fictional cross-source trial, while keeping the owner row unreviewed. The next
+financial gate is to establish a separately trusted worker attestation/storage
+boundary, expose the receipt only
 with explicit source/currentness labels in owner review, and require verified
 source tier plus human approval before any financial claim publication.
 PDF/Office/OCR, Email attachment and archive transforms require their own
