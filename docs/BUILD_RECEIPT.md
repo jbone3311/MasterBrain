@@ -2,6 +2,18 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Morgan Stanley donor recipe comparison — ADR-181
+
+The local exact-hash FOS-Master AST replay and fictional recipe goldens passed
+24/24 focused tests; the 1,000-row Morgan Stanley stress case also runs in
+ordinary CI without a donor-path setting. The local deployment gate passed
+2,763 tests with 541 skips (one of 537 PostgreSQL-marked tests executed);
+Ruff, mypy (102 source files), documentation validation (282 Markdown files,
+1,500 local references) and diff checks passed. Full hosted PostgreSQL,
+strict-runtime and populated-restore checks remain required on the exact PR
+head. No real statement, OCR process, provider, database mutation or FileOS
+source effect was used by this comparison.
+
 ## OCR bank recipe comparison — ADR-180
 
 On a clean pinned FOS-Master donor source, the fictional three-recipe parity

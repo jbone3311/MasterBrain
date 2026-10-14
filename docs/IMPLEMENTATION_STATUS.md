@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-181 adds a fourth isolated FOS-Master statement recipe baseline for Morgan
+Stanley OCR text. Fictional exact-donor comparison preserves a cash-bucket
+sub-component exclusion, parenthesized debits, OCR confidence/date loss and
+the zero-total fallback. It is not runtime OCR, a verified investment report,
+complete activity capture or FileOS cutover.
+
 ADR-180 adds a third isolated, donor-matched statement recipe baseline for
 OCR-derived bank text. Fictional cases exercise a wrapped amount, December to
 January date assignment, mismatch, invalid dates and 1,000-row repeatability.

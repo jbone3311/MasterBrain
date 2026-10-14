@@ -66,8 +66,11 @@ It is not connected to the typed candidate or proposal ledger; a reconciliation
 mismatch is a warning about incomplete coverage, not a verified account total.
 ADR-180 adds a third, isolated bank-statement recipe baseline for OCR text,
 including wrapped amounts and statement-year rollover. It does not run OCR or
-publish bank facts; Morgan Stanley, Jefferies, Wells Fargo, Schwab and donor
-intelligence reports still require comparison before any replacement claim.
+publish bank facts. The remaining recipes and donor intelligence reports still
+require comparison before any replacement claim.
+ADR-181 now compares Morgan Stanley too. Its cash-bucket detail exclusion and
+OCR-date loss are preserved as donor behavior, not product-grade investment
+analysis. Jefferies, Wells Fargo, Schwab and donor reports still lack parity.
 ADR-172 stores selected current-document candidates in an immutable tenant-fenced
 ledger, and ADR-173 permits a human owner to inspect bounded, source-rechecked
 unreviewed rows through the API. Neither proves a live holding, supplies a

@@ -2,6 +2,10 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add a fourth pinned, nonpublishing FOS-Master statement recipe baseline for
+  Morgan Stanley OCR text and cash-detail double-count protection (ADR-181).
+  Fictional donor replay and 1,000-row stress do not enable investment claims.
+
 - Preserve a third pinned FOS-Master statement recipe baseline for OCR-derived
   bank text, with fictional wrapped-amount, year-rollover and mismatch goldens
   plus donor replay (ADR-180). No runtime bank ingestion or facts are enabled.

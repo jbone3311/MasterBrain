@@ -1,4 +1,4 @@
-"""Fictional goldens for three pure recipes from the pinned FOS-Master donor."""
+"""Fictional goldens for four pure recipes from the pinned FOS-Master donor."""
 
 from __future__ import annotations
 
@@ -15,9 +15,11 @@ import pytest
 from masterbrain.statement_recipe_parity import (
     parse_fidelity,
     parse_ocr_bank,
+    parse_morgan_stanley,
     parse_streetbeat,
     reconcile_fidelity,
     reconcile_ocr_bank,
+    reconcile_morgan_stanley,
     reconcile_streetbeat,
 )
 
@@ -169,6 +171,74 @@ JLB_CASES: dict[str, tuple[str, list[dict[str, Any]], tuple[float, float] | None
     ),
 }
 
+MS_CASES: dict[
+    str, tuple[str, dict[str, Any], list[dict[str, Any]], tuple[float, float] | None]
+] = {
+    "cash_detail_not_double_counted": (
+        "Account Summary 123-456789-000\nPeriod April 1-30, 2024\n"
+        "TOTAL ENDING VALUE $100.00\nCASH, BDP, AND MMFs 100.00% $100.00\n"
+        "MORGAN STANLEY BANK N.A. # $25.00\n"
+        "04/15 Dividend Fictional Fund $10.00\n"
+        "04/16 Reinvestment Fictional Fund (5.00)\n",
+        {"account_number": "123-456789-000", "period": "2024-04",
+         "total_ending_value": 100.0, "total_value_cover": None, "is_ocr": False},
+        [
+            {"row_type": "holding", "description": "CASH, BDP, AND MMFs",
+             "amount": 100.0, "category": "asset_class_summary",
+             "account_number": "123-456789-000", "period": "2024-04",
+             "extraction_method": "regex:morgan_stanley", "confidence": 0.9},
+            {"row_type": "holding", "description": "MORGAN STANLEY BANK N.A.",
+             "amount": 25.0, "category": "bank_deposit_detail",
+             "account_number": "123-456789-000", "period": "2024-04",
+             "extraction_method": "regex:morgan_stanley", "confidence": 0.9},
+            {"row_type": "transaction", "line_date": "04/15",
+             "description": "Dividend Fictional Fund", "amount": 10.0,
+             "account_number": "123-456789-000", "period": "2024-04",
+             "extraction_method": "regex:morgan_stanley", "confidence": 0.8},
+            {"row_type": "transaction", "line_date": "04/16",
+             "description": "Reinvestment Fictional Fund", "amount": -5.0,
+             "account_number": "123-456789-000", "period": "2024-04",
+             "extraction_method": "regex:morgan_stanley", "confidence": 0.8},
+        ],
+        (100.0, 100.0),
+    ),
+    "ocr_marker_and_corrupt_date": (
+        "--- OCR ---\nTOTAL VALUE OF YOUR ACCOUNTS (as of 7/31/2019) $26.58\n"
+        "CASH, BOP, AND MEFs 100.00% $26.58\n"
+        "731 Dividend Fictional Fund 1.00\n",
+        {"account_number": None, "period": None, "total_ending_value": None,
+         "total_value_cover": 26.58, "is_ocr": True},
+        [{"row_type": "holding", "description": "CASH, BDP, AND MMFs",
+          "amount": 26.58, "category": "asset_class_summary", "account_number": None,
+          "period": None, "extraction_method": "regex:morgan_stanley(ocr)",
+          "confidence": 0.6}],
+        (26.58, 26.58),
+    ),
+    "detail_only_mismatch": (
+        "TOTAL ENDING VALUE $100.00\nMORGAN STANLEY BANK N.A. # $25.00\n",
+        {"account_number": None, "period": None, "total_ending_value": 100.0,
+         "total_value_cover": None, "is_ocr": False},
+        [{"row_type": "holding", "description": "MORGAN STANLEY BANK N.A.",
+          "amount": 25.0, "category": "bank_deposit_detail",
+          "account_number": None, "period": None,
+          "extraction_method": "regex:morgan_stanley", "confidence": 0.9}],
+        (100.0, 0),
+    ),
+    "unknown_month_and_zero_fallback": (
+        "Period Foo 1-30, 2024\nTOTAL ENDING VALUE $0.00\n"
+        "TOTAL VALUE OF YOUR ACCOUNTS (as of 4/30/2024) $20.00\n",
+        {"account_number": None, "period": "2024-??", "total_ending_value": 0.0,
+         "total_value_cover": 20.0, "is_ocr": False},
+        [], (20.0, 0),
+    ),
+    "empty": (
+        "Unrelated fictional text.",
+        {"account_number": None, "period": None, "total_ending_value": None,
+         "total_value_cover": None, "is_ocr": False},
+        [], None,
+    ),
+}
+
 
 @pytest.mark.parametrize("name", CASES)
 def test_pinned_golden(name: str) -> None:
@@ -198,17 +268,29 @@ def test_ocr_bank_pinned_golden(name: str) -> None:
         "year_rollover_and_wrapped_ocr_amount", "mismatch") else None)
 
 
-def _donor_functions(path: Path) -> tuple[Any, Any, Any, Any, Any, Any]:
+@pytest.mark.parametrize("name", MS_CASES)
+def test_morgan_stanley_pinned_golden(name: str) -> None:
+    content, expected_summary, expected_items, expected_reconciliation = MS_CASES[name]
+    summary, items = parse_morgan_stanley(content)
+    assert (summary, items, reconcile_morgan_stanley(summary, items)) == (
+        expected_summary, expected_items, expected_reconciliation,
+    )
+
+
+def _donor_functions(path: Path) -> tuple[Any, ...]:
     """Run only pure pinned recipe AST nodes, never donor module imports or DB code."""
     source = path.read_bytes()
     assert hashlib.sha256(source).hexdigest() == DONOR_SHA256
     functions = {"num", "_parse_streetbeat", "_reconcile_streetbeat",
                  "_parse_fidelity", "_reconcile_fidelity", "_jlb_section",
                  "_jlb_rows", "_jlb_row_date", "_parse_ocr_bank",
-                 "_reconcile_ocr_bank"}
+                 "_reconcile_ocr_bank", "_ms_num", "_parse_morgan_stanley",
+                 "_reconcile_morgan_stanley"}
     constants = {"_MONTHS", "_SB_TXN", "_SB_HOLDING_ROW", "_SB_CASH_ROW",
                  "_FID_HOLDING_ROW", "_FID_ACTIVITY_ROW", "_FID_NON_HOLDING_LABELS",
-                 "_JLB_BOILERPLATE", "_JLB_TXN_TYPE"}
+                 "_JLB_BOILERPLATE", "_JLB_TXN_TYPE", "_MS_MONTHS", "_MS_ACCOUNT",
+                 "_MS_PERIOD", "_MS_TOTAL_ENDING", "_MS_TOTAL_COVER", "_MS_CASH_BUCKET",
+                 "_MS_BANK_DEPOSIT", "_MS_ACTIVITY_ROW"}
     nodes = []
     for node in ast.parse(source, filename=str(path)).body:
         if isinstance(node, ast.FunctionDef) and node.name in functions:
@@ -222,7 +304,8 @@ def _donor_functions(path: Path) -> tuple[Any, Any, Any, Any, Any, Any]:
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), namespace)
     return (namespace["_parse_streetbeat"], namespace["_reconcile_streetbeat"],
             namespace["_parse_fidelity"], namespace["_reconcile_fidelity"],
-            namespace["_parse_ocr_bank"], namespace["_reconcile_ocr_bank"])
+            namespace["_parse_ocr_bank"], namespace["_reconcile_ocr_bank"],
+            namespace["_parse_morgan_stanley"], namespace["_reconcile_morgan_stanley"])
 
 
 def test_local_pinned_donor_parity() -> None:
@@ -230,7 +313,7 @@ def test_local_pinned_donor_parity() -> None:
     if donor is None:
         pytest.skip("Set FOS_MASTER_STATEMENT_EXTRACT for optional pinned donor replay")
     (donor_parse, donor_reconcile, donor_fidelity, donor_fidelity_reconcile,
-     donor_jlb, donor_jlb_reconcile) = _donor_functions(
+     donor_jlb, donor_jlb_reconcile, donor_ms, donor_ms_reconcile) = _donor_functions(
         Path(donor)
     )
     stress_content = (
@@ -265,6 +348,17 @@ def test_local_pinned_donor_parity() -> None:
         )
         if content == jlb_stress:
             assert len(items) == 1000
+    ms_stress = "TOTAL ENDING VALUE $0.00\n" + "".join(
+        f"01/02 Dividend Fictional Fund {index}.00\n" for index in range(1, 1001)
+    )
+    for content in [*(case[0] for case in MS_CASES.values()), ms_stress]:
+        donor_summary, donor_items = donor_ms(content)
+        summary, items = parse_morgan_stanley(content)
+        assert (summary, items, reconcile_morgan_stanley(summary, items)) == (
+            donor_summary, donor_items, donor_ms_reconcile(donor_summary, donor_items),
+        )
+        if content == ms_stress:
+            assert len(items) == 1000
 
 
 def test_many_fictional_rows_are_repeatable() -> None:
@@ -296,3 +390,13 @@ def test_ocr_bank_many_fictional_rows_are_repeatable() -> None:
     assert len(first[1]) == 1000
     assert first == parse_ocr_bank(content)
     assert reconcile_ocr_bank(*first) == (110.0, -500400.0)
+
+
+def test_morgan_stanley_many_fictional_rows_are_repeatable() -> None:
+    content = "TOTAL ENDING VALUE $0.00\n" + "".join(
+        f"01/02 Dividend Fictional Fund {index}.00\n" for index in range(1, 1001)
+    )
+    first = parse_morgan_stanley(content)
+    assert len(first[1]) == 1000
+    assert first == parse_morgan_stanley(content)
+    assert reconcile_morgan_stanley(*first) is None  # Donor treats a zero total as absent.

@@ -4,7 +4,7 @@ Extracted from FOS-Master at 218d5caec2f20b9047fd3eb8e027dc671acf0c15,
 _SYSTEM/tools/statement_extract.py
 (SHA-256 f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe).
 The parsing and reconciliation semantics are intentionally unchanged. See
-ADR-170, ADR-174 and ADR-180.
+ADR-170, ADR-174, ADR-180 and ADR-181.
 """
 
 from __future__ import annotations
@@ -289,4 +289,103 @@ def reconcile_ocr_bank(
     credits = sum(it["amount"] for it in items if it["row_type"] == "credit" and it["amount"])
     debits = sum(it["amount"] for it in items if it["row_type"] == "debit" and it["amount"])
     actual = round(summary["beginning_balance"] + credits - debits, 2)
+    return expected, actual
+
+
+# Morgan Stanley's bank-deposit detail is a component of its cash bucket, not
+# another holding to add. Preserve the donor's OCR marker, weak OCR confidence,
+# date-loss limitation and reconciliation exclusion in this comparison only.
+_MS_MONTHS = {month: f"{i:02d}" for i, month in enumerate(
+    ["January", "February", "March", "April", "May", "June", "July", "August",
+     "September", "October", "November", "December"], 1
+)}
+_MS_ACCOUNT = re.compile(r"Account\s+(?:Summary|Detail)\s+(\d{3})\s*-\s*(\d{6})\s*-\s*(\d{3})\b")
+_MS_PERIOD = re.compile(r"Period\s+([A-Za-z]+)\s+\d{1,2}\s*-\s*\d{1,2}\s*,\s*(\d{4})")
+_MS_TOTAL_ENDING = re.compile(r"TOTAL ENDING VALUE\s+\$?([\d,]+\.\d{2})")
+_MS_TOTAL_COVER = re.compile(
+    r"TOTAL VALUE OF YOUR ACCOUNTS\s*[\{\(]as of \d{1,2}/\d{1,2}/\d{2,4}[\)\}]\s*\$?([\d,]+\.\d{2})"
+)
+_MS_CASH_BUCKET = re.compile(
+    r"CASH,?\s*B[DO]P,?\s*AND\s*M[MZE]Fs?\s+[\d.]+%\.?\s+\$?([\d,]+\.\d{2})"
+)
+_MS_BANK_DEPOSIT = re.compile(r"MORGAN STANLEY BANK N\.?A\.?\s*#+\s*\$?([\d,]+\.\d{2})")
+_MS_ACTIVITY_ROW = re.compile(
+    r"^(\d{1,2}/\d{1,2})(?:\s+\d{1,2}/\d{1,2})?\s+(.+?)\s+(\(?-?\$?[\d,]+\.\d{2}\)?)\s*$",
+    re.MULTILINE,
+)
+
+
+def _ms_num(value: object) -> float | None:
+    if value is None:
+        return None
+    value = str(value).strip()
+    negative = value.startswith("(") and value.endswith(")")
+    if negative:
+        value = value[1:-1]
+    parsed = _num(value)
+    return None if parsed is None else (-parsed if negative else parsed)
+
+
+def parse_morgan_stanley(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Return the pinned donor's OCR-sensitive summary and raw rows."""
+    is_ocr = "--- OCR ---" in text
+    method = "regex:morgan_stanley(ocr)" if is_ocr else "regex:morgan_stanley"
+
+    summary: dict[str, Any] = {}
+    match = _MS_ACCOUNT.search(text)
+    summary["account_number"] = (
+        f"{match.group(1)}-{match.group(2)}-{match.group(3)}" if match else None
+    )
+    match = _MS_PERIOD.search(text)
+    summary["period"] = (
+        f"{match.group(2)}-{_MS_MONTHS.get(match.group(1), '??')}" if match else None
+    )
+    match = _MS_TOTAL_ENDING.search(text)
+    summary["total_ending_value"] = _num(match.group(1)) if match else None
+    match = _MS_TOTAL_COVER.search(text)
+    summary["total_value_cover"] = _num(match.group(1)) if match else None
+    summary["is_ocr"] = is_ocr
+
+    items: list[dict[str, Any]] = []
+    match = _MS_CASH_BUCKET.search(text)
+    if match:
+        items.append({
+            "row_type": "holding", "description": "CASH, BDP, AND MMFs",
+            "amount": _num(match.group(1)), "category": "asset_class_summary",
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": method, "confidence": 0.6 if is_ocr else 0.9,
+        })
+    match = _MS_BANK_DEPOSIT.search(text)
+    if match:
+        items.append({
+            "row_type": "holding", "description": "MORGAN STANLEY BANK N.A.",
+            "amount": _num(match.group(1)), "category": "bank_deposit_detail",
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": method, "confidence": 0.6 if is_ocr else 0.9,
+        })
+    for line_date, description, amount in _MS_ACTIVITY_ROW.findall(text):
+        description = description.strip()
+        if len(description) < 4:
+            continue
+        items.append({
+            "row_type": "transaction", "line_date": line_date,
+            "description": description[:200], "amount": _ms_num(amount),
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": method, "confidence": 0.5 if is_ocr else 0.8,
+        })
+    return summary, items
+
+
+def reconcile_morgan_stanley(
+    summary: dict[str, Any], items: list[dict[str, Any]],
+) -> tuple[float, float] | None:
+    """Exclude the deposit detail from its parent cash bucket, as donor does."""
+    expected = summary.get("total_ending_value") or summary.get("total_value_cover")
+    if expected is None:
+        return None
+    actual = round(sum(
+        item["amount"] for item in items
+        if item["row_type"] == "holding" and item["amount"] is not None
+        and item.get("category") != "bank_deposit_detail"
+    ), 2)
     return expected, actual

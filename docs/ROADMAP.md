@@ -39,6 +39,9 @@ explicit incomplete coverage, remaining recipes and owner review remain ahead.
 ADR-180 adds the donor's OCR-bank recipe as a third isolated comparison, with
 fictional wrapped-amount and year-rollover cases. It does not prove OCR input
 quality, bank-fact publication or the remaining donor recipes and reports.
+ADR-181 adds isolated Morgan Stanley comparison, explicitly retaining the
+cash-detail double-count guard, OCR confidence/date loss and zero fallback.
+Neither comparison makes a user investment dossier operational.
 
 ADR-173 adds a human-only, read-only preview of source-rechecked ADR-172
 statement proposals. It is an inspectable synthetic API slice, not a reviewer
