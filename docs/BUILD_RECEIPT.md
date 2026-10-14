@@ -4,14 +4,27 @@ Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Excluded Email retained-read visibility — ADR-185
 
-Synthetic-only candidate on `codex/excluded-evidence-visibility`. A disposable
-local PostgreSQL 17.11/Python 3.14 full run passed 3,339 tests with six skips;
-540 of 541 PostgreSQL-marked cases executed (one platform-local skip). The
-expanded fictional parent/attachment/document, project timeline/commitment,
-and tenant-RLS regression cases then passed 2/2 targeted after test-only
-assertion corrections. Browser tests passed 165/165; Ruff, mypy (102 source
-files), documentation links and the structural gate passed. Exact-head hosted
-CI, independent runtime/restore gates and merged-main proof remain pending.
+[PR #210](https://github.com/jbone3311/MasterBrain/pull/210) final head
+`0f2250edd34428a64666a8c6cf7fff373468d07e` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38614721585)
+with 3,339 tests, six skips and all 541 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38614721661),
+[populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38614721670)
+and the [synthetic FileOS benchmark](https://github.com/jbone3311/MasterBrain/actions/runs/38614721394)
+passed. Squash merge `136532d83adcf417b54245468670574cbd196404`
+passed [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38616305787)
+with the same 3,339 tests, six skips and all 541 PostgreSQL-marked tests,
+plus [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38616305919),
+[restore](https://github.com/jbone3311/MasterBrain/actions/runs/38616305718)
+and the [FileOS benchmark](https://github.com/jbone3311/MasterBrain/actions/runs/38616305858).
+
+The disposable local PostgreSQL 17.11/Python 3.14 full run passed 3,339
+tests with six skips; 540 of 541 PostgreSQL-marked cases executed (one
+platform-local skip). The expanded fictional parent/attachment/document,
+project timeline/commitment, and tenant-RLS regression cases then passed 2/2
+targeted after test-only assertion corrections, including on merged main.
+Browser tests passed 165/165; Ruff, mypy (102 source files), documentation
+links and the structural gate passed.
 No real mail or FileOS root was read; FOS-Master was not changed. This narrows
 but does not close [issue #184](https://github.com/jbone3311/MasterBrain/issues/184):
 privileged historical Email retention, policy changes on used accounts,
