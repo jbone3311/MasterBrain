@@ -82,6 +82,11 @@ def _decimal(value: str) -> Decimal:
         raise ValueError("invalid_statement_number") from exc
     if not number.is_finite():
         raise ValueError("invalid_statement_number")
+    exponent = number.as_tuple().exponent
+    if not isinstance(exponent, int) or len(number.as_tuple().digits) > 38 or exponent < -12:
+        raise ValueError("statement_number_limit")
+    if number.adjusted() >= 26:
+        raise ValueError("statement_number_limit")
     return number
 
 
@@ -134,6 +139,8 @@ def _statement_rows(text: str, errors: set[str]) -> tuple[StatementRow, ...]:
             if holding is not None:
                 (symbol, description, quantity, price, amount,
                  _cost_price, unrealized, cost_basis) = holding.groups()
+                if len(description.strip()) > 300:
+                    raise ValueError("statement_row_field_limit")
                 rows.append(StatementRow(
                     row_type="holding", description=description.strip(), symbol=symbol,
                     line_date=None, quantity=_decimal(quantity), price=_decimal(price),
@@ -181,6 +188,8 @@ def project_streetbeat_candidate(
     account = _ACCOUNT.search(text)
     if account is None:
         errors.add("missing_account")
+    elif len(account.group(1)) > 64:
+        raise ValueError("statement_account_limit")
     rows = _statement_rows(text, errors)
     expected_match = _LONG.search(text) or _TOTAL.search(text)
     expected = _decimal(expected_match.group(1)) if expected_match else None

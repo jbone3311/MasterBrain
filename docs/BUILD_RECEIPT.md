@@ -2,6 +2,22 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Private typed statement candidate — ADR-171
+
+[PR #189](https://github.com/jbone3311/MasterBrain/pull/189) final head
+`5128c52c420bafb6ed6b99471972bf45c888636a` added bounded, exact-decimal,
+text-span-bound in-memory Streetbeat candidates. The [final-head full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38536056040)
+passed 3,196 tests with six skips, including all 495 PostgreSQL-marked tests;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38536055876)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38536055846)
+passed. Squash merge `1c3a393d527c7f8adbe293b9ff15727f9ef2c8ca`
+passed [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38537201174),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38537201126)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38537201165)
+on that exact merge SHA. This was a private, unstored candidate only; no
+statement ingestion, reviewed holdings, owner/API read or donor cutover.
+ADR-172's later durable worker proposal ledger is a separate tranche.
+
 ## Isolated FOS statement-recipe parity seed — ADR-170
 
 [PR #188](https://github.com/jbone3311/MasterBrain/pull/188) final head

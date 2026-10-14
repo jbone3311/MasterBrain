@@ -12,7 +12,11 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their
   exact extracted-text spans and digest do not prove the source-byte-to-text
   derivation, current source grant, source tier, independent corroboration or a
-  financial holding. They have no runtime publisher or API read path.
+  financial holding. ADR-172 adds a worker-only, tenant-fenced immutable proposal
+  ledger with current-document and source-hash checks; it does not prove the
+  source-byte-to-text transform, independently verify currency, grant an API read
+  path, or promote a row to a reviewed holding. Stored offsets must be rechecked
+  under the reader's current grants before any future disclosure.
 - Source adapters, extraction workers, DataCore, KnowledgeCore, Brain API, and effect
   executors use separate identities and least-privilege scopes.
 - Brain API clients receive typed operations only—never general SQL, arbitrary HTTP,

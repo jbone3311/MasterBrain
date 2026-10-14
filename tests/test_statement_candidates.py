@@ -148,6 +148,18 @@ def test_bounded_thousand_row_repeat_and_row_limit() -> None:
         candidate(text + (HOLDING + "\n") * 1001)
 
 
+def test_excessive_numeric_precision_is_rejected_before_storage() -> None:
+    huge = "9" * 39
+    with pytest.raises(ValueError, match="^statement_number_limit$"):
+        candidate(BASE.replace("Long $150.00", f"Long ${huge}"))
+    with pytest.raises(ValueError, match="^statement_number_limit$"):
+        candidate(BASE.replace("2 $50.00", "2 $0.0000000000001"))
+    with pytest.raises(ValueError, match="^statement_account_limit$"):
+        candidate(BASE.replace("Account No: 000000", "Account No: " + "1" * 65))
+    with pytest.raises(ValueError, match="^statement_row_field_limit$"):
+        candidate(BASE.replace("Fictional Corporation", "X" * 301))
+
+
 def test_candidate_is_immutable() -> None:
     result = candidate()
     with pytest.raises(AttributeError):

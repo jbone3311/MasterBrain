@@ -1,8 +1,17 @@
 # MasterBrain Implementation Status
 
+ADR-172 adds an additive private PostgreSQL ledger for one explicitly selected,
+current normalized Email/FileOS statement. A scoped worker verifies the
+document/evidence/source-version binding and records exact-decimal candidate
+rows, coverage status and idempotency receipts; tenant isolation and direct-SQL
+guards are tested on disposable PostgreSQL. This does not expose an API/CLI,
+owner review, verified holdings, a live source or FileOS cutover. Hosted gates
+for this tranche are tracked in the [build receipt](BUILD_RECEIPT.md).
+
 ADR-171 adds private, in-memory exact-decimal Streetbeat row candidates for
 fictional Email/FileOS evidence references, with extracted-text SHA-256 and
-row spans. They are not ingested, stored, source-grant checked, reviewed or served.
+row spans. The standalone projector does not ingest, store, source-grant check,
+review or serve them; ADR-172 is the separate worker-persistence boundary.
 The donor's other recipes and investment reports are not preserved yet.
 
 ADR-170 adds an isolated Streetbeat statement-recipe parity candidate

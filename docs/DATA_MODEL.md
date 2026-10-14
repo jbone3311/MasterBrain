@@ -67,6 +67,20 @@ explicit, not inferred from filename.
 
 ## KnowledgeCore
 
+Migration `0057_private_statement_proposals.sql` implements ADR-172's separate
+append-only `knowledge_statement_proposals`, ordered
+`knowledge_statement_rows`, and actor-scoped idempotency
+`knowledge_statement_receipts`. Each proposal binds a current normalized
+document, evidence, source version, active source, source-byte and extracted-text
+digests, donor commit, transform version, status and coverage codes. Rows retain
+exact decimal values and character offsets into the immutable document, not a
+second copy of the text. Tenant-composite foreign keys, forced tenant RLS, the
+tenant-login fence, direct-SQL basis/row/completion guards and runtime
+SELECT/INSERT-only privileges protect this private ledger. It is deliberately
+separate from reviewed `knowledge_claims`; no row is a verified holding,
+current balance, or API result. `USD` and `reconciled` describe the donor recipe
+assumption and within-tolerance arithmetic only.
+
 ADR-171 introduces an in-memory `StatementCandidate` and grouped `StatementRow`
 for one fictional Streetbeat recipe. Rows carry exact `Decimal` quantity, price,
 amount, cost basis and unrealized value where present; a source-kind/evidence
@@ -75,10 +89,10 @@ and precise character spans back
 into that text. Separate status and content-free coverage codes distinguish a
 within-tolerance row sum from mismatches, absent totals and incomplete parsing.
 The source-byte evidence digest is *not* the extracted-text digest. Neither
-these candidates nor the donor float rows are stored in KnowledgeCore, exposed
-by Brain API or represented as reviewed holdings. A future relational model
-must bind tenant/source version, immutable evidence and reviewable provenance
-before publication.
+the donor float rows are stored in KnowledgeCore or exposed by Brain API. ADR-172
+stores only private proposals; its source/version/evidence binding is not human
+review or publication. Reviewable provenance, current-grant rechecks and owner
+approval remain required before publication.
 
 Migration `0016_knowledgecore.sql` implements append-only tenant-scoped tables for
 all objects below, evidence links, lexical search documents, change events and

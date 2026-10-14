@@ -469,7 +469,10 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
             ).fetchone()[0]
             for table in before
         }
-    assert migrate(admin_dsn, MIGRATIONS) == ["0056_knowledge_project_dossier.sql"]
+    assert migrate(admin_dsn, MIGRATIONS) == [
+        "0056_knowledge_project_dossier.sql",
+        "0057_private_statement_proposals.sql",
+    ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:
         for table, object_id in (

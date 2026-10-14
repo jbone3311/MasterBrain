@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-172](adr/172_private_statement_proposal_ledger.md) records one current
+normalized Email/FileOS document as an immutable, tenant-scoped, worker-only
+statement proposal and exact-decimal rows. It is not reviewed investment data,
+an API/assistant route, or a FileOS cutover.
+
 [ADR-171](adr/171_typed_statement_candidate_boundary.md) adds a bounded,
 source-neutral, exact-decimal and text-span-bound *private candidate* for the
 first statement recipe. It does not publish rows or assert verified holdings.

@@ -93,6 +93,12 @@ CLI command, live-source attestation, current-read effect or cutover authority.
 
 ## Operator and shared processing functions
 
+`StatementProposalStore.project_current_document` is a private worker library
+function for one explicitly selected, current normalized Email/FileOS document.
+It records immutable exact-decimal Streetbeat proposal rows under the worker's
+tenant and emits a content-free audit event. It is not a CLI/API command,
+assistant read, reviewed holding, live-source pilot or FileOS cutover.
+
 The preferred `masterbrain` command is defined in
 [cli.py](../src/masterbrain/cli.py). Its commands are **not** exposed as assistant
 tools or API routes.
