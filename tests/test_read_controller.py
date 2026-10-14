@@ -86,6 +86,38 @@ def test_scoped_preflight_and_worker_bind_exact_window(configured):
     assert selected == window
 
 
+def test_scoped_exclusion_is_private_config_and_exact_pin(configured):
+    path, config, store, previous = scoped(configured)
+    config["read_scope"]["excluded_mailbox_ids"] = ["private"]
+    private_write(path, config)
+    with pytest.raises(ControllerError):
+        control.run_read_controller(path, "synthetic", check=True)
+    assert previous.fingerprint() != control.ScopedReadWindowConfig.model_validate(
+        config["read_scope"]
+    ).window().fingerprint()
+    selected = control.ScopedReadWindowConfig.model_validate(config["read_scope"]).window()
+    store.transaction.return_value.__enter__.return_value.execute.return_value.fetchone.return_value[
+        "read_scope_sha256"
+    ] = selected.fingerprint()
+    assert control.run_read_controller(path, "synthetic", check=True)["provider_requests"] == 0
+    control._GuardedFastmail.assert_not_called()
+
+
+@pytest.mark.parametrize("excluded", ["private", ["inbox"], ["z", "a"],
+                                      ["private", "private"], [1], ["private\n"]])
+def test_bad_exclusion_config_fails_before_database(configured, excluded):
+    (path, config, _, _), _, _, _ = configured
+    config["version"] = 2
+    config["read_scope"] = {
+        "mailbox_id": "inbox", "after": "2026-09-18T00:00:00Z",
+        "before": "2026-09-21T00:00:00Z", "excluded_mailbox_ids": excluded,
+    }
+    private_write(path, config)
+    with pytest.raises(ControllerError):
+        run(path)
+    control.Store.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "scope",
     [

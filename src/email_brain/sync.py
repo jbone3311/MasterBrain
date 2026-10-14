@@ -424,8 +424,17 @@ class ReadWorker:
         """
         heartbeat()
         rows, missing = self._metadata_rows(ids, account, heartbeat)
+        excluded: set[str] = set()
+        if scope is not None:
+            for candidate_id, metadata in rows.items():
+                if not scope.accepts_metadata(metadata):
+                    raise ProtocolError("provider metadata escaped scoped query")
+                if scope.excludes_metadata(metadata):
+                    excluded.add(candidate_id)
         retained: Mapping[str, tuple[str, str]] = (
-            self.jobs.retained_blobs(ctx, account_id, ids) if ids else {}
+            self.jobs.retained_blobs(
+                ctx, account_id, tuple(key for key in ids if key not in excluded and key in rows)
+            ) if ids and len(excluded) < len(rows) else {}
         )
         items = []
         total_bytes = 0
@@ -451,8 +460,21 @@ class ReadWorker:
                 items.append(tombstone(key))
                 consumed += 1
                 continue
-            if scope is not None and not scope.accepts_metadata(row):
-                raise ProtocolError("provider metadata escaped scoped query")
+            if key in excluded:
+                assert scope is not None
+                policy = scope.fingerprint()
+                version = digest({"excluded_policy": policy})
+                items.append(
+                    IngestItem(
+                        digest({"checkpoint": checkpoint.encode(), "id": key, "version": version}),
+                        key,
+                        version,
+                        datetime(1970, 1, 1, tzinfo=UTC),
+                        exclusion_policy=policy,
+                    )
+                )
+                consumed += 1
+                continue
             blob = identifier(row.get("blobId"))
             thread = identifier(row.get("threadId"))
             mailboxes = true_keys(row.get("mailboxIds"))

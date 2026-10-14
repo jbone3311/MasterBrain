@@ -104,3 +104,27 @@ def test_metadata_must_confirm_mailbox_and_time(mailboxes, stamp, allowed) -> No
 def test_malformed_metadata_cannot_justify_download(row) -> None:
     with pytest.raises(ProtocolError):
         window().accepts_metadata(row)
+
+
+def test_exact_exclusion_policy_is_fingerprinted_but_query_stays_bounded() -> None:
+    base = window()
+    private = ScopedMailWindow(
+        base.mailbox_id, base.after, base.before, ("Private-Example",)
+    )
+    row = {"mailboxIds": {"mailbox-fixture": True, "Private-Example": True},
+           "receivedAt": "2026-09-02T00:00:00Z"}
+    assert private.query_filter() == base.query_filter()
+    assert private.fingerprint() != base.fingerprint()
+    assert private.accepts_metadata(row)
+    assert private.excludes_metadata(row)
+    assert not private.excludes_metadata({"mailboxIds": {"mailbox-fixture": True}})
+
+
+@pytest.mark.parametrize("ids", [
+    ("mailbox-fixture",), ("z", "a"), ("a", "a"), ("bad\nmailbox",),
+    tuple(f"m{i}" for i in range(101)),
+])
+def test_exclusion_policy_refuses_ambiguous_or_unbounded_ids(ids) -> None:
+    base = window()
+    with pytest.raises(ValueError):
+        ScopedMailWindow(base.mailbox_id, base.after, base.before, ids)

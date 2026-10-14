@@ -115,7 +115,7 @@ async function loadImport() {
   const data = await api(`/v1/accounts/${encodeURIComponent(account)}/sync-status`);
   if (version !== importVersion || byId("account-id").value.trim() !== account) return false;
   const counts = data.message_counts;
-  byId("import-health").replaceChildren(node("p", `${counts.ready} indexed · ${counts.quarantined} held · ${counts.deleted} no longer current`),
+  byId("import-health").replaceChildren(node("p", `${counts.ready} indexed · ${counts.quarantined} held · ${counts.deleted} no longer current · ${counts.excluded || 0} excluded by policy`),
     node("p", `Worker: ${data.worker ? data.worker.last_outcome || "not started" : "not enrolled"}. This is not proof of complete attachment extraction.`));
   await heldMessages(account, null, version);
   return version === importVersion && byId("account-id").value.trim() === account;

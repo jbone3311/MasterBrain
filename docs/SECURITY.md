@@ -19,6 +19,16 @@ modes retain exact credentials and guarded requests. Live-provider acceptance,
 hosted enrollment and provider-token revocation remain absent, so this is not
 a real pilot.
 
+ADR-184 checks an exact excluded-mailbox set in validated `Email/get` metadata
+before retained-byte lookup or provider download. The set changes the pinned
+scope fingerprint, and an excluded message has no new raw/content record. A
+previously current projection is hidden transactionally while its immutable
+evidence remains under existing privileged, audited historical access. The
+tenant-isolated reconciliation ledger must retain the opaque provider ID;
+public sync status reports only an excluded count. This is not a retroactive
+purge or a general sender/path policy, and the owner has selected synthetic-only
+testing for now.
+
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their

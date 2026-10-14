@@ -143,7 +143,7 @@ bounded MIME, not provider ingestion or a mailbox action. See the complete
 
 `GET /v1/accounts/{account_id}/sync-status` requires `email.search` and current
 owner membership. Returns account ID, content-free worker outcome/pause/retry state
-(or null before enrollment), message counts by ready/quarantined/deleted,
+(or null before enrollment), message counts by ready/quarantined/deleted/excluded,
 `review_required` for current quarantines, and `mailbox_writes: false`. Unknown
 and cross-tenant accounts return 404; missing scopes return 403. Counts do not
 imply complete backfill, binary extraction, or live-provider acceptance. No raw

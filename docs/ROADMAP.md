@@ -9,6 +9,15 @@ and the retention, credential and operating boundaries are decided. FileOS
 roots retain their separate approval gate. Existing scoped code is not
 authorization for either source.
 
+ADR-184 now supplies the first synthetic pre-index Email exclusion tranche:
+exact JMAP mailbox memberships, a policy-bound cursor, count-only public
+status, and current-visibility suppression with preserved history. Remaining
+before a private pilot: transitive KnowledgeCore and cross-route visibility
+audit, reviewed policy changes
+for already-used accounts, sender/category policy choices, retention/purge
+decision, and a separate owner-authorized disposable live-provider gate.
+FileOS keeps its independently pinned donor exclusion semantics.
+
 ADR-179 provides a local owner-reviewed, administrator-assisted check/enroll/
 disconnect path for a brand-new exact pinned Fastmail account, tested without
 provider contact. Next is an explicitly authorized disposable live-provider

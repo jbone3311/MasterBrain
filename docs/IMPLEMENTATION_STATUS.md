@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+ADR-184 adds a synthetic scoped Email mailbox exclusion: an exact, sorted
+private-mailbox set is bound to the account/cursor fingerprint, checked against
+`Email/get` membership before provider or retained-byte access, and recorded
+as `excluded` rather than a false deletion. Existing current Email/Brain search
+is hidden in the same transaction; immutable evidence is not purged. Internal
+reconciliation retains an opaque provider ID; user-facing sync status exposes
+only an excluded count. Sender/category policies, retroactive purge, policy
+changes on a used account, transitive KnowledgeCore visibility and live
+Fastmail acceptance remain open.
+
 ADR-183 adds evidence-backed, reviewed person/organization roles on a project,
 with immutable history, source-grant-safe exact/project-dossier/search/change
 reads and separately bounded members in the reference client and first-party

@@ -403,6 +403,7 @@ def test_encrypted_large_source_through_operator_and_fresh_restart(database, ten
         "ready": 1,
         "quarantined": 1,
         "deleted": 0,
+        "excluded": 0,
     }
     with store.transaction(ctx) as conn:
         rows = conn.execute(

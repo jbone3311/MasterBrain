@@ -11,7 +11,8 @@ import test_postgres as pg
 
 from email_brain.connectors.fastmail import FastmailReadClient
 from email_brain.connectors.jmap import ScopedMailWindow
-from email_brain.store import InventoryError, NotFound
+from email_brain.schemas import SearchRequest
+from email_brain.store import Conflict, IngestItem, InventoryError, NotFound
 from email_brain.sync import Checkpoint, ReadWorker
 from email_brain.sync_store import SyncStore
 
@@ -178,3 +179,136 @@ def test_scoped_http_worker_restarts_without_wide_change_request(database, tenan
         saved = Checkpoint.model_validate_json(cursor)
         assert saved.schema_version == 4 and saved.phase == "listing"
         assert saved.scope_sha256 == window().fingerprint()
+
+
+def test_scoped_mailbox_exclusion_hides_old_projection_without_new_content(database, tenant):
+    store, admin = database
+    ctx, account = tenant
+    base = window()
+    scope = ScopedMailWindow(base.mailbox_id, base.after, base.before, ("private",))
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE mail_accounts SET provider_account_id='provider-a',"
+            "read_scope_sha256=%s WHERE id=%s", (scope.fingerprint(), account)
+        )
+    mailbox = pg.SyntheticMailbox()
+    private = False
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        response = mailbox.handle(request)
+        if request.method == "POST" and b'"Email/get"' in request.content and private:
+            payload = response.json()
+            for row in payload["methodResponses"][0][1]["list"]:
+                row["mailboxIds"] = {"inbox": True, "private": True}
+            return httpx.Response(200, json=payload)
+        return response
+
+    def step(expected: str) -> None:
+        client = FastmailReadClient(
+            "synthetic-transport-token", transport=httpx.MockTransport(respond)
+        )
+        try:
+            assert ReadWorker(store, client, scope=scope).step(ctx, account) == expected
+        finally:
+            client.close()
+
+    step("progress")  # scope-bound baseline
+    step("progress")  # included first inventory
+    step("caught_up")
+    hits = store.search(ctx, SearchRequest(query="Melron"))
+    assert len(hits) == 1
+    bridge_ctx = pg.datacore_context(ctx)
+    core = pg.DataCoreStore(store)
+    core.bridge_current_email_version(
+        bridge_ctx, hits[0]["evidence_id"], uuid4(), code_revision="exclusion-test-v1"
+    )
+    assert len(core.search_current_email(bridge_ctx, "Melron")) == 1
+    assert mailbox.downloads == ["m1"]
+
+    private = True
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE sync_workers SET next_attempt_at=now() WHERE account_id=%s", (account,)
+        )
+    step("progress")  # mixed mailbox membership is excluded before byte lookup
+    assert store.search(ctx, SearchRequest(query="Melron")) == []
+    assert core.search_current_email(bridge_ctx, "Melron") == []
+    assert core.search_current_email_family(bridge_ctx, "Melron").messages == ()
+    assert mailbox.downloads == ["m1"]
+    assert store.sync_status(ctx, account)["message_counts"] == {
+        "ready": 0, "quarantined": 0, "deleted": 0, "excluded": 1,
+    }
+    with store.transaction(ctx) as conn:
+        state = conn.execute(
+            "SELECT status FROM message_sync_state WHERE account_id=%s", (account,)
+        ).fetchone()
+        assert state == {"status": "excluded"}
+        assert conn.execute(
+            "SELECT count(*) AS n FROM raw_objects WHERE account_id=%s", (account,)
+        ).fetchone()["n"] == 1
+        assert conn.execute(
+            "SELECT count(*) AS n FROM provider_events WHERE account_id=%s "
+            "AND kind='exclude_message'", (account,)
+        ).fetchone()["n"] == 1
+    step("caught_up")
+
+    private = False
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE sync_workers SET next_attempt_at=now() WHERE account_id=%s", (account,)
+        )
+    step("progress")
+    assert len(store.search(ctx, SearchRequest(query="Melron"))) == 1
+    assert len(core.search_current_email(bridge_ctx, "Melron")) == 1
+    assert store.sync_status(ctx, account)["message_counts"]["ready"] == 1
+
+
+def test_newly_excluded_message_never_downloads_or_publishes(database, tenant):
+    store, admin = database
+    ctx, account = tenant
+    base = window()
+    scope = ScopedMailWindow(base.mailbox_id, base.after, base.before, ("private",))
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE mail_accounts SET provider_account_id='provider-a',"
+            "read_scope_sha256=%s WHERE id=%s", (scope.fingerprint(), account)
+        )
+    mailbox = pg.SyntheticMailbox()
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        response = mailbox.handle(request)
+        if request.method == "POST" and b'"Email/get"' in request.content:
+            payload = response.json()
+            for row in payload["methodResponses"][0][1]["list"]:
+                row["mailboxIds"] = {"inbox": True, "private": True}
+            return httpx.Response(200, json=payload)
+        return response
+
+    client = FastmailReadClient(
+        "synthetic-transport-token", transport=httpx.MockTransport(respond)
+    )
+    try:
+        for expected in ("progress", "progress", "caught_up"):
+            assert ReadWorker(store, client, scope=scope).step(ctx, account) == expected
+    finally:
+        client.close()
+    assert mailbox.downloads == []
+    assert store.search(ctx, SearchRequest(query="Melron")) == []
+    assert store.sync_status(ctx, account)["message_counts"]["excluded"] == 1
+    with store.transaction(ctx) as conn:
+        for table in ("raw_objects", "messages", "message_versions", "quarantine_receipts"):
+            count = conn.execute(
+                f"SELECT count(*) AS n FROM {table} WHERE account_id=%s", (account,)
+            ).fetchone()["n"]
+            assert count == 0
+
+
+def test_exclusion_event_requires_pinned_live_scoped_worker(database, tenant):
+    store, _ = database
+    ctx, account = tenant
+    item = IngestItem(
+        "synthetic-event", "synthetic-id", "synthetic-version",
+        datetime(1970, 1, 1, tzinfo=UTC), exclusion_policy="a" * 64,
+    )
+    with pytest.raises(Conflict, match="matching scoped worker"):
+        store.ingest_page(ctx, account, None, "synthetic-cursor", [item], synthetic_only=True)

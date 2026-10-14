@@ -43,7 +43,14 @@ pinned canonical Fastmail mailbox/date window on a previously unused account.
 `sync_workers.read_scope_sha256` and `scope_claim_token` bind a fresh scoped
 lease to that pin; the Email cursor must carry version 4 and the same digest.
 Database triggers reject drift or unscoped worker takeover. The window itself
-is not stored here, and no live enrollment workflow is implemented.
+is not stored here. ADR-179 adds a synthetic-tested, private owner-reviewed
+enrollment/disconnect command; no live enrollment is approved. ADR-184 includes
+an exact excluded-mailbox policy in the pinned window fingerprint. Migration
+0061 adds `excluded` to `message_sync_state.status`: an excluded provider ID
+is retained only in the tenant-isolated sync/inventory ledger, with no new raw
+object, message projection or DataCore document. An older `messages` row is
+marked noncurrent in the same transaction; its immutable versions remain.
+`excluded` is not a provider deletion or a retention purge.
 
 - **source**: kind (`email`, `fileos`, future), provider, account/root, configuration.
 - **source_item**: stable logical item ID and source-native ID/path; current observation.

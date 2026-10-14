@@ -109,6 +109,7 @@ class IngestItem:
     # they exceed the configured storage budget. It is accounted, not silently skipped.
     held_reason: str | None = None
     source_size: int | None = None
+    exclusion_policy: str | None = None  # Opaque policy fingerprint; no source bytes.
 
     def __post_init__(self) -> None:
         if not all(0 < len(v) <= 1000 for v in (self.event_key, self.provider_id, self.version)):
@@ -128,6 +129,13 @@ class IngestItem:
             self.held_reason != HELD_SOURCE_TOO_LARGE or self.raw is not None
         ):
             raise ValueError("held items carry a known reason and no retained bytes")
+        if self.exclusion_policy is not None and (
+            not re.fullmatch(r"[0-9a-f]{64}", self.exclusion_policy)
+            or self.raw is not None or self.held_reason is not None
+            or self.thread_id is not None or self.mailbox_ids or self.keywords
+            or self.blob_id is not None or self.source_size is not None
+        ):
+            raise ValueError("excluded items carry only an opaque policy identity")
         if self.source_size is not None and (
             type(self.source_size) is not int or not 0 <= self.source_size <= MAX_PROVIDER_SIZE
         ):
@@ -669,8 +677,9 @@ class Store:
                 item,
                 *(
                     prepare_mime(item.raw)
-                    if not item.held and (item.raw is None or len(item.raw) <= MAX_RAW_BYTES)
-                    else (None, [], True)
+                    if not item.held and item.exclusion_policy is None
+                    and (item.raw is None or len(item.raw) <= MAX_RAW_BYTES)
+                    else (None, [], item.exclusion_policy is None)
                 ),
             )
             for item in items
@@ -683,7 +692,7 @@ class Store:
                 (f"{ctx.tenant_id}:{account_id}",),
             )
             account = conn.execute(
-                "SELECT id,provider_account_id,secret_ref FROM mail_accounts "
+                "SELECT id,provider_account_id,secret_ref,read_scope_sha256 FROM mail_accounts "
                 "WHERE id=%s AND status='active'",
                 (account_id,),
             ).fetchone()
@@ -697,7 +706,8 @@ class Store:
             # All ingestion for an enrolled worker account is fenced, including
             # direct library calls. A stale process cannot bypass the worker lease.
             worker = conn.execute(
-                "SELECT lease_token,provider_account_id,lease_until>clock_timestamp() AS live "
+                "SELECT lease_token,provider_account_id,read_scope_sha256,"
+                "lease_until>clock_timestamp() AS live "
                 "FROM sync_workers WHERE account_id=%s FOR UPDATE",
                 (account_id,),
             ).fetchone()
@@ -711,6 +721,16 @@ class Store:
                 raise Conflict("worker lease is not current")
             if lease_token is not None and worker is None:
                 raise Conflict("worker lease is missing")
+            if any(item.exclusion_policy is not None for item in items) and (
+                worker is None or lease_token is None
+                or not account["read_scope_sha256"]
+                or worker["read_scope_sha256"] != account["read_scope_sha256"]
+                or any(
+                    item.exclusion_policy != account["read_scope_sha256"]
+                    for item in items if item.exclusion_policy is not None
+                )
+            ):
+                raise Conflict("excluded event requires matching scoped worker")
             cursor = conn.execute(
                 "SELECT opaque_cursor FROM sync_cursors WHERE account_id=%s AND scope='email'",
                 (account_id,),
@@ -760,6 +780,14 @@ class Store:
                     if previous["event_hash"] != event_hash:
                         raise Conflict("event key reused with different content")
                     continue
+                if item.exclusion_policy is not None:
+                    event_kind, current_status = "exclude_message", "excluded"
+                elif quarantined:
+                    event_kind, current_status = "quarantine_message", "quarantined"
+                elif normalized is not None:
+                    event_kind, current_status = "upsert_message", "ready"
+                else:
+                    event_kind, current_status = "delete_message", "deleted"
                 raw_hash = hashlib.sha256(item.raw).hexdigest() if item.raw is not None else None
                 conn.execute(
                     "INSERT INTO provider_events(tenant_id,account_id,event_key,kind,"
@@ -769,11 +797,7 @@ class Store:
                         ctx.tenant_id,
                         account_id,
                         item.event_key,
-                        "quarantine_message"
-                        if quarantined
-                        else "upsert_message"
-                        if normalized
-                        else "delete_message",
+                        event_kind,
                         item.provider_id,
                         item.version,
                         raw_hash,
@@ -792,7 +816,7 @@ class Store:
                         account_id,
                         item.provider_id,
                         item.event_key,
-                        "quarantined" if quarantined else "ready" if normalized else "deleted",
+                        current_status,
                     ),
                 )
                 if item.raw is not None:
@@ -808,7 +832,16 @@ class Store:
                             Jsonb(asdict(ref)) if ref else None,
                         ),
                     )
-                if quarantined:
+                if item.exclusion_policy is not None:
+                    # Current projections are hidden without claiming provider deletion.
+                    # Historical immutable evidence remains behind its existing grants.
+                    conn.execute(
+                        "UPDATE messages SET deleted=true,provider_version=%s,updated_at=now() "
+                        "WHERE account_id=%s AND provider_message_id=%s",
+                        (item.version, account_id, item.provider_id),
+                    )
+                    self.audit(conn, ctx, "ingest.excluded", "account", str(account_id))
+                elif quarantined:
                     source_metadata: dict[str, Any] = {
                         "thread_id": item.thread_id,
                         "mailbox_ids": item.mailbox_ids,
@@ -876,6 +909,8 @@ class Store:
             payload.update(mailbox_ids=item.mailbox_ids, keywords=item.keywords)
         if item.held:
             payload.update(held=item.held_reason, source_size=item.source_size)
+        if item.exclusion_policy is not None:
+            payload["exclusion_policy"] = item.exclusion_policy
         return digest(payload)
 
     def quarantines(
@@ -919,7 +954,7 @@ class Store:
                 "FROM sync_workers WHERE account_id=%s",
                 (account_id,),
             ).fetchone()
-            counts = {"ready": 0, "quarantined": 0, "deleted": 0}
+            counts = {"ready": 0, "quarantined": 0, "deleted": 0, "excluded": 0}
             for row in conn.execute(
                 "SELECT status,count(*) AS n FROM message_sync_state "
                 "WHERE account_id=%s GROUP BY status",

@@ -406,6 +406,112 @@ def test_scoped_metadata_refusal_precedes_every_blob_download(
     assert [method for method, _ in calls] == ["Email/query"]
 
 
+def test_scoped_exclusion_precedes_download_and_retained_byte_lookup(monkeypatch):
+    base = scoped_window()
+    scope = ScopedMailWindow(base.mailbox_id, base.after, base.before, ("private",))
+    worker, store, calls, ctx, account = worker_harness(monkeypatch, scope=scope)
+    original = worker.client.metadata
+
+    def metadata(ids):
+        response = original(ids)
+        response["list"][0]["mailboxIds"] = {"inbox": True, "private": True}
+        return response
+
+    retained_calls = []
+    store.jobs.retained_blobs = lambda ctx, account, ids: retained_calls.append(ids) or {}
+    worker.client.metadata = metadata
+    assert worker.step(ctx, account) == "progress"
+    assert worker.step(ctx, account) == "progress"
+    items = store.commits[-1][0]
+    assert len(items) == 2
+    assert items[0].provider_id == "first"
+    assert items[0].exclusion_policy == scope.fingerprint()
+    assert items[0].raw is None and items[0].thread_id is None
+    assert items[0].mailbox_ids == () and items[0].blob_id is None
+    assert items[1].raw is not None
+    assert retained_calls == [("second",)]
+    assert store.downloads == ["blob-second"]
+    assert store.commits[-1][1]["inventory_total"] == 2
+    assert [method for method, _ in calls] == ["Email/query"]
+
+
+def test_thousand_excluded_rows_finish_inventory_without_content_reads(monkeypatch):
+    base = scoped_window()
+    scope = ScopedMailWindow(base.mailbox_id, base.after, base.before, ("private",))
+    mails = tuple(f"fictional-{index:04d}" for index in range(1000))
+    worker, store, calls, ctx, account = worker_harness(
+        monkeypatch, scope=scope, mails=mails, page_size=50
+    )
+    original = worker.client.metadata
+
+    def metadata(ids):
+        response = original(ids)
+        for row in response["list"]:
+            row["mailboxIds"] = {"inbox": True, "private": True}
+        return response
+
+    worker.client.metadata = metadata
+    store.jobs.retained_blobs = lambda *args: pytest.fail("excluded byte lookup")
+    assert worker.step(ctx, account) == "progress"
+    for _ in range(50):
+        assert worker.step(ctx, account) == "progress"
+        if cursor(store).phase == "reconcile":
+            break
+    else:
+        pytest.fail("bounded excluded inventory did not complete")
+    assert store.commits[-1][1]["inventory_total"] == 1000
+    assert sum(len(items) for items, _ in store.commits) == 1000
+    assert all(
+        item.exclusion_policy == scope.fingerprint() and item.raw is None
+        for items, _ in store.commits for item in items
+    )
+    assert store.downloads == []
+    assert all(method == "Email/query" for method, _ in calls)
+
+
+def test_malformed_mixed_membership_aborts_page_before_any_bytes(monkeypatch):
+    base = scoped_window()
+    scope = ScopedMailWindow(base.mailbox_id, base.after, base.before, ("private",))
+    worker, store, _, ctx, account = worker_harness(monkeypatch, scope=scope)
+    assert worker.step(ctx, account) == "progress"
+    previous = store.cursor
+    original = worker.client.metadata
+
+    def metadata(ids):
+        response = original(ids)
+        response["list"][1]["mailboxIds"] = {"inbox": True, "private": False}
+        return response
+
+    worker.client.metadata = metadata
+    store.jobs.retained_blobs = lambda *args: pytest.fail("invalid byte lookup")
+    assert worker.step(ctx, account) == "protocol_error"
+    assert store.cursor == previous and store.downloads == []
+
+
+def test_scoped_exclusion_change_refuses_old_cursor_before_provider(monkeypatch):
+    base = scoped_window()
+    previous = ScopedMailWindow(base.mailbox_id, base.after, base.before, ("private",))
+    worker, store, calls, ctx, account = worker_harness(monkeypatch, scope=base)
+    store.cursor = Checkpoint(
+        schema_version=4, generation=uuid4(), phase="listing",
+        email_state="scoped-inventory", scope_sha256=previous.fingerprint(),
+    ).encode()
+    assert worker.step(ctx, account) == "protocol_error"
+    assert not calls and not store.downloads and not store.commits
+
+
+@pytest.mark.parametrize("extra", [
+    {"raw": b"private"}, {"thread_id": "thread"}, {"mailbox_ids": ("private",)},
+    {"blob_id": "blob"}, {"source_size": 1}, {"held_reason": "source_too_large"},
+])
+def test_excluded_ingest_item_cannot_carry_content_or_membership(extra):
+    with pytest.raises(ValueError, match="excluded items"):
+        IngestItem(
+            "event", "id", "version", datetime(1970, 1, 1, tzinfo=UTC),
+            exclusion_policy="a" * 64, **extra,
+        )
+
+
 @pytest.mark.parametrize("expired", [False, True])
 def test_large_store_splits_listing_pages_by_bytes_and_changes_by_count(monkeypatch, expired):
     raw = b"x" * (MAX_RAW_BYTES + 1)

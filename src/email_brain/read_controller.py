@@ -42,12 +42,21 @@ class ScopedReadWindowConfig(ClosedModel):
     mailbox_id: str = Field(strict=True, min_length=1, max_length=512)
     after: str = Field(strict=True, pattern=UTC_SECOND_PATTERN)
     before: str = Field(strict=True, pattern=UTC_SECOND_PATTERN)
+    excluded_mailbox_ids: tuple[str, ...] = ()
+
+    @field_validator("excluded_mailbox_ids", mode="before")
+    @classmethod
+    def exact_exclusions(cls, value: Any) -> Any:
+        if not isinstance(value, list) or any(type(item) is not str for item in value):
+            raise ValueError("excluded mailboxes require an exact list of IDs")
+        return value
 
     def window(self) -> ScopedMailWindow:
         window = ScopedMailWindow(
             self.mailbox_id,
             datetime.fromisoformat(self.after.replace("Z", "+00:00")),
             datetime.fromisoformat(self.before.replace("Z", "+00:00")),
+            self.excluded_mailbox_ids,
         )
         if window.query_filter() != {
             "inMailbox": self.mailbox_id, "after": self.after, "before": self.before,

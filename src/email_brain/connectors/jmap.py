@@ -40,6 +40,7 @@ class ScopedMailWindow:
     mailbox_id: str
     after: datetime
     before: datetime
+    excluded_mailbox_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         identifier(self.mailbox_id)
@@ -53,6 +54,23 @@ class ScopedMailWindow:
                 raise ValueError("scoped mail dates require whole-second UTC timestamps")
         if not self.after < self.before <= self.after + timedelta(days=31):
             raise ValueError("scoped mail window must be 1..31 days")
+        if (
+            type(self.excluded_mailbox_ids) is not tuple
+            or len(self.excluded_mailbox_ids) > 100
+        ):
+            raise ValueError("excluded mailboxes must be a bounded tuple")
+        for mailbox in self.excluded_mailbox_ids:
+            if (
+                type(mailbox) is not str or not 0 < len(mailbox) <= 512
+                or "\x00" in mailbox or not mailbox.isprintable()
+                or mailbox != mailbox.strip()
+            ):
+                raise ValueError("excluded mailbox ID is not printable and exact")
+        if (
+            tuple(sorted(set(self.excluded_mailbox_ids))) != self.excluded_mailbox_ids
+            or self.mailbox_id in self.excluded_mailbox_ids
+        ):
+            raise ValueError("excluded mailboxes must be sorted, distinct, and separate")
 
     def query_filter(self) -> dict[str, str]:
         return {
@@ -63,8 +81,20 @@ class ScopedMailWindow:
 
     def fingerprint(self) -> str:
         """Stable identity for a durable cursor; the typed filter is the authority."""
-        encoded = json.dumps(self.query_filter(), sort_keys=True, separators=(",", ":"))
+        identity: dict[str, Any] = self.query_filter()
+        if self.excluded_mailbox_ids:
+            identity = {
+                "query": identity,
+                "exclusion_policy_version": 1,
+                "excluded_mailbox_ids": self.excluded_mailbox_ids,
+            }
+        encoded = json.dumps(identity, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+    def excludes_metadata(self, row: dict[str, Any]) -> bool:
+        """Call only after accepts_metadata validates the complete membership map."""
+        mailboxes = row["mailboxIds"]
+        return any(mailbox in mailboxes for mailbox in self.excluded_mailbox_ids)
 
     def accepts_metadata(self, row: dict[str, Any]) -> bool:
         """Fail closed if Email/get does not confirm the provider's query scope."""

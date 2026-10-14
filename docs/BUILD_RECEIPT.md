@@ -2,6 +2,26 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Scoped mailbox exclusion — ADR-184 branch candidate
+
+The disposable local Python 3.14/PostgreSQL 17.11 full suite passed 3,337
+tests, six skips; 540 of 541 PostgreSQL-marked tests executed (one
+platform-local skip). The synthetic mixed-membership and re-entry tests prove
+no excluded provider download, no new raw/message content, transactional
+suppression of older Email and bridged Brain current search, and ordinary
+re-publication when the membership is removed. After a readability-only
+event-state cleanup, the touched PostgreSQL cases passed 4/4. Browser tests
+passed 165/165; Ruff, mypy (102 source files), documentation links and the
+structural deployment gate passed. The first local full run exposed pinned
+migration-inventory test expectations; after updating those tests, the second
+full run passed. Two subsequent targeted tests passed a 1,000-row exclusion
+inventory and malformed mixed-membership fail-closed case. Exact final-head
+hosted CI, strict runtime, restore, and
+merged-main receipts are still required. No real Fastmail account or FileOS
+root was read and FOS-Master remains unchanged. Sender/category exclusion,
+retroactive purge, policy changes on an already-used account, transitive
+KnowledgeCore visibility and live-source acceptance remain open.
+
 ## Reviewed project members — ADR-183
 
 [PR #206](https://github.com/jbone3311/MasterBrain/pull/206) final head

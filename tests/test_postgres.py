@@ -5215,6 +5215,7 @@ def test_worker_restart_and_query_churn_preserve_baseline(database, tenant):
             "ready": 3,
             "quarantined": 0,
             "deleted": 1,
+            "excluded": 0,
         }
         assert len(worker.store.search(ctx, SearchRequest(query="Melron"))) == 1
         assert worker.store.search(ctx, SearchRequest(query="Vanishes")) == []
@@ -5267,6 +5268,7 @@ def test_worker_oversized_source_is_held_and_never_pauses(database, tenant):
             "ready": 1,
             "quarantined": 1,
             "deleted": 0,
+            "excluded": 0,
         }
         held = worker.store.quarantines(ctx, account)["results"]
         assert len(held) == 1 and held[0]["reason"] == "source_too_large"
@@ -5622,7 +5624,7 @@ def test_deleted_quarantine_has_no_unresolved_status_but_preserves_receipt(datab
     store.ingest_page(ctx, account, None, "q", [replace(item(), raw=b"")])
     store.ingest_page(ctx, account, "q", "d", [replace(item("deleted"), raw=None)])
     status = store.sync_status(ctx, account)
-    assert status["message_counts"] == {"ready": 0, "quarantined": 0, "deleted": 1}
+    assert status["message_counts"] == {"ready": 0, "quarantined": 0, "deleted": 1, "excluded": 0}
     assert not status["review_required"]
     with store.transaction(ctx) as conn:
         assert conn.execute("SELECT count(*) AS n FROM quarantine_receipts").fetchone()["n"] == 1
@@ -5703,7 +5705,9 @@ def test_synthetic_256_mailbox_import_search_attachments_and_restart(database, t
             assert result == "progress"
         assert outcomes[-1] == "caught_up" and len(outcomes) == 35
         state = worker.store.sync_status(ctx, account)
-        assert state["message_counts"] == {"ready": 256, "quarantined": 0, "deleted": 0}
+        assert state["message_counts"] == {
+            "ready": 256, "quarantined": 0, "deleted": 0, "excluded": 0,
+        }
         for index in (0, 4, 5, 7, 127, 255):
             hits = worker.store.search(ctx, SearchRequest(query=f"marker{index:05d}"))
             assert len(hits) == 1
@@ -5742,6 +5746,7 @@ def test_synthetic_256_mailbox_import_search_attachments_and_restart(database, t
             "ready": 255,
             "quarantined": 1,
             "deleted": 2,
+            "excluded": 0,
         }
         assert worker.store.search(ctx, SearchRequest(query="marker00000")) == []
         assert len(worker.store.search(ctx, SearchRequest(query="marker01000"))) == 1
@@ -5770,6 +5775,7 @@ def test_synthetic_256_mailbox_import_search_attachments_and_restart(database, t
             "ready": 235,
             "quarantined": 1,
             "deleted": 22,
+            "excluded": 0,
         }
         assert worker.store.search(ctx, SearchRequest(query="marker00010")) == []
     finally:

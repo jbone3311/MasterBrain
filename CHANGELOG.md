@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add synthetic scoped-mailbox exclusion before provider download or retained
+  byte reuse (ADR-184). An explicit excluded status hides older current Email
+  and Brain search results without claiming deletion or purging history; no
+  live Fastmail access or FileOS policy change is authorized.
+
 - Add reviewed, immutable person/organization roles on exact projects
   (ADR-183), with valid-time/supersession history, transitive source-grant
   filtering, and bounded dossier/client/browser views. Roles are not access

@@ -82,7 +82,7 @@ def test_large_mail_is_encrypted_held_and_healthy_mail_progresses(external, tena
     assert external.ingest_page(ctx, account, None, "done", items) == 2
     assert external.ingest_page(ctx, account, None, "done", items) == 0
     status = external.sync_status(ctx, account)
-    assert status["message_counts"] == {"ready": 1, "quarantined": 1, "deleted": 0}
+    assert status["message_counts"] == {"ready": 1, "quarantined": 1, "deleted": 0, "excluded": 0}
     held = external.quarantines(ctx, account)["results"]
     assert len(held) == 1 and held[0]["reason"] == "mime_too_large"
     assert len(external.search(ctx, SearchRequest(query="Melron"))) == 1
@@ -363,6 +363,7 @@ def test_fastmail_large_mail_restarts_through_durable_worker(database, external,
             "ready": 1,
             "quarantined": 1,
             "deleted": 0,
+            "excluded": 0,
         }
         assert external.object_inventory(ctx, account)["referenced"] == 2
     finally:

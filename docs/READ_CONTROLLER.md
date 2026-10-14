@@ -59,7 +59,8 @@ For the synthetic scoped path, use version 2 with the same private fields plus:
   "read_scope": {
     "mailbox_id": "fictional-mailbox-id",
     "after": "2026-09-18T00:00:00Z",
-    "before": "2026-09-21T00:00:00Z"
+    "before": "2026-09-21T00:00:00Z",
+    "excluded_mailbox_ids": ["fictional-private-mailbox-id"]
   }
 }
 ```
@@ -69,10 +70,16 @@ standalone config. `read_scope` is required for version 2 and forbidden for
 version 1. Dates are exact whole-second UTC, `after` inclusive and `before`
 exclusive, at most 31 days apart. The mailbox ID is an exact opaque JMAP ID,
 not a display name. The administrator must separately pin the canonical filter
-fingerprint on a **previously unused** Fastmail account; ADR-179 provides a
+and exclusion-policy fingerprint on a **previously unused** Fastmail account;
+ADR-179 provides a
 reviewed local path for a new row. `sync-read` itself does not set or change
 that pin. A wrong or missing pin fails preflight before any
 provider request or lease claim. Never put a real private config in Git.
+`excluded_mailbox_ids` is optional but, when present, must be a sorted,
+duplicate-free list of exact opaque IDs separate from `mailbox_id`. Any matching
+membership excludes the whole Email before its bytes are accessed. The empty
+list preserves the older fingerprint. A used account cannot silently change
+its policy; a reviewed transition is still needed. Testing remains synthetic.
 
 The account UUID, provider account ID and secret reference must match the existing
 active Fastmail row. A secret reference is compared, not resolved through a vault
