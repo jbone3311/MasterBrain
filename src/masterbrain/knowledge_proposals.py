@@ -20,6 +20,7 @@ from masterbrain.knowledge_schema import (
     KnowledgeAssertion,
     KnowledgeProposalReviewRequest,
     KnowledgeProposalStageRequest,
+    ProjectWrite,
 )
 
 _ASSERTION: TypeAdapter[KnowledgeAssertion] = TypeAdapter(KnowledgeAssertion)
@@ -76,6 +77,16 @@ class KnowledgeProposalBatches:
             raise NotFound()
         if not any(row["quote_matches"] for row in rows):
             raise ValueError("proposal quote lacks an exact source span")
+        if isinstance(assertion, ProjectWrite):
+            for alias in assertion.aliases:
+                matched = conn.execute(
+                    "SELECT EXISTS (SELECT 1 FROM brain_normalized_documents d "
+                    "WHERE d.tenant_id=%s AND d.evidence_id=%s "
+                    "AND position(%s in d.body)>0) AS matched",
+                    (ctx.tenant_id, alias.evidence_id, alias.source_quote),
+                ).fetchone()
+                if not matched or not matched["matched"]:
+                    raise ValueError("proposal alias quote lacks an exact source span")
 
     def stage(
         self, ctx: TenantContext, body: KnowledgeProposalStageRequest,

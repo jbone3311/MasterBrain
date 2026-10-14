@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-192 closes a project-alias citation hole in ADR-186's synthetic private
+proposal batches: every alias quote must appear in its own current, granted,
+nonexcluded normalized evidence at stage, preview and review. This does not
+retroactively validate directly published reviewed assertions, prove semantic
+truth, or implement a Markdown dossier. The direct-publication and export-time
+citation gates remain open.
+
 ADR-191 adds a sixth isolated, exact-hash donor recipe comparison for Wells
 Fargo savings. Fictional daily-balance groups preserve single-row signs,
 whole-day direction, mixed keyword/residual and bounded subset resolution,

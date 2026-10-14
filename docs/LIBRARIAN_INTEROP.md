@@ -43,6 +43,13 @@ excluded content into an indexed artifact.
 
 ## Build sequence and gates
 
+ADR-192 now checks each project-alias quote in the *proposal* queue against
+its own evidence at stage, preview and review. It does not certify historical
+direct publications: that route validates linked evidence but not exact
+`source_quote` spans. A Markdown renderer must check each quote against
+currently authorized evidence at export time and fail closed or label an
+unsupported line; it cannot assume that `reviewed` means quote-verified.
+
 1. Adopt ADR-169 and this corrected contract. This is documentation only; no
    importer, approval queue, or model path is claimed.
 2. ADR-186 now supplies a source-stated private queue and explicit atomic

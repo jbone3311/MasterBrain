@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Require each proposed project alias quote to appear exactly in its own
+  current, granted evidence at stage, preview and review (ADR-192). This
+  closes one proposal-citation hole; historical direct publications are not
+  retroactively certified and the Markdown dossier remains unimplemented.
+
 - Pin a sixth, nonpublishing FOS-Master recipe baseline for Wells Fargo savings
   (ADR-191). Fictional daily-balance, mixed-sign and low-confidence goldens,
   exact-hash donor replay, and 1,000-row stress do not establish bank truth.

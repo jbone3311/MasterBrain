@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-192 tightens the synthetic Librarian proposal path: project aliases now
+need an exact quote in their own evidence. Before a Markdown dossier can claim
+citations, add source-scoped facts and artifact associations, and verify each
+displayed quote against currently authorized evidence. Historical directly
+published Knowledge rows are not retroactively quote-certified. This remains
+read-only planning, not a live-source or FileOS cutover gate.
+
 ADR-189 now supplies a private, source-reacquired FileOS text replay receipt
 bound to one statement proposal. ADR-190 exercises it in the disposable
 fictional cross-source trial, while keeping the owner row unreviewed. The next

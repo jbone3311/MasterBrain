@@ -2,9 +2,26 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Project-proposal alias citation gate — ADR-192
+
+This branch requires each proposed project alias quote to occur exactly in its
+own current, granted, nonexcluded normalized evidence. It does not change
+direct reviewed publication or certify a complete Markdown dossier. Seven
+focused fictional PostgreSQL proposal tests passed locally, including
+invented-quote rejection with no batch row, exact-span preview, and rejection
+when an alias quote appears only in a different linked evidence item.
+The disposable Python 3.14/PostgreSQL 17.11 full suite before the last
+two-evidence regression case passed 3,384 tests
+with six skips (551 of 552 PostgreSQL-marked cases executed). All six browser
+suites passed 165/165; Ruff, mypy (105 source files), docs links and diff
+checks passed. The local repository deployment gate passed (2,834 tests, 556
+skips; its PostgreSQL coverage is intentionally separate from the full suite).
+The new two-evidence case passed locally; final-head hosted CI and merged-main
+gates are pending. No live source was used.
+
 ## Wells Fargo savings donor recipe parity — ADR-191
 
-The branch `codex/wells-savings-parity` adds an isolated, fictional-only sixth
+Merged [PR #221](https://github.com/jbone3311/MasterBrain/pull/221) adds an isolated, fictional-only sixth
 recipe comparison against pinned FOS-Master. Thirteen savings goldens cover
 daily-balance sign resolution, all-one-direction and mixed days, unique,
 ambiguous and absent subset solutions, the twelve-unknown boundary and
@@ -17,8 +34,16 @@ skips (550 of 551 PostgreSQL-marked cases executed). All six browser suites
 passed 165/165; Ruff, mypy (105 source files), docs links, structural and
 diff checks passed. The exact local test cluster was stopped. No real
 statement, donor database, runtime financial claim, source effect or
-FOS-Master edit was involved. Exact-head hosted gates are not yet claimed for
-this branch.
+FOS-Master edit was involved. Exact PR head
+`4991c086192597f68527906ac765bc8fa2e3b334` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38648082231),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38648082235)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38648082343).
+Squash merge `5d7a764d8c295fcfd88a40b9bf06b59a6a352b7c` landed on `main`;
+independent merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38649298372),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38649298329)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38649298368)
+all passed. The donor repository stayed unchanged.
 
 ## Fictional trial statement replay integration — ADR-190
 

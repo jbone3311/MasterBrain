@@ -143,6 +143,57 @@ def test_review_failure_rolls_back_every_row_and_hidden_basis(database, tenant):
         ).fetchone()["n"] == 0
 
 
+def test_project_alias_quote_must_match_its_own_evidence(database, tenant):
+    store, _ = database
+    ctx, evidence_id = prepared(store, tenant)
+    queue = KnowledgeProposalBatches(store)
+    base = proposal(evidence_id, 1)
+    alias = {
+        "alias": "Melron side deal", "alias_kind": "name",
+        "evidence_id": evidence_id, "source_quote": "Invented side deal",
+    }
+    with pytest.raises(ValueError, match="alias quote lacks an exact source span"):
+        queue.stage(ctx, KnowledgeProposalStageRequest(proposals=[{
+            **base, "aliases": [alias],
+        }]), uuid4())
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM knowledge_proposal_batches"
+        ).fetchone()["n"] == 0
+    valid = {**base, "aliases": [{**alias, "source_quote": QUOTE}]}
+    staged = queue.stage(ctx, KnowledgeProposalStageRequest(proposals=[valid]), uuid4())
+    assert queue.preview(ctx, staged["batch_id"])["proposals"][0]["assertion"][
+        "aliases"
+    ][0]["source_quote"] == QUOTE
+
+
+def test_project_alias_quote_in_another_linked_evidence_is_not_enough(database, tenant):
+    store, _ = database
+    ctx, first_id = prepared(store, tenant)
+    _, account = tenant
+    second_quote = "Fictional second source names Cedar Lane"
+    store.ingest_page(ctx, account, "proposal-synthetic-page", "proposal-second-page", [
+        replace(pg.item("proposal-e2", body=second_quote), provider_id="proposal-message-2"),
+    ])
+    legacy_id = store.search(ctx, SearchRequest(query=second_quote))[0]["evidence_id"]
+    second = pg.DataCoreStore(store).bridge_current_email_version(
+        ctx, legacy_id, uuid4(), code_revision="proposal-alias-second-source-v1",
+    )
+    base = {**proposal(first_id, 1), "evidence_ids": [first_id, second.evidence_id]}
+    alias = {
+        "alias": "Cedar Lane", "alias_kind": "address",
+        "evidence_id": second.evidence_id, "source_quote": QUOTE,
+    }
+    queue = KnowledgeProposalBatches(store)
+    with pytest.raises(ValueError, match="alias quote lacks an exact source span"):
+        queue.stage(ctx, KnowledgeProposalStageRequest(proposals=[{
+            **base, "aliases": [alias],
+        }]), uuid4())
+    valid = {**base, "aliases": [{**alias, "source_quote": second_quote}]}
+    staged = queue.stage(ctx, KnowledgeProposalStageRequest(proposals=[valid]), uuid4())
+    assert queue.preview(ctx, staged["batch_id"])["row_count"] == 1
+
+
 def test_review_bad_related_row_is_all_or_nothing(database, tenant):
     store, _ = database
     ctx, evidence_id = prepared(store, tenant)

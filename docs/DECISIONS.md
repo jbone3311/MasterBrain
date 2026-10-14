@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-192](adr/192_project_proposal_alias_quote_gate.md) requires each proposed
+project alias quote to match its own currently authorized normalized evidence
+at stage, preview and review. Older direct reviewed publication remains a
+separate citation-validation gap before Markdown export.
+
 [ADR-191](adr/191_wells_fargo_savings_recipe_parity.md) pins a sixth isolated
 donor statement recipe: Wells Fargo savings daily-balance sign resolution,
 including low-confidence ambiguous groups. It publishes no financial claim.
