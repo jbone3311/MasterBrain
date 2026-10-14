@@ -2,6 +2,24 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Isolated Fidelity donor recipe parity — ADR-174
+
+[PR #194](https://github.com/jbone3311/MasterBrain/pull/194) final head
+`41e86b14fa0c634592e844cd677462b6b1c82873` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38551640662)
+with 3,216 tests, six skips and 507/507 PostgreSQL-marked tests executed;
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38551640643)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38551640762)
+passed. Squash merge `f50abf2726091d1d0fc00d82f015b5e784e9477c` passed
+[merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38552921192)
+with the same counts, plus
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38552921195)
+and [restore](https://github.com/jbone3311/MasterBrain/actions/runs/38552921144).
+Local exact-hash AST replay against pinned FOS-Master passed 13 focused
+fictional tests, including 1,000-row stress. The superseded first-head CI run
+was canceled after a documentation correction and is not used as evidence.
+No donor state or live source changed; Fidelity output is not a verified holding.
+
 ## Fictional browser statement-proposal trial — ADR-173
 
 [PR #193](https://github.com/jbone3311/MasterBrain/pull/193) final head

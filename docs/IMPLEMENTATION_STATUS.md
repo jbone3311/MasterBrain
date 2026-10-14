@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-175 adds a synthetic-only typed Fastmail mailbox/date query filter and a
+separate metadata scope check. It is not wired into `ReadWorker` or CLI, whose
+initial inventory and change feed remain account-wide. Durable scope binding,
+safe reconciliation and provider-read acceptance are still required before a
+private Fastmail pilot.
+
 ADR-174 adds an isolated, behavior-matched Fidelity recipe baseline with six
 fictional goldens, optional exact-hash donor replay and 1,000-row stress. The
 donor's two-column missed-row and zero-total fallback limitations remain

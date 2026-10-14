@@ -1,5 +1,10 @@
 # MasterBrain Roadmap
 
+ADR-175 adds a typed, synthetic-only Fastmail mailbox/date query and
+metadata-recheck primitive. A private pilot still requires durable scope
+binding across cursors, reconciliation and change tracking before any real
+provider request. The existing `sync-read` command remains account-wide.
+
 ADR-174 extends the pinned, synthetic-only statement donor comparison to the
 low-confidence Fidelity recipe. Six fictional goldens preserve its exact
 duplicate, missed-row, zero-fallback and period behavior. This is not a second

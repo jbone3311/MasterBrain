@@ -2,6 +2,13 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Pinned a second fictional FOS-Master statement recipe baseline (Fidelity)
+  with its known low-confidence and missed-row behavior; it is not a runtime
+  holding extractor (ADR-174, PR #194).
+- Added a typed, synthetic-only Fastmail mailbox/date JMAP query and independent
+  metadata scope check (ADR-175). The existing read worker remains account-wide;
+  no private pilot is authorized by this primitive.
+
 - Current-search and extractive Ask now report Email and FileOS registration
   independently, including absent, focus-excluded and assistant-unavailable
   kinds (ADR-168). Either source can be omitted without breaking read queries.

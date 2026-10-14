@@ -94,6 +94,7 @@ redirecting Email ingestion or search.
 | Encrypted local objects | [blobs.py](../src/email_brain/blobs.py) |
 | Provider reads | [connectors/](../src/email_brain/connectors/) |
 | Worker/checkpoints | [sync.py](../src/email_brain/sync.py), [sync_store.py](../src/email_brain/sync_store.py), [JMAP anchor paging](../src/email_brain/connectors/jmap.py), [held-source receipts, migration 0052](../migrations/0052_held_source_quarantine.sql), [ADR-110](adr/110_fastmail_sync_resilience.md) |
+| Synthetic scoped Fastmail query primitive | [typed window and metadata recheck](../src/email_brain/connectors/jmap.py), [protocol tests](../tests/test_scoped_jmap.py), [ADR-175](adr/175_scoped_fastmail_query_boundary.md); not yet connected to worker, CLI or live pilot |
 | Bounded read operator | [read_controller.py](../src/email_brain/read_controller.py); `sync-read`, private preflight, exact ingest identity and guarded Fastmail reads |
 | Recovery/jobs | [recovery.py](../src/email_brain/recovery.py), [recovery_jobs.py](../src/email_brain/recovery_jobs.py) |
 | Approved document jobs/results | [document_jobs.py](../src/email_brain/document_jobs.py), [migration 0012](../migrations/0012_document_jobs.sql); opt-in search/evidence in Store |

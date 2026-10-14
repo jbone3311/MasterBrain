@@ -7,6 +7,13 @@ exfiltration, destructive file/mail effects, and leakage through logs/backups.
 
 ## Trust boundaries
 
+ADR-175's typed Fastmail `Email/query` mailbox/date filter is only a protocol
+primitive. Its separate `Email/get` metadata check fails closed on malformed
+membership/date fields, but neither is yet connected to the worker. The
+existing `sync-read` command remains account-wide; no live scoped-read
+security claim is made until scope is durably bound through changes and
+reconciliation.
+
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their

@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-175](adr/175_scoped_fastmail_query_boundary.md) adds a synthetic-only,
+typed mailbox/date `Email/query` filter and independent metadata check. The
+account-wide `sync-read` worker is unchanged; a durable scoped pilot is not
+yet authorized.
+
 [ADR-174](adr/174_fidelity_recipe_parity_baseline.md) pins a second, deliberately
 low-confidence Fidelity statement recipe against fictional donor goldens. It
 does not publish or verify holdings, relax ADR-171/172's Streetbeat-only

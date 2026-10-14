@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 # Listing order is explicit so anchor paging is stable across servers. Ascending
@@ -24,6 +25,64 @@ class AnchorNotFound(Exception):
 
 class ProtocolError(Exception):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class ScopedMailWindow:
+    """One exact JMAP mailbox and bounded UTC receipt window for a future pilot.
+
+    This does not scope Email/changes or authorize the existing ReadWorker. A
+    caller must recheck Email/get metadata before downloading any source bytes.
+    """
+
+    mailbox_id: str
+    after: datetime
+    before: datetime
+
+    def __post_init__(self) -> None:
+        identifier(self.mailbox_id)
+        if not self.mailbox_id.isprintable() or self.mailbox_id != self.mailbox_id.strip():
+            raise ValueError("scoped mailbox ID is not printable and exact")
+        for value in (self.after, self.before):
+            if (
+                type(value) is not datetime or value.tzinfo is None
+                or value.utcoffset() != timedelta(0) or value.microsecond
+            ):
+                raise ValueError("scoped mail dates require whole-second UTC timestamps")
+        if not self.after < self.before <= self.after + timedelta(days=31):
+            raise ValueError("scoped mail window must be 1..31 days")
+
+    def query_filter(self) -> dict[str, str]:
+        return {
+            "inMailbox": self.mailbox_id,
+            "after": self.after.astimezone(UTC).isoformat().replace("+00:00", "Z"),
+            "before": self.before.astimezone(UTC).isoformat().replace("+00:00", "Z"),
+        }
+
+    def accepts_metadata(self, row: dict[str, Any]) -> bool:
+        """Fail closed if Email/get does not confirm the provider's query scope."""
+        if not isinstance(row, dict):
+            raise ProtocolError("invalid scoped message metadata")
+        mailboxes = row.get("mailboxIds")
+        stamp = row.get("receivedAt")
+        if (
+            not isinstance(mailboxes, dict) or len(mailboxes) > 100
+            or any(value is not True for value in mailboxes.values())
+            or not isinstance(stamp, str) or len(stamp) > 40
+        ):
+            raise ProtocolError("invalid scoped message metadata")
+        for key in mailboxes:
+            identifier(key)
+        try:
+            received = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        except ValueError:
+            raise ProtocolError("invalid scoped receive timestamp") from None
+        if received.tzinfo is None or received.utcoffset() != timedelta(0):
+            raise ProtocolError("scoped receive timestamp is not UTC")
+        return (
+            mailboxes.get(self.mailbox_id) is True
+            and self.after <= received < self.before
+        )
 
 
 def identifier(value: Any) -> str:
@@ -124,7 +183,10 @@ class JmapReader:
             raise ProtocolError("changes made no state progress")
         return ChangeIds(groups[0], groups[1], groups[2], state, data["hasMoreChanges"])
 
-    def query_page(self, anchor: str | None = None, limit: int = 100) -> QueryPage:
+    def query_page(
+        self, anchor: str | None = None, limit: int = 100,
+        *, scope: ScopedMailWindow | None = None,
+    ) -> QueryPage:
         """List the page after ``anchor`` in explicit receipt order.
 
         Anchor paging keeps its place when mail is created or destroyed elsewhere in
@@ -133,11 +195,15 @@ class JmapReader:
         """
         if type(limit) is not int or not 1 <= limit <= 100:
             raise ValueError("invalid batch limit")
+        if scope is not None and not isinstance(scope, ScopedMailWindow):
+            raise ValueError("invalid scoped mail window")
         arguments: dict[str, Any] = {
             "sort": [dict(entry) for entry in LISTING_SORT],
             "limit": limit,
             "calculateTotal": True,
         }
+        if scope is not None:
+            arguments["filter"] = scope.query_filter()
         if anchor is None:
             arguments["position"] = 0
         else:
