@@ -1,5 +1,13 @@
 # Changelog
 
+- Add a separate, human-only synthetic Email XLSX extraction approval bound
+  to an exact current bridged attachment, parent MIME, source event and pinned
+  processor. Protected SQL and disposable PostgreSQL tests pass; this does not
+  run extraction, publish text or enable live Fastmail. PDF jobs stay PDF-only.
+
+- Expand the pinned FOS-Master XLSX comparison with sparse/multi-sheet and
+  exact row-cap cases; preserve the donor and explicit policy differences.
+
 - Add a fictional cross-source conflicting-price API acceptance case: two
   exact-cited Email/FileOS `loi.price` statements remain separate, the owner
   sees a disagreement without any total, and an Email-scoped assistant cannot

@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-239](adr/239_synthetic_email_xlsx_extraction_approval.md) creates a
+separate human, synthetic-only approval for one exact retained Email XLSX
+occurrence. It grants no PDF job, extraction result, bridge or live access.
+
 [ADR-238](adr/238_retained_email_xlsx_row_layout.md) binds one retained
 Email XLSX occurrence's bounded physical rows to its existing indexed text
 digest without publishing values, approving extraction or accessing live mail.

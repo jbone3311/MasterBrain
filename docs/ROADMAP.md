@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-239 now supplies an immutable, human-only synthetic Email XLSX extraction
+approval distinct from the PDF jobs. Next implement the exact-approval worker
+and immutable result, then an occurrence-specific reviewed DataCore bridge.
+No spreadsheet text has been published by this approval, and live Fastmail
+remains out of scope. Hosted CI is currently stopped before steps by the
+GitHub account payment/spending-limit gate.
+
 The pinned FOS XLSX baseline now has a 24-case sparse/multi-sheet value
 matrix and exact 2,000/2,001-row boundary contrast. It supports the bounded
 DataCore table path but does not close formula, `.xlsm`, financial citation or

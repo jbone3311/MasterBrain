@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Separate synthetic Email XLSX extraction approval — current branch
+
+ADR-239 adds an immutable, one-hour human approval for one exact current,
+bridged synthetic Email XLSX occurrence. It stores no MIME or extracted text;
+PDF jobs and bridges are untouched. A fresh disposable PostgreSQL 17 cluster
+bound to `127.0.0.1` ran the approval, historical populated-upgrade,
+migration-integrity and protected-truncation suites: **45 passed**, with
+**42/42 PostgreSQL-marked tests executed** and none skipped. The SQL guard
+refused a directly forged parent hash, while UPDATE, DELETE and TRUNCATE
+guards prevented rewriting the approval. An initial test expected NotFound
+for an unowned account; the service correctly returns AccessDenied and the
+test was corrected. A second fresh test database was used after revising the
+not-yet-committed migration, preserving checksum integrity. No worker result,
+document bridge, live account, actual-image or hosted gate is claimed.
+
+The complete local synthetic Python suite then passed **3,794 tests, 19
+skipped, zero failed** in 6m55s on locked Python 3.11.13 and disposable
+loopback-only PostgreSQL 17.11. **677/678 PostgreSQL-marked tests executed**;
+one was skipped and is not counted as a pass. This run is not a Docker-image,
+hosted CI, independent restore or live-source acceptance.
+
 ## Exact-head hosted gate diagnostic — current branch
 
 At `afb7cb8638027abc7ea75c05159c00fe810aed0b`, [CI run

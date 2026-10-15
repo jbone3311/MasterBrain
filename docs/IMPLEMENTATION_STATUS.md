@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-239 adds a separate synthetic-only human approval row for one exact
+currently bridged Email XLSX attachment. The service and SQL guard reject
+nonhuman, wrong-account, paused-source and forged-parent cases; migration,
+truncation and populated-upgrade tests pass on disposable PostgreSQL. It does
+not run extraction, publish a document, search cells or enable live mail.
+The full local synthetic Python suite passed 3,794 tests, 19 skipped and zero
+failed; 677/678 PostgreSQL-marked cases executed. Hosted, actual-image and
+independent restore gates remain open.
+
 The latest exact-head CI check on `afb7cb8` failed before any test step; its
 GitHub annotation explicitly names failed account payments or an insufficient
 spending limit. This is an external runner gate, not a failing test. Hosted
