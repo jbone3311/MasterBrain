@@ -25,7 +25,9 @@ and the fact's full `value` must be the same decimal string.
 
 The amount and unit/currency token must occur in the exact `source_quote`,
 which the existing current-evidence publication path verifies against the
-normalized source text. This is a literal substring check, not a general
+normalized source text. Migration 0071 originally used a literal substring
+check; [ADR-213](213_project_fact_measurement_quote_tokens.md) adds complete
+lexical token boundaries in migration 0072. Neither is a general
 numeric parser: it does not prove scale, ownership, whether a figure is a
 balance versus transaction, or that the source itself is correct. SQL checks
 repeat the tuple shape, decimal/value equality and quote-token requirement

@@ -269,6 +269,7 @@ def protected_database(
             "0069_private_project_fact_proposals.sql",
             "0070_private_project_artifact_proposals.sql",
             "0071_reviewed_project_fact_measurements.sql",
+            "0072_reviewed_project_fact_measurement_tokens.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:

@@ -1,5 +1,10 @@
 # MasterBrain Roadmap
 
+ADR-213 closes a misleading substring-citation path in ADR-212's typed
+measurement field. The next product tranche remains a controlled fact-name
+registry, ownership/source-tier semantics and a known-answer cross-source
+company dossier. Exact-head hosted gates still must run before merge.
+
 ADR-211 now supplies the first authorized current-evidence project fact report
 through KnowledgeCore and the external client. The next financial/report step
 is a controlled predicate and ownership model on top of ADR-212's opt-in

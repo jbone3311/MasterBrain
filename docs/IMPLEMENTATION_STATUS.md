@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-213 strengthens ADR-212's quote binding: a typed amount and its
+unit/currency must appear as complete lexical tokens, not substrings of a
+larger figure or word. Migration 0072 validates previously typed rows and
+fails closed on a misleading one; it never repairs evidence automatically.
+This is still a source-stated lexical check, not verified ownership, a
+portfolio balance or a certified currency interpretation. Local fictional
+model, PostgreSQL and migration/recovery tests pass; hosted gates remain.
+
 ADR-212 adds optional exact-decimal, unit and currency metadata to **new**
 human-reviewed project facts under migration 0071. The amount string and unit
 token must occur in the still-current source quote; old facts remain untyped.

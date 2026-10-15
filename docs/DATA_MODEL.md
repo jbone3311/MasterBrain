@@ -88,11 +88,14 @@ explicit, not inferred from filename.
 Migration `0071_reviewed_project_fact_measurements.sql` adds nullable,
 immutable exact-decimal `amount_decimal`, `unit_code` and `currency_code` to
 reviewed project facts. The opt-in typed write requires a matching canonical
-decimal `value` and literal amount/unit tokens in the current exact source
-quote; direct SQL shape checks repeat those constraints. Historical rows keep
-NULLs. The current-source fact report alone exposes the typed object, never
-an investment sum; ownership, FX and controlled predicate semantics remain
-open ([ADR-212](adr/212_exact_project_fact_measurement.md)).
+decimal `value` and amount/unit tokens in the current exact source quote;
+direct SQL shape checks repeat those constraints. Migration 0072 tightens
+both application and SQL quote matching to complete lexical tokens and
+validates existing typed rows without rewriting them. Historical untyped
+rows keep NULLs. The current-source fact report alone exposes the typed
+object, never an investment sum; ownership, FX and controlled predicate
+semantics remain open ([ADR-212](adr/212_exact_project_fact_measurement.md),
+[ADR-213](adr/213_project_fact_measurement_quote_tokens.md)).
 
 Migration `0064_private_statement_fileos_replay.sql` adds one append-only
 `knowledge_statement_fileos_replays` row per proposal. Its tenant-composite

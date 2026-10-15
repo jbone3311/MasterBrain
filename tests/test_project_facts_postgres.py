@@ -181,6 +181,26 @@ def test_project_fact_exact_measurement_stays_typed_only_in_report(database, ten
                 "%s,%s FROM knowledge_project_facts WHERE tenant_id=%s AND id=%s",
                 ("pfact_" + suffix * 32, unit, currency, ctx.tenant_id, typed["object_id"]),
             )
+    misleading = _source(
+        store, ctx, account, "fictional-measurement-fragments",
+        "fictional-typed-fact-message",
+        body="Fictional amount 1100.25 USD. Fictional amount 100.25 USDA.",
+    )
+    for suffix, quote in (("b", "Fictional amount 1100.25 USD"),
+                          ("a", "Fictional amount 100.25 USDA")):
+        with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+                "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+                "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+                "unit_code,currency_code) SELECT tenant_id,%s,project_id,predicate,"
+                "value,value_type,assertion_status,confidence,derivation,ARRAY[%s],"
+                "%s,%s,observed_at,reviewer_id,amount_decimal,"
+                "unit_code,currency_code FROM knowledge_project_facts "
+                "WHERE tenant_id=%s AND id=%s",
+                ("pfact_" + suffix * 32, misleading, misleading, quote,
+                 ctx.tenant_id, typed["object_id"]),
+            )
 
 
 def test_project_fact_markdown_byte_budget_preserves_paging(database, tenant):

@@ -53,3 +53,22 @@ def test_mismatched_value_and_currency_shape_rejected():
     with pytest.raises(ValueError):
         _fact({"amount": "100.25", "unit": "currency", "currency": "USD"},
               quote="The source says 200.00 USD.")
+
+
+@pytest.mark.parametrize("quote", [
+    "The source says 1100.25 USD.",
+    "The source says -100.25 USD.",
+    "The source says 100.25 USDA.",
+    "The source says 100.25 preUSD.",
+    "The source says 100.25USD without a unit boundary.",
+    "The source says 100.25 US dollars.",
+])
+def test_measurement_requires_complete_amount_and_unit_tokens(quote):
+    with pytest.raises(ValueError):
+        _fact({"amount": "100.25", "unit": "currency", "currency": "USD"},
+              quote=quote)
+
+
+def test_quote_allows_punctuation_around_complete_tokens():
+    assert _fact({"amount": "100.25", "unit": "currency", "currency": "USD"},
+                 quote="The amount ($100.25), in USD; was fictional.").measurement

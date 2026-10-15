@@ -2,6 +2,29 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Complete measurement quote tokens — ADR-213
+
+Migration 0072 replaces ADR-212's literal-substring SQL check with complete
+lexical amount and unit/currency tokens; the Python write model uses the same
+boundary rule. Misleading fictional quotes with `100.25` inside `1100.25`
+or `USD` inside `USDA` are refused. A valid `($100.25), in USD;` quote passes.
+The direct-SQL test uses current fictional normalized evidence containing the
+misleading text, so the existing source-basis trigger does not mask the new
+constraint. The targeted pure/PostgreSQL/migration/recovery set passed
+**67/67**, including all **48** PostgreSQL-marked cases. Existing typed rows
+are validated transactionally on upgrade; no row is rewritten or discarded.
+The exact-current full local Python 3.14/PostgreSQL 17.11 suite passed
+**3,552 tests, 19 skipped** (630 of 631 PostgreSQL-marked cases executed).
+Browser tests passed **167/167**. The repository quality gate passed
+**2,925 tests, 646 skipped** (three PostgreSQL-marked cases executed). Its
+first sandboxed run could not start a disposable PostgreSQL child process;
+the single test and then the full gate passed with the required local process
+permission. Ruff, strict mypy (112 source files), documentation links (314
+Markdown files, 1,672 local paths/fragments) and diff whitespace passed.
+The optional DuckDB donor replays still skip in the locked environment.
+Local Docker is unavailable, so the independent-container logical restore
+gate is not verified. Hosted exact-head and merged-main gates remain required.
+
 ## Opt-in reviewed exact-decimal measurement — ADR-212
 
 Migration 0071 adds nullable, immutable `amount_decimal`, `unit_code` and

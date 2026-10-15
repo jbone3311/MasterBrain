@@ -393,6 +393,13 @@ class ProjectDossierRequest(ClosedModel):
 _CANONICAL_AMOUNT = re.compile(r"^-?(?:0|[1-9][0-9]{0,21})(?:\.[0-9]{1,8})?$")
 
 
+def _quoted_measurement_token(quote: str, token: str, *, amount: bool) -> bool:
+    """Require a complete lexical token, not digits/letters inside another token."""
+    before = r"(?<![\w.\-])" if amount else r"(?<!\w)"
+    after = r"(?![\w.])" if amount else r"(?!\w)"
+    return re.search(before + re.escape(token) + after, quote) is not None
+
+
 class ProjectFactMeasurement(ClosedModel):
     amount: str
     unit: Literal["currency", "shares", "percent", "count"]
@@ -438,9 +445,14 @@ class ProjectFactWrite(AssertionBase):
                 self.measurement.currency if self.measurement.unit == "currency"
                 else self.measurement.unit
             )
-            if (token is None or self.measurement.amount not in self.source_quote
-                    or token not in self.source_quote):
-                raise ValueError("typed amount and unit must occur in exact source quote")
+            if (token is None
+                    or not _quoted_measurement_token(
+                        self.source_quote, self.measurement.amount, amount=True,
+                    )
+                    or not _quoted_measurement_token(
+                        self.source_quote, token, amount=False,
+                    )):
+                raise ValueError("typed amount and unit must be complete quote tokens")
         return self
 
 

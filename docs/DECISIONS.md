@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-213](adr/213_project_fact_measurement_quote_tokens.md) refuses partial
+amount and unit/currency matches in source-stated measurement quotes at both
+application and SQL boundaries. Existing typed rows are checked during the
+additive migration, without a silent rewrite.
+
 [ADR-212](adr/212_exact_project_fact_measurement.md) adds opt-in exact-decimal
 unit/currency metadata to newly reviewed project facts. Existing values stay
 untyped; the report labels measurements as source-stated and still refuses

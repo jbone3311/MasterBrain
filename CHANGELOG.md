@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-213: tightened reviewed measurement citation checks from substrings to
+  complete amount and unit/currency quote tokens in both the write model and
+  additive migration 0072. Existing typed rows are validated without rewrite;
+  a misleading old row blocks migration for explicit review.
+
 - ADR-212: added opt-in exact-decimal amount, unit and currency metadata to
   newly reviewed project facts via additive migration 0071. App and SQL
   require matching value and literal source-quote tokens; the scoped report
