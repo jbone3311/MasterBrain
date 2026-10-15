@@ -91,3 +91,9 @@ migration and populated restore. Run full local, exact-head hosted CI,
 strict-runtime, independent-container restore and merged-main gates before
 calling it delivered. Rollback disables new stage/preview/review routes but
 retains private rows and reviewed links for audit.
+
+The current dossier exporter bounds its artifact section to at most 25 rows;
+the 1–50-row private queue does not make a 50-artifact single-export dossier
+possible. Synthetic stress covers the 25-row export limit, mixed decisions,
+late-fault rollback and same-hash distinct evidence occurrences. Larger
+exchange requires a separately designed, provenance-preserving paging format.

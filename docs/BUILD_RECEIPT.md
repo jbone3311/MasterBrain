@@ -30,6 +30,25 @@ CI, strict-runtime, independent-container restore and merged-main gates remain
 unverified because GitHub jobs currently fail before any steps. No live source,
 automatic approval, FileOS effect or FOS-Master change occurred.
 
+Follow-up synthetic stress on the same ADR-207 branch adds two PostgreSQL
+tests: two independent Email evidence occurrences with the same SHA-256 remain
+distinct throughout proposal staging and approval; a 25-row mixed
+approve/reject batch rolls back all decisions and links on its last approval
+fault, then succeeds on retry. The focused artifact suite passed **11/11** on
+a fresh local PostgreSQL 17.11 database. The Markdown exporter currently caps
+artifact rows at 25, so this is its largest single-export artifact batch,
+even though the private queue schema permits 1–50 rows. Full-suite and hosted
+results for this follow-up are recorded separately: the exact-current fresh
+Python 3.14/PostgreSQL 17.11 full suite passed **3,510 tests, nine skipped**
+(621 of 622 PostgreSQL-marked tests executed). Ruff, strict mypy (112 files),
+browser 167/167 and docs links passed. A sandboxed deployment-gate attempt
+failed only when its disposable local PostgreSQL launcher raised
+`PermissionError`; rerun with local PostgreSQL permission passed **2,891
+tests, 628 skipped** (only two PostgreSQL-marked tests executed). This gate
+does not replace the full database run.
+The prior 3,508-test receipt belongs to commit `4d205bc`, not to this
+follow-up head.
+
 ## Project-artifact batch-publication prerequisite — ADR-207
 
 ADR-207 now specifies a separate selected artifact-link proposal queue because

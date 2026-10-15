@@ -12,7 +12,7 @@ import pytest
 import test_postgres as pg
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
-from test_project_artifacts_postgres import _body, _prepared
+from test_project_artifacts_postgres import _body, _evidence, _prepared
 
 from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
@@ -142,6 +142,128 @@ def test_artifact_batch_mixed_decisions_and_stale_source_refusal(database, tenan
             "SELECT count(*) FROM knowledge_artifact_proposal_decisions "
             "WHERE tenant_id=%s AND batch_id=%s", (ctx.tenant_id, another["batch_id"]),
         ).fetchone()[0] == 0
+
+
+def test_artifact_proposals_preserve_same_hash_distinct_occurrences(database, tenant):
+    store, admin = database
+    ctx, account, project_id, basis_id, first_artifact = _prepared(store, tenant)
+    second_artifact = _evidence(
+        store, ctx, account, key="projectethree", provider_id="project-message-3",
+        cursor="project-artifact-page-2", next_cursor="project-artifact-page-3",
+    )
+    with store.transaction(ctx) as conn:
+        evidence = conn.execute(
+            "SELECT id,sha256 FROM brain_evidence WHERE id=ANY(%s)",
+            ([first_artifact, second_artifact],),
+        ).fetchall()
+    assert first_artifact != second_artifact
+    assert len(evidence) == 2 and len({row["sha256"] for row in evidence}) == 1
+
+    links = ProjectArtifactLinks(store)
+    selected = []
+    markdown_ids = []
+    for index, artifact_id in enumerate((first_artifact, second_artifact), start=1):
+        published = links.publish(ctx, project_id, _body(artifact_id, basis_id), uuid4())
+        claim = "partifact_" + f"{index:032x}"
+        markdown_ids.append((published["object_id"], claim))
+        selected.append({
+            "claimed_id": claim,
+            "assertion": _body(artifact_id, basis_id).model_dump(mode="json"),
+        })
+    markdown = ProjectDossierMarkdown(store).export(
+        ctx, project_id, ProjectDossierRequest(),
+    )["markdown"]
+    for original_id, claim in markdown_ids:
+        markdown = markdown.replace(original_id, claim)
+    service = ArtifactProposalBatches(store)
+    staged = service.stage(
+        ctx, DossierProposalStageRequest(markdown=markdown, selections=selected), uuid4(),
+    )
+    preview = service.preview(ctx, staged["batch_id"])
+    assert {row["assertion"]["artifact_evidence_id"]
+            for row in preview["proposals"]} == {first_artifact, second_artifact}
+    reviewed = service.review(
+        ctx, staged["batch_id"],
+        _review(staged, preview["proposals"], ["approved", "approved"]), uuid4(),
+    )
+    assert reviewed["approved"] == 2
+    with psycopg.connect(admin) as conn:
+        approved = conn.execute(
+            "SELECT DISTINCT l.artifact_evidence_id FROM knowledge_project_artifacts l "
+            "JOIN knowledge_artifact_proposal_decisions d "
+            "ON d.tenant_id=l.tenant_id AND d.link_id=l.id "
+            "WHERE d.tenant_id=%s AND d.batch_id=%s",
+            (ctx.tenant_id, staged["batch_id"]),
+        ).fetchall()
+    assert {row[0] for row in approved} == {first_artifact, second_artifact}
+
+
+def test_artifact_25_row_mixed_batch_rolls_back_and_retries(database, tenant, monkeypatch):
+    store, admin = database
+    ctx, _, project_id, basis_id, artifact_id = _prepared(store, tenant)
+    links = ProjectArtifactLinks(store)
+    selected = []
+    markdown_ids = []
+    for index in range(25):
+        published = links.publish(ctx, project_id, _body(artifact_id, basis_id), uuid4())
+        claim = "partifact_" + f"{index + 1:032x}"
+        markdown_ids.append((published["object_id"], claim))
+        selected.append({
+            "claimed_id": claim,
+            "assertion": _body(artifact_id, basis_id).model_dump(mode="json"),
+        })
+    markdown = ProjectDossierMarkdown(store).export(
+        ctx, project_id, ProjectDossierRequest(artifact_limit=25),
+    )["markdown"]
+    for original_id, claim in markdown_ids:
+        markdown = markdown.replace(original_id, claim)
+    service = ArtifactProposalBatches(store)
+    staged = service.stage(
+        ctx, DossierProposalStageRequest(markdown=markdown, selections=selected), uuid4(),
+    )
+    preview = service.preview(ctx, staged["batch_id"])
+    assert staged["row_count"] == len(preview["proposals"]) == 25
+    choices = ["approved" if index % 2 == 0 else "rejected" for index in range(25)]
+    request = _review(staged, preview["proposals"], choices)
+    with psycopg.connect(admin) as conn:
+        links_before = conn.execute(
+            "SELECT count(*) FROM knowledge_project_artifacts WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        ).fetchone()[0]
+    original = ProjectArtifactLinks._publish_in_transaction
+    calls = 0
+
+    def fail_last_approval(self, conn, context, linked_project, link, key):
+        nonlocal calls
+        calls += 1
+        if calls == 13:
+            raise ValueError("fictional final approval fault")
+        return original(self, conn, context, linked_project, link, key)
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(ProjectArtifactLinks, "_publish_in_transaction", fail_last_approval)
+        with pytest.raises(ValueError, match="final approval fault"):
+            service.review(ctx, staged["batch_id"], request, uuid4())
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_artifact_proposal_decisions "
+            "WHERE tenant_id=%s AND batch_id=%s", (ctx.tenant_id, staged["batch_id"]),
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_project_artifacts WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        ).fetchone()[0] == links_before
+    result = service.review(ctx, staged["batch_id"], request, uuid4())
+    assert result["approved"] == 13 and result["rejected"] == 12
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_artifact_proposal_decisions "
+            "WHERE tenant_id=%s AND batch_id=%s", (ctx.tenant_id, staged["batch_id"]),
+        ).fetchone()[0] == 25
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_project_artifacts WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        ).fetchone()[0] == links_before + 13
 
 
 def test_artifact_review_second_publication_fault_is_atomic(database, tenant, monkeypatch):
