@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-235 now proves a fictional FileOS XLSX can be re-read through a confined
+source root and the same pinned document image, with source/text and physical
+row-layout digests. It is pure and nonpublishing: no current human-review
+receipt, API table read, live root or source effect is enabled. The actual-
+image case is collected but not run locally; hosted/restore gates remain.
+
 At code commit `5165a03`, a fresh local PostgreSQL 17.11 and locked Python
 3.11.13 ran the full CI-mode Python suite: 3,726 passed, 18 skipped and one
 failure solely because the actual Docker-backed trial requires Docker on this

@@ -104,6 +104,24 @@ def require_indexed_text_digest(
     return digest
 
 
+def projection_layout_sha256(projection: XlsxTableProjection) -> str:
+    """Digest the extracted sheet/row layout independently of source packaging."""
+    if (
+        type(projection) is not XlsxTableProjection
+        or projection.status != "extracted"
+        or projection.reason != "bounded_xlsx_tables_v1"
+        or not projection.sheets
+    ):
+        raise DocumentUnavailable()
+    payload = json.dumps(
+        [asdict(sheet) for sheet in projection.sheets],
+        ensure_ascii=True, allow_nan=False, separators=(",", ":"),
+    ).encode("ascii")
+    if len(payload) > MAX_OUTPUT_BYTES:
+        raise DocumentUnavailable()
+    return hashlib.sha256(payload).hexdigest()
+
+
 def encode_projection(result: XlsxTableProjection) -> bytes:
     """Serialize the closed worker result without changing document-v1 output."""
     if type(result) is not XlsxTableProjection:

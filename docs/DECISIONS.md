@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-235](adr/235_confined_fileos_xlsx_table_replay.md) re-reads one exact
+FileOS XLSX through a no-follow root, binds rows to existing indexed text and
+records a content-free layout digest without publishing or changing the file.
+
 [ADR-234](adr/234_bounded_xlsx_cell_projection.md) adds a separate, bounded
 source-bound XLSX row/cell worker with a strict isolated pipe contract. It
 does not alter indexed text or publish spreadsheet values.

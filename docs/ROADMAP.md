@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-235 adds a private, nonpublishing FileOS XLSX table replay over exact
+confined source bytes. A row-layout digest distinguishes physical coordinates
+that the indexed text digest cannot. Next: a current human review and
+tenant-fenced receipt with final source authorization, then a private command;
+actual-image and independent restore remain required. No table publication,
+live root, financial claim or FileOS switch follows from this proof.
+
 ADR-234 adds a separate, source-bound XLSX worker that returns bounded physical
 rows and positional cell values, with sheet visibility and no fabricated
 headers. Its ordinary and 1,000-row values match the pinned FOS donor on the

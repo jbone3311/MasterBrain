@@ -40,6 +40,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Intake classification/routing/preflight | Donor only | FileOS adapter + DataCore |
 | FileOS | PDF/DOCX/XLSX text/metadata extraction and indexing | Isolated shared tranche; hosted container/SQL gate green | DataCore |
 | FileOS | Donor XLSX tables and row semantics | ADR-233 pins donor behavior; ADR-234 adds a separate nonpublishing bounded row/cell worker whose ordinary and 1,000-row values match the donor. Formula, row-cap, encrypted and `.xlsm` policy differences remain; no indexed tables or reviewed cell citations | DataCore + FileOS adapter |
+| FileOS | Current XLSX row replay | ADR-235 confined, digest-only fictional source re-read with same pinned image and row-layout binding; no review receipt, searchable table or live-root acceptance | DataCore + FileOS adapter |
 | FileOS | ZIP/TAR recursive inventory | Isolated hash-only worker and append-only manifest ledger; exact member reads, text/document derivatives, current text/document search and private batch operators implemented | DataCore |
 | FileOS | Archive-contained image OCR | Isolated worker, exact member composition, retained-history derivative, private one-member command and distinct current-only OCR search implemented; no automatic fan-out | DataCore + Brain API |
 | FileOS | Authenticated idempotent snapshot publication | Explicit one-shot command; hosted SQL/restore green | DataCore operator |

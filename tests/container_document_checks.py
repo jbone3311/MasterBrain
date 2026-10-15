@@ -16,10 +16,13 @@ from test_source_tier_fileos_pdf_replay_postgres import _prepared, _review, work
 from email_brain.domain.models import TenantContext
 from email_brain.store import Store
 from email_brain.synthetic_formats import SHEET_TYPE, WORD_TYPE, docx_bytes, pdf_bytes, xlsx_bytes
+from masterbrain.datacore.current_fileos_xlsx_table_replay import (
+    replay_current_fileos_xlsx_tables,
+)
 from masterbrain.datacore.document_contract import PDF_TYPE, DocumentUnavailable
 from masterbrain.datacore.document_processor import DockerDocumentProcessor
 from masterbrain.datacore.extraction import FileOSAdapter
-from masterbrain.datacore.fileos import snapshot_tree
+from masterbrain.datacore.fileos import fileos_root_binding_sha256, snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.datacore.xlsx_tables_processor import DockerXlsxTableProcessor
 from masterbrain.source_tier_fileos_pdf_replay import SourceTierFileOSPdfReplayStore
@@ -101,6 +104,36 @@ def test_actual_image_preserves_xlsx_rows_and_cell_positions() -> None:
     assert result.sheets[0].rows[1].values == (
         "Container Atlas", "3100", "7", "containercellproof",
     )
+
+
+def test_actual_image_reacquires_fileos_xlsx_without_source_effects(
+    processor: DockerDocumentProcessor, tmp_path: Path,
+) -> None:
+    image = os.environ.get("MASTERBRAIN_DOCUMENT_IMAGE_ID")
+    assert image is not None
+    root = tmp_path / "files"
+    root.mkdir()
+    path = root / "rent.xlsx"
+    raw = xlsx_bytes("Container Atlas", 3100, 7, "containerreplayproof")
+    path.write_bytes(raw)
+    before = path.stat().st_mtime_ns
+    version_id, digest = identity(raw, path.name)
+    text = processor.extract(
+        raw, version_id=version_id, locator=path.name,
+        sha256=digest, media_type=SHEET_TYPE,
+    )
+    assert text.status == "extracted"
+    proof = replay_current_fileos_xlsx_tables(
+        root, locator=path.name, version_id=version_id,
+        root_binding_sha256=fileos_root_binding_sha256(root),
+        source_sha256=digest, source_size_bytes=len(raw),
+        text_sha256=hashlib.sha256(text.text.encode()).hexdigest(),
+        normalizer=processor.processor_version,
+        processor=DockerXlsxTableProcessor(image),
+    )
+    assert proof.sheet_count == 1 and proof.row_count == 2
+    assert proof.text_sha256 == hashlib.sha256(text.text.encode()).hexdigest()
+    assert path.read_bytes() == raw and path.stat().st_mtime_ns == before
 
 
 def test_actual_child_refuses_source_mismatch_and_external_relationship(

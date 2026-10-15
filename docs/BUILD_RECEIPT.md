@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Confined FileOS XLSX table replay — current branch
+
+ADR-235 adds a private, nonpublishing exact-byte re-read of one fictional
+FileOS workbook through the no-follow root boundary. The same pinned image
+as its indexed document yields bounded table rows; the replay checks the
+source and indexed-text SHA-256s and returns a separate digest of physical
+sheet/row layout without returning cell contents. Fictional tests verify
+changed/symlinked sources, formula refusal, wrong root/image/text, no source
+mutation, and identical text with different row positions versus different
+ZIP metadata with identical layout. The adjacent FileOS XLSX/table/donor/PDF
+suites passed **39 tests** on locked Python 3.11.13; Ruff, focused mypy and
+documentation checks passed. An actual-image replay was added to the explicit
+container gate but not run locally (Docker unavailable). There is no database
+review receipt, command, table API, live root or FOS cutover; the donor was
+not modified.
+
 ## Full local synthetic gate at code commit `5165a03` — not hosted acceptance
 
 On locked Python 3.11.13 and a fresh, disposable loopback PostgreSQL 17.11
