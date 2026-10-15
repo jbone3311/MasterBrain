@@ -2,6 +2,30 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Source-stated dossier proposal staging — ADR-202
+
+The owner-selected Markdown format now supports synthetic-only, human-only
+staging of explicitly selected project, event and commitment rows into the
+existing private proposal queue. Visible fields match exactly; missing typed
+metadata is supplied separately; the full quote is checked on its specifically
+cited current evidence in the same write transaction. An immutable digest
+binds exact Markdown and selection context to the proposal batch. Fictional
+tests passed for two-row stage, exact replay, changed-input conflict,
+all-or-nothing wrong-citation refusal, a source revoked between inspection
+and the write, zero reviewed rows before human
+decision, mixed approve/reject, project-only stage, unsupported fact refusal,
+immutable header and API scopes. A follow-up found that claimed source IDs
+cannot be preserved by ordinary Knowledge publication; imported event and
+commitment proposals now require a project already present locally, and the
+test asserts that approval issues a new MasterBrain ID. Focused proposal tests
+passed **14/14** after that correction. The first full local run exposed only
+stale migration-catalog fixture expectations; after updating them and adding
+the project-link check, the final-head Python 3.14/PostgreSQL 17.11 gate passed
+**3,466 tests, 8 skipped** (587 of 588 PostgreSQL-marked tests executed).
+Ruff, strict mypy (109 source files), documentation links (303 Markdown files,
+1,614 paths/fragments), all 167 browser tests and diff checks passed. Hosted
+gates are pending at this branch checkpoint. FOS-Master was not changed.
+
 ## Owner-only imported-dossier citation inspection — ADR-201
 
 The owner-selected ADR-197 Markdown intake now has an owner-only API that
@@ -12,7 +36,10 @@ stale version, excluded mail, hidden source, cross-tenant and assistant denial,
 and no proposal write. The local Python 3.14/PostgreSQL 17.11 deployment gate
 passed **3,459 tests, 8 skipped** (580 of 581 PostgreSQL-marked tests
 executed). Ruff, strict mypy, documentation links and 167 browser tests passed.
-Hosted gates are pending at this branch checkpoint. A matching preview is not
+Independent merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38698006371),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38698006705)
+and [logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/38698006411)
+passed at `8978f93f3f1f0ef6e7bdc81fee6e3a1eb239b35b`. A matching preview is not
 proof of the full stored quote,
 observation time, source freshness or real-world truth; the endpoint stages
 nothing.

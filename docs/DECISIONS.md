@@ -1,5 +1,11 @@
 # Architecture Decisions
 
+[ADR-202](adr/202_dossier_source_stated_proposal_staging.md) allows an owner
+to stage selected source-stated project/event/commitment Markdown rows only as
+private ADR-186 proposals. It binds exact input/selection context and rechecks
+full quotes on their specifically cited current evidence within the batch
+transaction; no automatic review, inferred claim or live source follows.
+
 [ADR-201](adr/201_current_dossier_citation_inspection.md) makes the selected
 Markdown dossier's claimed quote previews checkable against each current,
 authorized evidence ID by an owner-only API. It remains an inspection, not a

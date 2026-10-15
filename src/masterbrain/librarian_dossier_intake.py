@@ -1,20 +1,29 @@
-"""Read-only candidate inventory for ADR-197 Markdown; never stages knowledge."""
+"""Bounded ADR-197 Markdown inspection and private proposal-only import."""
 
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import ConfigDict, Field
 
 from email_brain.domain.models import TenantContext
 from email_brain.schemas import ClosedModel
 from email_brain.store import AccessDenied, Conflict, Store
-from masterbrain.project_dossier_markdown import _HEADER
+from masterbrain.knowledge_proposals import KnowledgeProposalBatches, _canonical, _sha
+from masterbrain.knowledge_schema import (
+    CommitmentWrite,
+    EventWrite,
+    KnowledgeProposalStageRequest,
+    ProjectWrite,
+)
+from masterbrain.project_dossier_markdown import _HEADER, _quote_label
 from masterbrain.project_facts import _markdown_json_text
 
 _MAX_BYTES = 65_536
@@ -43,6 +52,17 @@ class DossierMarkdownInspectRequest(ClosedModel):
     # The shared schema strips strings; this format's trailing newlines are grammar.
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
     markdown: str = Field(min_length=1, max_length=_MAX_BYTES)
+
+
+class DossierProposalSelection(ClosedModel):
+    claimed_id: str = Field(pattern=r"^[a-z]+_[a-f0-9]{32}$")
+    assertion: dict[str, Any]
+
+
+class DossierProposalStageRequest(ClosedModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
+    markdown: str = Field(min_length=1, max_length=_MAX_BYTES)
+    selections: list[DossierProposalSelection] = Field(min_length=1, max_length=50)
 
 
 def _outside_json_string(line: str) -> list[bool]:
@@ -98,7 +118,8 @@ def inspect_project_dossier_markdown(markdown: str) -> dict[str, Any]:
         encoded = markdown.encode("utf-8", errors="strict")
     except UnicodeError as exc:
         raise ValueError("invalid dossier text") from exc
-    if len(encoded) > _MAX_BYTES or not markdown.startswith(_HEADER):
+    if (len(encoded) > _MAX_BYTES or not markdown.startswith(_HEADER)
+            or not markdown.endswith("\n")):
         raise ValueError("invalid dossier envelope")
     lines = markdown[len(_HEADER):].splitlines()
     if not lines or (match := _META.fullmatch(lines[0])) is None:
@@ -218,3 +239,93 @@ class DossierMarkdownInspection:
         inventory["citation_spans_checked"] = True
         inventory["source_freshness"] = "not_asserted"
         return inventory
+
+
+def _expected_selected_line(
+    assertion: ProjectWrite | EventWrite | CommitmentWrite,
+    claimed_id: str, citation_id: str, project_id: str,
+) -> str:
+    """Bind supplied typed fields to an exact existing exporter row."""
+    if (assertion.supersedes_id is not None or assertion.valid_from is not None
+            or assertion.valid_to is not None):
+        raise ValueError("unrendered import fields are not supported")
+    quote = _quote_label(assertion.source_quote)
+    if isinstance(assertion, ProjectWrite):
+        if assertion.aliases or claimed_id != project_id:
+            raise ValueError("unsupported imported project fields")
+        return (
+            f"- project `{claimed_id}`: reviewed title "
+            f"{_markdown_json_text(assertion.title)}; state `{assertion.state}`; "
+            f"reviewed summary {_markdown_json_text(assertion.description)}; "
+            f"derivation unspecified; {quote}; citation `{citation_id}`."
+        )
+    if isinstance(assertion, EventWrite):
+        if assertion.project_id != project_id or assertion.ends_at is not None:
+            raise ValueError("unsupported imported event fields")
+        when = assertion.starts_at.isoformat() if assertion.starts_at else "undated"
+        return (
+            f"- event `{claimed_id}` ({assertion.event_type}, {when}): "
+            f"reviewed title {_markdown_json_text(assertion.title)}; "
+            f"reviewed description {_markdown_json_text(assertion.description)}; "
+            f"derivation unspecified; {quote}; citation `{citation_id}`."
+        )
+    if assertion.project_id != project_id:
+        raise ValueError("imported commitment project mismatch")
+    due = assertion.due_at.isoformat() if assertion.due_at else "undated"
+    owner = assertion.owner_entity_id or "unspecified"
+    counterparty = assertion.counterparty_entity_id or "unspecified"
+    return (
+        f"- commitment `{claimed_id}` (due {due}, state `{assertion.state}`): "
+        f"reviewed description {_markdown_json_text(assertion.description)}; "
+        f"owner `{owner}`; counterparty `{counterparty}`; "
+        f"derivation unspecified; {quote}; citation `{citation_id}`."
+    )
+
+
+@dataclass(slots=True)
+class DossierProposalImport:
+    store: Store
+
+    def stage(
+        self, ctx: TenantContext, body: DossierProposalStageRequest,
+        idempotency_key: UUID,
+    ) -> dict[str, Any]:
+        inventory = DossierMarkdownInspection(self.store).inspect(ctx, body.markdown)
+        by_id = {row["claimed_id"]: row for row in inventory["candidates"]}
+        seen: set[str] = set()
+        payloads: list[dict[str, Any]] = []
+        claims: list[tuple[str, str]] = []
+        for selected in body.selections:
+            if selected.claimed_id in seen or selected.claimed_id not in by_id:
+                raise ValueError("invalid dossier selection")
+            seen.add(selected.claimed_id)
+            candidate = by_id[selected.claimed_id]
+            if candidate["kind"] not in {"project", "event", "commitment"}:
+                raise ValueError("unsupported dossier selection")
+            assertion, payload = _canonical(selected.assertion)
+            if not isinstance(assertion, (ProjectWrite, EventWrite, CommitmentWrite)):
+                raise ValueError("unsupported dossier assertion")
+            if assertion.kind != candidate["kind"]:
+                raise ValueError("dossier kind mismatch")
+            citation_id = candidate["claimed_citation_ids"][0]
+            expected = _expected_selected_line(
+                assertion, selected.claimed_id, citation_id,
+                inventory["claimed_project_id"],
+            )
+            if expected != candidate["untrusted_line"]:
+                raise ValueError("dossier row does not match proposed assertion")
+            payloads.append(payload)
+            claims.append((selected.claimed_id, citation_id))
+        context_sha = _sha({
+            "format": inventory["format"],
+            "markdown_sha256": hashlib.sha256(
+                body.markdown.encode("utf-8"),
+            ).hexdigest(),
+            "claims": claims,
+        })
+        result = KnowledgeProposalBatches(self.store).stage(
+            ctx, KnowledgeProposalStageRequest(proposals=payloads),
+            idempotency_key, import_context_sha256=context_sha,
+            import_claims=claims,
+        )
+        return {**result, "import_context_sha256": context_sha}

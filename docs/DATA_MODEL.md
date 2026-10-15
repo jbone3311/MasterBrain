@@ -104,7 +104,12 @@ the per-evidence links and row/decision closure are SQL-checked. Forced RLS,
 tenant-login fencing, runtime insert/select-only grants and protected TRUNCATE
 apply. Only explicit approved rows enter the existing reviewed Knowledge
 tables, in the same transaction as all decisions. These private rows are not
-inferred claims, Markdown imports, or reviewed search material.
+inferred claims or reviewed search material. ADR-202's additive
+`0067_dossier_import_batch_binding.sql` adds a nullable immutable
+`import_context_sha256` to the batch header; generic/historical batches keep
+NULL and their original payload digest. A Markdown-imported project, event or
+commitment batch binds the exact file and selected claim IDs/citations to its
+typed payload digest. No raw Markdown or source path is stored in this column.
 
 Migration `0057_private_statement_proposals.sql` implements ADR-172's separate
 append-only `knowledge_statement_proposals`, ordered
@@ -214,8 +219,9 @@ fact page/dossier only, with value previews and evidence IDs. It does not
 store inferred basis links, unit/currency semantics or export-ready quotes.
 
 The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
-[ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions,
-not existing columns or routes: a Markdown proposal importer, inferred-derivation/basis links,
+[ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions.
+ADR-202 now supplies a narrow project/event/commitment Markdown proposal route;
+the remaining unimplemented additions are inferred-derivation/basis links,
 typed monetary units and uncertain due
 windows, expanded project-artifact dossier presentation and a compatible
 fact-name registry.

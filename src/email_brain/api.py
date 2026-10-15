@@ -70,6 +70,8 @@ from masterbrain.knowledge_schema import (
 from masterbrain.librarian_dossier_intake import (
     DossierMarkdownInspection,
     DossierMarkdownInspectRequest,
+    DossierProposalImport,
+    DossierProposalStageRequest,
 )
 from masterbrain.project_artifacts import ProjectArtifactLinks
 from masterbrain.project_dossier_markdown import ProjectDossierMarkdown
@@ -172,6 +174,7 @@ def create_app(
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
     dossier_markdown_inspection = DossierMarkdownInspection(store)
+    dossier_proposal_import = DossierProposalImport(store)
     project_artifacts = ProjectArtifactLinks(store)
     project_dossier_markdown = ProjectDossierMarkdown(store)
     project_facts = ProjectFacts(store)
@@ -986,6 +989,21 @@ def create_app(
             return dossier_markdown_inspection.inspect(principal.context, body.markdown)
         except ValueError:
             raise HTTPException(422, "invalid_dossier_markdown") from None
+
+    @app.post("/v1/knowledge/dossier-markdown/proposal-batches", status_code=201)
+    def stage_dossier_proposals(
+        body: DossierProposalStageRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        try:
+            return dossier_proposal_import.stage(
+                principal.context, body, idempotency_key,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_dossier_proposal") from None
 
     @app.get("/v1/knowledge/proposal-batches/{batch_id}")
     def preview_knowledge_proposals(

@@ -1,9 +1,9 @@
 # Librarian Markdown interoperability review
 
 Status: design review with a bounded synthetic-only export, ADR-200's
-candidate inventory parser and ADR-201's current-evidence inspection, not
-proposal staging or a complete round
-trip. Originally reviewed
+candidate inventory parser, ADR-201's current-evidence inspection and
+ADR-202's project/event/commitment-only private proposal stage. This is not
+a complete round trip. Originally reviewed
 against `main` at `8d053d8` on 2026-10-14; ADR-182 later implements the
 project-alias slice. The [umbrella issue](https://github.com/jbone3311/MasterBrain/issues/174)
 and its twelve children are proposals, not evidence that a capability works. This
@@ -34,7 +34,7 @@ excluded content into an indexed artifact.
 | [#175](https://github.com/jbone3311/MasterBrain/issues/175) Project aliases | ADR-182 adds reviewed, evidence-linked project aliases and ambiguous, source-scoped candidate lookup. Older projects keep exact-title fallback. | A complete dossier is still missing. An alias names a project; it does not assert that a legal-entity record is the same object or auto-merge projects. |
 | [#176](https://github.com/jbone3311/MasterBrain/issues/176) Deal roles | ADR-183 adds reviewed, append-only person/organization-to-project role assertions with valid time, evidence, reviewer, supersession, corrections and source-grant-safe dossier/client/browser reads. | Registry validation and a computed current roster remain separate. Bounded role slugs are not permissions; unknown syntactically valid slugs remain possible until the registry exists. |
 | [#177](https://github.com/jbone3311/MasterBrain/issues/177) Derivation | Partial: ADR-195 project facts have a first-class `derivation`, currently constrained to `source_stated`; other assertion kinds do not have a common derivation contract. Confidence/status are not derivation. | Cover all relevant assertion kinds. Keep source-stated quotes mandatory. An inference without a direct quote needs typed links to reviewed basis assertions *and* their evidence, with transitive source-grant checks. Never put an assertion ID in `knowledge_evidence.evidence_id` or use `stance=context` as a substitute for a typed basis link. |
-| [#178](https://github.com/jbone3311/MasterBrain/issues/178) Proposal queue | ADR-186 adds a private source-stated Knowledge queue and atomic, explicit per-row human review. It is not wired to Markdown, inferred claims or model suggestions. | Feed a separately specified, synthetic-only Markdown importer into this queue after an owner-approved sanitized format; add typed inference/basis handling in its own gate. No unreviewed proposal enters search, dossier or assistant retrieval. |
+| [#178](https://github.com/jbone3311/MasterBrain/issues/178) Proposal queue | ADR-186 adds a private source-stated Knowledge queue and atomic, explicit per-row human review. ADR-202 connects selected project/event/commitment Markdown rows with full-quote checks and a bound import digest. | Extend the typed queue to members, facts and artifact links only under separate basis contracts; add inference/basis handling in its own gate. No unreviewed proposal enters search, dossier or assistant retrieval. |
 | [#179](https://github.com/jbone3311/MasterBrain/issues/179) Amounts, owners, fuzzy dates | Partial: claims have a value type; commitments have one optional owner and one exact due instant. | Add exact decimal + unit/currency with validation, an evidence-linked multi-owner association, and raw due wording plus an optional reviewed window/timezone. Preserve `due_at` semantics. A fuzzy interval needs an explicit overlap query contract; do not silently change ADR-161's exact-time due view. |
 | [#180](https://github.com/jbone3311/MasterBrain/issues/180) Markdown dossier | ADR-162/183/194 return bounded JSON for an exact reviewed project. ADR-195/196 add source-stated facts and a fact-only export. ADR-197 adds a merged synthetic-only, bounded, fail-closed cited Markdown view across project, events, commitments, roles, related artifact occurrences and source-stated facts. | A full Librarian round trip still needs a proposal-only importer, owner-approved exchange format, typed inferred basis, richer file occurrence metadata and an explicit policy for projects exceeding one export bound. Every exported factual line needs a current authorized citation; inference must never invent a direct quote. Keep machine round-trip IDs in an authorized sidecar/manifest rather than an unbounded hidden YAML block in shareable prose. |
 | [#181](https://github.com/jbone3311/MasterBrain/issues/181) Spreadsheets | **Incorrectly marked missing.** FileOS already extracts bounded CSV text and isolated XLSX cached values (ADRs 049/053); archive XLSX is also supported. | The gap is structured table/cell locators and a separately authorized Email-attachment extraction route. Reuse the isolated parser; never evaluate formulas/macros or claim that absent cached values were extracted. Preserve per-source status and limits. |
@@ -93,6 +93,19 @@ cannot recover the full quote, observation time or assertion payload and never
 stages a proposal. The later write transaction must recheck the full basis; a
 successful inspection is not a durable grant.
 
+[ADR-202](adr/202_dossier_source_stated_proposal_staging.md) permits an owner
+to stage selected project, event or commitment lines into ADR-186's private
+queue with explicit typed metadata omitted by the Markdown. The selected
+visible line must match exactly; the full quote must occur in its specifically
+cited current evidence at stage time; a digest binds the exact Markdown and
+selection to the immutable batch. No row is approved automatically. Members,
+source-stated project facts and artifact links still need their own staging
+contracts and are refused rather than silently dropped. Source `claimed_id`
+values select rows; they are not carried into approved MasterBrain IDs. A
+selected event or commitment therefore must reference a project that already
+exists locally. Import a project first, review it, then explicitly remap child
+rows to the new local project ID before staging them.
+
 1. Existing foundations are ADR-169's code-first boundary, ADR-182/183's
    reviewed aliases and roles, ADR-186's private source-stated proposal queue,
    and ADR-193/194's reviewed artifact-link history. None is a Markdown
@@ -108,12 +121,12 @@ successful inspection is not a durable grant.
    attachment occurrences, revoked/excluded sources, unsupported old quotes,
    truncation and byte-stable output. The renderer is not a freshness or truth
    certificate.
-4. Use the owner-selected ADR-197 export layout and ADR-200's read-only
-   inventory as the parser baseline. Design a separate proposal-only staging
-   path into ADR-186's private queue, with current full-quote/evidence checks,
-   explicit missing metadata, fictional fixtures, zero reviewed rows before
-   approval and no model dependency. Pre-index exclusions must precede any
-   separately authorized live fetch.
+4. ADR-202 supplies the first owner-only, proposal-only stage for project,
+   event and commitment rows using ADR-200/201 as the parser and inspection
+   baseline. Extend this only with typed member/fact/artifact bases, explicit
+   missing metadata and independent fictional acceptance. Zero reviewed rows
+   may appear before approval; no model dependency or separately unauthorized
+   live fetch is allowed.
 5. Design typed inference-to-reviewed-basis links with transitive evidence
    grants before accepting an inferred proposal. Never encode assertion IDs as
    `knowledge_evidence.evidence_id` or weaken stated-quote requirements. Test
