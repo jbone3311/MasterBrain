@@ -24,7 +24,10 @@ from masterbrain.knowledge_schema import (
     ProjectDossierRequest,
     ProjectFactPageRequest,
 )
-from masterbrain.librarian_dossier_intake import DossierProposalStageRequest
+from masterbrain.librarian_dossier_intake import (
+    DossierMarkdownInspection,
+    DossierProposalStageRequest,
+)
 from masterbrain.project_dossier_markdown import ProjectDossierMarkdown
 from masterbrain.project_facts import ProjectFacts
 
@@ -255,6 +258,110 @@ def test_fact_markdown_rejects_unrendered_and_false_citation(database, tenant):
             ctx, DossierProposalStageRequest.model_validate(payload), uuid4(),
         )
     assert evidence_id in request.markdown
+
+
+def test_fact_import_rejects_valid_preview_with_wrong_full_quote(database, tenant):
+    store, _ = database
+    ctx, account, project_id, _ = _prepared(store, tenant)
+    prefix = "Fictional private deal memo " + "A" * 300
+    real_quote = prefix + " correct ending"
+    wrong_text = prefix + " unrelated ending"
+    cursor = "fictional-fact-message-1"
+
+    def evidence(key, body):
+        nonlocal cursor
+        store.ingest_page(ctx, account, cursor, key, [
+            replace(pg.item(key, body=body), provider_id=key),
+        ])
+        cursor = key
+        with store.transaction(ctx) as conn:
+            version_id = conn.execute(
+                "SELECT v.id FROM message_versions v JOIN messages m "
+                "ON m.tenant_id=v.tenant_id AND m.id=v.message_id "
+                "WHERE m.provider_message_id=%s ORDER BY v.id DESC LIMIT 1",
+                (key,),
+            ).fetchone()["id"]
+        return pg.DataCoreStore(store).bridge_current_email_version(
+            ctx, version_id, uuid4(), code_revision="fact-import-preview-test-v1",
+        ).evidence_id
+
+    real_id = evidence("fictional-long-quote", real_quote)
+    wrong_id = evidence("fictional-wrong-long-quote", wrong_text)
+    published = ProjectFacts(store).publish(
+        ctx, project_id, _body(project_id, real_id, quote=real_quote), uuid4(),
+    )
+    markdown = ProjectDossierMarkdown(store).export(
+        ctx, project_id, ProjectDossierRequest(),
+    )["markdown"].replace(published["object_id"], CLAIM)
+    original_line = next(
+        line for line in markdown.splitlines() if line.startswith("- fact `" + CLAIM)
+    )
+    wrong_line = original_line.replace(
+        "citation `" + real_id + "`", "citation `" + wrong_id + "`",
+    )
+    assert "quote prefix" in wrong_line
+    altered = markdown.replace(original_line, wrong_line)
+    # The bounded preview is genuinely present in both sources. The full
+    # sidecar quote must still be rechecked against the specifically cited one.
+    inventory = DossierMarkdownInspection(store).inspect(ctx, altered)
+    assert any(row["claimed_id"] == CLAIM for row in inventory["candidates"])
+    assertion = _body(project_id, wrong_id, quote=real_quote).model_dump(mode="json")
+    assertion.pop("reviewed")
+    with pytest.raises(ValueError, match="exact source span"):
+        FactProposalBatches(store).stage(
+            ctx, DossierProposalStageRequest(
+                markdown=altered,
+                selections=[{"claimed_id": CLAIM, "assertion": assertion}],
+            ), uuid4(),
+        )
+
+
+def test_fact_batch_refuses_source_scope_revocation_at_every_gate(database, tenant):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _candidate(store, ctx, project_id, evidence_id)
+    denied = replace(ctx, source_ids=frozenset())
+    service = FactProposalBatches(store)
+    with pytest.raises((NotFound, Conflict)):
+        service.stage(denied, body, uuid4())
+    staged = service.stage(ctx, body, uuid4())
+    preview = service.preview(ctx, staged["batch_id"])
+    decision = _decisions(staged, (preview["proposals"], ["approved"]))
+    with pytest.raises((NotFound, Conflict)):
+        service.preview(denied, staged["batch_id"])
+    with pytest.raises((NotFound, Conflict)):
+        service.review(denied, staged["batch_id"], decision, uuid4())
+    assert service.preview(ctx, staged["batch_id"])["proposals"][0]["status"] == "proposed"
+
+
+def test_fact_stage_rechecks_source_after_markdown_inspection(database, tenant, monkeypatch):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _candidate(store, ctx, project_id, evidence_id)
+    original = DossierMarkdownInspection.inspect
+
+    def inspect_then_revoke(self, context, markdown):
+        inventory = original(self, context, markdown)
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "UPDATE brain_source_items i SET current_version_id=NULL "
+                "FROM brain_source_versions v JOIN brain_evidence e "
+                "ON e.tenant_id=v.tenant_id AND e.source_version_id=v.id "
+                "WHERE i.tenant_id=v.tenant_id AND i.id=v.item_id "
+                "AND e.tenant_id=%s AND e.id=%s",
+                (ctx.tenant_id, evidence_id),
+            )
+        return inventory
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(DossierMarkdownInspection, "inspect", inspect_then_revoke)
+        with pytest.raises((NotFound, Conflict)):
+            FactProposalBatches(store).stage(ctx, body, uuid4())
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_fact_proposal_batches WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        ).fetchone()[0] == 0
 
 
 def test_fact_proposal_api_requires_human_content_scope(database, tenant):

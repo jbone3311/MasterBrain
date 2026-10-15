@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Project-fact citation and revocation hardening — ADR-206
+
+The fictional fact-import suite now proves that a second current source with
+the same bounded Markdown quote prefix but a different full quote cannot be
+substituted as the fact citation. It also proves source-scope denial at
+stage/preview/review and a source-currentness change between Markdown
+inspection and transactional staging. The focused fact suite passed **9/9**.
+The full local Python 3.14/PostgreSQL 17.11 run on a fresh disposable
+loopback database passed **3,497 tests, nine skipped** (608 of 609
+PostgreSQL-marked tests executed). Ruff and strict mypy (110 source files)
+passed; six browser suites passed **167/167**, the docs checker passed (307
+Markdown files, 1,631 paths/fragments), and the repository deployment gate
+passed (2,891 passed, 615 skipped). The deployment gate skips most PostgreSQL
+tests and is not substituted for the full run. The first broad run used a Unix-socket-only temporary server that
+the cross-source fixture explicitly rejects; it was not counted as a pass.
+The successful rerun used the required loopback address. The deployment
+gate's first sandboxed attempt also failed when its isolated local launcher
+could not start; its permitted rerun passed. This test-only
+checkpoint does not change live sources or FOS-Master. Hosted exact-head,
+strict-runtime, logical restore and merged-main checks remain unverified.
+
 ## Selected project-fact Markdown proposals — ADR-206
 
 Migration 0069 and the human-only Brain API now stage selected source-stated

@@ -7,7 +7,9 @@ receipt differs from ADR-186's generic Knowledge receipt. The exact exported
 fact line, typed sidecar, cited quote, current project and all direct evidence
 are checked at stage, private preview and explicit human review. Approval
 creates a new fact ID inside the batch transaction; rejection creates no fact.
-Next: deepen false-citation, scope/revocation and populated-restore proofs;
+The local synthetic suite now covers a valid-but-wrong truncated quote
+citation, source-scope denial at all three gates and revocation between
+inspection and staging. Next: populated-restore proof and broader stress;
 obtain exact-head hosted CI/strict-runtime/restore and merged-main gates;
 then design artifact-link staging and typed inferred basis separately. This
 is not an automatic or lossless round trip, live-source gate or FOS-Master
