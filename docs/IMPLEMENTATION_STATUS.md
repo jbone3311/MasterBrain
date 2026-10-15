@@ -4,11 +4,16 @@ The current branch corrects the synthetic combined-source demo's evidence:
 its reviewed Melron project now links the exact email and file occurrences
 containing its quote, rather than whichever email happened to bridge first.
 The v2 demo requires fresh disposable state and activates the fictional FileOS
-index for current search. On locked Python 3.11.13 and disposable PostgreSQL
-17.11, the adjacent suite passed 39 tests with one skip; browser checks passed
-167/167, Ruff, focused mypy, docs and structural deployment gate passed. A
-forced-CI full local run passed 3,694 tests with 18 skips and one expected
-runner-only failure because Docker is unavailable on this host. It is **not**
+index for current search. The next synthetic slice adds one quoted event,
+proposed relative-date reply request, source-stated note and generated-file
+link; it does not infer a date or a person/role. On locked Python 3.11.13 and
+disposable PostgreSQL 17.11, the expanded demo and adjacent
+cross-source/fact/artifact suites passed 65 tests with one skip. Ruff, focused
+mypy and docs passed on this slice.
+Before that additive slice, browser checks passed 167/167 and the structural
+deployment gate passed. A forced-CI full local run passed 3,694 tests with 18
+skips and one expected runner-only failure because Docker is unavailable on
+this host. It is **not**
 an exact-head full CI pass. Hosted checks still fail before job start due to
 GitHub account payment/spending limits; actual-image and independent Docker
 restore gates remain open. No live-source or FOS-Master cutover is accepted.

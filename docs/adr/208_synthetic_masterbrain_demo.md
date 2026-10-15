@@ -38,6 +38,12 @@ testing the combined MasterBrain product.
   API and cited dossier can then be exercised. This is a fixture, not model
   judgment or an assertion about real financial records. Never make the demo
   seed a production enrollment.
+- Add only source-supported fictional dossier rows: an undated briefing event,
+  a proposed reply request whose relative due date remains unresolved, a
+  source-stated project note and a link to the generated text file. Each has
+  an exact quote, current evidence and a deterministic replay key. Do not
+  fabricate a person/role assertion from the email sender or treat the reply
+  request as an accepted commitment.
 - Refuse the combined seed when the state marker was not created by the
   combined initializer. Before any ingest or publication, verify the database
   tenant and account exactly match the initializer's fictional tenant name,
@@ -53,7 +59,8 @@ wrong account/state refuses before any provider event;
 seed/replay; Email and FileOS Brain search; cited combined project dossier;
 exact quote in both linked original source bodies; owner-only Markdown
 inspection without automatic publication; source presence/absence; no live
-network or source effects. Run full local,
+network or source effects. Confirm that replay does not duplicate dossier
+rows and that the relative due date stays null. Run full local,
 browser, docs and deployment gates. Hosted exact-head CI remains mandatory
 before merge. Rollback removes the two new commands while preserving any
 already-generated fictional test records for normal disposable-state cleanup.

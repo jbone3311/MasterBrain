@@ -97,6 +97,20 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
         row for row in coverage.json()["results"] if row["source_id"] == "files_demo"
     )
     assert file_coverage["active_generation"] is not None
+    compact = client.get(
+        f"/v1/knowledge/projects/{project_id}/dossier", headers=headers,
+    )
+    assert compact.status_code == 200, compact.text
+    assert len(compact.json()["events"]) == 1
+    assert len(compact.json()["commitments"]) == 1
+    assert compact.json()["commitments"][0]["due_at"] is None
+    assert compact.json()["commitments"][0]["state"] == "proposed"
+    assert compact.json()["members"] == []
+    assert len(compact.json()["artifacts"]) == 1
+    assert compact.json()["artifacts"][0]["artifact_evidence_id"] == file_evidence
+    assert len(compact.json()["facts"]) == 1
+    assert compact.json()["facts"][0]["predicate"] == "deal.note"
+    assert compact.json()["facts"][0]["quote_evidence_id"] == email_evidence
     dossier = client.get(
         f"/v1/knowledge/projects/{project_id}/dossier/markdown", headers=headers,
     )
@@ -104,6 +118,10 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
     markdown = dossier.json()["markdown"]
     assert "Melron project briefing is ready" in markdown
     assert markdown.count("citation `") >= 1
+    assert dossier.json()["section_counts"] == {
+        "events": 1, "commitments": 1, "members": 0,
+        "artifacts": 1, "facts": 1,
+    }
     inspected = client.post(
         "/v1/knowledge/dossier-markdown/inspect",
         json={"markdown": markdown}, headers=headers,

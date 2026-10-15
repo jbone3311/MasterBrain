@@ -36,7 +36,15 @@ from email_brain.tenant_db import TenantDbRoutes
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
-from masterbrain.knowledge_schema import ProjectWrite
+from masterbrain.knowledge_schema import (
+    CommitmentWrite,
+    EventWrite,
+    ProjectArtifactLinkWrite,
+    ProjectFactWrite,
+    ProjectWrite,
+)
+from masterbrain.project_artifacts import ProjectArtifactLinks
+from masterbrain.project_facts import ProjectFacts
 
 _DEMO_PROJECT_QUOTE = "The Melron project briefing is ready."
 _DEMO_FILE_TEXT = (
@@ -183,7 +191,7 @@ def seed_masterbrain(state: Path) -> None:
         tenant_id, actor_id,
         frozenset({
             "brain.source.ingest", "brain.document.publish", "brain.search",
-            "brain.index.activate", "knowledge.review",
+            "brain.index.activate", "brain.content.read", "knowledge.review",
         }),
         uuid4(),
     )
@@ -268,6 +276,50 @@ def seed_masterbrain(state: Path) -> None:
             reviewed=True,
         ),
         uuid5(NAMESPACE_URL, f"masterbrain-demo-project:{tenant_id}"),
+    )
+    KnowledgeCore(store).publish(
+        ctx,
+        EventWrite(
+            kind="event", event_type="briefing_ready", title="Melron briefing ready",
+            description=_DEMO_PROJECT_QUOTE, project_id=project.object_id,
+            evidence_ids=[quoted_email[0]["evidence_id"]],
+            source_quote=_DEMO_PROJECT_QUOTE, confidence=1.0,
+            observed_at=datetime(2026, 9, 19, 12, tzinfo=UTC), reviewed=True,
+        ),
+        uuid5(NAMESPACE_URL, f"masterbrain-demo-event:{tenant_id}"),
+    )
+    KnowledgeCore(store).publish(
+        ctx,
+        CommitmentWrite(
+            kind="commitment", description="Reply to the Melron briefing request",
+            state="proposed", project_id=project.object_id,
+            evidence_ids=[quoted_email[0]["evidence_id"]],
+            source_quote="Please reply by Friday.", confidence=1.0,
+            observed_at=datetime(2026, 9, 19, 12, tzinfo=UTC), reviewed=True,
+        ),
+        uuid5(NAMESPACE_URL, f"masterbrain-demo-commitment:{tenant_id}"),
+    )
+    ProjectFacts(store).publish(
+        ctx, project.object_id,
+        ProjectFactWrite(
+            kind="project_fact", project_id=project.object_id,
+            predicate="deal.note", value=_DEMO_PROJECT_QUOTE,
+            evidence_ids=[quoted_email[0]["evidence_id"], published.evidence_id],
+            quote_evidence_id=quoted_email[0]["evidence_id"],
+            source_quote=_DEMO_PROJECT_QUOTE, confidence=1.0,
+            observed_at=datetime(2026, 9, 22, 12, tzinfo=UTC), reviewed=True,
+        ),
+        uuid5(NAMESPACE_URL, f"masterbrain-demo-fact:{tenant_id}"),
+    )
+    ProjectArtifactLinks(store).publish(
+        ctx, project.object_id,
+        ProjectArtifactLinkWrite(
+            artifact_evidence_id=published.evidence_id,
+            basis_evidence_id=published.evidence_id,
+            source_quote=_DEMO_PROJECT_QUOTE, relation="planning_brief",
+            observed_at=datetime(2026, 9, 22, 12, tzinfo=UTC),
+        ),
+        uuid5(NAMESPACE_URL, f"masterbrain-demo-artifact:{tenant_id}"),
     )
     print(f"Fictional MasterBrain Email/FileOS project ready: {project.object_id}.")
 

@@ -64,7 +64,11 @@ its immutable search generation, so both sources appear in the **current**
 Brain search rather than only the older combined search. It prints the project
 ID. Search `briefing` at `/brain` to see the same quoted Melron project phrase
 in Email and FileOS results, or open the
-project dossier through the Brain API. Its Markdown can be inspected by the
+project dossier through the Brain API. The fictional dossier contains one
+undated briefing event, one proposed reply request with no invented due date,
+one source-stated note and a link to the generated file. It intentionally has
+no person/role assertion because the fixture does not establish a project role.
+Its Markdown can be inspected by the
 owner's review-scoped API, but inspection only verifies cited quote previews;
 it does not automatically publish imported assertions. Running the seed again
 is idempotent. The underlying `email-brain`

@@ -1,5 +1,10 @@
 # Changelog
 
+- Expand the disposable combined-source dossier with exact-quote, replay-safe
+  event, proposed reply request, source-stated note and generated-file link.
+  The request's relative due date remains unresolved and no person/role is
+  invented. The real Brain API test verifies one row per section after replay.
+
 - Correct the fictional combined-source project so its cited Melron phrase
   occurs in both the linked email and file. The demo v2 marker requires fresh
   disposable state instead of silently rewriting a v1 fixture; tests verify
