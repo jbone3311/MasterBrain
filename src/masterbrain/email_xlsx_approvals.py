@@ -61,7 +61,7 @@ _BASIS_SQL = (
     "AND a.secret_ref LIKE 'synthetic:%%' "
     "AND s.kind='email' AND s.status='active' "
     "AND NOT public.brain_email_evidence_is_excluded(ab.tenant_id,ab.evidence_id) "
-    "FOR SHARE OF ai,pi,s,m"
+    "FOR SHARE OF ai,pi,s,m,ms"
 )
 
 

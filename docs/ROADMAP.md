@@ -1,8 +1,16 @@
 # MasterBrain Roadmap
 
+ADR-240 now seals complete isolated text for one exact ADR-239 approved
+synthetic Email XLSX occurrence. Next is an occurrence-specific DataCore
+document bridge with provenance, chunks, currentness checks and a separately
+reviewed path to bounded retrieval/citation. No spreadsheet has been
+published to Brain search; real-image, hosted CI and independent restore
+remain open.
+
 ADR-239 now supplies an immutable, human-only synthetic Email XLSX extraction
-approval distinct from the PDF jobs. Next implement the exact-approval worker
-and immutable result, then an occurrence-specific reviewed DataCore bridge.
+approval distinct from the PDF jobs. ADR-240 implements the exact-approval
+worker and immutable private result; the occurrence-specific reviewed DataCore
+bridge is the next dependency.
 No spreadsheet text has been published by this approval, and live Fastmail
 remains out of scope. Hosted CI is currently stopped before steps by the
 GitHub account payment/spending-limit gate.

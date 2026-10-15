@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-240 adds a private, synthetic-only worker for one current Email XLSX
+approval. It rechecks retained parent/part bytes, runs the pinned isolated
+document extractor, and seals only complete bounded text in a separate
+immutable, tenant-fenced result. Focused approval/result/migration tests pass
+50/50 on disposable PostgreSQL. No Brain document, index, API search, live
+mail or financial claim follows. Actual-image and hosted gates remain open.
+
 ADR-239 adds a separate synthetic-only human approval row for one exact
 currently bridged Email XLSX attachment. The service and SQL guard reject
 nonhuman, wrong-account, paused-source and forged-parent cases; migration,

@@ -37,10 +37,12 @@ def _mail(document: bytes) -> bytes:
     return message.as_bytes()
 
 
-def _prepared(database, tenant):
+def _prepared(database, tenant, *, document: bytes | None = None):
     store, admin = database
     ctx, account = tenant
-    document = xlsx_bytes("Fictional Atlas", 2450, 3, "xlsxapprovalproof")
+    document = document if document is not None else xlsx_bytes(
+        "Fictional Atlas", 2450, 3, "xlsxapprovalproof",
+    )
     raw = _mail(document)
     store.ingest_page(
         ctx, account, None, "xlsx-approval-ready", [replace(pg.item(), raw=raw)],
@@ -92,7 +94,10 @@ def test_exact_human_approval_is_immutable_and_does_not_publish(database, tenant
                 conn.execute(query, (first["approval_id"],))
     with psycopg.connect(admin) as conn:
         with pytest.raises(psycopg.errors.RaiseException), conn.transaction():
-            conn.execute("TRUNCATE brain_email_xlsx_extraction_approvals")
+            conn.execute(
+                "TRUNCATE brain_email_xlsx_extraction_approvals,"
+                "brain_email_xlsx_extraction_results",
+            )
 
 
 def test_nonhuman_and_wrong_account_refuse(database, tenant) -> None:

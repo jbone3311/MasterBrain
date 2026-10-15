@@ -1,5 +1,9 @@
 # Changelog
 
+- Seal one exact-approved synthetic Email XLSX extraction through the pinned
+  isolated DataCore worker in a separate immutable result table. The result
+  remains private; no Brain search, live mailbox or financial claim is enabled.
+
 - Add a separate, human-only synthetic Email XLSX extraction approval bound
   to an exact current bridged attachment, parent MIME, source event and pinned
   processor. Protected SQL and disposable PostgreSQL tests pass; this does not

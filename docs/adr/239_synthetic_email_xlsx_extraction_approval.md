@@ -28,10 +28,10 @@ safe, or that a source-tier/financial claim was reviewed.
 
 ## Next dependent steps
 
-Build a separate exact-approval worker and immutable XLSX extraction result.
-It must load only the approved retained parent MIME, verify currentness,
-expiry and authorization again, invoke the pinned restricted document worker,
-and seal complete text/hash/metadata or a fail-closed refusal. Then add an
+ADR-240 now adds the separate exact-approval worker and immutable XLSX
+extraction result. It loads only the approved retained parent MIME, verifies
+currentness, expiry and authorization again, invokes the pinned restricted
+document worker, and seals complete text/hash/metadata or refuses. Next add an
 occurrence-specific, tenant-fenced DataCore document bridge with provenance,
 chunks and final currentness/worker checks. Only after that may a human
 source-tier review, row-layout receipt and bounded Brain API citation be

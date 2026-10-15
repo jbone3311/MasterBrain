@@ -2,6 +2,32 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Isolated result for approved synthetic Email XLSX — current branch
+
+ADR-240 adds migration 0083 and an exact-approval worker that loads one
+retained MIME, verifies the XLSX part and runs the pinned isolated DataCore
+document processor. Only complete bounded text is sealed in a private,
+immutable tenant-fenced row; no Brain document/index or live source is touched.
+The fictional worker/approval, historical populated-upgrade, migration-
+integrity and protected-truncation run passed **50/50**, including **47/47
+PostgreSQL-marked** tests executed. A first focused run exposed an attempted
+runtime row lock on the intentionally ungrantable `mail_accounts` table and
+then on the immutable approval table; those locks were removed without
+broadening database grants. A forged-digest test was corrected to use a
+second legitimate approval so it exercises the text-digest CHECK rather than
+only the approval-basis trigger. Real immutable-image and hosted/restore
+gates remain open.
+
+The complete local synthetic suite on locked Python 3.11.13 and disposable
+loopback-only PostgreSQL 17.11 then passed **3,799 tests, 19 skipped, zero
+failed** in 6m09s. **682/683 PostgreSQL-marked tests executed**; the skip is
+not counted as a pass. The first broad attempt was sandboxed without loopback
+permission and failed to connect to the disposable database; it was stopped
+and rerun with loopback access, with no code or database-grant change. Ruff,
+strict mypy over 138 source files, documentation links (341 Markdown files,
+1,786 local paths/fragments), the structural gate and diff whitespace check
+passed. This is not actual-image, hosted CI or independent restore evidence.
+
 ## Separate synthetic Email XLSX extraction approval — current branch
 
 ADR-239 adds an immutable, one-hour human approval for one exact current,

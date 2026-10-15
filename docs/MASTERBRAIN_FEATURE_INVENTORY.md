@@ -26,7 +26,8 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Email | IMAP injected-session reader | Contract-tested, not durable live connector | Email adapter |
 | Email | Raw MIME, headers, bodies, attachment receipts, calendar parts | Implemented | DataCore evidence/extraction |
 | Email | XLSX attachment text through shared isolated DataCore extractor | ADR-232 exact-parent/part synthetic derivation proof only; no receipt, bridge, indexing or live account | Email adapter + DataCore |
-| Email | Human approval for one XLSX extraction attempt | ADR-239 synthetic-only immutable exact-occurrence approval; worker result and document bridge not yet implemented | Email adapter + DataCore |
+| Email | Human approval for one XLSX extraction attempt | ADR-239 synthetic-only immutable exact-occurrence approval; ADR-240 adds a private worker result, but no document bridge | Email adapter + DataCore |
+| Email | Isolated XLSX extraction result | ADR-240 one complete, exact-approved synthetic worker result in an immutable private table; no normalized document bridge, index, API or live mail | Email adapter + DataCore |
 | Email | XLSX physical row-layout proof | ADR-238 binds one retained attachment occurrence's bounded rows to existing text; synthetic-only, no approved extraction, cell API or live mail | Email adapter + DataCore |
 | Email | Owner search/read/review/recovery screens | Implemented prototype | Email UI + Brain API |
 | Email + FileOS | Fictional PostgreSQL-backed cross-source browser trial | Merged and hosted-test verified; interactive Mac acceptance pending | Brain API + local trial |

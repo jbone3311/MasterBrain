@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-240](adr/240_synthetic_email_xlsx_worker_result.md) consumes one current
+synthetic-only XLSX approval through the pinned isolated DataCore worker and
+seals complete text in an immutable private result. It does not index or
+publish a Brain document.
+
 [ADR-239](adr/239_synthetic_email_xlsx_extraction_approval.md) creates a
 separate human, synthetic-only approval for one exact retained Email XLSX
 occurrence. It grants no PDF job, extraction result, bridge or live access.
