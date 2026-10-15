@@ -25,6 +25,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Email | Gmail and Microsoft Graph read libraries | Offline-tested, not durable live connectors | Email adapter |
 | Email | IMAP injected-session reader | Contract-tested, not durable live connector | Email adapter |
 | Email | Raw MIME, headers, bodies, attachment receipts, calendar parts | Implemented | DataCore evidence/extraction |
+| Email | XLSX attachment text through shared isolated DataCore extractor | ADR-232 exact-parent/part synthetic derivation proof only; no receipt, bridge, indexing or live account | Email adapter + DataCore |
 | Email | Owner search/read/review/recovery screens | Implemented prototype | Email UI + Brain API |
 | Email + FileOS | Fictional PostgreSQL-backed cross-source browser trial | Merged and hosted-test verified; interactive Mac acceptance pending | Brain API + local trial |
 | Email | Explicit current-evidence/part bridges, previews and sealed batches | Implemented; hosted SQL/restore green | DataCore operator |

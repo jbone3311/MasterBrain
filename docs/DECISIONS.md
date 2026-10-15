@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-232](adr/232_retained_email_xlsx_derivation.md) proves one exact retained
+Email XLSX attachment can reuse the isolated shared DataCore parser without
+publishing text or granting live-mail authority.
+
 [ADR-231](adr/231_email_pdf_replay_account_transition_fence.md) serializes the
 reviewed Email PDF receipt with controlled and direct account-status updates
 using a tenant-bound worker function; completed document jobs stay immutable.

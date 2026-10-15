@@ -2,6 +2,20 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Exact retained Email XLSX through shared DataCore — current branch
+
+ADR-232 adds a nonpublishing proof for one retained fictional XLSX attachment.
+It rechecks parent MIME and attachment occurrence digests, then runs the same
+restricted DataCore workbook extractor used for FileOS. Synthetic tests prove
+the source-bound result, distinct parent identities for duplicate attachment
+bytes, changed-basis refusal and uncached-formula deferral. The adjacent Email
+XLSX/PDF proof, DataCore document and processor suites passed **38 tests** on
+both lockfile Python 3.11.13 and local Python 3.14; Ruff, focused mypy and
+documentation link checks passed. Docker
+was simulated for the caller, so
+this is not an actual-image test, review-bound receipt, Email search bridge,
+live account or financial acceptance. FOS-Master was not modified.
+
 ## External assistant source-availability response guard — current branch
 
 The read-only reference client now validates ADR-168's optional Email/FileOS

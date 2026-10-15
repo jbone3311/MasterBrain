@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+ADR-232 proves one exact retained fictional Email XLSX attachment can be
+re-extracted through the existing shared, isolated DataCore document worker
+without publishing text. The proof retains parent Email occurrence identity
+and rejects incomplete/formula-dependent results. Next: a tenant-fenced,
+review-bound digest receipt and private command, then actual-image, hosted and
+independent restore checks. There is still no live Email spreadsheet bridge,
+cell locator, automatic index publication or certified financial statement.
+
 ADR-231 now serializes a reviewed Email PDF receipt with both the controlled
 Fastmail account transition and a direct privileged account-status update,
 without granting the worker account UPDATE. Completed document jobs are

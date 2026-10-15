@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-232 adds a synthetic-only, nonpublishing Email XLSX derivation proof using
+the existing isolated shared DataCore document worker. It binds exact parent
+MIME and part hashes, validates full extracted text/digest and preserves
+occurrence identity; no Email bridge, receipt, live mailbox, index publication
+or financial claim is enabled. Actual-image, hosted and restore gates remain.
+
 The current branch corrects the synthetic combined-source demo's evidence:
 its reviewed Melron project now links the exact email and file occurrences
 containing its quote, rather than whichever email happened to bridge first.
