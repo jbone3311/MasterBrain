@@ -2,6 +2,25 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Fictional cross-source project dossier — ADR-204
+
+The disposable Cedar Harbor fixture now publishes one reviewed project,
+appraisal event, Email-plus-FileOS closing commitment, source-stated proposed
+loan amount and exact FileOS term-sheet link. A real PostgreSQL/API/client
+acceptance case verified the compact and citation-checked Markdown dossiers,
+original evidence drill-down and denial to a file-only assistant. The full
+cross-source suite passed **30 tests, one skipped**; the full local Python
+3.14/PostgreSQL 17.11 repository gate passed **3,477 tests, nine skipped**
+(588 of 589 PostgreSQL-marked tests executed). Six browser suites passed
+**167/167**. Ruff, strict mypy (109 source files), documentation links
+(305 Markdown files, 1,619 paths/fragments) and diff checks passed. The
+packaged local fictional launcher `--self-test` passed with its own temporary
+cluster and cleanup. `uv` warned about an old local package's missing RECORD
+while reinstalling, but installed the current package and the self-test
+completed. Hosted exact-head/merged-main checks are not yet claimed in this
+local receipt. No live source, model inference, user file effect or FOS-Master
+change was made.
+
 ## Charles Schwab supplied-text donor parity — ADR-203
 
 The unchanged FOS-Master commit

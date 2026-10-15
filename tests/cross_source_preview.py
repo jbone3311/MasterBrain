@@ -44,7 +44,15 @@ from masterbrain.datacore.extraction import FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
-from masterbrain.knowledge_schema import CommitmentWrite
+from masterbrain.knowledge_schema import (
+    CommitmentWrite,
+    EventWrite,
+    ProjectArtifactLinkWrite,
+    ProjectFactWrite,
+    ProjectWrite,
+)
+from masterbrain.project_artifacts import ProjectArtifactLinks
+from masterbrain.project_facts import ProjectFacts
 from masterbrain.statement_fileos_replay import StatementFileOSReplayStore
 from masterbrain.statement_persistence import StatementProposalStore
 
@@ -97,6 +105,7 @@ class Preview:
     other_context: TenantContext
     file_hashes: dict[str, str]
     statement_proposal_id: str
+    project_id: str
 
 
 def new_tenant(admin: str) -> tuple[TenantContext, UUID]:
@@ -153,28 +162,79 @@ def publish_files(
     }
 
 
-def publish_reviewed_knowledge(store: Store, ctx: TenantContext) -> None:
-    """One fictional, human-reviewed cross-source interpretation for Ask."""
+def publish_reviewed_knowledge(store: Store, ctx: TenantContext) -> str:
+    """One cited fictional deal dossier across current Email and FileOS evidence."""
     core = DataCoreStore(store)
     email = core.search_current_email_family(ctx, "insurance", message_limit=1).messages
     files = core.search_current_fileos(ctx, "insurance", limit=1)
-    if len(email) != 1 or len(files) != 1:
+    term_files = core.search_current_fileos(ctx, "loan", limit=2)
+    appraisal_mail = core.search_current_email_family(
+        ctx, "appraisal", message_limit=2,
+    ).messages
+    if (len(email) != 1 or len(files) != 1 or len(term_files) != 1
+            or len(appraisal_mail) != 1):
         raise RuntimeError("Synthetic knowledge evidence is incomplete")
     reviewer = replace(ctx, scopes=ctx.scopes | frozenset({"knowledge.review"}))
+    observed = datetime(2026, 9, 24, tzinfo=UTC)
+    project = KnowledgeCore(store).publish(
+        reviewer,
+        ProjectWrite(
+            kind="project", title="Cedar Harbor fictional financing",
+            description="Reviewed fictional project joining mail and file evidence",
+            state="active",
+            evidence_ids=[term_files[0].evidence_id, appraisal_mail[0].evidence_id],
+            source_quote="Cedar Harbor fictional loan term sheet.",
+            confidence=0.9, observed_at=observed, reviewed=True,
+        ),
+        uuid4(),
+    )
+    project_id = project.object_id
+    KnowledgeCore(store).publish(
+        reviewer,
+        EventWrite(
+            kind="event", event_type="appraisal_received", title="Appraisal received",
+            project_id=project_id, evidence_ids=[appraisal_mail[0].evidence_id],
+            source_quote="Cedar Harbor appraisal received.",
+            confidence=0.9, observed_at=observed, reviewed=True,
+        ),
+        uuid4(),
+    )
     KnowledgeCore(store).publish(
         reviewer,
         CommitmentWrite(
             kind="commitment",
             description="Closing readiness follow-up: obtain outstanding certificate",
-            state="open",
+            state="open", project_id=project_id,
             evidence_ids=[email[0].evidence_id, files[0].evidence_id],
             source_quote="Insurance certificate remains outstanding.",
-            confidence=0.9,
-            observed_at=datetime(2026, 9, 24, tzinfo=UTC),
-            reviewed=True,
+            confidence=0.9, observed_at=observed, reviewed=True,
         ),
         uuid4(),
     )
+    ProjectFacts(store).publish(
+        reviewer, project_id,
+        ProjectFactWrite(
+            kind="project_fact", project_id=project_id,
+            predicate="loan.proposed_amount", value="$8,000,000",
+            evidence_ids=[term_files[0].evidence_id],
+            quote_evidence_id=term_files[0].evidence_id,
+            source_quote="Proposed loan amount: $8,000,000.",
+            confidence=0.9, observed_at=observed, reviewed=True,
+        ),
+        uuid4(),
+    )
+    ProjectArtifactLinks(store).publish(
+        reviewer, project_id,
+        ProjectArtifactLinkWrite(
+            artifact_evidence_id=term_files[0].evidence_id,
+            basis_evidence_id=term_files[0].evidence_id,
+            relation="term_sheet", assertion_status="asserted",
+            source_quote="Cedar Harbor fictional loan term sheet.",
+            observed_at=observed,
+        ),
+        uuid4(),
+    )
+    return project_id
 
 
 def credential(ctx: TenantContext, token: str, scopes: frozenset[str] = READ_SCOPES) -> Credential:
@@ -228,7 +288,7 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
     )
     if not replay["worker_observed_text_replay"] or replay["reviewed"]:
         raise RuntimeError("Fictional statement source replay did not remain private")
-    publish_reviewed_knowledge(store, ctx)
+    project_id = publish_reviewed_knowledge(store, ctx)
     publish_files(store, other, temporary_root / "other", {
         "other-private.txt": "Cedar Harbor other-tenant-canary must not appear for the first user."
     })
@@ -260,7 +320,8 @@ def build_preview(store: Store, admin: str, temporary_root: Path) -> Preview:
 
     hashes = {name: hashlib.sha256(text.encode()).hexdigest() for name, text in FILES.items()}
     return Preview(app, token, other_token, replace(ctx, scopes=READ_SCOPES),
-                   replace(other, scopes=READ_SCOPES), hashes, statement["proposal_id"])
+                   replace(other, scopes=READ_SCOPES), hashes,
+                   statement["proposal_id"], project_id)
 
 
 def docker(*args: str, env: dict[str, str] | None = None) -> str:

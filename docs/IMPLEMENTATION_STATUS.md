@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+ADR-204 extends the disposable Cedar Harbor trial with a reviewed project,
+appraisal event, Email-plus-FileOS commitment, exact FileOS term-sheet link
+and source-stated loan fact. The existing compact and Markdown dossier APIs
+and provider-neutral client now have one coherent fictional cross-source
+acceptance case, including original-evidence drill-down and a file-only
+assistant denial. This is not a live-source result, investment analysis,
+automatic import/review, inferred fact or FileOS cutover. The owner selected
+the current MasterBrain Markdown export as the later Librarian import exemplar;
+ADR-200 through 202 still stage only a subset as unreviewed proposals.
+
 ADR-203 adds a ninth isolated, exact-hash FOS-Master statement text-recipe
 comparison for Charles Schwab brokerage. Fictional old-template rows and
 failure-era inputs test Cash-and-Bank-Sweep headings, positional/inline tickers,

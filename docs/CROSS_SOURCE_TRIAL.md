@@ -68,6 +68,16 @@ source quotes: the file says November 12, 2026 and the Email says November 19,
 text is not a resolution. This is a deliberate evaluation case, not current
 project advice.
 
+In the `/brain` question workspace, Search only for “Cedar Harbor” and open
+the reviewed project result. Its dossier
+joins one appraisal timeline event, one Email-plus-FileOS closing commitment,
+one source-stated `$8,000,000` loan fact and one linked FileOS term-sheet
+artifact. Open the term-sheet evidence and check the exact amount against its
+source text. The Markdown export uses MasterBrain's current Librarian exchange
+format; its cited source statements are not independently verified deal terms
+or proof that the source is fresh. A file-only assistant credential cannot read
+this mixed-source project, even though it can still search its permitted files.
+
 ## Inspect a proposed statement row
 
 On the trial page, select **Open proposed row**. The launcher has already
@@ -88,9 +98,9 @@ proposal. The page does not fetch proposal text before you click the button.
 
 | Search | Email | Files | Reviewed knowledge | What to inspect |
 |---|---:|---:|---:|---|
-| Cedar Harbor | 2 | 2 | 0 | All indexed evidence for the fictional deal |
+| Cedar Harbor | 2 | 2 | 1 | Reviewed project plus indexed evidence for the fictional deal |
 | insurance | 1 | 1 | 0 | Email and checklist both say the certificate is outstanding |
-| appraisal | 1 | 1 | 0 | Email and checklist both say the appraisal was received |
+| appraisal | 1 | 1 | 1 | Reviewed event plus Email and checklist source evidence |
 | Juniper Plaza | 1 | 1 | 0 | A separate fictional project, not Cedar Harbor |
 | Maple Arcade | 1 | 1 | 0 | Conflicting fictional closing dates; inspect both sources |
 | readiness | 0 | 0 | 1 | Reviewed closing follow-up, with two source links; not an exact source quote |
@@ -105,7 +115,8 @@ $8,000,000 loan and a 1.25 debt-service coverage ratio; the checklist lists Octo
 Open source coverage/freshness. The response intentionally says coverage is partial:
 only explicitly bridged current email and activated FileOS generations count.
 The synthetic source observation date is September 24, 2026. One reviewed
-KnowledgeCore commitment is populated; archive layers are not. Ranks are not
+KnowledgeCore project, appraisal event, commitment, source-stated fact and
+term-sheet artifact link are populated; archive layers are not. Ranks are not
 compared across layers.
 
 ## Stop and report

@@ -1,5 +1,11 @@
 # Changelog
 
+- Extended the disposable Cedar Harbor cross-source trial with a reviewed
+  project dossier joining an appraisal event, Email/FileOS commitment,
+  source-stated loan amount and linked term-sheet artifact (ADR-204). Added
+  API/client/Markdown/evidence and file-only assistant denial acceptance;
+  no live source, model inference or FOS-Master cutover.
+
 - Add a ninth isolated FOS-Master supplied-text statement baseline for Charles
   Schwab brokerage (ADR-203). Fictional old-template holdings, Cash-and-Bank-
   Sweep, symbol mismatch, signed transactions, empty redesigned/scanned text
