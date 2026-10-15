@@ -1,16 +1,23 @@
 # MasterBrain Roadmap
 
+ADR-248 now lets the first-party Email screen select an eligible synthetic
+XLSX from inspected message evidence and explicitly create ADR-247's exact
+approval. Next add the private exact-approval extraction command and prove
+the complete synthetic workflow with the actual pinned image, then browser,
+full PostgreSQL, hosted and independent-review gates. The screen never runs
+extraction or publication.
+
 ADR-247 now exposes the exact synthetic Email XLSX extraction approval through
 a human-only source-attached API, with its own server-pinned XLSX image version
-separate from PDF. Next connect an owner-selected attachment to a first-party
-approval control and provide the private exact-approval extraction command.
+separate from PDF. ADR-248 connects an owner-selected attachment to a
+first-party approval control; next provide the private exact-approval extraction command.
 Neither approval nor the existing review screen runs the worker or publishes.
 Actual-image, full exact-head PostgreSQL, hosted and browser gates remain open.
 
 ADR-246 adds a first-party, human-only screen for an already-approved
 synthetic XLSX extraction result. It validates every bounded page and the
 complete browser-computed text digest before submitting an exact review.
-Next make first-party source selection and isolated extraction operable
+Next make isolated extraction operable
 through separately scoped workflows, then run actual-browser, immutable-image
 and hosted gates. The screen does not publish, certify financial facts or
 authorize live Fastmail.

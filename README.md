@@ -21,9 +21,9 @@ publication (ADR-242), now reachable through a private, account-bound worker
 command (ADR-243); the server owns the bridge provenance revision (ADR-244).
 ADR-246 adds a first-party human screen to inspect and review an existing
 synthetic XLSX result. ADR-247 adds a separate human-only API approval of one
-current synthetic attachment using a server-pinned XLSX image; the screen does
-not yet create that approval, and neither approval nor review runs a worker or
-publishes the document.
+current synthetic attachment using a server-pinned XLSX image; ADR-248 lets
+the owner select that attachment in the Email screen and explicitly approve
+it. Neither approval nor review runs a worker or publishes the document.
 This is not live Fastmail, a cell-level citation or financial review. Local
 populated restore passed; actual-image and hosted CI gates remain open. The
 first-party `/brain` workspace and

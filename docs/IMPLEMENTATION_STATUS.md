@@ -1,11 +1,18 @@
 # MasterBrain Implementation Status
 
+ADR-248 makes eligible synthetic XLSX attachments selectable from inspected
+Email message evidence in the first-party screen, followed by a separate
+explicit approval click. The saved `xapp_` ID can then be entered for result
+inspection after a private worker runs. DOM tests cover selection, no automatic
+write, same-key retry and stale-session denial. The screen has no worker or
+publication capability; an exact-approval extraction command is still open.
+
 ADR-247 exposes an exact synthetic Email XLSX extraction approval via a
 human-only API with a separate server-pinned XLSX image version. The focused
 disposable PostgreSQL test covers first approval, idempotent replay, no pin,
 missing attachment, missing key and assistant denial. Approval creates no
 result, document or source effect; first-party source selection and the
-private extraction command still need implementation.
+private extraction command still needs implementation.
 
 ADR-246 adds the first-party synthetic XLSX result-review screen for an
 existing approval ID. Seven focused DOM cases, 174/174 first-party Node cases,

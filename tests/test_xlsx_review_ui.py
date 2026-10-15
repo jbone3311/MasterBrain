@@ -15,8 +15,10 @@ def test_first_party_xlsx_review_asset_is_fixed_and_no_store() -> None:
         assert page.status_code == script.status_code == 200
         assert 'src="/xlsx_review.js"' in page.text
         assert 'id="xlsx-review-approve"' in page.text
+        assert 'id="xlsx-source-selection"' in page.text
         assert script.headers["cache-control"] == "no-store"
         assert "email-xlsx-results" in script.text
+        assert "xlsx-approvals" in script.text
         assert "publish-reviewed-xlsx" not in script.text
         forbidden = "/v1/brain/email-xlsx-results/xapp_" + "a" * 32 + "/publish"
         assert client.post(forbidden).status_code == 404

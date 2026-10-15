@@ -11,19 +11,106 @@ let xlsxEpoch = 0;
 let xlsxResult = null;
 let xlsxReviewKey = null;
 let xlsxBusy = false;
+let xlsxSelection = null;
+let xlsxApprovalKey = null;
+let xlsxApprovalBusy = false;
+let xlsxApprovalRecorded = null;
 
 function resetXlsxReview(clearInput = false) {
+  const interruptedApproval = xlsxApprovalBusy && !clearInput;
   xlsxEpoch += 1;
   xlsxResult = null;
   xlsxReviewKey = null;
   xlsxBusy = false;
-  if (clearInput) byId("xlsx-approval-id").value = "";
+  xlsxApprovalBusy = false;
+  if (clearInput) {
+    byId("xlsx-approval-id").value = "";
+    xlsxSelection = null;
+    xlsxApprovalKey = null;
+    xlsxApprovalBusy = false;
+    xlsxApprovalRecorded = null;
+    byId("xlsx-source-selection").replaceChildren();
+  }
+  if (interruptedApproval) renderXlsxSelection(
+    "Approval outcome is uncertain after changing the review context. Explicit retry uses the same request key; no worker was started here.");
   byId("xlsx-review-status").textContent = "";
   byId("xlsx-review-result").replaceChildren();
   for (const id of ["xlsx-review-next", "xlsx-review-approve"]) {
     byId(id).hidden = true;
     byId(id).disabled = false;
   }
+}
+
+function validXlsxSelection(value) {
+  return value && xlsxUuidPattern.test(value.account)
+    && xlsxUuidPattern.test(value.evidence) && xlsxUuidPattern.test(value.receipt)
+    && typeof value.filename === "string" && /\.xlsx$/i.test(value.filename)
+    && Array.from(value.filename).length <= 120
+    && !/[\u0000-\u001f\uD800-\uDFFF]/u.test(value.filename)
+    && xlsxDigestPattern.test(value.rawHash) && xlsxDigestPattern.test(value.partHash)
+    && xlsxPartPattern.test(value.part);
+}
+
+function renderXlsxSelection(message = "") {
+  const target = byId("xlsx-source-selection");
+  target.replaceChildren();
+  const selected = xlsxSelection;
+  if (!selected) return;
+  target.append(node("h3", `Selected spreadsheet: ${selected.filename}`),
+    node("small", `Account: ${selected.account} · Original Email evidence: ${selected.evidence} · Attachment receipt: ${selected.receipt}`),
+    node("small", `MIME SHA-256: ${selected.rawHash} · Part: ${selected.part} · Part SHA-256: ${selected.partHash}`),
+    node("p", "Approve one current synthetic attachment for isolated extraction. The server pins the processor and rechecks eligibility. Approval does not run a worker or publish text."));
+  if (message) target.append(node("p", message));
+  if (xlsxApprovalRecorded) {
+    target.append(node("p", `Extraction approval: ${xlsxApprovalRecorded}. Give this ID to the separately scoped private extraction worker, then inspect its saved result below. No worker was started here.`));
+    return;
+  }
+  const approve = node("button", xlsxApprovalKey ? "Retry same XLSX approval request" : "Approve this XLSX for extraction");
+  approve.disabled = xlsxApprovalBusy;
+  target.append(approve);
+  approve.onclick = async () => {
+    if (xlsxApprovalBusy || xlsxApprovalRecorded || !xlsxSelection
+        || xlsxSelection !== selected || !byId("token").value
+        || byId("account-id").value.trim().toLowerCase() !== selected.account.toLowerCase()) return;
+    const view = {epoch: xlsxEpoch, session: sessionVersion,
+      token: byId("token").value, selected};
+    if (xlsxApprovalKey === null) xlsxApprovalKey = crypto.randomUUID();
+    xlsxApprovalBusy = true;
+    approve.disabled = true;
+    try {
+      const data = await api(`/v1/accounts/${selected.account}/attachments/${selected.receipt}/xlsx-approvals`,
+        "POST", undefined, {"Idempotency-Key": xlsxApprovalKey});
+      if (!xlsxApprovalCurrent(view)) return;
+      if (!xlsxClosed(data, ["approval_id", "changed", "mailbox_effects", "document_published"])
+          || !xlsxApprovalPattern.test(data.approval_id)
+          || typeof data.changed !== "boolean" || data.mailbox_effects !== false
+          || data.document_published !== false) throw new Error("Invalid XLSX approval response");
+      xlsxApprovalRecorded = data.approval_id;
+      byId("xlsx-approval-id").value = data.approval_id;
+      renderXlsxSelection();
+    } catch (_) {
+      if (xlsxApprovalCurrent(view)) {
+        xlsxApprovalBusy = false;
+        renderXlsxSelection(
+          "Approval outcome is uncertain or was refused. Check the source and server configuration; explicit retry uses the same request key. No worker was started here.");
+      }
+    } finally {
+      if (xlsxApprovalCurrent(view)) xlsxApprovalBusy = false;
+    }
+  };
+}
+
+function xlsxApprovalCurrent(view) {
+  return view.epoch === xlsxEpoch && view.session === sessionVersion
+    && view.token === byId("token").value && view.selected === xlsxSelection
+    && byId("account-id").value.trim().toLowerCase() === view.selected.account.toLowerCase();
+}
+
+function selectXlsxAttachment(selection) {
+  if (!validXlsxSelection(selection)) return;
+  resetXlsxReview(true);
+  xlsxSelection = {...selection};
+  renderXlsxSelection();
 }
 
 function xlsxCurrent(view) {

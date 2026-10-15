@@ -2,6 +2,21 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## First-party synthetic XLSX source approval — current unmerged branch
+
+ADR-248 links an eligible, inspected Email attachment occurrence to ADR-247's
+human-only approval route. Four focused DOM tests cover explicit approval,
+uncertain same-key retry, stale credential/account refusal and result-input
+changes during an in-flight request; the full first-party Node suite passed
+**178/178**. The server API test on disposable
+PostgreSQL is recorded below. The broader Python 3.14 local run passed
+**3,137 / 707 skipped** in 4m33s; **4/693 PostgreSQL-marked executed** and
+689 skipped without a test DSN. The fixed static asset route passed 1/1,
+Ruff and strict mypy (140 source files) passed, and offline links passed over
+349 Markdown files / 1,811 local paths and fragments. Source selection alone
+does not write, and the browser cannot run the worker or publish. Full exact-head PostgreSQL,
+actual-browser/accessibility, pinned-image and hosted gates remain open.
+
 ## Synthetic XLSX source-attached approval API — current unmerged branch
 
 ADR-247 exposes the existing exact-attachment, human-only synthetic XLSX

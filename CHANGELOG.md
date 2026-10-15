@@ -1,5 +1,10 @@
 # Changelog
 
+- Add first-party source-attached selection and explicit approval for one
+  eligible synthetic Email XLSX. Selection alone does not write; approval
+  returns an `xapp_` ID for a separately scoped extraction worker. The screen
+  cannot run extraction, publish or change sources.
+
 - Expose human-only, idempotent approval of one current synthetic Email XLSX
   attachment through the API. A new server-side XLSX processor pin is distinct
   from the existing PDF pin. Approval does not run extraction or publish.

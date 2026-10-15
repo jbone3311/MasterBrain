@@ -34,8 +34,10 @@ the browser nor caller can choose the image. It returns an `xapp_` approval ID
 without running extraction. There is no public endpoint to invoke the worker
 bridge, fetch original XLSX bytes or assert cell-level financial truth.
 ADR-246's first-party screen can inspect and review an existing synthetic
-approval ID after validating the complete displayed text digest; it does not
-create an approval or publish a document.
+approval ID after validating the complete displayed text digest. ADR-248 adds
+an inspected-evidence source-selection control and an explicit approval click
+using ADR-247's route. Neither screen operation runs extraction or publishes
+a document.
 Actual-browser, real-image and hosted gates remain open.
 
 ADR-244 removes caller-supplied `code_revision` from the publication-review

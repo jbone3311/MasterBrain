@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-248](adr/248_first_party_synthetic_xlsx_source_approval.md) connects
+inspected Email attachment evidence to explicit, human-only synthetic XLSX
+extraction approval. Selection, approval, extraction, review and publication
+remain distinct actions with separate scopes.
+
 [ADR-247](adr/247_synthetic_email_xlsx_approval_api.md) exposes exact
 synthetic Email XLSX extraction approval through a human-only API with a
 server-pinned XLSX processor independent of PDF processing. It does not run

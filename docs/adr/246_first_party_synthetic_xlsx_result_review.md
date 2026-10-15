@@ -4,7 +4,7 @@ Status: implemented on an open PR with DOM, static-route and fictional API-to-UI
 
 ## Context
 
-ADR-242 exposes human-only bounded inspection and exact-result review routes, but the first-party Email screen had no way to use them. The worker-only publication command must not be moved into the browser. An owner-selected existing synthetic XLSX approval ID is the narrow input for this first screen; creating an extraction approval and running its isolated worker are separate operational steps, not silently implied by this UI.
+ADR-242 exposes human-only bounded inspection and exact-result review routes, but the first-party Email screen had no way to use them. The worker-only publication command must not be moved into the browser. An owner-selected existing synthetic XLSX approval ID is the narrow input for this first screen; creating an extraction approval and running its isolated worker are separate operational steps, not silently implied by result review. ADR-248 later adds explicit source selection/approval to the same page, but still does not run the worker.
 
 ## Decision
 
@@ -14,4 +14,4 @@ The UI cannot certify that every financial cell is correct, that the workbook wa
 
 ## Acceptance and remaining gates
 
-Seven focused DOM cases cover paging, no auto-review/publication, digest mismatch, changed result/source, uncertain retry, credential/account invalidation and inert text. The entire first-party Node suite passes 174/174. A static-route test and a fictional PostgreSQL/API-to-UI response contract execute. Hosted exact-head CI, actual browser/accessibility, immutable worker-image execution, an owner-friendly approval/result queue and the separate worker operation remain required before an end-to-end alpha claim.
+Seven focused DOM cases cover paging, no auto-review/publication, digest mismatch, changed result/source, uncertain retry, credential/account invalidation and inert text. At this ADR's original checkpoint, the first-party Node suite passed 174/174. A static-route test and a fictional PostgreSQL/API-to-UI response contract execute. Hosted exact-head CI, actual browser/accessibility, immutable worker-image execution, a result/worker queue and the separate worker operation remain required before an end-to-end alpha claim. ADR-248 adds explicit source approval, not worker execution.
