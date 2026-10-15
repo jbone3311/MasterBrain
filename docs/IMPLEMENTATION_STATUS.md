@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-228 now has a pure synthetic-only Email PDF attachment derivation proof.
+It replays one exact MIME part with the isolated, pinned legacy PDF worker and
+compares the whole DataCore text and image/policy normalizer. Changed parent
+MIME, wrong part, partial/image-only/encrypted PDFs and invented text refuse.
+This adds no database receipt, review/currentness fence, operator command,
+OCR/visual completeness, live Fastmail authorization or financial claim.
+
 ADR-227 exposes one exact reviewed FileOS PDF text-layer replay through a
 tenant-bound private `masterbrain fileos replay-tier-pdf` command. A closed
 config pins source/root and immutable processor image; a document-only worker

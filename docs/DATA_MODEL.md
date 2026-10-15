@@ -127,6 +127,12 @@ issuer authenticity or financial truth
 ([ADR-225](adr/225_confined_fileos_pdf_derivation_replay.md),
 [ADR-226](adr/226_reviewed_fileos_pdf_replay_receipt.md)).
 
+ADR-228 adds only a pure, nonpublishing Email attachment PDF text-layer proof:
+one retained parent MIME hash/size, one MIME part path/hash, the entire bridged
+text digest, exact image/policy normalizer and page count. No table or receipt
+exists for it yet. The proof preserves each attachment occurrence's parent
+identity and cannot assert current review or financial truth.
+
 Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
 immutable global catalog for **new** reviewed project-fact names. A SQL insert
 guard and the publication boundary require the active name/value-type/unit shape and

@@ -2,6 +2,26 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Retained Email PDF attachment derivation — ADR-228
+
+A pure DataCore proof now compares one retained parent MIME, selected PDF part,
+complete extracted page text and exact image/policy normalizer using the
+existing isolated Email PDF worker. Fictional tests passed **13/13** locally,
+including two pages, changed MIME/part, distinct same-hash occurrences and
+partial/image-only/encrypted refusal. The explicit PDF-container suite now
+collects an actual-image complete/partial proof but has not run on this Mac
+or hosted CI. This has not written or verified any database receipt, contacted
+live mail or made a financial claim. The next gate is a current reviewed-
+attachment receipt with final source/grant/worker checks, followed by a
+private command and real-image execution.
+
+At this checkpoint, a fresh locked Python 3.11 environment and disposable
+PostgreSQL 17.11 passed the full suite: **3,667 passed, 19 skipped**
+(657/658 PostgreSQL-marked executed). Browser tests passed **167/167**; Ruff,
+mypy over 126 source files, docs (329 Markdown / 1,720 local paths/fragments)
+and the post-suite structural deployment gate passed. The actual-image Email
+PDF proof and hosted/restore jobs are still unexecuted gates, not passes.
+
 ## Real-image PDF replay gate prepared — pending container execution
 
 The explicit `tests/container_document_checks.py` suite now includes a

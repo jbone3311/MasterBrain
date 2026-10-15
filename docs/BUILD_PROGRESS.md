@@ -1,5 +1,16 @@
 # MasterBrain Build Progress
 
+## Retained Email PDF attachment derivation (2026-10-15, ADR-228, open PR)
+
+An isolated PDF worker can now re-extract one explicit attachment from its
+retained parent MIME and compare the complete bridged text without publishing
+anything. Fictional two-page, duplicate-content/different-parent, changed
+MIME/part, wrong image/text and incomplete-PDF tests passed locally (13/13).
+The pure proof has no database/current-review receipt or private command. A
+real-image CI test is wired but not executed while hosted jobs cannot start;
+Email attachment evidence remains occurrence-specific;
+live mail, OCR, issuer and financial acceptance remain closed.
+
 ## Actual-image FileOS PDF receipt gate prepared (2026-10-15, open PR)
 
 The existing dedicated document-container CI suite now contains a fictional

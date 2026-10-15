@@ -1,5 +1,9 @@
 # Changelog
 
+- ADR-228: added a nonpublishing, exact retained-MIME/part Email PDF text-layer
+  replay proof through the pinned isolated worker, with fictional complete,
+  changed, partial and same-hash occurrence tests. No receipt or live mail.
+
 - Prepared an explicit CI check that replays a fictional reviewed FileOS PDF
   through the actual pinned document image into its protected PostgreSQL
   receipt. The container result remains pending until hosted jobs start.

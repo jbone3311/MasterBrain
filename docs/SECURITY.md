@@ -135,6 +135,12 @@ open. Consequently no public verified-source or investment claim is exposed.
   attest the sender, prove complete attachment parsing, or make a compromised
   general runtime login harmless. ADR-224 adds a restricted tenant-bound
   command; hosted restore/CI gates remain open and no live mailbox is authorized.
+- ADR-228 separately replays one bounded Email PDF attachment from the exact
+  retained parent MIME through the pinned isolated PDF worker. It checks the
+  MIME/part digests and complete published text without parsing PDF bytes in
+  the parent. The pure proof has no database-currentness, review receipt or
+  operator command; it cannot certify visual/OCR completeness, sender or
+  financial truth, and grants no Brain API access to retained MIME or Docker.
 - ADR-225/226's FileOS PDF worker reopens one confined source and compares its
   exact output from an image-pinned restricted document processor before a
   final current/grant/authorization recheck and digest-only receipt. SQL alone

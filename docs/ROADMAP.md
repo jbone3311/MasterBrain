@@ -1,10 +1,18 @@
 # MasterBrain Roadmap
 
+ADR-228 adds the first nonpublishing Email attachment PDF replay proof from
+retained MIME through the pinned isolated Email PDF worker. The next Email
+tranche must bind it to one current, granted, nonexcluded reviewed attachment,
+store an immutable tenant-fenced digest receipt after final rechecks, then
+expose a narrow operator command and actual-image gate. This proof alone is
+not an issuer, OCR, financial or live-mail acceptance.
+
 ADR-227 exposes ADR-226's current reviewed FileOS PDF text-layer receipt as
 one exact, tenant-bound operator command. Its check mode reads no selected PDF
 or review row and does not construct the processor; fictional execution is
-tested. Next: actual immutable-image container, independent restore, Email
-attachment PDF derivation, OCR/visual coverage and issuer/conflict policy.
+tested. Next: actual immutable-image container, independent restore, the
+review-bound Email attachment PDF receipt, OCR/visual coverage and issuer/
+conflict policy.
 No live root, financial claim or FileOS cutover is authorized.
 
 ADR-226 now binds the confined FileOS PDF text-layer replay to one current
@@ -24,8 +32,9 @@ image-only/OCR, issuer and financial truth remain unresolved.
 ADR-224 now exposes the reviewed Email MIME replay as an exact authenticated
 operator command with a mandatory tenant-bound login and check mode that
 reads no selected MIME or review row. Fictional inline and encrypted paths
-are tested. Next: attachment/PDF byte derivation, issuer/conflict policy,
-independent restore and hosted gates; no live mailbox or financial claim.
+are tested. ADR-228 adds a separate pure attachment/PDF byte proof; its
+review-bound receipt, issuer/conflict policy, independent restore and hosted
+gates remain. No live mailbox or financial claim.
 
 ADR-223 adds a point-in-time worker-observed Email MIME-to-text replay for a
 current reviewed direct-parser message, covering inline and encrypted retained

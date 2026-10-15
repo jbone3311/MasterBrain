@@ -1,5 +1,6 @@
 """Explicit real restricted-image PDF tests; not ordinary test discovery."""
 
+import hashlib
 import json
 import os
 import secrets
@@ -23,6 +24,11 @@ from email_brain.pdf_processor import DockerPdfProcessor
 from email_brain.schemas import SearchRequest
 from email_brain.store import Store
 from email_brain.synthetic_mailbox import project_events
+from masterbrain.datacore.email_pdf_derivation import (
+    EmailAttachmentPdfUnavailable,
+    prove_email_attachment_pdf_derivation,
+)
+from masterbrain.datacore.persistence import EMAIL_DOCUMENT_NORMALIZER_PREFIX
 
 database, tenant = pg.database, pg.tenant
 
@@ -68,6 +74,34 @@ def test_actual_child_rejects_mismatched_part_before_pdf_read(processor):
     raw, source, _ = mail_packet(variant("text"))
     with pytest.raises(PdfUnavailable, match="^pdf_processing_unavailable$"):
         processor.extract(raw, part_path=source.part_path, part_sha256="a" * 64)
+
+
+def test_actual_image_proves_only_complete_retained_attachment_text(processor):
+    raw, source, _ = mail_packet(variant("text"))
+    extracted = processor.extract(
+        raw, part_path=source.part_path, part_sha256=source.part_sha256,
+    )
+    assert extracted.status == "extracted"
+    text = "\n".join(page.text for page in extracted.pages)
+    normalizer = (
+        f"{EMAIL_DOCUMENT_NORMALIZER_PREFIX}:{processor.processor_version}:{POLICY}"
+    )
+    proof = prove_email_attachment_pdf_derivation(
+        raw, raw_sha256=source.raw_sha256, raw_size_bytes=len(raw),
+        part_path=source.part_path, part_sha256=source.part_sha256,
+        text=text, text_sha256=hashlib.sha256(text.encode()).hexdigest(),
+        normalizer=normalizer, processor=processor,
+    )
+    assert proof.page_count == 1 and proof.raw_sha256 == source.raw_sha256
+    partial_raw, partial_source, _ = mail_packet(variant("partial"))
+    with pytest.raises(EmailAttachmentPdfUnavailable):
+        prove_email_attachment_pdf_derivation(
+            partial_raw, raw_sha256=partial_source.raw_sha256,
+            raw_size_bytes=len(partial_raw), part_path=partial_source.part_path,
+            part_sha256=partial_source.part_sha256, text=text,
+            text_sha256=hashlib.sha256(text.encode()).hexdigest(),
+            normalizer=normalizer, processor=processor,
+        )
 
 
 def test_existing_known_answer_mailbox_pdf_in_real_container(processor):

@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-228](adr/228_retained_email_attachment_pdf_derivation.md) adds a
+nonpublishing exact retained-MIME/part and isolated Email PDF text-layer proof.
+It is not a reviewed receipt, live mail or financial attestation.
+
 [ADR-227](adr/227_restricted_fileos_pdf_tier_replay_command.md) exposes one
 reviewed FileOS PDF text-layer replay through an exact, tenant-bound private
 command with a no-selected-PDF-read check mode. Synthetic execution does not
