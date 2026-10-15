@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Wells Fargo brokerage donor recipe parity — ADR-198
+
+The new isolated comparison pins FOS-Master commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` and exact
+`_SYSTEM/tools/statement_extract.py` SHA-256
+`f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe`.
+Seven fictional goldens, optional exact-hash donor AST replay and a 1,000-row
+repeatability case passed **53/53** across the seven-recipe suites with the
+local donor supplied. The full local repository gate passed **3,433 tests, 7
+skipped** on disposable PostgreSQL 17.11; 576 of 577 PostgreSQL-marked cases
+executed. Six browser suites passed **167/167**; Ruff, strict mypy (108 source
+files), documentation links and diff checks passed. Hosted exact-head and
+merged-main gates remain pending at this branch checkpoint; do not read this
+receipt as an approval to publish holdings or switch FileOS. The donor checkout
+was not modified.
+
 ## Verified project-dossier Markdown — ADR-197
 
 Merged [PR #232](https://github.com/jbone3311/MasterBrain/pull/232)
