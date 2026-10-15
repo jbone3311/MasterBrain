@@ -18,9 +18,13 @@ Ruff, strict mypy (112 files), docs links (308 Markdown files, 1,638 paths and
 fragments), browser **167/167**, and diff whitespace checks passed. The local
 deployment gate passed **2,891 tests, 633 skipped** (only two PostgreSQL-
 marked cases executed), so it is not the full database proof. Hosted
-exact-head CI and merged-main acceptance remain unverified. These locks do
-not freeze Email exclusion-policy edits or external provider state; generic
-direct Knowledge publication is unchanged. All inputs were fictional.
+exact-head CI and merged-main acceptance remain unverified. The code checkpoint
+`0e821c1` [gate run 38732469839](https://github.com/jbone3311/MasterBrain/actions/runs/38732469839)
+reported failure with **zero executed steps**; its GitHub annotation says
+recent account payments failed or the spending limit needs increasing. This
+is not a code-test result, and the PR must not bypass hosted gates. These
+locks do not freeze Email exclusion-policy edits or external provider state;
+generic direct Knowledge publication is unchanged. All inputs were fictional.
 
 ## Fact and artifact source-row transaction fence
 
