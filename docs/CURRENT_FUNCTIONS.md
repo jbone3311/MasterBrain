@@ -1,8 +1,9 @@
 # Current MasterBrain functions
 
-ADR-244 update: the Email XLSX human review request supplies only the exact
-result digest and counts; it cannot claim the server's code revision. The
-private worker records a semantic bridge revision guarded by migration 0086.
+ADR-246 update: the Email owner screen can inspect all pages of an existing
+synthetic XLSX extraction result and explicitly review its browser-verified
+complete text digest/counts. The human cannot claim the server's bridge code
+revision or publish; the private worker records that guarded revision.
 
 Updated 2026-10-15; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
 verification. “Available” below means executable in this repository with
@@ -15,7 +16,7 @@ approved for private data, or production accepted. The exact-commit gates are in
 
 | Function | Working path | Boundary |
 |---|---|---|
-| Publish one fictional approved Email XLSX as cited text | Private `EmailXlsxApprovals` → `EmailXlsxResults` → human API inspection and exact digest/count publication review → `masterbrain email publish-reviewed-xlsx --tenant-bound-db` with an account-pinned worker credential; then existing Brain/Email-family search | Synthetic-only path on an open PR. The human credential cannot publish. No first-party review screen or public worker endpoint, cell-level citation, live Fastmail or financial approval. Actual-image, hosted and restore gates remain open. |
+| Publish one fictional approved Email XLSX as cited text | Private `EmailXlsxApprovals` → `EmailXlsxResults` → first-party human inspection and exact digest/count review of an existing approval ID → `masterbrain email publish-reviewed-xlsx --tenant-bound-db` with an account-pinned worker credential; then existing Brain/Email-family search | Synthetic-only path on an open PR. The human credential cannot publish; the first-party screen cannot create the original approval or run the extraction worker. No public worker endpoint, cell-level citation, live Fastmail or financial approval. Local populated restore passed; actual-image and hosted gates remain open. |
 | Replay one fictional reviewed FileOS XLSX row layout | `masterbrain fileos replay-tier-xlsx-tables --tenant-bound-db --check`, then the exact selected review without `--check` | Private worker-only, same pinned image as the indexed document; stores only a tenant-fenced digest/count receipt. It does not publish cells, certify financial facts, modify files, or authorize a live root. The actual-image and hosted gates remain open. |
 | Search fictional Email and FileOS together or explicitly focus one source kind | [cross-source browser trial](CROSS_SOURCE_TRIAL.md) and `POST /v1/brain/current-search` | Real PostgreSQL and Brain API, fictional data; plain-text excerpts, grouped layers with separate ranks and partial coverage. All-source Knowledge matches use ADR-159's verified unsuperseded review-chain leaves; focused calls skip knowledge and report `not_searched`. No generated answer. |
 | Ask for verified source quotes and reviewed matches | `POST /v1/brain/answers`, `BrainReadClient.answer`, and `/brain` | A local deterministic selector returns exact current-source excerpts from at most 8,192 UTF-8 bytes of passage text and flags shortened context. Returned quote plus reviewed-match text has a separate 8,192-UTF-8-byte ceiling with visible output truncation; reviewed KnowledgeCore matches and evidence links appear only under All focus. Ask removes fixed question boilerplate before lexical retrieval. Neither reviewed text nor source quotes are freeform synthesis. Explicitly disabling selection returns 503 and grouped-search fallback. |

@@ -1,5 +1,10 @@
 # Testing and Evaluations
 
+ADR-246's first-party XLSX screen has seven focused DOM tests, 174/174 total
+first-party Node tests, a fixed static-route check and one executed fictional
+PostgreSQL/API-to-UI response contract. These do not prove an actual browser,
+accessibility or isolated document-image run.
+
 The `0c64f8b` fictional full-suite run on a fresh local PostgreSQL 17.11
 cluster passed 3,823 tests with 19 skips and no failures (691/692
 PostgreSQL-marked executed). See [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for the

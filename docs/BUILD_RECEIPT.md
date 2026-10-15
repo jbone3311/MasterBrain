@@ -2,6 +2,28 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## First-party synthetic XLSX result review — current unmerged branch
+
+ADR-246 adds a browser-only human review screen for an existing synthetic XLSX
+approval ID. It requires all bounded result pages and a browser-computed
+full-text SHA-256 match before an explicit digest/count-bound review request.
+It displays and rechecks the original attachment filename, account, parent
+Email evidence, part path and part digest across pages.
+It neither creates the original approval nor runs a worker or publishes a
+document. Seven focused DOM cases and the full **174/174** first-party Node
+suite passed. The static asset route passed **1/1** offline test, and one
+fictional PostgreSQL/API-to-UI response-shape test executed and passed on a
+fresh disposable cluster. Ruff passed, and strict mypy passed over 140 source
+files. This is not an actual-browser/accessibility, immutable-image, hosted
+CI or complete workflow result. The full **3,823-pass** PostgreSQL suite below
+belongs to the preceding `0c64f8b` code head, before ADR-246 UI files.
+The broader Python 3.14 local rerun at this UI checkpoint passed **3,137,
+zero failed, 706 skipped** in 1m44s against the freshly built and installed
+`masterbrain-0.2.0a2` wheel. It executed **4/692
+PostgreSQL-marked tests**; 688 skipped without a test DSN and are not counted
+as passes. The modified XLSX API-to-UI integration test separately executed
+against a fresh disposable PostgreSQL 17.11 cluster and passed **1/1**.
+
 ## Native synthetic logical restore — current unmerged branch
 
 At exact code head `0c64f8b`, the full fictional local suite passed on Python

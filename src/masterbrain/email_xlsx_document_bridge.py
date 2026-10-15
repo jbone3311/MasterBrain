@@ -80,7 +80,17 @@ class EmailXlsxDocumentBridge:
         ):
             raise ValueError("invalid Email XLSX inspection request")
         with self.store.transaction(ctx) as conn:
-            self._basis(conn, ctx, approval_id)
+            approval = self._basis(conn, ctx, approval_id)
+            attachment = conn.execute(
+                "SELECT safe_filename FROM attachment_receipts "
+                "WHERE account_id=%s AND id=%s AND evidence_id=%s",
+                (
+                    approval["account_id"], approval["attachment_id"],
+                    approval["parent_version_id"],
+                ),
+            ).fetchone()
+            if attachment is None:
+                raise Conflict("approved Email XLSX attachment changed")
             result = conn.execute(
                 "SELECT text_sha256,sheet_count,cell_count,extracted_text FROM "
                 "brain_email_xlsx_extraction_results WHERE approval_id=%s",
@@ -96,6 +106,14 @@ class EmailXlsxDocumentBridge:
             return {
                 "approval_id": approval_id, "text_sha256": result["text_sha256"],
                 "sheet_count": result["sheet_count"], "cell_count": result["cell_count"],
+                "source": {
+                    "account_id": str(approval["account_id"]),
+                    "attachment_id": str(approval["attachment_id"]),
+                    "parent_version_id": str(approval["parent_version_id"]),
+                    "safe_filename": attachment["safe_filename"],
+                    "part_path": approval["part_path"],
+                    "part_sha256": approval["part_sha256"],
+                },
                 "text": text[offset:offset + max_chars], "offset": offset,
                 "next_offset": next_offset, "total_chars": len(text),
                 "untrusted_content": True, "mailbox_effects": False,

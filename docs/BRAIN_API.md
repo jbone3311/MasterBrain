@@ -20,12 +20,18 @@ be current. A human-only `POST /v1/brain/email-xlsx-results/{approval_id}/inspec
 returns a bounded untrusted text page and exact digest/counts; a separate
 `POST /v1/brain/email-xlsx-results/{approval_id}/publication-reviews` seals
 those values for one hour without publication. Both require Email review and
-evidence-read scopes. The worker publication service is private and needs
+evidence-read scopes. Each inspection page also carries the exact source
+identity (`account_id`, `attachment_id`, `parent_version_id`, `safe_filename`,
+`part_path`, `part_sha256`); clients must reject a change across pages. These
+are identifiers and display metadata, not original workbook bytes. The worker
+publication service is private and needs
 DataCore ingest/document scopes. ADR-243 makes that private service callable
 through one account-pinned, tenant-bound worker command. There is no public endpoint to approve
 extraction, invoke the worker bridge, fetch original XLSX bytes or assert
-cell-level financial truth. The first-party review screen and real-image/
-hosted gates remain open.
+cell-level financial truth. ADR-246's first-party screen can inspect and
+review an existing synthetic approval ID after validating the complete
+displayed text digest; it does not create an approval or publish a document.
+Actual-browser, real-image and hosted gates remain open.
 
 ADR-244 removes caller-supplied `code_revision` from the publication-review
 request. The server records its own semantic bridge revision, and the database

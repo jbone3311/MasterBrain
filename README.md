@@ -19,9 +19,11 @@ synthetic Email XLSX can be published as an occurrence-cited DataCore text
 document after a human-only digest/count review and separate worker
 publication (ADR-242), now reachable through a private, account-bound worker
 command (ADR-243); the server owns the bridge provenance revision (ADR-244).
-This is not live
-Fastmail, a cell-level citation or financial review; actual-image, hosted CI
-and restore gates remain open. The first-party `/brain` workspace and
+ADR-246 adds a first-party human screen to inspect and review an existing
+synthetic XLSX result; it does not create the approval or publish the document.
+This is not live Fastmail, a cell-level citation or financial review. Local
+populated restore passed; actual-image and hosted CI gates remain open. The
+first-party `/brain` workspace and
 provider-neutral client can search current evidence, show exact source quotes,
 and drill down to the
 original; reviewed events, due commitments and project dossiers are separate

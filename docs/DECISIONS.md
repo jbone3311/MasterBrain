@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-246](adr/246_first_party_synthetic_xlsx_result_review.md) adds a
+first-party human screen for an existing fictional XLSX result. It verifies
+all displayed pages against the sealed digest before explicit review, while
+the browser never gains worker publication power.
+
 [ADR-245](adr/245_native_synthetic_restore_drill.md) adds a separate,
 synthetic-only native PostgreSQL 17 dump/restore proof for Docker-less local
 hosts. Its fictional seed now proves populated XLSX review/receipt restore and

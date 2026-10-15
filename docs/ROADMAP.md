@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+ADR-246 adds a first-party, human-only screen for an already-approved
+synthetic XLSX extraction result. It validates every bounded page and the
+complete browser-computed text digest before submitting an exact review.
+Next make source-attached approval creation and isolated extraction operable
+through separately scoped workflows, then run actual-browser, immutable-image
+and hosted gates. The screen does not publish, certify financial facts or
+authorize live Fastmail.
+
 ADR-245's native PostgreSQL dump/restore now verifies a populated fictional
 XLSX approval, result, human review, publication receipt and retrievable
 document. Next run the same seeded Docker restore on the exact head when

@@ -1,5 +1,19 @@
 # Changelog
 
+- Add a first-party synthetic XLSX result-review screen for an existing
+  approval ID. It displays every bounded text page, recomputes the complete
+  UTF-8 SHA-256 in the browser, and requires a separate explicit human review
+  click. It cannot create the approval, run or impersonate a worker, publish
+  a document, or change mail/files. The local populated restore and full
+  disposable-PostgreSQL suite passed before this UI slice; hosted/image and
+  actual-browser gates remain open.
+
+- Add a native two-cluster PostgreSQL 17 synthetic dump/restore drill and
+  populate it with an approved, reviewed and published fictional XLSX.
+  The restored document is retrievable, its review/receipt is preserved and
+  a foreign tenant cannot read it. This complements, not replaces, the
+  hosted Docker restore gate.
+
 - Add a separate human-authorized synthetic Email XLSX DataCore bridge. It
   publishes only a complete exact-approved result with reviewer-supplied
   digest/counts, immutable occurrence receipt, deterministic chunks and

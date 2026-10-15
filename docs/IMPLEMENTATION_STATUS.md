@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-246 adds the first-party synthetic XLSX result-review screen for an
+existing approval ID. Seven focused DOM cases, 174/174 first-party Node cases,
+the fixed static route and a fictional PostgreSQL API-to-UI response contract
+pass. The browser checks the complete displayed UTF-8 text SHA-256 and stable
+original attachment identity before it submits
+only an explicit human review; no browser publication, automatic fact claim,
+source effect or live account was added. This is not yet an owner-friendly
+approval/result queue or end-to-end worker workflow.
+
 The exact `0c64f8b` code head passed the complete fictional local suite on
 Python 3.14 and fresh disposable PostgreSQL 17.11: 3,823 passed, 19 skipped,
 zero failed; 691/692 PostgreSQL-marked tests executed. The cluster was removed.

@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import subprocess
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import uuid4
 
 import psycopg
@@ -215,6 +218,13 @@ def test_owner_api_inspects_bounded_text_then_publishes_exact_review(
         client_kind="human",
     )
     headers = {"Authorization": f"Bearer {token}"}
+    with store.transaction(reviewer.context) as conn:
+        basis = conn.execute(
+            "SELECT account_id,attachment_id,parent_version_id,part_path,part_sha256 "
+            "FROM brain_email_xlsx_extraction_approvals WHERE id=%s",
+            (approval,),
+        ).fetchone()
+    assert basis is not None
     with TestClient(create_app(store, TokenRegistry([credential]))) as api:
         route = f"/v1/brain/email-xlsx-results/{approval}"
         first = api.post(route + "/inspect", json={"max_chars": 10}, headers=headers)
@@ -222,6 +232,11 @@ def test_owner_api_inspects_bounded_text_then_publishes_exact_review(
         page = first.json()
         assert page["text_sha256"] == sealed["text_sha256"]
         assert page["untrusted_content"] is True
+        assert page["source"]["safe_filename"] == "rent.xlsx"
+        for field in ("account_id", "attachment_id", "parent_version_id"):
+            assert page["source"][field] == str(basis[field])
+        for field in ("part_path", "part_sha256"):
+            assert page["source"][field] == basis[field]
         assert len(page["text"]) == 10 and page["next_offset"] == 10
         assert first.headers["Cache-Control"] == "no-store"
         second = api.post(
@@ -250,6 +265,18 @@ def test_owner_api_inspects_bounded_text_then_publishes_exact_review(
             headers={**headers, "Idempotency-Key": str(uuid4())},
         )
         assert reviewed.status_code == 201
+        full = api.post(route + "/inspect", json={"max_chars": 16000}, headers=headers)
+        assert full.status_code == 200 and full.json()["next_offset"] is None
+        ui = subprocess.run(
+            ["node", "tests/web_xlsx_review_api_contract.cjs"],
+            cwd=Path(__file__).resolve().parents[1],
+            input=json.dumps({
+                "approval": approval, "inspection": full.json(), "review": reviewed.json(),
+            }),
+            text=True, capture_output=True, timeout=20, check=False,
+        )
+        assert ui.returncode == 0, ui.stderr
+        assert ui.stdout.startswith("PASS: real XLSX API shapes")
         forged_revision = api.post(
             route + "/publication-reviews",
             json={"expected_text_sha256": page["text_sha256"],

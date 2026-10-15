@@ -361,6 +361,10 @@ def create_app(
     def document_javascript() -> FileResponse:
         return FileResponse(WEB / "document_review.js", media_type="text/javascript")
 
+    @app.get("/xlsx_review.js", include_in_schema=False)
+    def xlsx_review_javascript() -> FileResponse:
+        return FileResponse(WEB / "xlsx_review.js", media_type="text/javascript")
+
     @app.get("/style.css", include_in_schema=False)
     def stylesheet() -> FileResponse:
         return FileResponse(WEB / "style.css", media_type="text/css")
