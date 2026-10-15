@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-219 now exposes the ADR-218 FileOS text replay as one exact, authenticated
+operator command with a mandatory tenant-bound database login and no-source-
+read check mode. Fictional local execution and revocation rollback are tested;
+no live root has been used. Next: PDF/OCR and spreadsheet completeness,
+equivalent Email-byte replay, issuer/conflict policy, independent restore and
+hosted gates before using a tier in any financial publication.
+
 ADR-218 now records a point-in-time, worker-observed FileOS **text** replay
 for an ADR-217 human tier review. The confined read and exact byte-to-text
 proof are shared DataCore machinery with the older statement-proposal replay.

@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Restricted FileOS tier-text replay command — ADR-219
+
+`masterbrain fileos replay-tier-text` now targets exactly one reviewed tier and
+one configured FileOS source. A private credential/token pair grants only
+`brain.document.publish`; both check and execution require a DBA-enrolled
+tenant-bound PostgreSQL login. Check mode authenticates and verifies config,
+login and root identity without reading the selected file or writing a
+receipt. Execution reauthenticates inside the final locked transaction.
+Fictional end-to-end tests reject shared/owner DSNs and a mismatched source,
+prove source bytes remain unchanged, and show revocation before insertion
+rolls back. Failures are scrubbed. No live source was accessed.
+
+The exact-current local PostgreSQL 17.11 / Python 3.14 suite passed **3,594
+tests, 19 skipped** (644 of 645 PostgreSQL-marked executed; one intentional
+skip). Six browser suites passed **167/167**. Ruff, mypy over 119 source files,
+documentation links (320 Markdown files, 1,690 paths/fragments) and diff
+whitespace passed. Hosted exact-head and independent restore remain open;
+GitHub billing/spending-limit status must be checked on this head before
+merging. This command does not prove PDF/OCR or spreadsheet completeness,
+replay Email bytes, approve a financial claim or authorize FileOS cutover.
+
 ## Shared FileOS text replay for reviewed tiers — ADR-218
 
 Migration 0076 and an internal worker-scoped operation add one immutable,

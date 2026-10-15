@@ -35,6 +35,7 @@ from masterbrain.email_bridge_controller import (
 )
 from masterbrain.fileos_controller import run_fileos_controller
 from masterbrain.fileos_index_controller import run_fileos_index_controller
+from masterbrain.source_tier_fileos_controller import run_source_tier_fileos_controller
 
 
 def _json(value: Any) -> str:
@@ -136,6 +137,13 @@ def build_parser() -> argparse.ArgumentParser:
     index.add_argument("--idempotency-key", type=UUID, required=True)
     index.add_argument("--check", action="store_true")
     index.add_argument("--tenant-bound-db", action="store_true")
+    tier_replay = file_commands.add_parser(
+        "replay-tier-text", help="Replay one reviewed FileOS text source with a worker"
+    )
+    tier_replay.add_argument("--config", type=Path, required=True)
+    tier_replay.add_argument("--review-id", required=True)
+    tier_replay.add_argument("--check", action="store_true")
+    tier_replay.add_argument("--tenant-bound-db", action="store_true")
     archive_text = file_commands.add_parser(
         "archive-text", help="Publish one selected archive text member"
     )
@@ -323,6 +331,14 @@ def main(argv: Sequence[str] | None = None) -> None:
                     )
                 )
             )
+        elif args.command == "fileos" and args.file_command == "replay-tier-text":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_source_tier_fileos_controller(
+                args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
         elif args.command == "fileos" and args.file_command == "archive-text":
             dsn = os.environ.get("MASTERBRAIN_DSN")
             if not dsn:

@@ -31,9 +31,10 @@ This records that the worker observed a matching file **at replay time**.
 It does not guarantee that the file remains unchanged after the operation,
 that a PDF/OCR/spreadsheet was completely extracted, that a document's
 claimed issuer is authentic, that multiple sources independently corroborate
-a value, or that a financial claim is approved. The operation is internal;
-there is no public API route or unattended live-root run. FOS-Master remains
-untouched.
+a value, or that a financial claim is approved. This ADR introduced an
+internal operation; ADR-219 later adds a selected, authenticated operator
+command. There is no public API route or unattended live-root run.
+FOS-Master remains untouched.
 
 ## Acceptance and next gate
 

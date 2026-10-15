@@ -3,20 +3,30 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import secrets
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
 import psycopg
 import pytest
 import test_postgres as pg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 from test_statement_fileos_replay_postgres import source_file_document
 from test_statement_persistence_postgres import TEXT, worker
 
 import masterbrain.datacore.current_fileos_text_replay as replay_core
+from email_brain.migrate import grant_tenant_runtime
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.knowledge_schema import SourceTierReviewWrite
+from masterbrain.source_tier_fileos_controller import (
+    FileOSTierReplayControllerError,
+    run_source_tier_fileos_controller,
+)
 from masterbrain.source_tier_fileos_replay import SourceTierFileOSReplayStore
 from masterbrain.source_tier_reviews import SourceTierReviews
 
@@ -202,6 +212,104 @@ def test_symlink_and_between_transaction_version_race_fail_closed(
     monkeypatch.setattr(replay_core, "read_confined_file", race)
     with pytest.raises(Conflict, match="basis changed"):
         replay.record_current_text_replay(worker(tenant[0]), review_id, root)
+    with store.transaction(worker(tenant[0])) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM knowledge_source_tier_fileos_replays "
+            "WHERE review_id=%s", (review_id,),
+        ).fetchone()["n"] == 0
+
+
+def test_authenticated_command_checks_then_replays_only_selected_review(
+    database, tenant, tmp_path: Path,
+):
+    store, admin = database
+    root = tmp_path / "fictional-files"
+    document_id, _, _, source_id = source_file_document(admin, tenant[0], root)
+    review_id = _review(store, tenant[0], document_id)
+    state = tmp_path / "private-state"
+    state.mkdir(mode=0o700)
+    token = secrets.token_urlsafe(40)
+    token_path = state / "token"
+    token_path.write_text(token)
+    token_path.chmod(0o600)
+    credentials = [{
+        "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+        "tenant_id": str(tenant[0].tenant_id), "actor_id": str(tenant[0].actor_id),
+        "scopes": ["brain.document.publish"], "client_kind": "worker",
+        "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+    }]
+    credentials_path = state / "credentials.json"
+    credentials_path.write_text(json.dumps(credentials))
+    credentials_path.chmod(0o600)
+    config_path = state / "tier-replay.json"
+    config = {
+        "version": 1, "source_id": source_id, "root": str(root),
+        "credentials_file": str(credentials_path), "token_file": str(token_path),
+    }
+    config_path.write_text(json.dumps(config))
+    config_path.chmod(0o600)
+
+    role = "test_tier_replay_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                sql.Identifier(role), sql.Literal(password),
+            )
+        )
+        grant_tenant_runtime(conn, role, tenant[0].tenant_id)
+    bound_dsn = make_conninfo(admin, user=role, password=password)
+
+    before_bytes = (root / "fictional-statement.txt").read_bytes()
+    for refused in (store.dsn, admin):
+        with pytest.raises(FileOSTierReplayControllerError):
+            run_source_tier_fileos_controller(
+                config_path, refused, review_id, check=True, tenant_bound_db=True,
+            )
+    check = run_source_tier_fileos_controller(
+        config_path, bound_dsn, review_id, check=True, tenant_bound_db=True,
+    )
+    assert check["execution_verified"] is False
+    with store.transaction(worker(tenant[0])) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM knowledge_source_tier_fileos_replays "
+            "WHERE review_id=%s", (review_id,),
+        ).fetchone()["n"] == 0
+    executed = run_source_tier_fileos_controller(
+        config_path, bound_dsn, review_id, tenant_bound_db=True,
+    )
+    assert executed["worker_observed_text_replay"] is True
+    assert executed["financial_claim_approved"] is False
+    assert (root / "fictional-statement.txt").read_bytes() == before_bytes
+    config_path.write_text(json.dumps({**config, "source_id": "wrong_source"}))
+    config_path.chmod(0o600)
+    with pytest.raises(FileOSTierReplayControllerError, match="sensitive details suppressed"):
+        run_source_tier_fileos_controller(
+            config_path, bound_dsn, review_id, tenant_bound_db=True,
+        )
+
+
+def test_worker_revocation_before_receipt_rolls_back(
+    database, tenant, tmp_path: Path,
+):
+    store, admin = database
+    root = tmp_path / "fictional-files"
+    document_id, _, _, source_id = source_file_document(admin, tenant[0], root)
+    review_id = _review(store, tenant[0], document_id)
+    replay = SourceTierFileOSReplayStore(store)
+
+    def revoked() -> None:
+        raise AccessDenied("worker token revoked")
+
+    with pytest.raises(NotFound):
+        replay.record_current_text_replay(
+            worker(tenant[0]), review_id, root, expected_source_id="wrong_source",
+        )
+    with pytest.raises(AccessDenied):
+        replay.record_current_text_replay(
+            worker(tenant[0]), review_id, root,
+            expected_source_id=source_id, authorize=revoked,
+        )
     with store.transaction(worker(tenant[0])) as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM knowledge_source_tier_fileos_replays "

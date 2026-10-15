@@ -1,5 +1,16 @@
 # MasterBrain Build Progress
 
+## Tenant-bound FileOS tier replay command (2026-10-15, ADR-219, open PR)
+
+A document-publish-only worker can now preflight or replay exactly one
+reviewed FileOS text source with `masterbrain fileos replay-tier-text`.
+Tenant-bound database login is mandatory; a synthetic end-to-end test
+refuses shared and owner DSNs, and revocation inside the final transaction
+leaves no receipt. The full disposable-PostgreSQL suite passed 3,594 tests,
+19 skipped (644/645 PostgreSQL-marked executed), browser 167/167, and
+Ruff/mypy/docs passed. No live root was used. PDF/OCR, spreadsheets,
+Email-byte parity, issuer/conflict policy and financial publication remain.
+
 ## Shared FileOS text replay (2026-10-15, ADR-218, open PR)
 
 DataCore now owns one confined read and byte-to-text derivation proof shared

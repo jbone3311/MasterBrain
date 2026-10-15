@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,7 @@ from masterbrain.datacore.extraction import EXTRACTOR_VERSION, MAX_SOURCE_BYTES
 from masterbrain.datacore.fileos import fileos_root_binding_sha256
 
 _REVIEW_ID = re.compile(r"^stier_[a-f0-9]{32}$")
+_SOURCE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,127}$")
 _BASIS_SQL = (
     "SELECT r.id,r.evidence_id,r.document_id,r.source_version_id,"
     "r.source_sha256,r.document_sha256,r.source_quote,"
@@ -47,8 +49,11 @@ _BASIS_SQL = (
 
 def _checked_basis(
     row: dict[str, Any] | None, ctx: TenantContext, root_sha256: str,
+    expected_source_id: str | None,
 ) -> dict[str, Any]:
     if row is None or (ctx.source_ids is not None and row["source_id"] not in ctx.source_ids):
+        raise NotFound()
+    if expected_source_id is not None and row["source_id"] != expected_source_id:
         raise NotFound()
     if (
         row["source_kind"] != "fileos"
@@ -79,6 +84,8 @@ class SourceTierFileOSReplayStore:
 
     def record_current_text_replay(
         self, ctx: TenantContext, review_id: str, root: Path,
+        *, expected_source_id: str | None = None,
+        authorize: Callable[[], None] | None = None,
     ) -> dict[str, Any]:
         """Reacquire a confined current file and seal the exact text replay."""
         self.store.require(ctx, "brain.document.publish")
@@ -88,6 +95,11 @@ class SourceTierFileOSReplayStore:
             raise NotFound()
         if not isinstance(root, Path):
             raise ValueError("invalid_fileos_root")
+        if expected_source_id is not None and (
+            not isinstance(expected_source_id, str)
+            or _SOURCE_ID.fullmatch(expected_source_id) is None
+        ):
+            raise ValueError("invalid_expected_source")
         try:
             root_sha256 = fileos_root_binding_sha256(root)
         except (OSError, RuntimeError, ValueError):
@@ -95,7 +107,8 @@ class SourceTierFileOSReplayStore:
 
         with self.store.transaction(ctx) as conn:
             before = _checked_basis(
-                conn.execute(_BASIS_SQL, (review_id,)).fetchone(), ctx, root_sha256,
+                conn.execute(_BASIS_SQL, (review_id,)).fetchone(), ctx,
+                root_sha256, expected_source_id,
             )
         try:
             proof = replay_current_fileos_text(
@@ -117,10 +130,12 @@ class SourceTierFileOSReplayStore:
             after = _checked_basis(
                 conn.execute(
                     _BASIS_SQL + " FOR SHARE OF i,s", (review_id,),
-                ).fetchone(), ctx, root_sha256,
+                ).fetchone(), ctx, root_sha256, expected_source_id,
             )
             if after != before:
                 raise Conflict("source tier FileOS replay basis changed")
+            if authorize is not None:
+                authorize()
             conn.execute(
                 "INSERT INTO knowledge_source_tier_fileos_replays(tenant_id,review_id,"
                 "evidence_id,document_id,source_version_id,source_id,actor_id,"

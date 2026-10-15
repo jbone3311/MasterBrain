@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-219 exposes the FileOS tier-text replay through a restricted operator
+command with a mandatory tenant-bound database login, exact review/source
+selection and a document-publish-only worker token. Check mode never reads
+the selected file or writes a receipt; execution reauthenticates inside the
+final transaction. Synthetic command-to-database execution and revocation
+rollback pass locally. No live source, PDF/OCR completeness, Email-byte
+replay, financial approval or FileOS cutover is claimed.
+
 ADR-218 adds a point-in-time FileOS text-byte replay receipt for an ADR-217
 human tier review and moves the shared confined read/text derivation into
 DataCore. The older statement replay uses that same path without changing its

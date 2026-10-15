@@ -179,6 +179,7 @@ class WorkerIdentity:
             frozenset({"email.process"}),
             frozenset({"email.document.process"}),
             frozenset({"email.ingest"}),
+            frozenset({"brain.document.publish"}),
             frozenset({"brain.source.ingest", "brain.document.publish"}),
             frozenset({"brain.document.publish", "brain.index.activate"}),
             frozenset({"brain.index.activate"}),

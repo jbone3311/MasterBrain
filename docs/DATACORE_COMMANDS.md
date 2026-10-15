@@ -6,14 +6,37 @@ commands. The legacy `email-brain` command remains the Email capability surface.
 shared command moves, renames, quarantines, deletes or modifies a source file or
 mailbox.
 
-ADR-218 adds an **internal** shared DataCore confined FileOS text replay used
-by statement proposals and human source-tier reviews. It re-reads only one
-already-authorized current source, verifies source bytes and the complete
-normalized text, and records a point-in-time immutable receipt. There is no
-public `masterbrain` subcommand or unattended live-root executor for this yet;
-the tested operation is `SourceTierFileOSReplayStore.record_current_text_replay`
-inside a scoped worker. PDF/OCR/spreadsheet completeness and Email-byte replay
-remain separate gates.
+ADR-218 adds a shared DataCore confined FileOS text replay used by statement
+proposals and human source-tier reviews. It re-reads only one already-authorized
+current source, verifies source bytes and the complete normalized text, and
+records a point-in-time immutable receipt. ADR-219 adds one explicit operator
+command for a selected review; it is not an unattended live-root executor.
+PDF/OCR/spreadsheet completeness and Email-byte replay remain separate gates.
+
+## Replay one reviewed FileOS text source
+
+Store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It has `source_id`, absolute `root`, absolute `credentials_file`
+and `token_file`. The token must belong to a worker with **only**
+`brain.document.publish`; the database login must be DBA-bound to the same
+tenant. Keep the DSN in `MASTERBRAIN_DSN`, not in arguments or config.
+
+```sh
+masterbrain fileos replay-tier-text \
+  --config /private/operator/tier-replay.json \
+  --review-id stier_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode authenticates and checks config, tenant-bound login and physical
+root identity; it does **not** read the selected file or write a receipt.
+After checking, omit `--check` to replay exactly that review. Execution
+rechecks the current source/version, root, source grant, normalized body and
+worker token before recording one immutable receipt. It never modifies a
+source file. The receipt is a historical observation, not a live freshness
+certificate or approval of a financial fact. Only fictional local sources
+have been tested; do not point this at a live root without a separately
+authorized pilot and hosted/restore gates.
 
 Every database-backed private `masterbrain` command below accepts
 `--tenant-bound-db` on both `--check` and execution (ADRs 135, 138 and 139).

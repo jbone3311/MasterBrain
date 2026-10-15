@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-219: added a tenant-bound, document-only worker command for one reviewed
+  FileOS text replay, with no-read check mode, source-ID binding, scrubbed
+  failures and final-transaction credential recheck. Only fictional local
+  execution has been tested.
+
 - ADR-218: extracted a shared DataCore confined FileOS byte/text replay and
   added an immutable worker-observed replay receipt for current human
   source-tier reviews. Statement replay behavior remains tested; no source
