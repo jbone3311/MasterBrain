@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-199 adds an eighth isolated, exact-hash FOS-Master statement recipe
+comparison for Wells Fargo Priority Credit Line supplied text. Nine fictional
+goldens and pinned-donor replay cover both donor layouts, debt-negative
+balances, optional fields, linked-bank exclusion, unknown transaction labels,
+page/header noise and incomplete text; a 1,000-row repeat checks stability.
+This pure parser is not a PDF source-to-text proof, runtime intake, a typed loan
+proposal, a verified debt claim or a FileOS cutover. Schwab and donor reports
+remain outside the parity corpus, and FOS-Master remains unchanged.
+
 ADR-198 adds a seventh isolated, exact-hash FOS-Master statement recipe
 comparison for Wells Fargo brokerage. Fictional goldens cover cash, acquired
 lots, page-break lot deduplication, more-than-six-lot summaries, zero fallback,
@@ -7,7 +16,7 @@ incomplete tails and reconciliation; an optional pinned-donor AST replay and
 1,000-row stress check protect the extraction. It is not connected to runtime
 intake, statement proposal publication, the Brain API or a live source. The
 donor remains unchanged; Wells Fargo credit-line, Schwab and intelligence
-reports still need their own corpus and acceptance.
+reports still needed their own corpus and acceptance at that checkpoint.
 
 ADR-197 is merged on `main` via PR #232 as a synthetic-only tranche: an exact-project
 Markdown read combines independently bounded reviewed events, commitments,

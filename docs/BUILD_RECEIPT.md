@@ -2,6 +2,23 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Wells Fargo credit-line donor text parity — ADR-199
+
+The isolated recipe comparison pins FOS-Master commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` and exact
+`_SYSTEM/tools/statement_extract.py` SHA-256
+`f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe`.
+Nine fictional text goldens preserve both donor layouts, opposite debt signs,
+linked-bank exclusion, page/header noise, missing fields and incomplete text.
+With the pinned local donor supplied, the eight-recipe suites passed **64/64**,
+including exact ordered summary/row/reconciliation replay and a 1,000-row
+repeatability case. The local Python 3.14/PostgreSQL 17.11 deployment gate
+passed **3,443 tests, 8 skipped**, including 576 of 577 PostgreSQL-marked
+tests executed. Ruff, strict mypy, documentation links and 167 browser tests
+also passed. Hosted checks are pending at this branch checkpoint. Parser parity
+does not prove complete PDF extraction or a
+verified loan balance. FOS-Master was not changed.
+
 ## Fictional cross-source launcher package freshness
 
 Merged [PR #236](https://github.com/jbone3311/MasterBrain/pull/236)

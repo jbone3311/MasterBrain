@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-199](adr/199_wells_fargo_credit_line_recipe_parity.md) pins a synthetic
+Wells Fargo credit-line text comparison, preserving both donor layouts and
+debt-sign reconciliation without claiming source-PDF extraction or a verified
+loan balance.
+
 [ADR-198](adr/198_wells_fargo_brokerage_recipe_parity.md) pins a seventh
 synthetic-only donor statement recipe comparison for Wells Fargo brokerage.
 It preserves cash, lot and reconciliation behavior without publishing holdings
