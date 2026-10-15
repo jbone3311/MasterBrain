@@ -2,6 +2,26 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Email XLSX pre-read and replay authorization — current branch
+
+ADR-240's worker now takes the account lock before source-row locks and checks
+approver/worker ownership and the caller authorization hook before loading raw
+MIME or returning a cached result. Fictional revocation/replay, approval,
+historical migration, recovery and protected-truncation tests passed **52/52**
+on disposable loopback PostgreSQL 17.11; **49/49 PostgreSQL-marked** executed.
+An actual-image approval-to-result test was added to the explicit container
+suite and **collected** (11 tests total, four PostgreSQL-marked), not executed:
+Docker is unavailable locally and GitHub's runner/billing gate persists.
+This checkpoint changes no publication or live-source permission.
+
+The complete synthetic suite then passed **3,801 tests, 19 skipped, zero
+failed** in 5m55s on locked Python 3.11.13 and disposable loopback-only
+PostgreSQL 17.11. **684/685 PostgreSQL-marked tests executed**; one skip is
+not a pass. Repository-wide Ruff, strict mypy (138 source files), docs links
+(341 Markdown files, 1,786 local paths/fragments), structural gate and diff
+whitespace check passed. Actual-image execution, hosted exact-head CI and
+independent restore are still open.
+
 ## Isolated result for approved synthetic Email XLSX — current branch
 
 ADR-240 adds migration 0083 and an exact-approval worker that loads one

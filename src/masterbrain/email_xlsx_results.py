@@ -97,7 +97,20 @@ class EmailXlsxResults:
             raise ValueError("invalid XLSX processor")
         processor_version = self.processor.processor_version
         with self.store.transaction(ctx) as conn:
+            identity = conn.execute(
+                "SELECT account_id FROM brain_email_xlsx_extraction_approvals WHERE id=%s",
+                (approval_id,),
+            ).fetchone()
+            if identity is None:
+                raise NotFound()
+            _account_lock(conn, ctx.tenant_id, identity["account_id"])
             before = _current(conn, approval_id, ctx, processor_version)
+            if not _owners(
+                conn, before["account_id"], before["actor_id"], ctx.actor_id,
+            ):
+                raise AccessDenied("Email XLSX owner authorization changed")
+            if authorize is not None:
+                authorize()
             prior = conn.execute(
                 "SELECT text_sha256,sheet_count,cell_count "
                 "FROM brain_email_xlsx_extraction_results WHERE approval_id=%s",

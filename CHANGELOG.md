@@ -1,5 +1,10 @@
 # Changelog
 
+- Recheck the approving owner's membership and caller authorization before
+  reading retained Email XLSX MIME or replaying a cached extraction result.
+  Add revoked-owner and replay tests plus a collected actual-image
+  approval-to-result test; no publication boundary changes.
+
 - Seal one exact-approved synthetic Email XLSX extraction through the pinned
   isolated DataCore worker in a separate immutable result table. The result
   remains private; no Brain search, live mailbox or financial claim is enabled.

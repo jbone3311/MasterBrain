@@ -108,6 +108,71 @@ def test_wrong_processor_and_lost_authorization_leave_no_result(
         ).fetchone()["n"] == 0
 
 
+def test_unowned_worker_never_reads_raw_or_replays_result(
+    database, tenant, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, admin, ctx, approval, processor, _ = _case(database, tenant, monkeypatch)
+    second_owner = uuid4()
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) "
+            "VALUES (%s,%s,'owner')",
+            (ctx.tenant_id, second_owner),
+        )
+        conn.execute(
+            "DELETE FROM tenant_memberships WHERE tenant_id=%s AND user_id=%s",
+            (ctx.tenant_id, ctx.actor_id),
+        )
+    alternate_worker = replace(_worker(ctx), actor_id=second_owner)
+    reads = 0
+    original_load = store.load_raw
+
+    def counted_load(*args, **kwargs):
+        nonlocal reads
+        reads += 1
+        return original_load(*args, **kwargs)
+
+    monkeypatch.setattr(store, "load_raw", counted_load)
+    with pytest.raises(AccessDenied, match="owner authorization"):
+        EmailXlsxResults(store, processor).record(alternate_worker, approval)
+    assert reads == 0
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO tenant_memberships(tenant_id,user_id,role) "
+            "VALUES (%s,%s,'owner')",
+            (ctx.tenant_id, ctx.actor_id),
+        )
+    EmailXlsxResults(store, processor).record(alternate_worker, approval)
+    assert reads == 1
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "DELETE FROM tenant_memberships WHERE tenant_id=%s AND user_id=%s",
+            (ctx.tenant_id, ctx.actor_id),
+        )
+    with pytest.raises(AccessDenied, match="owner authorization"):
+        EmailXlsxResults(store, processor).record(alternate_worker, approval)
+    assert reads == 1
+
+
+def test_cached_result_rechecks_caller_authorization(
+    database, tenant, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _, ctx, approval, processor, _ = _case(database, tenant, monkeypatch)
+    EmailXlsxResults(store, processor).record(_worker(ctx), approval)
+    checks = 0
+
+    def revoked() -> None:
+        nonlocal checks
+        checks += 1
+        raise AccessDenied("worker lease revoked")
+
+    with pytest.raises(AccessDenied, match="worker lease revoked"):
+        EmailXlsxResults(store, processor).record(
+            _worker(ctx), approval, authorize=revoked,
+        )
+    assert checks == 1
+
+
 def test_paused_source_after_approval_refuses_worker(
     database, tenant, monkeypatch: pytest.MonkeyPatch,
 ) -> None:

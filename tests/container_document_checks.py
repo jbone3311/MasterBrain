@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from dataclasses import replace
 from datetime import UTC, datetime
 from email.message import EmailMessage
 from pathlib import Path
@@ -12,9 +13,11 @@ from uuid import UUID, uuid4
 import pytest
 import test_postgres as pg
 from test_datacore_documents import hostile_ooxml
+from test_email_xlsx_approvals_postgres import _prepared as email_xlsx_prepared
 from test_source_tier_fileos_pdf_replay_postgres import _prepared, _review, worker
 from test_source_tier_fileos_xlsx_table_replay_postgres import _prepared as xlsx_prepared
 
+from email_brain.auth import Principal
 from email_brain.domain.models import TenantContext
 from email_brain.store import Store
 from email_brain.synthetic_formats import SHEET_TYPE, WORD_TYPE, docx_bytes, pdf_bytes, xlsx_bytes
@@ -32,6 +35,8 @@ from masterbrain.datacore.extraction import FileOSAdapter
 from masterbrain.datacore.fileos import fileos_root_binding_sha256, snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.datacore.xlsx_tables_processor import DockerXlsxTableProcessor
+from masterbrain.email_xlsx_approvals import EmailXlsxApprovals
+from masterbrain.email_xlsx_results import EmailXlsxResults
 from masterbrain.source_tier_fileos_pdf_replay import SourceTierFileOSPdfReplayStore
 from masterbrain.source_tier_fileos_xlsx_table_replay import (
     SourceTierFileOSXlsxTableReplayStore,
@@ -188,6 +193,42 @@ def test_actual_image_binds_retained_email_xlsx_text_and_rows(
     assert text_proof.text_sha256 == row_proof.text_sha256
     assert row_proof.sheet_count == 1 and row_proof.row_count == 2
     assert "containeremailrowproof" not in repr(row_proof)
+
+
+@pytest.mark.postgres
+def test_actual_image_seals_approved_email_xlsx_result_without_publication(
+    database: tuple[Store, str],
+    tenant: tuple[TenantContext, UUID],
+    processor: DockerDocumentProcessor,
+) -> None:
+    document = xlsx_bytes("Container Atlas", 3100, 7, "containerapprovedproof")
+    store, _, ctx, account, attachment, _, _ = email_xlsx_prepared(
+        database, tenant, document=document,
+    )
+    approval = EmailXlsxApprovals(store, processor.processor_version).approve(
+        Principal(ctx, "human"), account, attachment, uuid4(),
+    )["approval_id"]
+    worker = replace(
+        ctx, scopes=frozenset({"email.document.process", "email.evidence.read"}),
+    )
+    sealed = EmailXlsxResults(store, processor).record(worker, approval)
+    assert sealed["changed"] and sealed["document_published"] is False
+    with store.transaction(ctx) as conn:
+        result = conn.execute(
+            "SELECT extracted_text,text_sha256 FROM brain_email_xlsx_extraction_results "
+            "WHERE approval_id=%s", (approval,),
+        ).fetchone()
+        assert result is not None
+        assert "containerapprovedproof" in result["extracted_text"]
+        assert sealed["text_sha256"] == hashlib.sha256(
+            result["extracted_text"].encode(),
+        ).hexdigest()
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_normalized_documents d "
+            "JOIN brain_email_attachment_bridge_receipts b "
+            "ON b.tenant_id=d.tenant_id AND b.evidence_id=d.evidence_id "
+            "WHERE b.legacy_attachment_id=%s", (attachment,),
+        ).fetchone()["n"] == 0
 
 
 def test_actual_child_refuses_source_mismatch_and_external_relationship(

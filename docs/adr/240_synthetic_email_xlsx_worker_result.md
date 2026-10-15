@@ -9,7 +9,10 @@ Consume only one unexpired ADR-239 human approval for an exact currently
 bridged synthetic Email attachment. The private worker requires
 `email.document.process` and `email.evidence.read`, checks source grants and
 current parent/attachment/account state, and reads only the retained MIME
-identified by the approval. It verifies the MIME hash and size, exact MIME
+identified by the approval. Before any raw read or cached-result replay, it
+takes the account transition lock and rechecks both the approving owner's and
+worker's current memberships plus the caller authorization hook. It verifies
+the MIME hash and size, exact MIME
 part path/hash and XLSX type/name before invoking the same pinned restricted
 DataCore document image used for FileOS. It accepts only a complete
 `bounded_xlsx_v1` result with unscanned status and bounded sheet/cell/text
@@ -36,8 +39,12 @@ effect occurs. FOS-Master remains untouched.
 Fictional disposable-PostgreSQL tests cover exact extraction/replay, wrong
 image, lost final authorization, paused source, uncached formula, immutable
 rows and a forged text digest under a second legitimate approval. Historical
-migration, protected-truncation and populated-upgrade checks pass. The Docker
-pipe is fake in these tests; actual immutable-image execution is still open.
+migration, protected-truncation and populated-upgrade checks pass. A later
+regression also proves revoking the approver denies pre-read and cached replay,
+and that a lost caller authorization hook denies replay. The Docker pipe is
+fake in these local tests. A real-image approval-to-result case is collected
+in the explicit hosted container suite but has not executed locally;
+actual immutable-image execution is still open.
 Next implement an occurrence-specific reviewed DataCore document bridge with
 provenance and chunks, then bounded retrieval/citation. Exact-head hosted CI
 and independent populated restore remain required before merge. Live
