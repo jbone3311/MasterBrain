@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+The owner selected the existing MasterBrain dossier export as the Librarian
+exchange format. ADR-200 adds only a bounded, read-only candidate inventory
+parser with a fictional exporter-to-parser proof. Claimed IDs and citations
+remain unverified and no proposal is staged. The next gate is a separately
+specified evidence-reverified, human-reviewed staging path with missing
+metadata supplied explicitly; no observation time or full quote may be
+invented from the Markdown cutoff or quote preview.
+
 ADR-197 merged via PR #232 as a synthetic-only export tranche: a fail-closed whole-project
 Markdown read checks current full source-quote citations for older reviewed
 assertions before formatting them. A bounded, authorized dossier is possible;
@@ -61,8 +69,9 @@ authorization for either source.
 ADR-186 supplies the first private KnowledgeCore proposal batch and atomic
 per-row human review for source-stated assertions over current, granted,
 nonexcluded evidence. It does not ingest Markdown or admit inferred claims.
-Next: an owner-approved sanitized Librarian layout, proposal-only parser,
-typed inference/basis model, and evidence-safe round-trip tests; keep the
+The owner selected ADR-197's current export layout. Next: evidence-safe
+proposal staging, typed inference/basis model, and full-fidelity round-trip
+tests; keep the
 source exclusion and synthetic-only gates intact.
 
 ADR-184 now supplies the first synthetic pre-index Email exclusion tranche:
@@ -223,7 +232,7 @@ Each lane must pass its own acceptance gate before the next dependent step:
 | Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Deferred by the owner's synthetic-only decision. Continue fictional/disposable scope and exclusion proof; seek new explicit authorization and region, budget, retention, identity and exact-source decisions before any private pilot | No live source, hosted identity, recovery or operations acceptance exists |
 | FileOS migration ([migration plan](FOS_MIGRATION.md)) | Review the six recorded donor-policy differences and fault/platform cases, then run an owner-authorized read-only shadow on a bounded root | No v2 current publication, FileOS effect, donor cutover or retirement is approved |
 | FOS intelligence ([preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md)) | Extend synthetic donor goldens beyond eight isolated recipes to Schwab and reports; prove credit-line PDF-to-text completeness, harden ADR-189's private FileOS text replay into a separately attested worker/source tier, then design owner review/publication and other-format proofs for the statement ledger | No donor-equivalent investment dossier, owner-approved statement row or verified holdings claim exists yet |
-| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds a private source-stated proposal queue and atomic human per-row review; merged ADR-197 adds a bounded, citation-verified Markdown export. Next specify and test a fictional Markdown importer that stages only proposals with exact citations and no model dependency; separately review derivation/basis links | No importer, inferred proposal path, automatic dossier generation or full round trip exists; overfull/uncitable exports refuse, and live-source acceptance remains a prerequisite |
+| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds a private source-stated proposal queue and atomic human per-row review; merged ADR-197 adds a bounded, citation-verified Markdown export; ADR-200 adds a read-only candidate inventory parser for that format. Next design evidence-reverified proposal staging with explicit missing metadata and no model dependency; separately review derivation/basis links | No Markdown-to-proposal staging, inferred proposal path, automatic dossier generation or full round trip exists; overfull/uncitable exports refuse, and live-source acceptance remains a prerequisite |
 | Reviewed actions ([#93](https://github.com/jbone3311/MasterBrain/issues/93)) | Specify typed propose/preview/approve/execute contracts and reversible first actions | The existing Brain API stays read-only until separate grants, safety tests and approval exist |
 
 The donor remains pinned at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`

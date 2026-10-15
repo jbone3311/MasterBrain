@@ -1,5 +1,10 @@
 # Changelog
 
+- Add ADR-200's bounded, read-only candidate inventory for the owner-selected
+  MasterBrain dossier Markdown format. Fictional exporter-to-parser tests prove
+  the shape; claimed citations remain unverified and no Knowledge proposal is
+  staged or approved.
+
 - Add an eighth isolated FOS-Master statement text-recipe baseline for Wells
   Fargo Priority Credit Line (ADR-199). Fictional two-layout, debt-sign,
   linked-bank exclusion and 1,000-row cases compare exactly to the pinned

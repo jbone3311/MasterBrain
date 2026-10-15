@@ -28,6 +28,7 @@ from masterbrain.knowledge_schema import (
     ProjectDossierRequest,
     ProjectWrite,
 )
+from masterbrain.librarian_dossier_intake import inspect_project_dossier_markdown
 from masterbrain.project_artifacts import ProjectArtifactLinks
 from masterbrain.project_dossier_markdown import ProjectDossierMarkdown
 from masterbrain.project_facts import ProjectFacts
@@ -91,6 +92,14 @@ def test_complete_fictional_dossier_with_all_sections_and_fixed_audit(database, 
     assert "source-stated" in markdown
     assert exported["source_freshness"] == "not_asserted"
     assert len(markdown.encode("utf-8")) <= 65_536
+    inventory = inspect_project_dossier_markdown(markdown)
+    assert inventory["section_counts"] == {
+        "Project": 1, "Events": 1, "Commitments": 1,
+        "People and roles": 1, "Related artifacts": 1,
+        "Source-stated project facts": 1,
+    }
+    assert inventory["proposal_ready"] is False
+    assert inventory["staged"] is False
     replay = service.export(ctx, project_id, ProjectDossierRequest(
         recorded_cutoff_at=exported["recorded_cutoff_at"],
     ))
