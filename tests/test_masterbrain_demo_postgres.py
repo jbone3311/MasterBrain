@@ -53,7 +53,8 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
         token_sha256=hashlib.sha256(token.encode()).hexdigest(),
         tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
         scopes={"email.search", "brain.search", "brain.content.read",
-                "brain.changes.read", "knowledge.search", "knowledge.review"},
+                "brain.changes.read", "knowledge.search", "knowledge.read",
+                "knowledge.review"},
         client_kind="human", expires_at=datetime.now(UTC) + timedelta(days=1),
     )])
     client = TestClient(create_app(store, registry))
@@ -61,13 +62,13 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
     email = client.post("/v1/search", json={"query": "Melron"}, headers=headers)
     assert email.status_code == 200 and len(email.json()["results"]) == 2
     combined = client.post(
-        "/v1/brain/search", json={"query": "fictional"}, headers=headers,
+        "/v1/brain/search", json={"query": "briefing"}, headers=headers,
     )
     assert combined.status_code == 200
     sources = {row["source_id"] for row in combined.json()["results"]}
     assert "files_demo" in sources and len(sources) == 2
     current = client.post(
-        "/v1/brain/current-search", json={"query": "fictional"}, headers=headers,
+        "/v1/brain/current-search", json={"query": "briefing"}, headers=headers,
     )
     assert current.status_code == 200, current.text
     assert current.json()["coverage"]["source_availability"] == {
@@ -75,6 +76,21 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
     }
     assert current.json()["layers"]["email_messages"]
     assert current.json()["layers"]["fileos"]
+    email_evidence = current.json()["layers"]["email_messages"][0]["evidence_id"]
+    file_evidence = current.json()["layers"]["fileos"][0]["evidence_id"]
+    project = client.get(f"/v1/knowledge/project/{project_id}", headers=headers)
+    assert project.status_code == 200, project.text
+    assert {row["evidence_id"] for row in project.json()["evidence"]} == {
+        email_evidence, file_evidence,
+    }
+    assert project.json()["source_quote"] == "The Melron project briefing is ready."
+    for evidence_id in (email_evidence, file_evidence):
+        content = client.post(
+            f"/v1/brain/evidence/{evidence_id}/content",
+            json={"max_chars": 4000}, headers=headers,
+        )
+        assert content.status_code == 200, content.text
+        assert "The Melron project briefing is ready." in content.text
     coverage = client.get("/v1/brain/current-coverage", headers=headers)
     assert coverage.status_code == 200, coverage.text
     file_coverage = next(
@@ -86,7 +102,7 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
     )
     assert dossier.status_code == 200
     markdown = dossier.json()["markdown"]
-    assert "Cedar Harbor fictional planning brief" in markdown
+    assert "Melron project briefing is ready" in markdown
     assert markdown.count("citation `") >= 1
     inspected = client.post(
         "/v1/knowledge/dossier-markdown/inspect",
@@ -102,6 +118,15 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
 def test_combined_demo_refuses_email_only_state(tmp_path, monkeypatch):
     state = tmp_path / "email-only"
     state.mkdir(mode=0o700)
+    monkeypatch.setenv("EMAIL_BRAIN_DSN", "unused")
+    with pytest.raises(ValueError, match="fresh private MasterBrain demo state"):
+        cli.seed_masterbrain(state)
+
+
+def test_combined_demo_refuses_old_fixture_marker(tmp_path, monkeypatch):
+    state = tmp_path / "old-combined-demo"
+    state.mkdir(mode=0o700)
+    (state / "masterbrain-demo.marker").write_text("synthetic-masterbrain-demo-v1\n")
     monkeypatch.setenv("EMAIL_BRAIN_DSN", "unused")
     with pytest.raises(ValueError, match="fresh private MasterBrain demo state"):
         cli.seed_masterbrain(state)

@@ -31,9 +31,13 @@ testing the combined MasterBrain product.
   keys; it does not read any user-selected root, mail account or token. The
   generated local file lives only in the private demo state directory.
 - Publish one explicitly synthetic, reviewed project joining an Email and a
-  FileOS evidence occurrence so the current Brain API and cited dossier can
-  be exercised. This is a fixture, not model judgment or an assertion about
-  real financial records. Never make the demo seed a production enrollment.
+  FileOS evidence occurrence. Both source bodies must contain the project's
+  exact quote; a merely linked but unrelated email is not acceptable evidence.
+  Complete and activate the fictional FileOS run/index so both sources appear
+  in current search, not only historical combined search. The current Brain
+  API and cited dossier can then be exercised. This is a fixture, not model
+  judgment or an assertion about real financial records. Never make the demo
+  seed a production enrollment.
 - Refuse the combined seed when the state marker was not created by the
   combined initializer. Before any ingest or publication, verify the database
   tenant and account exactly match the initializer's fictional tenant name,
@@ -47,7 +51,9 @@ Use a fresh disposable PostgreSQL 17 database and private fictional state.
 Check old token scopes unchanged; combined token has no worker/effect scopes;
 wrong account/state refuses before any provider event;
 seed/replay; Email and FileOS Brain search; cited combined project dossier;
-source presence/absence; no live network or source effects. Run full local,
+exact quote in both linked original source bodies; owner-only Markdown
+inspection without automatic publication; source presence/absence; no live
+network or source effects. Run full local,
 browser, docs and deployment gates. Hosted exact-head CI remains mandatory
 before merge. Rollback removes the two new commands while preserving any
 already-generated fictional test records for normal disposable-state cleanup.

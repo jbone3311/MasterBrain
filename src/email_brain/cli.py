@@ -38,10 +38,12 @@ from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import ProjectWrite
 
+_DEMO_PROJECT_QUOTE = "The Melron project briefing is ready."
 _DEMO_FILE_TEXT = (
-    "Cedar Harbor fictional planning brief. The October review joins email and files.\n"
+    f"{_DEMO_PROJECT_QUOTE} The fictional October review joins "
+    "email and files.\n"
 )
-_DEMO_REVISION = "synthetic-masterbrain-demo-v1"
+_DEMO_REVISION = "synthetic-masterbrain-demo-v2"
 
 
 def _env(name: str) -> str:
@@ -209,6 +211,14 @@ def seed_masterbrain(state: Path) -> None:
         )
         for row in plan["results"]
     ]
+    with store.transaction(ctx) as conn:
+        quoted_email = conn.execute(
+            "SELECT DISTINCT evidence_id FROM brain_normalized_documents "
+            "WHERE evidence_id=ANY(%s) AND position(%s IN body)>0",
+            ([row.evidence_id for row in bridged], _DEMO_PROJECT_QUOTE),
+        ).fetchall()
+    if len(quoted_email) != 1:
+        raise ValueError("fictional Email project quote is not uniquely supported")
     root = state / "fictional-files"
     if root.is_symlink():
         raise ValueError("fictional FileOS demo root must not be a symlink")
@@ -250,10 +260,10 @@ def seed_masterbrain(state: Path) -> None:
     project = KnowledgeCore(store).publish(
         ctx,
         ProjectWrite(
-            kind="project", title="Cedar Harbor fictional project",
+            kind="project", title="Melron fictional project",
             description="Fictional cross-source demonstration only", state="active",
-            evidence_ids=[bridged[0].evidence_id, published.evidence_id],
-            source_quote="Cedar Harbor fictional planning brief",
+            evidence_ids=[quoted_email[0]["evidence_id"], published.evidence_id],
+            source_quote=_DEMO_PROJECT_QUOTE,
             confidence=1.0, observed_at=datetime(2026, 9, 22, 12, tzinfo=UTC),
             reviewed=True,
         ),

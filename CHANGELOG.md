@@ -1,5 +1,10 @@
 # Changelog
 
+- Correct the fictional combined-source project so its cited Melron phrase
+  occurs in both the linked email and file. The demo v2 marker requires fresh
+  disposable state instead of silently rewriting a v1 fixture; tests verify
+  the original evidence bodies through the Brain API.
+
 - Complete and activate the fictional FileOS search generation in the
   combined-source demo. Its current Brain search now returns both Email and
   FileOS, and the exported dossier passes the owner-only Markdown citation
