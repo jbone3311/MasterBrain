@@ -4,7 +4,7 @@ Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Bounded project dossier artifact section — ADR-194
 
-The `codex/project-dossier-artifacts` branch adds a fourth independently
+Merged [PR #226](https://github.com/jbone3311/MasterBrain/pull/226) adds a fourth independently
 bounded section to the exact-project dossier and owner workspace. It reuses
 ADR-193's pre-limit current/source-grant/exclusion/quote visibility query;
 the client and browser reject malformed rows. Fictional focused PostgreSQL
@@ -15,11 +15,18 @@ suites passed 166/166. The disposable Python 3.14/PostgreSQL 17.11 full
 suite passed 3,400 tests with six skips (560 of 561 PostgreSQL-marked tests
 executed). Ruff, mypy (106 source files), documentation links and diff checks
 passed. The local repository deployment gate passed (2,841 passed, 565
-skipped; one PostgreSQL-marked test executed in this separate gate).
-Hosted exact-head/restore checks remain pending. No live source, source effect,
-database migration or
-FOS-Master edit is involved. This section is a local progress record, not a
-merge receipt.
+skipped; one PostgreSQL-marked test executed in this separate gate). Exact
+PR head `2c796385c290d86e4cd972d078db7857ff36fc4a` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38661380012),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38661380011)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38661380003).
+Squash merge `47b48c5f3fb806ba90976255c66a06981dd51cf7` landed on `main`;
+independent [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38662472850),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38662472731)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38662472814)
+all passed. The feature branch was removed
+after its tree matched `main`. No live source, source effect, database
+migration or FOS-Master edit is involved.
 
 ## Reviewed project-to-artifact links — ADR-193
 
