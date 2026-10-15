@@ -2,6 +2,19 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Exact-source donor parity gate — current unmerged branch
+
+The older DataCore dedupe/extraction parity command now refuses a dirty
+FOS-Master checkout and verifies the exact SHA-256 of both pinned donor source
+files before importing them, then rechecks provenance after comparison. A
+clean, different donor commit requires an
+explicit exploratory override and cannot be labeled pinned parity. Three
+fictional provenance tests passed, including edited-source and dirty-checkout
+refusals. The real unchanged pinned donor then passed the fixture comparison
+and a 3,000-file stress comparison of hash/name/both dedupe, pair hashes and
+text/HTML/CSV/DOCX/XLSX extraction. This hardens the comparison instrument;
+it does not change FileOS runtime behavior or satisfy live shadow/cutover.
+
 ## Pinned FileOS donor recheck — current unmerged branch
 
 At product-code head `d593ad6`, the synthetic donor-policy shadow was rerun

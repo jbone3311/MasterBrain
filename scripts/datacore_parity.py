@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -23,6 +24,8 @@ from masterbrain.datacore.document_worker import extract_document
 from masterbrain.datacore.extraction import extract_source_version
 
 PINNED_FOS_COMMIT = "218d5caec2f20b9047fd3eb8e027dc671acf0c15"
+PINNED_DEDUP_SHA256 = "093f1800e8faff59b70502865f73e4aeaa56112edd43326fc8c7c548cdc5bff8"
+PINNED_EXTRACT_SHA256 = "746932e5ce033a9b8f8bd7155a88dfbb6d1c57a9916aea2230e6afbe1a3ab269"
 FIXTURE = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "datacore_parity" / "corpus"
 
 
@@ -57,10 +60,39 @@ def normalize(value: Any, root: Path) -> Any:
     return value
 
 
-def git_commit(repo: Path) -> str:
-    import subprocess
+def _git(repo: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    )
+    return result.stdout.strip()
 
-    return subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
+
+def verify_donor(repo: Path, *, allow_unpinned: bool = False) -> str:
+    """Refuse a dirty donor and attest pinned source bytes before any comparison."""
+    repo = repo.resolve(strict=True)
+    commit = _git(repo, "rev-parse", "HEAD")
+    if _git(repo, "status", "--porcelain"):
+        raise ValueError("FOS-Master checkout is dirty; parity donor must be unchanged")
+    if commit != PINNED_FOS_COMMIT:
+        if not allow_unpinned:
+            raise ValueError(f"FOS-Master is {commit}; expected pinned donor {PINNED_FOS_COMMIT}")
+        return commit
+    tools = repo / "_SYSTEM" / "tools"
+    for name, expected in (
+        ("dedup_tool.py", PINNED_DEDUP_SHA256),
+        ("doc_extract.py", PINNED_EXTRACT_SHA256),
+    ):
+        try:
+            actual = hashlib.sha256((tools / name).read_bytes()).hexdigest()
+        except OSError as exc:
+            raise ValueError(f"missing pinned donor source: {name}") from exc
+        if actual != expected:
+            raise ValueError(f"pinned donor source hash changed: {name}")
+    return commit
 
 
 def build_stress_corpus(root: Path, total_files: int) -> None:
@@ -208,9 +240,10 @@ def main() -> int:
     parser.add_argument("--skip-stress", action="store_true")
     args = parser.parse_args()
 
-    commit = git_commit(args.fos_repo)
-    if commit != PINNED_FOS_COMMIT and not args.allow_unpinned:
-        parser.error(f"FOS-Master is {commit}; expected pinned donor {PINNED_FOS_COMMIT}")
+    try:
+        commit = verify_donor(args.fos_repo, allow_unpinned=args.allow_unpinned)
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as exc:
+        parser.error(str(exc))
 
     donor = load_donor(args.fos_repo)
     donor_extractor = load_donor_extractor(args.fos_repo)
@@ -239,14 +272,21 @@ def main() -> int:
             if expected != actual:
                 failures[name] = {"fos_master": expected, "masterbrain": actual}
 
+    try:
+        if verify_donor(args.fos_repo, allow_unpinned=args.allow_unpinned) != commit:
+            parser.error("FOS-Master donor commit changed during parity run")
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as exc:
+        parser.error(str(exc))
+
     if failures:
         print(json.dumps(failures, indent=2, sort_keys=True))
         return 1
-    stress = "disabled" if args.skip_stress else f"{args.stress_files} base files plus edges"
+    stress_label = "disabled" if args.skip_stress else f"{args.stress_files} base files plus edges"
+    donor_status = "pinned" if commit == PINNED_FOS_COMMIT else "exploratory unpinned"
     print(
-        f"PASS: DataCore matches FOS-Master {commit}; "
+        f"PASS: DataCore matches {donor_status} FOS-Master {commit}; "
         f"fixture scans, pair comparisons, hashes, text/HTML/CSV/DOCX/XLSX extraction, "
-        f"stress={stress}"
+        f"stress={stress_label}"
     )
     return 0
 
