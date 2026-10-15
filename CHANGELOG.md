@@ -1,5 +1,9 @@
 # Changelog
 
+- Prepared an explicit CI check that replays a fictional reviewed FileOS PDF
+  through the actual pinned document image into its protected PostgreSQL
+  receipt. The container result remains pending until hosted jobs start.
+
 - ADR-227: exposed one current reviewed FileOS PDF text-layer replay through
   a tenant-bound, exact-source operator command with no-selected-PDF-read
   check mode, pinned image config and final worker reauthentication. Fictional

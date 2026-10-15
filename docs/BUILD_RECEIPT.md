@@ -2,6 +2,28 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Real-image PDF replay gate prepared — pending container execution
+
+The explicit `tests/container_document_checks.py` suite now includes a
+reviewed FileOS PDF replay through its **actual pinned** document image and
+protected PostgreSQL receipt, with source bytes and modification time checked
+for no effect. The ordinary simulated fixture accepts the CI image digest so
+the same text/normalizer basis can be replayed. The new container test
+**collected** locally but was not executed: this Mac has no container runtime,
+and exact-head hosted jobs are prevented from starting by the account payment/
+spending-limit restriction. Do not count this as a passed real-image gate.
+
+Against a fresh locked Python 3.11 environment and disposable PostgreSQL
+17.11, the non-container suite passed **3,654 tests, 19 skipped** (657/658
+PostgreSQL-marked executed), including the focused PDF command/replay tests
+**18/18**. The browser suite passed **167/167**; Ruff, mypy over 125 source
+files, docs (328 Markdown / 1,716 local paths/fragments) and the post-suite
+structural deployment gate passed. A preflight run in a stale local Python
+3.14 environment produced four subprocess import failures because the local
+editable package path was not loaded; all four passed in the fresh locked
+environment and the full rerun was green. The failed preflight was an
+environment artifact, not a successful test run.
+
 ## Tenant-bound FileOS PDF replay command — ADR-227
 
 The private command authenticates an exact document-only worker, pins source

@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 import pytest
 import test_postgres as pg
 from test_datacore_documents import hostile_ooxml
+from test_source_tier_fileos_pdf_replay_postgres import _prepared, _review, worker
 
 from email_brain.domain.models import TenantContext
 from email_brain.store import Store
@@ -20,6 +21,7 @@ from masterbrain.datacore.document_processor import DockerDocumentProcessor
 from masterbrain.datacore.extraction import FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.source_tier_fileos_pdf_replay import SourceTierFileOSPdfReplayStore
 
 database, tenant = pg.database, pg.tenant
 
@@ -149,3 +151,45 @@ def test_actual_fileos_documents_publish_to_shared_search_without_source_writes(
         path = tmp_path / name
         assert hashlib.sha256(path.read_bytes()).hexdigest() == digest
         assert path.stat().st_mtime_ns == modified
+
+
+@pytest.mark.postgres
+def test_actual_image_replays_one_reviewed_pdf_without_source_effects(
+    database: tuple[Store, str],
+    tenant: tuple[TenantContext, UUID],
+    processor: DockerDocumentProcessor,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exercise ADR-226 through the actual restricted image, not a fake pipe."""
+    store, _, ctx, root, _, document_id, _, _, result = _prepared(
+        database, tenant, tmp_path, monkeypatch,
+        image_id=os.environ["MASTERBRAIN_DOCUMENT_IMAGE_ID"],
+    )
+    assert result.status == "extracted"
+    review_id = _review(store, ctx, document_id)
+    source = root / "statement.pdf"
+    original = source.read_bytes()
+    before_mtime = source.stat().st_mtime_ns
+    replay = SourceTierFileOSPdfReplayStore(store, processor)
+    receipt = replay.record_current_pdf_replay(worker(ctx), review_id, root)
+    assert receipt == {
+        "review_id": review_id,
+        "worker_observed_pdf_text_replay": True,
+        "source_effects": False,
+        "financial_claim_approved": False,
+    }
+    assert source.read_bytes() == original
+    assert source.stat().st_mtime_ns == before_mtime
+    with store.transaction(worker(ctx)) as conn:
+        saved = conn.execute(
+            "SELECT source_sha256,source_size_bytes,text_sha256,normalizer,page_count "
+            "FROM knowledge_source_tier_fileos_pdf_replays WHERE review_id=%s",
+            (review_id,),
+        ).fetchone()
+    assert saved is not None
+    assert saved["source_sha256"] == hashlib.sha256(original).hexdigest()
+    assert saved["source_size_bytes"] == len(original)
+    assert saved["text_sha256"] == hashlib.sha256(result.text.encode()).hexdigest()
+    assert saved["normalizer"] == processor.processor_version
+    assert saved["page_count"] == 1

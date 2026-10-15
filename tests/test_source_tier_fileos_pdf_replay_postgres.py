@@ -63,7 +63,7 @@ def _review(store: Store, ctx: pg.TenantContext, document_id: str) -> str:
 
 def _prepared(
     database, tenant, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-    raw: bytes | None = None,
+    raw: bytes | None = None, *, image_id: str = IMAGE,
 ):
     store, admin = database
     ctx = tenant[0]
@@ -78,7 +78,7 @@ def _prepared(
     from masterbrain.datacore.document_contract import decode_result, source_for
     result = decode_result(output, source_for(raw, version_id, "statement.pdf", digest, PDF_TYPE))
     processor, _, _ = fake_docker(
-        monkeypatch, processor=DockerDocumentProcessor(IMAGE), output=output,
+        monkeypatch, processor=DockerDocumentProcessor(image_id), output=output,
     )
     # The database fixture deliberately uses the same stable version ID.
     root.mkdir()

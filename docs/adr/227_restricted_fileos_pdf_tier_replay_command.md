@@ -44,7 +44,10 @@ Fictional tests must prove closed/private config, exact worker scope, no
 selected-source read or processor construction in check mode, shared/owner
 DSN refusal, exact source/review binding, actual command-to-database receipt,
 unchanged bytes and final authorization rollback. Run full local, hosted and
-independent restore gates before merge. Next validate the actual immutable
-container image, then address OCR/visual completeness, Email attachment PDF
+independent restore gates before merge. The dedicated CI document-container
+suite now includes a reviewed-PDF receipt test through the actual pinned image;
+it is not counted as passed until that job runs on the exact PR head. Next
+validate the actual immutable container image, then address OCR/visual
+completeness, Email attachment PDF
 derivation and issuer/conflict policy before any financial claim. A live root
 requires a new owner authorization.

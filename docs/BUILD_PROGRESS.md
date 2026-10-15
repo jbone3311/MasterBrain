@@ -1,5 +1,16 @@
 # MasterBrain Build Progress
 
+## Actual-image FileOS PDF receipt gate prepared (2026-10-15, open PR)
+
+The existing dedicated document-container CI suite now contains a fictional
+reviewed FileOS PDF replay through the actual pinned image and PostgreSQL
+receipt, checking unchanged source bytes and modification time. Its synthetic
+basis helper accepts the CI image digest without changing the ordinary simulated
+tests. Local collection and Ruff pass; no container runtime is installed here.
+The real-image result is **pending**, not passed, because hosted jobs have not
+started under the account payment/spending-limit restriction. This does not
+clear independent restore, live-source, OCR or financial-truth gates.
+
 ## Tenant-bound FileOS PDF replay command (2026-10-15, ADR-227, open PR)
 
 `masterbrain fileos replay-tier-pdf` now checks or executes exactly one
