@@ -1,20 +1,20 @@
 # MasterBrain Roadmap
 
-ADR-195's synthetic implementation is in draft PR #228, pending full
-exact-head/merged-main gates: direct source-stated, exact-quote-checked
+ADR-195's synthetic implementation is merged via PR #228: direct source-stated, exact-quote-checked
 project facts and a source-scoped dossier section. It is not a Markdown export,
-an inferred-fact path or live-source acceptance.
+an inferred-fact path or live-source acceptance. Exact PR-head and independent
+merged-main gates passed.
 
 ADR-193 supplies reviewed project-to-artifact evidence links. ADR-194 adds a
 separately bounded, current-authorized artifact section to the project dossier
-and owner workspace. After the fact gate, render only
+and owner workspace. The next export slice must render only
 currently authorized, export-time-verified citations. Neither step is
 automatic association, a computed current file roster, a complete Librarian
 round trip, or a FileOS effect.
 
 ADR-192 tightens the synthetic Librarian proposal path: project aliases now
 need an exact quote in their own evidence. Before a Markdown dossier can claim
-citations, finish the source-scoped fact gate and verify each displayed quote
+citations, verify each displayed quote
 against currently authorized evidence. Historical directly
 published Knowledge rows are not retroactively quote-certified. This remains
 read-only planning, not a live-source or FileOS cutover gate.

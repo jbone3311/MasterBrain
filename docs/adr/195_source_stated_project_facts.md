@@ -1,7 +1,7 @@
-# ADR-195 — Source-stated reviewed project facts (proposed)
+# ADR-195 — Source-stated reviewed project facts
 
-Status: synthetic implementation candidate on draft PR #228. Exact-head and
-merged-main gates remain pending. This decision is not a release,
+Status: accepted and merged in PR #228 after exact-head and independent
+merged-main gates passed. This decision is not a release,
 Markdown-export, inferred-fact, real-source or FileOS-cutover approval.
 
 ## Context

@@ -30,10 +30,10 @@ excluded content into an indexed artifact.
 |---|---|---|
 | [#175](https://github.com/jbone3311/MasterBrain/issues/175) Project aliases | ADR-182 adds reviewed, evidence-linked project aliases and ambiguous, source-scoped candidate lookup. Older projects keep exact-title fallback. | A complete dossier is still missing. An alias names a project; it does not assert that a legal-entity record is the same object or auto-merge projects. |
 | [#176](https://github.com/jbone3311/MasterBrain/issues/176) Deal roles | ADR-183 adds reviewed, append-only person/organization-to-project role assertions with valid time, evidence, reviewer, supersession, corrections and source-grant-safe dossier/client/browser reads. | Registry validation and a computed current roster remain separate. Bounded role slugs are not permissions; unknown syntactically valid slugs remain possible until the registry exists. |
-| [#177](https://github.com/jbone3311/MasterBrain/issues/177) Derivation | Missing as a first-class attribute; confidence/status are not derivation. | Cover all relevant assertion kinds, not only four. Keep source-stated quotes mandatory. An inference without a direct quote needs typed links to reviewed basis assertions *and* their evidence, with transitive source-grant checks. Never put an assertion ID in `knowledge_evidence.evidence_id` or use `stance=context` as a substitute for a typed basis link. |
+| [#177](https://github.com/jbone3311/MasterBrain/issues/177) Derivation | Partial: ADR-195 project facts have a first-class `derivation`, currently constrained to `source_stated`; other assertion kinds do not have a common derivation contract. Confidence/status are not derivation. | Cover all relevant assertion kinds. Keep source-stated quotes mandatory. An inference without a direct quote needs typed links to reviewed basis assertions *and* their evidence, with transitive source-grant checks. Never put an assertion ID in `knowledge_evidence.evidence_id` or use `stance=context` as a substitute for a typed basis link. |
 | [#178](https://github.com/jbone3311/MasterBrain/issues/178) Proposal queue | ADR-186 adds a private source-stated Knowledge queue and atomic, explicit per-row human review. It is not wired to Markdown, inferred claims or model suggestions. | Feed a separately specified, synthetic-only Markdown importer into this queue after an owner-approved sanitized format; add typed inference/basis handling in its own gate. No unreviewed proposal enters search, dossier or assistant retrieval. |
 | [#179](https://github.com/jbone3311/MasterBrain/issues/179) Amounts, owners, fuzzy dates | Partial: claims have a value type; commitments have one optional owner and one exact due instant. | Add exact decimal + unit/currency with validation, an evidence-linked multi-owner association, and raw due wording plus an optional reviewed window/timezone. Preserve `due_at` semantics. A fuzzy interval needs an explicit overlap query contract; do not silently change ADR-161's exact-time due view. |
-| [#180](https://github.com/jbone3311/MasterBrain/issues/180) Markdown dossier | Partial: ADR-162/183/194 return bounded JSON for an exact reviewed project with events, commitments, roles and authorized artifact-link history. Draft PR #228 adds a source-stated, source-scoped fact page/section under ADR-195. | After the fact branch passes gates, add export-time quote verification and a deterministic renderer. Each factual line cites visible evidence. Inferred lines name basis citations and say `inferred`; they must not invent a direct quote. Keep machine round-trip IDs in an authorized sidecar/manifest rather than an unbounded hidden YAML block in shareable prose. |
+| [#180](https://github.com/jbone3311/MasterBrain/issues/180) Markdown dossier | Partial: ADR-162/183/194 return bounded JSON for an exact reviewed project with events, commitments, roles and authorized artifact-link history. ADR-195 adds a source-stated, source-scoped fact page/section on `main`. | Add export-time quote verification and a deterministic renderer. Each factual line cites visible evidence. Inferred lines name basis citations and say `inferred`; they must not invent a direct quote. Keep machine round-trip IDs in an authorized sidecar/manifest rather than an unbounded hidden YAML block in shareable prose. |
 | [#181](https://github.com/jbone3311/MasterBrain/issues/181) Spreadsheets | **Incorrectly marked missing.** FileOS already extracts bounded CSV text and isolated XLSX cached values (ADRs 049/053); archive XLSX is also supported. | The gap is structured table/cell locators and a separately authorized Email-attachment extraction route. Reuse the isolated parser; never evaluate formulas/macros or claim that absent cached values were extracted. Preserve per-source status and limits. |
 | [#182](https://github.com/jbone3311/MasterBrain/issues/182) Attachment index | Partial: ADR-065/migration 0021 create distinct child items, evidence and parent part links per Email attachment occurrence; ADR-193 adds a reviewed project link to one such evidence ID and ADR-194 shows it in the dossier under current grants. | Add richer occurrence/parent metadata reads. **Do not collapse same-hash occurrences into one artifact:** dedupe shared bytes/index work if safe, but retain every message/attachment occurrence and its provenance. |
 | [#183](https://github.com/jbone3311/MasterBrain/issues/183) Fact-name registry | Missing; claim predicates and event types are constrained slugs, not a controlled vocabulary. | Version a small vocabulary with aliases and typed/unit constraints. Begin in advisory/proposal mode so existing reviewed writes and history are not invalidated. Require an explicit compatibility/migration ADR before strict rejection. |
@@ -57,19 +57,19 @@ project dossier and owner workspace. This advances issues #180 and #182, but
 no Markdown renderer or importer is enabled. A link is a reviewed association,
 not evidence that its source file is current truth or safe to rename.
 
-[ADR-195](adr/195_source_stated_project_facts.md) implements on draft PR #228 a separate
+[ADR-195](adr/195_source_stated_project_facts.md) implements on merged PR #228 a separate
 source-stated project-fact kind rather than recasting a project as an entity.
 It requires exact quote binding on new writes and current source checks before
-read limits. Exact-head/merged-main gates and the later export-time recheck
-remain open; inference/basis storage is a separate gate.
+read limits. Exact PR-head and merged-main gates passed; the later export-time
+recheck remains open. Inference/basis storage is a separate gate.
 
 1. Existing foundations are ADR-169's code-first boundary, ADR-182/183's
    reviewed aliases and roles, ADR-186's private source-stated proposal queue,
    and ADR-193/194's reviewed artifact-link history. None is a Markdown
    importer/exporter or a current-truth guarantee.
-2. Merge ADR-195's source-stated project facts only after independent
-   PostgreSQL/RLS, client/browser, full CI, strict-runtime and restore gates.
-   Its new fact writes check quotes and the dossier rechecks current presence.
+2. ADR-195's source-stated project facts passed independent PostgreSQL/RLS,
+   client/browser, exact-head full CI, strict-runtime and restore gates before
+   merge. Its new fact writes check quotes and the dossier rechecks current presence.
    Keep historical direct publications unverified until each displayed citation is checked
    against currently authorized evidence at export time. Do not add inferred
    fact publication through this slice.

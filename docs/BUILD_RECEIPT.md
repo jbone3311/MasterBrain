@@ -2,9 +2,9 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Source-stated reviewed project facts — ADR-195 (draft PR #228)
+## Source-stated reviewed project facts — ADR-195
 
-The draft [PR #228](https://github.com/jbone3311/MasterBrain/pull/228) adds a
+Merged [PR #228](https://github.com/jbone3311/MasterBrain/pull/228) adds a
 synthetic-only reviewed project-fact write/page and independent dossier/owner
 workspace section under forward migration 0066. It freezes all direct
 evidence IDs, anchors one exact normalized-text quote, filters every current
@@ -22,12 +22,18 @@ Ruff passed and strict mypy passed **107 source files**. A prior local Python
 3.14 environment had a damaged older editable installation (missing package
 `RECORD`), causing six unrelated subprocess import failures after `uv sync`;
 the same six tests passed unchanged in the fresh environment. The disposable
-local Docker restore could not run because Docker is absent; the hosted
-populated restore drill now seeds and checks a project fact for each of two
-fictional tenants, but has not yet executed on this head. Documentation and
-diff checks passed, and no
-exact-head hosted CI, strict-runtime, restore or merge result is yet claimed
-for this branch.
+local Docker restore could not run because Docker is absent. The hosted
+populated restore drill seeds and checks a project fact for each of two
+fictional tenants. Documentation and diff checks passed. Exact PR head
+`dffd00477d0a217f91495d3e2336fa8f6764c08b` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38668120375),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38668120414)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38668120482).
+Squash merge `35bbc03f3b5ab178c5da861cffe876fe1f6e3fa7` landed on `main`.
+Its independent [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38669033646)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38669033644)
+passed, as did independent [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38669033622).
+No live source or FOS-Master cutover is implied.
 
 ## Bounded project dossier artifact section — ADR-194
 
