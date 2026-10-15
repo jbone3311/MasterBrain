@@ -1,12 +1,18 @@
 # MasterBrain Roadmap
 
+ADR-211 now supplies the first authorized current-evidence project fact report
+through KnowledgeCore and the external client. The next financial/report step
+is a controlled predicate and exact unit/currency/ownership model, followed
+by a known-answer fictional company dossier; no donor money sum is promoted
+to an investment balance. Hosted gates are still pending.
+
 ADR-209/210 compare all five FOS intelligence-report row shapes in isolated,
-synthetic, nonpublishing code. The next product tranche is not to expose the
-donor reports verbatim: map authorized current DataCore/KnowledgeCore evidence
-to a source-grant-aware report projection, preserving units, provenance,
-contradictions and review state; then run a known-answer fictional company
-dossier and denial/currentness tests. The donor's money-fact sum must never be
-reported as an investment balance. Hosted gates and FileOS cutover remain open.
+synthetic, nonpublishing code. ADR-211 takes the first product projection from
+authorized current reviewed facts; it deliberately leaves amount units,
+currency, ownership and completeness unresolved. Next, design those typed
+contracts and run a known-answer fictional company dossier with denial and
+currentness tests. The donor's money-fact sum must never be reported as an
+investment balance. Hosted gates and FileOS cutover remain open.
 
 ADR-208 now supplies a separate disposable combined-source demo for the owner
 to run locally: fictional Email and FileOS evidence flows through DataCore,

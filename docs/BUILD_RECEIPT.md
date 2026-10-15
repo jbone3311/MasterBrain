@@ -2,6 +2,30 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Current-evidence project fact report — ADR-211
+
+The new read-only `/v1/knowledge/projects/{project_id}/facts/report` route
+groups one existing current-authorized, reviewed fact page by predicate. It
+returns each source-stated compact fact and its evidence IDs, flags divergent
+asserted previews and disputed/retracted rows, and marks page/truncation
+limits. It explicitly performs no numeric aggregation. The external read
+client checks the closed envelope and rejects a forged investment-total label.
+Fictional PostgreSQL tests prove hidden-before-limit source grants, assistant
+allow/deny, stale-version refusal, closed query limits and no-store responses.
+Focused report/fact suites passed **12/12**, including all ten PostgreSQL-
+marked cases; pure grouping tests passed **2/2** within that set.
+
+The exact-current full local Python 3.14/PostgreSQL 17.11 suite passed
+**3,535 tests, 19 skipped** (629 of 630 PostgreSQL-marked cases executed).
+The ten optional DuckDB donor-replay tests still skip in the locked project
+environment; the prior ADR-210 direct local donor run remains separately
+recorded below. Browser tests passed **167/167**; Ruff, strict mypy (113
+source files), documentation links (312 Markdown files, 1,658 paths/fragments)
+and diff whitespace passed. The separate local deployment gate passed **2,909
+tests, 645 skipped** (three PostgreSQL-marked cases executed), not a substitute
+for the full database suite. Hosted exact-head and merged-main gates remain
+required. No live source, financial total or FOS-Master change occurred.
+
 ## Remaining isolated FOS report row shapes — ADR-210
 
 The exact pinned read-only donor `reporting.py` from ADR-209 now also anchors

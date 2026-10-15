@@ -704,6 +704,98 @@ class BrainReadClient:
             raise BrainClientError("invalid_response")
         return data
 
+    def project_fact_report(
+        self, project_id: str, *, visibility: KnowledgeVisibility = "unsuperseded",
+        limit: int = 10, recorded_cutoff_at: datetime | None = None,
+        after: str | None = None,
+    ) -> dict[str, Any]:
+        """Read and validate one grouped, non-aggregating reviewed-fact page."""
+        if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
+            raise BrainClientError("invalid_request")
+        if (type(limit) is not int or recorded_cutoff_at is not None
+                and not isinstance(recorded_cutoff_at, datetime)
+                or after is not None and not isinstance(after, str)):
+            raise BrainClientError("invalid_request")
+        try:
+            request = ProjectFactPageRequest(
+                visibility=visibility, limit=limit,
+                recorded_cutoff_at=recorded_cutoff_at, after=after,
+            )
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        query = httpx.QueryParams(request.model_dump(mode="json", exclude_none=True))
+        data = self._request(
+            "GET", f"/v1/knowledge/projects/{project_id}/facts/report?{query}"
+        )
+        cutoff = self._aware_datetime(data.get("recorded_cutoff_at"))
+        groups = data.get("groups")
+        cursor = data.get("next_cursor")
+        if (
+            set(data) != {"project_id", "groups", "next_cursor", "recorded_cutoff_at",
+                          "limit", "visibility", "coverage", "numeric_aggregation",
+                          "interpretation", "untrusted_content"}
+            or data.get("project_id") != project_id
+            or data.get("visibility") != visibility
+            or type(data.get("limit")) is not int or data["limit"] != limit
+            or cutoff is None
+            or recorded_cutoff_at is not None and cutoff != recorded_cutoff_at
+            or data.get("coverage")
+            != "current_authorized_source_stated_reviewed_facts_page_only"
+            or data.get("numeric_aggregation")
+            != "none_units_currency_ownership_unverified"
+            or data.get("interpretation")
+            != "reviewed_source_statements_not_investment_truth"
+            or data.get("untrusted_content") is not True
+            or not isinstance(groups, list) or len(groups) > limit
+        ):
+            raise BrainClientError("invalid_response")
+        flattened: list[dict[str, Any]] = []
+        predicates: list[str] = []
+        for group in groups:
+            if not isinstance(group, dict) or set(group) != {
+                "predicate", "facts", "different_asserted_previews_on_page",
+                "comparison_incomplete", "has_disputed_or_retracted_on_page",
+            }:
+                raise BrainClientError("invalid_response")
+            predicate, facts = group["predicate"], group["facts"]
+            if (not isinstance(predicate, str) or not _EVENT_TYPE.fullmatch(predicate)
+                    or not isinstance(facts, list) or not facts
+                    or len(facts) > limit or any(
+                        not self._valid_project_fact(row, project_id, cutoff)
+                        or row["predicate"] != predicate for row in facts
+                    )):
+                raise BrainClientError("invalid_response")
+            asserted = [row for row in facts if row["assertion_status"] == "asserted"]
+            if (
+                group["different_asserted_previews_on_page"] is not
+                (len({row["value_preview"] for row in asserted}) > 1)
+                or group["comparison_incomplete"] is not
+                (cursor is not None or after is not None
+                 or any(row["value_truncated"] for row in asserted))
+                or group["has_disputed_or_retracted_on_page"] is not
+                any(row["assertion_status"] != "asserted" for row in facts)
+            ):
+                raise BrainClientError("invalid_response")
+            predicates.append(predicate)
+            flattened.extend(facts)
+        if (
+            predicates != sorted(set(predicates))
+            or len(flattened) > limit
+            or len({row["object_id"] for row in flattened}) != len(flattened)
+            or cursor is not None and (
+                not flattened or len(flattened) != limit
+                or not isinstance(cursor, str) or not _PROJECT_FACT_ID.fullmatch(cursor)
+                or cursor == after or cursor != min(
+                    flattened,
+                    key=lambda row: (
+                        self._aware_datetime(row["recorded_at"]), row["object_id"]
+                    ),
+                )["object_id"]
+            )
+        ):
+            raise BrainClientError("invalid_response")
+        return data
+
     @classmethod
     def _valid_project_fact(cls, row: Any, project_id: str, cutoff: datetime) -> bool:
         if not isinstance(row, dict):

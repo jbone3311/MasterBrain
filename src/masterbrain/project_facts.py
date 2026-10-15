@@ -109,6 +109,42 @@ def compact_project_fact(row: Any) -> dict[str, Any]:
     }
 
 
+def _report_from_fact_page(page: dict[str, Any], *, after: str | None) -> dict[str, Any]:
+    """Group one authorized page; never infer a total or complete truth state."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in page["results"]:
+        grouped.setdefault(row["predicate"], []).append(row)
+    groups = []
+    for predicate, facts in sorted(grouped.items()):
+        asserted = [row for row in facts if row["assertion_status"] == "asserted"]
+        previews = {row["value_preview"] for row in asserted}
+        groups.append({
+            "predicate": predicate,
+            "facts": facts,
+            "different_asserted_previews_on_page": len(previews) > 1,
+            "comparison_incomplete": (
+                page["next_cursor"] is not None
+                or after is not None
+                or any(row["value_truncated"] for row in asserted)
+            ),
+            "has_disputed_or_retracted_on_page": any(
+                row["assertion_status"] != "asserted" for row in facts
+            ),
+        })
+    return {
+        "project_id": page["project_id"],
+        "groups": groups,
+        "next_cursor": page["next_cursor"],
+        "recorded_cutoff_at": page["recorded_cutoff_at"],
+        "limit": page["limit"],
+        "visibility": page["visibility"],
+        "coverage": "current_authorized_source_stated_reviewed_facts_page_only",
+        "numeric_aggregation": "none_units_currency_ownership_unverified",
+        "interpretation": "reviewed_source_statements_not_investment_truth",
+        "untrusted_content": True,
+    }
+
+
 def _export_preview(value: str) -> tuple[str, bool]:
     """Clip at a UTF-8 boundary; an exact quote prefix remains an exact span."""
     raw = value.encode("utf-8", errors="strict")
@@ -340,6 +376,13 @@ class ProjectFacts:
             "coverage": "current_authorized_source_stated_reviewed_facts",
             "untrusted_content": True,
         }
+
+    def report(
+        self, ctx: TenantContext, project_id: str, request: ProjectFactPageRequest,
+    ) -> dict[str, Any]:
+        """Group one current-authorized fact page without amount aggregation."""
+        page = self.page(ctx, project_id, request)
+        return _report_from_fact_page(page, after=request.after)
 
     def export_markdown(
         self, ctx: TenantContext, project_id: str, request: ProjectFactPageRequest,

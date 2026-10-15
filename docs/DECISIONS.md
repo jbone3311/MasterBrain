@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-211](adr/211_current_project_fact_report.md) exposes a first source-
+granted, current-evidence project fact report from reviewed KnowledgeCore rows.
+It groups one bounded page with citation IDs and uncertainty flags, never a
+numeric investment total.
+
 [ADR-210](adr/210_fos_entity_money_report_baseline.md) compares the remaining
 three FOS intelligence-report row shapes on fictional data. Duplicate entity
 mentions, distinct-domain spread and DuckDB money rounding are pinned, but

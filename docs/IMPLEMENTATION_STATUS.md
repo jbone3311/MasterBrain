@@ -1,12 +1,20 @@
 # MasterBrain Implementation Status
 
+ADR-211 adds a read-only, source-granted project fact report API and validated
+external-client method. It groups one bounded page of current-evidence,
+reviewed source-stated facts by predicate; differing asserted previews and
+disputed/retracted rows are page-local review signals. It does not aggregate
+money, certify a contradiction, know currency/ownership, or create a complete
+company dossier. Local fictional PostgreSQL tests pass; hosted exact-head
+and merged-main gates remain open.
+
 ADR-210 extends the isolated ADR-209 donor comparison to `top_entities`,
 `entity_crossdomain` and `dollars_by_domain`. Fictional goldens and direct
 read-only pinned-donor DuckDB replay cover duplicate mentions, spread,
 filtering, rounding and 1,000-row repeats. All five donor report row shapes
-now have a local comparison, but there is no authorized runtime report,
-financial truth claim, live-source use or FOS-Master cutover. The donor money
-sum is explicitly unsafe as an investment total.
+now have a local comparison, but none is an authorized runtime report,
+financial truth claim, live-source use or FOS-Master cutover. ADR-211's
+separate reviewed-fact page is not a donor money report or investment total.
 
 ADR-209 first added an isolated, nonpublishing comparison of the pinned
 FOS-Master `coverage` and `timeline` intelligence-report row semantics.

@@ -182,6 +182,15 @@ source effects or an alternate route through KnowledgeCore.
   IDs, not the quote itself. An aware cutoff and visible cursor bind paging;
   hidden evidence and successors are filtered before limit. A quote still
   needs export-time verification before appearing as a Markdown citation.
+- `GET /v1/knowledge/projects/{project_id}/facts/report` — ADR-211 groups one
+  current-authorized reviewed fact page by predicate under `knowledge.search`.
+  Each fact keeps its source IDs and status. Page-local divergent asserted
+  previews and disputed/retracted rows are signals for review, not certified
+  contradictions. Continuation, prior cursor and truncated values mark
+  comparison incomplete. It explicitly performs no amount aggregation and
+  is not an investment balance or complete dossier. Enrolled assistants see
+  only their granted sources; `BrainReadClient.project_fact_report` validates
+  the closed response before use.
 - `GET /v1/knowledge/projects/{project_id}/facts/markdown` — ADR-196
   synthetic-only, bounded **fact fragment**, requiring both
   `knowledge.search` and `brain.content.read`. It rechecks the complete

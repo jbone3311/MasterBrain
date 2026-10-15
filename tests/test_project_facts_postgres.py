@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
 from email_brain.store import Conflict, NotFound, Store
-from masterbrain.brain_client import BrainReadClient
+from masterbrain.brain_client import BrainClientError, BrainReadClient
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
     ProjectDossierRequest,
@@ -255,6 +255,10 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
         visible["object_id"],
     ]
     assert restricted_page["next_cursor"] is None
+    restricted_report = facts.report(scoped, project_id, ProjectFactPageRequest(limit=1))
+    assert [row["object_id"] for group in restricted_report["groups"]
+            for row in group["facts"]] == [visible["object_id"]]
+    assert restricted_report["next_cursor"] is None
     restricted_export = facts.export_markdown(
         scoped, project_id, ProjectFactPageRequest(limit=1),
     )
@@ -271,6 +275,9 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
     assert restricted_dossier["facts_truncated"] is False
     unrestricted = facts.page(ctx, project_id, ProjectFactPageRequest(limit=1))
     assert unrestricted["next_cursor"] is not None
+    assert facts.report(ctx, project_id, ProjectFactPageRequest(limit=1))[
+        "groups"
+    ][0]["comparison_incomplete"] is True
     unrestricted_export = facts.export_markdown(
         ctx, project_id, ProjectFactPageRequest(limit=1),
     )
@@ -303,6 +310,9 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
         visible["object_id"],
     ]
     assert after_exclusion["next_cursor"] is None
+    assert facts.report(ctx, project_id, ProjectFactPageRequest(limit=1))[
+        "next_cursor"
+    ] is None
     assert "Hidden fictional value" not in facts.export_markdown(
         ctx, project_id, ProjectFactPageRequest(limit=1),
     )["markdown"]
@@ -349,6 +359,7 @@ def test_project_fact_sql_guard_immutability_and_stale_evidence(database, tenant
     with pytest.raises(NotFound):
         facts.publish(ctx, project_id, _body(project_id, evidence_id), uuid4())
     assert facts.page(ctx, project_id, ProjectFactPageRequest())["results"] == []
+    assert facts.report(ctx, project_id, ProjectFactPageRequest())["groups"] == []
 
 
 def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
@@ -394,6 +405,32 @@ def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
         assert exported.headers["cache-control"] == "no-store"
         assert exported.json()["fact_count"] == 1
         assert evidence_id in exported.json()["markdown"]
+        report = api.get(path + "/report", params={"limit": 1})
+        assert report.status_code == 200, report.text
+        assert report.headers["cache-control"] == "no-store"
+        assert report.json()["groups"][0]["facts"][0]["object_id"] == (
+            created.json()["object_id"]
+        )
+        assert report.json()["numeric_aggregation"] == (
+            "none_units_currency_ownership_unverified"
+        )
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=report.json())
+            ),
+        ) as reader:
+            assert reader.project_fact_report(project_id, limit=1)["groups"][0][
+                "facts"
+            ][0]["object_id"] == created.json()["object_id"]
+        falsified = {**report.json(), "numeric_aggregation": "verified_investment_total"}
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=falsified)
+            ),
+        ) as reader, pytest.raises(BrainClientError, match="invalid_response"):
+            reader.project_fact_report(project_id, limit=1)
         with BrainReadClient(
             "https://brain.example", "fictional-token",
             transport=httpx.MockTransport(
@@ -405,6 +442,7 @@ def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
             ] == exported.json()["markdown"]
         assert api.get(path, params={"limit": 0}).status_code == 422
         assert api.get(path + "/markdown", params={"limit": 0}).status_code == 422
+        assert api.get(path + "/report", params={"limit": 0}).status_code == 422
         assert api.get(path, params={"after": "pfact_bad"}).status_code == 422
         assert api.post(
             path, json={**payload, "derivation": "inferred"},
@@ -412,6 +450,7 @@ def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
         ).status_code == 422
     with client({"knowledge.review"}) as denied:
         assert denied.get(path).status_code == 403
+        assert denied.get(path + "/report").status_code == 403
     with client({"knowledge.search"}) as denied:
         assert denied.get(path + "/markdown").status_code == 403
     with client({"brain.content.read"}) as denied:
@@ -449,9 +488,15 @@ def test_project_fact_markdown_assistant_enrollment_filters_before_export(databa
         response = allowed.get(f"/v1/knowledge/projects/{project_id}/facts/markdown")
         assert response.status_code == 200, response.text
         assert evidence_id in response.json()["markdown"]
+        report = allowed.get(f"/v1/knowledge/projects/{project_id}/facts/report")
+        assert report.status_code == 200, report.text
+        assert report.json()["groups"][0]["facts"][0]["quote_evidence_id"] == evidence_id
     with client({"fictional_other_source"}) as hidden:
         response = hidden.get(f"/v1/knowledge/projects/{project_id}/facts/markdown")
         assert response.status_code == 404
+        assert hidden.get(
+            f"/v1/knowledge/projects/{project_id}/facts/report"
+        ).status_code == 404
     with pytest.raises(ValueError):
         client(set())
 

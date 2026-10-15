@@ -20,6 +20,7 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 | `answer(question)` | `POST /v1/brain/answers` | `brain.search`, `knowledge.search`, `brain.evidence.read`, `brain.content.read`; local exact-quote selection is the default, and the operator may disable it |
 | `timeline(start, end, ...)` | `GET /v1/knowledge/timeline` | `knowledge.search`; bounded reviewed-event occurrence window (ADR-160) |
 | `commitments_due(start, end, ...)` | `GET /v1/knowledge/commitments-due` | `knowledge.search`; bounded reviewed-commitment due window (ADR-161, merged synthetic read) |
+| `project_fact_report(project_id, ...)` | `GET /v1/knowledge/projects/{project_id}/facts/report` | `knowledge.search`; ADR-211 grouped one-page source-stated reviewed facts, no money aggregation or certified balance |
 
 The server remains the authority for identity, tenant, scopes, source visibility
 and freshness. In the synthetic bootstrap path, an assistant must be enrolled

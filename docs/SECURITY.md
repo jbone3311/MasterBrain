@@ -325,6 +325,14 @@ text. This is synthetic-only, not a semantic noninterference proof, hosted
 identity acceptance, inferred-basis authorization, or a Markdown export-time
 citation verifier.
 
+ADR-211's report is a read-only projection of that same current-authorized
+fact page, not a second visibility query. Hidden facts are filtered before
+the report's 1–25-row limit; an ungranted assistant cannot infer their count
+from the groups or cursor. The external client rejects malformed group flags
+and any replacement of the explicit no-aggregation label with a financial
+total claim. No content scope, provider token, source path, raw bytes or
+write authority is added.
+
 ADR-196's separate synthetic fact-fragment export requires content-read as
 well as Knowledge search authority. Its tenant-fenced read rechecks project,
 every fact evidence grant/current version/exclusion and the full exact quote

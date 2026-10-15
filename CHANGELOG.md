@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-211: added a current-evidence, source-granted project fact report route
+  and validated external read client. It groups one reviewed page, flags
+  divergent previews and disputed rows, and refuses numeric aggregation or
+  investment-truth claims; no donor or source data changed.
+
 - ADR-210: compared the remaining three pinned FOS intelligence-report row
   shapes on fictional data, with direct local DuckDB donor replay, a 1,000-row
   repeat and corrected half-away rounding. No runtime report, verified balance,
