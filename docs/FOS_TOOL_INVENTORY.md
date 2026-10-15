@@ -74,6 +74,14 @@ e52ee7672121a609171a827eab086080dcea159ef987e21f0793e32528521cc9  _SYSTEM/tools/
 c2f4c38c8a6bd783e726cebde1f555586d5675639aab2beb45c50128898feb8b  _SYSTEM/tools/fact_verify.py
 ```
 
+ADR-216 isolates the pinned `fact_verify.py` tier heuristics, numeric variants
+and status precedence in a pure compatibility module. Its fictional test runs
+the donor's own `confirm` against disposable SQLite and stress-compares 500
+numeric cases. This is **behavioral parity, not source-tier attestation**:
+donor `CONFIRMED` can mean one substring match while another source is
+unreadable or missing. No FOS database or source file is modified, and no
+MasterBrain claim-publication path imports the compatibility module.
+
 DC-004C archive audit adds:
 
 ```text

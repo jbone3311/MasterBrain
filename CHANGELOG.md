@@ -1,5 +1,9 @@
 # Changelog
 
+- ADR-216: added exact-hash synthetic FOS fact-verifier parity for tier
+  heuristics, numeric variants and confirmation status; documented why these
+  donor outcomes cannot certify MasterBrain financial claims.
+
 - ADR-215: fixed project-fact catalog retirement so the latest deprecated
   revision cannot revive an older active one. Added a bounded, database-
   authoritative Brain API discovery route and strict external client;

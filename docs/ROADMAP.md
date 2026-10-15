@@ -1,5 +1,9 @@
 # MasterBrain Roadmap
 
+ADR-216 now pins the FOS fact-verifier's pure tier/variant/status behavior in
+fictional donor parity without treating donor `CONFIRMED` as a MasterBrain
+financial attestation. The next source-tier gate is an immutable, reviewed,
+version/hash-bound attestation with current grant and exclusion checks.
 ADR-215 makes latest-revision retirement effective and lets clients discover
 the actual SQL vocabulary. Next complete issue #183 with a human-reviewed
 vocabulary proposal/version process and explicit alias compatibility; the
