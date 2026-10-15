@@ -2,6 +2,24 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Branded combined-source owner command smoke — current branch
+
+On a fresh disposable PostgreSQL 17.11 database and lockfile Python 3.11.13,
+the actual `masterbrain demo migrate`, `init`, `seed`, replayed `seed`, and
+loopback `serve` commands all succeeded. The second seed added zero Email
+events and returned the same project ID. An authenticated real HTTP request to
+`/v1/brain/current-search` for `briefing` returned one Email and one FileOS
+hit and reported both sources registered. Email-only and FileOS-only focus each
+returned one hit and marked the other source `not_searched`. The project
+dossier returned one event, proposed commitment with null due date, artifact
+link and fact, and no member. Exporting its Markdown and sending it to the
+owner-only inspection route verified citation spans while leaving
+`proposal_ready=false`. The test harness now exercises the branded seed route
+directly; demo/CLI tests passed **44/44** on the same disposable cluster.
+The server was stopped before cleanup. This is a fictional local API proof,
+not provider, assistant identity, actual-image, hosted, restore or live-data
+acceptance. No real credentials or source roots were used.
+
 ## Exact-current-head local validation — 0c320a5
 
 Fresh lockfile-resolved Python 3.11.13 and fresh disposable PostgreSQL

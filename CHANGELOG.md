@@ -1,5 +1,10 @@
 # Changelog
 
+- Exercise the published `masterbrain demo seed` command in the PostgreSQL
+  regression, in addition to its underlying service. A fresh disposable
+  command-to-loopback-API walkthrough verified migration, initialization,
+  idempotent seed, both-source search/focus and cited Markdown inspection.
+
 - Expand the disposable combined-source dossier with exact-quote, replay-safe
   event, proposed reply request, source-stated note and generated-file link.
   The request's relative due date remains unresolved and no person/role is

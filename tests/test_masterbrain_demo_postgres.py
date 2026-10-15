@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 from email_brain import cli
 from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
+from masterbrain.cli import main as masterbrain_main
 
 pytestmark = pytest.mark.postgres
 database, tenant = pg.database, pg.tenant
@@ -41,11 +42,11 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
             "secret_ref='synthetic:no-token' WHERE id=%s", (account,),
         )
 
-    cli.seed_masterbrain(state)
+    masterbrain_main(["demo", "seed", "--state-dir", str(state)])
     first = capsys.readouterr().out
     project_id = first.split("project ready: ")[1].split(".")[0]
     assert project_id.startswith("project_")
-    cli.seed_masterbrain(state)
+    masterbrain_main(["demo", "seed", "--state-dir", str(state)])
     assert project_id in capsys.readouterr().out
 
     token = "synthetic-masterbrain-demo-credential-0001"
