@@ -2,6 +2,30 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Populated project-fact proposal restore fixture — ADR-206
+
+The synthetic logical-restore drill now seeds one pending and one explicitly
+approved private fact batch across two tenants. Its whole-public-table
+snapshot comparison includes migration 0069's proposal, citation, decision,
+review and fact-receipt rows; restored verification checks the proposal
+status/object link, visible reviewed facts and cross-tenant preview refusal.
+An isolated local PostgreSQL 17.11 source-to-target **database** `pg_dump`/
+`pg_restore` probe passed with equal public-table snapshots and both states
+readable under the restored runtime role. A second fresh local pair also
+passed the drill's full `verify_restored` authorization, data and isolation
+checks after logical restore. Both pairs used one disposable local
+cluster with two databases, **not** the independent-container hosted restore
+gate. The repeatable seed test and adjacent fact suite passed **41/41**; the
+fresh full Python 3.14/PostgreSQL run passed **3,498 tests, nine skipped**
+(609 of 610 PostgreSQL-marked tests executed). Ruff and strict mypy passed
+(111 files when including the drill); browser suites passed **167/167**,
+documentation links passed (307 Markdown files, 1,631 paths/fragments), and
+the repository deployment gate passed (2,891 passed, 616 skipped). The
+deployment gate skips most PostgreSQL tests and is not the full-run proof.
+The hosted exact-head logical restore, strict-runtime, CI and merged-main
+gates are still required. No live source
+or FOS-Master change was made.
+
 ## Project-fact citation and revocation hardening — ADR-206
 
 The fictional fact-import suite now proves that a second current source with

@@ -1,7 +1,9 @@
 # ADR-206 — Project-fact Markdown proposal boundary
 
-Status: implemented on the open synthetic/disposable PR branch, pending
-exact-head hosted CI, strict-runtime, restore and merged-main gates. No live
+Status: implemented on the open synthetic/disposable PR branch. A populated
+same-cluster local logical restore probe passed; independent-container
+exact-head hosted CI, strict-runtime, restore and merged-main gates remain.
+No live
 source, automatic approval, inferred fact, or FileOS cutover is authorized.
 
 ## Context
@@ -9,7 +11,8 @@ source, automatic approval, inferred fact, or FileOS cutover is authorized.
 The owner selected MasterBrain's existing ADR-197 dossier export as the
 Librarian exchange format. ADR-200/201 inventory and inspect that exact
 Markdown; ADR-202/205 stage selected project, event, commitment and member
-rows as private proposals. A selected `fact` row is still rejected. Its
+rows as private proposals. Before this tranche, a selected `fact` row was
+rejected. Its
 export line displays predicate, value, assertion status, derivation, a quote
 preview and one citation, but omits value type, confidence, observation/valid
 times, full quote and the complete direct evidence set. None of those fields

@@ -9,7 +9,10 @@ are checked at stage, private preview and explicit human review. Approval
 creates a new fact ID inside the batch transaction; rejection creates no fact.
 The local synthetic suite now covers a valid-but-wrong truncated quote
 citation, source-scope denial at all three gates and revocation between
-inspection and staging. Next: populated-restore proof and broader stress;
+inspection and staging. A local same-cluster source-to-target logical
+dump/restore now preserves pending and approved batches and their private
+visibility; the independent-container hosted restore remains unverified.
+Next: broader stress and hosted restore confirmation;
 obtain exact-head hosted CI/strict-runtime/restore and merged-main gates;
 then design artifact-link staging and typed inferred basis separately. This
 is not an automatic or lossless round trip, live-source gate or FOS-Master

@@ -5,12 +5,16 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
+import test_postgres as pg
 from psycopg.conninfo import conninfo_to_dict
 
 from email_brain.attachments import receive_attachments
 from email_brain.normalize import normalize
+from email_brain.store import NotFound
+from masterbrain.fact_proposals import FactProposalBatches
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "restore_drill.py"
 SPEC = importlib.util.spec_from_file_location("email_brain_restore_drill", SCRIPT)
@@ -22,6 +26,7 @@ SPEC.loader.exec_module(drill)
 NAME = "email_brain_test_restore_0123456789abcdef"
 NONCE = "0123456789abcdef0123456789abcdef"
 IDENTITY = "a" * 64
+database = pg.database
 
 
 def container():
@@ -160,6 +165,24 @@ def test_synthetic_fixture_contains_extractable_and_deferred_attachments():
     assert "restorecalendarproof" in attachments[2].text
     assert {item.status for item in attachments} == {"extracted", "deferred"}
     assert b"example.invalid" in raw
+
+
+@pytest.mark.postgres
+def test_populated_restore_seed_covers_pending_and_approved_fact_batches(database):
+    store, admin = database
+    tenants = drill.seed(admin, store, keyword_suffix=uuid4().hex[:8])
+    assert [item.fact_proposal_fact_id is not None for item in tenants] == [False, True]
+    for current, foreign in ((tenants[0], tenants[1]), (tenants[1], tenants[0])):
+        batches = FactProposalBatches(store)
+        preview = batches.preview(current.context, current.fact_proposal_batch_id)
+        assert preview["row_count"] == 1
+        assert preview["proposals"][0]["proposal_id"] == current.fact_proposal_id
+        assert preview["proposals"][0]["status"] == (
+            "approved" if current.fact_proposal_fact_id else "proposed"
+        )
+        assert preview["proposals"][0]["object_id"] == current.fact_proposal_fact_id
+        with pytest.raises(NotFound):
+            batches.preview(current.context, foreign.fact_proposal_batch_id)
 
 
 def test_cli_requires_explicit_opt_in_without_invoking_docker():

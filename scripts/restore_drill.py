@@ -58,14 +58,23 @@ from masterbrain.datacore.fileos import (
     fileos_inventory_policy,
 )
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.fact_proposals import FactProposalBatches
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
     ClaimWrite,
     EntityWrite,
+    FactProposalDecision,
+    FactProposalReviewRequest,
+    ProjectDossierRequest,
     ProjectFactPageRequest,
     ProjectFactWrite,
     ProjectWrite,
 )
+from masterbrain.librarian_dossier_intake import (
+    DossierProposalSelection,
+    DossierProposalStageRequest,
+)
+from masterbrain.project_dossier_markdown import ProjectDossierMarkdown
 from masterbrain.project_facts import ProjectFacts
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
@@ -326,6 +335,9 @@ class SeededTenant:
     knowledge_claim_id: str
     knowledge_project_id: str
     knowledge_project_fact_id: str
+    fact_proposal_batch_id: str
+    fact_proposal_id: str
+    fact_proposal_fact_id: str | None
 
 
 class SyntheticDocumentProcessor:
@@ -395,9 +407,12 @@ def seed(
     *,
     object_root: Path | None = None,
     keys: dict[tuple[UUID, str], bytes] | None = None,
+    keyword_suffix: str = "",
 ) -> list[SeededTenant]:
+    require(bool(re.fullmatch(r"[a-f0-9]{0,8}", keyword_suffix)), "invalid seed suffix")
     tenants = []
-    for keyword in ("restorealphazebra", "restorebetazebra"):
+    for seed_index, base_keyword in enumerate(("restorealphazebra", "restorebetazebra")):
+        keyword = base_keyword + keyword_suffix
         tenant, actor, account = uuid4(), uuid4(), uuid4()
         identity_id = uuid4()
         with psycopg.connect(admin) as conn:
@@ -576,17 +591,51 @@ def seed(
             ),
             uuid4(),
         )
+        fact_body = ProjectFactWrite(
+            kind="project_fact", project_id=project.object_id,
+            predicate="restore.status", value=f"restored project fact {keyword}",
+            evidence_ids=[brain_document.evidence_id],
+            quote_evidence_id=brain_document.evidence_id,
+            source_quote=body, confidence=1, observed_at=now, reviewed=True,
+        )
         project_fact = ProjectFacts(store).publish(
-            context, project.object_id,
-            ProjectFactWrite(
-                kind="project_fact", project_id=project.object_id,
-                predicate="restore.status", value=f"restored project fact {keyword}",
-                evidence_ids=[brain_document.evidence_id],
-                quote_evidence_id=brain_document.evidence_id,
-                source_quote=body, confidence=1, observed_at=now, reviewed=True,
+            context, project.object_id, fact_body, uuid4(),
+        )
+        claimed_fact_id = "pfact_" + uuid4().hex
+        dossier_markdown = ProjectDossierMarkdown(store).export(
+            context, project.object_id, ProjectDossierRequest(),
+        )["markdown"].replace(project_fact["object_id"], claimed_fact_id)
+        proposed_fact = fact_body.model_dump(mode="json")
+        proposed_fact.pop("reviewed")
+        fact_batches = FactProposalBatches(store)
+        fact_batch = fact_batches.stage(
+            context,
+            DossierProposalStageRequest(
+                markdown=dossier_markdown,
+                selections=[DossierProposalSelection(
+                    claimed_id=claimed_fact_id, assertion=proposed_fact,
+                )],
             ),
             uuid4(),
         )
+        fact_preview = fact_batches.preview(context, fact_batch["batch_id"])
+        fact_proposal_id = fact_preview["proposals"][0]["proposal_id"]
+        fact_proposal_fact_id = None
+        if seed_index == 1:
+            fact_batches.review(
+                context, fact_batch["batch_id"],
+                FactProposalReviewRequest(
+                    batch_sha256=fact_batch["batch_sha256"],
+                    decisions=[FactProposalDecision(
+                        proposal_id=fact_proposal_id, decision="approved",
+                    )],
+                ),
+                uuid4(),
+            )
+            fact_proposal_fact_id = fact_batches.preview(
+                context, fact_batch["batch_id"],
+            )["proposals"][0]["object_id"]
+            require(fact_proposal_fact_id is not None, "fact restore approval missing")
         items = [
             IngestItem("good-event", "good-message", "v1", now, synthetic_mime(keyword)),
             IngestItem("poison-event", "poison-message", "v1", now, b""),
@@ -712,7 +761,7 @@ def seed(
         store.review(
             context, proposal["id"], ReviewRequest(decision="approved", expected_version=1)
         )
-        category = "investment" if keyword == "restorealphazebra" else "business"
+        category = "investment" if seed_index == 0 else "business"
         rule_proposal = store.propose(
             context,
             ProposalRequest(
@@ -763,6 +812,9 @@ def seed(
                 claim.object_id,
                 project.object_id,
                 project_fact["object_id"],
+                fact_batch["batch_id"],
+                fact_proposal_id,
+                fact_proposal_fact_id,
             )
         )
     return tenants
@@ -1021,14 +1073,33 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             "restored KnowledgeCore entity changed",
         )
         facts = ProjectFacts(store).page(
-            ctx, current.knowledge_project_id, ProjectFactPageRequest(limit=1),
+            ctx, current.knowledge_project_id, ProjectFactPageRequest(limit=3),
         )["results"]
+        expected_fact_ids = {current.knowledge_project_fact_id}
+        if current.fact_proposal_fact_id is not None:
+            expected_fact_ids.add(current.fact_proposal_fact_id)
         require(
-            len(facts) == 1
-            and facts[0]["object_id"] == current.knowledge_project_fact_id
-            and facts[0]["quote_evidence_id"] == current.brain_evidence_id,
+            {fact["object_id"] for fact in facts} == expected_fact_ids
+            and all(fact["quote_evidence_id"] == current.brain_evidence_id for fact in facts),
             "restored project fact changed",
         )
+        fact_batches = FactProposalBatches(store)
+        fact_preview = fact_batches.preview(ctx, current.fact_proposal_batch_id)
+        require(
+            fact_preview["row_count"] == 1
+            and len(fact_preview["proposals"]) == 1
+            and fact_preview["proposals"][0]["proposal_id"] == current.fact_proposal_id
+            and fact_preview["proposals"][0]["status"]
+            == ("approved" if current.fact_proposal_fact_id else "proposed")
+            and fact_preview["proposals"][0]["object_id"] == current.fact_proposal_fact_id,
+            "restored private fact proposal changed",
+        )
+        try:
+            fact_batches.preview(ctx, foreign.fact_proposal_batch_id)
+        except NotFound:
+            pass
+        else:
+            raise DrillFailure("foreign restored fact proposal accessible")
         try:
             ProjectFacts(store).page(
                 ctx, foreign.knowledge_project_id, ProjectFactPageRequest(limit=1),
