@@ -47,6 +47,7 @@ from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain import archive_member_controller as archive_controller
 from masterbrain.brain_client import BrainReadClient
 from masterbrain.datacore import fileos_donor_transition as transition_module
+from masterbrain.datacore import fileos_v2_completed_preview as completed_preview_module
 from masterbrain.datacore import fileos_v2_document_publication as document_publication_module
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
 from masterbrain.datacore.archive_member_contract import decode_result as decode_member_result
@@ -68,6 +69,7 @@ from masterbrain.datacore.fileos_donor_transition import (
 from masterbrain.datacore.fileos_transition_approval import FileOSV2TransitionReview
 from masterbrain.datacore.fileos_v2_authorization import FileOSV2BaselineAuthorizer
 from masterbrain.datacore.fileos_v2_baseline import FileOSV2BaselineVerifier
+from masterbrain.datacore.fileos_v2_completed_preview import FileOSV2CompletedPreviewer
 from masterbrain.datacore.fileos_v2_completion import FileOSV2BaselineCompleter
 from masterbrain.datacore.fileos_v2_document_publication import FileOSV2DocumentPublisher
 from masterbrain.datacore.fileos_v2_index_generation import (
@@ -7553,6 +7555,29 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert private_baseline["latest_v1_matches"] is True
     assert private_baseline["current_read_active"] is False
     assert private_baseline["absence_authorized"] is False
+    later_previewer = FileOSV2CompletedPreviewer(core)
+    later = later_previewer.preview(completion_worker, completion_id, tmp_path)
+    assert later.counts["unchanged"] == 2
+    assert later.counts["absence_candidate"] == 0
+    assert later.blockers == ()
+    assert later.publishable is False and later.absence_authorized is False
+    assert len(later.preview_sha256) == 64
+    (tmp_path / "new.txt").unlink()
+    possible_absence = later_previewer.preview(completion_worker, completion_id, tmp_path)
+    assert possible_absence.counts["absence_candidate"] == 1
+    assert possible_absence.absence_authorized is False
+    assert possible_absence.preview_sha256 != later.preview_sha256
+    (tmp_path / "new.txt").write_bytes(b"synthetic donor-only proof")
+    with monkeypatch.context() as patched:
+        patched.setattr(completed_preview_module, "_completion_sha", lambda *_: "0" * 64)
+        with pytest.raises(Conflict, match="completion integrity requires review"):
+            later_previewer.preview(completion_worker, completion_id, tmp_path)
+    with pytest.raises(NotFound):
+        later_previewer.preview(completion_worker, uuid4(), tmp_path)
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_previewer.preview(authorizing_human, completion_id, tmp_path)
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_previewer.preview(Principal(ctx, "worker"), completion_id, tmp_path)
     with pytest.raises(AccessDenied, match="scope denied"):
         completer.inspect(replace(ctx, scopes=frozenset()), source_id)
     assert completer.complete(
@@ -7570,6 +7595,8 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     wrong_root.mkdir()
     (wrong_root / "changed.txt").write_bytes(changed.read_bytes())
     (wrong_root / "new.txt").write_bytes((tmp_path / "new.txt").read_bytes())
+    with pytest.raises(Conflict, match="source requires review"):
+        later_previewer.preview(completion_worker, completion_id, wrong_root)
     with pytest.raises(Conflict, match="source requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, wrong_root)
     with pytest.raises(Conflict, match="source requires review"):
@@ -8115,6 +8142,8 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             item["version_id"] for item in next_manifest["items"] if item["locator"] == "new.txt"
         )
     assert completer.inspect(ctx, source_id)["latest_v1_matches"] is False
+    with pytest.raises(Conflict, match="basis requires review"):
+        later_previewer.preview(completion_worker, completion_id, tmp_path)
     with pytest.raises(Conflict, match="basis requires review"):
         search_reviewer.preview(human, source_id, generation.generation_id,
                                 "synthetic changed proof")

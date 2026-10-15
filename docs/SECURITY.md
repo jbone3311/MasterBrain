@@ -670,6 +670,14 @@ activation. It does not reopen source files, grant a new read route or infer
 absence. The private builder remains synthetic/disposable until full gates
 pass; FOS-Master remains the unchanged operational donor.
 
+ADR-252's private later-observation preview requires a worker with the existing
+`brain.fileos.transition.verify` and `brain.changes.read` scopes. It rechecks
+the completed baseline and immutable stage under the source lock, uses an
+explicit root-bound no-follow scan, and returns no locators or content. It
+audits only an opaque completion ID. A possible missing file is not an absence
+event; scan errors suppress such candidates. No assistant route or v2 current
+switch consumes this ephemeral preview.
+
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and
 run-bound cursor to prevent mixed-run plans. Both source and DataCore effects are false.

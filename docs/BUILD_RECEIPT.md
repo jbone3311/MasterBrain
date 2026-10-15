@@ -2,6 +2,33 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Completed-baseline-bound FileOS v2 preview — current unmerged branch
+
+ADR-252 adds a private worker-only later-observation preview against the
+existing completed FileOS v2 baseline. One focused fictional PostgreSQL 17.11
+lifecycle test passed on a fresh disposable socket-only cluster: exact clean
+preview, one missing-file candidate without absence authority, wrong-root and
+scope refusal, unknown or corrupted completion refusal, and refusal after a
+newer v1 completion. The cluster was stopped.
+The response contains only counts, fixed blockers and an ephemeral digest;
+there is no later-run insert, source mutation or current-read switch. Hosted
+exact-head, live-root and rollback gates remain open.
+
+The complete fictional Python 3.14 suite then passed against a fresh
+PostgreSQL 17.11 **127.0.0.1-only** disposable database: **3,853 passed,
+19 skipped, zero failed** in 6m13s; **694/695 PostgreSQL-marked tests
+executed**. The sole PostgreSQL-marked skip is the Docker-backed trial
+launcher, not a pass. A preceding Unix-socket-only full attempt had 28 setup
+errors in combined-demo/OIDC fixtures that explicitly require a loopback TCP
+host, plus one related failure; two representative cases passed after the
+configuration correction, and the full clean loopback rerun passed. Both
+temporary databases and the cluster were stopped and removed. The first-party
+Node suite passed **178/178**; Ruff, strict mypy (143 source files), offline
+documentation links (353 Markdown files / 1,820 local paths and fragments),
+diff whitespace and an offline wheel build passed. The wheel includes the new
+private preview module. This is local fictional evidence, not hosted CI,
+actual-image, live-root or cutover acceptance.
+
 ## Consecutive FileOS v2 observation preview — current unmerged branch
 
 ADR-251 adds a pure, nonpublishing later-observation classifier. Twelve fictional

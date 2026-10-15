@@ -1,10 +1,16 @@
 # MasterBrain Roadmap
 
+ADR-252 now binds the later FileOS v2 preview to an actual completed baseline
+and fresh root scan in a private worker transaction. Next build and verify an
+immutable, tenant-fenced later-run ledger with exact hashed/deferred/excluded/
+error coverage, then specify v2 current visibility, rollback and owner-approved
+live shadow. The current preview is ephemeral and cannot publish absence.
+
 ADR-251 supplies a tested, nonpublishing FileOS v2 later-observation
 classification: hashless, deferred, excluded and error-covered paths do not
 silently become absence. Next bind this policy to one actual completed v2
-baseline and fresh source scan under a tenant/source lock, then design the
-immutable later-run ledger, current visibility and rollback separately.
+baseline and fresh source scan under a tenant/source lock (now ADR-252), then
+design the immutable later-run ledger, current visibility and rollback separately.
 No v2 activation, live-root authorization or FOS-Master cutover follows.
 
 ADR-250 now proves one complete fictional Email XLSX round trip using real

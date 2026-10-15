@@ -1,5 +1,9 @@
 # Current MasterBrain code map
 
+ADR-252 adds a [completed-baseline-bound FileOS v2 preview](../src/masterbrain/datacore/fileos_v2_completed_preview.py)
+and extends the [fictional PostgreSQL v2 lifecycle test](../tests/test_postgres.py).
+It returns only an ephemeral summary; no later run or absence row is persisted.
+
 ADR-251 adds a [pure consecutive FileOS v2 observation preview](../src/masterbrain/datacore/fileos_v2_consecutive_preview.py)
 with [fictional coverage tests](../tests/test_fileos_v2_consecutive_preview.py).
 It has no database binding, API, current read or absence-event authority.

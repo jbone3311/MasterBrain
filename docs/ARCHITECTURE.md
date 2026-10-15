@@ -121,6 +121,11 @@ runs. It distinguishes possible absence from hashless, deferred, excluded and
 error-covered membership, but is not bound to a completed baseline or allowed
 to publish absence/current state. A durable later-run transaction and rollback
 policy must be designed before any v2 read switch.
+ADR-252 binds that pure policy to the stored completed baseline: a private
+worker revalidates its stage, source lock, latest v1 basis and completion
+digest, scans the explicitly bound root again, and returns only an ephemeral
+count/digest summary. It does not persist the later observation or activate
+current v2 reads.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

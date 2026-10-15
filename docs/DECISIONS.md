@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-252](adr/252_fileos_v2_completed_baseline_preview.md) binds ADR-251's
+later-observation policy preview to one exact, completed, owner-authorized
+FileOS v2 baseline under the tenant/source lock. It returns only counts,
+blockers and an ephemeral digest; no later run or absence/current authority.
+
 [ADR-251](adr/251_fileos_v2_consecutive_observation_preview.md) adds a
 read-only, nonpublishing comparison of two closed FileOS donor-policy
 observations. It distinguishes a possible absence from deferred, excluded,

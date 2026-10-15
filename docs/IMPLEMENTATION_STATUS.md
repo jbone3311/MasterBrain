@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-252 adds a private, worker-only FileOS v2 later-observation preview bound
+to one completed, owner-authorized baseline. It revalidates the immutable
+stage/packet/row ledger and latest v1 basis under the source lock, checks the
+completion digest and physical root, then applies ADR-251's policy to a fresh
+no-follow donor scan. A focused fictional PostgreSQL lifecycle test passed for
+unchanged and possible-missing rows, wrong root, scope denial and stale v1.
+Only counts/blockers and an ephemeral digest return. No durable later-run
+ledger, absence event, current-read activation, live root or donor cutover.
+
 ADR-251 adds a synthetic-only, pure FileOS v2 consecutive-observation preview.
 It validates both closed donor candidates, source/root/policy/time continuity,
 and separates possible absence from deferral, exclusions, scan errors and

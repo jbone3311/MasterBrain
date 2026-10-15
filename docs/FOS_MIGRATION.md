@@ -243,6 +243,10 @@ ADR-251 adds a pure, synthetic-only consecutive donor-observation preview for
 the later-run policy question. It separates possible absence from hashless,
 deferred, excluded and error-covered paths, but is not connected to an actual
 completed v2 baseline and cannot create absence or current-read authority.
+ADR-252 now binds that policy preview to the real completed v2 baseline under
+the private source lock and a fresh synthetic root scan. Only an ephemeral
+count/digest summary returns; the immutable later-run ledger, absence/current
+semantics, live shadow and rollback are still open.
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then
