@@ -23,9 +23,11 @@ only, with no database or provider access.
 ## Acceptance and next gate
 
 Fictional tests exercise exact, repeated-occurrence, blank-row, wrong-basis,
-formula and malformed-package cases through the fake Docker transport. They
-do not run the actual immutable image. This adds no Email XLSX approval,
-review receipt, indexing, API, live-mail permission or FileOS cutover.
+formula and malformed-package cases through the fake Docker transport. The
+explicit document-container suite collects a chained actual-image test for
+both the Email text and physical-row proofs; it has not run locally. This adds
+no Email XLSX approval, review receipt, indexing, API, live-mail permission or
+FileOS cutover.
 Next: design an independently reviewed XLSX extraction/occurrence-specific
 Email bridge; then tenant-fenced receipt and private exact-account command.
 Actual-image, hosted exact-head and independent-restore gates are still open.

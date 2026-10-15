@@ -18,6 +18,13 @@ No Email XLSX review receipt, bridge, published cell API, live mail or
 financial claim follows from this proof. Exact-head hosted CI and independent
 restore remain open.
 
+An explicit actual-image case was then added to the document-container suite:
+it re-extracts one fictional retained MIME attachment through the pinned text
+and table workers and requires exact parent/part/text identity. The suite
+collected **10 tests** (three PostgreSQL-marked) but none executed in that
+collection run. Docker is unavailable locally, so no real-image pass is
+claimed. The adjacent fake-transport XLSX/donor suite remained **48/48**.
+
 ## Full local synthetic gate after migration-list repair — current branch
 
 The first attempted full run used a Unix-socket-only disposable PostgreSQL

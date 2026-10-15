@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import os
 from datetime import UTC, datetime
+from email.message import EmailMessage
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -17,11 +18,16 @@ from test_source_tier_fileos_xlsx_table_replay_postgres import _prepared as xlsx
 from email_brain.domain.models import TenantContext
 from email_brain.store import Store
 from email_brain.synthetic_formats import SHEET_TYPE, WORD_TYPE, docx_bytes, pdf_bytes, xlsx_bytes
+from masterbrain.datacore.contracts import stable_id
 from masterbrain.datacore.current_fileos_xlsx_table_replay import (
     replay_current_fileos_xlsx_tables,
 )
 from masterbrain.datacore.document_contract import PDF_TYPE, DocumentUnavailable
 from masterbrain.datacore.document_processor import DockerDocumentProcessor
+from masterbrain.datacore.email_xlsx_derivation import prove_email_attachment_xlsx_derivation
+from masterbrain.datacore.email_xlsx_table_derivation import (
+    prove_email_attachment_xlsx_table_derivation,
+)
 from masterbrain.datacore.extraction import FileOSAdapter
 from masterbrain.datacore.fileos import fileos_root_binding_sha256, snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
@@ -138,6 +144,50 @@ def test_actual_image_reacquires_fileos_xlsx_without_source_effects(
     assert proof.sheet_count == 1 and proof.row_count == 2
     assert proof.text_sha256 == hashlib.sha256(text.text.encode()).hexdigest()
     assert path.read_bytes() == raw and path.stat().st_mtime_ns == before
+
+
+def test_actual_image_binds_retained_email_xlsx_text_and_rows(
+    processor: DockerDocumentProcessor,
+) -> None:
+    image = os.environ.get("MASTERBRAIN_DOCUMENT_IMAGE_ID")
+    assert image is not None
+    document = xlsx_bytes("Container Atlas", 3100, 7, "containeremailrowproof")
+    message = EmailMessage()
+    message["From"] = "sender@example.invalid"
+    message["To"] = "owner@example.invalid"
+    message["Subject"] = "Fictional workbook"
+    message.set_content("Synthetic message")
+    message.add_attachment(
+        document, maintype="application",
+        subtype=SHEET_TYPE.removeprefix("application/"), filename="rent.xlsx",
+    )
+    message.set_boundary("synthetic-email-container-boundary")
+    raw_mime = message.as_bytes()
+    raw_sha256 = hashlib.sha256(raw_mime).hexdigest()
+    part_sha256 = hashlib.sha256(document).hexdigest()
+    normalized = processor.extract(
+        document,
+        version_id=stable_id("version", raw_sha256, "1.2", part_sha256),
+        locator="attachment.xlsx", sha256=part_sha256, media_type=SHEET_TYPE,
+    )
+    assert normalized.status == "extracted"
+    text_sha256 = hashlib.sha256(normalized.text.encode()).hexdigest()
+    text_proof = prove_email_attachment_xlsx_derivation(
+        raw_mime, raw_sha256=raw_sha256, raw_size_bytes=len(raw_mime),
+        part_path="1.2", part_sha256=part_sha256, text=normalized.text,
+        text_sha256=text_sha256, processor=processor,
+    )
+    row_proof = prove_email_attachment_xlsx_table_derivation(
+        raw_mime, raw_sha256=raw_sha256, raw_size_bytes=len(raw_mime),
+        part_path="1.2", part_sha256=part_sha256, text_sha256=text_sha256,
+        normalizer=processor.processor_version,
+        processor=DockerXlsxTableProcessor(image),
+    )
+    assert text_proof.raw_sha256 == row_proof.raw_sha256
+    assert text_proof.part_sha256 == row_proof.part_sha256
+    assert text_proof.text_sha256 == row_proof.text_sha256
+    assert row_proof.sheet_count == 1 and row_proof.row_count == 2
+    assert "containeremailrowproof" not in repr(row_proof)
 
 
 def test_actual_child_refuses_source_mismatch_and_external_relationship(
