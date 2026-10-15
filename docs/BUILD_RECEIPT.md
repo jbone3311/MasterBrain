@@ -2,6 +2,19 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Exact-head hosted gate diagnostic — current branch
+
+At `afb7cb8638027abc7ea75c05159c00fe810aed0b`, [CI run
+38796983905](https://github.com/jbone3311/MasterBrain/actions/runs/38796983905)
+ended in three seconds before any job step. Its `gate` check annotation says:
+"The job was not started because recent account payments have failed or your
+spending limit needs to be increased." The restore, strict-runtime and
+benchmark workflows on the same head also failed before running steps. This
+is a GitHub account billing/spending-limit runner gate, not a code test result.
+The owner must resolve it in GitHub Billing & plans; then rerun every exact-
+head check and the actual-image/restore gates before any merge. No billing
+settings or live data were changed by this task.
+
 ## Expanded pinned FOS XLSX stress corpus — current branch
 
 The exact pinned FOS-Master `extract_xlsx` function was replayed, without

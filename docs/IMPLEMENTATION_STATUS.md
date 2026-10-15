@@ -1,5 +1,10 @@
 # MasterBrain Implementation Status
 
+The latest exact-head CI check on `afb7cb8` failed before any test step; its
+GitHub annotation explicitly names failed account payments or an insufficient
+spending limit. This is an external runner gate, not a failing test. Hosted
+CI, actual-image and independent restore must run before PR #245 can merge.
+
 ADR-238 adds a nonpublishing synthetic Email XLSX physical-row proof bound to
 exact retained MIME/part bytes, the pinned table image and an existing indexed
 text digest. Fictional focused tests pass; actual-image, hosted and restore
