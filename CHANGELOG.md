@@ -1,5 +1,10 @@
 # Changelog
 
+- Add an eighth isolated FOS-Master statement text-recipe baseline for Wells
+  Fargo Priority Credit Line (ADR-199). Fictional two-layout, debt-sign,
+  linked-bank exclusion and 1,000-row cases compare exactly to the pinned
+  donor; no PDF derivation, verified balance or FileOS switch is claimed.
+
 - Rebuild the local non-editable MasterBrain package when starting the fictional
   cross-source trial. A stale same-version wheel could omit newer modules and
   fail before the trial opened; the launcher now refreshes just that package.

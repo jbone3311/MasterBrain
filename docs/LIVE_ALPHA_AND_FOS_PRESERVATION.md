@@ -79,8 +79,10 @@ exposing unpriced positions and wrapped-activity omissions. ADR-191 adds a sixth
 Wells Fargo *savings* baseline with daily-balance sign resolution and explicit
 low-confidence mismatch cases. ADR-198 adds a seventh isolated Wells Fargo
 *brokerage* baseline for cash, lots, page-break duplicates and incomplete tails.
-Wells Fargo credit-line, Schwab and donor reports remain unported; none of the
-seven is a live investment analysis path.
+ADR-199 adds an eighth isolated Wells Fargo *credit-line* text baseline for
+the two donor layouts and debt-negative reconciliation. It does not prove
+complete PDF extraction for that statement family. Schwab and donor reports
+remain unported; none of the eight is a live investment analysis path.
 ADR-172 stores selected current-document candidates in an immutable tenant-fenced
 ledger, and ADR-173 permits a human owner to inspect bounded, source-rechecked
 unreviewed rows through the API. Neither proves a live holding, supplies a

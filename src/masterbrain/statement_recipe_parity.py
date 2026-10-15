@@ -4,7 +4,7 @@ Extracted from FOS-Master at 218d5caec2f20b9047fd3eb8e027dc671acf0c15,
 _SYSTEM/tools/statement_extract.py
 (SHA-256 f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe).
 The parsing and reconciliation semantics are intentionally unchanged. See
-ADR-170, ADR-174, ADR-180, ADR-181, ADR-187, ADR-191 and ADR-198.
+ADR-170, ADR-174, ADR-180, ADR-181, ADR-187, ADR-191, ADR-198 and ADR-199.
 """
 
 from __future__ import annotations
@@ -886,4 +886,204 @@ def reconcile_wells_fargo_brokerage(
         return None
     actual = round(sum(item["amount"] for item in items
                        if item["row_type"] == "holding" and item["amount"]), 2)
+    return expected, actual
+
+
+# ADR-199: exact donor Wells Fargo Priority Credit Line text-recipe comparison.
+# This is supplied-text parity, not source-PDF derivation or a verified debt.
+_WFLOC_MONTHS = {month: f"{i:02d}" for i, month in enumerate(
+    ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST",
+     "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"], 1,
+)}
+_WFLOC_ACCOUNT = re.compile(r"ACCOUNT\s*NUMBER:?\s*(\d{4}-\d{4})", re.IGNORECASE)
+_WFLOC_PERIOD = re.compile(
+    r"([A-Za-z]+)\s*\d{1,2},\s*\d{4}\s*-\s*([A-Za-z]+)\s*(\d{1,2}),\s*(\d{4})"
+)
+_WFLOC_ACT_BEGIN_BAL = re.compile(
+    r"\d{2}/\d{2}\s*BEGINNING\s*BALANCE\s*(-?[\d,]+\.\d{2})", re.IGNORECASE
+)
+_WFLOC_BEGIN_LOAN_BAL = re.compile(
+    r"Beginning\s*loan\s*balance\s*(-?[\d,]+\.\d{2})", re.IGNORECASE
+)
+_WFLOC_END_LOAN_BAL = re.compile(
+    r"Ending\s*loan\s*balance\s*(-?[\d,]+\.\d{2})", re.IGNORECASE
+)
+_WFLOC_AVAIL_CREDIT = re.compile(
+    r"Available\s*credit\s*\*?\s*([\d,]+\.\d{2})", re.IGNORECASE
+)
+_WFLOC_ADDL_BORROW = re.compile(
+    r"Plus\s*additional\s*borrowing\s*([\d,]+\.\d{2})", re.IGNORECASE
+)
+_WFLOC_FINANCE_CHG = re.compile(
+    r"Plus\s*finance\s*charges\s*([\d,]+\.\d{2})", re.IGNORECASE
+)
+_WFLOC_REPAYMENTS = re.compile(
+    r"Less\s*repayments\s*(-?[\d,]+\.\d{2})", re.IGNORECASE
+)
+_WFLOC_ACTIVITY_SECTION = re.compile(
+    r"Activity\s*detail.*?"
+    r"DATE\s*TRANSACTION\s*QUANTITY\s*DESCRIPTION\s*PRICE\s*AMOUNT\s*BALANCES\s*"
+    r"(.*?)"
+    r"(?:Bank\s*Deposits\s*Through\s*Teller|Statement\s*of\s*interest\s*charged|"
+    r"Specific\s*instructions\s*and\s*disclosures|\Z)",
+    re.S | re.IGNORECASE,
+)
+_WFLOC_TXN_ROW = re.compile(
+    r"^(\d{2}/\d{2})\s+([A-Z]+)\s+(.+?)\s+(-?[\d,]+\.\d{2})"
+    r"\s*(?:-?[\d,]+\.\d{2})?\s*$",
+    re.MULTILINE,
+)
+_WFLOC2_BEGIN_LOAN = re.compile(r"Beginning loan balance\s*\n?\s*([\d,]+\.\d{2})")
+_WFLOC2_AVAIL_SCOPE = re.compile(
+    r"Available credit\s*\*?(.*?)(?:Your Priority Credit Line|Loan history|\Z)", re.S
+)
+_WFLOC2_FIRST_AMOUNT = re.compile(r"(-?[\d,]+\.\d{2})")
+_WFLOC2_ROW_ANCHOR = re.compile(r"^([A-Z][A-Z ]{2,30}[A-Z])\s*$", re.MULTILINE)
+_WFLOC2_ROW_DATE = re.compile(r"^(\d{2}/\d{2})\s*$", re.MULTILINE)
+
+
+def _wfloc2_row_amount(chunk: str, after_idx: int) -> float | None:
+    match = _WFLOC2_FIRST_AMOUNT.search(chunk, after_idx)
+    return _num(match.group(1)) if match else None
+
+
+def _wfloc_summary_ending_balance(text: str) -> float | None:
+    match = _WFLOC2_BEGIN_LOAN.search(text)
+    if not match:
+        return None
+    total = _num(match.group(1))
+    assert total is not None
+    for pattern in (_WFLOC_ADDL_BORROW, _WFLOC_FINANCE_CHG, _WFLOC_REPAYMENTS):
+        part_match = pattern.search(text)
+        if part_match:
+            part = _num(part_match.group(1))
+            assert part is not None
+            total += part
+    return round(total, 2)
+
+
+def _parse_wells_fargo_loc_pymupdf(
+    text: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    summary: dict[str, Any] = {"beginning_balance": None}
+    ending_unsigned = _wfloc_summary_ending_balance(text)
+    summary["ending_loan_balance_unsigned"] = ending_unsigned
+    summary["ending_balance"] = -ending_unsigned if ending_unsigned is not None else None
+
+    match = _WFLOC2_AVAIL_SCOPE.search(text)
+    if match:
+        amount_match = _WFLOC2_FIRST_AMOUNT.search(match.group(1))
+        summary["available_credit"] = _num(amount_match.group(1)) if amount_match else None
+    else:
+        summary["available_credit"] = None
+
+    items: list[dict[str, Any]] = []
+    section = re.search(
+        r"CASH AND SWEEP(.*?)(?:Bank Deposits Through Teller|"
+        r"Statement of interest charged|\Z)", text, re.S,
+    )
+    block = section.group(1) if section else ""
+    anchors = list(_WFLOC2_ROW_ANCHOR.finditer(block))
+    for index, anchor in enumerate(anchors):
+        row_type = anchor.group(1).strip()
+        chunk_end = anchors[index + 1].start() if index + 1 < len(anchors) else len(block)
+        chunk = block[anchor.end():chunk_end]
+        date_match = _WFLOC2_ROW_DATE.search(chunk)
+        if not date_match:
+            continue
+        amount = _wfloc2_row_amount(chunk, date_match.end())
+        if amount is None:
+            continue
+        if row_type == "BEGINNING BALANCE":
+            if summary["beginning_balance"] is None:
+                summary["beginning_balance"] = amount
+            continue
+        description = chunk[:date_match.start()].strip().replace("\n", " ")
+        category = "interest" if ("INT" in row_type and "CHARG" in row_type) else (
+            "draw" if amount < 0 else "payment" if amount > 0 else "other"
+        )
+        items.append({
+            "row_type": "transaction", "line_date": date_match.group(1),
+            "description": f"{row_type} {description}"[:120] if description else row_type,
+            "amount": amount, "category": category,
+            "extraction_method": "regex:wells_fargo_loc(pymupdf_fallback)", "confidence": 0.7,
+        })
+    return summary, items
+
+
+def parse_wells_fargo_loc(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Return donor loan summary and ordered rows for supplied fictional text only."""
+    summary: dict[str, Any] = {}
+    match = _WFLOC_ACCOUNT.search(text)
+    summary["account_number"] = match.group(1) if match else None
+
+    match = _WFLOC_PERIOD.search(text)
+    if match:
+        ending_month, ending_year = match.group(2).upper(), match.group(4)
+        summary["period"] = f"{ending_year}-{_WFLOC_MONTHS.get(ending_month, '??')}"
+    else:
+        summary["period"] = None
+
+    match = _WFLOC_ACT_BEGIN_BAL.search(text)
+    summary["beginning_balance"] = _num(match.group(1)) if match else None
+
+    match = _WFLOC_END_LOAN_BAL.search(text)
+    ending_unsigned = _num(match.group(1)) if match else None
+    summary["ending_balance"] = -ending_unsigned if ending_unsigned is not None else None
+    summary["ending_loan_balance_unsigned"] = ending_unsigned
+
+    match = _WFLOC_BEGIN_LOAN_BAL.search(text)
+    summary["beginning_loan_balance_unsigned"] = _num(match.group(1)) if match else None
+
+    match = _WFLOC_AVAIL_CREDIT.search(text)
+    summary["available_credit"] = _num(match.group(1)) if match else None
+
+    match = _WFLOC_ADDL_BORROW.search(text)
+    summary["additional_borrowing_period"] = _num(match.group(1)) if match else None
+
+    match = _WFLOC_FINANCE_CHG.search(text)
+    summary["finance_charges_period"] = _num(match.group(1)) if match else None
+
+    items: list[dict[str, Any]] = []
+    section = _WFLOC_ACTIVITY_SECTION.search(text)
+    block = section.group(1) if section else text
+    for date, code, description, raw_amount in _WFLOC_TXN_ROW.findall(block):
+        amount = _num(raw_amount)
+        combined = f"{code} {description.strip()}".strip()
+        if "INT" in code and "CHARG" in combined.upper():
+            category = "interest"
+        elif amount is not None and amount < 0:
+            category = "draw"
+        elif amount is not None and amount > 0:
+            category = "payment"
+        else:
+            category = "other"
+        items.append({
+            "row_type": "transaction", "line_date": date, "description": combined[:120],
+            "amount": amount, "category": category, "period": summary.get("period"),
+            "extraction_method": "regex:wells_fargo_loc",
+        })
+
+    if summary["beginning_balance"] is None:
+        fallback_summary, fallback_items = _parse_wells_fargo_loc_pymupdf(text)
+        for key, value in fallback_summary.items():
+            if summary.get(key) is None and value is not None:
+                summary[key] = value
+        if not items:
+            for item in fallback_items:
+                item["period"] = summary.get("period")
+            items = fallback_items
+
+    return summary, items
+
+
+def reconcile_wells_fargo_loc(
+    summary: dict[str, Any], items: list[dict[str, Any]],
+) -> tuple[float, float] | None:
+    """Preserve the donor's debt-negative activity reconciliation."""
+    beginning, ending = summary.get("beginning_balance"), summary.get("ending_balance")
+    if beginning is None or ending is None:
+        return None
+    expected = round(ending - beginning, 2)
+    actual = round(sum(item["amount"] for item in items if item["amount"] is not None), 2)
     return expected, actual
