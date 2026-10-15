@@ -941,6 +941,8 @@ class KnowledgeCore:
         self, ctx: TenantContext, project_id: str, request: ProjectDossierRequest
     ) -> dict[str, Any]:
         """Return bounded reviewed project context, never a current-state reducer."""
+        from masterbrain.project_artifacts import visible_project_artifact_rows
+
         self.store.require(ctx, "knowledge.search")
         if (
             not isinstance(request, ProjectDossierRequest)
@@ -1022,9 +1024,13 @@ class KnowledgeCore:
                 + " ORDER BY km.recorded_at DESC,km.id DESC LIMIT %s",
                 (allowed_sources, cutoff_at, project_id, request.member_limit + 1),
             ).fetchall()
+            artifacts = visible_project_artifact_rows(
+                conn, allowed_sources, cutoff_at, project_id, request.artifact_limit + 1,
+            )
             event_page = events[:request.event_limit]
             commitment_page = commitments[:request.commitment_limit]
             member_page = members[:request.member_limit]
+            artifact_page = artifacts[:request.artifact_limit]
             ids_by_kind = {
                 "project": [project_id],
                 "event": [row["id"] for row in event_page],
@@ -1102,19 +1108,37 @@ class KnowledgeCore:
                 }
                 for row in member_page
             ],
+            "artifacts": [
+                {
+                    "object_kind": "project_artifact",
+                    "object_id": row["id"],
+                    "project_id": project_id,
+                    "artifact_evidence_id": row["artifact_evidence_id"],
+                    "basis_evidence_id": row["basis_evidence_id"],
+                    "artifact_source_kind": row["artifact_source_kind"],
+                    "relation": row["relation"],
+                    "assertion_status": row["assertion_status"],
+                    "observed_at": row["observed_at"],
+                    "recorded_at": row["recorded_at"],
+                }
+                for row in artifact_page
+            ],
             "recorded_cutoff_at": cutoff_at,
             "visibility": request.visibility,
             "event_limit": request.event_limit,
             "commitment_limit": request.commitment_limit,
             "member_limit": request.member_limit,
+            "artifact_limit": request.artifact_limit,
             "events_truncated": len(events) > request.event_limit,
             "commitments_truncated": len(commitments) > request.commitment_limit,
             "members_truncated": len(members) > request.member_limit,
+            "artifacts_truncated": len(artifacts) > request.artifact_limit,
             "coverage": {
                 "order": "recorded_at_descending",
                 "undated_links": "included",
                 "source_freshness": "not_asserted",
                 "interpretation": "reviewed_assertions_not_current_state",
+                "artifact_visibility": "retained_reviewed_link_history",
             },
             "untrusted_content": True,
         }

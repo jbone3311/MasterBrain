@@ -242,6 +242,11 @@ path or bytes, and rejects a hidden cursor. The append-only tenant-fenced
 table and SQL trigger refuse stale/excluded evidence and invented quotes;
 they do not make a compromised database owner harmless. Existing evidence
 drill-down remains separately scoped and no source effect is authorized.
+ADR-194 reuses that current, source-grant, exclusion and exact-quote predicate
+inside the dossier's tenant-bound read transaction before its independent
+artifact limit. The browser validates the full bounded artifact section and
+renders labels as inert text; it does not receive paths, quotes, bytes or a
+source-effect grant. Retraction remains history, not automatic roster removal.
 
 ## Privacy-safe failure observability
 

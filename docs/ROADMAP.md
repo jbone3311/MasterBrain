@@ -1,10 +1,11 @@
 # MasterBrain Roadmap
 
-ADR-193 supplies reviewed project-to-artifact evidence links as the first
-related-files building block. Next integrate a separately bounded artifact
-section into the project dossier and add source-scoped project facts, then
-render only currently authorized, export-time-verified citations. It is not
-automatic association, a complete Librarian round trip, or a FileOS effect.
+ADR-193 supplies reviewed project-to-artifact evidence links. ADR-194 adds a
+separately bounded, current-authorized artifact section to the project dossier
+and owner workspace. Next add source-scoped project facts, then render only
+currently authorized, export-time-verified citations. Neither step is
+automatic association, a computed current file roster, a complete Librarian
+round trip, or a FileOS effect.
 
 ADR-192 tightens the synthetic Librarian proposal path: project aliases now
 need an exact quote in their own evidence. Before a Markdown dossier can claim

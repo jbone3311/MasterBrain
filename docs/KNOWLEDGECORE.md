@@ -37,6 +37,9 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
   It is not a general Knowledge assertion kind or automatic project match.
   A bounded link-history API filters project, artifact and basis source grants
   before paging. Same-hash attachment occurrences remain separate IDs.
+- ADR-194 includes that same currently authorized retained link history in
+  the exact-project dossier as a fourth independently bounded list. It does
+  not infer a current file roster, export quotes or original FileOS bytes.
 - Corrections link an old assertion to a replacement without updating or deleting
   either assertion. Conflicting claims can coexist and are returned independently.
 - All knowledge and evidence-link tables use forced PostgreSQL row-level security,
@@ -83,7 +86,7 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
 | `GET /v1/knowledge/commitments-due` | `knowledge.search` | Bounded due-window commitment page, recorded-time cutoff/cursor, direct evidence IDs; ADR-161 |
 | `GET /v1/knowledge/{kind}/{id}` | `knowledge.read` | One tenant-scoped assertion and its evidence links |
 | `GET /v1/knowledge/changes` | `knowledge.changes.read` | Bounded chronological change page, with member linked-source filtering |
-| `GET /v1/knowledge/projects/{project_id}/dossier` | `knowledge.search` | Independently bounded reviewed events, commitments and members; no current-roster claim |
+| `GET /v1/knowledge/projects/{project_id}/dossier` | `knowledge.search` | Independently bounded reviewed events, commitments, members and artifact-link history; no current-roster claim |
 | `GET /v1/knowledge/projects/resolve` | `knowledge.search` | Bounded, source-scoped reviewed candidates for an exact normalized alias; ambiguous names are not merged |
 | `POST /v1/knowledge/projects/{project_id}/artifacts` | `knowledge.review` + `brain.content.read` | Human-only exact evidence-occurrence link and quoted basis; idempotent append |
 | `GET /v1/knowledge/projects/{project_id}/artifacts` | `knowledge.search` | Current-authorized, cutoff-paged reviewed link history; evidence IDs/source kind only |

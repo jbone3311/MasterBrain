@@ -19,6 +19,7 @@ from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
     ProjectArtifactLinkWrite,
     ProjectArtifactPageRequest,
+    ProjectDossierRequest,
     ProjectWrite,
 )
 from masterbrain.project_artifacts import ProjectArtifactLinks
@@ -87,6 +88,10 @@ def test_reviewed_artifact_link_replay_paging_and_distinct_occurrences(database,
     key = uuid4()
     first = links.publish(ctx, project_id, _body(first_artifact, basis_id), key)
     assert first["changed"] and first["reviewed"]
+    initial_dossier = KnowledgeCore(store).project_dossier(
+        ctx, project_id, ProjectDossierRequest(artifact_limit=1),
+    )
+    assert [row["object_id"] for row in initial_dossier["artifacts"]] == [first["object_id"]]
     assert links.publish(ctx, project_id, _body(first_artifact, basis_id), key) == {
         **first, "changed": False,
     }
@@ -104,6 +109,13 @@ def test_reviewed_artifact_link_replay_paging_and_distinct_occurrences(database,
         ).fetchall()
     assert len(hashes) == 2 and len({row["sha256"] for row in hashes}) == 1
     second = links.publish(ctx, project_id, _body(second_artifact, basis_id), uuid4())
+    frozen_dossier = KnowledgeCore(store).project_dossier(
+        ctx, project_id, ProjectDossierRequest(
+            artifact_limit=1, recorded_cutoff_at=initial_dossier["recorded_cutoff_at"],
+        ),
+    )
+    assert [row["object_id"] for row in frozen_dossier["artifacts"]] == [first["object_id"]]
+    assert frozen_dossier["artifacts_truncated"] is False
     page = links.page(ctx, project_id, ProjectArtifactPageRequest(limit=1))
     assert len(page["results"]) == 1 and page["next_cursor"] is not None
     assert page["results"][0]["object_id"] == second["object_id"]
@@ -181,6 +193,9 @@ def test_artifact_link_hidden_after_email_exclusion(database, tenant):
         links.publish(ctx, project_id, _body(artifact_id, basis_id), uuid4())
     with pytest.raises(NotFound):
         links.publish(ctx, project_id, _body(artifact_id, basis_id), replay_key)
+    assert KnowledgeCore(store).project_dossier(
+        ctx, project_id, ProjectDossierRequest(artifact_limit=1),
+    )["artifacts"] == []
 
 
 def test_artifact_link_cross_tenant_is_not_disclosed(database, tenant):
@@ -196,6 +211,10 @@ def test_artifact_link_cross_tenant_is_not_disclosed(database, tenant):
         links.page(foreign_ctx, project_id, ProjectArtifactPageRequest())
     with pytest.raises(NotFound):
         links.publish(foreign_ctx, project_id, _body(artifact_id, basis_id), uuid4())
+    with pytest.raises(NotFound):
+        KnowledgeCore(store).project_dossier(
+            foreign_ctx, project_id, ProjectDossierRequest(),
+        )
 
 
 def test_artifact_link_hidden_after_artifact_version_changes(database, tenant):
@@ -216,6 +235,9 @@ def test_artifact_link_hidden_after_artifact_version_changes(database, tenant):
     assert links.page(ctx, project_id, ProjectArtifactPageRequest())["results"] == []
     with pytest.raises(NotFound):
         links.publish(ctx, project_id, _body(artifact_id, basis_id), replay_key)
+    assert KnowledgeCore(store).project_dossier(
+        ctx, project_id, ProjectDossierRequest(artifact_limit=1),
+    )["artifacts"] == []
 
 
 def test_project_and_artifact_sources_are_checked_independently(database, tenant):
@@ -250,6 +272,16 @@ def test_project_and_artifact_sources_are_checked_independently(database, tenant
     assert [row["object_id"] for row in visible_page["results"]] == [visible["object_id"]]
     assert visible_page["next_cursor"] is None
     assert len(links.page(ctx, project_id, ProjectArtifactPageRequest(limit=25))["results"]) == 25
+    dossier = KnowledgeCore(store).project_dossier(
+        project_only, project_id, ProjectDossierRequest(artifact_limit=1),
+    )
+    assert [row["object_id"] for row in dossier["artifacts"]] == [visible["object_id"]]
+    assert dossier["artifacts_truncated"] is False
+    assert dossier["coverage"]["artifact_visibility"] == "retained_reviewed_link_history"
+    owner_dossier = KnowledgeCore(store).project_dossier(
+        ctx, project_id, ProjectDossierRequest(artifact_limit=1),
+    )
+    assert owner_dossier["artifacts_truncated"] is True
 
 
 def test_reviewed_project_can_link_exact_fileos_occurrence(database, tenant, tmp_path):
@@ -274,6 +306,12 @@ def test_reviewed_project_can_link_exact_fileos_occurrence(database, tenant, tmp
     assert page["results"][0]["object_id"] == created["object_id"]
     assert page["results"][0]["artifact_evidence_id"] == file_evidence
     assert page["results"][0]["artifact_source_kind"] == "fileos"
+    dossier = KnowledgeCore(store).project_dossier(
+        ctx, project_id, ProjectDossierRequest(artifact_limit=1),
+    )
+    assert dossier["artifacts"][0]["artifact_source_kind"] == "fileos"
+    assert dossier["artifacts"][0]["basis_evidence_id"] == basis_id
+    assert "source_quote" not in dossier["artifacts"][0]
 
     # The project/basis email and the linked FileOS occurrence require separate grants.
     with store.transaction(ctx) as conn:
@@ -284,6 +322,9 @@ def test_reviewed_project_can_link_exact_fileos_occurrence(database, tenant, tmp
         ).fetchone()["source_id"]
     email_only = replace(ctx, source_ids=frozenset({email_source}))
     assert links.page(email_only, project_id, ProjectArtifactPageRequest())["results"] == []
+    assert KnowledgeCore(store).project_dossier(
+        email_only, project_id, ProjectDossierRequest(artifact_limit=1),
+    )["artifacts"] == []
     with pytest.raises(NotFound):
         links.publish(email_only, project_id, _body(file_evidence, basis_id), uuid4())
 
@@ -319,6 +360,14 @@ def test_artifact_link_api_scopes_and_closed_page(database, tenant):
         assert page.json()["results"][0]["artifact_evidence_id"] == artifact_id
         assert page.json()["results"][0]["artifact_source_kind"] == "email"
         assert page.headers["cache-control"] == "no-store"
+        dossier = api.get(
+            f"/v1/knowledge/projects/{project_id}/dossier",
+            params={"artifact_limit": 1},
+        )
+        assert dossier.status_code == 200, dossier.text
+        assert dossier.json()["artifacts"][0]["artifact_evidence_id"] == artifact_id
+        assert dossier.json()["artifacts"][0]["artifact_source_kind"] == "email"
+        assert dossier.json()["artifact_limit"] == 1
         assert api.get(path, params={"limit": 0}).status_code == 422
         assert api.get(path, params={"after": "partifact_bad"}).status_code == 422
     with client({"knowledge.review"}) as denied:

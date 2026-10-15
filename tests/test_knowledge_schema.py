@@ -206,7 +206,10 @@ def test_timeline_requires_bounded_aware_window_and_recorded_cutoff_cursor() -> 
 def test_project_dossier_is_closed_bounded_and_cutoff_aware() -> None:
     request = ProjectDossierRequest()
     assert request.visibility == "unsuperseded"
-    assert request.event_limit == request.commitment_limit == request.member_limit == 10
+    assert (
+        request.event_limit == request.commitment_limit
+        == request.member_limit == request.artifact_limit == 10
+    )
     assert ProjectDossierRequest(recorded_cutoff_at=NOW, visibility="retained").visibility == (
         "retained"
     )
@@ -214,6 +217,7 @@ def test_project_dossier_is_closed_bounded_and_cutoff_aware() -> None:
         {"visibility": "current"}, {"event_limit": 0}, {"event_limit": 26},
         {"commitment_limit": True}, {"recorded_cutoff_at": NOW.replace(tzinfo=None)},
         {"member_limit": 0}, {"member_limit": True},
+        {"artifact_limit": 0}, {"artifact_limit": 26}, {"artifact_limit": True},
         {"unknown": "not allowed"},
     ):
         with pytest.raises(ValidationError):

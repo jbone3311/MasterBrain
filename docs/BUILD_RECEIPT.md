@@ -2,6 +2,25 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Bounded project dossier artifact section — ADR-194
+
+The `codex/project-dossier-artifacts` branch adds a fourth independently
+bounded section to the exact-project dossier and owner workspace. It reuses
+ADR-193's pre-limit current/source-grant/exclusion/quote visibility query;
+the client and browser reject malformed rows. Fictional focused PostgreSQL
+cases passed 8/8 after adding dossier assertions for Email/FileOS links,
+hidden-source pagination, cutoff, stale/excluded evidence and API scope.
+The focused dossier/client/schema unit tests passed 99/99 and all six browser
+suites passed 166/166. The disposable Python 3.14/PostgreSQL 17.11 full
+suite passed 3,400 tests with six skips (560 of 561 PostgreSQL-marked tests
+executed). Ruff, mypy (106 source files), documentation links and diff checks
+passed. The local repository deployment gate passed (2,841 passed, 565
+skipped; one PostgreSQL-marked test executed in this separate gate).
+Hosted exact-head/restore checks remain pending. No live source, source effect,
+database migration or
+FOS-Master edit is involved. This section is a local progress record, not a
+merge receipt.
+
 ## Reviewed project-to-artifact links — ADR-193
 
 Merged [PR #224](https://github.com/jbone3311/MasterBrain/pull/224) adds a human-reviewed link from
@@ -34,6 +53,16 @@ All six browser suites passed 165/165. Ruff, mypy (106 source files), docs
 links, diff checks and the local repository deployment gate passed (2,836
 tests, 563 skips; the gate's PostgreSQL coverage is separate from the full
 suite). The feature branch was removed after its tree matched `main`.
+[Receipt PR #225](https://github.com/jbone3311/MasterBrain/pull/225) then recorded these links; its exact
+head `cf255e8af01912bc7385fe30939e1554f9a59110` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38659227661),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38659227582)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38659227748).
+The docs-only squash `78377e32b400f5959ba41122c481b333d9cfec8d`
+also passed independent merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38660248483),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38660248494)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38660248487).
 
 ## Project-proposal alias citation gate — ADR-192
 

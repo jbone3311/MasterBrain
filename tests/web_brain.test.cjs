@@ -48,7 +48,8 @@ const EVENT_ID = "event_" + "c".repeat(32);
 const COMMITMENT_ID = "commitment_" + "d".repeat(32);
 const MEMBER_ID = "member_" + "e".repeat(32);
 const ENTITY_ID = "entity_" + "f".repeat(32);
-const DOSSIER_PATH = `/v1/knowledge/projects/${PROJECT_ID}/dossier?event_limit=5&commitment_limit=5&member_limit=5`;
+const ARTIFACT_LINK_ID = "partifact_" + "1".repeat(32);
+const DOSSIER_PATH = `/v1/knowledge/projects/${PROJECT_ID}/dossier?event_limit=5&commitment_limit=5&member_limit=5&artifact_limit=5`;
 const SCHEDULE_START = "2026-10-01";
 const SCHEDULE_END = "2026-10-08";
 const scheduleQuery = `start=2026-10-01T00%3A00%3A00Z&end=2026-10-08T00%3A00%3A00Z&visibility=unsuperseded&limit=10`;
@@ -97,11 +98,18 @@ function dossierData() {
       entity_id: ENTITY_ID, entity_name: "Pat <Example>", entity_type: "person",
       role: "broker", assertion_status: "asserted", valid_from: null, valid_to: null,
       recorded_at: "2026-10-04T00:00:00Z", evidence_ids: [EVIDENCE_ID]}],
+    artifacts: [{object_kind: "project_artifact", object_id: ARTIFACT_LINK_ID,
+      project_id: PROJECT_ID, artifact_evidence_id: EVIDENCE_ID,
+      basis_evidence_id: EVIDENCE_ID, artifact_source_kind: "fileos",
+      relation: "related", assertion_status: "asserted",
+      observed_at: "2026-10-04T00:00:00Z", recorded_at: "2026-10-04T00:00:00Z"}],
     recorded_cutoff_at: "2026-10-05T00:00:00Z", visibility: "unsuperseded",
-    event_limit: 5, commitment_limit: 5, member_limit: 5, events_truncated: false,
-    commitments_truncated: false, members_truncated: false, untrusted_content: true,
+    event_limit: 5, commitment_limit: 5, member_limit: 5, artifact_limit: 5,
+    events_truncated: false, commitments_truncated: false, members_truncated: false,
+    artifacts_truncated: false, untrusted_content: true,
     coverage: {order: "recorded_at_descending", undated_links: "included",
-      source_freshness: "not_asserted", interpretation: "reviewed_assertions_not_current_state"},
+      source_freshness: "not_asserted", interpretation: "reviewed_assertions_not_current_state",
+      artifact_visibility: "retained_reviewed_link_history"},
   };
 }
 function walk(element) { return [element, ...element.children.flatMap(walk)]; }
@@ -352,6 +360,8 @@ test("explicit project drill-down uses the scoped read route and renders bounded
   assert.match(rendered, /Send <img> package/);
   assert.match(rendered, /Pat <Example>/);
   assert.match(rendered, /Reviewed role · broker · asserted/);
+  assert.match(rendered, /Reviewed related evidence · 1/);
+  assert.match(rendered, /fileos evidence · related · asserted/);
   assert.match(rendered, /Source freshness and current project truth are not established/);
   assert.ok(walk(h.elements.turns).filter(item => item.textContent === "Open evidence").length >= 4);
   assert.equal(h.calls.some(call => /proposals|move|rename|delete/.test(call.url)), false);
@@ -393,6 +403,10 @@ test("project drill-down refuses mismatched data and hidden project responses", 
       members: [{...dossierData().members[0], entity_id: "entity_bad"}]})},
     {ok: true, status: 200, json: async () => ({...dossierData(),
       members: [{...dossierData().members[0], role: "admin permission"}]})},
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      artifacts: [{...dossierData().artifacts[0], project_id: "project_bad"}]})},
+    {ok: true, status: 200, json: async () => ({...dossierData(),
+      artifacts: [{...dossierData().artifacts[0], source_quote: "private"}]})},
     {ok: false, status: 404},
   ]) {
     const h = harness(async url => url === DOSSIER_PATH ? reply :
@@ -426,6 +440,32 @@ test("project drill-down labels independently truncated lists and rejects row re
   const reordered = {...valid, events: [...fiveEvents].reverse()};
   const bad = harness(async url => ({ok: true, status: 200,
     json: async () => url === DOSSIER_PATH ? reordered : projectSearchData()}));
+  bad.enterToken("owner-token");
+  await bad.searchOnly("Fictional project");
+  await walk(bad.elements.turns).find(item => item.textContent === "Open reviewed project").events.click();
+  await flush();
+  assert.match(walk(bad.elements.turns).map(item => item.textContent).join("\n"),
+    /Project details unavailable/);
+});
+
+test("project artifact history has its own bound and rejects malformed ordering", async () => {
+  const fiveArtifacts = Array.from({length: 5}, (_, index) => ({...dossierData().artifacts[0],
+    object_id: "partifact_" + String(9 - index).repeat(32),
+    recorded_at: `2026-10-04T00:00:0${5 - index}Z`,
+  }));
+  const valid = {...dossierData(), artifacts: fiveArtifacts, artifacts_truncated: true};
+  const h = harness(async url => ({ok: true, status: 200,
+    json: async () => url === DOSSIER_PATH ? valid : projectSearchData()}));
+  h.enterToken("owner-token");
+  await h.searchOnly("Fictional project");
+  await walk(h.elements.turns).find(item => item.textContent === "Open reviewed project").events.click();
+  await flush();
+  assert.match(walk(h.elements.turns).map(item => item.textContent).join("\n"),
+    /Reviewed related evidence · 5\+/);
+
+  const bad = harness(async url => ({ok: true, status: 200,
+    json: async () => url === DOSSIER_PATH ?
+      {...valid, artifacts: [...fiveArtifacts].reverse()} : projectSearchData()}));
   bad.enterToken("owner-token");
   await bad.searchOnly("Fictional project");
   await walk(bad.elements.turns).find(item => item.textContent === "Open reviewed project").events.click();

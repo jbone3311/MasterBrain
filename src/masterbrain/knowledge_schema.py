@@ -315,9 +315,12 @@ class ProjectDossierRequest(ClosedModel):
     event_limit: int = Field(default=10, ge=1, le=25)
     commitment_limit: int = Field(default=10, ge=1, le=25)
     member_limit: int = Field(default=10, ge=1, le=25)
+    artifact_limit: int = Field(default=10, ge=1, le=25)
     recorded_cutoff_at: AwareDatetime | None = None
 
-    @field_validator("event_limit", "commitment_limit", "member_limit", mode="before")
+    @field_validator(
+        "event_limit", "commitment_limit", "member_limit", "artifact_limit", mode="before"
+    )
     @classmethod
     def integer_limit(cls, value: object) -> object:
         if isinstance(value, bool):

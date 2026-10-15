@@ -1,6 +1,6 @@
 # Current MasterBrain code map
 
-Updated 2026-10-14. Existing files, not a proposed directory tree. Python modular
+Updated 2026-10-15. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without
@@ -8,6 +8,7 @@ redirecting Email ingestion or search.
 
 | Responsibility | Actual files |
 |---|---|
+| Bounded project dossier artifact section | [dossier read](../src/masterbrain/knowledge.py), [shared artifact visibility query](../src/masterbrain/project_artifacts.py), [client validator](../src/masterbrain/brain_client.py), [owner workspace](../src/masterbrain/web/brain.js), [fictional PostgreSQL tests](../tests/test_project_artifacts_postgres.py), [browser tests](../tests/web_brain.test.cjs), [ADR-194](adr/194_project_dossier_artifact_section.md); retained reviewed link history, not a current roster or Markdown export |
 | Reviewed project-to-artifact links | [link service](../src/masterbrain/project_artifacts.py), [closed schemas](../src/masterbrain/knowledge_schema.py), [Brain API routes](../src/email_brain/api.py), [reference read client](../src/masterbrain/brain_client.py), [additive schema](../migrations/0065_reviewed_project_artifacts.sql), [fictional PostgreSQL tests](../tests/test_project_artifacts_postgres.py), [ADR-193](adr/193_reviewed_project_artifact_links.md); exact evidence occurrences, not automatic association or a dossier exporter |
 | Private Knowledge proposal batches | [queue and review](../src/masterbrain/knowledge_proposals.py), [closed schemas](../src/masterbrain/knowledge_schema.py), [human routes](../src/email_brain/api.py), [additive schema](../migrations/0063_private_knowledge_proposal_batches.sql), [PostgreSQL/API tests](../tests/test_knowledge_proposals_postgres.py), [ADR-186](adr/186_private_knowledge_proposal_batches.md); source-stated only, no Markdown parser or assistant access |
 | Synthetic-only scoped Fastmail inventory | [typed filter](../src/email_brain/connectors/jmap.py), [version-4 worker](../src/email_brain/sync.py), [fictional tests](../tests/test_sync.py), [ADR-176](adr/176_scoped_fastmail_inventory_worker.md); connected to the private operator by ADR-178 and local source management by ADR-179 |

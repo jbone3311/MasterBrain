@@ -33,8 +33,10 @@ def test_project_dossier_route_is_scoped_and_closed() -> None:
         assert response.json()["project"]["object_id"] == PROJECT
         request = knowledge.project_dossier.call_args.args[2]
         assert request.event_limit == 2 and request.commitment_limit == 10
+        assert request.artifact_limit == 10
         for params in (
             {"event_limit": "0"}, {"commitment_limit": "26"},
+            {"artifact_limit": "26"},
             {"recorded_cutoff_at": "2026-10-05T00:00:00"},
             {"visibility": "current"}, {"unknown": "no"},
         ):
@@ -46,7 +48,7 @@ def test_project_dossier_route_is_scoped_and_closed() -> None:
         assert client.get(PATH, headers=HEADERS).status_code == 403
 
 
-def test_project_dossier_sql_checks_grants_and_cutoff_before_both_limits() -> None:
+def test_project_dossier_sql_checks_grants_and_cutoff_before_independent_limits() -> None:
     store = MagicMock(spec=Store)
     conn = store.transaction.return_value.__enter__.return_value
     clock = MagicMock()
@@ -62,16 +64,21 @@ def test_project_dossier_sql_checks_grants_and_cutoff_before_both_limits() -> No
     commitments.fetchall.return_value = []
     members = MagicMock()
     members.fetchall.return_value = []
+    artifacts = MagicMock()
+    artifacts.fetchall.return_value = []
     evidence = MagicMock()
     evidence.fetchall.return_value = []
-    conn.execute.side_effect = [clock, project, events, commitments, members, evidence]
+    conn.execute.side_effect = [
+        clock, project, events, commitments, members, artifacts, evidence,
+    ]
     ctx = TenantContext(uuid4(), uuid4(), frozenset({"knowledge.search"}), uuid4())
     result = KnowledgeCore(store).project_dossier(
         ctx, PROJECT, ProjectDossierRequest(event_limit=2, commitment_limit=3),
     )
     assert result["project"]["object_id"] == PROJECT
-    assert result["events"] == result["commitments"] == result["members"] == []
-    for call in conn.execute.call_args_list[1:5]:
+    for section in ("events", "commitments", "members", "artifacts"):
+        assert result[section] == []
+    for call in conn.execute.call_args_list[1:6]:
         query, params = call.args
         assert query.count("%s") == len(params)
         assert "recorded_at<=allowed.cutoff" in query
@@ -92,6 +99,12 @@ def test_project_dossier_sql_checks_grants_and_cutoff_before_both_limits() -> No
     assert "ORDER BY km.recorded_at DESC,km.id DESC LIMIT %s" in member_sql
     assert "knowledge_entities ke_ref" in member_sql
     assert member_params[-1] == 11
+    artifact_sql, artifact_params = conn.execute.call_args_list[5].args
+    assert "l.project_id=%s" in artifact_sql
+    assert "AND i.current_version_id=v.id AND s.status='active'" in artifact_sql
+    assert "position(l.source_quote IN d.body)>0" in artifact_sql
+    assert "ORDER BY l.recorded_at DESC,l.id DESC LIMIT %s" in artifact_sql
+    assert artifact_params[-1] == 11
     store.audit.assert_called_once_with(
         conn, ctx, "knowledge.project_dossier_read", "project",
     )

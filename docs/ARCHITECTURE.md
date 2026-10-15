@@ -160,6 +160,10 @@ DataCore evidence identity: an Email attachment occurrence or FileOS version is
 linked by exact evidence ID, with a separate exact-quoted basis. Source-grant
 filters precede the bounded link-history read; it neither auto-matches nor
 performs any source effect.
+ADR-194 composes that same pre-limit, current-authorized link-history predicate
+into the exact-project dossier transaction as a fourth independently bounded
+section. Its retained rows are not a computed current file roster or export
+citations; the first-party workspace only opens them on an explicit read.
 ADR-158's optional `unsuperseded` query is a source-grant-aware leaf of
 the reviewed supersession/correction graph. ADR-159 composes that projection
 into the grouped Brain current-search and Ask Knowledge layer while keeping

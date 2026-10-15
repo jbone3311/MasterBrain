@@ -577,12 +577,16 @@ class BrainReadClient:
         event_limit: int = 10,
         commitment_limit: int = 10,
         member_limit: int = 10,
+        artifact_limit: int = 10,
         recorded_cutoff_at: datetime | None = None,
     ) -> dict[str, Any]:
         """Read compact reviewed project context with bounded linked assertions."""
         if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
             raise BrainClientError("invalid_request")
-        if any(type(value) is not int for value in (event_limit, commitment_limit, member_limit)):
+        if any(
+            type(value) is not int
+            for value in (event_limit, commitment_limit, member_limit, artifact_limit)
+        ):
             raise BrainClientError("invalid_request")
         if recorded_cutoff_at is not None and not isinstance(recorded_cutoff_at, datetime):
             raise BrainClientError("invalid_request")
@@ -591,6 +595,7 @@ class BrainReadClient:
                 "visibility": visibility, "event_limit": event_limit,
                 "commitment_limit": commitment_limit,
                 "member_limit": member_limit,
+                "artifact_limit": artifact_limit,
                 "recorded_cutoff_at": recorded_cutoff_at,
             })
         except ValidationError:
@@ -604,6 +609,7 @@ class BrainReadClient:
         events = data.get("events")
         commitments = data.get("commitments")
         members = data.get("members")
+        artifacts = data.get("artifacts")
         coverage = data.get("coverage")
         if (
             cutoff is None
@@ -615,37 +621,57 @@ class BrainReadClient:
             or data["commitment_limit"] != commitment_limit
             or type(data.get("member_limit")) is not int
             or data["member_limit"] != member_limit
+            or type(data.get("artifact_limit")) is not int
+            or data["artifact_limit"] != artifact_limit
             or type(data.get("events_truncated")) is not bool
             or type(data.get("commitments_truncated")) is not bool
             or type(data.get("members_truncated")) is not bool
+            or type(data.get("artifacts_truncated")) is not bool
             or data.get("untrusted_content") is not True
             or not isinstance(coverage, dict)
             or coverage.get("order") != "recorded_at_descending"
             or coverage.get("undated_links") != "included"
             or coverage.get("source_freshness") != "not_asserted"
             or coverage.get("interpretation") != "reviewed_assertions_not_current_state"
+            or coverage.get("artifact_visibility") != "retained_reviewed_link_history"
             or not self._valid_project_dossier_project(project, project_id, cutoff)
             or not isinstance(events, list) or len(events) > event_limit
             or not isinstance(commitments, list) or len(commitments) > commitment_limit
             or not isinstance(members, list) or len(members) > member_limit
+            or not isinstance(artifacts, list) or len(artifacts) > artifact_limit
             or data["events_truncated"] and len(events) != event_limit
             or data["commitments_truncated"] and len(commitments) != commitment_limit
             or data["members_truncated"] and len(members) != member_limit
+            or data["artifacts_truncated"] and len(artifacts) != artifact_limit
             or any(not self._valid_project_dossier_event(row, project_id, cutoff)
                    for row in events)
             or any(not self._valid_project_dossier_commitment(row, project_id, cutoff)
                    for row in commitments)
             or any(not self._valid_project_dossier_member(row, project_id, cutoff)
                    for row in members)
+            or any(not self._valid_project_dossier_artifact(row, project_id, cutoff)
+                   for row in artifacts)
         ):
             raise BrainClientError("invalid_response")
-        for rows in (events, commitments, members):
+        for rows in (events, commitments, members, artifacts):
             ids = [row["object_id"] for row in rows]
             order = [(self._aware_datetime(row["recorded_at"]), row["object_id"])
                      for row in rows]
             if len(set(ids)) != len(ids) or order != sorted(order, reverse=True):
                 raise BrainClientError("invalid_response")
         return data
+
+    @classmethod
+    def _valid_project_dossier_artifact(
+        cls, row: Any, project_id: str, cutoff: datetime
+    ) -> bool:
+        return bool(
+            isinstance(row, dict)
+            and row.get("project_id") == project_id
+            and cls._valid_project_artifact(
+                {key: value for key, value in row.items() if key != "project_id"}, cutoff,
+            )
+        )
 
     @classmethod
     def _valid_project_dossier_member(

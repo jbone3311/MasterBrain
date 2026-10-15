@@ -108,13 +108,24 @@ def dossier_result() -> dict[str, object]:
             "valid_from": None, "valid_to": None, "recorded_at": recorded,
             "evidence_ids": [TIMELINE_EVIDENCE],
         }],
+        "artifacts": [{
+            "object_kind": "project_artifact", "object_id": ARTIFACT_LINK,
+            "project_id": DOSSIER_PROJECT,
+            "artifact_evidence_id": TIMELINE_EVIDENCE,
+            "basis_evidence_id": TIMELINE_EVIDENCE,
+            "artifact_source_kind": "fileos", "relation": "related",
+            "assertion_status": "asserted", "observed_at": recorded,
+            "recorded_at": recorded,
+        }],
         "recorded_cutoff_at": TIMELINE_START.isoformat(),
         "visibility": "unsuperseded", "event_limit": 1, "commitment_limit": 1,
-        "member_limit": 1, "events_truncated": False, "commitments_truncated": False,
-        "members_truncated": False,
+        "member_limit": 1, "artifact_limit": 10,
+        "events_truncated": False, "commitments_truncated": False,
+        "members_truncated": False, "artifacts_truncated": False,
         "coverage": {"order": "recorded_at_descending", "undated_links": "included",
                      "source_freshness": "not_asserted",
-                     "interpretation": "reviewed_assertions_not_current_state"},
+                     "interpretation": "reviewed_assertions_not_current_state",
+                     "artifact_visibility": "retained_reviewed_link_history"},
         "untrusted_content": True,
     }
 
@@ -136,7 +147,8 @@ def test_project_dossier_client_sends_bounded_read_and_validates_context() -> No
         assert result["project"]["object_id"] == DOSSIER_PROJECT
         for invalid in (
             {"project_id": "project_bad"}, {"event_limit": True},
-            {"commitment_limit": 26}, {"member_limit": True}, {"visibility": "current"},
+            {"commitment_limit": 26}, {"member_limit": True},
+            {"artifact_limit": 0}, {"visibility": "current"},
             {"recorded_cutoff_at": TIMELINE_START.replace(tzinfo=None)},
         ):
             with pytest.raises(BrainClientError, match="invalid_request"):
@@ -168,6 +180,11 @@ def test_project_dossier_client_sends_bounded_read_and_validates_context() -> No
     {"commitments": dossier_result()["commitments"] * 2},
     {"members": [{**dossier_result()["members"][0], "entity_id": "entity_bad"}]},
     {"members": dossier_result()["members"] * 2},
+    {"artifacts": [{**dossier_result()["artifacts"][0], "project_id": "project_bad"}]},
+    {"artifacts": [{**dossier_result()["artifacts"][0], "source_quote": "private"}]},
+    {"artifacts": dossier_result()["artifacts"] * 2},
+    {"artifact_limit": 26},
+    {"coverage": {**dossier_result()["coverage"], "artifact_visibility": "current_truth"}},
     {"coverage": {"source_freshness": "asserted"}},
 ])
 def test_project_dossier_client_rejects_malformed_context(change: dict) -> None:

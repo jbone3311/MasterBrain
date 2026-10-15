@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add a fourth, independently bounded reviewed-artifact section to exact
+  project dossiers and the owner workspace (ADR-194). Current source grants,
+  exclusion and basis quote are rechecked before limiting. This is retained
+  link history, not a current file roster or complete Markdown export.
+
 - Add reviewed project-to-artifact evidence-occurrence links and a bounded,
   source-scoped Brain API page (ADR-193). A human selects the link and exact
   quoted basis; duplicate-content occurrences remain distinct. This is link

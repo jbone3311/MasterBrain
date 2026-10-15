@@ -212,16 +212,24 @@ source effects or an alternate route through KnowledgeCore.
   they do not establish a durable snapshot, current truth or new API grant.
 - `GET /v1/knowledge/projects/{project_id}/dossier` — ADR-162 compact,
   read-only context for one reviewed project assertion and its linked events,
-  commitments and ADR-183 reviewed members/roles. Requires `knowledge.search`;
+  commitments, ADR-183 reviewed members/roles and ADR-194 reviewed artifact
+  link history. Requires `knowledge.search`;
   each list has an independent
-  1–25 limit (default 10), a truncation flag and direct evidence IDs. An
-  optional aware recorded-time cutoff and `unsuperseded` (default) or
-  `retained` visibility apply to both lists; the project is always the exact
+  1–25 limit (default 10), a truncation flag and direct evidence IDs. The
+  artifact section has its own `artifact_limit` and `artifacts_truncated`;
+  it returns artifact and separately quoted-basis evidence IDs but no quote,
+  path or bytes. Its links are filtered under current grants, active/version
+  and exclusion state before limiting; it is retained link history regardless
+  of the dossier visibility switch, not a current file roster. An
+  optional aware recorded-time cutoff applies to every list; `unsuperseded`
+  (default) or `retained` visibility applies to events, commitments and
+  members only. The project is always the exact
   requested reviewed assertion, not automatically redirected to a successor.
   Results are ordered by recording
   time, not occurrence/due time; undated links are included. Assistants must
   have grants to the project, every returned assertion and every referenced
-  commitment owner/counterparty, and every member's linked project and entity.
+  commitment owner/counterparty, every member's linked project and entity,
+  and both evidence occurrences of each artifact link.
   Roles are descriptive assertions, never permission grants. A hidden, missing
   or cutoff-invisible project
   returns not found. This is reviewed context, not a project-state reducer,
@@ -229,7 +237,8 @@ source effects or an alternate route through KnowledgeCore.
   `BrainReadClient.project_dossier` validates the bounded response.
   ADR-163's first-party `/brain` control explicitly requests this same route
   from a reviewed project match with fixed five-item limits for each linked
-  list. It does not fetch on page load, add a privileged API, or interpret
+  list, including artifacts under ADR-194. It does not fetch on page load,
+  add a privileged API, or interpret
   the reviewed project state as live truth. PR #156 merged after exact-head
   gates passed. Merged-main restore passed; full CI and the final strict gate
   were blocked before execution by hosted-runner acquisition

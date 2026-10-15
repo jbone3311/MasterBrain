@@ -24,6 +24,10 @@ project match in either Ask or Search only. It calls the same scoped read API,
 shows a bounded set of linked reviewed events and commitments with evidence
 controls, and labels project state as an assertion rather than current truth.
 No project fetch occurs until the owner opens it.
+ADR-183 adds people/roles to that read, and ADR-194 adds independently bounded
+artifact-link history. The artifact section exposes only
+current-authorized evidence IDs and separate drill-down controls, not paths,
+bytes, an inferred file match or a complete Markdown dossier.
 ADR-164 adds a merged, explicit Reviewed schedule panel: the owner selects
 a UTC date window, then separately requests occurrence-dated reviewed events
 or due-dated reviewed commitments. It uses the existing scoped Brain API,

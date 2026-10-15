@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -51,6 +51,41 @@ _LINK_VISIBLE = (
     + " AND " + _current_evidence_sql("l.artifact_evidence_id")
     + " AND " + _current_evidence_sql("l.basis_evidence_id", quote=True)
 )
+
+_ARTIFACT_FROM_SQL = (
+    "FROM knowledge_project_artifacts l "
+    "JOIN knowledge_projects p ON p.tenant_id=l.tenant_id AND p.id=l.project_id "
+    "JOIN brain_evidence ae ON ae.tenant_id=l.tenant_id "
+    "AND ae.id=l.artifact_evidence_id "
+    "JOIN brain_source_versions av ON av.tenant_id=ae.tenant_id "
+    "AND av.id=ae.source_version_id "
+    "JOIN brain_sources artifact_source ON artifact_source.tenant_id=av.tenant_id "
+    "AND artifact_source.id=av.source_id CROSS JOIN allowed "
+)
+_ARTIFACT_WHERE_SQL = (
+    "WHERE l.project_id=%s AND l.recorded_at<=allowed.cutoff "
+    "AND p.recorded_at<=allowed.cutoff AND " + _LINK_VISIBLE
+)
+_ARTIFACT_COMMON_SQL = (
+    "WITH allowed AS (SELECT %s::text[] AS sources, %s::timestamptz AS cutoff) "
+)
+
+
+def visible_project_artifact_rows(
+    conn: Any, allowed: list[str] | None, cutoff: datetime, project_id: str,
+    limit: int, *, anchor: tuple[datetime, str] | None = None,
+) -> list[Any]:
+    """Return current-authorized link history before the independent limit."""
+    cursor_sql = " AND (l.recorded_at,l.id)<(%s,%s)" if anchor else ""
+    rows = conn.execute(
+        _ARTIFACT_COMMON_SQL + "SELECT l.id,l.artifact_evidence_id,l.basis_evidence_id,"
+        "l.relation,l.assertion_status,l.observed_at,l.recorded_at,"
+        "artifact_source.kind AS artifact_source_kind "
+        + _ARTIFACT_FROM_SQL + _ARTIFACT_WHERE_SQL + cursor_sql
+        + " ORDER BY l.recorded_at DESC,l.id DESC LIMIT %s",
+        (allowed, cutoff, project_id, *(anchor or ()), limit),
+    ).fetchall()
+    return list(rows)
 
 
 @dataclass(slots=True)
@@ -152,22 +187,6 @@ class ProjectArtifactLinks:
                 or not isinstance(request, ProjectArtifactPageRequest)):
             raise NotFound()
         allowed = sorted(ctx.source_ids) if ctx.source_ids is not None else None
-        common = "WITH allowed AS (SELECT %s::text[] AS sources, %s::timestamptz AS cutoff) "
-        from_sql = (
-            "FROM knowledge_project_artifacts l "
-            "JOIN knowledge_projects p ON p.tenant_id=l.tenant_id AND p.id=l.project_id "
-            "JOIN brain_evidence ae ON ae.tenant_id=l.tenant_id "
-            "AND ae.id=l.artifact_evidence_id "
-            "JOIN brain_source_versions av ON av.tenant_id=ae.tenant_id "
-            "AND av.id=ae.source_version_id "
-            "JOIN brain_sources artifact_source ON artifact_source.tenant_id=av.tenant_id "
-            "AND artifact_source.id=av.source_id "
-            "CROSS JOIN allowed "
-        )
-        where_sql = (
-            "WHERE l.project_id=%s AND l.recorded_at<=allowed.cutoff "
-            "AND p.recorded_at<=allowed.cutoff AND " + _LINK_VISIBLE
-        )
         with self.store.transaction(ctx) as conn:
             clock = conn.execute("SELECT transaction_timestamp() AS now").fetchone()
             if clock is None:
@@ -180,7 +199,7 @@ class ProjectArtifactLinks:
             if cutoff > now:
                 raise ValueError("invalid future project artifact cutoff")
             project = conn.execute(
-                common + "SELECT 1 FROM knowledge_projects p CROSS JOIN allowed "
+                _ARTIFACT_COMMON_SQL + "SELECT 1 FROM knowledge_projects p CROSS JOIN allowed "
                 "WHERE p.id=%s AND p.recorded_at<=allowed.cutoff AND "
                 + _visible_assertion_sql("p", "'project'", "p.id"),
                 (allowed, cutoff, project_id),
@@ -190,23 +209,17 @@ class ProjectArtifactLinks:
             anchor = None
             if request.after is not None:
                 anchor = conn.execute(
-                    common + "SELECT l.recorded_at,l.id " + from_sql + where_sql
+                    _ARTIFACT_COMMON_SQL + "SELECT l.recorded_at,l.id "
+                    + _ARTIFACT_FROM_SQL + _ARTIFACT_WHERE_SQL
                     + " AND l.id=%s",
                     (allowed, cutoff, project_id, request.after),
                 ).fetchone()
                 if anchor is None:
                     raise NotFound()
-            cursor_sql = " AND (l.recorded_at,l.id)<(%s,%s)" if anchor else ""
-            rows = conn.execute(
-                common + "SELECT l.id,l.artifact_evidence_id,l.basis_evidence_id,"
-                "l.relation,l.assertion_status,l.observed_at,l.recorded_at,"
-                "artifact_source.kind AS artifact_source_kind "
-                + from_sql + where_sql + cursor_sql
-                + " ORDER BY l.recorded_at DESC,l.id DESC LIMIT %s",
-                (allowed, cutoff, project_id,
-                 *((anchor["recorded_at"], anchor["id"]) if anchor else ()),
-                 request.limit + 1),
-            ).fetchall()
+            rows = visible_project_artifact_rows(
+                conn, allowed, cutoff, project_id, request.limit + 1,
+                anchor=(anchor["recorded_at"], anchor["id"]) if anchor else None,
+            )
             self.store.audit(conn, ctx, "knowledge.project_artifacts_read", "project", project_id)
         page = rows[:request.limit]
         return {

@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-194 extends the exact-project dossier with an independently bounded
+reviewed artifact-link history section. The owner workspace and reference
+client validate and show exact evidence IDs under current source grants; the
+same visibility predicate as ADR-193 runs before the dossier limit. This
+remains synthetic-only and does not present a computed current file roster,
+filenames/bytes, source freshness or export-ready citations. Source-scoped
+facts, export-time citation checks and a Markdown renderer remain open.
+
 ADR-193 adds a synthetic-only, human-reviewed association between one exact
 project and one exact Email/FileOS evidence occurrence, with a separately
 quoted current basis. A bounded Brain API page returns link status, source
@@ -7,8 +15,9 @@ kind and evidence IDs only after project, artifact and basis grants pass; it
 does not expose paths, text or an inferred match. Immutable tenant-fenced
 migration 0065 and fictional PostgreSQL/API/client tests cover replay,
 cross-tenant/source denial, exclusion and pagination. A full related-files
-dossier, historical artifact display, Markdown export and live-source
-acceptance remain open. Branch/hosted verification is in the build receipt.
+dossier, Markdown export and live-source acceptance remain open. ADR-194
+adds the bounded historical artifact display; branch/hosted verification is
+in the build receipt.
 
 ADR-192 closes a project-alias citation hole in ADR-186's synthetic private
 proposal batches: every alias quote must appear in its own current, granted,

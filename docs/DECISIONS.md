@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-194](adr/194_project_dossier_artifact_section.md) adds an independently
+bounded, currently source-authorized reviewed artifact-link history section to
+the exact-project dossier and owner workspace. It does not compute a current
+file roster, expose bytes or complete the Markdown Librarian export.
+
 [ADR-193](adr/193_reviewed_project_artifact_links.md) adds human-reviewed links
 from an exact project to an exact Email/FileOS evidence occurrence, with a
 separately quoted basis and source-scoped, bounded link-history API. It neither
