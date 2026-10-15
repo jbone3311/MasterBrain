@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Bounded XLSX physical rows and cells — current branch
+
+ADR-234 adds a separate source-bound `sandbox-xlsx-tables-v1` worker and
+immutable-image caller without changing the existing indexed XLSX text. It
+returns bounded physical row numbers, positional cell values and labeled
+hidden sheets. The pinned FOS donor's ordinary table rows and 1,000-row tail
+values match; formulas or changed bytes yield no partial rows. Strict child
+response validation refuses forged source identity, malformed counts and
+malformed row positions. Focused worker, donor, Email proof, document and
+sandbox suites passed **112 tests** on lockfile Python 3.11.13; Ruff, focused
+mypy and documentation links passed.
+An actual-image case was added to the explicit container suite but did not run
+locally because Docker is unavailable. Nothing is persisted, indexed,
+reviewed or exposed by Brain API; this is not complete workbook or financial
+parity, and the FOS-Master donor remains unchanged.
+
 ## Pinned donor XLSX table baseline — current branch
 
 The unchanged FOS-Master checkout at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`

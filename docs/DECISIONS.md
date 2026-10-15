@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-234](adr/234_bounded_xlsx_cell_projection.md) adds a separate, bounded
+source-bound XLSX row/cell worker with a strict isolated pipe contract. It
+does not alter indexed text or publish spreadsheet values.
+
 [ADR-233](adr/233_pinned_fos_xlsx_table_baseline.md) pins an isolated
 FOS-Master XLSX table baseline and records the precise DataCore table, formula,
 truncation, encrypted-workbook and `.xlsm` differences before any cutover.

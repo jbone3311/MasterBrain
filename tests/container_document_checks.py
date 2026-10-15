@@ -21,6 +21,7 @@ from masterbrain.datacore.document_processor import DockerDocumentProcessor
 from masterbrain.datacore.extraction import FileOSAdapter
 from masterbrain.datacore.fileos import snapshot_tree
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.datacore.xlsx_tables_processor import DockerXlsxTableProcessor
 from masterbrain.source_tier_fileos_pdf_replay import SourceTierFileOSPdfReplayStore
 
 database, tenant = pg.database, pg.tenant
@@ -79,6 +80,27 @@ def test_actual_source_bound_document_profiles(
     )
     assert result.status == "extracted" and result.reason == reason
     assert marker in result.text and result.scanner_status == "unscanned"
+
+
+def test_actual_image_preserves_xlsx_rows_and_cell_positions() -> None:
+    image = os.environ.get("MASTERBRAIN_DOCUMENT_IMAGE_ID")
+    if not image:
+        pytest.fail("explicit document container checks require an approved prebuilt image")
+    raw = xlsx_bytes("Container Atlas", 3100, 7, "containercellproof")
+    version_id, digest = identity(raw, "rent.xlsx")
+    result = DockerXlsxTableProcessor(image).extract(
+        raw, version_id=version_id, locator="rent.xlsx",
+        sha256=digest, media_type=SHEET_TYPE,
+    )
+    assert result.status == "extracted" and result.reason == "bounded_xlsx_tables_v1"
+    assert result.sheets[0].name == "Rent roll"
+    assert result.sheets[0].rows[0].values == (
+        "Project", "Monthly rent USD", "Revision", "Evidence marker",
+    )
+    assert result.sheets[0].rows[1].number == 2
+    assert result.sheets[0].rows[1].values == (
+        "Container Atlas", "3100", "7", "containercellproof",
+    )
 
 
 def test_actual_child_refuses_source_mismatch_and_external_relationship(

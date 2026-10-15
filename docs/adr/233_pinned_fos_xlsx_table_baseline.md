@@ -14,10 +14,12 @@ file effects. A portable DataCore plain-workbook golden remains active even
 when the separate donor checkout is unavailable in hosted CI.
 
 The ordinary overlap is source cell values: both paths see all authored values
-in a bounded workbook. The result shapes are **not** parity-equivalent. FOS
-returns per-sheet `headers`/`rows` tables and space-separated text; DataCore
-returns a bounded tab-separated text projection with sheet/cell counts, not
-addressable tables or cell citations. FOS reads cached formula values and can
+in a bounded workbook. At this baseline, result shapes were **not** parity-
+equivalent: FOS returned per-sheet `headers`/`rows` tables and space-separated
+text while DataCore returned tab-separated text. ADR-234 later adds a separate,
+nonpublishing addressable row/cell projection and tests its ordinary values
+against the same pinned donor. Neither path yet provides a reviewed cell
+citation in Brain API. FOS reads cached formula values and can
 silently represent an uncached formula as an empty cell; DataCore defers the
 entire workbook without text. FOS returns a truncated partial table with an
 explicit flag when its configured row limit is reached; DataCore either reads

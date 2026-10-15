@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-234 adds a separate fixed-profile XLSX row/cell projector that retains
+physical sheet/row and positional cell information without changing indexed
+text. Fictional pinned-donor plain/1,000-row values match; formulas yield no
+partial table. This is nonpublishing and awaits actual-image, hosted, review
+and restore gates before any source-tier or Brain API claim.
+
 ADR-233 now pins and replays the donor's XLSX table extractor on fictional
 workbooks against DataCore. Ordinary authored values overlap, but structured
 tables, cached-formula behavior, row caps, encrypted classification and `.xlsm`

@@ -17,6 +17,7 @@ from openpyxl import Workbook
 
 from masterbrain.datacore.document_contract import SHEET_TYPE, DocumentUnavailable, source_for
 from masterbrain.datacore.document_worker import extract_document
+from masterbrain.datacore.xlsx_tables import project_xlsx_tables
 
 DONOR_COMMIT = "218d5caec2f20b9047fd3eb8e027dc671acf0c15"
 DONOR_SHA256 = "746932e5ce033a9b8f8bd7155a88dfbb6d1c57a9916aea2230e6afbe1a3ab269"
@@ -92,11 +93,16 @@ def test_pinned_donor_plain_table_values_are_represented_but_shape_differs(
     path.write_bytes(raw)
     donor = donor_extract(path, {"xlsx_max_rows": 2000})
     shared = _datacore(raw)
+    structured = project_xlsx_tables(raw, shared.source)
     assert donor["tables"] == [{
         "sheet": "Rent roll", "headers": ["Project", "Monthly USD"],
         "rows": [["Fictional-0", "100"], ["Fictional-1", "101"], ["Fictional-2", "102"]],
     }]
     assert donor["sheets"] == [{"name": "Rent roll", "row_count": 4}]
+    rows = structured.sheets[0].rows
+    assert structured.status == "extracted"
+    assert donor["tables"][0]["headers"] == list(rows[0].values)
+    assert donor["tables"][0]["rows"] == [list(row.values) for row in rows[1:]]
     assert all(cell in shared.text for row in [
         donor["tables"][0]["headers"], *donor["tables"][0]["rows"]
     ] for cell in row)
@@ -141,8 +147,12 @@ def test_thousand_row_plain_workbook_replays_without_losing_tail(tmp_path: Path)
     path.write_bytes(raw)
     donor = donor_extract(path, {"xlsx_max_rows": 2000})
     shared = _datacore(raw)
+    structured = project_xlsx_tables(raw, shared.source)
     assert len(donor["tables"][0]["rows"]) == 1000
     assert donor["tables"][0]["rows"][-1] == ["Fictional-999", "1099"]
+    assert donor["tables"][0]["rows"] == [
+        list(row.values) for row in structured.sheets[0].rows[1:]
+    ]
     assert shared.status == "extracted"
     assert shared.metadata.cell_count == 2002
     assert shared.text.endswith("Fictional-999\t1099")

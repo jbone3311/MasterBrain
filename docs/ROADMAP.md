@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-234 adds a separate, source-bound XLSX worker that returns bounded physical
+rows and positional cell values, with sheet visibility and no fabricated
+headers. Its ordinary and 1,000-row values match the pinned FOS donor on the
+fictional corpus. Next run the new explicit actual-image gate, define reviewed
+cell-level provenance and feature coverage, then build the approved Email XLSX
+extraction/bridge. It is not yet a searchable table or financial evidence.
+
 ADR-233 pins the FOS-Master XLSX table output and verifies the ordinary
 overlap plus formula, row-cap, encrypted and `.xlsm` differences against
 DataCore on fictional bytes. Preserve the donor's useful table/row structure
