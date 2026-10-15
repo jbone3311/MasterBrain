@@ -1,5 +1,10 @@
 # Changelog
 
+- Add a fictional cross-source conflicting-price API acceptance case: two
+  exact-cited Email/FileOS `loi.price` statements remain separate, the owner
+  sees a disagreement without any total, and an Email-scoped assistant cannot
+  see or infer the FileOS row. No ownership or investment truth is claimed.
+
 - Make the pinned FOS-Master donor-policy shadow repeatable at the 9,994-file
   v1 transition capacity. The exact-donor local run and new test compare
   9,998 ordinary rows across replay/change/metadata paths and retain the six

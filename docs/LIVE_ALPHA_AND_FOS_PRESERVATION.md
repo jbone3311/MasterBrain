@@ -111,6 +111,10 @@ For “tell me all my investments in X company,” the response should:
 
 An initial lexical dossier may satisfy discovery only; it must not be labeled a
 complete portfolio, verified balance or tax/financial advice.
+The synthetic cross-source `loi.price` disagreement test now proves that a
+reviewed fact report retains competing Email and FileOS prices and that a
+source-scoped assistant cannot see the other source's row. It deliberately
+does not establish which price is effective, who owns a position, or a total.
 
 ## Sequenced pilot
 

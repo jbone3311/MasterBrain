@@ -1001,3 +1001,98 @@ def test_project_fact_can_quote_fileos_but_requires_both_source_grants(
             _body(project_id, email_evidence, supersedes_id=created["object_id"]),
             uuid4(),
         )
+
+
+def test_conflicting_email_file_prices_remain_separate_and_source_scoped(
+    database, tenant, tmp_path,
+):
+    """A cited price disagreement is not a portfolio balance or a winning fact."""
+    store, _ = database
+    ctx, account, project_id, _ = _prepared(store, tenant)
+    email_quote = "Fictional Melron letter of intent price 200 USD."
+    email_evidence = _source(
+        store, ctx, account, "fictional-email-price", "fictional-fact-message-1",
+        body=email_quote,
+    )
+    file_quote = "Fictional Melron letter of intent price 250 USD."
+    root = tmp_path / "fictional-price-files"
+    root.mkdir()
+    (root / "letter-of-intent.txt").write_text(file_quote, encoding="utf-8")
+    manifest = pg.fileos_manifest(root, source_id="fictional_price_files")
+    core = pg.DataCoreStore(store)
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    file_evidence = core.publish_text(
+        ctx, manifest["items"][0]["version_id"], file_quote,
+        code_revision="project-fact-conflict-fictional-v1",
+    ).evidence_id
+    facts = ProjectFacts(store)
+    for amount, evidence_id, quote in (
+        ("200", email_evidence, email_quote),
+        ("250", file_evidence, file_quote),
+    ):
+        facts.publish(
+            ctx, project_id,
+            ProjectFactWrite(
+                kind="project_fact", project_id=project_id,
+                predicate="loi.price", value=amount, value_type="number",
+                measurement={"amount": amount, "unit": "currency", "currency": "USD"},
+                evidence_ids=[evidence_id], quote_evidence_id=evidence_id,
+                source_quote=quote, confidence=1.0, observed_at=NOW,
+                reviewed=True,
+            ),
+            uuid4(),
+        )
+    full = facts.report(ctx, project_id, ProjectFactPageRequest())
+    assert len(full["groups"]) == 1
+    group = full["groups"][0]
+    assert group["predicate"] == "loi.price"
+    assert group["different_asserted_previews_on_page"] is True
+    assert group["comparison_incomplete"] is False
+    assert {row["quote_evidence_id"] for row in group["facts"]} == {
+        email_evidence, file_evidence,
+    }
+    assert {row["measurement"]["amount"] for row in group["facts"]} == {
+        "200", "250",
+    }
+    assert full["numeric_aggregation"] == "none_units_currency_ownership_unverified"
+    assert "total" not in full
+    with store.transaction(ctx) as conn:
+        email_source = conn.execute(
+            "SELECT v.source_id FROM brain_evidence e JOIN brain_source_versions v "
+            "ON v.tenant_id=e.tenant_id AND v.id=e.source_version_id WHERE e.id=%s",
+            (email_evidence,),
+        ).fetchone()["source_id"]
+    email_only = facts.report(
+        replace(ctx, source_ids=frozenset({email_source})),
+        project_id, ProjectFactPageRequest(),
+    )
+    assert len(email_only["groups"]) == 1
+    assert email_only["groups"][0]["different_asserted_previews_on_page"] is False
+    assert [row["quote_evidence_id"] for row in email_only["groups"][0]["facts"]] == [
+        email_evidence,
+    ]
+    assert file_evidence not in str(email_only)
+    owner_token = "fictional-conflict-owner-" + uuid4().hex
+    assistant_token = "fictional-conflict-email-reader-" + uuid4().hex
+    credentials = [
+        Credential(
+            token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+            tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+            scopes={"knowledge.search"},
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            client_kind=kind, source_ids=sources,
+        )
+        for token, kind, sources in (
+            (owner_token, "human", None),
+            (assistant_token, "assistant", {email_source}),
+        )
+    ]
+    path = f"/v1/knowledge/projects/{project_id}/facts/report"
+    with TestClient(create_app(store, TokenRegistry(credentials))) as api:
+        owner = api.get(path, headers={"Authorization": "Bearer " + owner_token})
+        assert owner.status_code == 200, owner.text
+        assert owner.json()["groups"][0]["different_asserted_previews_on_page"] is True
+        scoped = api.get(path, headers={"Authorization": "Bearer " + assistant_token})
+        assert scoped.status_code == 200, scoped.text
+        assert scoped.json()["groups"][0]["different_asserted_previews_on_page"] is False
+        assert file_evidence not in scoped.text

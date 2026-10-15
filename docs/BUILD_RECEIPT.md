@@ -2,6 +2,21 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Cross-source price disagreement without a fabricated balance — current branch
+
+A new fictional PostgreSQL/API case publishes two separate reviewed `loi.price`
+statements for the same project: 200 USD from current Email evidence and 250
+USD from a current FileOS text file. Each amount and currency are exact quote
+tokens in its own original evidence. The owner report keeps both rows and flags
+`different_asserted_previews_on_page=true`, with `numeric_aggregation=none`;
+it neither selects a winner nor emits a total. A source-enrolled Email-only
+assistant sees only the Email row, no FileOS evidence ID and no false conflict
+flag. On locked Python 3.11.13 and disposable PostgreSQL 17.11, the adjacent
+fact/cross-source/report suites passed **51 tests, one Docker-dependent skip**.
+This is a synthetic contradiction and grant-boundary proof, not ownership,
+source-byte attestation, reconciliation, financial advice or a complete
+investment dossier.
+
 ## Maximum pinned-donor FileOS inventory shadow — current branch
 
 The clean, unchanged FOS-Master donor checkout was verified at commit
