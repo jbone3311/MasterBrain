@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Private synthetic XLSX extraction command — current unmerged branch
+
+ADR-249 adds an exact-approved, account-pinned, tenant-bound worker command.
+Eleven controller unit cases passed. Two focused tests executed on a fresh
+socket-only disposable PostgreSQL 17.11 cluster: one command-to-database
+seal/replay with a distinct worker identity and different-account refusal,
+and one direct service account-pin/authorization case. The cluster was stopped
+and removed. The restricted processor was simulated, not an actual image.
+Ruff and strict mypy (141 source files) passed. Actual pinned-image, hosted CI
+and end-to-end first-party/browser gates remain open. The complete fictional
+Python 3.14 suite then passed at this code state
+on a fresh disposable PostgreSQL 17.11 TCP-loopback cluster: **3,837 passed,
+19 skipped, zero failed** in 10m19s; **693/694 PostgreSQL-marked tests
+executed**. The single PostgreSQL-marked skip is the Docker-backed trial
+launcher; it is not counted as a pass. The cluster was confirmed stopped and
+removed. Check mode made no selected-result read or write; no live source was used.
+The first-party Node suite passed **178/178**; offline documentation links
+passed over **350 Markdown files / 1,812 local paths and fragments**. An
+offline wheel build included the new private controller. Docker was not
+available locally, so no actual-image execution is claimed.
+
 ## First-party synthetic XLSX source approval — current unmerged branch
 
 ADR-248 links an eligible, inspected Email attachment occurrence to ADR-247's

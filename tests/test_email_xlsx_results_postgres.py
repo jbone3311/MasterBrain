@@ -15,7 +15,7 @@ from test_email_xlsx_approvals_postgres import VERSION, _prepared
 from test_sandbox_runner import IMAGE, fake_docker
 
 from email_brain.auth import Principal
-from email_brain.store import AccessDenied, Conflict
+from email_brain.store import AccessDenied, Conflict, NotFound
 from email_brain.synthetic_formats import SHEET_TYPE
 from masterbrain.datacore.contracts import stable_id
 from masterbrain.datacore.document_contract import encode_request
@@ -96,6 +96,10 @@ def test_wrong_processor_and_lost_authorization_leave_no_result(
 ) -> None:
     store, _, ctx, approval, processor, _ = _case(database, tenant, monkeypatch)
     wrong = DockerDocumentProcessor("sha256:" + "b" * 64)
+    with pytest.raises(NotFound):
+        EmailXlsxResults(store, processor).record(
+            _worker(ctx), approval, expected_account_id=uuid4(),
+        )
     with pytest.raises(Conflict, match="approval expired or processor changed"):
         EmailXlsxResults(store, wrong).record(_worker(ctx), approval)
     with pytest.raises(AccessDenied):

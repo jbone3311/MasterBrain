@@ -33,6 +33,9 @@ from masterbrain.email_bridge_controller import (
     run_email_part_bridge_batch_controller,
     run_email_part_bridge_plan_controller,
 )
+from masterbrain.email_xlsx_extraction_controller import (
+    run_email_xlsx_extraction_controller,
+)
 from masterbrain.email_xlsx_publication_controller import (
     run_email_xlsx_publication_controller,
 )
@@ -248,6 +251,13 @@ def build_parser() -> argparse.ArgumentParser:
     email_xlsx_publish.add_argument("--idempotency-key", type=UUID, required=True)
     email_xlsx_publish.add_argument("--check", action="store_true")
     email_xlsx_publish.add_argument("--tenant-bound-db", action="store_true")
+    email_xlsx_extract = email_commands.add_parser(
+        "extract-approved-xlsx", help="Extract one exact-approved synthetic Email XLSX"
+    )
+    email_xlsx_extract.add_argument("--config", type=Path, required=True)
+    email_xlsx_extract.add_argument("--approval-id", required=True)
+    email_xlsx_extract.add_argument("--check", action="store_true")
+    email_xlsx_extract.add_argument("--tenant-bound-db", action="store_true")
     bridge_plan = email_commands.add_parser(
         "bridge-plan", help="Preview current Email versions for bridging"
     )
@@ -423,6 +433,14 @@ def main(argv: Sequence[str] | None = None) -> None:
                 raise ValueError("MASTERBRAIN_DSN is required")
             print(_json(run_email_xlsx_publication_controller(
                 args.config, dsn, args.review_id, args.idempotency_key,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "email" and args.email_command == "extract-approved-xlsx":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_email_xlsx_extraction_controller(
+                args.config, dsn, args.approval_id,
                 check=args.check, tenant_bound_db=args.tenant_bound_db,
             )))
         elif args.command == "fileos" and args.file_command == "archive-text":

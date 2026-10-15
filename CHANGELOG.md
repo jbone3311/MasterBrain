@@ -1,5 +1,10 @@
 # Changelog
 
+- Add `masterbrain email extract-approved-xlsx` for one account-pinned,
+  human-approved synthetic attachment. A separate worker identity and
+  tenant-bound login run the pinned isolated extractor; check mode reads no
+  selected MIME and execution seals only a private result, not a document.
+
 - Add first-party source-attached selection and explicit approval for one
   eligible synthetic Email XLSX. Selection alone does not write; approval
   returns an `xapp_` ID for a separately scoped extraction worker. The screen

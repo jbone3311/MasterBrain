@@ -8,6 +8,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 import psycopg
 
@@ -84,7 +85,8 @@ class EmailXlsxResults:
 
     def record(
         self, ctx: TenantContext, approval_id: str,
-        *, authorize: Callable[[], None] | None = None,
+        *, expected_account_id: UUID | None = None,
+        authorize: Callable[[], None] | None = None,
     ) -> dict[str, Any]:
         """Recheck, isolate extraction, then seal only complete XLSX text."""
         self.store.require(ctx, "email.document.process")
@@ -93,6 +95,8 @@ class EmailXlsxResults:
             raise AccessDenied("worker identity required")
         if type(approval_id) is not str or _APPROVAL_ID.fullmatch(approval_id) is None:
             raise NotFound()
+        if expected_account_id is not None and not isinstance(expected_account_id, UUID):
+            raise ValueError("invalid expected Email XLSX account")
         if type(self.processor) is not DockerDocumentProcessor:
             raise ValueError("invalid XLSX processor")
         processor_version = self.processor.processor_version
@@ -101,7 +105,10 @@ class EmailXlsxResults:
                 "SELECT account_id FROM brain_email_xlsx_extraction_approvals WHERE id=%s",
                 (approval_id,),
             ).fetchone()
-            if identity is None:
+            if identity is None or (
+                expected_account_id is not None
+                and identity["account_id"] != expected_account_id
+            ):
                 raise NotFound()
             _account_lock(conn, ctx.tenant_id, identity["account_id"])
             before = _current(conn, approval_id, ctx, processor_version)

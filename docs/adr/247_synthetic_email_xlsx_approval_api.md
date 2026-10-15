@@ -10,4 +10,4 @@ This route only authorizes a one-hour isolated extraction attempt for one curren
 
 ## Verification and next gate
 
-A real disposable PostgreSQL test exercises first approval, idempotent replay, missing key, unknown receipt, missing XLSX pin and assistant denial. The existing ADR-239 service and SQL tests cover stale source, wrong account, immutability, cross-tenant access and synthetic-only eligibility. ADR-248 adds the first-party source-attached approval affordance; a private exact-approval extraction command remains next, followed by immutable-image and hosted checks before claiming an end-to-end workflow.
+A real disposable PostgreSQL test exercises first approval, idempotent replay, missing key, unknown receipt, missing XLSX pin and assistant denial. The existing ADR-239 service and SQL tests cover stale source, wrong account, immutability, cross-tenant access and synthetic-only eligibility. ADR-248 adds the first-party source-attached approval affordance and ADR-249 the private exact-approval extraction command; immutable-image and hosted checks remain before claiming an end-to-end workflow.

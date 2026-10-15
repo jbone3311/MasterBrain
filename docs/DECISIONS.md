@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-249](adr/249_private_synthetic_email_xlsx_extraction_command.md) exposes
+one exact synthetic XLSX approval to an account-pinned, tenant-bound private
+worker command. Check mode reads no selected MIME; extraction, human review and
+publication remain distinct scoped actions.
+
 [ADR-248](adr/248_first_party_synthetic_xlsx_source_approval.md) connects
 inspected Email attachment evidence to explicit, human-only synthetic XLSX
 extraction approval. Selection, approval, extraction, review and publication

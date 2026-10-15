@@ -6,6 +6,34 @@ commands. The legacy `email-brain` command remains the Email capability surface.
 shared command moves, renames, quarantines, deletes or modifies a source file or
 mailbox.
 
+## Extract one approved synthetic Email XLSX privately
+
+After the owner selects and explicitly approves one eligible XLSX attachment,
+store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It contains `version`, the exact `account_id`, immutable
+`document_image_id` (`sha256:` plus 64 lowercase hex characters), absolute
+`docker_binary`, `credentials_file` and `token_file`; optional `blob_root` and
+`keys_file` must both be present or absent. The token must be a **worker**
+credential with exactly `email.document.process` and `email.evidence.read`.
+The database login must be DBA-bound to the same tenant. Supply its DSN in
+`MASTERBRAIN_DSN`, not the config or arguments.
+
+```sh
+masterbrain email extract-approved-xlsx \
+  --config /private/operator/email-xlsx-extraction.json \
+  --approval-id xapp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode verifies private config, worker identity, tenant binding and the
+synthetic account without reading the selected approval or workbook. Omit
+`--check` only for the exact fictional approval selected by the operator.
+Execution rechecks the source and image before and after restricted extraction,
+seals a complete private text digest/count result, and has no mailbox or
+document-publication effect. The owner then inspects/reviews the result in
+the first-party screen; `publish-reviewed-xlsx` is a different worker command.
+No live Fastmail or actual-image acceptance is claimed.
+
 ## Publish one reviewed synthetic Email XLSX text document
 
 After a human has used the ADR-242 inspection and publication-review API,
