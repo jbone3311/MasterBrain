@@ -13,6 +13,8 @@ permission, deployment or Factory-policy change.
 | What passed, at which revision? | [Build receipt](BUILD_RECEIPT.md), linked exact-commit CI/restore runs |
 | What comes next and why? | [Roadmap](ROADMAP.md), [Email backlog](BACKLOG.md), [Factory handoff](FACTORY_HANDOFF.md) |
 | How should changes be contributed and accepted? | [Contributor guide](../CONTRIBUTING.md), [release acceptance](RELEASE_ACCEPTANCE.md) |
+| What ideas and lessons informed the design? | [Concepts and institutional knowledge](concepts/README.md), with linked source discussions |
+| What are the canonical component boundaries and schemas? | [Architecture](ARCHITECTURE.md), [data model](DATA_MODEL.md), applicable accepted ADRs |
 | Why was a boundary chosen? | [Accepted decisions](DECISIONS.md) and applicable ADR |
 | What still needs the owner? | [Open questions](OPEN_QUESTIONS.md) |
 | How healthy was an external dependency when inspected? | [OSS health](OSS_HEALTH.md), with its actual measurement date |
@@ -21,6 +23,34 @@ Security invariants and applicable accepted ADRs govern behavior. Source and tes
 show the implementation; a contradiction with an approved contract is a defect to
 resolve, not permission to silently change the contract. Do not use a newer prose
 date to override an older exact-commit verification result.
+
+## Concepts, discussions and decisions
+
+[Concepts](concepts/README.md) preserve institutional reasoning, hypotheses,
+examples, alternatives and lessons. They explain why an idea may matter; they do
+not own product requirements, architecture, data schemas, adoption decisions or
+current capability status. Mark exploratory material explicitly and link to the
+canonical documents rather than duplicating their inventories.
+
+Use discussion or an issue/PR to explore, distill enduring rationale into a concept,
+then update PRD requirements or record the applicable ADR when a decision is made.
+Architecture and data model remain canonical for their boundaries; accepted ADRs
+retain their existing precedence and history. Follow the contributor process for
+scoped implementation, tests, status and exact-commit evidence. Concepts cannot
+waive security, authorize live sources or create delivery commitments.
+
+Use the guide's common structure: status/date and provenance, idea/lesson,
+illustrative example, boundaries/next evidence, and canonical follow-through.
+Retain rejected/deferred rationale with linked decisions; put unresolved owner
+choices in OPEN_QUESTIONS.md. Keep real user knowledge and private evidence out of
+this source-controlled documentation layer.
+
+No RFC system is needed for this addition. Introduce one only when a substantial
+unresolved cross-component proposal needs coordinated review of alternatives,
+compatibility or migration before an ADR can be decided. Agree its ownership,
+location, lifecycle and decision criteria in a reviewed documentation change at
+that point. An RFC would remain a proposal, not replace required ADRs. See the
+[full promotion and RFC guidance](concepts/README.md#when-to-introduce-rfcs).
 
 ## Status vocabulary
 

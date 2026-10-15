@@ -1,5 +1,10 @@
 # Changelog
 
+- Add an explanatory `docs/concepts` institutional-knowledge layer and connect
+  repository navigation, contributor guidance and documentation ownership. Preserve
+  canonical PRD/architecture/ADR authority and dated research; describe future RFC
+  triggers without creating an RFC system. Documentation only.
+
 - Extended the disposable Cedar Harbor cross-source trial with a reviewed
   project dossier joining an appraisal event, Email/FileOS commitment,
   source-stated loan amount and linked term-sheet artifact (ADR-204). Added
