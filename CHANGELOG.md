@@ -1,5 +1,11 @@
 # Changelog
 
+- Complete and activate the fictional FileOS search generation in the
+  combined-source demo. Its current Brain search now returns both Email and
+  FileOS, and the exported dossier passes the owner-only Markdown citation
+  inspection API. Disposable PostgreSQL regression tests cover replay and
+  both-source coverage; no live source is enabled.
+
 - ADR-231: closed the reviewed Email PDF account-status race with the shared
   tenant/account advisory lock and a narrow tenant-bound account row-lock
   function. Synthetic concurrent, privilege, migration and recovery tests

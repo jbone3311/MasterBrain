@@ -53,7 +53,7 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
         token_sha256=hashlib.sha256(token.encode()).hexdigest(),
         tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
         scopes={"email.search", "brain.search", "brain.content.read",
-                "knowledge.search"},
+                "brain.changes.read", "knowledge.search", "knowledge.review"},
         client_kind="human", expires_at=datetime.now(UTC) + timedelta(days=1),
     )])
     client = TestClient(create_app(store, registry))
@@ -66,12 +66,37 @@ def test_combined_demo_seeds_and_replays_two_sources_with_cited_project(
     assert combined.status_code == 200
     sources = {row["source_id"] for row in combined.json()["results"]}
     assert "files_demo" in sources and len(sources) == 2
+    current = client.post(
+        "/v1/brain/current-search", json={"query": "fictional"}, headers=headers,
+    )
+    assert current.status_code == 200, current.text
+    assert current.json()["coverage"]["source_availability"] == {
+        "email": "registered", "fileos": "registered",
+    }
+    assert current.json()["layers"]["email_messages"]
+    assert current.json()["layers"]["fileos"]
+    coverage = client.get("/v1/brain/current-coverage", headers=headers)
+    assert coverage.status_code == 200, coverage.text
+    file_coverage = next(
+        row for row in coverage.json()["results"] if row["source_id"] == "files_demo"
+    )
+    assert file_coverage["active_generation"] is not None
     dossier = client.get(
         f"/v1/knowledge/projects/{project_id}/dossier/markdown", headers=headers,
     )
     assert dossier.status_code == 200
-    assert "Cedar Harbor fictional planning brief" in dossier.json()["markdown"]
-    assert dossier.json()["markdown"].count("citation `") >= 1
+    markdown = dossier.json()["markdown"]
+    assert "Cedar Harbor fictional planning brief" in markdown
+    assert markdown.count("citation `") >= 1
+    inspected = client.post(
+        "/v1/knowledge/dossier-markdown/inspect",
+        json={"markdown": markdown}, headers=headers,
+    )
+    assert inspected.status_code == 200, inspected.text
+    assert inspected.json()["format"] == "masterbrain_project_dossier_markdown_v1"
+    assert inspected.json()["citation_spans_checked"] is True
+    assert inspected.json()["claimed_project_id"] == project_id
+    assert inspected.json()["proposal_ready"] is False
 
 
 def test_combined_demo_refuses_email_only_state(tmp_path, monkeypatch):

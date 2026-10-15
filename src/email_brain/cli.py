@@ -181,7 +181,7 @@ def seed_masterbrain(state: Path) -> None:
         tenant_id, actor_id,
         frozenset({
             "brain.source.ingest", "brain.document.publish", "brain.search",
-            "knowledge.review",
+            "brain.index.activate", "knowledge.review",
         }),
         uuid4(),
     )
@@ -228,12 +228,24 @@ def seed_masterbrain(state: Path) -> None:
             or manifest["items"][0]["locator"] != file.name
             or manifest["errors"]):
         raise ValueError("fictional FileOS demo snapshot is incomplete")
-    core.import_fileos_snapshot(
-        ctx, manifest, uuid5(NAMESPACE_URL, f"masterbrain-demo-file:{tenant_id}"),
-    )
+    file_run_id = uuid5(NAMESPACE_URL, f"masterbrain-demo-file:{tenant_id}")
+    core.import_fileos_snapshot(ctx, manifest, file_run_id)
     published = core.publish_text(
         ctx, manifest["items"][0]["version_id"], _DEMO_FILE_TEXT,
         code_revision=_DEMO_REVISION,
+    )
+    receipt = core.complete_fileos_run(
+        ctx, manifest, file_run_id, outcomes={"extracted": 1},
+        item_outcomes={manifest["items"][0]["item_id"]: "extracted"},
+        published_documents=1, code_revision=_DEMO_REVISION,
+        document_processor_version=None,
+    )
+    generation = core.build_fileos_index_generation(
+        ctx, "files_demo", receipt.run_id, code_revision=_DEMO_REVISION,
+    )
+    core.activate_fileos_index_generation(
+        ctx, "files_demo", generation.generation_id,
+        uuid5(NAMESPACE_URL, f"masterbrain-demo-index:{tenant_id}"),
     )
     project = KnowledgeCore(store).publish(
         ctx,

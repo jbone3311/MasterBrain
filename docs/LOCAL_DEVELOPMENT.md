@@ -59,9 +59,14 @@ Use a fresh database/cluster: initialization deliberately refuses an existing
 fictional emails, bridges their current versions into DataCore, snapshots one
 generated fictional text file under the private state directory, publishes its
 text, and creates one explicitly synthetic reviewed project citing both source
-occurrences. It prints the project ID. Search `fictional` at `/brain` to see
-Email and FileOS results, or open the project dossier through the Brain API.
-Running the seed again is idempotent. The underlying `email-brain`
+occurrences. The seed also records a complete fictional FileOS run and activates
+its immutable search generation, so both sources appear in the **current**
+Brain search rather than only the older combined search. It prints the project
+ID. Search `fictional` at `/brain` to see Email and FileOS results, or open the
+project dossier through the Brain API. Its Markdown can be inspected by the
+owner's review-scoped API, but inspection only verifies cited quote previews;
+it does not automatically publish imported assertions. Running the seed again
+is idempotent. The underlying `email-brain`
 `init-masterbrain-demo`/`seed-masterbrain-demo` aliases remain for compatibility.
 The owner token has Brain/Knowledge read
 and Knowledge review scopes but no worker or file-effect scopes. The older
