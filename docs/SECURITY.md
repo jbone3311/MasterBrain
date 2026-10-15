@@ -141,6 +141,13 @@ open. Consequently no public verified-source or investment claim is exposed.
   the parent. The pure proof has no database-currentness, review receipt or
   operator command; it cannot certify visual/OCR completeness, sender or
   financial truth, and grants no Brain API access to retained MIME or Docker.
+- ADR-229 binds that proof to one current human-reviewed attachment occurrence
+  and an immutable, digest-only tenant-fenced receipt. Its final transaction
+  locks source item, parent item, source and message rows, rechecks current
+  account/job status and optional worker authorization, and has no public
+  route or source effect. Account/job state is not row-locked by this worker;
+  a concurrent transition after the final check is not claimed serialized.
+  It remains synthetic-only and cannot justify a financial fact or live mail.
 - ADR-225/226's FileOS PDF worker reopens one confined source and compares its
   exact output from an image-pinned restricted document processor before a
   final current/grant/authorization recheck and digest-only receipt. SQL alone

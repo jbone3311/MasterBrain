@@ -1,10 +1,20 @@
 # MasterBrain Implementation Status
 
+ADR-229 now has a worker-only, current reviewed Email attachment PDF replay
+receipt in protected migration 0079. It binds one child occurrence to its
+approved extraction and retained parent MIME, re-runs ADR-228's isolated
+text-layer proof and seals only digests/identities/page count after final
+current/grant/authorization checks. Fictional PostgreSQL and SQL-guard tests
+pass. No private command, real-image execution, live mail, OCR, sender/issuer
+proof or financial claim is enabled. Concurrent account/job transitions are
+rechecked but not serialized by row locks; hosted/restore gates remain open.
+
 ADR-228 now has a pure synthetic-only Email PDF attachment derivation proof.
 It replays one exact MIME part with the isolated, pinned legacy PDF worker and
 compares the whole DataCore text and image/policy normalizer. Changed parent
 MIME, wrong part, partial/image-only/encrypted PDFs and invented text refuse.
-This adds no database receipt, review/currentness fence, operator command,
+That pure function itself adds no database receipt or review/currentness fence;
+ADR-229 now adds them separately. It adds no operator command,
 OCR/visual completeness, live Fastmail authorization or financial claim.
 
 ADR-227 exposes one exact reviewed FileOS PDF text-layer replay through a

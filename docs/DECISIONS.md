@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-229](adr/229_reviewed_email_attachment_pdf_replay_receipt.md) binds one
+current reviewed Email PDF attachment to a retained-MIME replay and immutable
+digest-only receipt. It is not an operator command or financial attestation.
+
 [ADR-228](adr/228_retained_email_attachment_pdf_derivation.md) adds a
 nonpublishing exact retained-MIME/part and isolated Email PDF text-layer proof.
 It is not a reviewed receipt, live mail or financial attestation.

@@ -1,10 +1,17 @@
 # MasterBrain Roadmap
 
+ADR-229 now seals one current reviewed Email attachment PDF text-layer replay
+in a protected digest-only receipt. The next Email step is a tenant-bound,
+exact-account private command with a no-selected-MIME-read check mode, then
+actual-image, hosted and independent restore gates. A separate account/job
+transition fence is needed before any live use; OCR, sender/issuer proof and
+financial publication remain out of scope.
+
 ADR-228 adds the first nonpublishing Email attachment PDF replay proof from
 retained MIME through the pinned isolated Email PDF worker. The next Email
-tranche must bind it to one current, granted, nonexcluded reviewed attachment,
-store an immutable tenant-fenced digest receipt after final rechecks, then
-expose a narrow operator command and actual-image gate. This proof alone is
+tranche, ADR-229, binds it to one current, granted, nonexcluded reviewed
+attachment and stores an immutable tenant-fenced digest receipt. A narrow
+operator command and actual-image gate remain. The pure proof alone is
 not an issuer, OCR, financial or live-mail acceptance.
 
 ADR-227 exposes ADR-226's current reviewed FileOS PDF text-layer receipt as

@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-229: sealed one current reviewed Email attachment PDF text-layer replay
+  in an occurrence-specific, tenant-fenced immutable digest receipt after
+  retained-MIME proof and final checks. Fictional PostgreSQL/RLS tests pass;
+  no operator command, live mail or financial claim is enabled.
+
 - ADR-228: added a nonpublishing, exact retained-MIME/part Email PDF text-layer
   replay proof through the pinned isolated worker, with fictional complete,
   changed, partial and same-hash occurrence tests. No receipt or live mail.

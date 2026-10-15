@@ -1,5 +1,20 @@
 # MasterBrain Build Progress
 
+## Reviewed Email attachment PDF receipt (2026-10-15, ADR-229, open PR)
+
+Migration 0079 and a worker-only store now bind a current reviewed attachment
+document, approved extraction and exact retained parent MIME to ADR-228's
+complete isolated text-layer proof. The receipt is append-only, tenant-fenced
+and digest-only. Fictional PostgreSQL tests passed 5/5 for receipt/replay,
+immutable/forgery guards, account/source/exclusion refusal and final authorization
+rollback. No command, actual immutable-image run, live mail, OCR or financial
+claim is enabled; account/job transition serialization remains a later gate.
+After migration-inventory repair, the full disposable PostgreSQL 17.11 /
+Python 3.11 suite passed 3,672 tests with 19 skipped, including the exclusion
+case. Browser tests passed
+167/167 and static/docs/structural gates passed. Hosted and independent
+restore checks remain open.
+
 ## Retained Email PDF attachment derivation (2026-10-15, ADR-228, open PR)
 
 An isolated PDF worker can now re-extract one explicit attachment from its

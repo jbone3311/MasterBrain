@@ -129,9 +129,20 @@ issuer authenticity or financial truth
 
 ADR-228 adds only a pure, nonpublishing Email attachment PDF text-layer proof:
 one retained parent MIME hash/size, one MIME part path/hash, the entire bridged
-text digest, exact image/policy normalizer and page count. No table or receipt
-exists for it yet. The proof preserves each attachment occurrence's parent
-identity and cannot assert current review or financial truth.
+text digest, exact image/policy normalizer and page count. That pure primitive
+introduced no table or receipt. It preserves each attachment occurrence's
+parent identity and cannot assert current review or financial truth.
+
+Migration `0079_source_tier_email_pdf_replay.sql` / ADR-229 now adds the
+separate append-only receipt for one current reviewed Email **attachment** PDF.
+It binds the child source/evidence/document and approved extraction to the
+specific parent Email version/account and retained MIME hash/size, part
+path/hash/size, complete text digest, image/policy normalizer, result digest
+and page count. The worker reproduces the bytes-to-text transform before a
+final current/grant/authorization check; SQL repeats the current identity
+join and enforces forced RLS, tenant-login fencing and no row mutation or
+truncate. This is not OCR, sender/issuer authenticity or financial truth.
+The ADR-228 paragraph above describes the pure primitive alone.
 
 Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
 immutable global catalog for **new** reviewed project-fact names. A SQL insert

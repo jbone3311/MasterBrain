@@ -2,6 +2,28 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed Email attachment PDF receipt — ADR-229
+
+Migration 0079 and a worker-only store now seal one current, human-reviewed
+Email attachment's approved PDF text-layer derivation from its exact retained
+parent MIME. The immutable, forced-RLS, tenant-login-fenced row carries only
+source/part/text/result digests, identities and page count. Fictional
+PostgreSQL tests passed **5/5** for exact replay, SQL forgery and immutable
+guards, wrong account/source grant, paused/deleted/excluded source and final worker
+authorization rollback. A private operator command, actual image, hosted
+exact-head and independent restore are **not** verified. Account/job status
+is rechecked but not row-locked; no live or financial claim is authorized.
+
+A fresh locked Python 3.11 environment against disposable PostgreSQL 17.11
+passed the final full suite: **3,672 passed, 19 skipped** (662/663
+PostgreSQL-marked executed), including the new exclusion case. Browser tests
+passed **167/167**; Ruff, mypy over 127 source files,
+docs (330 Markdown / 1,725 local paths/fragments) and the post-suite
+structural deployment gate passed. The first full run exposed migration-list
+and protected-table-count expectations ending at 0078; the 17 affected
+migration/guard tests passed after those inventories were updated, followed
+by the full green rerun. No actual immutable-image container was used.
+
 ## Retained Email PDF attachment derivation — ADR-228
 
 A pure DataCore proof now compares one retained parent MIME, selected PDF part,
@@ -11,9 +33,8 @@ including two pages, changed MIME/part, distinct same-hash occurrences and
 partial/image-only/encrypted refusal. The explicit PDF-container suite now
 collects an actual-image complete/partial proof but has not run on this Mac
 or hosted CI. This has not written or verified any database receipt, contacted
-live mail or made a financial claim. The next gate is a current reviewed-
-attachment receipt with final source/grant/worker checks, followed by a
-private command and real-image execution.
+live mail or made a financial claim. ADR-229 later adds the separate current
+reviewed-attachment receipt; a private command and real-image execution remain.
 
 At this checkpoint, a fresh locked Python 3.11 environment and disposable
 PostgreSQL 17.11 passed the full suite: **3,667 passed, 19 skipped**
