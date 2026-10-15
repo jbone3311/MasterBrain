@@ -531,6 +531,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0065_reviewed_project_artifacts.sql",
             "0066_reviewed_project_facts.sql",
             "0067_dossier_import_batch_binding.sql",
+            "0068_dossier_proposal_citation_binding.sql",
         ]
         assert migrate(dsn, directory) == []
         with psycopg.connect(dsn) as conn:
@@ -594,6 +595,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
                 "0065_reviewed_project_artifacts.sql",
                 "0066_reviewed_project_facts.sql",
                 "0067_dossier_import_batch_binding.sql",
+                "0068_dossier_proposal_citation_binding.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -653,6 +655,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             "0065_reviewed_project_artifacts.sql",
             "0066_reviewed_project_facts.sql",
             "0067_dossier_import_batch_binding.sql",
+            "0068_dossier_proposal_citation_binding.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -758,6 +761,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
             "0065_reviewed_project_artifacts.sql",
             "0066_reviewed_project_facts.sql",
             "0067_dossier_import_batch_binding.sql",
+            "0068_dossier_proposal_citation_binding.sql",
             }:
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)

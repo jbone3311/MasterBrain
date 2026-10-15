@@ -59,6 +59,13 @@ current cited evidence, as well as every direct evidence grant. Unknown,
 stale, excluded or mismatched rows abort the entire batch. A staged row remains
 unreviewed and inaccessible to assistants/search until explicit per-row human
 review. No live source, model authority or FileOS effect is added.
+ADR-205 extends that route to selected role rows only when both their member
+quote and displayed entity identity/citation exactly match current local,
+granted evidence. Migration 0068 retains the selected citation IDs in the
+immutable private proposal row, so preview and review cannot substitute a
+different quoted source after staging. The linked project and person/
+organization entity must also remain fully citeable. A role never conveys
+authorization; fact and artifact-link imports remain separately gated.
 
 ADR-189 adds a separate, synthetic-only FileOS statement replay boundary. A
 worker, never a public API reader, selects one current proposal under tenant

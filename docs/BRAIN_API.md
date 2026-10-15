@@ -315,21 +315,25 @@ source effects or an alternate route through KnowledgeCore.
   Any mismatch returns a generic conflict with no partial inventory. The
   response is untrusted candidate context, explicitly not a full-quote,
   source-freshness or truth certificate and never a staged proposal.
-- `POST /v1/knowledge/dossier-markdown/proposal-batches` — ADR-202
+- `POST /v1/knowledge/dossier-markdown/proposal-batches` — ADR-202/205
   synthetic-only, human-only staging of 1–50 explicitly selected project,
-  event or commitment rows from the exact ADR-197 Markdown format. Requires
+  event, commitment or member rows from the exact ADR-197 Markdown format. Requires
   `knowledge.review`, `brain.content.read` and a UUID idempotency key. Each
   selected typed payload must supply the full source quote, observation time,
   confidence and evidence IDs omitted by Markdown; visible fields must match
   the selected line exactly. The write transaction rechecks the full quote on
   the *specifically cited* current, granted, nonexcluded evidence and binds an
   immutable digest of the Markdown/selection context to the private ADR-186
-  batch. Same actor/key with changed input conflicts. This route stages no
+  batch. New imports also retain the exact cited evidence IDs for stage,
+  preview and review rechecks. A member needs an existing local project and
+  person/organization entity; the displayed entity name, full quote and its
+  separate citation must match that local entity. Same actor/key with changed
+  input conflicts. This route stages no
   reviewed assertion; the separate human batch-review route decides every
   row. Claimed IDs are source-row selectors, not reserved publication IDs;
   approved rows receive new MasterBrain IDs. Event and commitment selections
-  require an already existing local project ID. Members, facts and artifact
-  links are not accepted in this tranche.
+  require an already existing local project ID. Facts and artifact links are
+  not accepted in this tranche. A member role never grants access.
 - `GET /v1/knowledge/proposal-batches/{batch_id}` — human-only private preview
   requiring `knowledge.review` and `brain.content.read`. Rechecks current
   evidence/grants and returns ordered untrusted proposals plus decision status;

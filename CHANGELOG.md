@@ -1,5 +1,10 @@
 # Changelog
 
+- Extend synthetic-only dossier import to selected, cited project-member roles
+  as private proposals (ADR-205). Keep the specific member and entity citation
+  IDs immutable and recheck their current evidence at preview and human
+  review; no automatic approval, role permission or live source.
+
 - Extended the disposable Cedar Harbor cross-source trial with a reviewed
   project dossier joining an appraisal event, Email/FileOS commitment,
   source-stated loan amount and linked term-sheet artifact (ADR-204). Added

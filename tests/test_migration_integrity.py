@@ -482,6 +482,7 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
         "0065_reviewed_project_artifacts.sql",
         "0066_reviewed_project_facts.sql",
         "0067_dossier_import_batch_binding.sql",
+        "0068_dossier_proposal_citation_binding.sql",
     ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:

@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-205 extends the synthetic-only, owner-selected Markdown import to one
+selected project-member role per typed proposal row. A member needs an already
+reviewed local project and person/organization entity; the visible line,
+entity citation and member quote must match exact current authorized evidence.
+Immutable private proposal rows now retain the selected citation IDs so
+preview and explicit human review recheck the same bases. Approval creates a
+new local member ID, never a permission. Project facts, artifact links,
+inference, full round-trip fidelity and live-source acceptance remain open.
+
 ADR-204 extends the disposable Cedar Harbor trial with a reviewed project,
 appraisal event, Email-plus-FileOS commitment, exact FileOS term-sheet link
 and source-stated loan fact. The existing compact and Markdown dossier APIs
@@ -24,8 +33,9 @@ ADR-186 proposals. The typed sidecar must supply omitted full quotes,
 observation time, confidence and evidence links; visible fields must match
 exactly. Same-transaction current/full-quote checks and an immutable import
 context digest prevent altered citations and conflicting idempotent replay.
-No proposal is automatically reviewed; member, fact, artifact-link and inferred
-imports, live sources and full round-trip fidelity remain open. Source claimed
+No proposal is automatically reviewed; ADR-205 later adds member staging,
+while fact, artifact-link and inferred imports, live sources and full
+round-trip fidelity remain open. Source claimed
 IDs are selection markers, not publication IDs; selected child rows require
 an existing local project. Local/hosted
 validation is tracked in the build receipt.

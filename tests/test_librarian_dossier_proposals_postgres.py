@@ -12,18 +12,21 @@ import pytest
 import test_postgres as pg
 from fastapi.testclient import TestClient
 from test_project_dossier_markdown_postgres import _published
-from test_project_facts_postgres import NOW, QUOTE, _prepared
+from test_project_facts_postgres import NOW, QUOTE, _prepared, _source
 
 from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
 from email_brain.store import Conflict, NotFound
+from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_proposals import KnowledgeProposalBatches
 from masterbrain.knowledge_schema import (
     CommitmentWrite,
+    EntityWrite,
     EventWrite,
     KnowledgeProposalDecision,
     KnowledgeProposalReviewRequest,
     KnowledgeProposalStageRequest,
+    MemberWrite,
     ProjectDossierRequest,
     ProjectWrite,
 )
@@ -39,6 +42,7 @@ pytestmark = pytest.mark.postgres
 database, tenant = pg.database, pg.tenant
 NEW_EVENT = "event_" + "f" * 32
 NEW_COMMITMENT = "commitment_" + "e" * 32
+NEW_MEMBER = "member_" + "c" * 32
 
 
 def _candidate(store, ctx, project_id, evidence_id):
@@ -73,6 +77,262 @@ def _candidate(store, ctx, project_id, evidence_id):
         ],
     )
     return body
+
+
+def _member_candidate(store, ctx, project_id, evidence_id):
+    entity, _, _, member, _, _ = _published(store, ctx, project_id, evidence_id)
+    markdown = ProjectDossierMarkdown(store).export(
+        ctx, project_id, ProjectDossierRequest(),
+    )["markdown"].replace(member.object_id, NEW_MEMBER)
+    assertion = MemberWrite(
+        kind="member", project_id=project_id, entity_id=entity.object_id,
+        role="broker", evidence_ids=[evidence_id], source_quote=QUOTE,
+        confidence=1.0, observed_at=NOW, reviewed=True,
+    ).model_dump(mode="json")
+    assertion.pop("reviewed")
+    return DossierProposalStageRequest(
+        markdown=markdown,
+        selections=[{"claimed_id": NEW_MEMBER, "assertion": assertion}],
+    )
+
+
+def _separate_entity_member_candidate(store, ctx, account, project_id, evidence_id):
+    entity_evidence = _source(
+        store, ctx, account, "fictional-member-entity-2", "fictional-fact-message-1",
+    )
+    entity = KnowledgeCore(store).publish(ctx, EntityWrite(
+        kind="entity", entity_type="person", name="Fictional Morgan",
+        evidence_ids=[entity_evidence], source_quote=QUOTE,
+        confidence=1.0, observed_at=NOW, reviewed=True,
+    ), uuid4())
+    member = KnowledgeCore(store).publish(ctx, MemberWrite(
+        kind="member", project_id=project_id, entity_id=entity.object_id,
+        role="counsel", evidence_ids=[evidence_id], source_quote=QUOTE,
+        confidence=1.0, observed_at=NOW, reviewed=True,
+    ), uuid4())
+    markdown = ProjectDossierMarkdown(store).export(
+        ctx, project_id, ProjectDossierRequest(),
+    )["markdown"].replace(member.object_id, NEW_MEMBER)
+    assertion = MemberWrite(
+        kind="member", project_id=project_id, entity_id=entity.object_id,
+        role="counsel", evidence_ids=[evidence_id], source_quote=QUOTE,
+        confidence=1.0, observed_at=NOW, reviewed=True,
+    ).model_dump(mode="json")
+    assertion.pop("reviewed")
+    return DossierProposalStageRequest(
+        markdown=markdown,
+        selections=[{"claimed_id": NEW_MEMBER, "assertion": assertion}],
+    ), entity_evidence
+
+
+def test_member_row_stages_privately_then_requires_explicit_review(database, tenant):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _member_candidate(store, ctx, project_id, evidence_id)
+    service = DossierProposalImport(store)
+    with psycopg.connect(admin) as conn:
+        before = conn.execute(
+            "SELECT count(*) FROM knowledge_project_members WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        ).fetchone()[0]
+    key = uuid4()
+    staged = service.stage(ctx, body, key)
+    assert staged["row_count"] == 1 and staged["reviewed"] is False
+    assert service.stage(ctx, body, key)["changed"] is False
+    page = KnowledgeProposalBatches(store).preview(ctx, staged["batch_id"])
+    assert page["proposals"][0]["status"] == "proposed"
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT import_quote_evidence_id,import_entity_citation_id "
+            "FROM knowledge_proposals WHERE tenant_id=%s AND id=%s",
+            (ctx.tenant_id, page["proposals"][0]["proposal_id"]),
+        ).fetchone() == (evidence_id, evidence_id)
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_project_members WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        ).fetchone()[0] == before
+    reviewed = KnowledgeProposalBatches(store).review(
+        ctx, staged["batch_id"], KnowledgeProposalReviewRequest(
+            batch_sha256=staged["batch_sha256"],
+            decisions=[KnowledgeProposalDecision(
+                proposal_id=page["proposals"][0]["proposal_id"],
+                decision="approved",
+            )],
+        ), uuid4(),
+    )
+    assert reviewed["approved"] == 1
+    with psycopg.connect(admin) as conn:
+        rows = conn.execute(
+            "SELECT id FROM knowledge_project_members WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        ).fetchall()
+    assert len(rows) == before + 1
+    assert NEW_MEMBER not in {row[0] for row in rows}
+
+
+def test_generic_member_proposal_keeps_nullable_import_columns(database, tenant):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _member_candidate(store, ctx, project_id, evidence_id)
+    generic = KnowledgeProposalStageRequest(
+        proposals=[body.selections[0].assertion],
+    )
+    batches = KnowledgeProposalBatches(store)
+    staged = batches.stage(ctx, generic, uuid4())
+    page = batches.preview(ctx, staged["batch_id"])
+    assert page["proposals"][0]["status"] == "proposed"
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT import_quote_evidence_id,import_entity_citation_id "
+            "FROM knowledge_proposals WHERE tenant_id=%s AND id=%s",
+            (ctx.tenant_id, page["proposals"][0]["proposal_id"]),
+        ).fetchone() == (None, None)
+
+
+def test_member_import_binds_entity_and_role_citations(database, tenant):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _member_candidate(store, ctx, project_id, evidence_id)
+    importer = DossierProposalImport(store)
+    bad_entity = body.model_copy(deep=True)
+    bad_entity.selections[0].assertion["entity_id"] = "entity_" + "a" * 32
+    with pytest.raises(ValueError):
+        importer.stage(ctx, bad_entity, uuid4())
+    bad_role = body.model_copy(deep=True)
+    bad_role.selections[0].assertion["role"] = "counsel"
+    with pytest.raises(ValueError):
+        importer.stage(ctx, bad_role, uuid4())
+    bad_citation = body.model_copy(deep=True)
+    member_line = next(
+        line for line in bad_citation.markdown.splitlines()
+        if line.startswith("- member `" + NEW_MEMBER)
+    )
+    bad_citation.markdown = bad_citation.markdown.replace(
+        member_line, member_line.replace(
+            "citation `" + evidence_id + "`", "citation `evidence_" + "a" * 32 + "`",
+            1,
+        ),
+    )
+    with pytest.raises(Conflict):
+        importer.stage(ctx, bad_citation, uuid4())
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_proposal_batches WHERE tenant_id=%s",
+            (ctx.tenant_id,),
+        ).fetchone()[0] == 0
+
+
+def test_member_import_rejects_wrong_valid_entity_citation_and_revocation(
+    database, tenant, monkeypatch,
+):
+    store, admin = database
+    ctx, account, project_id, evidence_id = _prepared(store, tenant)
+    body, entity_evidence = _separate_entity_member_candidate(
+        store, ctx, account, project_id, evidence_id,
+    )
+    wrong = body.model_copy(deep=True)
+    member_line = next(
+        line for line in wrong.markdown.splitlines()
+        if line.startswith("- member `" + NEW_MEMBER)
+    )
+    wrong.markdown = wrong.markdown.replace(
+        member_line, member_line.replace(
+            "citation `" + entity_evidence + "`",
+            "citation `" + evidence_id + "`", 1,
+        ),
+    )
+    with pytest.raises(ValueError, match="entity citation mismatch"):
+        DossierProposalImport(store).stage(ctx, wrong, uuid4())
+
+    original = DossierMarkdownInspection.inspect
+
+    def inspect_then_revoke(service, context, markdown):
+        result = original(service, context, markdown)
+        with psycopg.connect(admin) as conn:
+            conn.execute(
+                "UPDATE brain_source_items i SET current_version_id=NULL "
+                "FROM brain_source_versions v JOIN brain_evidence e "
+                "ON e.tenant_id=v.tenant_id AND e.source_version_id=v.id "
+                "WHERE i.tenant_id=v.tenant_id AND i.id=v.item_id "
+                "AND e.tenant_id=%s AND e.id=%s", (ctx.tenant_id, entity_evidence),
+            )
+        return result
+
+    monkeypatch.setattr(DossierMarkdownInspection, "inspect", inspect_then_revoke)
+    key = uuid4()
+    with pytest.raises(Conflict):
+        DossierProposalImport(store).stage(ctx, body, key)
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_proposal_batches "
+            "WHERE tenant_id=%s AND idempotency_key=%s",
+            (ctx.tenant_id, key),
+        ).fetchone()[0] == 0
+
+
+def test_member_and_invalid_event_batch_rolls_back_atomically(database, tenant):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _member_candidate(store, ctx, project_id, evidence_id)
+    event_id = next(
+        row["claimed_id"]
+        for row in inspect_project_dossier_markdown(body.markdown)["candidates"]
+        if row["kind"] == "event"
+    )
+    request = body.model_dump(mode="json")
+    request["markdown"] = request["markdown"].replace(event_id, NEW_EVENT)
+    invalid_event = EventWrite(
+        kind="event", project_id=project_id, event_type="review",
+        title="Fictional review", evidence_ids=[
+            evidence_id, "evidence_" + "b" * 32,
+        ], source_quote=QUOTE, confidence=1.0, observed_at=NOW, reviewed=True,
+    ).model_dump(mode="json")
+    invalid_event.pop("reviewed")
+    request["selections"].append({"claimed_id": NEW_EVENT, "assertion": invalid_event})
+    body = DossierProposalStageRequest.model_validate(request)
+    key = uuid4()
+    with pytest.raises(NotFound):
+        DossierProposalImport(store).stage(ctx, body, key)
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_proposal_batches "
+            "WHERE tenant_id=%s AND idempotency_key=%s", (ctx.tenant_id, key),
+        ).fetchone()[0] == 0
+
+
+def test_member_private_preview_and_review_recheck_entity_source(database, tenant):
+    store, admin = database
+    ctx, account, project_id, evidence_id = _prepared(store, tenant)
+    body, entity_evidence = _separate_entity_member_candidate(
+        store, ctx, account, project_id, evidence_id,
+    )
+    batches = KnowledgeProposalBatches(store)
+    staged = DossierProposalImport(store).stage(ctx, body, uuid4())
+    page = batches.preview(ctx, staged["batch_id"])
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE brain_source_items i SET current_version_id=NULL "
+            "FROM brain_source_versions v JOIN brain_evidence e "
+            "ON e.tenant_id=v.tenant_id AND e.source_version_id=v.id "
+            "WHERE i.tenant_id=v.tenant_id AND i.id=v.item_id "
+            "AND e.tenant_id=%s AND e.id=%s", (ctx.tenant_id, entity_evidence),
+        )
+    with pytest.raises(Conflict):
+        batches.preview(ctx, staged["batch_id"])
+    with pytest.raises(Conflict):
+        batches.review(ctx, staged["batch_id"], KnowledgeProposalReviewRequest(
+            batch_sha256=staged["batch_sha256"],
+            decisions=[KnowledgeProposalDecision(
+                proposal_id=page["proposals"][0]["proposal_id"],
+                decision="approved",
+            )],
+        ), uuid4())
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_proposal_decisions "
+            "WHERE tenant_id=%s AND batch_id=%s",
+            (ctx.tenant_id, staged["batch_id"]),
+        ).fetchone()[0] == 0
 
 
 def test_two_rows_stage_private_replay_then_explicit_mixed_review(database, tenant):
@@ -263,6 +523,18 @@ def test_api_human_scopes_and_exact_whitespace(database, tenant):
         assert accepted.status_code == 201, accepted.text
         assert accepted.json()["reviewed"] is False
         assert "import_context_sha256" in accepted.json()
+        member = _member_candidate(store, ctx, project_id, evidence_id)
+        member_response = client.post(
+            route, json=member.model_dump(mode="json"),
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert member_response.status_code == 201, member_response.text
+        member_page = client.get(
+            "/v1/knowledge/proposal-batches/" + member_response.json()["batch_id"],
+        )
+        assert member_page.status_code == 200, member_page.text
+        assert member_page.json()["proposals"][0]["assertion"]["kind"] == "member"
+        assert member_page.json()["proposals"][0]["status"] == "proposed"
         truncated = body.model_dump(mode="json")
         truncated["markdown"] = truncated["markdown"].rstrip()
         assert client.post(

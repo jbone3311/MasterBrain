@@ -110,6 +110,11 @@ inferred claims or reviewed search material. ADR-202's additive
 NULL and their original payload digest. A Markdown-imported project, event or
 commitment batch binds the exact file and selected claim IDs/citations to its
 typed payload digest. No raw Markdown or source path is stored in this column.
+ADR-205's `0068_dossier_proposal_citation_binding.sql` adds two nullable,
+tenant-FK-bound evidence IDs on each proposal: the selected row's quote basis
+and (only for imported members) its displayed entity citation. New imports
+recheck these IDs at private preview and human review as well as staging;
+historical and generic batches retain NULL and their original contract.
 
 Migration `0057_private_statement_proposals.sql` implements ADR-172's separate
 append-only `knowledge_statement_proposals`, ordered

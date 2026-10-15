@@ -2,6 +2,30 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Selected dossier-member proposals — ADR-205
+
+The existing human-only Markdown route now stages a selected reviewed-role
+line only as an unreviewed private `MemberWrite` proposal. It requires an
+existing local project and person/organization entity, exact visible-line
+match, two current source citations and full typed sidecar fields. Migration
+0068 retains the selected member and entity citation IDs for rechecks during
+private preview and explicit atomic human review. Approval issues a new local
+member ID; roles never grant access. Fictional PostgreSQL tests cover private
+stage/replay/review, actual HTTP stage/preview, valid-but-wrong entity citation,
+revocation before stage and after stage, mixed-batch rollback, generic-batch
+compatibility and migration/recovery. The three adjacent proposal/inspection
+suites passed **21/21** before the last added cases; the migration/recovery/
+protected-truncate suites passed **40/40**. The exact final local Python
+3.14/PostgreSQL 17.11 full gate passed **3,483 tests, nine skipped** (594 of
+595 PostgreSQL-marked tests executed). Six browser suites passed **167/167**;
+Ruff, strict mypy (109 source files), documentation links (306 Markdown files,
+1,623 paths/fragments) and diff checks passed. An earlier run on the repeatedly
+reused test database failed at PostgreSQL `GRANT` with `row is too big` after
+many per-module test roles accumulated; it was not counted as a pass. The
+final run used a fresh explicitly named disposable test database and passed.
+Hosted exact-head/merged-main gates remain to be recorded. No live source,
+inference, FileOS effect or FOS-Master change was made.
+
 ## Fictional cross-source project dossier — ADR-204
 
 The disposable Cedar Harbor fixture now publishes one reviewed project,

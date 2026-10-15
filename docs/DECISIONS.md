@@ -1,5 +1,11 @@
 # Architecture Decisions
 
+[ADR-205](adr/205_dossier_member_proposal_staging.md) admits selected,
+two-citation project-member Markdown rows only into the private proposal
+queue. Existing local project/entity bases and exact cited evidence are
+rechecked through human review; approval issues a new local member ID and
+never grants permissions.
+
 [ADR-204](adr/204_fictional_cross_source_project_dossier_acceptance.md)
 extends only the disposable cross-source trial with one coherent, reviewed
 fictional project dossier spanning Email and FileOS. It tests existing API,
