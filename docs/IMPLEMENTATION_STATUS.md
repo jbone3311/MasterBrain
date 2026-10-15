@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-203 adds a ninth isolated, exact-hash FOS-Master statement text-recipe
+comparison for Charles Schwab brokerage. Fictional old-template rows and
+failure-era inputs test Cash-and-Bank-Sweep headings, positional/inline tickers,
+parenthesized cash flows, confidence downgrade, zero fallback and a 1,000-row
+repeat. It is not a source-PDF/OCR extraction proof, typed statement proposal,
+reviewed investment, live source or FileOS cutover. Exact validation is in
+the build receipt.
+
 ADR-202 adds a synthetic-only human route that stages selected project,
 event and commitment rows from the owner-selected Markdown format as private
 ADR-186 proposals. The typed sidecar must supply omitted full quotes,

@@ -1,5 +1,10 @@
 # MasterBrain Security and Privacy
 
+ADR-203's Schwab recipe is isolated supplied-text comparison code. Its
+old-template matches cannot prove that a PDF was extracted faithfully; the
+scanned and redesigned-template cases may return no rows. No candidate reaches
+reviewed KnowledgeCore or an assistant, and the donor remains unchanged.
+
 MasterBrain processes highly sensitive email and files. Its threat model includes
 malicious source content, compromised client/model output, parser exploits, confused
 deputy actions, cross-tenant access, credential theft, poisoned indexes, data

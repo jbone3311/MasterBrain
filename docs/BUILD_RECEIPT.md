@@ -2,6 +2,26 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Charles Schwab supplied-text donor parity — ADR-203
+
+The unchanged FOS-Master commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` and exact
+`_SYSTEM/tools/statement_extract.py` SHA-256
+`f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe`
+anchor this isolated ninth recipe. Nine fictional goldens and exact-hash donor
+AST replay passed **11/11**, including a 1,000-row repeatability comparison.
+The first local golden expectation incorrectly treated a zero investment total
+without fallback as a reconciliation result; the donor returns no
+reconciliation, so the expected result was corrected without changing parser
+behavior. All nine isolated recipe suites passed **75/75** with the exact
+local donor supplied. The local Python 3.14/PostgreSQL 17.11 deployment gate
+passed **3,476 tests, 9 skipped** (587 of 588 PostgreSQL-marked tests
+executed; its extra skip is the optional donor replay without that environment
+variable). Ruff, strict mypy (109 source files), documentation links (304
+Markdown files, 1,617 paths/fragments), 167 browser tests and diff checks
+passed. Hosted gates are pending at this branch checkpoint.
+No real statements or source bytes were used; no FOS-Master file was edited.
+
 ## Source-stated dossier proposal staging — ADR-202
 
 The owner-selected Markdown format now supports synthetic-only, human-only
@@ -23,8 +43,17 @@ stale migration-catalog fixture expectations; after updating them and adding
 the project-link check, the final-head Python 3.14/PostgreSQL 17.11 gate passed
 **3,466 tests, 8 skipped** (587 of 588 PostgreSQL-marked tests executed).
 Ruff, strict mypy (109 source files), documentation links (303 Markdown files,
-1,614 paths/fragments), all 167 browser tests and diff checks passed. Hosted
-gates are pending at this branch checkpoint. FOS-Master was not changed.
+1,614 paths/fragments), all 167 browser tests and diff checks passed.
+[PR #242](https://github.com/jbone3311/MasterBrain/pull/242) merged at
+`f71f9d6141b017c764286237e3a894fbf65ea782`; exact-head
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38702188640),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38702188691)
+and [logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/38702188708)
+passed. Independent merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38703425747),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38703425682)
+and [logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/38703425686)
+also passed. FOS-Master was not changed.
 
 ## Owner-only imported-dossier citation inspection — ADR-201
 

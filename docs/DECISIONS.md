@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-203](adr/203_schwab_statement_recipe_parity.md) pins an isolated,
+synthetic supplied-text Charles Schwab recipe comparison to the unchanged
+FOS-Master donor. It does not prove scanned/redesigned PDF extraction, publish
+holdings or authorize a FileOS cutover.
+
 [ADR-202](adr/202_dossier_source_stated_proposal_staging.md) allows an owner
 to stage selected source-stated project/event/commitment Markdown rows only as
 private ADR-186 proposals. It binds exact input/selection context and rechecks

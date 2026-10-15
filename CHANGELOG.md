@@ -1,5 +1,10 @@
 # Changelog
 
+- Add a ninth isolated FOS-Master supplied-text statement baseline for Charles
+  Schwab brokerage (ADR-203). Fictional old-template holdings, Cash-and-Bank-
+  Sweep, symbol mismatch, signed transactions, empty redesigned/scanned text
+  and 1,000-row exact-hash donor parity do not publish financial knowledge.
+
 - Add ADR-202's synthetic-only project/event/commitment Markdown-to-private-
   proposal stage. Exact rows, full cited quotes, current source grants and an
   immutable import digest are required; human review remains a separate step.
