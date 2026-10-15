@@ -14,6 +14,7 @@ import test_postgres as pg
 from pdf_samples import mail_packet, variant
 from test_document_controller import document_files
 from test_processing_controller import private_write
+from test_recovery_jobs import worker_principal
 
 from email_brain.attachments import receive_attachments
 from email_brain.auth import Principal
@@ -28,7 +29,10 @@ from masterbrain.datacore.email_pdf_derivation import (
     EmailAttachmentPdfUnavailable,
     prove_email_attachment_pdf_derivation,
 )
-from masterbrain.datacore.persistence import EMAIL_DOCUMENT_NORMALIZER_PREFIX
+from masterbrain.datacore.persistence import EMAIL_DOCUMENT_NORMALIZER_PREFIX, DataCoreStore
+from masterbrain.knowledge_schema import SourceTierReviewWrite
+from masterbrain.source_tier_email_pdf_replay import SourceTierEmailPdfReplayStore
+from masterbrain.source_tier_reviews import SourceTierReviews
 
 database, tenant = pg.database, pg.tenant
 
@@ -158,6 +162,96 @@ def test_actual_approved_document_to_sql_search_and_evidence(database, tenant, p
             ).fetchone()["opaque_cursor"]
             == "pdf-ready"
         )
+
+
+@pytest.mark.postgres
+def test_actual_image_seals_reviewed_email_pdf_receipt_without_source_effects(
+    database, tenant, processor,
+):
+    """Exercise ADR-229 with the actual pinned image rather than a fake pipe."""
+    store, admin = database
+    ctx, account = tenant
+    raw, _, _ = mail_packet(variant("text"))
+    store.ingest_page(ctx, account, None, "reviewed-pdf-ready", [replace(pg.item(), raw=raw)])
+    with store.transaction(ctx) as conn:
+        attachment = conn.execute(
+            "SELECT id,evidence_id FROM attachment_receipts WHERE account_id=%s",
+            (account,),
+        ).fetchone()
+    assert attachment is not None
+    jobs = DocumentJobs(store, processor.processor_version)
+    jobs.enqueue(
+        Principal(ctx, "human"), account, attachment["id"],
+        processor.processor_version, POLICY, uuid4(),
+    )
+    job_worker = worker_principal(admin, ctx)
+    job_worker = replace(
+        job_worker,
+        context=replace(
+            job_worker.context, scopes=frozenset({"email.document.process"}),
+        ),
+    )
+    completed = jobs.run_once(job_worker, account, processor)
+    assert completed is not None and completed["status"] == "completed"
+    assert completed["extraction_id"] is not None
+    core = DataCoreStore(store)
+    bridge_ctx = pg.datacore_context(ctx)
+    core.bridge_current_email_version(
+        bridge_ctx, attachment["evidence_id"], uuid4(),
+        code_revision="actual-email-pdf-tier-v1",
+    )
+    core.bridge_email_attachment(
+        bridge_ctx, attachment["id"], uuid4(),
+        code_revision="actual-email-pdf-tier-v1",
+    )
+    derived = core.bridge_email_document_extraction(
+        bridge_ctx, completed["extraction_id"], uuid4(),
+        code_revision="actual-email-pdf-tier-v1",
+    )
+    reviewer = replace(
+        ctx, scopes=ctx.scopes | frozenset({"knowledge.review", "brain.content.read"}),
+    )
+    with store.transaction(reviewer) as conn:
+        source = conn.execute(
+            "SELECT d.evidence_id,d.body_sha256,e.source_version_id,e.sha256 "
+            "FROM brain_normalized_documents d JOIN brain_evidence e "
+            "ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id WHERE d.id=%s",
+            (derived.document_id,),
+        ).fetchone()
+    assert source is not None
+    review_id = SourceTierReviews(store).publish(
+        reviewer, source["evidence_id"], SourceTierReviewWrite(
+            evidence_id=source["evidence_id"], document_id=derived.document_id,
+            document_sha256=source["body_sha256"],
+            source_version_id=source["source_version_id"],
+            source_sha256=source["sha256"], source_tier="T3",
+            authority_kind="internal_record", source_quote="pdfonlyproof",
+        ), uuid4(),
+    )["object_id"]
+    worker = replace(
+        ctx, scopes=frozenset({"brain.document.publish", "email.evidence.read"}),
+    )
+    receipt = SourceTierEmailPdfReplayStore(store, processor).record_current_pdf_replay(
+        worker, review_id, expected_account_id=account,
+    )
+    assert receipt == {
+        "review_id": review_id, "worker_observed_pdf_text_replay": True,
+        "source_effects": False, "financial_claim_approved": False,
+    }
+    with store.transaction(worker) as conn:
+        saved = conn.execute(
+            "SELECT raw_sha256,normalizer,page_count FROM "
+            "knowledge_source_tier_email_pdf_replays WHERE review_id=%s",
+            (review_id,),
+        ).fetchone()
+        assert conn.execute("SELECT count(*) AS n FROM knowledge_claims").fetchone()["n"] == 0
+    assert saved is not None
+    assert saved["raw_sha256"] == hashlib.sha256(raw).hexdigest()
+    assert saved["normalizer"] == (
+        f"{EMAIL_DOCUMENT_NORMALIZER_PREFIX}:{processor.processor_version}:{POLICY}"
+    )
+    assert saved["page_count"] == 1
+    assert store.load_raw(ctx, account, saved["raw_sha256"]) == raw
 
 
 @pytest.mark.postgres

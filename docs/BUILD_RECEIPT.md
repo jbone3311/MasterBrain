@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Restricted Email PDF replay command — ADR-230
+
+The private exact-review CLI now binds one active account, a two-scope worker,
+tenant-bound database login and immutable Email PDF image. Check mode reads
+no selected MIME/PDF or review row and constructs no processor or blob store.
+Fictional controller/CLI tests passed **15/15**, with the existing Email text
+command tests **14/14**; one fictional command-to-PostgreSQL test passed
+with a tenant-bound receipt and shared/owner login refusal. Ruff and focused
+mypy passed. No actual-container, hosted or independent restore result is claimed.
+The combined clean Python 3.11 / disposable PostgreSQL 17.11 focused run
+passed **36/36**, including all 7 PostgreSQL-marked cases. Full Ruff, mypy
+over 128 source files, docs (331 Markdown / 1,732 local paths/fragments),
+diff check and 17-test PDF-container collection passed. An earlier broad
+Python 3.14 non-PostgreSQL run passed 3,023 tests with three environment
+failures; each of those three passed in the clean 3.11 rerun after installing
+the checkout and allowing the disposable local PostgreSQL launcher. This
+checkpoint has not rerun the complete suite under one clean environment.
+The explicit PDF-container suite collects 17 tests including a reviewed Email
+PDF receipt through the actual image; collection is not a passing image result.
+The earlier full Python 3.11 suite below predates this command.
+
 ## Reviewed Email attachment PDF receipt — ADR-229
 
 Follow-up occurrence gate: a new fictional two-message case uses identical
@@ -16,8 +37,9 @@ parent MIME. The immutable, forced-RLS, tenant-login-fenced row carries only
 source/part/text/result digests, identities and page count. Fictional
 PostgreSQL tests passed **5/5** for exact replay, SQL forgery and immutable
 guards, wrong account/source grant, paused/deleted/excluded source and final worker
-authorization rollback. A private operator command, actual image, hosted
-exact-head and independent restore are **not** verified. Account/job status
+authorization rollback. ADR-230 adds a private operator command with a
+fictional command-to-database test; actual image, hosted exact-head and
+independent restore gates are **not** verified. Account/job status
 is rechecked but not row-locked; no live or financial claim is authorized.
 
 A fresh locked Python 3.11 environment against disposable PostgreSQL 17.11
@@ -40,7 +62,8 @@ partial/image-only/encrypted refusal. The explicit PDF-container suite now
 collects an actual-image complete/partial proof but has not run on this Mac
 or hosted CI. This has not written or verified any database receipt, contacted
 live mail or made a financial claim. ADR-229 later adds the separate current
-reviewed-attachment receipt; a private command and real-image execution remain.
+reviewed-attachment receipt; ADR-230 later adds a private command, while
+real-image execution remains.
 
 At this checkpoint, a fresh locked Python 3.11 environment and disposable
 PostgreSQL 17.11 passed the full suite: **3,667 passed, 19 skipped**

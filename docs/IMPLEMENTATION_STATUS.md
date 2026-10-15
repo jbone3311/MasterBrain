@@ -1,11 +1,20 @@
 # MasterBrain Implementation Status
 
+ADR-230 exposes ADR-229's reviewed Email PDF text-layer receipt through a
+private `masterbrain email replay-tier-pdf` command. A closed config pins one
+account and immutable PDF image; a two-scope worker and tenant-bound database
+login are mandatory. Check mode opens no selected MIME/PDF or processor.
+Fictional controller/CLI and command-to-database tests pass, including
+shared/owner login refusal. Real-container, hosted and independent restore
+gates remain. No live mail, OCR, financial
+publication or account/job-transition serialization is claimed.
+
 ADR-229 now has a worker-only, current reviewed Email attachment PDF replay
 receipt in protected migration 0079. It binds one child occurrence to its
 approved extraction and retained parent MIME, re-runs ADR-228's isolated
 text-layer proof and seals only digests/identities/page count after final
 current/grant/authorization checks. Fictional PostgreSQL and SQL-guard tests
-pass. No private command, real-image execution, live mail, OCR, sender/issuer
+pass. ADR-230 adds the private command; real-image execution, live mail, OCR, sender/issuer
 proof or financial claim is enabled. Concurrent account/job transitions are
 rechecked but not serialized by row locks; hosted/restore gates remain open.
 

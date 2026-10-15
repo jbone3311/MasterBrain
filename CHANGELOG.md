@@ -1,9 +1,16 @@
 # Changelog
 
+- ADR-230: added a restricted, tenant-bound Email attachment PDF replay
+  command with exact account/review, pinned image and no-selected-MIME-read
+  check mode. Fictional controller/CLI and command-to-PostgreSQL tests pass;
+  real-container and hosted gates remain, and no live mail or financial claim
+  is enabled.
+
 - ADR-229: sealed one current reviewed Email attachment PDF text-layer replay
   in an occurrence-specific, tenant-fenced immutable digest receipt after
   retained-MIME proof and final checks. Fictional PostgreSQL/RLS tests pass;
-  no operator command, live mail or financial claim is enabled.
+  ADR-230 later adds a restricted operator command; no live mail or financial
+  claim is enabled.
 
 - ADR-228: added a nonpublishing, exact retained-MIME/part Email PDF text-layer
   replay proof through the pinned isolated worker, with fictional complete,

@@ -1,5 +1,25 @@
 # MasterBrain Build Progress
 
+## Restricted Email PDF replay command (2026-10-15, ADR-230, open PR)
+
+`masterbrain email replay-tier-pdf` now checks or executes one exact reviewed
+attachment under a private account/image config, two-scope worker identity and
+mandatory tenant-bound database login. Check mode validates without opening
+selected MIME/PDF or constructing the processor. Fictional controller/CLI
+tests pass 15/15, including inactive account, invalid image/config, missing
+scopes and unbound login refusal; the existing Email text command tests pass
+14/14. One fictional command-to-PostgreSQL test passed with receipt publication
+and shared/owner login refusal. Actual-image, hosted and independent restore
+gates remain. No live mail or financial claim.
+The combined clean Python 3.11 / PostgreSQL 17.11 command-and-receipt run
+passed **36/36**, with all 7 PostgreSQL-marked cases executed. A broader
+Python 3.14 non-PostgreSQL pass had 3,023 passes and three local environment
+failures; all three failures passed when rerun under the clean supported 3.11
+environment with its disposable launcher. This is not a fresh full-suite pass.
+The explicit PDF-container suite now collects a reviewed Email PDF receipt
+through the actual pinned image and database, but no such image ran locally or
+on hosted CI. This is a pending gate, not a passing test.
+
 ## Reviewed Email attachment PDF receipt (2026-10-15, ADR-229, open PR)
 
 An additional fictional PostgreSQL regression now proves identical PDF/MIME
@@ -13,7 +33,7 @@ document, approved extraction and exact retained parent MIME to ADR-228's
 complete isolated text-layer proof. The receipt is append-only, tenant-fenced
 and digest-only. Fictional PostgreSQL tests passed 5/5 for receipt/replay,
 immutable/forgery guards, account/source/exclusion refusal and final authorization
-rollback. No command, actual immutable-image run, live mail, OCR or financial
+rollback. ADR-230 adds a private command; no actual immutable-image run, live mail, OCR or financial
 claim is enabled; account/job transition serialization remains a later gate.
 After migration-inventory repair, the full disposable PostgreSQL 17.11 /
 Python 3.11 suite passed 3,672 tests with 19 skipped, including the exclusion

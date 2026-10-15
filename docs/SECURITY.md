@@ -148,6 +148,12 @@ open. Consequently no public verified-source or investment claim is exposed.
   route or source effect. Account/job state is not row-locked by this worker;
   a concurrent transition after the final check is not claimed serialized.
   It remains synthetic-only and cannot justify a financial fact or live mail.
+- ADR-230 adds only a private, exact-account command for that receipt. It
+  requires a tenant-bound login and two-scope worker token, pins an immutable
+  PDF image and reauthenticates within the receipt transaction. Its check mode
+  does not read a selected MIME/PDF or start a processor and is not an
+  execution proof. Actual-image, hosted, independent restore and account/job
+  transition gates remain before any live-source use.
 - ADR-225/226's FileOS PDF worker reopens one confined source and compares its
   exact output from an image-pinned restricted document processor before a
   final current/grant/authorization recheck and digest-only receipt. SQL alone

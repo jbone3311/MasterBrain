@@ -2,8 +2,8 @@
 
 Status: synthetic-only worker/store and protected schema on an open PR. Local
 fictional PostgreSQL/full-suite tests passed; exact-head hosted, independent
-restore and actual-image gates remain. There is no private operator command,
-live mailbox or financial publication.
+restore and actual-image gates remain. ADR-230 later adds a private operator
+command; there is no live mailbox or financial publication.
 
 ## Context
 
@@ -61,7 +61,7 @@ retroactive exclusion, lost grant, wrong account/tenant, trigger/immutability,
 authorization rollback and two distinct Email occurrences of identical PDF
 bytes retaining separate parent/review/receipt identities. Run exact-head
 hosted PostgreSQL and populated
-independent restore before merge. A later ADR must add a tenant-bound private
-command with shared/owner login refusal and an actual immutable-image gate.
+independent restore before merge. ADR-230 later adds the tenant-bound private
+command with shared/owner login refusal; an actual immutable-image gate remains.
 No live account is authorized. Roll back by stopping the worker; preserve the
 append-only table and migrate forward rather than deleting receipts.

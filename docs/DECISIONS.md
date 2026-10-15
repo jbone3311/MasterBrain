@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-230](adr/230_restricted_email_pdf_tier_replay_command.md) exposes one
+reviewed Email attachment PDF text-layer replay through a private, exact-account,
+tenant-bound worker command with no selected MIME read in check mode.
+
 [ADR-229](adr/229_reviewed_email_attachment_pdf_replay_receipt.md) binds one
 current reviewed Email PDF attachment to a retained-MIME replay and immutable
 digest-only receipt. It is not an operator command or financial attestation.

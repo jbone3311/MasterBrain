@@ -1,9 +1,16 @@
 # MasterBrain Roadmap
 
+ADR-230 adds the restricted, exact-account Email attachment PDF replay
+command with tenant-bound database login, pinned image, worker reauthentication
+and no-selected-MIME-read check mode. Fictional command-to-database receipt
+proof now passes. Next: actual immutable-image execution, hosted/restore gates and an
+account/job transition serialization fence before any live use. OCR, issuer
+proof and financial publication remain unavailable.
+
 ADR-229 now seals one current reviewed Email attachment PDF text-layer replay
 in a protected digest-only receipt. The next Email step is a tenant-bound,
-exact-account private command with a no-selected-MIME-read check mode, then
-actual-image, hosted and independent restore gates. A separate account/job
+exact-account private command (ADR-230), then actual-image, hosted and
+independent restore gates. A separate account/job
 transition fence is needed before any live use; OCR, sender/issuer proof and
 financial publication remain out of scope.
 
