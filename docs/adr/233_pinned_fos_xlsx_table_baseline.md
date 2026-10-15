@@ -33,6 +33,12 @@ policy/feature differences, not discrepancies to normalize away in tests.
 
 The fictional corpus covers ordinary rows, 1,000-row tail retention, an
 uncached formula, row truncation, encrypted/mislabeled bytes and `.xlsm`.
+An additional deterministic 24-case exact-donor matrix covers sparse rows,
+leading/interior blanks, one/two sheets, hidden sheets and positional empty
+cells. At exactly 2,000 physical rows, both paths retain the tail; at 2,001,
+FOS returns an explicitly truncated table while DataCore refuses all indexed
+text and rows. These checks compare only authored value overlap, not FOS's
+header inference, text layout, policy or financial truth.
 The FOS-Master donor stays unchanged. This comparison does not prove all
 workbook features, authentic statement values, sheet/cell provenance, Email
 attachment publication or FileOS replacement parity.

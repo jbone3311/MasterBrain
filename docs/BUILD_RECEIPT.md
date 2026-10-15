@@ -2,6 +2,16 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Expanded pinned FOS XLSX stress corpus — current branch
+
+The exact pinned FOS-Master `extract_xlsx` function was replayed, without
+running donor configuration or source effects, against a deterministic
+24-case authored sparse/multi-sheet corpus. The 2,000-row boundary and
+2,001-row refusal/truncation contrast were also checked. The pinned-donor
+module passed **32/32** locally. This is value overlap and explicit policy-gap
+evidence, not complete FileOS or financial parity. The separate donor checkout
+remained unchanged.
+
 ## Retained Email XLSX physical-row proof — current branch
 
 ADR-238 adds a private, nonpublishing proof for one exact retained Email

@@ -1,5 +1,11 @@
 # MasterBrain Roadmap
 
+The pinned FOS XLSX baseline now has a 24-case sparse/multi-sheet value
+matrix and exact 2,000/2,001-row boundary contrast. It supports the bounded
+DataCore table path but does not close formula, `.xlsm`, financial citation or
+full FileOS parity gaps. Keep FOS-Master as the runtime authority until those
+and the hosted/restore gates are independently resolved.
+
 ADR-238 adds a synthetic-only retained Email XLSX row-layout proof: exact
 parent/part identity, the pinned table image, and the existing normalized
 text digest must agree. Next is a separate reviewed XLSX extraction and

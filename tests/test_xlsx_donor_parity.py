@@ -158,6 +158,81 @@ def test_thousand_row_plain_workbook_replays_without_losing_tail(tmp_path: Path)
     assert shared.text.endswith("Fictional-999\t1099")
 
 
+@pytest.mark.parametrize("case", range(24))
+def test_pinned_donor_sparse_multisheet_value_matrix(tmp_path: Path, case: int) -> None:
+    """Compare authored values, not FOS's header inference or text formatting."""
+    donor_extract = _pinned_donor_extract()
+    book = Workbook()
+    first = book.active
+    first.title = "Fictional A"
+    sheets = [first]
+    if case % 3 != 0:
+        second = book.create_sheet("Fictional B")
+        if case % 2 == 0:
+            second.sheet_state = "hidden"
+        sheets.append(second)
+    for sheet_index, sheet in enumerate(sheets):
+        if case % 4 == 0:
+            sheet.append([None, None, None])
+        sheet.append(["Name", "Amount", "Note"])
+        for number in range(1 + case % 5):
+            if (number + case) % 3 == 0:
+                sheet.append([None, None, None])
+            sheet.append([
+                f"Fictional-{case}-{sheet_index}-{number}",
+                100 + number,
+                None if (case + number) % 2 else "reviewed",
+            ])
+    output = BytesIO()
+    book.save(output)
+    book.close()
+    raw = output.getvalue()
+    path = tmp_path / f"matrix-{case}.xlsx"
+    path.write_bytes(raw)
+    donor = donor_extract(path, {"xlsx_max_rows": 2000})
+    source = _datacore(raw)
+    projection = project_xlsx_tables(raw, source.source)
+    assert source.status == "extracted" and projection.status == "extracted"
+    assert len(donor["tables"]) == len(projection.sheets)
+    assert donor["metadata"].get("truncated") is not True
+    for donor_table, shared_sheet in zip(donor["tables"], projection.sheets, strict=True):
+        assert donor_table["sheet"] == shared_sheet.name
+        assert donor_table["headers"] == list(shared_sheet.rows[0].values)
+        assert donor_table["rows"] == [
+            list(row.values) for row in shared_sheet.rows[1:]
+        ]
+        assert all(row.number >= 1 for row in shared_sheet.rows)
+        assert len({row.number for row in shared_sheet.rows}) == len(shared_sheet.rows)
+
+
+def test_exact_row_cap_keeps_tail_and_next_row_refuses_partial_claim(tmp_path: Path) -> None:
+    donor_extract = _pinned_donor_extract()
+    at_cap = _workbook(row_count=1999)  # header plus 1,999 rows = 2,000 physical rows
+    at_path = tmp_path / "at-cap.xlsx"
+    at_path.write_bytes(at_cap)
+    donor_at = donor_extract(at_path, {"xlsx_max_rows": 2000})
+    shared_at = _datacore(at_cap)
+    rows_at = project_xlsx_tables(at_cap, shared_at.source)
+    assert donor_at["metadata"].get("truncated") is not True
+    assert shared_at.status == "extracted" and rows_at.status == "extracted"
+    assert rows_at.sheets[0].rows[-1].number == 2000
+    assert donor_at["tables"][0]["rows"][-1] == list(rows_at.sheets[0].rows[-1].values)
+
+    over_cap = _workbook(row_count=2000)
+    over_path = tmp_path / "over-cap.xlsx"
+    over_path.write_bytes(over_cap)
+    donor_over = donor_extract(over_path, {"xlsx_max_rows": 2000})
+    shared_over = _datacore(over_cap)
+    rows_over = project_xlsx_tables(over_cap, shared_over.source)
+    assert donor_over["metadata"]["truncated"] is True
+    assert donor_over["metadata"]["total_rows"] == 2001
+    assert donor_over["metadata"]["extracted_rows"] == 2000
+    assert shared_over.status == "deferred" and shared_over.reason == "structure_limit"
+    assert shared_over.text == ""
+    assert rows_over.status == "deferred" and rows_over.reason == "structure_limit"
+    assert rows_over.sheets == () and rows_over.cell_count == 0
+
+
 def test_encrypted_or_mislabeled_workbook_never_produces_text(tmp_path: Path) -> None:
     donor_extract = _pinned_donor_extract()
     for name, raw in (("encrypted.xlsx", OLE2_MAGIC + b"\x00" * 100),
