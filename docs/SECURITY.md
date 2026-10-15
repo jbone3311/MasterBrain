@@ -43,7 +43,10 @@ atomic row-by-row review recheck current source grants, excluded evidence and
 an exact quote in normalized text. Preview additionally requires content-read
 scope. A proposed row is untrusted and cannot authorize its own publication;
 the reviewer must make every decision explicitly. This is synthetic-only and
-does not establish a safe Markdown parser or source-byte derivation proof.
+  does not by itself establish a safe Markdown parser or source-byte derivation
+  proof. ADR-201's separate owner-only inspection checks imported Markdown
+  quote previews against each claimed current/granted/nonexcluded evidence ID;
+  it has no proposal write and does not recover full quotes or observation time.
 
 ADR-189 adds a separate, synthetic-only FileOS statement replay boundary. A
 worker, never a public API reader, selects one current proposal under tenant

@@ -2,6 +2,21 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Owner-only imported-dossier citation inspection — ADR-201
+
+The owner-selected ADR-197 Markdown intake now has an owner-only API that
+checks each claimed quote preview against its own current, granted,
+nonexcluded normalized evidence in a tenant-fenced transaction. Fictional
+parser/exporter/API/PostgreSQL tests passed locally, including changed quote,
+stale version, excluded mail, hidden source, cross-tenant and assistant denial,
+and no proposal write. The local Python 3.14/PostgreSQL 17.11 deployment gate
+passed **3,459 tests, 8 skipped** (580 of 581 PostgreSQL-marked tests
+executed). Ruff, strict mypy, documentation links and 167 browser tests passed.
+Hosted gates are pending at this branch checkpoint. A matching preview is not
+proof of the full stored quote,
+observation time, source freshness or real-world truth; the endpoint stages
+nothing.
+
 ## Read-only intake of the current MasterBrain dossier format — ADR-200
 
 The owner selected ADR-197's export layout as the Librarian exchange format.

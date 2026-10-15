@@ -1,5 +1,11 @@
 # MasterBrain Roadmap
 
+ADR-201 adds an owner-only current-evidence inspection of the selected
+MasterBrain dossier Markdown format. It checks every claimed quote preview
+against its cited evidence but remains read-only and synthetic-only; a later
+proposal write must recheck full assertion bases and require the missing
+metadata and explicit human review.
+
 The owner selected the existing MasterBrain dossier export as the Librarian
 exchange format. ADR-200 adds only a bounded, read-only candidate inventory
 parser with a fictional exporter-to-parser proof. Claimed IDs and citations
@@ -232,7 +238,7 @@ Each lane must pass its own acceptance gate before the next dependent step:
 | Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Deferred by the owner's synthetic-only decision. Continue fictional/disposable scope and exclusion proof; seek new explicit authorization and region, budget, retention, identity and exact-source decisions before any private pilot | No live source, hosted identity, recovery or operations acceptance exists |
 | FileOS migration ([migration plan](FOS_MIGRATION.md)) | Review the six recorded donor-policy differences and fault/platform cases, then run an owner-authorized read-only shadow on a bounded root | No v2 current publication, FileOS effect, donor cutover or retirement is approved |
 | FOS intelligence ([preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md)) | Extend synthetic donor goldens beyond eight isolated recipes to Schwab and reports; prove credit-line PDF-to-text completeness, harden ADR-189's private FileOS text replay into a separately attested worker/source tier, then design owner review/publication and other-format proofs for the statement ledger | No donor-equivalent investment dossier, owner-approved statement row or verified holdings claim exists yet |
-| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds a private source-stated proposal queue and atomic human per-row review; merged ADR-197 adds a bounded, citation-verified Markdown export; ADR-200 adds a read-only candidate inventory parser for that format. Next design evidence-reverified proposal staging with explicit missing metadata and no model dependency; separately review derivation/basis links | No Markdown-to-proposal staging, inferred proposal path, automatic dossier generation or full round trip exists; overfull/uncitable exports refuse, and live-source acceptance remains a prerequisite |
+| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds a private source-stated proposal queue and atomic human per-row review; merged ADR-197 adds a bounded, citation-verified Markdown export; ADR-200 adds its read-only candidate inventory parser; ADR-201 checks imported quote previews against current authorized evidence for an owner. Next design full-basis-reverified proposal staging with explicit missing metadata and no model dependency; separately review derivation/basis links | No Markdown-to-proposal staging, inferred proposal path, automatic dossier generation or full round trip exists; overfull/uncitable exports refuse, and live-source acceptance remains a prerequisite |
 | Reviewed actions ([#93](https://github.com/jbone3311/MasterBrain/issues/93)) | Specify typed propose/preview/approve/execute contracts and reversible first actions | The existing Brain API stays read-only until separate grants, safety tests and approval exist |
 
 The donor remains pinned at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
