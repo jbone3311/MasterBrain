@@ -1,11 +1,20 @@
 # MasterBrain Roadmap
 
+ADR-233 pins the FOS-Master XLSX table output and verifies the ordinary
+overlap plus formula, row-cap, encrypted and `.xlsm` differences against
+DataCore on fictional bytes. Preserve the donor's useful table/row structure
+without importing its unsafe cached-formula or partial-truncation claims as
+complete evidence. A reviewed Email XLSX receipt cannot precede a separately
+approved extraction and occurrence-specific bridge; the PDF-only approval
+path is not a substitute. See [ADR-233](adr/233_pinned_fos_xlsx_table_baseline.md).
+
 ADR-232 proves one exact retained fictional Email XLSX attachment can be
 re-extracted through the existing shared, isolated DataCore document worker
 without publishing text. The proof retains parent Email occurrence identity
-and rejects incomplete/formula-dependent results. Next: a tenant-fenced,
-review-bound digest receipt and private command, then actual-image, hosted and
-independent restore checks. There is still no live Email spreadsheet bridge,
+and rejects incomplete/formula-dependent results. Next: approved XLSX extraction
+and an Email document bridge, then a tenant-fenced, review-bound digest receipt
+and private command; actual-image, hosted and independent restore checks follow.
+There is still no live Email spreadsheet bridge,
 cell locator, automatic index publication or certified financial statement.
 
 ADR-231 now serializes a reviewed Email PDF receipt with both the controlled

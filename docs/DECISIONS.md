@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-233](adr/233_pinned_fos_xlsx_table_baseline.md) pins an isolated
+FOS-Master XLSX table baseline and records the precise DataCore table, formula,
+truncation, encrypted-workbook and `.xlsm` differences before any cutover.
+
 [ADR-232](adr/232_retained_email_xlsx_derivation.md) proves one exact retained
 Email XLSX attachment can reuse the isolated shared DataCore parser without
 publishing text or granting live-mail authority.

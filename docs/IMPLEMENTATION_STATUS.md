@@ -1,5 +1,10 @@
 # MasterBrain Implementation Status
 
+ADR-233 now pins and replays the donor's XLSX table extractor on fictional
+workbooks against DataCore. Ordinary authored values overlap, but structured
+tables, cached-formula behavior, row caps, encrypted classification and `.xlsm`
+are explicit differences. This is not complete FileOS replacement parity.
+
 ADR-232 adds a synthetic-only, nonpublishing Email XLSX derivation proof using
 the existing isolated shared DataCore document worker. It binds exact parent
 MIME and part hashes, validates full extracted text/digest and preserves

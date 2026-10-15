@@ -29,6 +29,8 @@ Fictional tests run the real bounded XLSX child logic on authored bytes and
 exercise the pinned Docker caller through an isolated fake transport. These
 tests are not actual-image execution. No database receipt, Email document
 bridge, search/index publication, source freshness, live provider, OCR, cell
-locator or financial truth is conferred. Next: a tenant-fenced, digest-only
-review-bound receipt and private command, followed by actual immutable-image,
-hosted and independent-restore gates. The FOS-Master donor stays unchanged.
+locator or financial truth is conferred. ADR-233 pins the donor table/behavior
+gaps. Next: an independently approved XLSX extraction and occurrence-specific
+Email document bridge, then a tenant-fenced review-bound digest receipt and
+private command, followed by actual immutable-image, hosted and independent-
+restore gates. The FOS-Master donor stays unchanged.

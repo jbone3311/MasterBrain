@@ -2,6 +2,19 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Pinned donor XLSX table baseline — current branch
+
+The unchanged FOS-Master checkout at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
+supplied an exact-SHA-verified `doc_extract.py` `extract_xlsx` AST replay on
+fictional workbooks. Ordinary tables and 1,000-row tail values overlap with
+DataCore's text projection, but structured donor tables are not yet in DataCore.
+Uncached formula, row-truncation, OLE2-encrypted and `.xlsm` cases are retained
+as explicit policy/feature differences, not hidden in normalization. The new
+comparison plus adjacent Email/DataCore suites passed **32 tests** on lockfile
+Python 3.11.13; Ruff passed. Hosted runs without the optional donor checkout
+execute the portable DataCore golden and skip exact donor replay. No live
+workbook, donor edit, source publication or FileOS cutover occurred.
+
 ## Exact retained Email XLSX through shared DataCore — current branch
 
 ADR-232 adds a nonpublishing proof for one retained fictional XLSX attachment.
