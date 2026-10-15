@@ -1,5 +1,10 @@
 # MasterBrain Feature Inventory
 
+ADR-242 update: human XLSX inspection and exact digest/count review now use
+two owner-only API calls; a separately scoped private worker publishes the
+reviewed text. Migration 0085 enforces the split. Existing ADR-241 feature
+rows below describe the resulting document, not a single combined credential.
+
 Updated 2026-10-15 through ADR-212's opt-in reviewed measurement. The current
 owner-selected Librarian exchange layout is MasterBrain's ADR-197 Markdown
 export; ADR-200/201 can inventory it, but this is not an automatic or lossless

@@ -12,13 +12,18 @@ and external-client acceptance remain targets [documented separately](USER_INTER
 ADR-147 exposes ADR-128's FileOS v2 comparison through one human-only,
 historical-preview route. It is not current v2 visibility or cutover.
 
-ADR-241 adds a synthetic-only, separately human-authorized Email XLSX
+ADR-241/242 add a synthetic-only, separately human-reviewed Email XLSX
 derivative behind existing Brain search and Email-family search. Its result
 is bounded text citing the attachment occurrence; generic search, evidence
 content and Email-family search hide it if the exact parent/source ceases to
-be current. There is no public endpoint to approve extraction, invoke the
-bridge, fetch original XLSX bytes or assert cell-level financial truth. The
-publication service is private; first-party review UI/API and real-image/
+be current. A human-only `POST /v1/brain/email-xlsx-results/{approval_id}/inspect`
+returns a bounded untrusted text page and exact digest/counts; a separate
+`POST /v1/brain/email-xlsx-results/{approval_id}/publication-reviews` seals
+those values for one hour without publication. Both require Email review and
+evidence-read scopes. The worker publication service is private and needs
+DataCore ingest/document scopes. There is no public endpoint to approve
+extraction, invoke the worker bridge, fetch original XLSX bytes or assert
+cell-level financial truth. The first-party review screen and real-image/
 hosted gates remain open.
 
 ## Progressive access

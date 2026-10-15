@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Human/worker Email XLSX role correction — current unmerged branch
+
+ADR-242 and migration 0085 resolve the token-registry mismatch in ADR-241.
+A human can inspect bounded untrusted result text and seal its digest/counts
+through two owner-only API routes; a separate worker publishes the exact
+reviewed result. New SQL receipts require an unexpired human review. The
+focused fictional PostgreSQL suite passed **16/16** (16/16 marked executed).
+The complete local synthetic suite then passed **3,806 tests, 19 skipped,
+zero failed** in 5m57s on locked Python 3.11.13 and disposable loopback-only
+PostgreSQL 17.11; **689/690 PostgreSQL-marked tests executed**. Browser tests
+passed **167/167**. Ruff, strict mypy over 139 source files, the documentation
+link check (343 Markdown files, 1,796 local paths/fragments), structural gate
+and whitespace check passed. The actual-image case collected but did not run.
+Hosted exact-head CI and independent populated restore remain open. The
+3,805-pass figure below is the *prior* 0084 checkpoint.
+
 ## Reviewed synthetic Email XLSX DataCore document bridge — current branch
 
 ADR-241 and migration 0084 add a distinct human digest/count-bound bridge

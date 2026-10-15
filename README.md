@@ -16,7 +16,8 @@ Today, fictional data can flow through read-only Email and FileOS intake,
 shared DataCore extraction and indexing, reviewed KnowledgeCore records, and a
 scoped Brain API. On the open development PR, one separately approved
 synthetic Email XLSX can be published as an occurrence-cited DataCore text
-document after explicit human digest/count authorization. This is not live
+document after a human-only digest/count review and separate worker
+publication (ADR-242). This is not live
 Fastmail, a cell-level citation or financial review; actual-image, hosted CI
 and restore gates remain open. The first-party `/brain` workspace and
 provider-neutral client can search current evidence, show exact source quotes,

@@ -52,6 +52,7 @@ from masterbrain.answers import (
 from masterbrain.artifact_proposals import ArtifactProposalBatches
 from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReviewer
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
+from masterbrain.email_xlsx_document_bridge import EmailXlsxDocumentBridge
 from masterbrain.fact_proposals import FactProposalBatches
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_proposals import KnowledgeProposalBatches
@@ -85,6 +86,8 @@ from masterbrain.schemas import (
     BrainSearchRequest,
     CurrentGroupedSearchRequest,
     EmailFamilySearchRequest,
+    EmailXlsxInspectRequest,
+    EmailXlsxReviewRequest,
     EvidenceContentRequest,
     FileOSV2SearchPreviewRequest,
     GroundedAnswerRequest,
@@ -176,6 +179,7 @@ def create_app(
     message_reader = MessageReader(store)
     memory = Memory(store)
     brain = brain_store or DataCoreStore(store)
+    email_xlsx_bridge = EmailXlsxDocumentBridge(store)
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
@@ -961,6 +965,37 @@ def create_app(
             "ranking": "within_layer_only",
             "untrusted_content": True,
         }
+
+    @app.post("/v1/brain/email-xlsx-results/{approval_id}/inspect")
+    def inspect_email_xlsx_result(
+        approval_id: str,
+        body: EmailXlsxInspectRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        try:
+            return email_xlsx_bridge.inspect(
+                principal, approval_id, offset=body.offset, max_chars=body.max_chars,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_email_xlsx_review") from None
+
+    @app.post("/v1/brain/email-xlsx-results/{approval_id}/publication-reviews", status_code=201)
+    def review_email_xlsx_publication(
+        approval_id: str,
+        body: EmailXlsxReviewRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        try:
+            return email_xlsx_bridge.review(
+                principal, approval_id, idempotency_key,
+                expected_text_sha256=body.expected_text_sha256,
+                expected_sheet_count=body.expected_sheet_count,
+                expected_cell_count=body.expected_cell_count,
+                code_revision=body.code_revision,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_email_xlsx_review") from None
 
     @app.post("/v1/knowledge/assertions", status_code=201)
     def publish_knowledge(

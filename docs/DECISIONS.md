@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-242](adr/242_split_email_xlsx_review_and_worker_publication.md) corrects
+ADR-241's role mismatch: a human inspects and seals one exact synthetic XLSX
+result; a separately scoped worker publishes it. Migration 0085 requires
+the review on every new bridge receipt.
+
 [ADR-241](adr/241_reviewed_synthetic_email_xlsx_document_bridge.md) binds a
 complete synthetic Email XLSX worker result to an explicitly human-authorized
 DataCore document and the original attachment occurrence. Currentness gates

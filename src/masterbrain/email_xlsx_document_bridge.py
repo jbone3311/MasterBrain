@@ -1,9 +1,10 @@
-"""Reviewed publication of one current synthetic Email XLSX derivative."""
+"""Human review and worker-only publication of a synthetic Email XLSX result."""
 
 from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -11,10 +12,11 @@ from uuid import UUID
 import psycopg
 
 from email_brain.auth import Principal
+from email_brain.domain.models import TenantContext
 from email_brain.recovery_jobs import _account_lock, _owners
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.contracts import stable_id
-from masterbrain.datacore.document_contract import MAX_CELLS, MAX_SHEETS
+from masterbrain.datacore.document_contract import MAX_CELLS, MAX_SHEETS, MAX_TEXT_CHARS
 from masterbrain.datacore.persistence import (
     CHUNK_CHARACTERS,
     MAX_NORMALIZED_BYTES,
@@ -26,6 +28,7 @@ from masterbrain.email_xlsx_results import _APPROVAL_ID, _current
 
 _CODE_REVISION = re.compile(r"^[^\x00]{1,200}$")
 _SHA256 = re.compile(r"^[a-f0-9]{64}$")
+_REVIEW_ID = re.compile(r"^xrev_[a-f0-9]{32}$")
 
 
 def _public(row: dict[str, Any], *, changed: bool) -> dict[str, Any]:
@@ -43,23 +46,74 @@ def _public(row: dict[str, Any], *, changed: bool) -> dict[str, Any]:
 class EmailXlsxDocumentBridge:
     store: Store
 
-    def publish(
+    @staticmethod
+    def _basis(
+        conn: psycopg.Connection[dict[str, Any]], ctx: TenantContext,
+        approval_id: str,
+    ) -> dict[str, Any]:
+        identity = conn.execute(
+            "SELECT account_id,processor_version FROM "
+            "brain_email_xlsx_extraction_approvals WHERE id=%s", (approval_id,),
+        ).fetchone()
+        if identity is None or _VERSION.fullmatch(identity["processor_version"]) is None:
+            raise NotFound()
+        _account_lock(conn, ctx.tenant_id, identity["account_id"])
+        approval = _current(conn, approval_id, ctx, identity["processor_version"])
+        if not _owners(conn, approval["account_id"], approval["actor_id"], ctx.actor_id):
+            raise AccessDenied("Email XLSX owner authorization changed")
+        return approval
+
+    def inspect(
+        self, principal: Principal, approval_id: str,
+        *, offset: int = 0, max_chars: int = 4000,
+    ) -> dict[str, Any]:
+        """Read a bounded page of untrusted text before human authorization."""
+        if principal.client_kind != "human":
+            raise AccessDenied("human document review required")
+        ctx = principal.context
+        self.store.require(ctx, "email.review")
+        self.store.require(ctx, "email.evidence.read")
+        if (
+            type(approval_id) is not str or _APPROVAL_ID.fullmatch(approval_id) is None
+            or type(offset) is not int or not 0 <= offset <= MAX_TEXT_CHARS
+            or type(max_chars) is not int or not 1 <= max_chars <= 16000
+        ):
+            raise ValueError("invalid Email XLSX inspection request")
+        with self.store.transaction(ctx) as conn:
+            self._basis(conn, ctx, approval_id)
+            result = conn.execute(
+                "SELECT text_sha256,sheet_count,cell_count,extracted_text FROM "
+                "brain_email_xlsx_extraction_results WHERE approval_id=%s",
+                (approval_id,),
+            ).fetchone()
+            if result is None:
+                raise Conflict("approved Email XLSX extraction is not complete")
+            text = result["extracted_text"]
+            next_offset = offset + max_chars if offset + max_chars < len(text) else None
+            self.store.audit(
+                conn, ctx, "brain.email_xlsx_result_inspected", "xlsx_approval", approval_id,
+            )
+            return {
+                "approval_id": approval_id, "text_sha256": result["text_sha256"],
+                "sheet_count": result["sheet_count"], "cell_count": result["cell_count"],
+                "text": text[offset:offset + max_chars], "offset": offset,
+                "next_offset": next_offset, "total_chars": len(text),
+                "untrusted_content": True, "mailbox_effects": False,
+            }
+
+    def review(
         self, principal: Principal, approval_id: str, idempotency_key: UUID,
         *, expected_text_sha256: str, expected_sheet_count: int,
         expected_cell_count: int, code_revision: str,
     ) -> dict[str, Any]:
-        """Publish complete approved text on its existing attachment occurrence."""
+        """Seal a one-hour human intent; do not publish the document."""
         if principal.client_kind != "human":
             raise AccessDenied("human document review required")
         ctx = principal.context
-        for scope in (
-            "email.review", "email.evidence.read", "brain.source.ingest",
-            "brain.document.publish",
-        ):
-            self.store.require(ctx, scope)
+        self.store.require(ctx, "email.review")
+        self.store.require(ctx, "email.evidence.read")
         if (
-            type(approval_id) is not str
-            or _APPROVAL_ID.fullmatch(approval_id) is None
+            type(approval_id) is not str or _APPROVAL_ID.fullmatch(approval_id) is None
             or not isinstance(idempotency_key, UUID)
             or type(code_revision) is not str
             or _CODE_REVISION.fullmatch(code_revision) is None
@@ -70,33 +124,24 @@ class EmailXlsxDocumentBridge:
             or type(expected_cell_count) is not int
             or not 1 <= expected_cell_count <= MAX_CELLS
         ):
-            raise ValueError("invalid Email XLSX bridge request")
+            raise ValueError("invalid Email XLSX review request")
         request_hash = _canonical_digest({
-            "approval_id": approval_id,
-            "code_revision": code_revision,
-            "contract": "email-xlsx-document-bridge-v1",
+            "approval_id": approval_id, "code_revision": code_revision,
+            "contract": "email-xlsx-publication-review-v1",
             "expected_text_sha256": expected_text_sha256,
             "expected_sheet_count": expected_sheet_count,
             "expected_cell_count": expected_cell_count,
         })
+        review_id = stable_id(
+            "xrev", str(ctx.tenant_id), str(ctx.actor_id), str(idempotency_key),
+        )
         try:
             with self.store.transaction(ctx) as conn:
-                identity = conn.execute(
-                    "SELECT account_id,processor_version FROM "
-                    "brain_email_xlsx_extraction_approvals WHERE id=%s",
-                    (approval_id,),
-                ).fetchone()
-                if identity is None or _VERSION.fullmatch(identity["processor_version"]) is None:
-                    raise NotFound()
-                _account_lock(conn, ctx.tenant_id, identity["account_id"])
-                approval = _current(conn, approval_id, ctx, identity["processor_version"])
-                if not _owners(
-                    conn, approval["account_id"], approval["actor_id"], ctx.actor_id,
-                ):
-                    raise AccessDenied("Email XLSX owner authorization changed")
+                approval = self._basis(conn, ctx, approval_id)
                 result = conn.execute(
-                    "SELECT * FROM brain_email_xlsx_extraction_results "
-                    "WHERE approval_id=%s", (approval_id,),
+                    "SELECT text_sha256,sheet_count,cell_count FROM "
+                    "brain_email_xlsx_extraction_results WHERE approval_id=%s",
+                    (approval_id,),
                 ).fetchone()
                 if result is None:
                     raise Conflict("approved Email XLSX extraction is not complete")
@@ -106,9 +151,98 @@ class EmailXlsxDocumentBridge:
                     or result["cell_count"] != expected_cell_count
                 ):
                     raise Conflict("Email XLSX reviewed result identity changed")
+                prior = conn.execute(
+                    "SELECT id,request_hash FROM brain_email_xlsx_publication_reviews "
+                    "WHERE actor_id=%s AND idempotency_key=%s",
+                    (ctx.actor_id, idempotency_key),
+                ).fetchone()
+                if prior is None:
+                    prior = conn.execute(
+                        "SELECT id,request_hash FROM brain_email_xlsx_publication_reviews "
+                        "WHERE approval_id=%s", (approval_id,),
+                    ).fetchone()
+                if prior is not None:
+                    if prior["request_hash"] != request_hash:
+                        raise Conflict("Email XLSX result already reviewed differently")
+                    return {
+                        "review_id": prior["id"], "approval_id": approval_id,
+                        **result, "changed": False, "document_published": False,
+                    }
+                conn.execute(
+                    "INSERT INTO brain_email_xlsx_publication_reviews("
+                    "tenant_id,id,actor_id,idempotency_key,approval_id,account_id,"
+                    "text_sha256,sheet_count,cell_count,code_revision,request_hash) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        ctx.tenant_id, review_id, ctx.actor_id, idempotency_key,
+                        approval_id, approval["account_id"], expected_text_sha256,
+                        expected_sheet_count, expected_cell_count, code_revision,
+                        request_hash,
+                    ),
+                )
+                self.store.audit(
+                    conn, ctx, "brain.email_xlsx_publication_reviewed",
+                    "xlsx_approval", approval_id,
+                )
+                return {
+                    "review_id": review_id, "approval_id": approval_id,
+                    **result, "changed": True, "document_published": False,
+                }
+        except psycopg.errors.UniqueViolation:
+            raise Conflict("Email XLSX publication review already exists") from None
+
+    def publish(
+        self, ctx: TenantContext, review_id: str, idempotency_key: UUID,
+        *, authorize: Callable[[], None] | None = None,
+    ) -> dict[str, Any]:
+        """Worker publishes only the exact unexpired human-reviewed result."""
+        for scope in ("brain.source.ingest", "brain.document.publish", "email.evidence.read"):
+            self.store.require(ctx, scope)
+        if ctx.identity is not None and ctx.identity.client_kind != "worker":
+            raise AccessDenied("worker identity required")
+        if (
+            type(review_id) is not str or _REVIEW_ID.fullmatch(review_id) is None
+            or not isinstance(idempotency_key, UUID)
+        ):
+            raise ValueError("invalid Email XLSX publication request")
+        try:
+            with self.store.transaction(ctx) as conn:
+                review = conn.execute(
+                    "SELECT * FROM brain_email_xlsx_publication_reviews WHERE id=%s",
+                    (review_id,),
+                ).fetchone()
+                if review is None:
+                    raise NotFound()
+                approval = self._basis(conn, ctx, review["approval_id"])
+                clock = conn.execute("SELECT clock_timestamp() AS now").fetchone()
+                assert clock is not None
+                if review["expires_at"] <= clock["now"]:
+                    raise Conflict("Email XLSX publication review expired")
+                if (
+                    review["account_id"] != approval["account_id"]
+                    or not _owners(
+                        conn, approval["account_id"], review["actor_id"], ctx.actor_id,
+                    )
+                ):
+                    raise AccessDenied("Email XLSX reviewer authorization changed")
+                result = conn.execute(
+                    "SELECT * FROM brain_email_xlsx_extraction_results "
+                    "WHERE approval_id=%s", (review["approval_id"],),
+                ).fetchone()
+                if result is None or any(
+                    result[field] != review[field]
+                    for field in ("text_sha256", "sheet_count", "cell_count")
+                ):
+                    raise Conflict("Email XLSX reviewed result identity changed")
+                if authorize is not None:
+                    authorize()
+                request_hash = _canonical_digest({
+                    "review_id": review_id, "code_revision": review["code_revision"],
+                    "contract": "email-xlsx-document-bridge-v2",
+                })
                 receipt = conn.execute(
                     "SELECT source_id,item_id,version_id,evidence_id,document_id,"
-                    "chunk_count,request_hash,approval_id FROM "
+                    "chunk_count,request_hash,approval_id,review_id FROM "
                     "brain_email_xlsx_document_bridge_receipts "
                     "WHERE actor_id=%s AND idempotency_key=%s",
                     (ctx.actor_id, idempotency_key),
@@ -119,13 +253,13 @@ class EmailXlsxDocumentBridge:
                     return _public(receipt, changed=False)
                 prior = conn.execute(
                     "SELECT source_id,item_id,version_id,evidence_id,document_id,"
-                    "chunk_count,request_hash,approval_id FROM "
+                    "chunk_count,request_hash,approval_id,review_id FROM "
                     "brain_email_xlsx_document_bridge_receipts WHERE approval_id=%s",
-                    (approval_id,),
+                    (review["approval_id"],),
                 ).fetchone()
                 if prior is not None:
-                    if prior["request_hash"] != request_hash:
-                        raise Conflict("Email XLSX result was published with different provenance")
+                    if prior["review_id"] != review_id:
+                        raise Conflict("Email XLSX result was published under another review")
                     return _public(prior, changed=False)
                 occurrence = conn.execute(
                     "SELECT ab.source_id,ab.item_id,ab.version_id,ab.evidence_id "
@@ -186,14 +320,15 @@ class EmailXlsxDocumentBridge:
                         ),
                     )
                 configuration_sha256 = _canonical_digest({
-                    "approval_id": approval_id,
+                    "approval_id": review["approval_id"], "review_id": review_id,
                     "chunk_characters": CHUNK_CHARACTERS,
                     "processor_version": result["processor_version"],
                     "policy_version": approval["policy_version"],
                     "text_sha256": result["text_sha256"],
                 })
                 provenance_id = stable_id(
-                    "provenance", document_id, code_revision, configuration_sha256,
+                    "provenance", document_id, review["code_revision"],
+                    configuration_sha256,
                 )
                 conn.execute(
                     "INSERT INTO brain_provenance(tenant_id,id,output_id,transform,"
@@ -201,7 +336,7 @@ class EmailXlsxDocumentBridge:
                     "VALUES (%s,%s,%s,'bridge_email_xlsx_result',%s,%s,%s,clock_timestamp())",
                     (
                         ctx.tenant_id, provenance_id, document_id, normalizer,
-                        code_revision, configuration_sha256,
+                        review["code_revision"], configuration_sha256,
                     ),
                 )
                 conn.execute(
@@ -224,24 +359,25 @@ class EmailXlsxDocumentBridge:
                     "tenant_id,actor_id,idempotency_key,approval_id,account_id,"
                     "attachment_id,source_id,item_id,version_id,evidence_id,"
                     "document_id,normalizer,text_sha256,chunk_count,code_revision,"
-                    "request_hash) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    "request_hash,review_id) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                     (
-                        ctx.tenant_id, ctx.actor_id, idempotency_key, approval_id,
-                        approval["account_id"], approval["attachment_id"],
-                        occurrence["source_id"], occurrence["item_id"],
-                        occurrence["version_id"], occurrence["evidence_id"],
-                        document_id, normalizer, result["text_sha256"],
-                        len(chunks), code_revision, request_hash,
+                        ctx.tenant_id, ctx.actor_id, idempotency_key,
+                        review["approval_id"], approval["account_id"],
+                        approval["attachment_id"], occurrence["source_id"],
+                        occurrence["item_id"], occurrence["version_id"],
+                        occurrence["evidence_id"], document_id, normalizer,
+                        result["text_sha256"], len(chunks), review["code_revision"],
+                        request_hash, review_id,
                     ),
                 )
                 self.store.audit(
                     conn, ctx, "brain.email_xlsx_document_published",
-                    "xlsx_approval", approval_id,
+                    "xlsx_review", review_id,
                 )
-                return {
-                    **occurrence, "approval_id": approval_id,
+                return _public({
+                    **occurrence, "approval_id": review["approval_id"],
                     "document_id": document_id, "chunk_count": len(chunks),
-                    "changed": True, "mailbox_effects": False,
-                }
+                }, changed=True)
         except psycopg.errors.UniqueViolation:
             raise Conflict("Email XLSX derivative already published") from None

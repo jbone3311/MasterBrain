@@ -86,7 +86,8 @@ def test_worker_seals_exact_text_without_publishing(
         with pytest.raises(psycopg.errors.RaiseException), conn.transaction():
             conn.execute(
                 "TRUNCATE brain_email_xlsx_extraction_results,"
-                "brain_email_xlsx_document_bridge_receipts",
+                "brain_email_xlsx_document_bridge_receipts,"
+                "brain_email_xlsx_publication_reviews",
             )
 
 

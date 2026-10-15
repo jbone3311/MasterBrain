@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+Current correction: ADR-242 separates human XLSX inspection/review from
+worker-only document publication. Migration 0085 enforces an unexpired,
+exact-result human review for each new receipt; the human credential does not
+gain ingest/publication scopes. The first-party review screen, actual-image
+run, hosted exact-head CI, independent restore and live-source acceptance
+remain open. Librarian import continues to use the existing
+`masterbrain_project_dossier_markdown_v1` export; no new format is planned.
+
 ADR-241 now publishes one exact-approved, complete synthetic Email XLSX
 result as a reviewed DataCore document with deterministic chunks, provenance
 and an immutable occurrence receipt. Generic and Email-family retrieval are

@@ -231,12 +231,22 @@ def test_actual_image_seals_then_reviews_email_xlsx_document(
             "WHERE b.legacy_attachment_id=%s", (attachment,),
         ).fetchone()["n"] == 0
     reviewer = Principal(pg.datacore_context(ctx), "human")
-    published = EmailXlsxDocumentBridge(store).publish(
+    bridge = EmailXlsxDocumentBridge(store)
+    reviewed = bridge.review(
         reviewer, approval, uuid4(),
         expected_text_sha256=sealed["text_sha256"],
         expected_sheet_count=sealed["sheet_count"],
         expected_cell_count=sealed["cell_count"],
         code_revision="actual-image-email-xlsx-v1",
+    )
+    assert reviewed["document_published"] is False
+    published = bridge.publish(
+        replace(
+            ctx, scopes=frozenset({
+                "brain.source.ingest", "brain.document.publish", "email.evidence.read",
+            }),
+        ),
+        reviewed["review_id"], uuid4(),
     )
     assert published["changed"] and published["mailbox_effects"] is False
     assert any(

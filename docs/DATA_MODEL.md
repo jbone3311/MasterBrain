@@ -1,5 +1,14 @@
 # MasterBrain Data Model
 
+Migration 0085 adds immutable, tenant-fenced
+`brain_email_xlsx_publication_reviews` rows binding one human owner, exact
+synthetic approval/result digest and counts, and a one-hour expiry. New 0084
+bridge receipts must reference such a current review and are inserted by a
+separately scoped worker; the SQL guard rechecks reviewer, approver, worker,
+source, document body and chunks. A nullable review reference preserves
+pre-0085 receipts, not permission to create new unreviewed ones. ADR-242
+supersedes ADR-241's single-principal authorization model.
+
 Migration 0084 adds one immutable, tenant-fenced
 `brain_email_xlsx_document_bridge_receipts` row per human-authorized synthetic
 Email XLSX result. It binds the exact approval/result, reviewer/idempotency,

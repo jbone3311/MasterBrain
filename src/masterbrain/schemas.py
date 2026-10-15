@@ -40,6 +40,18 @@ class EvidenceContentRequest(ClosedModel):
     max_chars: int = Field(default=4000, ge=1, le=16000, strict=True)
 
 
+class EmailXlsxInspectRequest(ClosedModel):
+    offset: int = Field(default=0, ge=0, le=200000, strict=True)
+    max_chars: int = Field(default=4000, ge=1, le=16000, strict=True)
+
+
+class EmailXlsxReviewRequest(ClosedModel):
+    expected_text_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    expected_sheet_count: int = Field(ge=1, le=20, strict=True)
+    expected_cell_count: int = Field(ge=1, le=20000, strict=True)
+    code_revision: str = Field(min_length=1, max_length=200)
+
+
 class GroundedAnswerRequest(ClosedModel):
     question: str = Field(min_length=1, max_length=500)
     source_focus: SourceFocus = "all"

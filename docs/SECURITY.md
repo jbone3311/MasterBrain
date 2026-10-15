@@ -1,5 +1,11 @@
 # MasterBrain Security and Privacy
 
+ADR-242 keeps Email XLSX human review separate from DataCore publication:
+owner-only inspection and digest/count review use Email scopes; only a
+worker with ingest/document scopes may publish. Migration 0085 guards every
+new receipt with an unexpired review and current exact-source/result checks.
+This does not authorize live mail or certify extracted financial values.
+
 ADR-235–237's fictional FileOS XLSX row-layout replay is worker-only and
 nonpublishing. Its private command requires a tenant-bound database login,
 exact source/review ID, one immutable image and an expiring one-scope worker

@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-242 corrects ADR-241's unreachable combined credential: the API now
+supports human-only, bounded XLSX result inspection and digest/count-bound
+publication review; a separate worker uses the private bridge. Migration
+0085 requires that review for every new receipt. Focused fictional PostgreSQL
+tests pass 16/16. The complete local synthetic suite passes 3,806/3,806,
+with 19 skips; actual-image execution, hosted CI and independent populated
+restore have not been rerun for this correction.
+
 ADR-241 adds an explicit human, digest-and-count-bound synthetic Email XLSX
 publication on the existing attachment occurrence. It records normalized
 text/chunks, provenance and an immutable tenant-fenced bridge receipt, then
