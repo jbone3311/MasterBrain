@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+ADR-250 now proves one complete fictional Email XLSX round trip using real
+owner/API and separate tenant-bound worker-controller calls with a simulated
+restricted processor, then hides the derivative when its source is paused.
+Next run that path with the actual pinned image and browser, add broader
+failure/stress cases and an owner-friendly result queue, then meet hosted
+exact-head CI, restore, strict-runtime and independent-review gates before
+any narrow live-source pilot. FOS-Master remains unchanged.
+
 ADR-249 now makes exact-approved synthetic Email XLSX extraction callable
 through a separate account-pinned, tenant-bound private worker command. Its
 command-to-PostgreSQL simulation passes; the next dependent gate is the

@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-250 adds one disposable PostgreSQL round trip from fictional owner Email
+search/evidence and exact XLSX approval through separate extraction/review/
+publication identities to cited Brain retrieval. The actual API result and
+review JSON pass the first-party JavaScript contract; pausing the source hides
+both search and direct content. This is a simulated restricted processor,
+not an actual image or browser session, and is not live-source acceptance.
+
 ADR-249 adds a private `masterbrain email extract-approved-xlsx` command for
 one source-attached synthetic approval. It requires exact worker scopes,
 the configured account and pinned image, and a tenant-bound SQL login. The

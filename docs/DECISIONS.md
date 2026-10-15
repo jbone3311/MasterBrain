@@ -1,5 +1,11 @@
 # Architecture Decisions
 
+[ADR-250](adr/250_fictional_xlsx_alpha_round_trip.md) treats the synthetic
+Email XLSX path as one round-trip contract from owner evidence selection
+through two separately scoped workers to cited retrieval and source-pause
+invalidation. Its processor is simulated; actual-image/live acceptance stays
+separate.
+
 [ADR-249](adr/249_private_synthetic_email_xlsx_extraction_command.md) exposes
 one exact synthetic XLSX approval to an account-pinned, tenant-bound private
 worker command. Check mode reads no selected MIME; extraction, human review and

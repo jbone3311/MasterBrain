@@ -25,7 +25,9 @@ current synthetic attachment using a server-pinned XLSX image; ADR-248 lets
 the owner select that attachment in the Email screen and explicitly approve
 it. ADR-249 supplies the separately scoped private exact-approval extraction
 command; neither browser approval nor review runs a worker or publishes the
-document.
+document. ADR-250 now tests that entire fictional owner/API → two private
+workers → cited retrieval sequence, including source-pause invalidation; its
+restricted processor is simulated, so actual-image and hosted gates remain.
 This is not live Fastmail, a cell-level citation or financial review. Local
 populated restore passed; actual-image and hosted CI gates remain open. The
 first-party `/brain` workspace and

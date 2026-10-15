@@ -1,5 +1,10 @@
 # Changelog
 
+- Add one disposable synthetic XLSX alpha round-trip test across owner Email
+  search/evidence, exact approval, isolated-worker simulation, bounded result
+  inspection, explicit review, separate publication worker and cited Brain
+  retrieval. Pausing the source hides the derivative; no live data is used.
+
 - Add `masterbrain email extract-approved-xlsx` for one account-pinned,
   human-approved synthetic attachment. A separate worker identity and
   tenant-bound login run the pinned isolated extractor; check mode reads no

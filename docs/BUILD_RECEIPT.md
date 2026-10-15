@@ -2,6 +2,24 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Fictional XLSX alpha round trip — current unmerged branch
+
+ADR-250 adds one real disposable PostgreSQL 17.11 integration test exercising
+owner Email search/evidence, exact source approval, two distinct tenant-bound
+worker actors/logins, sealed extraction, human result inspection and review,
+separate publication, current Email-family search, cited content and source-
+pause denial. The real API inspection/review JSON also passed through the
+first-party Node UI contract. The focused test passed **1/1** on a fresh
+socket-only cluster, which was stopped and removed. The restricted processor
+was simulated; no actual Docker image, live account, personal data or real
+browser was used. This does not replace the broader local suite or hosted
+exact-head, restore, image, browser and independent-review gates.
+Ruff, strict mypy (141 source files), the first-party Node suite (178/178),
+offline documentation links (351 Markdown files / 1,813 paths and fragments)
+and diff whitespace checks passed. No product-source files changed after the
+full 3,837-pass local PostgreSQL suite recorded below; ADR-250 adds the
+independently executed integration test.
+
 ## Private synthetic XLSX extraction command — current unmerged branch
 
 ADR-249 adds an exact-approved, account-pinned, tenant-bound worker command.
