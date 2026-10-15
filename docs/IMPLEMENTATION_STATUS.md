@@ -9,7 +9,7 @@ The full local synthetic Python suite passed 3,794 tests, 19 skipped and zero
 failed; 677/678 PostgreSQL-marked cases executed. Hosted, actual-image and
 independent restore gates remain open.
 
-The latest exact-head CI check on `afb7cb8` failed before any test step; its
+An exact-head CI check on `afb7cb8` failed before any test step; its
 GitHub annotation explicitly names failed account payments or an insufficient
 spending limit. This is an external runner gate, not a failing test. Hosted
 CI, actual-image and independent restore must run before PR #245 can merge.

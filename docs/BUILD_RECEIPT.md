@@ -35,6 +35,9 @@ is a GitHub account billing/spending-limit runner gate, not a code test result.
 The owner must resolve it in GitHub Billing & plans; then rerun every exact-
 head check and the actual-image/restore gates before any merge. No billing
 settings or live data were changed by this task.
+At `d6b4e28befa9b87377f2d64cc67d2ae0e5fdc20c`, [CI run
+38799248207](https://github.com/jbone3311/MasterBrain/actions/runs/38799248207)
+again failed with no job steps and the same explicit billing annotation.
 
 ## Expanded pinned FOS XLSX stress corpus — current branch
 
