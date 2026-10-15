@@ -15,9 +15,22 @@ temporary clusters were confirmed stopped and removed. Three offline safety
 tests passed before this seed extension; the new PostgreSQL fixture test is
 collected but skipped when no `EMAIL_BRAIN_TEST_ADMIN_DSN` is supplied. The
 real native drill executed the same seed and verification against two fresh
-clusters. The fixture inserts deterministic
-extraction output directly, so this is not isolated-worker or immutable-image
-execution. The hosted Docker restore remains unexecuted on this head.
+clusters. The fixture inserts deterministic extraction output directly, so
+this is not isolated-worker or immutable-image execution. The hosted Docker
+restore remains unexecuted on this head.
+
+The Python 3.14 local full-suite rerun passed **3,136 tests, zero failed,
+706 skipped** in 1m44s after installing this checkout into the local test
+environment; **4/692 PostgreSQL-marked tests executed**, with 688 skipped
+because no `EMAIL_BRAIN_TEST_ADMIN_DSN` was supplied. These skips are not
+passes. The separate real native restore drill above executed against two
+fresh PostgreSQL clusters. The prior Python 3.11 full-suite receipt with
+disposable PostgreSQL remains the 3,819-pass checkpoint at `a82b75e`.
+
+Exact head `d58969d` [CI](https://github.com/jbone3311/MasterBrain/actions/runs/38810565861)
+and [hosted restore](https://github.com/jbone3311/MasterBrain/actions/runs/38810565863)
+failed before any job step. The CI annotation reports failed account payments
+or a spending-limit increase; it is not a code-test result.
 
 ## Server-owned Email XLSX bridge provenance — current unmerged branch
 
