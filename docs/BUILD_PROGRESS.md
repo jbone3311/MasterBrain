@@ -1,5 +1,18 @@
 # MasterBrain Build Progress
 
+## Retained Email byte/text replay (2026-10-15, ADR-223, open PR)
+
+A worker-only operation now reads one current reviewed Email's retained MIME,
+including authenticated encrypted storage, and recomputes the exact
+`email-message-v1` DataCore text under `stdlib-mime-v5`. Migration 0077 records
+an immutable digest-only point-in-time receipt. Fictional tests cover inline
+and encrypted success, changed ciphertext, stale version, source grants,
+revocation and a between-read message update. Other parser modes and
+attachments remain unsupported; no live account was touched. After exact
+migration inventories and protected-table counts were updated, the full
+disposable PostgreSQL 17.11 / Python 3.14 suite passed 3,613 with 19 skipped
+(651/652 PostgreSQL-marked executed); Ruff, mypy and docs passed.
+
 ## Encrypted Email bridge size (2026-10-15, ADR-222, open PR)
 
 A fictional encrypted-MIME PostgreSQL regression reproduced a null source-

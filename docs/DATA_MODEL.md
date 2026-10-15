@@ -105,6 +105,17 @@ text before the receipt can be written. This supports only bounded built-in
 text extraction, not PDF/OCR completeness or ongoing on-disk freshness
 ([ADR-218](adr/218_source_tier_fileos_text_replay.md)).
 
+Migration `0077_source_tier_email_text_replay.sql` adds a parallel immutable,
+tenant-scoped point-in-time receipt for one current reviewed **Email message**.
+It binds the review, bridged DataCore evidence/document, legacy Email version,
+account, source/text hashes and byte count, direct MIME parser and normalizer.
+The SQL guard checks the current active source/account, bridge and message;
+the worker must separately load retained MIME (inline or authenticated
+encrypted), rehash it, re-run the pinned parser and compare the whole
+normalized text before inserting. Only bounded direct-parser messages are
+covered; the receipt contains no MIME/body and is not an issuer or financial
+attestation ([ADR-223](adr/223_retained_email_text_replay.md)).
+
 Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
 immutable global catalog for **new** reviewed project-fact names. A SQL insert
 guard and the publication boundary require the active name/value-type/unit shape and

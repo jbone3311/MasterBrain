@@ -1,5 +1,11 @@
 # MasterBrain Roadmap
 
+ADR-223 adds a point-in-time worker-observed Email MIME-to-text replay for a
+current reviewed direct-parser message, covering inline and encrypted retained
+bytes. Next expose it through a tenant-bound operator command, prove other
+parser/attachment/PDF derivations and resolve authority conflicts before any
+financial publication. No live mailbox or source-tier cutover is authorized.
+
 ADR-222 removes an encrypted-Email bridge blocker: source-version byte size
 now follows the storage-independent retained MIME size. Next prove authorized
 current Email bytes reproduce the published text under a pinned parser and

@@ -2,6 +2,28 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Retained Email byte/text replay — ADR-223
+
+Migration 0077 records one immutable digest-only worker-observed replay for a
+current reviewed direct-parser Email message. The worker reads authorized
+retained MIME (inline or authenticated encrypted), checks the MIME digest and
+size, re-runs `stdlib-mime-v5`, refuses truncated text, and compares the whole
+`email-message-v1` DataCore projection and digest. A final locked transaction
+rechecks current source, bridge, message, grants, exclusion and optional
+authorization before insertion. Fictional faults include changed ciphertext,
+stale message, between-read update and final revocation; no source or Knowledge
+claim is modified.
+
+Focused tests passed **14/14**. A first full run exposed outdated exact
+migration inventories and protected-table counts, which were corrected; the
+final full disposable PostgreSQL 17.11 / Python 3.14 suite passed **3,613
+tests, 19 skipped** (651/652 PostgreSQL-marked executed). Ruff, mypy over
+121 source files, documentation links (324 Markdown files, 1,691 local
+paths/fragments), and diff whitespace passed. No live account or FOS-Master
+change. A tenant-bound operator command, hosted exact-head CI and independent
+restore remain open before merge. This receipt is not sender authenticity,
+attachment/PDF completeness or financial approval.
+
 ## Encrypted Email source size — ADR-222
 
 A fictional encrypted retained-MIME test first reproduced a `NULL`
