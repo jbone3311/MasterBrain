@@ -2,6 +2,32 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed synthetic Email XLSX DataCore document bridge — current branch
+
+ADR-241 and migration 0084 add a distinct human digest/count-bound bridge
+from an exact ADR-240 result to the existing attachment evidence, normalized
+text, deterministic chunks and provenance. Generic Brain, evidence-content
+and Email-family reads check the bridge's current synthetic source; a paused
+source or a disallowed source grant hides the derivative. Fictional
+approval/worker/bridge, historical populated-upgrade, recovery and protected-
+truncation checks passed **56/56**, including **53/53 PostgreSQL-marked**.
+Initial focused failures exposed unescaped SQL LIKE placeholders and older
+truncate assertions that omitted the new FK child; both were corrected, with
+no runtime grant or guard relaxed. A forged chunk-count insertion is refused
+by the SQL basis guard. The explicit actual-image container suite now includes
+approval → real isolated extraction → human-bound publication → Email-family
+search, but it is collected, not executed locally because Docker is absent.
+Full-suite, hosted exact-head CI and independent restore gates remain open.
+Repository-wide Ruff, strict mypy over 139 source files, documentation links
+(342 Markdown files, 1,792 local paths/fragments), structural gate and diff
+whitespace check passed.
+
+The complete synthetic suite then passed **3,805 tests, 19 skipped, zero
+failed** in 5m08s on locked Python 3.11.13 and disposable loopback-only
+PostgreSQL 17.11. **688/689 PostgreSQL-marked tests executed**; the skip is
+not counted as a pass. This does not execute the actual immutable image,
+hosted exact-head CI or independent populated restore.
+
 ## Email XLSX pre-read and replay authorization — current branch
 
 ADR-240's worker now takes the account lock before source-row locks and checks

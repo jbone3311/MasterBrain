@@ -1,5 +1,11 @@
 # Architecture Decisions
 
+[ADR-241](adr/241_reviewed_synthetic_email_xlsx_document_bridge.md) binds a
+complete synthetic Email XLSX worker result to an explicitly human-authorized
+DataCore document and the original attachment occurrence. Currentness gates
+generic and Email-family retrieval; cell citations, live mail and FileOS
+cutover remain open.
+
 [ADR-240](adr/240_synthetic_email_xlsx_worker_result.md) consumes one current
 synthetic-only XLSX approval through the pinned isolated DataCore worker and
 seals complete text in an immutable private result. It does not index or

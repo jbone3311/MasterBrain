@@ -1,5 +1,11 @@
 # Changelog
 
+- Add a separate human-authorized synthetic Email XLSX DataCore bridge. It
+  publishes only a complete exact-approved result with reviewer-supplied
+  digest/counts, immutable occurrence receipt, deterministic chunks and
+  provenance. Generic and Email-family reads recheck currentness; no
+  cell-level or financial claim, live mail or FOS cutover is enabled.
+
 - Recheck the approving owner's membership and caller authorization before
   reading retained Email XLSX MIME or replaying a cached extraction result.
   Add revoked-owner and replay tests plus a collected actual-image

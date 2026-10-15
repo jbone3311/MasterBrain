@@ -96,7 +96,8 @@ def test_exact_human_approval_is_immutable_and_does_not_publish(database, tenant
         with pytest.raises(psycopg.errors.RaiseException), conn.transaction():
             conn.execute(
                 "TRUNCATE brain_email_xlsx_extraction_approvals,"
-                "brain_email_xlsx_extraction_results",
+                "brain_email_xlsx_extraction_results,"
+                "brain_email_xlsx_document_bridge_receipts",
             )
 
 

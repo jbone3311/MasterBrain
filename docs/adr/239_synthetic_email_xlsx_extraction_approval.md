@@ -31,11 +31,11 @@ safe, or that a source-tier/financial claim was reviewed.
 ADR-240 now adds the separate exact-approval worker and immutable XLSX
 extraction result. It loads only the approved retained parent MIME, verifies
 currentness, expiry and authorization again, invokes the pinned restricted
-document worker, and seals complete text/hash/metadata or refuses. Next add an
-occurrence-specific, tenant-fenced DataCore document bridge with provenance,
-chunks and final currentness/worker checks. Only after that may a human
-source-tier review, row-layout receipt and bounded Brain API citation be
-considered. Actual-image, exact-head hosted CI and independent populated
+document worker, and seals complete text/hash/metadata or refuses. ADR-241
+now adds a separate human-authorized, occurrence-specific DataCore text bridge
+with provenance, chunks and currentness-gated retrieval. Cell-level
+citations, source-tier review and a table receipt remain separate gates.
+Actual-image, exact-head hosted CI and independent populated
 restore remain required before merge. FOS-Master stays unchanged.
 
 ## Acceptance evidence

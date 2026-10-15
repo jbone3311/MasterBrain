@@ -1,7 +1,8 @@
 # ADR-240 — Isolated result for one approved synthetic Email XLSX
 
-Status: private worker and protected result implemented on an open PR;
-DataCore document bridge, Brain API search and live mail are not implemented.
+Status: private worker and protected result implemented on an open PR. This
+ADR does not publish; ADR-241 separately adds a reviewed DataCore document
+bridge and currentness-gated Brain search. Live mail is not implemented.
 
 ## Decision
 
@@ -45,7 +46,7 @@ and that a lost caller authorization hook denies replay. The Docker pipe is
 fake in these local tests. A real-image approval-to-result case is collected
 in the explicit hosted container suite but has not executed locally;
 actual immutable-image execution is still open.
-Next implement an occurrence-specific reviewed DataCore document bridge with
-provenance and chunks, then bounded retrieval/citation. Exact-head hosted CI
+ADR-241 now adds a separate human-authorized occurrence-specific DataCore
+text bridge with provenance, chunks and currentness-gated retrieval. Exact-head hosted CI
 and independent populated restore remain required before merge. Live
 Fastmail remains disabled by the approval contract.

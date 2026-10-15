@@ -1,5 +1,15 @@
 # MasterBrain Data Model
 
+Migration 0084 adds one immutable, tenant-fenced
+`brain_email_xlsx_document_bridge_receipts` row per human-authorized synthetic
+Email XLSX result. It binds the exact approval/result, reviewer/idempotency,
+attachment occurrence, DataCore evidence/document, normalizer, text digest,
+chunk count and code revision. The normalized document and deterministic
+chunks cite the existing attachment occurrence. A SQL insert guard checks the
+current source, result/body identity and actual chunk count; a separate
+currentness predicate gates Brain retrieval after publication. It stores no
+new MIME or verified cell coordinates. ADR-241 defines the boundary.
+
 Migration 0081 adds an append-only, tenant-fenced
 `knowledge_source_tier_fileos_xlsx_table_replays` row keyed by one human
 source-tier review. It binds the current FileOS evidence/document/version,

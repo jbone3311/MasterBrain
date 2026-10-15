@@ -84,7 +84,10 @@ def test_worker_seals_exact_text_without_publishing(
                 conn.execute(query, (approval,))
     with psycopg.connect(admin) as conn:
         with pytest.raises(psycopg.errors.RaiseException), conn.transaction():
-            conn.execute("TRUNCATE brain_email_xlsx_extraction_results")
+            conn.execute(
+                "TRUNCATE brain_email_xlsx_extraction_results,"
+                "brain_email_xlsx_document_bridge_receipts",
+            )
 
 
 def test_wrong_processor_and_lost_authorization_leave_no_result(

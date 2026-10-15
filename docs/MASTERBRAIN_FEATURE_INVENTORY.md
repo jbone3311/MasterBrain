@@ -25,9 +25,10 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Email | Gmail and Microsoft Graph read libraries | Offline-tested, not durable live connectors | Email adapter |
 | Email | IMAP injected-session reader | Contract-tested, not durable live connector | Email adapter |
 | Email | Raw MIME, headers, bodies, attachment receipts, calendar parts | Implemented | DataCore evidence/extraction |
-| Email | XLSX attachment text through shared isolated DataCore extractor | ADR-232 exact-parent/part synthetic derivation proof only; no receipt, bridge, indexing or live account | Email adapter + DataCore |
-| Email | Human approval for one XLSX extraction attempt | ADR-239 synthetic-only immutable exact-occurrence approval; ADR-240 adds a private worker result, but no document bridge | Email adapter + DataCore |
-| Email | Isolated XLSX extraction result | ADR-240 one complete, exact-approved synthetic worker result in an immutable private table; no normalized document bridge, index, API or live mail | Email adapter + DataCore |
+| Email | XLSX attachment text through shared isolated DataCore extractor | ADR-232/239/240/241 now take one exact synthetic attachment from approval through isolated extraction to a reviewed normalized document; actual-image and hosted gates remain open | Email adapter + DataCore |
+| Email | Human approval for one XLSX extraction attempt | ADR-239 synthetic-only immutable exact-occurrence approval; ADR-240 seals a private result, and ADR-241 requires a separate human digest/count-bound publication | Email adapter + DataCore |
+| Email | Isolated XLSX extraction result | ADR-240 one complete, exact-approved synthetic worker result in an immutable private table; ADR-241 can publish its text to currentness-gated Brain search, not cell-level citations or live mail | Email adapter + DataCore |
+| Email | Reviewed XLSX document derivative | ADR-241 synthetic-only occurrence receipt, deterministic chunks and provenance; generic and Email-family search gated on current source and grants; no first-party review UI, table index, financial attestation or live acceptance | DataCore + Brain API |
 | Email | XLSX physical row-layout proof | ADR-238 binds one retained attachment occurrence's bounded rows to existing text; synthetic-only, no approved extraction, cell API or live mail | Email adapter + DataCore |
 | Email | Owner search/read/review/recovery screens | Implemented prototype | Email UI + Brain API |
 | Email + FileOS | Fictional PostgreSQL-backed cross-source browser trial | Merged and hosted-test verified; interactive Mac acceptance pending | Brain API + local trial |

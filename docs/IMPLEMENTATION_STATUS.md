@@ -1,11 +1,20 @@
 # MasterBrain Implementation Status
 
+ADR-241 adds an explicit human, digest-and-count-bound synthetic Email XLSX
+publication on the existing attachment occurrence. It records normalized
+text/chunks, provenance and an immutable tenant-fenced bridge receipt, then
+lets generic Brain and Email-family search return the derivative only while
+the source is current. Fictional PostgreSQL tests pass; actual-image execution,
+hosted CI, independent restore, review UI, cell-level citations and live
+Fastmail remain open. This is not a financial/source-tier approval.
+
 ADR-240 adds a private, synthetic-only worker for one current Email XLSX
 approval. It rechecks retained parent/part bytes, runs the pinned isolated
 document extractor, and seals only complete bounded text in a separate
 immutable, tenant-fenced result. Focused approval/result/migration tests pass
-50/50 on disposable PostgreSQL. No Brain document, index, API search, live
-mail or financial claim follows. Actual-image and hosted gates remain open.
+50/50 on disposable PostgreSQL at that checkpoint. ADR-241 separately adds
+the reviewed DataCore document bridge; the worker alone does not publish.
+Actual-image and hosted gates remain open.
 
 ADR-239 adds a separate synthetic-only human approval row for one exact
 currently bridged Email XLSX attachment. The service and SQL guard reject

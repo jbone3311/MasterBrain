@@ -36,6 +36,7 @@ from masterbrain.datacore.fileos import fileos_root_binding_sha256, snapshot_tre
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.datacore.xlsx_tables_processor import DockerXlsxTableProcessor
 from masterbrain.email_xlsx_approvals import EmailXlsxApprovals
+from masterbrain.email_xlsx_document_bridge import EmailXlsxDocumentBridge
 from masterbrain.email_xlsx_results import EmailXlsxResults
 from masterbrain.source_tier_fileos_pdf_replay import SourceTierFileOSPdfReplayStore
 from masterbrain.source_tier_fileos_xlsx_table_replay import (
@@ -196,7 +197,7 @@ def test_actual_image_binds_retained_email_xlsx_text_and_rows(
 
 
 @pytest.mark.postgres
-def test_actual_image_seals_approved_email_xlsx_result_without_publication(
+def test_actual_image_seals_then_reviews_email_xlsx_document(
     database: tuple[Store, str],
     tenant: tuple[TenantContext, UUID],
     processor: DockerDocumentProcessor,
@@ -229,6 +230,21 @@ def test_actual_image_seals_approved_email_xlsx_result_without_publication(
             "ON b.tenant_id=d.tenant_id AND b.evidence_id=d.evidence_id "
             "WHERE b.legacy_attachment_id=%s", (attachment,),
         ).fetchone()["n"] == 0
+    reviewer = Principal(pg.datacore_context(ctx), "human")
+    published = EmailXlsxDocumentBridge(store).publish(
+        reviewer, approval, uuid4(),
+        expected_text_sha256=sealed["text_sha256"],
+        expected_sheet_count=sealed["sheet_count"],
+        expected_cell_count=sealed["cell_count"],
+        code_revision="actual-image-email-xlsx-v1",
+    )
+    assert published["changed"] and published["mailbox_effects"] is False
+    assert any(
+        hit.document_id == published["document_id"]
+        for hit in DataCoreStore(store).search_current_email_family(
+            reviewer.context, "containerapprovedproof",
+        ).documents
+    )
 
 
 def test_actual_child_refuses_source_mismatch_and_external_relationship(
