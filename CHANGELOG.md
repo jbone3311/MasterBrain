@@ -1,5 +1,10 @@
 # Changelog
 
+- Pin FOS-Master's coverage/timeline intelligence-report semantics in an
+  isolated fictional ADR-209 parity seed. Exact-hash local donor replay and
+  1,000-row comparison preserve its status counts and year-prefix behavior;
+  no money/entity report, certified freshness or investment total is enabled.
+
 - Add a separate synthetic MasterBrain demo initializer/seed (ADR-208) that
   bridges fictional Email into DataCore, publishes one fictional FileOS text
   occurrence and exposes a cited cross-source project through the running

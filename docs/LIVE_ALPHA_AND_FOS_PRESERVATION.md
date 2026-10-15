@@ -60,7 +60,7 @@ or intelligence-report test module in the pinned donor; build a synthetic golden
 suite before extracting runtime behavior. Do not copy real statements into Git.
 ADR-170 now provides a first isolated, fictional Streetbeat recipe candidate and
 golden comparison. It is not a runtime ingestion or investment feature; ADR-174
-adds Fidelity goldens, while the remaining recipes and reports still lack that corpus.
+adds Fidelity goldens, while other recipes and reports still need distinct corpora.
 ADR-171 adds private exact-decimal/text-span candidates for that one recipe; it
 does not validate a source's bytes-to-text derivation, tenant grant or live holding.
 ADR-174 adds a separate fictional Fidelity donor baseline, preserving its
@@ -81,8 +81,11 @@ low-confidence mismatch cases. ADR-198 adds a seventh isolated Wells Fargo
 *brokerage* baseline for cash, lots, page-break duplicates and incomplete tails.
 ADR-199 adds an eighth isolated Wells Fargo *credit-line* text baseline for
 the two donor layouts and debt-negative reconciliation. It does not prove
-complete PDF extraction for that statement family. Schwab and donor reports
-remain unported; none of the eight is a live investment analysis path.
+complete PDF extraction for that statement family. ADR-203 adds a ninth,
+old-template Schwab supplied-text baseline; scanned/redesigned eras remain
+unsupported. ADR-209 begins donor-report comparison with coverage and timeline
+row semantics only. The money, entity and cross-domain reports remain
+unported, and none of these baselines is a live investment analysis path.
 ADR-172 stores selected current-document candidates in an immutable tenant-fenced
 ledger, and ADR-173 permits a human owner to inspect bounded, source-rechecked
 unreviewed rows through the API. Neither proves a live holding, supplies a

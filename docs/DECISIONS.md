@@ -1,5 +1,13 @@
 # Architecture Decisions
 
+[ADR-209](adr/209_fos_report_baseline.md) pins the first isolated, synthetic
+FOS intelligence-report comparison: coverage and timeline only, with donor
+source hash and no runtime, financial-truth or cutover claim.
+
+[ADR-208](adr/208_synthetic_masterbrain_demo.md) adds a disposable, branded
+combined Email/FileOS demo and cited project fixture. It leaves live sources,
+hosted identity, automatic interpretation and FOS-Master untouched.
+
 [ADR-207](adr/207_project_artifact_markdown_proposal_boundary.md) specifies
 separate private selected artifact-link proposals because their approved
 receipt differs from generic Knowledge and project-fact receipts. Its

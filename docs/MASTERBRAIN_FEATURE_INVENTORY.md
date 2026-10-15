@@ -1,6 +1,9 @@
 # MasterBrain Feature Inventory
 
-Updated 2026-10-06 through merged ADR-163, ADR-164 and the ADR-120 follow-up.
+Updated 2026-10-15 through the isolated ADR-209 report baseline. The current
+owner-selected Librarian exchange layout is MasterBrain's ADR-197 Markdown
+export; ADR-200/201 can inventory it, but this is not an automatic or lossless
+round trip.
 For ADR-163, merged-main restore passed, while
 full CI and the final strict gate were blocked before execution by hosted
 runner acquisition ([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
@@ -41,7 +44,7 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Explicit index generation and rollback | Private one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Private v2 generation in shared index tables | Merged historical builder; exact-head/merged-main gates green; v2 activation and current reads refused | DataCore |
 | FileOS | Human-only historical v2 search comparison | Brain API route merged via PR #116 with exact-head/merged-main gates green; compares one ready v2 generation with active v1 under three scopes, without activation or cutover | DataCore + Brain API |
-| FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
+| FileOS | Entity/fact extraction and cross-domain reports | Donor remains the runtime authority; ADR-209 compares only the coverage and timeline row semantics in an isolated, nonpublishing synthetic harness. Three donor reports, authorized runtime integration and financial truth remain unported | KnowledgeCore |
 
 ## DataCore
 

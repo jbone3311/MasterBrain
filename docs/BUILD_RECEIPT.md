@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Isolated FOS intelligence-report baseline — ADR-209
+
+Pinned read-only FOS-Master `_SYSTEM/tools/reporting.py` at commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` and SHA-256
+`e52ee7672121a609171a827eab086080dcea159ef987e21f0793e32528521cc9`.
+The first pure, nonpublishing MasterBrain comparison covers only the donor's
+coverage and timeline row semantics. Eight focused fictional tests passed,
+including direct execution of the exact pinned donor functions against SQLite,
+filtered/empty/status/date goldens, and a repeated 1,000-row comparison. The
+donor's wall-clock `generated_at` is excluded. This is not an API report,
+freshness certificate, verified investment total, or FOS cutover.
+
+The exact-current local Python 3.14/PostgreSQL 17.11 full suite passed
+**3,531 tests, nine skipped** (629 of 630 PostgreSQL-marked cases executed).
+Browser tests passed **167/167**. Ruff, strict mypy (113 source files),
+documentation links (310 Markdown files, 1,645 paths/fragments) and diff
+whitespace checks passed. The local deployment gate passed **2,905 tests,
+635 skipped** (three PostgreSQL-marked cases executed); missing donor checkout
+there skips the direct replay, so hosted goldens alone do not prove donor
+parity. Hosted exact-head and merged-main gates remain required.
+
 ## Branded disposable combined-source demo — ADR-208
 
 The old Email-only `init-demo`/`seed-demo` path was first run on a fresh

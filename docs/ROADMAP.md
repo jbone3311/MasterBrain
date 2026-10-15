@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-209 starts FOS intelligence-report parity with only isolated coverage and
+timeline row aggregation over fictional input. The next report tranche must
+compare entity spread and money-fact outputs while refusing to reinterpret a
+sum of mentions as an investment balance. Source grants, currentness,
+reconciliation, owner review and a known-answer company dossier still separate
+this baseline from a user-facing report or FileOS cutover.
+
 ADR-208 now supplies a separate disposable combined-source demo for the owner
 to run locally: fictional Email and FileOS evidence flows through DataCore,
 Brain search and a cited reviewed project dossier. The old Email-only demo

@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-209 adds an isolated, nonpublishing comparison of the pinned FOS-Master
+`coverage` and `timeline` intelligence-report row semantics. Fictional goldens,
+exact-hash local donor replay and a 1,000-row repeat passed. It deliberately
+does not port the donor's money/entity reports, read live databases, certify
+source freshness, calculate investments or supply a Brain API report.
+
 ADR-208 adds a separate, replay-safe combined-source local demo. A fresh
 disposable PostgreSQL instance, internal Email seed, DataCore Email bridge,
 fictional FileOS snapshot/text publication and reviewed synthetic project

@@ -28,7 +28,7 @@ later tranche identifies shared behavior.
 |---|---|---|---|
 | Entities/facts | `extract_facts.py`, `fact_db.py`, `fact_verify.py`, `extract_all_domains.py` | No complete known-answer suite found | Import as claims with evidence/confidence, not truth |
 | Statement holdings/transactions | `statement_extract.py`, `statement_line_items` and `statement_extraction_runs` schema; `CMD_INTELLIGENCE.md` | No dedicated checked-in statement recipe test module found; donor command records per-recipe operational outcomes | Keep each date/symbol/quantity/price/amount row together, preserve reconciliation status, and build synthetic golden cases before extraction |
-| Cross-domain reports | `reporting.py`, `report_data_collector.py` | No complete semantic suite found | Use as query/evaluation reference |
+| Cross-domain reports | `reporting.py` (five intelligence reports); `report_data_collector.py` is fleet metrics, not investment analysis | No complete donor semantic suite found; ADR-209 adds exact-hash fictional replay for coverage/timeline only | Use as query/evaluation reference; never treat donor money-fact sum as holdings |
 | Routing knowledge | `routing_engine.py`, `naming_classifier.py`, `spoke_config.py` | intake suites cover portions | Separate learned pattern from effect authority |
 | Freshness/lineage | `ssot_freshness.py`, `ssot_drift_check.py`, `source_registry`/`output_lineage` schema | Operational checks | Map to KnowledgeCore freshness and provenance |
 
