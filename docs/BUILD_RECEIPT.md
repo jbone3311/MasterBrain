@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Retained Email XLSX physical-row proof — current branch
+
+ADR-238 adds a private, nonpublishing proof for one exact retained Email
+attachment. It reuses the ADR-232 MIME selector and ADR-234 isolated table
+worker, checks the same pinned image and indexed text digest, and returns only
+parent/part identity, a physical row-layout digest and bounded counts. The
+fictional Email/FileOS XLSX proof, table and pinned-donor suite passed
+**48/48** locally. Repository-wide Ruff, strict mypy over 136 source files,
+documentation links (339 Markdown files, 1,775 local paths/fragments), the
+structural gate and diff whitespace check passed. No PostgreSQL-marked test
+was in this focused run; the earlier full synthetic/SQL receipt below remains
+the last broad database validation. Fake transport is not an actual-image run.
+No Email XLSX review receipt, bridge, published cell API, live mail or
+financial claim follows from this proof. Exact-head hosted CI and independent
+restore remain open.
+
 ## Full local synthetic gate after migration-list repair — current branch
 
 The first attempted full run used a Unix-socket-only disposable PostgreSQL

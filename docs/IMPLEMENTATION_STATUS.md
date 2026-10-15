@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-238 adds a nonpublishing synthetic Email XLSX physical-row proof bound to
+exact retained MIME/part bytes, the pinned table image and an existing indexed
+text digest. Fictional focused tests pass; actual-image, hosted and restore
+gates remain. It does not approve Email XLSX extraction, publish cells, access
+a live mailbox or make a financial claim.
+
 The current branch's repaired full synthetic local gate passed 3,754 Python
 tests with 19 skips on locked Python 3.11.13 and disposable loopback-only
 PostgreSQL 17.11; 673/674 PostgreSQL-marked tests executed. Browser tests

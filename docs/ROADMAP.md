@@ -1,5 +1,11 @@
 # MasterBrain Roadmap
 
+ADR-238 adds a synthetic-only retained Email XLSX row-layout proof: exact
+parent/part identity, the pinned table image, and the existing normalized
+text digest must agree. Next is a separate reviewed XLSX extraction and
+occurrence-specific Email bridge, followed by a tenant-fenced receipt and
+private command. This proof publishes no cells and grants no live-mail access.
+
 ADR-237 exposes ADR-236's reviewed XLSX layout receipt through an exact
 tenant-bound private command. Next run the actual immutable-image case,
 exact-head hosted CI and independent restore; then design reviewed cell-level

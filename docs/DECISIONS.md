@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-238](adr/238_retained_email_xlsx_row_layout.md) binds one retained
+Email XLSX occurrence's bounded physical rows to its existing indexed text
+digest without publishing values, approving extraction or accessing live mail.
+
 [ADR-237](adr/237_restricted_fileos_xlsx_table_replay_command.md) exposes
 one reviewed FileOS XLSX table replay through a private exact-source,
 tenant-bound command with a no-selected-workbook-read check mode.
