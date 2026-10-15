@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Maximum pinned-donor FileOS inventory shadow — current branch
+
+The clean, unchanged FOS-Master donor checkout was verified at commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`. The nonpublishing shadow
+comparator ran with the maximum **9,994 synthetic stress files**, yielding
+9,998 exact ordinary path/size/SHA matches on initial scan, replay, changed
+file, metadata-only scan and both candidate modes. The transition accounted
+for 10,000 prior rows, reported the same six known policy gaps and refused
+their promotion; no unexplained membership difference appeared. The new
+repeatable maximum-capacity test and surrounding donor shadow module passed
+**25 tests, one filesystem-dependent skip** on locked Python 3.11.13. The
+donor was only loaded in an isolated, in-memory SQLite comparison; no live
+root, donor database, current FileOS policy or source effect was changed.
+This does not satisfy owner-approved policy differences, live shadow, image,
+restore or FileOS cutover gates.
+
 ## Branded combined-source owner command smoke — current branch
 
 On a fresh disposable PostgreSQL 17.11 database and lockfile Python 3.11.13,

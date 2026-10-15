@@ -1,5 +1,10 @@
 # Changelog
 
+- Make the pinned FOS-Master donor-policy shadow repeatable at the 9,994-file
+  v1 transition capacity. The exact-donor local run and new test compare
+  9,998 ordinary rows across replay/change/metadata paths and retain the six
+  explicit blockers; no source policy or FileOS cutover changed.
+
 - Exercise the published `masterbrain demo seed` command in the PostgreSQL
   regression, in addition to its underlying service. A fresh disposable
   command-to-loopback-API walkthrough verified migration, initialization,
