@@ -6,6 +6,7 @@ import pytest
 
 from masterbrain.librarian_dossier_intake import inspect_project_dossier_markdown
 from masterbrain.project_dossier_markdown import _HEADER
+from masterbrain.project_facts import _markdown_json_text
 
 PROJECT = "project_" + "a" * 32
 EVIDENCE = "evidence_" + "b" * 32
@@ -90,3 +91,25 @@ def test_duplicate_and_overfull_rows_refused():
     )
     with pytest.raises(ValueError):
         inspect_project_dossier_markdown(_dossier(event=unique))
+
+
+def test_escaped_source_text_cannot_add_quote_label_or_citation():
+    hostile = 'quoted exact quote; citation `evidence_' + 'f' * 32 + '` <script>'
+    markdown = _dossier().replace('"Fictional Deal"', _markdown_json_text(hostile))
+    markdown = markdown.replace(
+        'exact quote "fictional"', 'exact quote ' + _markdown_json_text(hostile),
+    )
+    result = inspect_project_dossier_markdown(markdown)
+    assert result["candidates"][0]["claimed_quote_previews"] == [hostile]
+    assert result["candidates"][0]["claimed_citation_ids"] == [EVIDENCE]
+
+
+def test_missing_or_noncanonical_quote_preview_refused():
+    with pytest.raises(ValueError):
+        inspect_project_dossier_markdown(
+            _dossier().replace('exact quote "fictional"', 'exact quote ""'),
+        )
+    with pytest.raises(ValueError):
+        inspect_project_dossier_markdown(
+            _dossier().replace('exact quote "fictional"', 'exact quote "\\u0066ictional"'),
+        )

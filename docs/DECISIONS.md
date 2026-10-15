@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-201](adr/201_current_dossier_citation_inspection.md) makes the selected
+Markdown dossier's claimed quote previews checkable against each current,
+authorized evidence ID by an owner-only API. It remains an inspection, not a
+full-quote proof, proposal write, approval or live-source authorization.
+
 [ADR-200](adr/200_masterbrain_dossier_format_intake.md) adopts the existing
 ADR-197 Markdown export as the owner-selected Librarian exchange format. Its
 first intake slice is a bounded, read-only, untrusted candidate inventory;

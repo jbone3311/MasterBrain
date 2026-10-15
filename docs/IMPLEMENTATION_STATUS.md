@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-201 adds a synthetic-only, human-only Brain API inspection of the
+owner-selected MasterBrain dossier Markdown. It checks every claimed quote
+preview against that citation's current, granted, nonexcluded normalized
+evidence in one tenant-fenced transaction and refuses a partial inventory.
+It does not stage or approve a Knowledge proposal, verify the full stored
+quote or observation time, certify freshness or access a live source. Focused
+fictional API/PostgreSQL and full-gate results are in the build receipt.
+
 ADR-200 is merged on `main` via PR #239 as a synthetic-only, read-only intake
 checkpoint for the owner-selected
 MasterBrain dossier export format. It inventories fixed sections and claimed

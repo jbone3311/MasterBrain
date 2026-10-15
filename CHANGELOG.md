@@ -1,5 +1,9 @@
 # Changelog
 
+- Add ADR-201's synthetic-only owner inspection route for imported MasterBrain
+  dossier Markdown. It refuses altered, stale, excluded or ungranted citation
+  previews as a whole; it does not stage proposals or approve knowledge.
+
 - Add ADR-200's bounded, read-only candidate inventory for the owner-selected
   MasterBrain dossier Markdown format. Fictional exporter-to-parser tests prove
   the shape; claimed citations remain unverified and no Knowledge proposal is

@@ -67,6 +67,10 @@ from masterbrain.knowledge_schema import (
     ProjectFactWrite,
     TimelineRequest,
 )
+from masterbrain.librarian_dossier_intake import (
+    DossierMarkdownInspection,
+    DossierMarkdownInspectRequest,
+)
 from masterbrain.project_artifacts import ProjectArtifactLinks
 from masterbrain.project_dossier_markdown import ProjectDossierMarkdown
 from masterbrain.project_facts import ProjectFacts
@@ -167,6 +171,7 @@ def create_app(
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
+    dossier_markdown_inspection = DossierMarkdownInspection(store)
     project_artifacts = ProjectArtifactLinks(store)
     project_dossier_markdown = ProjectDossierMarkdown(store)
     project_facts = ProjectFacts(store)
@@ -969,6 +974,18 @@ def create_app(
             return knowledge_proposals.stage(principal.context, body, idempotency_key)
         except ValueError:
             raise HTTPException(422, "invalid_knowledge_proposals") from None
+
+    @app.post("/v1/knowledge/dossier-markdown/inspect")
+    def inspect_dossier_markdown(
+        body: DossierMarkdownInspectRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        try:
+            return dossier_markdown_inspection.inspect(principal.context, body.markdown)
+        except ValueError:
+            raise HTTPException(422, "invalid_dossier_markdown") from None
 
     @app.get("/v1/knowledge/proposal-batches/{batch_id}")
     def preview_knowledge_proposals(

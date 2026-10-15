@@ -1,7 +1,8 @@
 # Librarian Markdown interoperability review
 
-Status: design review with a bounded synthetic-only export and ADR-200's
-read-only candidate inventory parser, not proposal staging or a complete round
+Status: design review with a bounded synthetic-only export, ADR-200's
+candidate inventory parser and ADR-201's current-evidence inspection, not
+proposal staging or a complete round
 trip. Originally reviewed
 against `main` at `8d053d8` on 2026-10-14; ADR-182 later implements the
 project-alias slice. The [umbrella issue](https://github.com/jbone3311/MasterBrain/issues/174)
@@ -84,6 +85,13 @@ contains only quote previews and lacks observed times, all evidence links and
 other publication fields, so this inventory is explicitly untrusted and never
 stages or approves a proposal. A later stage path must retrieve and recheck
 current authorized evidence and require the missing fields and human review.
+
+[ADR-201](adr/201_current_dossier_citation_inspection.md) adds an owner-only
+inspection API that verifies each claimed citation and escaped quote preview
+against its own current, granted, nonexcluded normalized evidence. It still
+cannot recover the full quote, observation time or assertion payload and never
+stages a proposal. The later write transaction must recheck the full basis; a
+successful inspection is not a durable grant.
 
 1. Existing foundations are ADR-169's code-first boundary, ADR-182/183's
    reviewed aliases and roles, ADR-186's private source-stated proposal queue,

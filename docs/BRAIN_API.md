@@ -307,6 +307,14 @@ source effects or an alternate route through KnowledgeCore.
   No `reviewed` marker is accepted in a proposal. Every evidence ID must be
   current, granted and nonexcluded; the exact quote must occur in linked
   normalized text. Staging creates no reviewed assertion.
+- `POST /v1/knowledge/dossier-markdown/inspect` — ADR-201 human-only,
+  read-only inspection of the owner-selected ADR-197 Markdown format. Requires
+  `knowledge.review` and `brain.content.read`; the closed body contains only
+  bounded Markdown. Every claimed citation/escaped quote preview must match
+  its own current, granted, nonexcluded normalized evidence in one transaction.
+  Any mismatch returns a generic conflict with no partial inventory. The
+  response is untrusted candidate context, explicitly not a full-quote,
+  source-freshness or truth certificate and never a staged proposal.
 - `GET /v1/knowledge/proposal-batches/{batch_id}` — human-only private preview
   requiring `knowledge.review` and `brain.content.read`. Rechecks current
   evidence/grants and returns ordered untrusted proposals plus decision status;
@@ -314,8 +322,8 @@ source effects or an alternate route through KnowledgeCore.
 - `POST /v1/knowledge/proposal-batches/{batch_id}/review` — human-only atomic
   decision over every row, binding the exact batch digest and a UUID key.
   Approval uses the existing reviewed publication path; rejection records a
-  reason. One invalid row rolls back the entire decision. No Markdown parser,
-  inferred-claim approval or live-source operation is exposed.
+  reason. One invalid row rolls back the entire decision. That review route
+  does not parse Markdown, approve inferred claims or operate a live source.
 - `GET /v1/knowledge/changes` — implemented cursor-bounded knowledge change
   feed; enrolled assistants see only directly source-authorized assertions and
   cannot use an ungranted event as a cursor.
