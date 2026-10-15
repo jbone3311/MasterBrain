@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-245](adr/245_native_synthetic_restore_drill.md) adds a separate,
+synthetic-only native PostgreSQL 17 dump/restore proof for Docker-less local
+hosts. It does not replace the hosted Docker gate or prove populated XLSX
+review/receipt restore.
+
 [ADR-244](adr/244_server_owned_email_xlsx_bridge_revision.md) makes the XLSX
 bridge's transform revision server-owned. Human reviewers bind an exact result,
 not a code version; migration 0086 rejects newly forged review/receipt

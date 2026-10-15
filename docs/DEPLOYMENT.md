@@ -1,5 +1,13 @@
 # MasterBrain Deployment
 
+For a Docker-less local **synthetic** restore check on a host with native
+PostgreSQL 17 utilities, run `python scripts/native_restore_drill.py
+--run-disposable` from the repository environment. ADR-245's runner creates
+two fresh loopback-only clusters, accepts no existing DSN or backup, and
+removes them only after confirmed shutdown. It does not replace the hosted
+Docker restore gate, populate new XLSX review receipts, or authorize a live
+deployment.
+
 ## Target topology
 
 Deploy source connectors, API, DataCore workers, KnowledgeCore workers, and effect

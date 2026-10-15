@@ -2,6 +2,18 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Native synthetic logical restore — current unmerged branch
+
+ADR-245 adds an opt-in, fresh-cluster-only PostgreSQL 17 native restore drill
+using the existing fictional seed and verification routines. On local
+PostgreSQL **17.11**, it passed across two separate loopback-only clusters:
+**120 public tables, 385 rows, four encrypted external objects and two
+tenants**; content hashes and RLS/tenant isolation matched. The temporary
+clusters were confirmed stopped and removed. Three offline safety tests pass.
+This covers the current schema but the seed contains no new XLSX publication
+review/receipt row. It is not the hosted Docker drill, immutable document-image
+execution or a feature-specific populated-restore pass; those remain open.
+
 ## Server-owned Email XLSX bridge provenance — current unmerged branch
 
 ADR-244 and migration 0086 remove the human-supplied code-revision claim.

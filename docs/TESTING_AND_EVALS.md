@@ -1,5 +1,11 @@
 # Testing and Evaluations
 
+ADR-245 adds `python scripts/native_restore_drill.py --run-disposable` for a
+fresh, synthetic-only local PostgreSQL 17 dump/restore when Docker is absent.
+It accepts no DSN/archive/path and is not the hosted Docker gate. The existing
+seed does not populate ADR-242–244 XLSX review/receipt rows, so their
+feature-specific restore remains unproven.
+
 ADR-046 adds [structured-memory tests](../tests/test_memory.py),
 [actual SQL/API tests](../tests/test_memory_postgres.py), and
 [owner-interface contracts](../tests/web_memory.test.cjs). They cover typed claims,

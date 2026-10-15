@@ -1,5 +1,11 @@
 # MasterBrain Roadmap
 
+ADR-245 adds a real native PostgreSQL dump/restore proof for the existing
+fictional seed while hosted Docker jobs are stopped before execution. Next
+populate synthetic XLSX review/receipt rows in the restore seed and verify
+them in both native and hosted drills; schema-only restore is insufficient
+for that feature's merge gate.
+
 ADR-244 closes the reviewer-supplied XLSX code-provenance gap before any
 operator or live-source expansion. The server owns a semantic transform
 revision and migration 0086 enforces it; actual-image, hosted and restore
