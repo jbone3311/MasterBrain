@@ -2,6 +2,26 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Project-fact Markdown proposal boundary — ADR-206 (design only)
+
+ADR-206 records the next synthetic-only selected-fact importer contract and
+its required acceptance tests. **No fact-stage route, fact proposal table or
+fact approval path was implemented in this checkpoint.** The existing fact
+selection remains fail-closed. The exact local Python 3.14/PostgreSQL 17.11
+full gate on a fresh disposable database passed **3,487 tests, nine skipped**
+(598 of 599 PostgreSQL-marked tests executed). Six browser suites passed
+**167/167**; Ruff, strict mypy (109 source files), docs links (307 Markdown
+files, 1,624 paths/fragments), diff check and the repository deployment
+quality gate passed. The deployment gate alone skips most PostgreSQL tests
+and is not counted as the full run. Initial local reruns failed because macOS
+marked the editable package's `.pth` file hidden, so subprocess imports were
+skipped; a subsequent non-editable install used an older cached wheel. A
+forced rebuild from this branch and a fresh database produced the passing
+full result. These were local packaging-state failures, not a product-code
+change. Hosted exact-head/merged-main gates remain unverified because of the
+GitHub Actions billing/spending-limit block. No live source or FOS-Master
+change was made.
+
 ## Selected dossier-member proposals — ADR-205
 
 The existing human-only Markdown route now stages a selected reviewed-role
