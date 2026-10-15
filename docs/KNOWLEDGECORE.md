@@ -40,6 +40,14 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
 - ADR-194 includes that same currently authorized retained link history in
   the exact-project dossier as a fourth independently bounded list. It does
   not infer a current file roster, export quotes or original FileOS bytes.
+- ADR-195's synthetic candidate adds a separate, human-reviewed project-fact
+  assertion with one exact quoted evidence occurrence and a frozen 1–20-item
+  evidence set. It never recasts a project as an entity or accepts an inferred
+  fact. Current, active, nonexcluded evidence and the project grant are checked
+  before fact paging and dossier limits; only a visible same-kind successor
+  suppresses a predecessor. The compact result contains a value preview and
+  evidence IDs, not a source quote or export-ready citation. This branch is
+  still pending exact-head/merged-main acceptance.
 - Corrections link an old assertion to a replacement without updating or deleting
   either assertion. Conflicting claims can coexist and are returned independently.
 - All knowledge and evidence-link tables use forced PostgreSQL row-level security,
@@ -90,6 +98,8 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
 | `GET /v1/knowledge/projects/resolve` | `knowledge.search` | Bounded, source-scoped reviewed candidates for an exact normalized alias; ambiguous names are not merged |
 | `POST /v1/knowledge/projects/{project_id}/artifacts` | `knowledge.review` + `brain.content.read` | Human-only exact evidence-occurrence link and quoted basis; idempotent append |
 | `GET /v1/knowledge/projects/{project_id}/artifacts` | `knowledge.search` | Current-authorized, cutoff-paged reviewed link history; evidence IDs/source kind only |
+| `POST /v1/knowledge/projects/{project_id}/facts` | `knowledge.review` + `brain.content.read` | Human-only, exact-quoted source-stated project fact; UUID idempotency key |
+| `GET /v1/knowledge/projects/{project_id}/facts` | `knowledge.search` | Current-authorized, cutoff-paged reviewed project facts with evidence IDs and previews only |
 
 Returned titles, excerpts, values and source quotes are untrusted source-derived
 content. Clients must not treat them as instructions. `knowledge.review` cannot be

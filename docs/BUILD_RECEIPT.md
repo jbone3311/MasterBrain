@@ -2,6 +2,33 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Source-stated reviewed project facts — ADR-195 (draft PR #228)
+
+The draft [PR #228](https://github.com/jbone3311/MasterBrain/pull/228) adds a
+synthetic-only reviewed project-fact write/page and independent dossier/owner
+workspace section under forward migration 0066. It freezes all direct
+evidence IDs, anchors one exact normalized-text quote, filters every current
+source grant/exclusion before page limits, and keeps hidden successors from
+silencing a visible predecessor. One fictional Email-founded project also
+links a quoted FileOS text fact, with mixed-source grants tested. No
+inference, generic Knowledge search inclusion, Markdown export, live source
+or FOS-Master cutover is claimed.
+
+In a fresh disposable locked Python 3.11 environment, the final current-tree
+local deployment gate passed with **3,412 tests, 6 skipped** on PostgreSQL
+17.11; 567 of 568 PostgreSQL-marked cases executed. All six browser suites
+passed **167/167**;
+Ruff passed and strict mypy passed **107 source files**. A prior local Python
+3.14 environment had a damaged older editable installation (missing package
+`RECORD`), causing six unrelated subprocess import failures after `uv sync`;
+the same six tests passed unchanged in the fresh environment. The disposable
+local Docker restore could not run because Docker is absent; the hosted
+populated restore drill now seeds and checks a project fact for each of two
+fictional tenants, but has not yet executed on this head. Documentation and
+diff checks passed, and no
+exact-head hosted CI, strict-runtime, restore or merge result is yet claimed
+for this branch.
+
 ## Bounded project dossier artifact section — ADR-194
 
 Merged [PR #226](https://github.com/jbone3311/MasterBrain/pull/226) adds a fourth independently
@@ -27,6 +54,14 @@ and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38
 all passed. The feature branch was removed
 after its tree matched `main`. No live source, source effect, database
 migration or FOS-Master edit is involved.
+
+The follow-up documentation receipt [PR #227](https://github.com/jbone3311/MasterBrain/pull/227)
+merged as `8225844095a207a20d9533fa6434a3a09c03cab9`. Its independent
+merged-main [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38664622393),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38664622313)
+and [synthetic restore](https://github.com/jbone3311/MasterBrain/actions/runs/38664622372)
+all completed successfully. This is a documentation receipt, not a new live
+or FileOS cutover result.
 
 ## Reviewed project-to-artifact links — ADR-193
 

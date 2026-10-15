@@ -59,7 +59,14 @@ from masterbrain.datacore.fileos import (
 )
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
-from masterbrain.knowledge_schema import ClaimWrite, EntityWrite
+from masterbrain.knowledge_schema import (
+    ClaimWrite,
+    EntityWrite,
+    ProjectFactPageRequest,
+    ProjectFactWrite,
+    ProjectWrite,
+)
+from masterbrain.project_facts import ProjectFacts
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 LABEL = "com.cw-email-brain.synthetic-restore"
@@ -317,6 +324,8 @@ class SeededTenant:
     brain_generation_id: str
     knowledge_entity_id: str
     knowledge_claim_id: str
+    knowledge_project_id: str
+    knowledge_project_fact_id: str
 
 
 class SyntheticDocumentProcessor:
@@ -423,6 +432,7 @@ def seed(
                     "brain.document.publish",
                     "brain.index.activate",
                     "brain.search",
+                    "brain.content.read",
                     "brain.changes.read",
                     "knowledge.review",
                     "knowledge.read",
@@ -554,6 +564,26 @@ def seed(
                 confidence=1,
                 observed_at=now,
                 reviewed=True,
+            ),
+            uuid4(),
+        )
+        project = knowledge.publish(
+            context,
+            ProjectWrite(
+                kind="project", title=f"Synthetic {keyword} project",
+                state="active", evidence_ids=[brain_document.evidence_id],
+                source_quote=body, confidence=1, observed_at=now, reviewed=True,
+            ),
+            uuid4(),
+        )
+        project_fact = ProjectFacts(store).publish(
+            context, project.object_id,
+            ProjectFactWrite(
+                kind="project_fact", project_id=project.object_id,
+                predicate="restore.status", value=f"restored project fact {keyword}",
+                evidence_ids=[brain_document.evidence_id],
+                quote_evidence_id=brain_document.evidence_id,
+                source_quote=body, confidence=1, observed_at=now, reviewed=True,
             ),
             uuid4(),
         )
@@ -731,6 +761,8 @@ def seed(
                 generation.generation_id,
                 entity.object_id,
                 claim.object_id,
+                project.object_id,
+                project_fact["object_id"],
             )
         )
     return tenants
@@ -988,6 +1020,23 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             == f"Synthetic {current.keyword} organization",
             "restored KnowledgeCore entity changed",
         )
+        facts = ProjectFacts(store).page(
+            ctx, current.knowledge_project_id, ProjectFactPageRequest(limit=1),
+        )["results"]
+        require(
+            len(facts) == 1
+            and facts[0]["object_id"] == current.knowledge_project_fact_id
+            and facts[0]["quote_evidence_id"] == current.brain_evidence_id,
+            "restored project fact changed",
+        )
+        try:
+            ProjectFacts(store).page(
+                ctx, foreign.knowledge_project_id, ProjectFactPageRequest(limit=1),
+            )
+        except NotFound:
+            pass
+        else:
+            raise DrillFailure("foreign restored project fact accessible")
         require(
             not knowledge.search(ctx, f"knowledgecoreproof {foreign.keyword}"),
             "foreign restored KnowledgeCore assertion accessible",

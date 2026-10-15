@@ -248,6 +248,23 @@ artifact limit. The browser validates the full bounded artifact section and
 renders labels as inert text; it does not receive paths, quotes, bytes or a
 source-effect grant. Retraction remains history, not automatic roster removal.
 
+ADR-195's separate project-fact write requires a human review scope plus
+content-read authority and an exact quote in a current, active, nonexcluded
+evidence item's normalized text. The immutable fact row freezes every direct
+evidence ID so a later append cannot widen its grant set. The SQL guard
+rechecks currentness, quote membership and same-project/predicate/type
+supersession; the application additionally refuses a supersession whose prior
+fact is hidden from the reviewer. Tenant RLS, login fencing and no-truncate
+triggers protect both
+fact and receipt tables. Reads check the exact project's established grant
+predicate plus every fact evidence item's current source grant, exclusion and
+quote presence before sorting or limiting. Hidden successor rows cannot
+suppress a visible predecessor; a hidden cursor is not found. The browser
+rejects malformed responses before rendering source-derived previews as inert
+text. This is synthetic-only, not a semantic noninterference proof, hosted
+identity acceptance, inferred-basis authorization, or a Markdown export-time
+citation verifier.
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,

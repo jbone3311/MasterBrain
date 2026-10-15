@@ -1,12 +1,24 @@
 # MasterBrain Implementation Status
 
+ADR-195 is implemented on draft PR #228 as a synthetic-only, source-stated
+project-fact candidate, pending full exact-head/merged-main gates. A distinct
+immutable, tenant-fenced table freezes the direct evidence set and quote basis;
+the SQL guard and human route require current nonexcluded evidence and an exact
+normalized-text quote. A separately paged Brain API read and independently
+bounded dossier section filter every source before limits, with reference
+client and inert owner-workspace validation. The fact is **not** in generic
+Knowledge lexical search/change feed yet; no inferred basis, controlled
+predicate registry, typed currency, Markdown citation verifier/export or
+live-source acceptance is claimed.
+
 ADR-194 extends the exact-project dossier with an independently bounded
 reviewed artifact-link history section. The owner workspace and reference
 client validate and show exact evidence IDs under current source grants; the
 same visibility predicate as ADR-193 runs before the dossier limit. This
 remains synthetic-only and does not present a computed current file roster,
 filenames/bytes, source freshness or export-ready citations. Source-scoped
-facts, export-time citation checks and a Markdown renderer remain open.
+export-time citation checks and a Markdown renderer remain open; ADR-195 adds
+only the narrow source-stated fact path on this branch.
 
 ADR-193 adds a synthetic-only, human-reviewed association between one exact
 project and one exact Email/FileOS evidence occurrence, with a separately

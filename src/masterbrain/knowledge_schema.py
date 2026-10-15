@@ -16,6 +16,7 @@ EventIdentity = Annotated[str, Field(pattern=r"^event_[a-f0-9]{32}$")]
 CommitmentIdentity = Annotated[str, Field(pattern=r"^commitment_[a-f0-9]{32}$")]
 ProjectIdentity = Annotated[str, Field(pattern=r"^project_[a-f0-9]{32}$")]
 ProjectArtifactIdentity = Annotated[str, Field(pattern=r"^partifact_[a-f0-9]{32}$")]
+ProjectFactIdentity = Annotated[str, Field(pattern=r"^pfact_[a-f0-9]{32}$")]
 EntityIdentity = Annotated[str, Field(pattern=r"^entity_[a-f0-9]{32}$")]
 Predicate = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,99}$")]
 KnowledgeKind = Literal[
@@ -316,16 +317,59 @@ class ProjectDossierRequest(ClosedModel):
     commitment_limit: int = Field(default=10, ge=1, le=25)
     member_limit: int = Field(default=10, ge=1, le=25)
     artifact_limit: int = Field(default=10, ge=1, le=25)
+    fact_limit: int = Field(default=10, ge=1, le=25)
     recorded_cutoff_at: AwareDatetime | None = None
 
     @field_validator(
-        "event_limit", "commitment_limit", "member_limit", "artifact_limit", mode="before"
+        "event_limit", "commitment_limit", "member_limit", "artifact_limit",
+        "fact_limit", mode="before"
     )
     @classmethod
     def integer_limit(cls, value: object) -> object:
         if isinstance(value, bool):
             raise ValueError("boolean limit is invalid")
         return value
+
+
+class ProjectFactWrite(AssertionBase):
+    kind: Literal["project_fact"]
+    project_id: ProjectIdentity
+    predicate: Predicate
+    value: str = Field(min_length=1, max_length=4000)
+    value_type: Literal["text", "number", "date", "boolean", "reference"] = "text"
+    assertion_status: Literal["asserted", "disputed", "retracted"] = "asserted"
+    derivation: Literal["source_stated"] = "source_stated"
+    quote_evidence_id: EvidenceIdentity
+
+    @model_validator(mode="after")
+    def quote_basis(self) -> Self:
+        if self.quote_evidence_id not in self.evidence_ids:
+            raise ValueError("quote evidence must belong to the fact evidence set")
+        if "\x00" in self.source_quote or "\x00" in self.value:
+            raise ValueError("project fact text contains NUL")
+        self.source_quote.encode("utf-8", errors="strict")
+        self.value.encode("utf-8", errors="strict")
+        return self
+
+
+class ProjectFactPageRequest(ClosedModel):
+    visibility: KnowledgeVisibility = "unsuperseded"
+    limit: int = Field(default=25, ge=1, le=25)
+    recorded_cutoff_at: AwareDatetime | None = None
+    after: ProjectFactIdentity | None = None
+
+    @field_validator("limit", mode="before")
+    @classmethod
+    def integer_limit(cls, value: object) -> object:
+        if isinstance(value, bool):
+            raise ValueError("boolean limit is invalid")
+        return value
+
+    @model_validator(mode="after")
+    def page_anchor(self) -> Self:
+        if self.after is not None and self.recorded_cutoff_at is None:
+            raise ValueError("fact cursor requires recorded_cutoff_at")
+        return self
 
 
 class ProjectArtifactLinkWrite(ClosedModel):

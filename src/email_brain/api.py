@@ -63,9 +63,12 @@ from masterbrain.knowledge_schema import (
     ProjectArtifactLinkWrite,
     ProjectArtifactPageRequest,
     ProjectDossierRequest,
+    ProjectFactPageRequest,
+    ProjectFactWrite,
     TimelineRequest,
 )
 from masterbrain.project_artifacts import ProjectArtifactLinks
+from masterbrain.project_facts import ProjectFacts
 from masterbrain.schemas import (
     BrainSearchRequest,
     CurrentGroupedSearchRequest,
@@ -164,6 +167,7 @@ def create_app(
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
     project_artifacts = ProjectArtifactLinks(store)
+    project_facts = ProjectFacts(store)
     statement_proposals = StatementProposalReader(store)
     answers = GroundedAnswerService(brain, answer_selector)
     if browser_auth is not None:
@@ -1075,6 +1079,31 @@ def create_app(
             return project_artifacts.page(principal.context, project_id, body)
         except ValueError:
             raise HTTPException(422, "invalid_project_artifact_page") from None
+
+    @app.post("/v1/knowledge/projects/{project_id}/facts", status_code=201)
+    def publish_project_fact(
+        project_id: str,
+        body: ProjectFactWrite,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        try:
+            return project_facts.publish(principal.context, project_id, body, idempotency_key)
+        except ValueError:
+            raise HTTPException(422, "invalid_project_fact") from None
+
+    @app.get("/v1/knowledge/projects/{project_id}/facts")
+    def page_project_facts(
+        project_id: str,
+        body: Annotated[ProjectFactPageRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return project_facts.page(principal.context, project_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_project_fact_page") from None
 
     @app.get("/v1/knowledge/projects/{project_id}/dossier")
     def knowledge_project_dossier(

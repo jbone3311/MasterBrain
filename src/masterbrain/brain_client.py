@@ -20,6 +20,7 @@ from masterbrain.knowledge_schema import (
     ProjectAliasLookupRequest,
     ProjectArtifactPageRequest,
     ProjectDossierRequest,
+    ProjectFactPageRequest,
     TimelineRequest,
     normalize_project_alias,
 )
@@ -38,6 +39,7 @@ _COMMITMENT_ID = re.compile(r"^commitment_[a-f0-9]{32}$")
 _ENTITY_ID = re.compile(r"^entity_[a-f0-9]{32}$")
 _PROJECT_ID = re.compile(r"^project_[a-f0-9]{32}$")
 _PROJECT_ARTIFACT_ID = re.compile(r"^partifact_[a-f0-9]{32}$")
+_PROJECT_FACT_ID = re.compile(r"^pfact_[a-f0-9]{32}$")
 _EVIDENCE_ID = re.compile(r"^evidence_[a-f0-9]{32}$")
 _EVENT_TYPE = re.compile(r"^[a-z][a-z0-9_.-]{0,99}$")
 _CURRENT_LAYERS = frozenset(
@@ -569,6 +571,101 @@ class BrainReadClient:
             and "source_quote" not in row
         )
 
+    def project_facts(
+        self, project_id: str, *, visibility: KnowledgeVisibility = "unsuperseded",
+        limit: int = 10, recorded_cutoff_at: datetime | None = None,
+        after: str | None = None,
+    ) -> dict[str, Any]:
+        """Page source-scoped reviewed facts without treating them as exact quotes."""
+        if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
+            raise BrainClientError("invalid_request")
+        if (
+            type(limit) is not int
+            or recorded_cutoff_at is not None
+            and not isinstance(recorded_cutoff_at, datetime)
+            or after is not None and not isinstance(after, str)
+        ):
+            raise BrainClientError("invalid_request")
+        try:
+            request = ProjectFactPageRequest(
+                visibility=visibility, limit=limit,
+                recorded_cutoff_at=recorded_cutoff_at, after=after,
+            )
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        query = httpx.QueryParams(request.model_dump(mode="json", exclude_none=True))
+        data = self._request("GET", f"/v1/knowledge/projects/{project_id}/facts?{query}")
+        rows = data.get("results")
+        cutoff = self._aware_datetime(data.get("recorded_cutoff_at"))
+        cursor = data.get("next_cursor")
+        if (
+            data.get("project_id") != project_id
+            or data.get("visibility") != visibility
+            or type(data.get("limit")) is not int or data["limit"] != limit
+            or data.get("coverage") != "current_authorized_source_stated_reviewed_facts"
+            or data.get("untrusted_content") is not True
+            or cutoff is None
+            or recorded_cutoff_at is not None and cutoff != recorded_cutoff_at
+            or not isinstance(rows, list) or len(rows) > limit
+            or any(not self._valid_project_fact(row, project_id, cutoff) for row in rows)
+            or len({row["object_id"] for row in rows}) != len(rows)
+            or cursor is not None and (
+                not rows or len(rows) != limit or not isinstance(cursor, str)
+                or not _PROJECT_FACT_ID.fullmatch(cursor)
+                or cursor != rows[-1]["object_id"] or cursor == after
+            )
+        ):
+            raise BrainClientError("invalid_response")
+        order = [(self._aware_datetime(row["recorded_at"]), row["object_id"])
+                 for row in rows]
+        if order != sorted(order, reverse=True):
+            raise BrainClientError("invalid_response")
+        return data
+
+    @classmethod
+    def _valid_project_fact(cls, row: Any, project_id: str, cutoff: datetime) -> bool:
+        if not isinstance(row, dict):
+            return False
+        recorded = cls._aware_datetime(row.get("recorded_at"))
+        observed = cls._aware_datetime(row.get("observed_at"))
+        valid_from = (cls._aware_datetime(row.get("valid_from"))
+                      if row.get("valid_from") else None)
+        valid_to = (cls._aware_datetime(row.get("valid_to"))
+                    if row.get("valid_to") else None)
+        evidence = row.get("evidence_ids")
+        quote_id = row.get("quote_evidence_id")
+        preview = row.get("value_preview")
+        confidence = row.get("confidence")
+        return bool(
+            set(row) == {
+                "object_kind", "object_id", "project_id", "predicate", "value_preview",
+                "value_truncated", "value_type", "assertion_status", "derivation",
+                "confidence", "evidence_ids", "quote_evidence_id", "observed_at",
+                "valid_from", "valid_to", "recorded_at",
+            }
+            and row.get("object_kind") == "project_fact"
+            and row.get("project_id") == project_id
+            and isinstance(row.get("object_id"), str)
+            and _PROJECT_FACT_ID.fullmatch(row["object_id"])
+            and isinstance(row.get("predicate"), str)
+            and _EVENT_TYPE.fullmatch(row["predicate"])
+            and isinstance(preview, str) and 1 <= len(preview) <= 300
+            and "\x00" not in preview
+            and type(row.get("value_truncated")) is bool
+            and (not row["value_truncated"] or len(preview) == 300)
+            and row.get("value_type") in {"text", "number", "date", "boolean", "reference"}
+            and row.get("assertion_status") in {"asserted", "disputed", "retracted"}
+            and row.get("derivation") == "source_stated"
+            and isinstance(confidence, (int, float))
+            and not isinstance(confidence, bool) and 0 <= confidence <= 1
+            and isinstance(evidence, list) and cls._valid_dossier_evidence(evidence)
+            and isinstance(quote_id, str) and quote_id in evidence
+            and observed is not None and recorded is not None and recorded <= cutoff
+            and (row.get("valid_from") is None or valid_from is not None)
+            and (row.get("valid_to") is None or valid_from is not None
+                 and valid_to is not None and valid_to > valid_from)
+        )
+
     def project_dossier(
         self,
         project_id: str,
@@ -578,6 +675,7 @@ class BrainReadClient:
         commitment_limit: int = 10,
         member_limit: int = 10,
         artifact_limit: int = 10,
+        fact_limit: int = 10,
         recorded_cutoff_at: datetime | None = None,
     ) -> dict[str, Any]:
         """Read compact reviewed project context with bounded linked assertions."""
@@ -585,7 +683,8 @@ class BrainReadClient:
             raise BrainClientError("invalid_request")
         if any(
             type(value) is not int
-            for value in (event_limit, commitment_limit, member_limit, artifact_limit)
+            for value in (event_limit, commitment_limit, member_limit,
+                          artifact_limit, fact_limit)
         ):
             raise BrainClientError("invalid_request")
         if recorded_cutoff_at is not None and not isinstance(recorded_cutoff_at, datetime):
@@ -596,6 +695,7 @@ class BrainReadClient:
                 "commitment_limit": commitment_limit,
                 "member_limit": member_limit,
                 "artifact_limit": artifact_limit,
+                "fact_limit": fact_limit,
                 "recorded_cutoff_at": recorded_cutoff_at,
             })
         except ValidationError:
@@ -610,6 +710,7 @@ class BrainReadClient:
         commitments = data.get("commitments")
         members = data.get("members")
         artifacts = data.get("artifacts")
+        facts = data.get("facts")
         coverage = data.get("coverage")
         if (
             cutoff is None
@@ -623,10 +724,13 @@ class BrainReadClient:
             or data["member_limit"] != member_limit
             or type(data.get("artifact_limit")) is not int
             or data["artifact_limit"] != artifact_limit
+            or type(data.get("fact_limit")) is not int
+            or data["fact_limit"] != fact_limit
             or type(data.get("events_truncated")) is not bool
             or type(data.get("commitments_truncated")) is not bool
             or type(data.get("members_truncated")) is not bool
             or type(data.get("artifacts_truncated")) is not bool
+            or type(data.get("facts_truncated")) is not bool
             or data.get("untrusted_content") is not True
             or not isinstance(coverage, dict)
             or coverage.get("order") != "recorded_at_descending"
@@ -634,15 +738,18 @@ class BrainReadClient:
             or coverage.get("source_freshness") != "not_asserted"
             or coverage.get("interpretation") != "reviewed_assertions_not_current_state"
             or coverage.get("artifact_visibility") != "retained_reviewed_link_history"
+            or coverage.get("fact_visibility") != "current_authorized_source_stated_reviewed_facts"
             or not self._valid_project_dossier_project(project, project_id, cutoff)
             or not isinstance(events, list) or len(events) > event_limit
             or not isinstance(commitments, list) or len(commitments) > commitment_limit
             or not isinstance(members, list) or len(members) > member_limit
             or not isinstance(artifacts, list) or len(artifacts) > artifact_limit
+            or not isinstance(facts, list) or len(facts) > fact_limit
             or data["events_truncated"] and len(events) != event_limit
             or data["commitments_truncated"] and len(commitments) != commitment_limit
             or data["members_truncated"] and len(members) != member_limit
             or data["artifacts_truncated"] and len(artifacts) != artifact_limit
+            or data["facts_truncated"] and len(facts) != fact_limit
             or any(not self._valid_project_dossier_event(row, project_id, cutoff)
                    for row in events)
             or any(not self._valid_project_dossier_commitment(row, project_id, cutoff)
@@ -651,9 +758,11 @@ class BrainReadClient:
                    for row in members)
             or any(not self._valid_project_dossier_artifact(row, project_id, cutoff)
                    for row in artifacts)
+            or any(not self._valid_project_fact(row, project_id, cutoff)
+                   for row in facts)
         ):
             raise BrainClientError("invalid_response")
-        for rows in (events, commitments, members, artifacts):
+        for rows in (events, commitments, members, artifacts, facts):
             ids = [row["object_id"] for row in rows]
             order = [(self._aware_datetime(row["recorded_at"]), row["object_id"])
                      for row in rows]

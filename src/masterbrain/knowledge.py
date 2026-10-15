@@ -942,6 +942,7 @@ class KnowledgeCore:
     ) -> dict[str, Any]:
         """Return bounded reviewed project context, never a current-state reducer."""
         from masterbrain.project_artifacts import visible_project_artifact_rows
+        from masterbrain.project_facts import compact_project_fact, visible_project_fact_rows
 
         self.store.require(ctx, "knowledge.search")
         if (
@@ -1027,10 +1028,15 @@ class KnowledgeCore:
             artifacts = visible_project_artifact_rows(
                 conn, allowed_sources, cutoff_at, project_id, request.artifact_limit + 1,
             )
+            facts = visible_project_fact_rows(
+                conn, allowed_sources, cutoff_at, project_id, request.fact_limit + 1,
+                visibility=request.visibility,
+            )
             event_page = events[:request.event_limit]
             commitment_page = commitments[:request.commitment_limit]
             member_page = members[:request.member_limit]
             artifact_page = artifacts[:request.artifact_limit]
+            fact_page = facts[:request.fact_limit]
             ids_by_kind = {
                 "project": [project_id],
                 "event": [row["id"] for row in event_page],
@@ -1123,22 +1129,26 @@ class KnowledgeCore:
                 }
                 for row in artifact_page
             ],
+            "facts": [compact_project_fact(row) for row in fact_page],
             "recorded_cutoff_at": cutoff_at,
             "visibility": request.visibility,
             "event_limit": request.event_limit,
             "commitment_limit": request.commitment_limit,
             "member_limit": request.member_limit,
             "artifact_limit": request.artifact_limit,
+            "fact_limit": request.fact_limit,
             "events_truncated": len(events) > request.event_limit,
             "commitments_truncated": len(commitments) > request.commitment_limit,
             "members_truncated": len(members) > request.member_limit,
             "artifacts_truncated": len(artifacts) > request.artifact_limit,
+            "facts_truncated": len(facts) > request.fact_limit,
             "coverage": {
                 "order": "recorded_at_descending",
                 "undated_links": "included",
                 "source_freshness": "not_asserted",
                 "interpretation": "reviewed_assertions_not_current_state",
                 "artifact_visibility": "retained_reviewed_link_history",
+                "fact_visibility": "current_authorized_source_stated_reviewed_facts",
             },
             "untrusted_content": True,
         }

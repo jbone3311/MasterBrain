@@ -164,6 +164,12 @@ ADR-194 composes that same pre-limit, current-authorized link-history predicate
 into the exact-project dossier transaction as a fourth independently bounded
 section. Its retained rows are not a computed current file roster or export
 citations; the first-party workspace only opens them on an explicit read.
+ADR-195's synthetic project-fact path is a distinct KnowledgeCore assertion,
+not an entity-subject claim or a DataCore extraction. The write freezes its
+complete evidence set and verifies one exact quote in current normalized text;
+the dossier checks every direct source grant before the independent fact
+limit. A source-stated preview is still not a certified current fact or a
+Markdown citation. Inference requires a later typed basis-link design.
 ADR-158's optional `unsuperseded` query is a source-grant-aware leaf of
 the reviewed supersession/correction graph. ADR-159 composes that projection
 into the grouped Brain current-search and Ask Knowledge layer while keeping

@@ -20,6 +20,50 @@ DOSSIER_PROJECT = "project_" + "d" * 32
 DOSSIER_MEMBER = "member_" + "e" * 32
 DOSSIER_ENTITY = "entity_" + "f" * 32
 ARTIFACT_LINK = "partifact_" + "1" * 32
+PROJECT_FACT = "pfact_" + "2" * 32
+
+
+def test_project_facts_client_validates_source_stated_page() -> None:
+    fact = dossier_result()["facts"][0]
+    payload = {
+        "project_id": DOSSIER_PROJECT, "results": [fact],
+        "next_cursor": None, "recorded_cutoff_at": TIMELINE_START.isoformat(),
+        "limit": 1, "visibility": "unsuperseded",
+        "coverage": "current_authorized_source_stated_reviewed_facts",
+        "untrusted_content": True,
+    }
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json=payload)
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler),
+    ) as client:
+        assert client.project_facts(
+            DOSSIER_PROJECT, limit=1, recorded_cutoff_at=TIMELINE_START,
+        )["results"][0]["object_id"] == PROJECT_FACT
+        for arguments in (
+            {"limit": True}, {"limit": 26}, {"after": "pfact_bad"},
+            {"after": 7}, {"visibility": "current"},
+            {"recorded_cutoff_at": TIMELINE_START.isoformat()},
+        ):
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                client.project_facts(DOSSIER_PROJECT, **arguments)
+        for bad_fact in (
+            {**fact, "source_quote": "private"},
+            {**fact, "derivation": "inferred"},
+            {**fact, "quote_evidence_id": "evidence_" + "9" * 32},
+        ):
+            payload["results"] = [bad_fact]
+            with pytest.raises(BrainClientError, match="invalid_response"):
+                client.project_facts(
+                    DOSSIER_PROJECT, limit=1, recorded_cutoff_at=TIMELINE_START,
+                )
+        payload["results"] = [fact]
+    assert len(calls) == 4
+    assert calls[0].url.path == f"/v1/knowledge/projects/{DOSSIER_PROJECT}/facts"
 
 
 def test_project_artifact_client_validates_bounded_evidence_links() -> None:
@@ -117,15 +161,28 @@ def dossier_result() -> dict[str, object]:
             "assertion_status": "asserted", "observed_at": recorded,
             "recorded_at": recorded,
         }],
+        "facts": [{
+            "object_kind": "project_fact", "object_id": PROJECT_FACT,
+            "project_id": DOSSIER_PROJECT, "predicate": "capital.amount",
+            "value_preview": "Fictional 100 units", "value_truncated": False,
+            "value_type": "text", "assertion_status": "asserted",
+            "derivation": "source_stated", "confidence": 1.0,
+            "evidence_ids": [TIMELINE_EVIDENCE],
+            "quote_evidence_id": TIMELINE_EVIDENCE,
+            "observed_at": recorded, "valid_from": None, "valid_to": None,
+            "recorded_at": recorded,
+        }],
         "recorded_cutoff_at": TIMELINE_START.isoformat(),
         "visibility": "unsuperseded", "event_limit": 1, "commitment_limit": 1,
-        "member_limit": 1, "artifact_limit": 10,
+        "member_limit": 1, "artifact_limit": 10, "fact_limit": 10,
         "events_truncated": False, "commitments_truncated": False,
         "members_truncated": False, "artifacts_truncated": False,
+        "facts_truncated": False,
         "coverage": {"order": "recorded_at_descending", "undated_links": "included",
                      "source_freshness": "not_asserted",
                      "interpretation": "reviewed_assertions_not_current_state",
-                     "artifact_visibility": "retained_reviewed_link_history"},
+                     "artifact_visibility": "retained_reviewed_link_history",
+                     "fact_visibility": "current_authorized_source_stated_reviewed_facts"},
         "untrusted_content": True,
     }
 
@@ -149,6 +206,7 @@ def test_project_dossier_client_sends_bounded_read_and_validates_context() -> No
             {"project_id": "project_bad"}, {"event_limit": True},
             {"commitment_limit": 26}, {"member_limit": True},
             {"artifact_limit": 0}, {"visibility": "current"},
+            {"fact_limit": 0},
             {"recorded_cutoff_at": TIMELINE_START.replace(tzinfo=None)},
         ):
             with pytest.raises(BrainClientError, match="invalid_request"):
@@ -184,6 +242,10 @@ def test_project_dossier_client_sends_bounded_read_and_validates_context() -> No
     {"artifacts": [{**dossier_result()["artifacts"][0], "source_quote": "private"}]},
     {"artifacts": dossier_result()["artifacts"] * 2},
     {"artifact_limit": 26},
+    {"fact_limit": 26},
+    {"facts": [{**dossier_result()["facts"][0], "derivation": "inferred"}]},
+    {"facts": [{**dossier_result()["facts"][0], "source_quote": "private"}]},
+    {"facts": [{**dossier_result()["facts"][0], "quote_evidence_id": "evidence_bad"}]},
     {"coverage": {**dossier_result()["coverage"], "artifact_visibility": "current_truth"}},
     {"coverage": {"source_freshness": "asserted"}},
 ])

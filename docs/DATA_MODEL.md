@@ -199,16 +199,31 @@ current-authorized link history, source kind and evidence IDs, not source text,
 paths, a computed current relation or a Markdown dossier. Same-hash Email
 attachments remain distinct by occurrence evidence ID.
 
+Migration `0066_reviewed_project_facts.sql` adds immutable, forced-RLS
+`knowledge_project_facts` and actor-scoped receipts. Each fact has one exact
+project subject, bounded predicate and typed value, a frozen 1–20-element
+evidence-ID array, one quote-bearing evidence ID from that array, source-stated
+derivation, review/status/confidence and observation/valid/recorded times.
+The SQL insert guard rejects duplicate or missing evidence, stale/excluded
+source versions, absent exact normalized-text quotes and supersession that
+changes project, predicate or value type. A separate page index supports
+pre-limit source-grant filtering; no old claim/project heap is rewritten.
+This first fact kind is not included in generic Knowledge lexical search,
+correction or change-feed contracts yet. Its read path is the exact-project
+fact page/dossier only, with value previews and evidence IDs. It does not
+store inferred basis links, unit/currency semantics or export-ready quotes.
+
 The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
 [ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions,
-not existing columns or routes: a Markdown proposal importer, derivation/basis links,
+not existing columns or routes: a Markdown proposal importer, inferred-derivation/basis links,
 typed monetary units and uncertain due
 windows, expanded project-artifact dossier presentation and a compatible
 fact-name registry.
 New basis links must preserve transitive source grants. Existing Email attachment
-occurrences remain distinct even when their content hashes match. No migration
-for the remaining proposed KnowledgeCore additions has landed; project aliases,
-reviewed members and artifact links are separate ADR-182/183/193 slices.
+occurrences remain distinct even when their content hashes match. Project
+aliases, reviewed members, artifact links and source-stated project facts are
+separate ADR-182/183/193/195 slices; the remaining proposed KnowledgeCore
+additions have no migration.
 
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is

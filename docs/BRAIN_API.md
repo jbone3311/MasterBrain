@@ -168,6 +168,20 @@ source effects or an alternate route through KnowledgeCore.
   retains its separate scope. The cutoff is not source freshness or a durable
   cross-request snapshot; retractions remain explicit history and do not
   automatically negate a previous row.
+- `POST /v1/knowledge/projects/{project_id}/facts` — ADR-195 synthetic
+  human-only, source-stated fact about one exact reviewed project. Requires
+  `knowledge.review`, `brain.content.read`, a UUID idempotency key and an
+  exact quote in one current, granted, nonexcluded DataCore evidence item;
+  every direct evidence item must also be current and granted. A SQL guard
+  repeats currentness and quote checks, while forced RLS and immutable
+  receipts protect tenant-scoped history. No model proposal, inferred fact or
+  source effect is admitted.
+- `GET /v1/knowledge/projects/{project_id}/facts` — ADR-195 bounded 1–25
+  source-scoped page under `knowledge.search`. It returns predicate, typed
+  value preview, status, source-stated label, quote-basis and direct evidence
+  IDs, not the quote itself. An aware cutoff and visible cursor bind paging;
+  hidden evidence and successors are filtered before limit. A quote still
+  needs export-time verification before appearing as a Markdown citation.
 - `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
   relationship, claim, event, project, commitment, member and correction records.
   ADR-158 adds an optional `visibility` of `retained` (default) or
@@ -212,18 +226,20 @@ source effects or an alternate route through KnowledgeCore.
   they do not establish a durable snapshot, current truth or new API grant.
 - `GET /v1/knowledge/projects/{project_id}/dossier` — ADR-162 compact,
   read-only context for one reviewed project assertion and its linked events,
-  commitments, ADR-183 reviewed members/roles and ADR-194 reviewed artifact
-  link history. Requires `knowledge.search`;
+  commitments, ADR-183 reviewed members/roles, ADR-194 reviewed artifact
+  link history and ADR-195 source-stated project facts. Requires `knowledge.search`;
   each list has an independent
   1–25 limit (default 10), a truncation flag and direct evidence IDs. The
   artifact section has its own `artifact_limit` and `artifacts_truncated`;
   it returns artifact and separately quoted-basis evidence IDs but no quote,
   path or bytes. Its links are filtered under current grants, active/version
   and exclusion state before limiting; it is retained link history regardless
-  of the dossier visibility switch, not a current file roster. An
+  of the dossier visibility switch, not a current file roster. The independent
+  `fact_limit` and `facts_truncated` cover only current-authorized source-stated
+  fact previews, and honor the dossier's retained/unsuperseded choice. An
   optional aware recorded-time cutoff applies to every list; `unsuperseded`
-  (default) or `retained` visibility applies to events, commitments and
-  members only. The project is always the exact
+  (default) or `retained` visibility applies to events, commitments, members
+  and facts, but not artifact-link history. The project is always the exact
   requested reviewed assertion, not automatically redirected to a successor.
   Results are ordered by recording
   time, not occurrence/due time; undated links are included. Assistants must
@@ -237,7 +253,7 @@ source effects or an alternate route through KnowledgeCore.
   `BrainReadClient.project_dossier` validates the bounded response.
   ADR-163's first-party `/brain` control explicitly requests this same route
   from a reviewed project match with fixed five-item limits for each linked
-  list, including artifacts under ADR-194. It does not fetch on page load,
+  list, including artifacts and facts under ADR-194/195. It does not fetch on page load,
   add a privileged API, or interpret
   the reviewed project state as live truth. PR #156 merged after exact-head
   gates passed. Merged-main restore passed; full CI and the final strict gate

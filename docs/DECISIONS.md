@@ -8,6 +8,14 @@ The documentation refresh changes explanations/navigation, not runtime privilege
 ADR-035 now defines the separate approved PDF source-to-search channel for ready
 mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion.
 
+## Implementation candidate (not yet merged)
+
+[ADR-195](adr/195_source_stated_project_facts.md) specifies a distinct,
+quoted, source-stated project-fact assertion and a source-scoped dossier
+section before any Markdown citation claim. Draft PR #228 implements the
+synthetic schema, routes and bounded display; inferred facts and Markdown
+export remain absent, and exact-head/merged-main gates are pending.
+
 ## Accepted
 
 [ADR-194](adr/194_project_dossier_artifact_section.md) adds an independently

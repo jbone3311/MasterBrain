@@ -34,9 +34,11 @@ def test_project_dossier_route_is_scoped_and_closed() -> None:
         request = knowledge.project_dossier.call_args.args[2]
         assert request.event_limit == 2 and request.commitment_limit == 10
         assert request.artifact_limit == 10
+        assert request.fact_limit == 10
         for params in (
             {"event_limit": "0"}, {"commitment_limit": "26"},
             {"artifact_limit": "26"},
+            {"fact_limit": "26"},
             {"recorded_cutoff_at": "2026-10-05T00:00:00"},
             {"visibility": "current"}, {"unknown": "no"},
         ):
@@ -66,17 +68,19 @@ def test_project_dossier_sql_checks_grants_and_cutoff_before_independent_limits(
     members.fetchall.return_value = []
     artifacts = MagicMock()
     artifacts.fetchall.return_value = []
+    facts = MagicMock()
+    facts.fetchall.return_value = []
     evidence = MagicMock()
     evidence.fetchall.return_value = []
     conn.execute.side_effect = [
-        clock, project, events, commitments, members, artifacts, evidence,
+        clock, project, events, commitments, members, artifacts, facts, evidence,
     ]
     ctx = TenantContext(uuid4(), uuid4(), frozenset({"knowledge.search"}), uuid4())
     result = KnowledgeCore(store).project_dossier(
         ctx, PROJECT, ProjectDossierRequest(event_limit=2, commitment_limit=3),
     )
     assert result["project"]["object_id"] == PROJECT
-    for section in ("events", "commitments", "members", "artifacts"):
+    for section in ("events", "commitments", "members", "artifacts", "facts"):
         assert result[section] == []
     for call in conn.execute.call_args_list[1:6]:
         query, params = call.args
@@ -105,6 +109,11 @@ def test_project_dossier_sql_checks_grants_and_cutoff_before_independent_limits(
     assert "position(l.source_quote IN d.body)>0" in artifact_sql
     assert "ORDER BY l.recorded_at DESC,l.id DESC LIMIT %s" in artifact_sql
     assert artifact_params[-1] == 11
+    fact_sql, fact_params = conn.execute.call_args_list[6].args
+    assert "f.project_id=%s" in fact_sql
+    assert "ORDER BY f.recorded_at DESC,f.id DESC LIMIT %s" in fact_sql
+    assert "unnest(f.evidence_ids)" in fact_sql
+    assert fact_params[-1] == 11
     store.audit.assert_called_once_with(
         conn, ctx, "knowledge.project_dossier_read", "project",
     )

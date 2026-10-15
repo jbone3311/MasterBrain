@@ -2,6 +2,13 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add synthetic-only, human-reviewed source-stated project facts and an
+  independently bounded, current-authorized project-facts dossier/API view
+  (ADR-195). New writes require an exact normalized-source quote and frozen
+  evidence set; hidden-source successors cannot suppress visible facts.
+  Inference, generic Knowledge search inclusion and Markdown citation export
+  remain separate gates.
+
 - Add a fourth, independently bounded reviewed-artifact section to exact
   project dossiers and the owner workspace (ADR-194). Current source grants,
   exclusion and basis quote are rechecked before limiting. This is retained

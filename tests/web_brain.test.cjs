@@ -49,7 +49,8 @@ const COMMITMENT_ID = "commitment_" + "d".repeat(32);
 const MEMBER_ID = "member_" + "e".repeat(32);
 const ENTITY_ID = "entity_" + "f".repeat(32);
 const ARTIFACT_LINK_ID = "partifact_" + "1".repeat(32);
-const DOSSIER_PATH = `/v1/knowledge/projects/${PROJECT_ID}/dossier?event_limit=5&commitment_limit=5&member_limit=5&artifact_limit=5`;
+const PROJECT_FACT_ID = "pfact_" + "2".repeat(32);
+const DOSSIER_PATH = `/v1/knowledge/projects/${PROJECT_ID}/dossier?event_limit=5&commitment_limit=5&member_limit=5&artifact_limit=5&fact_limit=5`;
 const SCHEDULE_START = "2026-10-01";
 const SCHEDULE_END = "2026-10-08";
 const scheduleQuery = `start=2026-10-01T00%3A00%3A00Z&end=2026-10-08T00%3A00%3A00Z&visibility=unsuperseded&limit=10`;
@@ -103,13 +104,20 @@ function dossierData() {
       basis_evidence_id: EVIDENCE_ID, artifact_source_kind: "fileos",
       relation: "related", assertion_status: "asserted",
       observed_at: "2026-10-04T00:00:00Z", recorded_at: "2026-10-04T00:00:00Z"}],
+    facts: [{object_kind: "project_fact", object_id: PROJECT_FACT_ID,
+      project_id: PROJECT_ID, predicate: "capital.amount", value_preview: "Fictional <img> units",
+      value_truncated: false, value_type: "text", assertion_status: "asserted",
+      derivation: "source_stated", confidence: 1, evidence_ids: [EVIDENCE_ID],
+      quote_evidence_id: EVIDENCE_ID, observed_at: "2026-10-04T00:00:00Z",
+      valid_from: null, valid_to: null, recorded_at: "2026-10-04T00:00:00Z"}],
     recorded_cutoff_at: "2026-10-05T00:00:00Z", visibility: "unsuperseded",
-    event_limit: 5, commitment_limit: 5, member_limit: 5, artifact_limit: 5,
+    event_limit: 5, commitment_limit: 5, member_limit: 5, artifact_limit: 5, fact_limit: 5,
     events_truncated: false, commitments_truncated: false, members_truncated: false,
-    artifacts_truncated: false, untrusted_content: true,
+    artifacts_truncated: false, facts_truncated: false, untrusted_content: true,
     coverage: {order: "recorded_at_descending", undated_links: "included",
       source_freshness: "not_asserted", interpretation: "reviewed_assertions_not_current_state",
-      artifact_visibility: "retained_reviewed_link_history"},
+      artifact_visibility: "retained_reviewed_link_history",
+      fact_visibility: "current_authorized_source_stated_reviewed_facts"},
   };
 }
 function walk(element) { return [element, ...element.children.flatMap(walk)]; }
@@ -472,6 +480,34 @@ test("project artifact history has its own bound and rejects malformed ordering"
   await flush();
   assert.match(walk(bad.elements.turns).map(item => item.textContent).join("\n"),
     /Project details unavailable/);
+});
+
+test("source-stated project facts render inertly and reject inferred or hidden-basis shapes", async () => {
+  const h = harness(async url => ({ok: true, status: 200,
+    json: async () => url === DOSSIER_PATH ? dossierData() : projectSearchData()}));
+  h.enterToken("owner-token");
+  await h.searchOnly("Fictional project");
+  await walk(h.elements.turns).find(item => item.textContent === "Open reviewed project").events.click();
+  await flush();
+  const shown = walk(h.elements.turns).map(item => item.textContent).join("\n");
+  assert.match(shown, /Reviewed project facts · 1/);
+  assert.match(shown, /Fictional <img> units/);
+  assert.equal(walk(h.elements.turns).some(item => item.tag === "img"), false);
+
+  for (const fact of [
+    {...dossierData().facts[0], derivation: "inferred"},
+    {...dossierData().facts[0], quote_evidence_id: "evidence_" + "9".repeat(32)},
+    {...dossierData().facts[0], source_quote: "private"},
+  ]) {
+    const bad = harness(async url => ({ok: true, status: 200,
+      json: async () => url === DOSSIER_PATH ? {...dossierData(), facts: [fact]} : projectSearchData()}));
+    bad.enterToken("owner-token");
+    await bad.searchOnly("Fictional project");
+    await walk(bad.elements.turns).find(item => item.textContent === "Open reviewed project").events.click();
+    await flush();
+    assert.match(walk(bad.elements.turns).map(item => item.textContent).join("\n"),
+      /Project details unavailable/);
+  }
 });
 
 test("clearing access or changing focus prevents a late project dossier from reappearing", async () => {
