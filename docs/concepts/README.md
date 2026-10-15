@@ -20,11 +20,11 @@ Numbers organize the reading path; they are not priority or delivery order.
 | [Brain folders](04_BRAIN_FOLDERS.md) | A conceptual folder can express an attention view, a query or a proposed command. |
 | [Learning and rules](05_LEARNING_AND_RULES.md) | Corrections should become traceable proposals rather than invisible model changes. |
 | [Attention and workflow](06_ATTENTION_AND_WORKFLOW.md) | Help an owner decide what needs attention using evidence, deadlines and explicit preferences. |
-| [Projects and dossiers](07_PROJECTS_AND_DOSSIERS.md) | A dossier brings together scoped evidence and reviewed assertions about a project while retaining source identity and uncertainty.. |
+| [Projects and dossiers](07_PROJECTS_AND_DOSSIERS.md) | A dossier brings together scoped evidence and reviewed assertions about a project while retaining source identity and uncertainty. |
 | [Discoveries and weekly review](08_DISCOVERIES_AND_WEEKLY_REVIEW.md) | Periodic review is a proposed way to surface new connections, contradictions and unanswered questions. |
 | [Document intelligence](09_DOCUMENT_INTELLIGENCE.md) | Separate preserving bytes, extracting text/layout, identifying statements, reviewing knowledge and executing actions. |
 | [Search and retrieval](10_SEARCH_AND_RETRIEVAL.md) | Finding relevant evidence is different from establishing truth. |
-| [Model-agnostic access](11_MODEL_AGNOSTIC_API.md) | Keep knowledge and authorization in MasterBrain so different authorized clients can use the same evidence without owning its truth.. |
+| [Model-agnostic access](11_MODEL_AGNOSTIC_API.md) | Keep knowledge and authorization in MasterBrain so different authorized clients can use the same evidence without owning its truth. |
 | [Owner control center](12_HTML_CONTROL_CENTER.md) | An owner interface should make evidence, processing state and review choices understandable. |
 | [Automation model](13_AUTOMATION_MODEL.md) | Reliable automation needs explicit state, idempotency, retries, cancellation and audit. |
 | [Product principles](14_PRODUCT_PRINCIPLES.md) | Preserve evidence, show uncertainty, remain source- and provider-neutral, and make consequential changes reviewable. |
