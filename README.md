@@ -23,7 +23,10 @@ reviewed project dossier also shows bounded, evidence-linked people and
 organizations with roles; these are historical assertions, not a current
 roster or access permissions. A separately authorized API read can export a
 bounded, citation-rechecked Markdown fragment of source-stated project facts;
-it is not a complete Librarian dossier. The
+ADR-197 also adds a synthetic-only, fail-closed, bounded Markdown view of an
+exact reviewed project with verified citations across the linked sections.
+Neither export is a complete Librarian import/export round trip, a source-
+freshness certificate, or a live-source test. The
 pinned FOS-Master donor remains untouched and its FileOS
 shadow comparison is nonpublishing.
 

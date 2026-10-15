@@ -68,6 +68,7 @@ from masterbrain.knowledge_schema import (
     TimelineRequest,
 )
 from masterbrain.project_artifacts import ProjectArtifactLinks
+from masterbrain.project_dossier_markdown import ProjectDossierMarkdown
 from masterbrain.project_facts import ProjectFacts
 from masterbrain.schemas import (
     BrainSearchRequest,
@@ -167,6 +168,7 @@ def create_app(
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
     project_artifacts = ProjectArtifactLinks(store)
+    project_dossier_markdown = ProjectDossierMarkdown(store)
     project_facts = ProjectFacts(store)
     statement_proposals = StatementProposalReader(store)
     answers = GroundedAnswerService(brain, answer_selector)
@@ -1130,6 +1132,19 @@ def create_app(
             return knowledge.project_dossier(principal.context, project_id, body)
         except ValueError:
             raise HTTPException(422, "invalid_project_dossier") from None
+
+    @app.get("/v1/knowledge/projects/{project_id}/dossier/markdown")
+    def knowledge_project_dossier_markdown(
+        project_id: str,
+        body: Annotated[ProjectDossierRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return project_dossier_markdown.export(principal.context, project_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_project_dossier_markdown") from None
 
     @app.get("/v1/knowledge/projects/resolve")
     def knowledge_project_alias_lookup(

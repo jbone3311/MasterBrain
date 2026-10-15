@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add a synthetic-only, fail-closed Markdown view of one bounded reviewed
+  project (ADR-197). Each displayed older assertion must have a currently
+  authorized exact source span; an uncitable or overfull section produces no
+  export. This does not add a Librarian importer, inferred facts or live data.
+
 - Add a synthetic-only, citation-rechecked Markdown fragment for one page of
   source-stated reviewed project facts (ADR-196). It requires separate
   content-read authority, escapes untrusted text, preserves source-scoped

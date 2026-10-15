@@ -10,6 +10,12 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-197](adr/197_verified_project_dossier_markdown.md) specifies a
+synthetic-only, fail-closed cited Markdown view of one bounded reviewed
+project. Each older assertion's full stored quote is verified against its own
+currently authorized evidence before rendering; it does not infer truth or
+permit a live-source cutover.
+
 [ADR-196](adr/196_citation_safe_project_fact_export.md) adds a bounded,
 synthetic-only, export-time quote-rechecked Markdown **fact fragment**. It is
 not a complete project dossier or an approval to

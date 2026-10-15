@@ -2,6 +2,21 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Verified project-dossier Markdown candidate — ADR-197
+
+The `codex/verified-project-dossier-export` candidate adds a synthetic-only,
+fail-closed whole-project Markdown read with export-time exact quote checks for
+older reviewed assertions, independent section limits, a content-read scope,
+an inert provider-neutral client response and a fixed content-free audit.
+Fictional local PostgreSQL tests passed **24/24** across the new dossier,
+project-fact and project-artifact suites. The full local repository gate passed
+**3,424 tests, 6 skipped** on disposable PostgreSQL 17.11; 575 of 576
+PostgreSQL-marked cases executed. Six browser suites passed **167/167**.
+Ruff, strict mypy (108 source files), documentation links and diff checks
+passed. This is a local candidate, **not yet an exact-head hosted or merged-main
+receipt**, live-source acceptance, FOS-Master cutover, Markdown importer,
+inferred-fact exporter or source-freshness proof. No FOS-Master files changed.
+
 ## Citation-safe project-fact Markdown fragment — ADR-196
 
 Merged [PR #230](https://github.com/jbone3311/MasterBrain/pull/230) adds an explicitly partial,

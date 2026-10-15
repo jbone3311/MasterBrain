@@ -262,6 +262,19 @@ source effects or an alternate route through KnowledgeCore.
   returns not found. This is reviewed context, not a project-state reducer,
   source-freshness claim or durable cross-request snapshot.
   `BrainReadClient.project_dossier` validates the bounded response.
+- `GET /v1/knowledge/projects/{project_id}/dossier/markdown` — ADR-197
+  synthetic-only, fail-closed cited export for one exact reviewed project.
+  It requires `knowledge.search` and `brain.content.read`. Each of events,
+  commitments, members, related artifact occurrences and source-stated facts
+  has an independent 1–25 bound. The read checks current source grants,
+  exclusion and exact stored quote spans before emitting any Markdown;
+  an overfull or uncitable section returns a generic conflict with no export.
+  The response gives counts, an aware recorded cutoff, explicit coverage and
+  a 64-KiB cap. Older reviewed assertion derivation is unspecified. This is
+  not a source-freshness or truth certificate, a durable database snapshot,
+  an inferred-fact exporter, or a complete Librarian import/export round trip.
+  `BrainReadClient.project_dossier_markdown` validates the response envelope;
+  returned Markdown remains untrusted data.
   ADR-163's first-party `/brain` control explicitly requests this same route
   from a reviewed project match with fixed five-item limits for each linked
   list, including artifacts and facts under ADR-194/195. It does not fetch on page load,

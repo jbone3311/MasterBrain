@@ -852,6 +852,68 @@ class BrainReadClient:
                 raise BrainClientError("invalid_response")
         return data
 
+    def project_dossier_markdown(
+        self,
+        project_id: str,
+        *,
+        visibility: KnowledgeVisibility = "unsuperseded",
+        event_limit: int = 10,
+        commitment_limit: int = 10,
+        member_limit: int = 10,
+        artifact_limit: int = 10,
+        fact_limit: int = 10,
+        recorded_cutoff_at: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Read a bounded, still-untrusted dossier with verified source spans."""
+        if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
+            raise BrainClientError("invalid_request")
+        limits = (event_limit, commitment_limit, member_limit, artifact_limit, fact_limit)
+        if any(type(value) is not int for value in limits):
+            raise BrainClientError("invalid_request")
+        if recorded_cutoff_at is not None and not isinstance(recorded_cutoff_at, datetime):
+            raise BrainClientError("invalid_request")
+        try:
+            request = ProjectDossierRequest(
+                visibility=visibility, event_limit=event_limit,
+                commitment_limit=commitment_limit, member_limit=member_limit,
+                artifact_limit=artifact_limit, fact_limit=fact_limit,
+                recorded_cutoff_at=recorded_cutoff_at,
+            )
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        query = httpx.QueryParams(request.model_dump(mode="json", exclude_none=True))
+        data = self._request(
+            "GET", f"/v1/knowledge/projects/{project_id}/dossier/markdown?{query}",
+        )
+        markdown = data.get("markdown")
+        counts = data.get("section_counts")
+        cutoff = self._aware_datetime(data.get("recorded_cutoff_at"))
+        try:
+            markdown_bytes = len(markdown.encode("utf-8")) if isinstance(markdown, str) else -1
+        except UnicodeEncodeError:
+            markdown_bytes = -1
+        if (
+            data.get("project_id") != project_id
+            or data.get("visibility") != visibility
+            or data.get("coverage") != "complete_current_authorized_reviewed_project_within_limits"
+            or data.get("source_freshness") != "not_asserted"
+            or data.get("untrusted_content") is not True
+            or cutoff is None
+            or recorded_cutoff_at is not None and cutoff != recorded_cutoff_at
+            or not isinstance(markdown, str)
+            or markdown_bytes < 0 or markdown_bytes > 65_536
+            or not markdown.startswith("# Reviewed project dossier (verified citations)\n")
+            or not isinstance(counts, dict)
+            or set(counts) != {"events", "commitments", "members", "artifacts", "facts"}
+            or any(type(counts[name]) is not int or not 0 <= counts[name] <= limit
+                   for name, limit in zip(
+                       ("events", "commitments", "members", "artifacts", "facts"),
+                       limits, strict=True,
+                   ))
+        ):
+            raise BrainClientError("invalid_response")
+        return data
+
     @classmethod
     def _valid_project_dossier_artifact(
         cls, row: Any, project_id: str, cutoff: datetime

@@ -275,6 +275,15 @@ not a project ID, source quote or value. Returned Markdown remains untrusted
 data: it cannot grant tools, be interpreted as a prompt, prove current truth,
 or revoke a fragment already delivered before a later source-grant change.
 
+ADR-197's whole-project Markdown read is a separate, content-scoped operation.
+It refuses the entire response if any selected reviewed assertion lacks an
+exact full source quote in currently granted, active, nonexcluded evidence, or
+if any section exceeds its requested bound. Displayed member names require
+their own entity quote and citation. Text is JSON/Markdown-escaped and capped;
+the audit records only a fixed operation code. A recorded-time cutoff does not
+freeze concurrent source-state changes or retract already delivered Markdown.
+This remains synthetic-only and cannot authorize source effects.
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,

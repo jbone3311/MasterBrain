@@ -74,13 +74,15 @@ _ARTIFACT_COMMON_SQL = (
 def visible_project_artifact_rows(
     conn: Any, allowed: list[str] | None, cutoff: datetime, project_id: str,
     limit: int, *, anchor: tuple[datetime, str] | None = None,
+    include_quote: bool = False,
 ) -> list[Any]:
     """Return current-authorized link history before the independent limit."""
     cursor_sql = " AND (l.recorded_at,l.id)<(%s,%s)" if anchor else ""
     rows = conn.execute(
         _ARTIFACT_COMMON_SQL + "SELECT l.id,l.artifact_evidence_id,l.basis_evidence_id,"
         "l.relation,l.assertion_status,l.observed_at,l.recorded_at,"
-        "artifact_source.kind AS artifact_source_kind "
+        + ("l.source_quote," if include_quote else "")
+        + "artifact_source.kind AS artifact_source_kind "
         + _ARTIFACT_FROM_SQL + _ARTIFACT_WHERE_SQL + cursor_sql
         + " ORDER BY l.recorded_at DESC,l.id DESC LIMIT %s",
         (allowed, cutoff, project_id, *(anchor or ()), limit),
