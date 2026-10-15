@@ -2,9 +2,10 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Verified project-dossier Markdown candidate — ADR-197
+## Verified project-dossier Markdown — ADR-197
 
-The `codex/verified-project-dossier-export` candidate adds a synthetic-only,
+Merged [PR #232](https://github.com/jbone3311/MasterBrain/pull/232)
+(`709ec56fc38b2ced729a57ca90ff82f46c61272b`) adds a synthetic-only,
 fail-closed whole-project Markdown read with export-time exact quote checks for
 older reviewed assertions, independent section limits, a content-read scope,
 an inert provider-neutral client response and a fixed content-free audit.
@@ -13,9 +14,17 @@ project-fact and project-artifact suites. The full local repository gate passed
 **3,424 tests, 6 skipped** on disposable PostgreSQL 17.11; 575 of 576
 PostgreSQL-marked cases executed. Six browser suites passed **167/167**.
 Ruff, strict mypy (108 source files), documentation links and diff checks
-passed. This is a local candidate, **not yet an exact-head hosted or merged-main
-receipt**, live-source acceptance, FOS-Master cutover, Markdown importer,
-inferred-fact exporter or source-freshness proof. No FOS-Master files changed.
+passed. Exact PR head `cb0dfe4e1ae7edb21729ea1781fbf2f503f7cf71` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38679885633),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38679885579)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38679885563).
+Independent merged-main
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38680766902)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38680766942)
+passed, as did [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38680766933).
+These gates do not establish live-source
+acceptance, FOS-Master cutover, a Markdown importer, inferred-fact export or
+source-freshness proof. No FOS-Master files changed.
 
 ## Citation-safe project-fact Markdown fragment — ADR-196
 

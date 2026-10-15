@@ -1,12 +1,14 @@
 # MasterBrain Implementation Status
 
-ADR-197 is in a synthetic-only implementation tranche: an exact-project
+ADR-197 is merged on `main` via PR #232 as a synthetic-only tranche: an exact-project
 Markdown read combines independently bounded reviewed events, commitments,
 members/roles, related artifact occurrences and source-stated facts. It
 verifies older assertions' full quotes at export time and refuses an uncitable
 or overfull dossier without a partial body. It does not add inferred facts,
 automatic artifact matching, a Markdown importer, source-freshness proof or
-live-source acceptance. The build receipt tracks its verification state.
+live-source acceptance. Exact-head hosted full CI, strict runtime and restore
+passed, as did independent merged-main full CI, strict runtime and restore;
+the build receipt links each run.
 
 ADR-196 is merged on `main` via PR #230 as a bounded, synthetic-only
 Markdown **fact fragment**. It reuses ADR-195's pre-limit current-source and
