@@ -15,15 +15,20 @@ stage/replay/review, actual HTTP stage/preview, valid-but-wrong entity citation,
 revocation before stage and after stage, mixed-batch rollback, generic-batch
 compatibility and migration/recovery. The three adjacent proposal/inspection
 suites passed **21/21** before the last added cases; the migration/recovery/
-protected-truncate suites passed **40/40**. The exact final local Python
-3.14/PostgreSQL 17.11 full gate passed **3,483 tests, nine skipped** (594 of
-595 PostgreSQL-marked tests executed). Six browser suites passed **167/167**;
+protected-truncate suites passed **40/40**. Four further direct-SQL cases verify
+that new imported rows cannot omit their quote or member-entity citation,
+cite evidence outside the proposal, or smuggle import citations into a generic
+batch. The exact final local Python 3.14/PostgreSQL 17.11 full gate passed
+**3,487 tests, nine skipped** (598 of 599 PostgreSQL-marked tests executed).
+Six browser suites passed **167/167**;
 Ruff, strict mypy (109 source files), documentation links (306 Markdown files,
 1,623 paths/fragments) and diff checks passed. An earlier run on the repeatedly
 reused test database failed at PostgreSQL `GRANT` with `row is too big` after
 many per-module test roles accumulated; it was not counted as a pass. The
 final run used a fresh explicitly named disposable test database and passed.
-Hosted exact-head/merged-main gates remain to be recorded. No live source,
+Hosted exact-head/merged-main gates remain to be recorded; the latest prior
+GitHub Actions attempt could not start because of account billing/spending
+limits, not a test failure. No live source,
 inference, FileOS effect or FOS-Master change was made.
 
 ## Fictional cross-source project dossier — ADR-204

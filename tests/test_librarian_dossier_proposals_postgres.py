@@ -11,6 +11,7 @@ import psycopg
 import pytest
 import test_postgres as pg
 from fastapi.testclient import TestClient
+from psycopg.types.json import Jsonb
 from test_project_dossier_markdown_postgres import _published
 from test_project_facts_postgres import NOW, QUOTE, _prepared, _source
 
@@ -187,6 +188,45 @@ def test_generic_member_proposal_keeps_nullable_import_columns(database, tenant)
             "FROM knowledge_proposals WHERE tenant_id=%s AND id=%s",
             (ctx.tenant_id, page["proposals"][0]["proposal_id"]),
         ).fetchone() == (None, None)
+
+
+@pytest.mark.parametrize(
+    ("imported", "quote_id", "entity_id", "reason"),
+    [
+        (True, None, "same", "missing imported proposal quote citation"),
+        (True, "same", None, "missing imported member entity citation"),
+        (True, "other", "same", "missing imported proposal quote citation"),
+        (False, "same", None, "unexpected imported proposal citation"),
+    ],
+)
+def test_sql_guard_rejects_missing_or_unbound_import_citations(
+    database, tenant, imported, quote_id, entity_id, reason,
+):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _member_candidate(store, ctx, project_id, evidence_id)
+    payload = body.selections[0].assertion
+    batch_id = "kbatch_" + uuid4().hex
+    proposal_id = "kproposal_" + uuid4().hex
+    quote = evidence_id if quote_id == "same" else (
+        "evidence_" + "a" * 32 if quote_id == "other" else None
+    )
+    entity = evidence_id if entity_id == "same" else None
+    with pytest.raises(psycopg.Error, match=reason), store.transaction(ctx) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_proposal_batches(tenant_id,id,proposer_id,"
+            "idempotency_key,request_sha256,row_count,import_context_sha256) "
+            "VALUES (%s,%s,%s,%s,%s,1,%s)",
+            (ctx.tenant_id, batch_id, ctx.actor_id, uuid4(), "a" * 64,
+             "b" * 64 if imported else None),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_proposals(tenant_id,id,batch_id,ordinal,"
+            "payload,payload_sha256,evidence_count,import_quote_evidence_id,"
+            "import_entity_citation_id) VALUES (%s,%s,%s,0,%s,%s,1,%s,%s)",
+            (ctx.tenant_id, proposal_id, batch_id, Jsonb(payload), "c" * 64,
+             quote, entity),
+        )
 
 
 def test_member_import_binds_entity_and_role_citations(database, tenant):

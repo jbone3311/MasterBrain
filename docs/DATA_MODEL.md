@@ -115,6 +115,11 @@ tenant-FK-bound evidence IDs on each proposal: the selected row's quote basis
 and (only for imported members) its displayed entity citation. New imports
 recheck these IDs at private preview and human review as well as staging;
 historical and generic batches retain NULL and their original contract.
+The migration's insert guard also refuses a new import-context proposal if
+its selected quote citation is absent or outside its direct evidence set, or
+if an imported member lacks its separate entity citation. Generic batches
+cannot smuggle imported citation columns. Historical ADR-202 rows are not
+rewritten or retroactively rejected.
 
 Migration `0057_private_statement_proposals.sql` implements ADR-172's separate
 append-only `knowledge_statement_proposals`, ordered

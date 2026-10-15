@@ -33,6 +33,11 @@ role over an existing local project. A role is knowledge, never access control.
   exclusion, stale versions or an altered entity citation fail closed; one bad
   selected row rolls back the whole batch. Keep the ADR-202 import-context
   digest and per-row human decision contract unchanged.
+- For new proposal inserts, a SQL guard requires any batch with an import
+  context digest to retain its row's cited quote evidence; imported member
+  rows must also retain their entity citation. The quote citation must be in
+  the proposal's direct evidence set. Historical ADR-202 rows keep their
+  prior NULL columns and remain readable; no data rewrite is authorized.
 - Facts and artifact links remain unsupported selected rows. Do not change
   the generic `KnowledgeAssertion` meaning, issue a source effect or treat a
   reviewed role as a permission assignment.

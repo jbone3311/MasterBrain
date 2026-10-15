@@ -66,6 +66,11 @@ immutable private proposal row, so preview and review cannot substitute a
 different quoted source after staging. The linked project and person/
 organization entity must also remain fully citeable. A role never conveys
 authorization; fact and artifact-link imports remain separately gated.
+The SQL insert guard refuses new imported proposal rows missing a cited quote
+or member entity citation, and requires the quoted evidence to be in the
+proposal's direct evidence set. This closes an application-bypass gap for
+new rows without reinterpreting historical ADR-202 proposals; it is not a
+claim that a database owner or compromised migration role is harmless.
 
 ADR-189 adds a separate, synthetic-only FileOS statement replay boundary. A
 worker, never a public API reader, selects one current proposal under tenant
