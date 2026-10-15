@@ -1,5 +1,16 @@
 # MasterBrain Build Progress
 
+## Mixed-page PDF completeness guard (2026-10-15, ADR-220, open PR)
+
+DataCore's restricted PDF worker now defers a mixed text/image-only PDF with
+no published text instead of silently dropping the no-text page while claiming
+success. A fictional two-page PDF passes the closed worker contract with an
+explicit two-page count; source-version extraction also defers without changing
+the file. Focused tests passed 13/13; the full no-DSN local suite passed 2,955
+with 660 skipped (642 PostgreSQL-marked skipped). Ruff, mypy and documentation
+checks passed. This is a safety correction, not OCR or complete PDF/source-tier
+attestation. Database, hosted and container gates remain required.
+
 ## Tenant-bound FileOS tier replay command (2026-10-15, ADR-219, open PR)
 
 A document-publish-only worker can now preflight or replay exactly one

@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-220: DataCore now defers a mixed text/image-only PDF instead of
+  publishing an incomplete-looking extracted document. A fictional two-page
+  closed-contract regression protects the behavior; PDF/OCR completeness
+  remains a separate gate.
+
 - ADR-219: added a tenant-bound, document-only worker command for one reviewed
   FileOS text replay, with no-read check mode, source-ID binding, scrubbed
   failures and final-transaction credential recheck. Only fictional local

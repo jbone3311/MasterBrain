@@ -1,5 +1,10 @@
 # MasterBrain Roadmap
 
+ADR-220 closes one unsafe PDF outcome: a mixed text/no-text document is now
+deferred with no published text rather than labeled fully extracted. This is
+not a complete PDF/OCR proof; per-page coverage, OCR, spreadsheet fidelity
+and source-tier replay remain on the critical path to a financial claim.
+
 ADR-219 now exposes the ADR-218 FileOS text replay as one exact, authenticated
 operator command with a mandatory tenant-bound database login and no-source-
 read check mode. Fictional local execution and revocation rollback are tested;

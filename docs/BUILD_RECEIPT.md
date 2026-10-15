@@ -2,6 +2,20 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Mixed-page PDF deferral — ADR-220
+
+The restricted DataCore PDF worker no longer publishes text from a multi-page
+document when any page yields no text. A fictional two-page text/image-only PDF
+now returns `deferred/pages_without_text` with an empty body and page count;
+the source-version path also defers and leaves the file unchanged. An entirely
+image-only PDF remains `deferred/empty_document`. Focused tests passed 13/13.
+The exact-current local no-DSN suite passed **2,955 tests, 660 skipped**;
+642 PostgreSQL-marked tests were skipped, so this is not a PostgreSQL gate.
+Ruff, mypy over 119 source files, docs (321 Markdown files, 1,690 local links)
+and diff whitespace passed. Docker is unavailable locally. Hosted exact-head,
+container and independent restore checks remain open. This correction does
+not establish complete PDF/OCR extraction or authorize a financial claim.
+
 ## Restricted FileOS tier-text replay command — ADR-219
 
 `masterbrain fileos replay-tier-text` now targets exactly one reviewed tier and

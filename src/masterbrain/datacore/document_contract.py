@@ -44,6 +44,7 @@ _OUTCOMES = {
     "bounded_docx_v1": "extracted",
     "bounded_xlsx_v1": "extracted",
     "empty_document": "deferred",
+    "pages_without_text": "deferred",
     "encrypted": "deferred",
     "unsupported_features": "deferred",
     "document_byte_limit": "deferred",

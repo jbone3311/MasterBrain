@@ -145,6 +145,7 @@ def _extract_pdf(raw: bytes, source: DocumentSource) -> DocumentResult:
                 return _outcome(source, "deferred", "page_limit")
             parts: list[str] = []
             stream_bytes = 0
+            pages_without_text = False
             for number, page in enumerate(reader.pages, 1):
                 if any(key in page for key in ("/AA", "/Annots", "/AF")):
                     return _outcome(source, "deferred", "unsupported_features")
@@ -157,6 +158,8 @@ def _extract_pdf(raw: bytes, source: DocumentSource) -> DocumentResult:
                 text.encode("utf-8", errors="strict")
                 if text:
                     parts.append(f"[Page {number}]\n{text}")
+                else:
+                    pages_without_text = True
             joined = "\n\n".join(parts).strip()
             metadata: Any = reader.metadata or {}
             result_metadata = DocumentMetadata(
@@ -166,6 +169,8 @@ def _extract_pdf(raw: bytes, source: DocumentSource) -> DocumentResult:
             )
             if not joined:
                 return _outcome(source, "deferred", "empty_document", metadata=result_metadata)
+            if pages_without_text:
+                return _outcome(source, "deferred", "pages_without_text", metadata=result_metadata)
             if len(joined) > MAX_TEXT_CHARS:
                 return _outcome(source, "deferred", "text_limit", metadata=result_metadata)
             return _outcome(
