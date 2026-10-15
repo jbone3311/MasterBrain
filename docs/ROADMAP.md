@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-226 now binds the confined FileOS PDF text-layer replay to one current
+human source-tier review and stores an immutable digest-only receipt after a
+second locked source and worker-authorization check. Next is a tenant-bound
+operator command, actual immutable-image container validation, independent
+restore, OCR/visual coverage and issuer-conflict policy before any financial
+claim or FileOS cutover. Synthetic-only owner authorization still applies.
+
 ADR-225 adds the first confined FileOS PDF text-layer replay primitive: exact
 source bytes are re-read and re-extracted through the pinned restricted
 document processor, with digest-only output and no database write. The next

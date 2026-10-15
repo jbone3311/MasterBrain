@@ -2,6 +2,20 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed FileOS PDF replay receipt — ADR-226
+
+Migration 0078 and a worker-only store now seal one immutable digest-only
+receipt after confined PDF re-extraction and final locked currentness/worker
+authorization checks. Three fictional PostgreSQL integration tests passed
+against local PostgreSQL 17.11 using the simulated restricted processor pipe,
+including idempotence, changed bytes, version race, SQL trigger, cross-tenant
+denial and no financial claim. The full disposable PostgreSQL 17.11 / Python
+3.11 run passed **3,639 tests, 19 skipped** (656/657 PostgreSQL-marked
+executed). Ruff, mypy over 124 source files and documentation checks over
+327 Markdown files and 1,700 local paths/fragments passed. This does not prove a real container or PDF
+visual completeness, and no operator command or live root has been used.
+Independent restore and hosted exact-head gates remain open.
+
 ## Confined FileOS PDF derivation primitive — ADR-225
 
 The nonpublishing helper reopens one confined, source-hash-bound PDF and

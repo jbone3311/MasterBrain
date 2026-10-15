@@ -135,6 +135,13 @@ open. Consequently no public verified-source or investment claim is exposed.
   attest the sender, prove complete attachment parsing, or make a compromised
   general runtime login harmless. ADR-224 adds a restricted tenant-bound
   command; hosted restore/CI gates remain open and no live mailbox is authorized.
+- ADR-225/226's FileOS PDF worker reopens one confined source and compares its
+  exact output from an image-pinned restricted document processor before a
+  final current/grant/authorization recheck and digest-only receipt. SQL alone
+  does not attest that the processor ran, and text-layer agreement is not OCR
+  or visual completeness. The worker still needs a tenant-bound operator
+  command and real immutable-image container validation; no live FileOS or
+  financial publication is authorized.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their
   exact extracted-text spans and digest do not prove the source-byte-to-text
   derivation, current source grant, source tier, independent corroboration or a

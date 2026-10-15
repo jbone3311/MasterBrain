@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-226 now records a worker-observed, point-in-time PDF text-layer replay for
+one current human-reviewed FileOS document. ADR-225 supplies the confined
+byte-to-text proof through the pinned restricted document processor; migration
+0078 seals only digests, page count and source identity after final locked
+currentness and optional authorization checks. Fictional PostgreSQL and full
+local suite pass. No operator command, actual immutable-image container gate,
+OCR/visual completeness, issuer authenticity, financial claim, live root or
+FileOS cutover is accepted. Hosted and independent restore gates remain open.
+
 ADR-224 exposes ADR-223's current reviewed direct-parser Email MIME replay as
 an exact tenant-bound operator command. A two-scope worker token and one
 configured account are mandatory. Check mode validates private credentials,

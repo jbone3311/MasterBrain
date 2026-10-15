@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-226: added a worker-only, digest-only reviewed FileOS PDF replay receipt
+  with final current-source/authorization recheck, protected migration 0078
+  and fictional PostgreSQL fault tests. No operator command, OCR, live root or
+  financial publication is implied.
+
 - ADR-225: added a nonpublishing confined FileOS PDF byte-to-text replay
   primitive, bound to the exact restricted document processor and its image
   normalizer. Fictional digest, source-change, symlink, image-only and

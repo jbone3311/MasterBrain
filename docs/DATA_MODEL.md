@@ -116,6 +116,17 @@ normalized text before inserting. Only bounded direct-parser messages are
 covered; the receipt contains no MIME/body and is not an issuer or financial
 attestation ([ADR-223](adr/223_retained_email_text_replay.md)).
 
+Migration `0078_source_tier_fileos_pdf_replay.sql` adds a separate immutable,
+tenant-fenced point-in-time receipt for a current reviewed FileOS **PDF**. It
+pins source/text digests, byte count, root binding, exact isolated-processor
+normalizer and bounded page count. The worker must re-read the confined source
+and reproduce the entire published text; the SQL trigger rechecks current
+review/source/document identity but cannot itself prove the processor ran.
+The receipt is text-layer derivation only, not OCR, visual completeness,
+issuer authenticity or financial truth
+([ADR-225](adr/225_confined_fileos_pdf_derivation_replay.md),
+[ADR-226](adr/226_reviewed_fileos_pdf_replay_receipt.md)).
+
 Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
 immutable global catalog for **new** reviewed project-fact names. A SQL insert
 guard and the publication boundary require the active name/value-type/unit shape and

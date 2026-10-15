@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Reviewed FileOS PDF replay receipt (2026-10-15, ADR-226, open PR)
+
+One worker operation now binds ADR-225's confined PDF/text proof to an exact
+current human source-tier review, source grant, exclusion state and pinned
+processor image. Migration 0078 adds an immutable, tenant-fenced digest-only
+receipt. Three fictional PostgreSQL tests pass: exact/idempotent replay,
+changed source and grant/worker refusal, between-read version race, trigger
+guard and no Knowledge claim. The full disposable PostgreSQL 17.11 / Python
+3.11 suite passed 3,639 tests with 19 skipped (656/657 PostgreSQL-marked
+executed); Ruff, mypy and documentation links passed. The operator command, real container run,
+independent restore, OCR and issuer policy remain open.
+
 ## Confined FileOS PDF derivation primitive (2026-10-15, ADR-225, open PR)
 
 DataCore can now reopen one fictional PDF through a no-follow confined reader,
