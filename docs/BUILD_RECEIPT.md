@@ -20,9 +20,12 @@ files), documentation links and diff checks passed. Exact PR head
 [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38683640741),
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38683640716)
 and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38683640581).
-Independent merged-main checks are pending at this receipt checkpoint; do not
-read it as an approval to publish holdings or switch FileOS. The donor checkout
-was not modified.
+Independent merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38684379358),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38684379230)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38684379227)
+also passed. These gates do not approve publication of holdings or a FileOS
+switch. The donor checkout was not modified.
 
 ## Verified project-dossier Markdown — ADR-197
 
