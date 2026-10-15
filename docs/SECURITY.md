@@ -1,5 +1,12 @@
 # MasterBrain Security and Privacy
 
+ADR-254 makes the FileOS later-row coverage closure private, immutable and
+tenant-fenced. Only a scoped worker may seal it from a validated packet;
+private readers receive counts/digest, never locators. Direct SQL cannot set
+its publishable or absence flags, and private reads detect forged row content
+even when a forged digest matches that content. No API, current-search or
+source-effect path consumes this historical closure.
+
 ADR-253 confines durable later FileOS v2 observations to a scoped private
 worker, an exact completed baseline, source-locked fresh no-follow scan and
 tenant-fenced immutable packet. A private reader sees only IDs, timestamps,

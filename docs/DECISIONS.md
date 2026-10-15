@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-254](adr/254_fileos_v2_later_coverage_closure.md) seals exact current
+observation rows and prior classifications from one validated ADR-253 packet
+into a private, immutable coverage closure. It has no processing outcome,
+absence or current-read authority.
+
 [ADR-253](adr/253_fileos_v2_later_observation_packet.md) records an immutable,
 private, source-locked later FileOS v2 observation against one exact completed
 baseline. It is a review packet only: no completed later run, absence authority,

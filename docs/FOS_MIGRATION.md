@@ -251,6 +251,10 @@ ADR-253 retains the next synthetic observation as an immutable private review
 packet linked to that same completed baseline. It can be replayed and inspected
 without rescanning, but is explicitly not a per-row completed later-run ledger.
 Absence, v2 current reads, live shadow, rollback and donor cutover remain gated.
+ADR-254 projects that historical packet into a separately sealed, exact-row
+coverage closure for future processing. It accounts for current donor rows and
+prior classifications but does not process hashed evidence or complete a later
+run. All current/absence/cutover gates remain unchanged.
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then

@@ -1,5 +1,10 @@
 # Current MasterBrain code map
 
+ADR-254 adds the [private exact-row coverage store](../src/masterbrain/datacore/fileos_v2_later_coverage.py),
+[immutable SQL closure](../migrations/0088_fileos_v2_later_coverage_closures.sql)
+and [fictional PostgreSQL lifecycle tests](../tests/test_postgres.py).
+It does not process documents or supply current/absence authority.
+
 ADR-253 adds the [private later-observation packet store](../src/masterbrain/datacore/fileos_v2_later_packets.py),
 [immutable SQL ledger](../migrations/0087_fileos_v2_later_observation_packets.sql),
 and [fictional PostgreSQL lifecycle tests](../tests/test_postgres.py). The

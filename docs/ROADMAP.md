@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-254 now gives the later FileOS v2 observation an exact, sealed private
+row-coverage input. Next process current hashed versions against that exact
+closure, account for every hashed/deferred/excluded/error row with terminal
+outcomes, and define replay/rollback. Then perform reviewed live shadow before
+any current visibility, absence authority or donor cutover. Neither the
+packet nor the coverage closure is a completed later run.
+
 ADR-253 now persists a private, immutable later-observation packet for
 repeatable review of the FileOS v2 baseline comparison. The next tranche is
 an exact per-row later-run ledger: process/hash/defer/error coverage, terminal

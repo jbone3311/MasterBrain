@@ -76,6 +76,7 @@ from masterbrain.datacore.fileos_v2_index_generation import (
     FileOSV2IndexBuilder,
     FileOSV2SearchReviewer,
 )
+from masterbrain.datacore.fileos_v2_later_coverage import FileOSV2LaterCoverageStore
 from masterbrain.datacore.fileos_v2_later_packets import FileOSV2LaterPacketStore
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
@@ -84,6 +85,7 @@ from masterbrain.datacore.image_ocr_contract import source_for as image_source_f
 from masterbrain.datacore.persistence import (
     ArchiveMemberTargetRecord,
     DataCoreStore,
+    _canonical_digest,
     fileos_inventory_policy_sha256,
 )
 from masterbrain.email_bridge_controller import (
@@ -7572,6 +7574,22 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert first_later.classification_counts["unchanged"] == 2
     assert first_later.publishable is False and first_later.absence_authorized is False
     assert later_packets.inspect(ctx, first_later_id) == replace(first_later, recorded=False)
+    coverage_store = FileOSV2LaterCoverageStore(core)
+    closure_id = uuid4()
+    closure = coverage_store.seal(completion_worker, first_later_id, closure_id)
+    assert closure.recorded is True
+    assert closure.current_counts["hashed"] == 2
+    assert closure.prior_classification_counts["unchanged"] == 2
+    assert closure.publishable is False and closure.absence_authorized is False
+    assert coverage_store.inspect(ctx, closure_id) == replace(closure, recorded=False)
+    with store.transaction(ctx) as conn:
+        saved_closure = conn.execute(
+            "SELECT closure FROM brain_fileos_v2_later_coverage_closures WHERE id=%s",
+            (closure_id,),
+        ).fetchone()["closure"]
+        assert len(saved_closure["current_rows"]) == 2
+        assert len(saved_closure["prior_rows"]) == 2
+        assert all(row["kind"] == "hashed" for row in saved_closure["current_rows"])
     (tmp_path / "new.txt").unlink()
     possible_absence = later_previewer.preview(completion_worker, completion_id, tmp_path)
     assert possible_absence.counts["absence_candidate"] == 1
@@ -7584,10 +7602,52 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert second_later.classification_counts["absence_candidate"] == 1
     assert second_later.absence_authorized is False
     assert second_later.packet_sha256 != first_later.packet_sha256
+    forged_closure_id = uuid4()
+    forged_closure = saved_closure.copy()
+    forged_closure["packet_sha256"] = second_later.packet_sha256
+    forged_closure["observed_at"] = second_later.observed_at.isoformat()
+    with pytest.raises(psycopg.errors.CheckViolation):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_coverage_closures(tenant_id,id,"
+                "actor_id,packet_id,completion_id,source_id,packet_sha256,"
+                "observed_at,closure_sha256,closure) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id, uuid4(), ctx.actor_id, second_later_id,
+                    completion_id, source_id, second_later.packet_sha256,
+                    second_later.observed_at, _canonical_digest(forged_closure),
+                    Jsonb({**forged_closure, "absence_authorized": True}),
+                ),
+            )
+    with store.transaction(ctx) as conn:
+        conn.execute(
+            "INSERT INTO brain_fileos_v2_later_coverage_closures(tenant_id,id,"
+            "actor_id,packet_id,completion_id,source_id,packet_sha256,"
+            "observed_at,closure_sha256,closure) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                ctx.tenant_id, forged_closure_id, ctx.actor_id, second_later_id,
+                completion_id, source_id, second_later.packet_sha256,
+                second_later.observed_at, _canonical_digest(forged_closure),
+                Jsonb(forged_closure),
+            ),
+        )
+    with pytest.raises(Conflict, match="coverage integrity requires review"):
+        coverage_store.inspect(ctx, forged_closure_id)
     (tmp_path / "new.txt").write_bytes(b"synthetic donor-only proof")
     assert later_packets.record(
         completion_worker, completion_id, first_later_id, tmp_path
     ) == replace(first_later, recorded=False)
+    assert coverage_store.seal(
+        completion_worker, first_later_id, closure_id
+    ) == replace(closure, recorded=False)
+    with pytest.raises(Conflict, match="identity changed"):
+        coverage_store.seal(completion_worker, first_later_id, uuid4())
+    with pytest.raises(AccessDenied, match="worker required"):
+        coverage_store.seal(authorizing_human, first_later_id, uuid4())
+    with pytest.raises(AccessDenied, match="scope denied"):
+        coverage_store.seal(Principal(ctx, "worker"), first_later_id, uuid4())
+    with pytest.raises(NotFound):
+        coverage_store.inspect(ctx, uuid4())
     with pytest.raises(Conflict, match="identity changed"):
         later_packets.record(completion_worker, uuid4(), first_later_id, tmp_path)
     with store.transaction(ctx) as conn:
@@ -7628,6 +7688,15 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     with pytest.raises(psycopg.Error, match="protected record"):
         with psycopg.connect(admin) as conn:
             conn.execute("TRUNCATE brain_fileos_v2_later_observation_packets CASCADE")
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_coverage_closures CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_coverage_closures SET closure_sha256=%s "
+                "WHERE id=%s", ("0" * 64, closure_id),
+            )
     with pytest.raises(psycopg.Error):
         with store.transaction(ctx) as conn:
             conn.execute(

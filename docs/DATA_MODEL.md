@@ -1,5 +1,13 @@
 # MasterBrain Data Model
 
+Migration 0088 adds immutable `brain_fileos_v2_later_coverage_closures`:
+one bounded JSON row per ADR-253 packet, exact composite packet FK, forced
+tenant RLS/login fence, fixed nonpublishing/no-absence flags and protected
+truncation. The worker stores a sorted projection of each current candidate
+row and prior classification; private inspection recomputes the whole
+projection and canonical digest. It does not hold processing outcomes or
+advance source freshness (ADR-254).
+
 Migration 0087 adds append-only `brain_fileos_v2_later_observation_packets`
 under forced tenant RLS and the tenant-login fence. Each row has an exact
 composite FK to one completed v2 baseline, private source/root and observation

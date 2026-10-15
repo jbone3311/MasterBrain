@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-254 adds a private, immutable row-coverage closure over one ADR-253
+later-observation packet. It seals exact current hashed/deferred/excluded/error
+rows and each prior classification, with replay and read-time reconstruction.
+Fictional PostgreSQL lifecycle coverage includes forged-content/authority,
+identity, scope, mutation and truncation refusal. It is not a terminal
+processing ledger or completed later run; no absence/current/live cutover.
+
 ADR-253 adds a private durable FileOS v2 later-observation **review packet**:
 one scoped worker records a fresh, completed-baseline-bound fictional scan;
 exact-ID replay returns the historical packet; private inspection verifies its

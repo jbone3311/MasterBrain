@@ -2,6 +2,26 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Exact FileOS v2 later-row coverage closure — current unmerged branch
+
+ADR-254 and migration 0088 add one immutable, tenant-fenced historical
+coverage closure per validated ADR-253 packet. It deterministically seals
+every current donor row and prior-row classification, but it has no document
+processing outcome, completed later-run, absence or current-read authority.
+The focused fictional PostgreSQL lifecycle and migration/truncation checks
+passed **22/22**, including direct-SQL forged absence refusal, forged row
+projection detection, replay, scope and mutation guards. Two pure fictional
+coverage tests passed, including 3,000 hashed rows.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,855 passed, 19 skipped, zero failed**
+in 8m25s; **694/695 PostgreSQL-marked tests executed**. The one
+PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (145 source files), offline docs (355 Markdown
+files / 1,831 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the new coverage module. This is local fictional
+evidence, not hosted exact-head, actual-image, live-root or cutover acceptance.
+
 ## Durable FileOS v2 later-observation packet — current unmerged branch
 
 ADR-253 and migration 0087 add a nonpublishing, source-locked, immutable

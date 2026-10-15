@@ -131,6 +131,10 @@ that later observation. Its SQL guard binds the exact completed baseline,
 current v1 basis, source and root at insert; private reads revalidate packet
 digest and classification. Replays are historical. This packet is not a
 completed later run and has no absence or current-read authority.
+ADR-254 derives and seals an exact private coverage closure from one validated
+packet: every current donor row and prior-row classification is counted and
+bound to the packet digest. It is a historical processing input, not a
+terminal processing ledger, completed later run or v2 activation.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for
