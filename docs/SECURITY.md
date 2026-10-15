@@ -70,6 +70,11 @@ queues with human-only review, current cited-basis rechecks and no assistant
 read. Migration 0070 protects artifact proposals with forced RLS, tenant-login
 fencing, immutable rows and receipt-bound approval. Hosted and live-source
 acceptance remain gated.
+The direct and proposal-reviewed fact/artifact writers now hold shared row
+locks on each validated source item and source status until transaction
+commit. This closes a current-pointer/status change between check and
+publication; it does not serialize all Email exclusion updates or establish
+provider freshness. Source-scoped reads still recheck current visibility.
 The SQL insert guard refuses new imported proposal rows missing a cited quote
 or member entity citation, and requires the quoted evidence to be in the
 proposal's direct evidence set. This closes an application-bypass gap for

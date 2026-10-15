@@ -1,5 +1,12 @@
 # Changelog
 
+- Hold shared PostgreSQL locks on each checked source item and source-status
+  row through direct and proposal-reviewed fact/artifact publication. A
+  concurrent current-version or active-status update now waits until the
+  validation transaction commits; synthetic mid-review revocation tests
+  cover both paths. This does not serialize every Email exclusion change or
+  prove external provider freshness.
+
 - Extend the fictional Cedar Harbor Email/FileOS acceptance trial through
   MasterBrain's current Markdown export, separate private fact/artifact-link
   proposal APIs, explicit human approval, reviewed dossier reads, original

@@ -58,6 +58,11 @@ transaction; this implementation extracts a narrow caller-bound primitive.
    occur in the **specifically cited basis** normalized document; the
    preview alone is insufficient. Revocation of either evidence occurrence
    or the project fails closed. One bad row aborts the whole batch.
+   Hold shared row locks on each checked source item and source status through
+   the stage or review transaction so a concurrent current-version/status
+   change cannot commit between verification and proposal/publication commit.
+   This is a narrow transaction fence, not a claim that every Email exclusion
+   policy transition or external source change is serialized by those locks.
 5. Every row needs an explicit approve/reject decision. Approval calls the
    same transaction-bound ADR-193 publisher and issues a new link ID and
    reviewer-bound receipt. A changed idempotency replay conflicts; no
@@ -84,7 +89,8 @@ PostgreSQL. Test direct-publisher regression and transaction rollback; exact
 export/inspect/stage/preview/review; both same-item and separate-parent basis;
 same-hash distinct occurrences; wrong artifact kind, wrong valid citation,
 quote-preview/full-quote mismatch, wrong project, source revocation and
-exclusion at every gate; tenant/assistant/scope refusal; claimed-ID and
+exclusion at every gate; concurrent item/status revocation lock refusal at
+review; tenant/assistant/scope refusal; claimed-ID and
 idempotency conflict; mixed approve/reject and second-row fault rollback;
 direct-SQL citation/receipt guards, RLS, immutability, protected TRUNCATE,
 migration and populated restore. Run full local, exact-head hosted CI,

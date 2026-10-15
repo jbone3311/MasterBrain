@@ -157,7 +157,8 @@ class ProjectArtifactLinks:
                 "JOIN brain_sources s ON s.tenant_id=i.tenant_id AND s.id=i.source_id "
                 "WHERE e.id=%s AND i.current_version_id=v.id AND s.status='active' "
                 "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
-                "AND (%s::text[] IS NULL OR s.id=ANY(%s::text[]))",
+                "AND (%s::text[] IS NULL OR s.id=ANY(%s::text[])) "
+                "FOR SHARE OF i,s",
                 (quote or "", evidence_id, allowed, allowed),
             ).fetchone()
             if match is None:

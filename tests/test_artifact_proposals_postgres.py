@@ -302,6 +302,62 @@ def test_artifact_review_second_publication_fault_is_atomic(database, tenant, mo
     assert service.review(ctx, staged["batch_id"], request, uuid4())["approved"] == 2
 
 
+def test_artifact_review_holds_current_item_and_source_until_commit(
+    database, tenant, monkeypatch,
+):
+    store, admin = database
+    ctx, _, project_id, basis_id, artifact_id = _prepared(store, tenant)
+    service = ArtifactProposalBatches(store)
+    staged = service.stage(
+        ctx, _candidate(store, ctx, project_id, basis_id, artifact_id), uuid4(),
+    )
+    preview = service.preview(ctx, staged["batch_id"])
+    with store.transaction(ctx) as conn:
+        source_id = conn.execute(
+            "SELECT v.source_id FROM brain_evidence e JOIN brain_source_versions v "
+            "ON v.tenant_id=e.tenant_id AND v.id=e.source_version_id WHERE e.id=%s",
+            (artifact_id,),
+        ).fetchone()["source_id"]
+    original = ProjectArtifactLinks._validate_basis_in_transaction
+    checked = False
+
+    def check_concurrent_revocation(self, conn, context, linked_project, link):
+        nonlocal checked
+        result = original(self, conn, context, linked_project, link)
+        if not checked:
+            checked = True
+            for statement, target in (
+                ("UPDATE brain_source_items SET current_version_id=NULL "
+                 "WHERE tenant_id=%s AND id=(SELECT v.item_id "
+                 "FROM brain_evidence e JOIN brain_source_versions v "
+                 "ON v.tenant_id=e.tenant_id AND v.id=e.source_version_id "
+                 "WHERE e.tenant_id=%s AND e.id=%s)", artifact_id),
+                ("UPDATE brain_sources SET status='paused' "
+                 "WHERE tenant_id=%s AND id=%s", source_id),
+            ):
+                with pytest.raises(psycopg.errors.LockNotAvailable):
+                    with psycopg.connect(admin) as other:
+                        other.execute("SET lock_timeout='100ms'")
+                        params = ((ctx.tenant_id, ctx.tenant_id, target)
+                                  if target == artifact_id
+                                  else (ctx.tenant_id, target))
+                        other.execute(statement, params)
+        return result
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(ProjectArtifactLinks, "_validate_basis_in_transaction",
+                        check_concurrent_revocation)
+        result = service.review(
+            ctx, staged["batch_id"],
+            _review(staged, preview["proposals"], ["approved"]), uuid4(),
+        )
+    assert checked and result["approved"] == 1
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT status FROM brain_sources WHERE id=%s", (source_id,),
+        ).fetchone()["status"] == "active"
+
+
 def test_artifact_import_refuses_wrong_kind_and_current_grant(database, tenant):
     store, _ = database
     ctx, _, project_id, basis_id, artifact_id = _prepared(store, tenant)

@@ -2,6 +2,25 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Fact and artifact source-row transaction fence
+
+ADR-206/207 direct and proposal-reviewed publication now holds PostgreSQL
+shared locks on each checked source item and source-status row until commit.
+Two fictional tests attempt a concurrent current-version nullification and
+source pause during human review; each update times out on the held lock, and
+the approval commits against the checked source. Both complete private
+proposal suites passed **22/22** on a disposable local PostgreSQL 17.11
+database; direct project-fact and project-artifact regressions passed
+**19/19**. This fence does not prove serialization of every Email exclusion
+policy change or external provider state. A fresh local Python
+3.14/PostgreSQL 17.11 full run passed **3,513 tests, nine skipped** (624 of
+625 PostgreSQL-marked cases executed). Browser **167/167**, Ruff, strict mypy
+(112 files), docs links (308 Markdown files, 1,638 paths/fragments) and diff
+whitespace checks passed. The deployment gate passed **2,891 tests, 631
+skipped** (only two PostgreSQL-marked cases executed); it is not the full
+database proof. Hosted exact-head gates remain
+unverified; prior receipts do not attest this change.
+
 ## Fictional cross-source dossier export-to-review acceptance
 
 The Cedar Harbor synthetic Email/FileOS trial now exercises the actual Brain

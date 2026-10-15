@@ -248,7 +248,8 @@ class ProjectFacts:
                 "WHERE e.id=%s AND i.current_version_id=v.id "
                 "AND source.status='active' "
                 "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
-                "AND (%s::text[] IS NULL OR source.id=ANY(%s::text[]))",
+                "AND (%s::text[] IS NULL OR source.id=ANY(%s::text[])) "
+                "FOR SHARE OF i,source",
                 (body.source_quote, evidence_id, allowed, allowed),
             ).fetchone()
             if row is None:

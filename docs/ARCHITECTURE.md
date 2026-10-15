@@ -170,6 +170,11 @@ complete evidence set and verifies one exact quote in current normalized text;
 the dossier checks every direct source grant before the independent fact
 limit. A source-stated preview is still not a certified current fact or a
 Markdown citation. Inference requires a later typed basis-link design.
+Direct and selected-Markdown reviewed fact/artifact publication hold shared
+source-item and source-status row locks from their current-evidence check
+through commit. A concurrent current-pointer or active-status update cannot
+commit in that interval. This does not freeze external providers or every
+Email exclusion-policy transition.
 ADR-158's optional `unsuperseded` query is a source-grant-aware leaf of
 the reviewed supersession/correction graph. ADR-159 composes that projection
 into the grouped Brain current-search and Ask Knowledge layer while keeping

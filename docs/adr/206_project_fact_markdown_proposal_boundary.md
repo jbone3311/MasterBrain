@@ -57,6 +57,11 @@ generic proposal type union would make the approval contract incorrect.
    a durable grant. One bad row aborts the entire stage or review, not just
    that row. SQL constraints/triggers must prevent missing or unbound cited
    evidence in new imported proposal rows even for direct SQL writes.
+   Hold shared row locks on each verified source item and source status until
+   the stage or review transaction commits; a concurrent current-version or
+   source-status update must not slip between verification and publication.
+   This lock does not serialize every Email exclusion-policy transition or
+   external provider change.
 5. Approval calls the same validated, transactional publication primitive as
    ADR-195's direct human project-fact write, generating a new `pfact_...` ID
    and a fact receipt tied to the reviewer and deterministic publication key.
@@ -86,7 +91,8 @@ export-to-inspection-to-stage-to-preview-to-review for one fact and a mixed
 approve/reject fact batch; zero pre-review exposure; exact replay and
 changed-context conflict; quote-preview/full-quote mismatch; wrong cited
 evidence despite a quote in another direct evidence item; missing/stale/
-excluded/revoked/cross-tenant source or project; same-batch project refusal;
+excluded/revoked/cross-tenant source or project; concurrent item/status
+revocation lock refusal at review; same-batch project refusal;
 claimed-ID collision; malformed value, unrendered fields, assistant/scope
 denial, direct-SQL guard, RLS, immutability, protected TRUNCATE, migration
 and populated restore. Test revocation between stage and review, failure of
