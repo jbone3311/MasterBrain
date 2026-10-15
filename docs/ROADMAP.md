@@ -1,10 +1,16 @@
 # MasterBrain Roadmap
 
+ADR-236 now seals one synthetic, reviewed current FileOS XLSX table replay in
+an immutable tenant-fenced receipt after a final source and worker check.
+Next expose one exact private command, run the actual immutable image and
+independent restore, then design reviewed cell-level citations and a bounded
+table read. No live root, financial assertion or FileOS cutover is enabled.
+
 ADR-235 adds a private, nonpublishing FileOS XLSX table replay over exact
 confined source bytes. A row-layout digest distinguishes physical coordinates
-that the indexed text digest cannot. Next: a current human review and
-tenant-fenced receipt with final source authorization, then a private command;
-actual-image and independent restore remain required. No table publication,
+that the indexed text digest cannot. ADR-236 now adds the current human-review
+receipt; the private command, actual-image and independent restore remain.
+No table publication,
 live root, financial claim or FileOS switch follows from this proof.
 
 ADR-234 adds a separate, source-bound XLSX worker that returns bounded physical

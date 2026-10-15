@@ -1,6 +1,7 @@
 # ADR-235 — Confined current FileOS XLSX table replay
 
 Status: implemented as a nonpublishing, synthetic-only proof on an open PR.
+ADR-236 subsequently binds this proof to one reviewed, current source receipt.
 
 ## Decision
 

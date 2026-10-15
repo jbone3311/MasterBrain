@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-236](adr/236_reviewed_fileos_xlsx_table_replay_receipt.md) binds one
+current, human-reviewed FileOS XLSX to a tenant-fenced, immutable digest-only
+row-layout receipt. It does not publish cell values or approve financial facts.
+
 [ADR-235](adr/235_confined_fileos_xlsx_table_replay.md) re-reads one exact
 FileOS XLSX through a no-follow root, binds rows to existing indexed text and
 records a content-free layout digest without publishing or changing the file.

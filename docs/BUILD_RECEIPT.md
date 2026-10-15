@@ -2,6 +2,23 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed FileOS XLSX table receipt — current branch
+
+ADR-236 adds migration 0081 and a worker-only store for one human-reviewed,
+current FileOS workbook. The exact-byte/table proof is rerun through the same
+pinned image; the final source/item lock and worker callback precede a
+content-free, immutable row-layout receipt. On locked Python 3.11.13 and a
+fresh disposable Unix-socket PostgreSQL 17.11, the focused replay and
+migration-integrity suites passed **11/11** (11 PostgreSQL-marked executed,
+none skipped). Ruff and strict focused mypy passed. No Docker image was run;
+no command, table publication, live root, financial claim or donor cutover is
+enabled. Exact-head hosted and independent restore gates remain open.
+
+The expanded adjacent FileOS PDF/XLSX and migration regression run passed
+**35/35**, including 15 PostgreSQL-marked tests (none skipped). Repository-
+wide Ruff and strict mypy over 134 source files, documentation links (337
+Markdown files, 1,763 local paths/fragments), and diff whitespace passed.
+
 ## Confined FileOS XLSX table replay — current branch
 
 ADR-235 adds a private, nonpublishing exact-byte re-read of one fictional
@@ -14,9 +31,9 @@ mutation, and identical text with different row positions versus different
 ZIP metadata with identical layout. The adjacent FileOS XLSX/table/donor/PDF
 suites passed **39 tests** on locked Python 3.11.13; Ruff, focused mypy and
 documentation checks passed. An actual-image replay was added to the explicit
-container gate but not run locally (Docker unavailable). There is no database
-review receipt, command, table API, live root or FOS cutover; the donor was
-not modified.
+container gate but not run locally (Docker unavailable). ADR-236 subsequently
+adds the database review receipt. There is no command, table API, live root or
+FOS cutover; the donor was not modified.
 
 ## Full local synthetic gate at code commit `5165a03` — not hosted acceptance
 
