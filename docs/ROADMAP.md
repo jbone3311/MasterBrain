@@ -1,17 +1,24 @@
 # MasterBrain Roadmap
 
+ADR-231 now serializes a reviewed Email PDF receipt with both the controlled
+Fastmail account transition and a direct privileged account-status update,
+without granting the worker account UPDATE. Completed document jobs are
+terminal/immutable. Next: actual-image execution, exact-head hosted CI,
+independent populated restore and separate live-provider acceptance. This
+fence does not authorize live mail, OCR or financial publication.
+
 ADR-230 adds the restricted, exact-account Email attachment PDF replay
 command with tenant-bound database login, pinned image, worker reauthentication
 and no-selected-MIME-read check mode. Fictional command-to-database receipt
-proof now passes. Next: actual immutable-image execution, hosted/restore gates and an
-account/job transition serialization fence before any live use. OCR, issuer
+proof now passes. Next: actual immutable-image execution and hosted/restore
+gates; ADR-231 supplies the account transition fence. OCR, issuer
 proof and financial publication remain unavailable.
 
 ADR-229 now seals one current reviewed Email attachment PDF text-layer replay
 in a protected digest-only receipt. The next Email step is a tenant-bound,
 exact-account private command (ADR-230), then actual-image, hosted and
-independent restore gates. A separate account/job
-transition fence is needed before any live use; OCR, sender/issuer proof and
+independent restore gates. ADR-231 later supplies the account transition
+fence; OCR, sender/issuer proof and
 financial publication remain out of scope.
 
 ADR-228 adds the first nonpublishing Email attachment PDF replay proof from

@@ -78,7 +78,7 @@ def test_check_then_execute_exact_review_with_tenant_bound_login(
         assert conn.execute("SELECT count(*) AS n FROM knowledge_claims").fetchone()["n"] == 0
     with pytest.raises(control.EmailTierPdfControllerError):
         control.run_source_tier_email_pdf_controller(
-            path, store.dsn, review_id, check=True, tenant_bound_db=True,
+            path, database[0].dsn, review_id, check=True, tenant_bound_db=True,
         )
     with pytest.raises(control.EmailTierPdfControllerError):
         control.run_source_tier_email_pdf_controller(

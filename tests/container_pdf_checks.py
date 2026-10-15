@@ -9,9 +9,12 @@ import sys
 from dataclasses import replace
 from uuid import uuid4
 
+import psycopg
 import pytest
 import test_postgres as pg
 from pdf_samples import mail_packet, variant
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 from test_document_controller import document_files
 from test_processing_controller import private_write
 from test_recovery_jobs import worker_principal
@@ -20,6 +23,7 @@ from email_brain.attachments import receive_attachments
 from email_brain.auth import Principal
 from email_brain.blobs import EncryptedBlobStore
 from email_brain.document_jobs import POLICY, DocumentJobs
+from email_brain.migrate import grant_tenant_runtime
 from email_brain.pdf_contract import PdfUnavailable
 from email_brain.pdf_processor import DockerPdfProcessor
 from email_brain.schemas import SearchRequest
@@ -231,14 +235,25 @@ def test_actual_image_seals_reviewed_email_pdf_receipt_without_source_effects(
     worker = replace(
         ctx, scopes=frozenset({"brain.document.publish", "email.evidence.read"}),
     )
-    receipt = SourceTierEmailPdfReplayStore(store, processor).record_current_pdf_replay(
+    role = "test_actual_pdf_tier_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                sql.Identifier(role), sql.Literal(password),
+            ),
+        )
+        grant_tenant_runtime(conn, role, ctx.tenant_id)
+    bound_dsn = make_conninfo(admin, user=role, password=password)
+    bound_store = Store(bound_dsn, tenant_dsns={ctx.tenant_id: bound_dsn})
+    receipt = SourceTierEmailPdfReplayStore(bound_store, processor).record_current_pdf_replay(
         worker, review_id, expected_account_id=account,
     )
     assert receipt == {
         "review_id": review_id, "worker_observed_pdf_text_replay": True,
         "source_effects": False, "financial_claim_approved": False,
     }
-    with store.transaction(worker) as conn:
+    with bound_store.transaction(worker) as conn:
         saved = conn.execute(
             "SELECT raw_sha256,normalizer,page_count FROM "
             "knowledge_source_tier_email_pdf_replays WHERE review_id=%s",

@@ -3,22 +3,30 @@
 from __future__ import annotations
 
 import hashlib
+import secrets
+import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from threading import Event
 from uuid import uuid4
 
 import psycopg
 import pytest
 import test_postgres as pg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 from test_document_jobs import VERSION, setup
 from test_recovery_jobs import worker_principal
 from test_sandbox_runner import IMAGE, fake_docker
 
 from email_brain.auth import Principal
 from email_brain.document_jobs import POLICY, DocumentJobs
+from email_brain.migrate import grant_tenant_runtime
 from email_brain.pdf_contract import encode_request
 from email_brain.pdf_processor import DockerPdfProcessor
 from email_brain.pdf_worker import process_request
-from email_brain.store import AccessDenied, Conflict, NotFound
+from email_brain.store import AccessDenied, Conflict, NotFound, Store
+from masterbrain import source_tier_email_pdf_replay as replay_module
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge_schema import SourceTierReviewWrite
 from masterbrain.source_tier_email_pdf_replay import SourceTierEmailPdfReplayStore
@@ -90,7 +98,20 @@ def _prepared(database, tenant, monkeypatch: pytest.MonkeyPatch):
     )["object_id"]
     # The isolated pipe is one-shot; the replay receives a fresh exact pipe.
     fake_docker(monkeypatch, processor=processor, output=output)
-    return store, admin, ctx, account, raw, processor, review_id, receipt_id
+    role = "test_pdf_receipt_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                sql.Identifier(role), sql.Literal(password),
+            ),
+        )
+        grant_tenant_runtime(conn, role, ctx.tenant_id)
+    bound_store = Store(
+        make_conninfo(admin, user=role, password=password),
+        tenant_dsns={ctx.tenant_id: make_conninfo(admin, user=role, password=password)},
+    )
+    return bound_store, admin, ctx, account, raw, processor, review_id, receipt_id
 
 
 def test_current_reviewed_attachment_replays_exact_mime_and_is_immutable(
@@ -362,3 +383,142 @@ def test_identical_pdf_in_two_messages_needs_two_independent_reviews(
     }
     assert len({row["part_sha256"] for row in rows}) == 1
     assert len({row["raw_sha256"] for row in rows}) == 1
+
+
+def test_controlled_disconnect_winning_account_lock_refuses_receipt(
+    database, tenant, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, admin, ctx, account, _, processor, review_id, _ = _prepared(
+        database, tenant, monkeypatch,
+    )
+    proof_done = Event()
+    original = replay_module.prove_email_attachment_pdf_derivation
+
+    def observed_proof(*args, **kwargs):
+        proof = original(*args, **kwargs)
+        proof_done.set()
+        return proof
+
+    monkeypatch.setattr(replay_module, "prove_email_attachment_pdf_derivation", observed_proof)
+    replay = SourceTierEmailPdfReplayStore(store, processor)
+    with psycopg.connect(admin) as transition, ThreadPoolExecutor(max_workers=1) as pool:
+        transition.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+            (f"{ctx.tenant_id}:{account}",),
+        )
+        future = pool.submit(
+            replay.record_current_pdf_replay, _worker(ctx), review_id,
+            expected_account_id=account,
+        )
+        try:
+            assert proof_done.wait(timeout=5)
+            # The replay must wait on the same transaction-scoped lock,
+            # not merely happen to be slower than the admin update.
+            deadline = time.monotonic() + 2
+            waiting = 0
+            while time.monotonic() < deadline:
+                transition.execute("SELECT pg_stat_clear_snapshot()")
+                waiting = transition.execute(
+                    "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() "
+                    "AND wait_event_type='Lock' AND wait_event='advisory'",
+                ).fetchone()[0]
+                if waiting:
+                    break
+                time.sleep(0.02)
+            assert waiting and not future.done()
+            transition.execute(
+                "UPDATE mail_accounts SET status='disconnected' WHERE id=%s", (account,),
+            )
+        finally:
+            transition.commit()
+        with pytest.raises(Conflict):
+            future.result(timeout=5)
+    with store.transaction(_worker(ctx)) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM knowledge_source_tier_email_pdf_replays "
+            "WHERE review_id=%s", (review_id,),
+        ).fetchone()["n"] == 0
+
+
+def test_replay_winning_account_lock_finishes_before_controlled_disconnect(
+    database, tenant, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, admin, ctx, account, _, processor, review_id, _ = _prepared(
+        database, tenant, monkeypatch,
+    )
+    inside_final = Event()
+    release = Event()
+
+    def authorize() -> None:
+        inside_final.set()
+        assert release.wait(timeout=5)
+
+    def disconnect() -> None:
+        with psycopg.connect(admin) as conn:
+            # Deliberately omit the cooperative advisory lock: even a direct
+            # privileged status update must wait on the account row fence.
+            conn.execute(
+                "UPDATE mail_accounts SET status='disconnected' WHERE id=%s", (account,),
+            )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        replay_future = pool.submit(
+            SourceTierEmailPdfReplayStore(store, processor).record_current_pdf_replay,
+            _worker(ctx), review_id, expected_account_id=account, authorize=authorize,
+        )
+        try:
+            assert inside_final.wait(timeout=5), (
+                replay_future.exception() if replay_future.done() else "worker still running"
+            )
+            disconnect_future = pool.submit(disconnect)
+            with psycopg.connect(admin, autocommit=True) as observer:
+                deadline = time.monotonic() + 2
+                waiting = 0
+                while time.monotonic() < deadline:
+                    waiting = observer.execute(
+                        "SELECT count(*) FROM pg_stat_activity "
+                        "WHERE datname=current_database() AND wait_event_type='Lock' "
+                    ).fetchone()[0]
+                    if waiting:
+                        break
+                    time.sleep(0.02)
+            assert waiting and not disconnect_future.done()
+        finally:
+            release.set()
+        result = replay_future.result(timeout=5)
+        disconnect_future.result(timeout=5)
+    assert result["worker_observed_pdf_text_replay"] is True
+    with store.transaction(_worker(ctx)) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM knowledge_source_tier_email_pdf_replays "
+            "WHERE review_id=%s", (review_id,),
+        ).fetchone()["n"] == 1
+        assert conn.execute(
+            "SELECT status FROM mail_accounts WHERE id=%s", (account,),
+        ).fetchone()["status"] == "disconnected"
+
+
+def test_account_lock_function_is_granted_only_to_bound_tenant_login(
+    database, tenant, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, _, ctx, account, _, _, _, _ = _prepared(database, tenant, monkeypatch)
+    with store.transaction(_worker(ctx)) as conn:
+        assert conn.execute(
+            "SELECT public.lock_email_pdf_replay_account(%s,%s) AS active",
+            (ctx.tenant_id, account),
+        ).fetchone()["active"] is True
+        assert conn.execute(
+            "SELECT public.lock_email_pdf_replay_account(%s,%s) AS active",
+            (uuid4(), account),
+        ).fetchone()["active"] is False
+        assert conn.execute(
+            "SELECT public.lock_email_pdf_replay_account(%s,%s) AS active",
+            (ctx.tenant_id, uuid4()),
+        ).fetchone()["active"] is False
+    with database[0].transaction(_worker(ctx)) as conn:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            with conn.transaction():
+                conn.execute(
+                    "SELECT public.lock_email_pdf_replay_account(%s,%s)",
+                    (ctx.tenant_id, account),
+                )

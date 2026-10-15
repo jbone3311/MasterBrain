@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-231: closed the reviewed Email PDF account-status race with the shared
+  tenant/account advisory lock and a narrow tenant-bound account row-lock
+  function. Synthetic concurrent, privilege, migration and recovery tests
+  pass; live mail and real-container gates remain closed.
+
 - ADR-230: added a restricted, tenant-bound Email attachment PDF replay
   command with exact account/review, pinned image and no-selected-MIME-read
   check mode. Fictional controller/CLI and command-to-PostgreSQL tests pass;

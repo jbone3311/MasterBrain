@@ -144,6 +144,12 @@ join and enforces forced RLS, tenant-login fencing and no row mutation or
 truncate. This is not OCR, sender/issuer authenticity or financial truth.
 The ADR-228 paragraph above describes the pure primitive alone.
 
+Migration `0080_email_pdf_replay_account_lock.sql` / ADR-231 adds no source or
+content table. Its directly granted, tenant-bound definer function locks one
+account row during the final Email PDF replay transaction. The previously
+completed document job remains terminal/immutable under its existing trigger;
+the receipt remains a point-in-time record, not a durable active-account flag.
+
 Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
 immutable global catalog for **new** reviewed project-fact names. A SQL insert
 guard and the publication boundary require the active name/value-type/unit shape and

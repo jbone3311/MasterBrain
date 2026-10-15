@@ -543,6 +543,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0077_source_tier_email_text_replay.sql",
             "0078_source_tier_fileos_pdf_replay.sql",
             "0079_source_tier_email_pdf_replay.sql",
+            "0080_email_pdf_replay_account_lock.sql",
         ]
         assert migrate(dsn, directory) == []
         with psycopg.connect(dsn) as conn:
@@ -618,6 +619,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
                 "0077_source_tier_email_text_replay.sql",
                 "0078_source_tier_fileos_pdf_replay.sql",
                 "0079_source_tier_email_pdf_replay.sql",
+                "0080_email_pdf_replay_account_lock.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -689,6 +691,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             "0077_source_tier_email_text_replay.sql",
             "0078_source_tier_fileos_pdf_replay.sql",
             "0079_source_tier_email_pdf_replay.sql",
+            "0080_email_pdf_replay_account_lock.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -806,6 +809,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
             "0077_source_tier_email_text_replay.sql",
             "0078_source_tier_fileos_pdf_replay.sql",
             "0079_source_tier_email_pdf_replay.sql",
+            "0080_email_pdf_replay_account_lock.sql",
             }:
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)

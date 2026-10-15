@@ -205,6 +205,20 @@ class SourceTierEmailPdfReplayStore:
         except (BlobError, EmailAttachmentPdfUnavailable, NotFound, OSError, RuntimeError):
             raise Conflict("source tier Email PDF retained bytes unavailable or changed") from None
         with self.store.transaction(ctx) as conn:
+            # Match the account transition lock used by Fastmail enrollment /
+            # disconnect and document validity checks. If a controlled account
+            # transition wins, re-read below sees it; if we win, it waits for
+            # this point-in-time receipt transaction to finish.
+            conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                (f"{ctx.tenant_id}:{before['account_id']}",),
+            )
+            locked = conn.execute(
+                "SELECT public.lock_email_pdf_replay_account(%s,%s) AS active",
+                (ctx.tenant_id, before["account_id"]),
+            ).fetchone()
+            if locked is None or locked["active"] is not True:
+                raise Conflict("source tier Email PDF account changed")
             after = _checked_basis(
                 conn.execute(
                     _BASIS_SQL + " FOR SHARE OF i,s,pi,m", (review_id,),

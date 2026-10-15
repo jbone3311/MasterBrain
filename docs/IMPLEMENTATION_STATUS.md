@@ -1,22 +1,31 @@
 # MasterBrain Implementation Status
 
+ADR-231 adds a tenant-bound account row-lock function in migration 0080 and
+acquires the existing account advisory lock before the final reviewed Email
+PDF receipt check. Fictional races prove that a controlled disconnect winning
+first prevents the receipt, while a direct privileged status update waits for
+a replay that wins first. Completed document jobs are terminal/immutable;
+shared runtime logins lack the new function grant. This is not live-provider,
+actual-image, hosted or independent-restore acceptance.
+
 ADR-230 exposes ADR-229's reviewed Email PDF text-layer receipt through a
 private `masterbrain email replay-tier-pdf` command. A closed config pins one
 account and immutable PDF image; a two-scope worker and tenant-bound database
 login are mandatory. Check mode opens no selected MIME/PDF or processor.
 Fictional controller/CLI and command-to-database tests pass, including
 shared/owner login refusal. Real-container, hosted and independent restore
-gates remain. No live mail, OCR, financial
-publication or account/job-transition serialization is claimed.
+gates remain. No live mail, OCR or financial publication is claimed; ADR-231
+later supplies the account-status transition fence.
 
 ADR-229 now has a worker-only, current reviewed Email attachment PDF replay
 receipt in protected migration 0079. It binds one child occurrence to its
 approved extraction and retained parent MIME, re-runs ADR-228's isolated
 text-layer proof and seals only digests/identities/page count after final
 current/grant/authorization checks. Fictional PostgreSQL and SQL-guard tests
-pass. ADR-230 adds the private command; real-image execution, live mail, OCR, sender/issuer
-proof or financial claim is enabled. Concurrent account/job transitions are
-rechecked but not serialized by row locks; hosted/restore gates remain open.
+pass. ADR-230 adds the private command; no real-image execution, live mail,
+OCR, sender/issuer proof or financial claim is enabled. ADR-231 later locks
+the account row after the shared advisory lock; completed document jobs are
+already terminal/immutable. Hosted/restore gates remain open.
 
 ADR-228 now has a pure synthetic-only Email PDF attachment derivation proof.
 It replays one exact MIME part with the isolated, pinned legacy PDF worker and

@@ -39,11 +39,12 @@ rechecks the entire basis and optional worker authorization before inserting.
 Conflicts or revocation roll back the receipt. An exact retry returns the same
 content-free result; divergent replay is refused.
 
-The worker has no UPDATE privilege on the account or completed job tables, so
-it does not take row locks there. It rechecks both in the final query and SQL
-insert guard; a concurrent account/status transition after that check is not
-claimed to be serialized by this receipt. Live-source use needs a separately
-reviewed account/job transition fence.
+At this ADR's initial implementation, the worker had no UPDATE privilege on
+the account or completed job tables and did not lock either row. ADR-231 later
+adds a tenant-bound account row-lock function and the shared account advisory
+lock without expanding worker UPDATE authority. Completed document jobs are
+terminal/immutable. The replay still rechecks both in the final query and SQL
+insert guard; the later fence does not itself authorize live-source use.
 
 This is a point-in-time text-layer derivation, not OCR/visual completeness,
 attachment safety, sender/issuer authenticity, corroboration, a financial

@@ -458,6 +458,16 @@ def grant_tenant_runtime(
         ):
             raise ValueError("previously bound runtime role cannot be reused")
         grant_runtime(conn, role)
+        if conn.execute(
+            "SELECT to_regprocedure('public.lock_email_pdf_replay_account(uuid,uuid)') "
+            "IS NOT NULL",
+        ).fetchone() == (True,):
+            conn.execute(
+                sql.SQL(
+                    "GRANT EXECUTE ON FUNCTION "
+                    "public.lock_email_pdf_replay_account(uuid,uuid) TO {}"
+                ).format(sql.Identifier(role))
+            )
         if not existing:
             conn.execute(
                 "INSERT INTO public.masterbrain_tenant_login_bindings(role_name,tenant_id) "

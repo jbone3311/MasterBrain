@@ -154,6 +154,15 @@ open. Consequently no public verified-source or investment claim is exposed.
   does not read a selected MIME/PDF or start a processor and is not an
   execution proof. Actual-image, hosted, independent restore and account/job
   transition gates remain before any live-source use.
+- ADR-231 narrows the account transition gap without granting worker UPDATE:
+  the worker takes the controlled transition's advisory lock, then a bound-
+  login-only definer function locks the exact account row `FOR SHARE`. A direct
+  privileged status update must wait on that row even if it omits the
+  advisory lock. Completed approval jobs are terminal and protected by their
+  transition trigger. The function's actor GUC is not an independent identity
+  authenticator; the private command remains responsible for worker-token
+  authentication and final reauthentication. This fence does not make a
+  malicious database owner, live provider or financial claim safe.
 - ADR-225/226's FileOS PDF worker reopens one confined source and compares its
   exact output from an image-pinned restricted document processor before a
   final current/grant/authorization recheck and digest-only receipt. SQL alone

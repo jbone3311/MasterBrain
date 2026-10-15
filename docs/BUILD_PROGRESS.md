@@ -1,5 +1,19 @@
 # MasterBrain Build Progress
 
+## Email PDF account transition fence (2026-10-15, ADR-231, open PR)
+
+Migration 0080 gives only tenant-bound worker logins a narrow function that
+locks their exact active account row without granting account UPDATE. The
+reviewed Email PDF worker takes the controlled transition's advisory lock
+first, then the account row lock before the final review/currentness query.
+Two fictional PostgreSQL races passed: controlled disconnect first refuses
+without a receipt; replay first commits while a direct privileged status
+update waits. Tenant/login refusal and the existing ten receipt/command
+PostgreSQL cases passed; migration/protected-record/recovery suites passed
+41/41, and the full core PostgreSQL module passed 110/110. Ruff, mypy over
+128 source files and docs links passed. Hosted, real-container and
+independent restore remain pending.
+
 ## Restricted Email PDF replay command (2026-10-15, ADR-230, open PR)
 
 `masterbrain email replay-tier-pdf` now checks or executes one exact reviewed
@@ -34,7 +48,8 @@ complete isolated text-layer proof. The receipt is append-only, tenant-fenced
 and digest-only. Fictional PostgreSQL tests passed 5/5 for receipt/replay,
 immutable/forgery guards, account/source/exclusion refusal and final authorization
 rollback. ADR-230 adds a private command; no actual immutable-image run, live mail, OCR or financial
-claim is enabled; account/job transition serialization remains a later gate.
+claim is enabled; ADR-231 later adds account transition serialization while
+completed jobs remain terminal/immutable.
 After migration-inventory repair, the full disposable PostgreSQL 17.11 /
 Python 3.11 suite passed 3,672 tests with 19 skipped, including the exclusion
 case. Browser tests passed

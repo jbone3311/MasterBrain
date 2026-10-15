@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-231](adr/231_email_pdf_replay_account_transition_fence.md) serializes the
+reviewed Email PDF receipt with controlled and direct account-status updates
+using a tenant-bound worker function; completed document jobs stay immutable.
+
 [ADR-230](adr/230_restricted_email_pdf_tier_replay_command.md) exposes one
 reviewed Email attachment PDF text-layer replay through a private, exact-account,
 tenant-bound worker command with no selected MIME read in check mode.

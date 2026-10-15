@@ -526,6 +526,7 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
         "0077_source_tier_email_text_replay.sql",
         "0078_source_tier_fileos_pdf_replay.sql",
         "0079_source_tier_email_pdf_replay.sql",
+        "0080_email_pdf_replay_account_lock.sql",
     ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:

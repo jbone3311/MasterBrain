@@ -34,8 +34,9 @@ are flattened so sensitive account, source and path details do not escape.
 
 This command cannot move or rename an email or file, call Fastmail, approve a
 fact, produce OCR, prove issuer authenticity or publish a financial claim.
-Its receipt remains point-in-time; ADR-229's account/job transition race needs
-a separate serialization fence before any live use. FOS-Master is unchanged.
+Its receipt remains point-in-time; ADR-231 later adds account transition
+serialization while the approved job remains terminal/immutable. Separate
+live-provider gates still apply. FOS-Master is unchanged.
 
 ## Verification and rollout
 

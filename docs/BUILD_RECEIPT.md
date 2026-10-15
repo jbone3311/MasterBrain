@@ -2,6 +2,19 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Email PDF account transition fence — ADR-231
+
+Migration 0080 adds a directly granted tenant-bound function that locks only
+one account row `FOR SHARE`, after the worker takes the established account
+advisory lock. The completed document job remains terminal/immutable. Two
+fictional race orderings and wrong/shared-login cases passed on PostgreSQL
+17.11 / Python 3.14.7; all **10/10** Email PDF receipt/private-command
+PostgreSQL cases and **41/41** migration/integrity/recovery cases passed.
+The full core PostgreSQL module passed **110/110**. Ruff, mypy over 128 source
+files, docs (332 Markdown / 1,737 local paths/fragments) and diff check passed.
+The explicit real-image and exact-head hosted/independent restore gates have
+not run. No live-provider or financial acceptance follows from these races.
+
 ## Restricted Email PDF replay command — ADR-230
 
 The private exact-review CLI now binds one active account, a two-scope worker,
