@@ -200,9 +200,13 @@ acceptance still need separate work. None of these changes proves FileOS cutover
 
 ## Proposed next tranches
 
-The latest local pinned-donor comparison on 2026-10-03 passed at both 3,000
-stress files and the 9,994-stress-file maximum (10,000 prior v1 rows), with
-zero unexplained membership differences; 44 focused donor tests passed.
+The local pinned-donor comparison on 2026-10-03 passed at both 3,000 stress
+files and the 9,994-stress-file maximum (10,000 prior v1 rows), with zero
+unexplained membership differences; 44 focused donor tests passed. A
+2026-10-15 direct recheck at the 9,994-file maximum against the unchanged
+pinned donor again found zero unexplained membership differences across 9,998
+ordinary, replay, changed, metadata-only and candidate rows. It retained the
+six known transition policy gaps; see the [current receipt](BUILD_RECEIPT.md).
 The merged PR #164 filename probe adds a pinned-donor cross-directory case/Unicode
 corpus and conditional same-directory sibling probes. The former passed on
 this Mac; the latter could not run on its collision-folding filesystem. A

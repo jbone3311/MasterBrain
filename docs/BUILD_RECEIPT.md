@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Pinned FileOS donor recheck — current unmerged branch
+
+At product-code head `d593ad6`, the synthetic donor-policy shadow was rerun
+against the unchanged FOS-Master checkout at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`, with the maximum 9,994
+stress files. The donor and DataCore agreed on 9,998 ordinary, replay,
+changed-file, metadata-only and candidate rows, with **zero unexplained
+membership differences**. The 10,000-row prior-v1 transition still reports
+the same six known policy gaps and remains nonpublishing. The focused policy
+tests passed **24**, with one filesystem-conditional skip and the separate
+maximum-capacity case deselected because the direct maximum run covered it.
+The existing Librarian format choice was also rechecked: MasterBrain's own
+verified dossier Markdown remains the intake format (ADR-197/200), and its
+bounded parser tests passed **12/12**. This is synthetic verification only;
+it does not close live FileOS shadow, platform, rollback, or cutover gates.
+
 ## Fictional XLSX alpha round trip — current unmerged branch
 
 ADR-250 adds one real disposable PostgreSQL 17.11 integration test exercising
