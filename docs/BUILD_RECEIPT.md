@@ -2,6 +2,26 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Full local synthetic gate after migration-list repair — current branch
+
+The first attempted full run used a Unix-socket-only disposable PostgreSQL
+connection. The cross-source trial correctly refused it because its safety
+preflight permits only loopback TCP. That run also exposed migration 0081
+missing from two historical populated-upgrade expectations and a protected-
+table count. Those tests were updated; no runtime authorization or database
+guard was relaxed. The repaired upgrade/trial subset passed 35/35.
+
+A fresh disposable PostgreSQL 17.11 cluster bound **only to 127.0.0.1** and
+locked Python 3.11.13 then ran the complete discovered Python suite without
+CI-mode Docker enforcement: **3,754 passed, 19 skipped, zero failed** in
+7m55s. Of 674 PostgreSQL-marked tests, **673 executed and one skipped**;
+skips are not passes. All six first-party Node browser suites passed
+**167/167**. Repository-wide Ruff, strict mypy over 135 source files,
+documentation links (338 Markdown files, 1,771 local paths/fragments), the
+structural deployment gate and diff whitespace check passed. The actual
+immutable-image, hosted exact-head, independent restore and live-source gates
+remain open. This local result does not authorize merging or FileOS cutover.
+
 ## Restricted reviewed FileOS XLSX replay command — current branch
 
 ADR-237 adds one exact-review, exact-source `masterbrain fileos

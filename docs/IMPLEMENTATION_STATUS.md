@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+The current branch's repaired full synthetic local gate passed 3,754 Python
+tests with 19 skips on locked Python 3.11.13 and disposable loopback-only
+PostgreSQL 17.11; 673/674 PostgreSQL-marked tests executed. Browser tests
+passed 167/167, repository-wide Ruff/mypy and docs/structural checks passed.
+The initial Unix-socket attempt was rejected by the trial's intended
+loopback-only preflight and exposed migration 0081 expectations in older
+upgrade tests; those were fixed before the green run. Actual Docker-image,
+hosted exact-head and independent restore gates remain open. See
+[BUILD_RECEIPT](BUILD_RECEIPT.md).
+
 ADR-237 adds `masterbrain fileos replay-tier-xlsx-tables` with a closed
 private config, exact review/source binding, mandatory tenant-bound worker
 login and check mode that reads no selected workbook. Fictional command and
