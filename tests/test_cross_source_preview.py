@@ -687,8 +687,8 @@ def test_ask_preserves_unresolved_cross_source_date_conflict(preview, database):
 @pytest.mark.postgres
 @pytest.mark.parametrize(
     "query,emails,files,reviewed",
-    [("Cedar Harbor", 2, 2, 0), ("insurance", 1, 1, 0),
-     ("appraisal", 1, 1, 0), ("Juniper Plaza", 1, 1, 0),
+    [("Cedar Harbor", 2, 2, 1), ("insurance", 1, 1, 0),
+     ("appraisal", 1, 1, 1), ("Juniper Plaza", 1, 1, 0),
      ("Maple Arcade", 1, 1, 0),
      ("readiness", 0, 0, 1), ("nonexistentcanary", 0, 0, 0)],
 )
@@ -710,6 +710,96 @@ def test_known_answers_use_real_current_api(preview, query, emails, files, revie
                 assert query.split()[0].casefold() in hit["excerpt"].casefold()
         assert len(data["layers"]["knowledge"]) == reviewed
         assert "other-tenant-canary" not in result.text
+
+
+@pytest.mark.postgres
+def test_fictional_company_dossier_links_mail_file_fact_and_original_evidence(
+    preview, database,
+):
+    store, _ = database
+    project_id = preview.project_id
+    path = f"/v1/knowledge/projects/{project_id}/dossier"
+    with client_for(preview) as owner:
+        compact_response = owner.get(path)
+        assert compact_response.status_code == 200, compact_response.text
+        compact = compact_response.json()
+        assert compact["project"]["object_id"] == project_id
+        assert len(compact["events"]) == 1
+        assert len(compact["commitments"]) == 1
+        assert len(compact["facts"]) == 1
+        assert len(compact["artifacts"]) == 1
+        assert compact["members"] == []
+        assert compact["facts"][0]["predicate"] == "loan.proposed_amount"
+        assert compact["facts"][0]["value_preview"] == "$8,000,000"
+        artifact_id = compact["artifacts"][0]["artifact_evidence_id"]
+        assert artifact_id == compact["facts"][0]["quote_evidence_id"]
+        assert len(compact["commitments"][0]["evidence_ids"]) == 2
+        assert owner.get(f"/v1/brain/evidence/{artifact_id}").status_code == 200
+        source = owner.post(
+            f"/v1/brain/evidence/{artifact_id}/content", json={"max_chars": 4000},
+        )
+        assert source.status_code == 200
+        assert "Proposed loan amount: $8,000,000." in source.text
+
+        rendered_response = owner.get(path + "/markdown")
+        assert rendered_response.status_code == 200, rendered_response.text
+        rendered = rendered_response.json()
+        assert rendered["section_counts"] == {
+            "events": 1, "commitments": 1, "members": 0,
+            "artifacts": 1, "facts": 1,
+        }
+        markdown = rendered["markdown"]
+        for expected in (
+            "Cedar Harbor fictional financing", "Appraisal received",
+            "Closing readiness", "loan.proposed_amount",
+            "$8,000,000", "term_sheet", artifact_id,
+        ):
+            assert expected in markdown
+        assert rendered["source_freshness"] == "not_asserted"
+        with BrainReadClient(
+            "http://127.0.0.1", preview.token,
+            allow_insecure_loopback=True, transport=external_transport(owner),
+        ) as external:
+            external_compact = external.project_dossier(
+                project_id,
+                recorded_cutoff_at=datetime.fromisoformat(compact["recorded_cutoff_at"]),
+            )
+            assert datetime.fromisoformat(external_compact["recorded_cutoff_at"]) == (
+                datetime.fromisoformat(compact["recorded_cutoff_at"])
+            )
+            assert {key: value for key, value in external_compact.items()
+                    if key != "recorded_cutoff_at"} == {
+                key: value for key, value in compact.items()
+                if key != "recorded_cutoff_at"
+            }
+            external_rendered = external.project_dossier_markdown(
+                project_id,
+                recorded_cutoff_at=datetime.fromisoformat(rendered["recorded_cutoff_at"]),
+            )
+            assert datetime.fromisoformat(external_rendered["recorded_cutoff_at"]) == (
+                datetime.fromisoformat(rendered["recorded_cutoff_at"])
+            )
+            assert {key: value for key, value in external_rendered.items()
+                    if key != "recorded_cutoff_at"} == {
+                key: value for key, value in rendered.items()
+                if key != "recorded_cutoff_at"
+            }
+
+    token = "fictional-dossier-file-only-" + "x" * 32
+    assistant = create_app(
+        store, TokenRegistry([assistant_credential(preview, token, {"trial_files"})]),
+    )
+    with TestClient(assistant, base_url="http://127.0.0.1") as scoped:
+        headers = {"Authorization": "Bearer " + token}
+        assert scoped.get(path, headers=headers).status_code == 404
+        assert scoped.get(path + "/markdown", headers=headers).status_code == 404
+        current = scoped.post(
+            "/v1/brain/current-search", json={"query": "Cedar Harbor"},
+            headers=headers,
+        )
+        assert current.status_code == 200
+        assert current.json()["layers"]["knowledge"] == []
+        assert len(current.json()["layers"]["fileos"]) == 2
 
 
 @pytest.mark.postgres

@@ -1,5 +1,15 @@
 # MasterBrain Roadmap
 
+ADR-204 proves a small, synthetic Cedar Harbor company dossier through the
+existing compact/Markdown API and external client: reviewed project, event,
+commitment, source-stated fact and linked FileOS artifact with original evidence.
+It is a known-answer integration case, not automatic knowledge generation or
+source freshness. Next: owner walkthrough, held-out cross-source questions,
+approval-gated Markdown import of members/facts/artifact links, then explicit
+live-source and financial source-tier gates. The owner chose MasterBrain's
+current Markdown export as the Librarian import format; do not invent missing
+full quotes or observation metadata from that lossy export.
+
 ADR-203 extends isolated FOS-Master statement parity to Charles Schwab's
 old-template supplied text. Next financial gates remain source-byte-to-text
 proof for PDF/OCR, typed reviewable proposals beyond Streetbeat, independent

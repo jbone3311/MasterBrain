@@ -1,5 +1,11 @@
 # Architecture Decisions
 
+[ADR-204](adr/204_fictional_cross_source_project_dossier_acceptance.md)
+extends only the disposable cross-source trial with one coherent, reviewed
+fictional project dossier spanning Email and FileOS. It tests existing API,
+client and Markdown contracts without importing live sources, running model
+inference or changing FOS-Master.
+
 [ADR-203](adr/203_schwab_statement_recipe_parity.md) pins an isolated,
 synthetic supplied-text Charles Schwab recipe comparison to the unchanged
 FOS-Master donor. It does not prove scanned/redesigned PDF extraction, publish
