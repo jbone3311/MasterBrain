@@ -77,6 +77,7 @@ from masterbrain.datacore.fileos_v2_index_generation import (
     FileOSV2SearchReviewer,
 )
 from masterbrain.datacore.fileos_v2_later_coverage import FileOSV2LaterCoverageStore
+from masterbrain.datacore.fileos_v2_later_evidence import FileOSV2LaterEvidencePreparer
 from masterbrain.datacore.fileos_v2_later_packets import FileOSV2LaterPacketStore
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
@@ -7558,6 +7559,8 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert private_baseline["latest_v1_matches"] is True
     assert private_baseline["current_read_active"] is False
     assert private_baseline["absence_authorized"] is False
+    later_add = tmp_path / "later_add.txt"
+    later_add.write_bytes(b"synthetic later-only evidence")
     later_previewer = FileOSV2CompletedPreviewer(core)
     later = later_previewer.preview(completion_worker, completion_id, tmp_path)
     assert later.counts["unchanged"] == 2
@@ -7578,7 +7581,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     closure_id = uuid4()
     closure = coverage_store.seal(completion_worker, first_later_id, closure_id)
     assert closure.recorded is True
-    assert closure.current_counts["hashed"] == 2
+    assert closure.current_counts["hashed"] == 3
     assert closure.prior_classification_counts["unchanged"] == 2
     assert closure.publishable is False and closure.absence_authorized is False
     assert coverage_store.inspect(ctx, closure_id) == replace(closure, recorded=False)
@@ -7587,9 +7590,52 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             "SELECT closure FROM brain_fileos_v2_later_coverage_closures WHERE id=%s",
             (closure_id,),
         ).fetchone()["closure"]
-        assert len(saved_closure["current_rows"]) == 2
+        assert len(saved_closure["current_rows"]) == 3
         assert len(saved_closure["prior_rows"]) == 2
         assert all(row["kind"] == "hashed" for row in saved_closure["current_rows"])
+    later_evidence = FileOSV2LaterEvidencePreparer(core)
+    later_preparation_id = uuid4()
+    later_add.write_bytes(b"synthetic later drift")
+    with pytest.raises(Conflict, match="source changed"):
+        later_evidence.prepare(worker, closure_id, later_preparation_id, tmp_path)
+    later_add.write_bytes(b"synthetic later-only evidence")
+    later_prepared = later_evidence.prepare(
+        worker, closure_id, later_preparation_id, tmp_path
+    )
+    assert later_prepared.recorded is True
+    assert later_prepared.hashed_count == 3
+    assert later_prepared.publishable is False
+    assert later_prepared.absence_authorized is False
+    assert later_evidence.inspect(ctx, later_preparation_id) == replace(
+        later_prepared, recorded=False
+    )
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_evidence_preparations CASCADE")
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_prepared_rows CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_prepared_rows SET sha256=%s "
+                "WHERE preparation_id=%s", ("0" * 64, later_preparation_id),
+            )
+    with store.transaction(ctx) as conn:
+        later_row = conn.execute(
+            "SELECT i.current_version_id,v.id AS prepared_version_id,e.storage "
+            "FROM brain_fileos_v2_later_prepared_rows p "
+            "JOIN brain_source_items i ON i.tenant_id=p.tenant_id AND i.id=p.item_id "
+            "JOIN brain_source_versions v ON v.tenant_id=p.tenant_id "
+            "AND v.id=p.prepared_version_id "
+            "JOIN brain_evidence e ON e.tenant_id=p.tenant_id AND e.id=p.evidence_id "
+            "WHERE p.preparation_id=%s AND p.locator='later_add.txt'",
+            (later_preparation_id,),
+        ).fetchone()
+        assert later_row is not None
+        assert later_row["current_version_id"] is None
+        assert later_row["prepared_version_id"] is not None
+        assert later_row["storage"] == "source_bound"
     (tmp_path / "new.txt").unlink()
     possible_absence = later_previewer.preview(completion_worker, completion_id, tmp_path)
     assert possible_absence.counts["absence_candidate"] == 1
@@ -7602,6 +7648,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert second_later.classification_counts["absence_candidate"] == 1
     assert second_later.absence_authorized is False
     assert second_later.packet_sha256 != first_later.packet_sha256
+    later_add.unlink()
     forged_closure_id = uuid4()
     forged_closure = saved_closure.copy()
     forged_closure["packet_sha256"] = second_later.packet_sha256
@@ -7633,6 +7680,23 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         )
     with pytest.raises(Conflict, match="coverage integrity requires review"):
         coverage_store.inspect(ctx, forged_closure_id)
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 later prepared row count"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_evidence_preparations(tenant_id,id,"
+                "actor_id,closure_id,packet_id,completion_id,source_id,"
+                "root_binding_sha256,packet_sha256,closure_sha256,policy_sha256,"
+                "matched_rows_sha256,packet_observed_at,prepared_observed_at,"
+                "hashed_count,preparation_sha256) "
+                "SELECT c.tenant_id,%s,%s,c.id,c.packet_id,p.completion_id,c.source_id,"
+                "p.root_binding_sha256,p.packet_sha256,c.closure_sha256,%s,%s,"
+                "c.observed_at,clock_timestamp(),"
+                "(c.closure->'current_counts'->>'hashed')::integer,%s "
+                "FROM brain_fileos_v2_later_coverage_closures c "
+                "JOIN brain_fileos_v2_later_observation_packets p "
+                "ON p.tenant_id=c.tenant_id AND p.id=c.packet_id WHERE c.id=%s",
+                (uuid4(), ctx.actor_id, "0" * 64, "0" * 64, "0" * 64, forged_closure_id),
+            )
     (tmp_path / "new.txt").write_bytes(b"synthetic donor-only proof")
     assert later_packets.record(
         completion_worker, completion_id, first_later_id, tmp_path
@@ -7640,6 +7704,17 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert coverage_store.seal(
         completion_worker, first_later_id, closure_id
     ) == replace(closure, recorded=False)
+    assert later_evidence.prepare(
+        worker, closure_id, later_preparation_id, tmp_path
+    ) == replace(later_prepared, recorded=False)
+    with pytest.raises(Conflict, match="identity changed"):
+        later_evidence.prepare(worker, closure_id, uuid4(), tmp_path)
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_evidence.prepare(authorizing_human, closure_id, uuid4(), tmp_path)
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_evidence.prepare(Principal(ctx, "worker"), closure_id, uuid4(), tmp_path)
+    with pytest.raises(NotFound):
+        later_evidence.inspect(ctx, uuid4())
     with pytest.raises(Conflict, match="identity changed"):
         coverage_store.seal(completion_worker, first_later_id, uuid4())
     with pytest.raises(AccessDenied, match="worker required"):
@@ -7740,6 +7815,8 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         later_previewer.preview(completion_worker, completion_id, wrong_root)
     with pytest.raises(Conflict, match="source requires review"):
         later_packets.record(completion_worker, completion_id, uuid4(), wrong_root)
+    with pytest.raises(Conflict, match="identity changed"):
+        later_evidence.prepare(worker, closure_id, later_preparation_id, wrong_root)
     with pytest.raises(Conflict, match="source requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, wrong_root)
     with pytest.raises(Conflict, match="source requires review"):
@@ -7753,7 +7830,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "SELECT count(*) AS n FROM brain_source_versions WHERE source_id=%s",
                 (source_id,),
             ).fetchone()["n"]
-            == 3
+            == 4
         )
         assert (
             conn.execute(
@@ -7762,7 +7839,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "AND v.id=e.source_version_id WHERE v.source_id=%s",
                 (source_id,),
             ).fetchone()["n"]
-            == 3
+            == 4
         )
         mapped = conn.execute(
             "SELECT candidate_version_id,prepared_version_id FROM "

@@ -2,6 +2,28 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Source-bound later FileOS v2 hash evidence — current unmerged branch
+
+ADR-255 and migration 0089 prepare historical DataCore source versions and
+source-bound evidence for each hashed row in an exact ADR-254 closure. A
+fresh, locked, confined rescan must match the sealed donor observation; a
+later-only fictional file receives a policy-scoped evidence version while
+its current pointer stays null. Focused PostgreSQL lifecycle and migration
+guards passed **22/22**, including source drift, wrong-root replay, direct-
+SQL omission, scope, mutation and truncation refusal. The baseline evidence
+helper was refactored for reuse without changing its result.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,855 passed, 19 skipped, zero failed**
+in 7m02s; **694/695 PostgreSQL-marked tests executed**. The sole
+PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (146 source files), offline docs (356 Markdown
+files / 1,836 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the new later-evidence module. This is local
+fictional evidence, not hosted exact-head, actual-image, live-root or
+cutover acceptance. No normalized later document or completed later run is
+claimed.
+
 ## Exact FileOS v2 later-row coverage closure — current unmerged branch
 
 ADR-254 and migration 0088 add one immutable, tenant-fenced historical

@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-255 now prepares source-bound DataCore evidence for every exact later
+FileOS v2 hashed row after a matching fresh scan. Next publish historical
+normalized derivatives under exact prepared-version checks and seal terminal
+outcomes for **all** hashed/deferred/excluded/error rows. Only then design
+completed later-run freshness, rollback and owner-reviewed live shadow;
+current visibility, absence authority and donor cutover remain barred.
+
 ADR-254 now gives the later FileOS v2 observation an exact, sealed private
 row-coverage input. Next process current hashed versions against that exact
 closure, account for every hashed/deferred/excluded/error row with terminal

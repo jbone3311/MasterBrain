@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-255](adr/255_fileos_v2_later_hashed_evidence.md) re-scans one exact
+ADR-254 closure under the source lock and prepares policy-scoped,
+source-bound DataCore evidence for its hashed rows. It does not publish
+documents, complete a later run or change current FileOS state.
+
 [ADR-254](adr/254_fileos_v2_later_coverage_closure.md) seals exact current
 observation rows and prior classifications from one validated ADR-253 packet
 into a private, immutable coverage closure. It has no processing outcome,

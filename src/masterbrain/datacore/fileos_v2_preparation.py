@@ -9,8 +9,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
+from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from email_brain.auth import Principal
@@ -67,6 +69,85 @@ def _preparation_sha(
             "hashed_count": hashed_count,
         }
     )
+
+
+def _ensure_hashed_evidence(
+    conn: Connection[dict[str, Any]],
+    tenant_id: UUID,
+    source_id: str,
+    locator: str,
+    item_id: str,
+    candidate_version_id: str,
+    sha256: str,
+    size: int,
+    media: str,
+    policy_sha256: str,
+    observed_at: datetime,
+) -> tuple[str, str]:
+    """Reuse identical policy-scoped evidence; never change current pointers."""
+    conn.execute(
+        "INSERT INTO brain_source_items(tenant_id,source_id,id,locator,"
+        "first_seen_at,last_seen_at) VALUES (%s,%s,%s,%s,%s,%s) "
+        "ON CONFLICT DO NOTHING",
+        (tenant_id, source_id, item_id, locator, observed_at, observed_at),
+    )
+    saved_item = conn.execute(
+        "SELECT source_id,locator FROM brain_source_items WHERE id=%s FOR UPDATE",
+        (item_id,),
+    ).fetchone()
+    if saved_item != {"source_id": source_id, "locator": locator}:
+        raise Conflict("FileOS v2 source item identity changed")
+    prepared_version_id = stable_id(
+        "fileos_v2_version", candidate_version_id, policy_sha256
+    )
+    version_metadata = {
+        "inventory_policy_sha256": policy_sha256,
+        "candidate_version_id": candidate_version_id,
+    }
+    conn.execute(
+        "INSERT INTO brain_source_versions(tenant_id,source_id,item_id,id,"
+        "observed_at,sha256,size_bytes,media_type,metadata) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+        (
+            tenant_id, source_id, item_id, prepared_version_id, observed_at,
+            sha256, size, media, Jsonb(version_metadata),
+        ),
+    )
+    saved_version = conn.execute(
+        "SELECT source_id,item_id,sha256,size_bytes,media_type,metadata "
+        "FROM brain_source_versions WHERE id=%s",
+        (prepared_version_id,),
+    ).fetchone()
+    if saved_version != {
+        "source_id": source_id,
+        "item_id": item_id,
+        "sha256": sha256,
+        "size_bytes": size,
+        "media_type": media,
+        "metadata": version_metadata,
+    }:
+        raise Conflict("FileOS v2 source version identity changed")
+    evidence_id = stable_id("evidence", prepared_version_id)
+    conn.execute(
+        "INSERT INTO brain_evidence(tenant_id,id,source_version_id,sha256,"
+        "storage,retained) VALUES (%s,%s,%s,%s,'source_bound',false) "
+        "ON CONFLICT DO NOTHING",
+        (tenant_id, evidence_id, prepared_version_id, sha256),
+    )
+    saved_evidence = conn.execute(
+        "SELECT id,source_version_id,sha256,storage,retained "
+        "FROM brain_evidence WHERE id=%s",
+        (evidence_id,),
+    ).fetchone()
+    if saved_evidence != {
+        "id": evidence_id,
+        "source_version_id": prepared_version_id,
+        "sha256": sha256,
+        "storage": "source_bound",
+        "retained": False,
+    }:
+        raise Conflict("FileOS v2 evidence identity changed")
+    return prepared_version_id, evidence_id
 
 
 class FileOSV2EvidencePreparer:
@@ -252,73 +333,10 @@ class FileOSV2EvidencePreparer:
                     or media is None
                 ):
                     raise Conflict("FileOS v2 evidence row requires review")
-                conn.execute(
-                    "INSERT INTO brain_source_items(tenant_id,source_id,id,locator,"
-                    "first_seen_at,last_seen_at) VALUES (%s,%s,%s,%s,%s,%s) "
-                    "ON CONFLICT DO NOTHING",
-                    (ctx.tenant_id, stage["source_id"], item_id, locator, observed_at, observed_at),
+                prepared_version_id, evidence_id = _ensure_hashed_evidence(
+                    conn, ctx.tenant_id, stage["source_id"], locator, item_id,
+                    version_id, sha256, size, media, policy_sha256, observed_at,
                 )
-                saved_item = conn.execute(
-                    "SELECT source_id,locator FROM brain_source_items WHERE id=%s FOR UPDATE",
-                    (item_id,),
-                ).fetchone()
-                if saved_item != {"source_id": stage["source_id"], "locator": locator}:
-                    raise Conflict("FileOS v2 source item identity changed")
-                prepared_version_id = stable_id("fileos_v2_version", version_id, policy_sha256)
-                version_metadata = {
-                    "inventory_policy_sha256": policy_sha256,
-                    "candidate_version_id": version_id,
-                }
-                conn.execute(
-                    "INSERT INTO brain_source_versions(tenant_id,source_id,item_id,id,"
-                    "observed_at,sha256,size_bytes,media_type,metadata) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
-                    (
-                        ctx.tenant_id,
-                        stage["source_id"],
-                        item_id,
-                        prepared_version_id,
-                        observed_at,
-                        sha256,
-                        size,
-                        media,
-                        Jsonb(version_metadata),
-                    ),
-                )
-                saved_version = conn.execute(
-                    "SELECT source_id,item_id,sha256,size_bytes,media_type,metadata "
-                    "FROM brain_source_versions WHERE id=%s",
-                    (prepared_version_id,),
-                ).fetchone()
-                if saved_version != {
-                    "source_id": stage["source_id"],
-                    "item_id": item_id,
-                    "sha256": sha256,
-                    "size_bytes": size,
-                    "media_type": media,
-                    "metadata": version_metadata,
-                }:
-                    raise Conflict("FileOS v2 source version identity changed")
-                evidence_id = stable_id("evidence", prepared_version_id)
-                conn.execute(
-                    "INSERT INTO brain_evidence(tenant_id,id,source_version_id,sha256,"
-                    "storage,retained) VALUES (%s,%s,%s,%s,'source_bound',false) "
-                    "ON CONFLICT DO NOTHING",
-                    (ctx.tenant_id, evidence_id, prepared_version_id, sha256),
-                )
-                saved_evidence = conn.execute(
-                    "SELECT id,source_version_id,sha256,storage,retained "
-                    "FROM brain_evidence WHERE id=%s",
-                    (evidence_id,),
-                ).fetchone()
-                if saved_evidence != {
-                    "id": evidence_id,
-                    "source_version_id": prepared_version_id,
-                    "sha256": sha256,
-                    "storage": "source_bound",
-                    "retained": False,
-                }:
-                    raise Conflict("FileOS v2 evidence identity changed")
                 conn.execute(
                     "INSERT INTO brain_fileos_v2_prepared_rows(tenant_id,stage_id,source_id,"
                     "locator,item_id,candidate_version_id,prepared_version_id,evidence_id) "

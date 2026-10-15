@@ -1,5 +1,14 @@
 # MasterBrain Data Model
 
+Migration 0089 adds private, immutable
+`brain_fileos_v2_later_evidence_preparations` and
+`brain_fileos_v2_later_prepared_rows`. Composite packet/closure FKs,
+source-lock and a deferred exact-row check bind every sealed hashed row to
+one policy-scoped `brain_source_version` and `brain_evidence` pair. Both
+tables force tenant RLS/login fencing and deny update, delete and truncate.
+No source-item current pointer or completed-run table references them
+(ADR-255).
+
 Migration 0088 adds immutable `brain_fileos_v2_later_coverage_closures`:
 one bounded JSON row per ADR-253 packet, exact composite packet FK, forced
 tenant RLS/login fence, fixed nonpublishing/no-absence flags and protected

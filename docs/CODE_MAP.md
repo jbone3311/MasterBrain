@@ -1,5 +1,11 @@
 # Current MasterBrain code map
 
+ADR-255 adds [later hashed-evidence preparation](../src/masterbrain/datacore/fileos_v2_later_evidence.py)
+and [immutable exact-row SQL](../migrations/0089_fileos_v2_later_evidence_preparations.sql),
+reusing the baseline's [shared source-bound evidence primitive](../src/masterbrain/datacore/fileos_v2_preparation.py).
+The [fictional PostgreSQL lifecycle](../tests/test_postgres.py) verifies a
+later-only file remains noncurrent. No document/current/absence consumer exists.
+
 ADR-254 adds the [private exact-row coverage store](../src/masterbrain/datacore/fileos_v2_later_coverage.py),
 [immutable SQL closure](../migrations/0088_fileos_v2_later_coverage_closures.sql)
 and [fictional PostgreSQL lifecycle tests](../tests/test_postgres.py).

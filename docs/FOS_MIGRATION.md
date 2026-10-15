@@ -255,6 +255,11 @@ ADR-254 projects that historical packet into a separately sealed, exact-row
 coverage closure for future processing. It accounts for current donor rows and
 prior classifications but does not process hashed evidence or complete a later
 run. All current/absence/cutover gates remain unchanged.
+ADR-255 now prepares policy-scoped, source-bound DataCore evidence for those
+sealed hashed rows only after an exact fresh donor-policy rescan. A new later-
+only file is represented without becoming current. Document publication,
+terminal processing of all rows, completed later-run semantics, rollback,
+live shadow and cutover remain separate gates.
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then

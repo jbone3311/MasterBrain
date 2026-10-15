@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+ADR-255 adds private later FileOS v2 hashed-evidence preparation. A worker
+rechecks the completed baseline and ADR-254 closure, rescans the bound root,
+refuses drift/errors, and inserts or reuses exact policy-scoped source-bound
+evidence for each hashed row without changing current pointers. Migration
+0089 seals the per-hash mapping under tenant/source and exact-count guards.
+Fictional PostgreSQL coverage proves a later-only file, drift refusal,
+historical replay, scope and immutability. Normalized documents, terminal
+later-run outcomes, absence/current authority, live shadow and rollback
+remain open.
+
 ADR-254 adds a private, immutable row-coverage closure over one ADR-253
 later-observation packet. It seals exact current hashed/deferred/excluded/error
 rows and each prior classification, with replay and read-time reconstruction.

@@ -135,6 +135,10 @@ ADR-254 derives and seals an exact private coverage closure from one validated
 packet: every current donor row and prior-row classification is counted and
 bound to the packet digest. It is a historical processing input, not a
 terminal processing ledger, completed later run or v2 activation.
+ADR-255 uses a fresh source-locked no-follow rescan to match that closure
+exactly, then reuses the baseline's policy-scoped source-version/evidence
+primitive for each hashed row. The private mapping is immutable; no current
+pointer, document, later-run completion or absence event changes.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

@@ -1,5 +1,12 @@
 # MasterBrain Security and Privacy
 
+ADR-255 requires a scoped private worker and fresh confined source rescan
+before preparing any later FileOS v2 hash. The scan must match the sealed
+closure exactly and have no errors; deferred/excluded/error rows never get
+invented content. The immutable, tenant-fenced mapping reuses only matching
+policy-scoped source-bound evidence. No public API, source effect, current
+pointer or absence authority consumes it.
+
 ADR-254 makes the FileOS later-row coverage closure private, immutable and
 tenant-fenced. Only a scoped worker may seal it from a validated packet;
 private readers receive counts/digest, never locators. Direct SQL cannot set
