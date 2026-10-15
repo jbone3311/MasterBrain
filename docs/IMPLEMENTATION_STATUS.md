@@ -1,13 +1,15 @@
 # MasterBrain Implementation Status
 
-ADR-206 now records the **unimplemented** project-fact Markdown proposal
-boundary. Facts cannot use ADR-186's generic approval receipt unchanged:
-reviewed project facts have their own publication receipt and validation path.
-Current fact rows remain inspectable in Markdown but are rejected by staging;
-the next code tranche is a private, explicitly reviewed synthetic fact queue.
-The direct fact publisher now exposes the same validated write within an
-existing transaction, with a fictional two-fact rollback test. This is a
-prerequisite, not an import or proposal path.
+ADR-206 now adds selected project-fact Markdown staging into a separate,
+private synthetic proposal queue. Its typed sidecar supplies the full quote,
+evidence set, observation time, confidence and value type omitted by the
+export; the visible line must match exactly. Preview and explicit atomic
+human review recheck current project and evidence grants. A fact-specific
+review receipt publishes approved rows through the same validated
+transaction-bound direct fact primitive; rejected rows never publish. This
+open-PR implementation has local synthetic tests, but hosted and merged-main
+gates remain outstanding. It is not artifact-link import, inferred-fact
+review, automatic approval, live-source access or a lossless round trip.
 
 ADR-205 extends the synthetic-only, owner-selected Markdown import to one
 selected project-member role per typed proposal row. A member needs an already

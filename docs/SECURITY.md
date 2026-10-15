@@ -71,6 +71,17 @@ or member entity citation, and requires the quoted evidence to be in the
 proposal's direct evidence set. This closes an application-bypass gap for
 new rows without reinterpreting historical ADR-202 proposals; it is not a
 claim that a database owner or compromised migration role is harmless.
+ADR-206 keeps imported source-stated project facts in a separate private,
+forced-RLS queue because fact approvals have a different reviewed receipt.
+The human-only stage/preview/review routes require both review and content
+scopes; each rechecks the current local project and every direct source grant,
+with the full quote in the specifically cited evidence. The selected line and
+typed sidecar are bound to one immutable import digest, and SQL refuses a
+proposal whose quote citation differs from or falls outside its payload
+evidence set. Every approval or rejection is explicit and atomic; no staged
+fact enters search or the dossier. This remains synthetic-only; compromised
+database ownership, inferred basis, live source and artifact effects are not
+covered.
 
 ADR-189 adds a separate, synthetic-only FileOS statement replay boundary. A
 worker, never a public API reader, selects one current proposal under tenant

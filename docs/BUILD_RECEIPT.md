@@ -2,6 +2,25 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Selected project-fact Markdown proposals — ADR-206
+
+Migration 0069 and the human-only Brain API now stage selected source-stated
+project-fact lines into a separate immutable private batch, preview them under
+current source/project grants and require explicit atomic per-row decisions.
+Approval uses the validated project-fact publisher inside the batch transaction;
+rejection produces no reviewed fact. Claimed IDs are selection markers. The
+fictional stage/review/API/SQL and existing fact/import/migration/recovery/
+protected-truncate suites passed **73/73** after the five new tables were
+included in the catalog guards. The exact local Python 3.14/PostgreSQL 17.11
+full gate on a fresh disposable database passed **3,494 tests, nine skipped**
+(605 of 606 PostgreSQL-marked tests executed). Six browser suites passed
+**167/167**; Ruff, strict mypy (110 source files), docs links (307 Markdown
+files, 1,631 paths/fragments), diff check and the repository deployment
+quality gate passed. The deployment gate skips most PostgreSQL tests and is
+not a substitute for the full run. Exact-head hosted CI, strict-runtime,
+logical restore and independent merged-main gates remain unverified. No live
+source or FOS-Master change is claimed.
+
 ## Project-fact transactional publication prerequisite — ADR-206
 
 The existing direct, reviewed project-fact write now calls its same validated

@@ -51,10 +51,12 @@ from masterbrain.answers import (
 )
 from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReviewer
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
+from masterbrain.fact_proposals import FactProposalBatches
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_proposals import KnowledgeProposalBatches
 from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
+    FactProposalReviewRequest,
     KnowledgeProposalReviewRequest,
     KnowledgeProposalStageRequest,
     KnowledgePublishRequest,
@@ -173,6 +175,7 @@ def create_app(
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
+    fact_proposals = FactProposalBatches(store)
     dossier_markdown_inspection = DossierMarkdownInspection(store)
     dossier_proposal_import = DossierProposalImport(store)
     project_artifacts = ProjectArtifactLinks(store)
@@ -1013,6 +1016,44 @@ def create_app(
         if "brain.content.read" not in principal.context.scopes:
             raise HTTPException(403, "scope_denied")
         return knowledge_proposals.preview(principal.context, batch_id)
+
+    @app.post("/v1/knowledge/dossier-markdown/fact-proposal-batches", status_code=201)
+    def stage_dossier_fact_proposals(
+        body: DossierProposalStageRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        try:
+            return fact_proposals.stage(principal.context, body, idempotency_key)
+        except ValueError:
+            raise HTTPException(422, "invalid_dossier_fact_proposal") from None
+
+    @app.get("/v1/knowledge/fact-proposal-batches/{batch_id}")
+    def preview_fact_proposals(
+        batch_id: str,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        return fact_proposals.preview(principal.context, batch_id)
+
+    @app.post("/v1/knowledge/fact-proposal-batches/{batch_id}/review")
+    def review_fact_proposals(
+        batch_id: str,
+        body: FactProposalReviewRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        try:
+            return fact_proposals.review(
+                principal.context, batch_id, body, idempotency_key,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_fact_proposal_review") from None
 
     @app.post("/v1/knowledge/proposal-batches/{batch_id}/review")
     def review_knowledge_proposals(

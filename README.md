@@ -62,7 +62,8 @@ exports a bounded cited project dossier; ADR-200/201 parse and inspect that
 format; ADR-202/205 can stage selected project, event, commitment and member
 rows as private proposals with exact current evidence checks. ADR-186's
 1–50-row queue requires explicit atomic human decisions. This is **not** a
-lossless round trip: project facts and artifact links cannot yet be imported,
+lossless round trip: ADR-206 separately stages selected source-stated project
+facts for explicit human review, but artifact links cannot yet be imported,
 inference without a direct quote is unsupported, and proposals are never
 exposed to assistants or automatically approved.
 
@@ -153,7 +154,8 @@ FileOS sources ┘       │              │                │
 | Pinned donor statement recipe comparison | Five fictional baselines: Streetbeat, low-confidence Fidelity, OCR bank, Morgan Stanley and Jefferies. Optional exact-hash FOS-Master replay; isolated from runtime and not verified holdings |
 | Private statement proposal ledger | Worker-only, additive exact-decimal rows for one current normalized Email/FileOS document; exact-head and merged-main PostgreSQL/restore gates passed; storage itself creates no reviewed holding or live source |
 | Owner statement proposal preview | Human-only, paged API read of current, source-rechecked unreviewed rows and bounded source quotes; the fictional browser trial now opens one proposed row on explicit click. No assistant access, approval, investment total or live source |
-| Private Knowledge proposal batch and review | Human-only, source-stated 1–50 rows with exact current evidence quotes; selected project/event/commitment/member Markdown rows can stage privately with typed sidecars. Per-row approval/rejection is atomic and idempotent. No fact/artifact import, inferred claim, assistant proposal read or live source |
+| Private Knowledge proposal batch and review | Human-only, source-stated 1–50 rows with exact current evidence quotes; selected project/event/commitment/member Markdown rows can stage privately with typed sidecars. Per-row approval/rejection is atomic and idempotent. No artifact import, inferred claim, assistant proposal read or live source |
+| Private project-fact Markdown proposal batch | Separate synthetic-only fact queue and fact-specific receipt; exact selected line, full cited quote and current project/evidence bases are rechecked at stage, preview and explicit atomic human review. No automatic approval, artifact association, inferred fact or live source |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |
 | First-party read-only question workspace | Implemented prototype at `/brain`; grouped indexed evidence, not generated answers or live acceptance |
 | Certified external-AI clients and cited answer synthesis | Planned; neither is deployed or accepted |

@@ -1,9 +1,8 @@
 # ADR-206 — Project-fact Markdown proposal boundary
 
-Status: design accepted for a future synthetic/disposable implementation; the
-transactional publication prerequisite is implemented, but the **fact
-proposal queue is not**. No live source, automatic approval, inferred fact,
-or FileOS cutover is authorized.
+Status: implemented on the open synthetic/disposable PR branch, pending
+exact-head hosted CI, strict-runtime, restore and merged-main gates. No live
+source, automatic approval, inferred fact, or FileOS cutover is authorized.
 
 ## Context
 
@@ -68,11 +67,14 @@ generic proposal type union would make the approval contract incorrect.
    ADR-177, not an empty or fabricated source quote. Automatic dossier
    generation and lossless round trip remain out of scope for this tranche.
 
-The first prerequisite refactors ADR-195's direct publisher into an internal
-transaction-bound primitive with unchanged public write semantics. A fictional
-two-fact test proves that a failed later publication rolls back the first fact
-and its idempotency receipt. This does **not** create a proposal table, route,
-private preview or human batch-review operation.
+The first prerequisite refactored ADR-195's direct publisher into an internal
+transaction-bound primitive with unchanged public write semantics. Migration
+0069 now adds separate private fact proposal, evidence, decision and review
+tables; `FactProposalBatches` supplies exact-row staging, preview and atomic
+human review through three human-only API routes. A fictional two-fact fault
+test proves a failed later publication rolls back the first fact and receipt.
+These synthetic checks do not prove live-source acceptance or a lossless
+Markdown round trip.
 
 ## Acceptance and rollback
 

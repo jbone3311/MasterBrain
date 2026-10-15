@@ -1,10 +1,10 @@
 # Architecture Decisions
 
-[ADR-206](adr/206_project_fact_markdown_proposal_boundary.md) defines the
-next synthetic-only project-fact Markdown proposal boundary. It is a design,
-not an implemented importer: facts use a distinct reviewed publication
-receipt, so the generic Knowledge proposal approval FK cannot simply be
-reused. Artifact links and inferred facts remain separate decisions.
+[ADR-206](adr/206_project_fact_markdown_proposal_boundary.md) adds a
+synthetic-only, private project-fact Markdown proposal path with explicit
+human batch decisions and a fact-specific publication receipt. It remains on
+an open PR pending hosted gates, not a live-source or automatic-import claim.
+Artifact links and inferred facts remain separate decisions.
 
 [ADR-205](adr/205_dossier_member_proposal_staging.md) admits selected,
 two-citation project-member Markdown rows only into the private proposal

@@ -201,35 +201,29 @@ class ProjectFacts:
         self, ctx: TenantContext, project_id: str, body: ProjectFactWrite,
         idempotency_key: UUID,
     ) -> None:
+        self._validate_fact_inputs(ctx, project_id, body)
+        if not isinstance(idempotency_key, UUID):
+            raise ValueError("UUID idempotency key required")
+
+    def _validate_fact_inputs(
+        self, ctx: TenantContext, project_id: str, body: ProjectFactWrite,
+    ) -> None:
         self.store.require(ctx, "knowledge.review")
         self.store.require(ctx, "brain.content.read")
         if ctx.identity is not None and ctx.identity.client_kind != "human":
             raise AccessDenied("human identity required")
-        if not isinstance(idempotency_key, UUID):
-            raise ValueError("UUID idempotency key required")
         if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
             raise NotFound()
         if not isinstance(body, ProjectFactWrite) or body.project_id != project_id:
             raise ValueError("project fact subject mismatch")
 
-    def _publish_in_transaction(
+    def _validate_basis_in_transaction(
         self, conn: Any, ctx: TenantContext, project_id: str,
-        body: ProjectFactWrite, idempotency_key: UUID,
-    ) -> dict[str, Any]:
-        """Publish under the caller's transaction for atomic human batch review."""
-        self._validate_publish(ctx, project_id, body, idempotency_key)
+        body: ProjectFactWrite,
+    ) -> None:
+        """Recheck the exact project and full quoted basis at every fact gate."""
+        self._validate_fact_inputs(ctx, project_id, body)
         allowed = sorted(ctx.source_ids) if ctx.source_ids is not None else None
-        payload = body.model_dump(mode="json")
-        request_sha = hashlib.sha256(
-            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-        ).hexdigest()
-        fact_id = stable_id(
-            "pfact", str(ctx.tenant_id), str(ctx.actor_id), str(idempotency_key)
-        )
-        conn.execute(
-            "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
-            (f"{ctx.tenant_id}:pfact:{ctx.actor_id}:{idempotency_key}",),
-        )
         project = conn.execute(
             "WITH allowed AS (SELECT %s::text[] AS sources) "
             "SELECT 1 FROM knowledge_projects p CROSS JOIN allowed "
@@ -275,6 +269,25 @@ class ProjectFacts:
                 or prior_fact["predicate"] != body.predicate
                 or prior_fact["value_type"] != body.value_type):
                 raise NotFound()
+
+    def _publish_in_transaction(
+        self, conn: Any, ctx: TenantContext, project_id: str,
+        body: ProjectFactWrite, idempotency_key: UUID,
+    ) -> dict[str, Any]:
+        """Publish under the caller's transaction for atomic human batch review."""
+        self._validate_publish(ctx, project_id, body, idempotency_key)
+        payload = body.model_dump(mode="json")
+        request_sha = hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        fact_id = stable_id(
+            "pfact", str(ctx.tenant_id), str(ctx.actor_id), str(idempotency_key)
+        )
+        conn.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+            (f"{ctx.tenant_id}:pfact:{ctx.actor_id}:{idempotency_key}",),
+        )
+        self._validate_basis_in_transaction(conn, ctx, project_id, body)
         prior = conn.execute(
             "SELECT request_sha256,fact_id FROM knowledge_project_fact_receipts "
             "WHERE actor_id=%s AND idempotency_key=%s",

@@ -332,8 +332,29 @@ source effects or an alternate route through KnowledgeCore.
   reviewed assertion; the separate human batch-review route decides every
   row. Claimed IDs are source-row selectors, not reserved publication IDs;
   approved rows receive new MasterBrain IDs. Event and commitment selections
-  require an already existing local project ID. Facts and artifact links are
-  not accepted in this tranche. A member role never grants access.
+  require an already existing local project ID. Facts are staged through
+  the separate ADR-206 route below; artifact links are not accepted. A
+  member role never grants access.
+- `POST /v1/knowledge/dossier-markdown/fact-proposal-batches` — ADR-206
+  synthetic-only, human-only staging of 1–50 selected `fact` rows from the
+  same bounded dossier format. Requires `knowledge.review`,
+  `brain.content.read`, a UUID idempotency key and a closed typed sidecar
+  for each selected fact. Sidecars supply the full quote, complete direct
+  evidence, value type, confidence and observed time that Markdown omits;
+  `reviewed`, inferred derivation, supersession and unrendered valid-time
+  fields are rejected. The exact line, cited quote evidence, current local
+  project and all evidence grants are checked before an immutable private
+  batch is staged. Claimed `pfact_...` IDs are selectors, not publication IDs.
+- `GET /v1/knowledge/fact-proposal-batches/{batch_id}` — human-only private
+  preview with both scopes, current project/evidence rechecks, untrusted
+  proposed payloads and ordered decision status. Ordinary search, dossier
+  and assistant reads never expose unreviewed facts.
+- `POST /v1/knowledge/fact-proposal-batches/{batch_id}/review` — human-only
+  explicit approve/reject decision for **every** fact in one transaction,
+  binding the exact batch digest and a UUID key. Approval uses the reviewed
+  project-fact publication path and issues a new ID; rejection stores only
+  a reason. One invalid row rolls back all decisions and publications. No
+  live source, artifact association or inferred fact is authorized.
 - `GET /v1/knowledge/proposal-batches/{batch_id}` — human-only private preview
   requiring `knowledge.review` and `brain.content.read`. Rechecks current
   evidence/grants and returns ordered untrusted proposals plus decision status;

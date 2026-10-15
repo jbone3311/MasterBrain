@@ -121,6 +121,18 @@ if an imported member lacks its separate entity citation. Generic batches
 cannot smuggle imported citation columns. Historical ADR-202 rows are not
 rewritten or retroactively rejected.
 
+Migration `0069_private_project_fact_proposals.sql` adds a **separate**
+ADR-206 fact batch, ordered proposal/evidence rows, explicit per-row decisions
+and one atomic review receipt. The generic ADR-186 decision FK still points
+only to `knowledge_receipts`; an approved fact decision instead binds the
+reviewer's `knowledge_project_fact_receipts` row and resulting fact ID. The
+batch binds an exact Markdown/selection context digest to canonical typed
+payloads. SQL requires the selected quote evidence to match the payload and
+its evidence array; deferred closure checks row/evidence/decision counts.
+All five tables are forced-RLS, tenant-login-fenced, immutable and protected
+from TRUNCATE. They are private unreviewed storage, not fact search or a
+source-freshness certificate. No raw Markdown is stored.
+
 Migration `0057_private_statement_proposals.sql` implements ADR-172's separate
 append-only `knowledge_statement_proposals`, ordered
 `knowledge_statement_rows`, and actor-scoped idempotency
@@ -231,6 +243,7 @@ store inferred basis links, unit/currency semantics or export-ready quotes.
 The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
 [ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions.
 ADR-202 now supplies a narrow project/event/commitment Markdown proposal route;
+ADR-205 adds members, and ADR-206 adds a separate project-fact queue;
 the remaining unimplemented additions are inferred-derivation/basis links,
 typed monetary units and uncertain due
 windows, expanded project-artifact dossier presentation and a compatible

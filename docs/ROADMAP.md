@@ -1,17 +1,17 @@
 # MasterBrain Roadmap
 
-ADR-206 specifies, but does **not yet implement**, the next selected
-source-stated project-fact Markdown proposal tranche. The existing ADR-186
-approval receipt is tied to generic Knowledge publications, while ADR-195
-project facts have a separate receipt and publication path. The next code
-checkpoint is therefore a separate private, atomic fact queue with exact
-export-line/citation matching, current source and project rechecks, explicit
-human decisions, and a synthetic export-to-review acceptance run. The existing
-fact publisher now has a tested transaction-bound primitive so that later
-batch review can publish all approved facts atomically; the queue and route
-are **not yet implemented**. Artifact
-links and inferred facts still need independent contracts. No live source or
-FOS-Master cutover follows from this design.
+ADR-206 now implements a **synthetic-only** selected source-stated
+project-fact Markdown proposal path on an open PR branch. Facts use separate
+private, atomic batch/decision tables because their reviewed publication
+receipt differs from ADR-186's generic Knowledge receipt. The exact exported
+fact line, typed sidecar, cited quote, current project and all direct evidence
+are checked at stage, private preview and explicit human review. Approval
+creates a new fact ID inside the batch transaction; rejection creates no fact.
+Next: deepen false-citation, scope/revocation and populated-restore proofs;
+obtain exact-head hosted CI/strict-runtime/restore and merged-main gates;
+then design artifact-link staging and typed inferred basis separately. This
+is not an automatic or lossless round trip, live-source gate or FOS-Master
+cutover.
 
 ADR-205 adds selected project-member roles to the synthetic Markdown-to-
 private-proposal path, with exact member/entity citation IDs retained and
@@ -43,7 +43,8 @@ an owner may select project, event and commitment rows from the current export
 format, provide missing typed metadata, and hold them for explicit ADR-186
 human review. It binds exact Markdown/selection context to the immutable batch
 and rechecks full quotes on specifically cited current evidence. ADR-205 later
-adds member staging; project-fact and artifact-link staging, inference/basis links, full-fidelity
+adds member staging; ADR-206 now adds a separate selected source-stated
+project-fact queue. Artifact-link staging, inference/basis links, full-fidelity
 round trip and live-source acceptance remain separate gates.
 
 ADR-201 adds an owner-only current-evidence inspection of the selected
@@ -284,7 +285,7 @@ Each lane must pass its own acceptance gate before the next dependent step:
 | Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Deferred by the owner's synthetic-only decision. Continue fictional/disposable scope and exclusion proof; seek new explicit authorization and region, budget, retention, identity and exact-source decisions before any private pilot | No live source, hosted identity, recovery or operations acceptance exists |
 | FileOS migration ([migration plan](FOS_MIGRATION.md)) | Review the six recorded donor-policy differences and fault/platform cases, then run an owner-authorized read-only shadow on a bounded root | No v2 current publication, FileOS effect, donor cutover or retirement is approved |
 | FOS intelligence ([preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md)) | Extend the nine isolated recipe baselines to report composition and Schwab's unsupported eras; prove credit-line PDF-to-text completeness, harden ADR-189's private FileOS text replay into a separately attested worker/source tier, then design owner review/publication and other-format proofs for the statement ledger | No donor-equivalent investment dossier, owner-approved statement row or verified holdings claim exists yet |
-| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds a private source-stated proposal queue and atomic human per-row review; ADR-197/200/201 add cited Markdown export, inventory and current-preview inspection; ADR-202/205 stage selected project/event/commitment/member rows as private proposals with full cited-quote and entity-reference checks | Fact/artifact staging, inferred proposal path, automatic dossier generation and full round trip remain open; overfull/uncitable exports refuse, and live-source acceptance remains a prerequisite |
+| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds private source-stated proposals; ADR-197/200/201 add cited Markdown export, inventory and inspection; ADR-202/205 stage selected project/event/commitment/member rows; ADR-206 adds separate selected fact staging and explicit atomic fact review on an open PR | Hosted/merged-main gates for the fact route, artifact staging, inferred proposals, automatic dossier generation and full round trip remain open; overfull/uncitable exports refuse, and live-source acceptance requires separate approval |
 | Reviewed actions ([#93](https://github.com/jbone3311/MasterBrain/issues/93)) | Specify typed propose/preview/approve/execute contracts and reversible first actions | The existing Brain API stays read-only until separate grants, safety tests and approval exist |
 
 The donor remains pinned at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`

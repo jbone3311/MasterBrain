@@ -260,6 +260,34 @@ class KnowledgeProposalReviewRequest(ClosedModel):
         return values
 
 
+class FactProposalDecision(ClosedModel):
+    proposal_id: Annotated[str, Field(pattern=r"^kfproposal_[a-f0-9]{32}$")]
+    decision: Literal["approved", "rejected"]
+    reason: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def reason_contract(self) -> Self:
+        if self.decision == "approved" and self.reason is not None:
+            raise ValueError("approval does not take a reason")
+        if self.decision == "rejected" and (
+            self.reason is None or not self.reason.strip()
+        ):
+            raise ValueError("rejection requires a reason")
+        return self
+
+
+class FactProposalReviewRequest(ClosedModel):
+    batch_sha256: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    decisions: list[FactProposalDecision] = Field(min_length=1, max_length=50)
+
+    @field_validator("decisions")
+    @classmethod
+    def unique_rows(cls, values: list[FactProposalDecision]) -> list[FactProposalDecision]:
+        if len({item.proposal_id for item in values}) != len(values):
+            raise ValueError("duplicate fact proposal decision")
+        return values
+
+
 class KnowledgeSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     limit: int = Field(default=10, ge=1, le=50, strict=True)
