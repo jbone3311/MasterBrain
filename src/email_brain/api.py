@@ -992,7 +992,6 @@ def create_app(
                 expected_text_sha256=body.expected_text_sha256,
                 expected_sheet_count=body.expected_sheet_count,
                 expected_cell_count=body.expected_cell_count,
-                code_revision=body.code_revision,
             )
         except ValueError:
             raise HTTPException(422, "invalid_email_xlsx_review") from None

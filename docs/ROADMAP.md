@@ -1,5 +1,10 @@
 # MasterBrain Roadmap
 
+ADR-244 closes the reviewer-supplied XLSX code-provenance gap before any
+operator or live-source expansion. The server owns a semantic transform
+revision and migration 0086 enforces it; actual-image, hosted and restore
+gates still precede merge.
+
 ADR-243 adds an exact-review, account-pinned Email XLSX publication command
 with a tenant-bound worker login. Fictional command-to-PostgreSQL execution
 passes; the first-party review screen and actual-image/hosted/restore gates

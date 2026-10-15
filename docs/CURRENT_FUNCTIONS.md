@@ -1,5 +1,9 @@
 # Current MasterBrain functions
 
+ADR-244 update: the Email XLSX human review request supplies only the exact
+result digest and counts; it cannot claim the server's code revision. The
+private worker records a semantic bridge revision guarded by migration 0086.
+
 Updated 2026-10-15; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
 verification. “Available” below means executable in this repository with
 synthetic/disposable inputs; it does **not** mean hosted, connected to real accounts,

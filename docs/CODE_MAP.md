@@ -1,5 +1,9 @@
 # Current MasterBrain code map
 
+ADR-244 adds the [server-owned bridge revision](../src/masterbrain/email_xlsx_document_bridge.py)
+and [SQL guard](../migrations/0086_email_xlsx_bridge_revision_guard.sql),
+with refusal tests in the [bridge suite](../tests/test_email_xlsx_document_bridge_postgres.py).
+
 ADR-243 adds [one-review Email XLSX publication command](../src/masterbrain/email_xlsx_publication_controller.py),
 its [private CLI](../src/masterbrain/cli.py), and fictional
 [unit](../tests/test_email_xlsx_publication_controller.py) and

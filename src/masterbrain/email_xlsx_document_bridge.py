@@ -26,7 +26,7 @@ from masterbrain.datacore.persistence import (
 from masterbrain.email_xlsx_approvals import _VERSION
 from masterbrain.email_xlsx_results import _APPROVAL_ID, _current
 
-_CODE_REVISION = re.compile(r"^[^\x00]{1,200}$")
+BRIDGE_CODE_REVISION = "email-xlsx-document-bridge-v2"
 _SHA256 = re.compile(r"^[a-f0-9]{64}$")
 _REVIEW_ID = re.compile(r"^xrev_[a-f0-9]{32}$")
 
@@ -104,7 +104,7 @@ class EmailXlsxDocumentBridge:
     def review(
         self, principal: Principal, approval_id: str, idempotency_key: UUID,
         *, expected_text_sha256: str, expected_sheet_count: int,
-        expected_cell_count: int, code_revision: str,
+        expected_cell_count: int,
     ) -> dict[str, Any]:
         """Seal a one-hour human intent; do not publish the document."""
         if principal.client_kind != "human":
@@ -115,8 +115,6 @@ class EmailXlsxDocumentBridge:
         if (
             type(approval_id) is not str or _APPROVAL_ID.fullmatch(approval_id) is None
             or not isinstance(idempotency_key, UUID)
-            or type(code_revision) is not str
-            or _CODE_REVISION.fullmatch(code_revision) is None
             or type(expected_text_sha256) is not str
             or _SHA256.fullmatch(expected_text_sha256) is None
             or type(expected_sheet_count) is not int
@@ -126,7 +124,7 @@ class EmailXlsxDocumentBridge:
         ):
             raise ValueError("invalid Email XLSX review request")
         request_hash = _canonical_digest({
-            "approval_id": approval_id, "code_revision": code_revision,
+            "approval_id": approval_id, "code_revision": BRIDGE_CODE_REVISION,
             "contract": "email-xlsx-publication-review-v1",
             "expected_text_sha256": expected_text_sha256,
             "expected_sheet_count": expected_sheet_count,
@@ -176,7 +174,7 @@ class EmailXlsxDocumentBridge:
                     (
                         ctx.tenant_id, review_id, ctx.actor_id, idempotency_key,
                         approval_id, approval["account_id"], expected_text_sha256,
-                        expected_sheet_count, expected_cell_count, code_revision,
+                        expected_sheet_count, expected_cell_count, BRIDGE_CODE_REVISION,
                         request_hash,
                     ),
                 )
@@ -214,6 +212,8 @@ class EmailXlsxDocumentBridge:
                 ).fetchone()
                 if review is None:
                     raise NotFound()
+                if review["code_revision"] != BRIDGE_CODE_REVISION:
+                    raise Conflict("Email XLSX review has a different bridge revision")
                 if expected_account_id is not None and review["account_id"] != expected_account_id:
                     raise AccessDenied("Email XLSX review belongs to another account")
                 approval = self._basis(conn, ctx, review["approval_id"])

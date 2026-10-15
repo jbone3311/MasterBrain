@@ -532,6 +532,7 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
         "0083_email_xlsx_extraction_results.sql",
         "0084_email_xlsx_document_bridge.sql",
         "0085_email_xlsx_publication_reviews.sql",
+        "0086_email_xlsx_bridge_revision_guard.sql",
     ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:

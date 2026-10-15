@@ -1,5 +1,10 @@
 # MasterBrain Security and Privacy
 
+ADR-244 removes reviewer control over the Email XLSX provenance revision.
+The API rejects an extra `code_revision`; code and SQL require the server's
+semantic bridge revision on every new review and publication receipt. This
+does not equate a semantic transform revision with a Git commit.
+
 ADR-243 requires an exact-scope worker credential and a tenant-bound database
 login for one reviewed synthetic Email XLSX publication. The private command
 pins one account, reauthenticates inside the publication transaction, has a

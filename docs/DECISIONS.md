@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-244](adr/244_server_owned_email_xlsx_bridge_revision.md) makes the XLSX
+bridge's transform revision server-owned. Human reviewers bind an exact result,
+not a code version; migration 0086 rejects newly forged review/receipt
+revisions without rewriting older rows.
+
 [ADR-243](adr/243_restricted_email_xlsx_publication_command.md) exposes one
 ADR-242 review through a private, account-pinned, tenant-bound worker command.
 Check mode reads no selected result; execution publishes only the reviewed

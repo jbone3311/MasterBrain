@@ -237,7 +237,6 @@ def test_actual_image_seals_then_reviews_email_xlsx_document(
         expected_text_sha256=sealed["text_sha256"],
         expected_sheet_count=sealed["sheet_count"],
         expected_cell_count=sealed["cell_count"],
-        code_revision="actual-image-email-xlsx-v1",
     )
     assert reviewed["document_published"] is False
     published = bridge.publish(

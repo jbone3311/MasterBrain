@@ -283,6 +283,7 @@ def protected_database(
             "0083_email_xlsx_extraction_results.sql",
             "0084_email_xlsx_document_bridge.sql",
             "0085_email_xlsx_publication_reviews.sql",
+            "0086_email_xlsx_bridge_revision_guard.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:

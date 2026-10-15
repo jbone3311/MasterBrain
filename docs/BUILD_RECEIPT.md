@@ -2,6 +2,24 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Server-owned Email XLSX bridge provenance — current unmerged branch
+
+ADR-244 and migration 0086 remove the human-supplied code-revision claim.
+The server records `email-xlsx-document-bridge-v2`; new direct-SQL review
+and receipt inserts with another value are rejected, while older immutable
+rows remain untouched. The focused bridge, command, migration, recovery and
+protected-table run passed **47/47**, including **44/44 PostgreSQL-marked**.
+Ruff and strict mypy over 140 source files passed; the actual-image suite
+collected but did not execute locally. The full local synthetic suite then
+passed **3,819 tests, 19 skipped, zero failed** in 5m25s on locked Python
+3.11.13 and disposable loopback-only PostgreSQL 17.11;
+**690/691 PostgreSQL-marked tests executed**. Browser tests passed
+**167/167**, and the pinned FOS XLSX parity suite passed **32/32** with donor
+commit and source SHA-256 verified. Documentation links (345 Markdown files,
+1,806 paths/fragments), structural gate and whitespace check passed. Hosted
+exact-head CI, actual-image execution and independent populated restore remain
+open for this correction.
+
 ## Restricted Email XLSX publication command — current unmerged branch
 
 ADR-243 adds a tenant-bound, account-pinned private worker command for one

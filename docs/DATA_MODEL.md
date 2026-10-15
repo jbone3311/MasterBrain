@@ -1,5 +1,11 @@
 # MasterBrain Data Model
 
+Migration 0086 adds insert guards for the semantic
+`email-xlsx-document-bridge-v2` revision on new Email XLSX publication reviews
+and receipts. The revision is set by server code, not human input; it is not
+a commit hash. Earlier immutable rows remain unchanged, but this bridge
+refuses to publish a review with another revision (ADR-244).
+
 Migration 0085 adds immutable, tenant-fenced
 `brain_email_xlsx_publication_reviews` rows binding one human owner, exact
 synthetic approval/result digest and counts, and a one-hour expiry. New 0084

@@ -49,7 +49,6 @@ class EmailXlsxReviewRequest(ClosedModel):
     expected_text_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     expected_sheet_count: int = Field(ge=1, le=20, strict=True)
     expected_cell_count: int = Field(ge=1, le=20000, strict=True)
-    code_revision: str = Field(min_length=1, max_length=200)
 
 
 class GroundedAnswerRequest(ClosedModel):

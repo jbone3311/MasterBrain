@@ -1,5 +1,9 @@
 # MasterBrain Feature Inventory
 
+ADR-244 makes the Email XLSX bridge provenance revision server-owned and
+SQL-guarded; reviewer-supplied code-revision claims are rejected. This does
+not turn extracted spreadsheet text into certified financial facts.
+
 ADR-243 adds a private, account-pinned, tenant-bound worker command for one
 ADR-242-reviewed synthetic Email XLSX text derivative. It does not authorize
 live mail, a first-party review screen or cell-level spreadsheet citations.

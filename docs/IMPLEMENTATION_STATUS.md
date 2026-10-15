@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+ADR-244 removes caller-declared XLSX bridge code provenance. Server code
+and migration 0086 enforce one semantic revision for new review/receipt
+rows; 47 focused tests pass, including 44 PostgreSQL-marked executions.
+The full local synthetic suite passes 3,819 tests with 19 skips. Actual-image,
+hosted CI and independent populated restore remain open for this change.
+
 ADR-243 makes the reviewed synthetic Email XLSX bridge operable through a
 private worker command with exact scopes, account pin and tenant-bound SQL
 login. Fictional command-to-PostgreSQL check, wrong-account refusal,

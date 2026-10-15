@@ -17,7 +17,7 @@ from email_brain.api import create_app
 from email_brain.auth import Credential, Principal, TokenRegistry
 from email_brain.store import AccessDenied, Conflict, NotFound
 from masterbrain.datacore.persistence import DataCoreStore
-from masterbrain.email_xlsx_document_bridge import EmailXlsxDocumentBridge
+from masterbrain.email_xlsx_document_bridge import BRIDGE_CODE_REVISION, EmailXlsxDocumentBridge
 from masterbrain.email_xlsx_results import EmailXlsxResults
 
 pytestmark = pytest.mark.postgres
@@ -34,11 +34,11 @@ def _published(database, tenant, monkeypatch: pytest.MonkeyPatch):
     return store, admin, reviewer, approval, sealed
 
 
-def _review(bridge, reviewer, approval, sealed, key, *, revision="xlsx-bridge-test-v1"):
+def _review(bridge, reviewer, approval, sealed, key):
     return bridge.review(
         reviewer, approval, key, expected_text_sha256=sealed["text_sha256"],
         expected_sheet_count=sealed["sheet_count"],
-        expected_cell_count=sealed["cell_count"], code_revision=revision,
+        expected_cell_count=sealed["cell_count"],
     )
 
 
@@ -72,14 +72,14 @@ def test_reviewed_xlsx_publishes_exact_cited_document_and_replays(
     assert bridge.publish(_worker_context(reviewer), reviewed["review_id"], key) == {
         **published, "changed": False,
     }
-    with pytest.raises(Conflict, match="reviewed differently"):
-        _review(bridge, reviewer, approval, sealed, uuid4(), revision="different")
+    assert _review(bridge, reviewer, approval, sealed, uuid4()) == {
+        **reviewed, "changed": False,
+    }
     with pytest.raises(Conflict, match="reviewed result identity changed"):
         bridge.review(
             reviewer, approval, uuid4(), expected_text_sha256="0" * 64,
             expected_sheet_count=sealed["sheet_count"],
             expected_cell_count=sealed["cell_count"],
-            code_revision="xlsx-bridge-test-v1",
         )
     with store.transaction(reviewer.context) as conn:
         receipt = conn.execute(
@@ -87,11 +87,24 @@ def test_reviewed_xlsx_publishes_exact_cited_document_and_replays(
             "WHERE approval_id=%s", (approval,),
         ).fetchone()
         assert receipt is not None
+        assert receipt["code_revision"] == BRIDGE_CODE_REVISION
         assert receipt["evidence_id"] == published["evidence_id"]
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_provenance WHERE output_id=%s",
             (published["document_id"],),
         ).fetchone()["n"] == 1
+        with pytest.raises(
+            psycopg.errors.RaiseException, match="invalid Email XLSX bridge revision",
+        ), conn.transaction():
+            conn.execute(
+                "INSERT INTO brain_email_xlsx_publication_reviews("
+                "tenant_id,id,actor_id,idempotency_key,approval_id,account_id,"
+                "text_sha256,sheet_count,cell_count,code_revision,request_hash) "
+                "SELECT tenant_id,%s,actor_id,%s,approval_id,account_id,"
+                "text_sha256,sheet_count,cell_count,'caller-claimed-revision',request_hash "
+                "FROM brain_email_xlsx_publication_reviews WHERE id=%s",
+                ("xrev_" + uuid4().hex, uuid4(), reviewed["review_id"]),
+            )
         with pytest.raises(
             psycopg.errors.RaiseException,
             match="invalid Email XLSX document bridge basis",
@@ -179,14 +192,12 @@ def test_no_result_or_nonhuman_cannot_review(
         bridge.review(
             reviewer, approval, uuid4(), expected_text_sha256="0" * 64,
             expected_sheet_count=1, expected_cell_count=1,
-            code_revision="xlsx-bridge-test-v1",
         )
     with pytest.raises(AccessDenied, match="human document review required"):
         bridge.review(
             Principal(pg.datacore_context(ctx), "assistant"),
             approval, uuid4(), expected_text_sha256="0" * 64,
             expected_sheet_count=1, expected_cell_count=1,
-            code_revision="xlsx-bridge-test-v1",
         )
 
 
@@ -227,8 +238,7 @@ def test_owner_api_inspects_bounded_text_then_publishes_exact_review(
             route + "/publication-reviews",
             json={"expected_text_sha256": "0" * 64,
                   "expected_sheet_count": page["sheet_count"],
-                  "expected_cell_count": page["cell_count"],
-                  "code_revision": "api-xlsx-review-v1"},
+                  "expected_cell_count": page["cell_count"]},
             headers={**headers, "Idempotency-Key": str(uuid4())},
         )
         assert wrong.status_code == 409
@@ -236,11 +246,19 @@ def test_owner_api_inspects_bounded_text_then_publishes_exact_review(
             route + "/publication-reviews",
             json={"expected_text_sha256": page["text_sha256"],
                   "expected_sheet_count": page["sheet_count"],
-                  "expected_cell_count": page["cell_count"],
-                  "code_revision": "api-xlsx-review-v1"},
+                  "expected_cell_count": page["cell_count"]},
             headers={**headers, "Idempotency-Key": str(uuid4())},
         )
         assert reviewed.status_code == 201
+        forged_revision = api.post(
+            route + "/publication-reviews",
+            json={"expected_text_sha256": page["text_sha256"],
+                  "expected_sheet_count": page["sheet_count"],
+                  "expected_cell_count": page["cell_count"],
+                  "code_revision": "caller-claimed-revision"},
+            headers={**headers, "Idempotency-Key": str(uuid4())},
+        )
+        assert forged_revision.status_code == 422
         assert reviewed.json()["changed"] is True
         assert reviewed.json()["document_published"] is False
         before = api.post(

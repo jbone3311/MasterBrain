@@ -27,6 +27,11 @@ extraction, invoke the worker bridge, fetch original XLSX bytes or assert
 cell-level financial truth. The first-party review screen and real-image/
 hosted gates remain open.
 
+ADR-244 removes caller-supplied `code_revision` from the publication-review
+request. The server records its own semantic bridge revision, and the database
+rejects new review/receipt rows claiming another revision. Unknown request
+fields return 422; a human review cannot attest the executing code.
+
 ## Progressive access
 
 1. **Orient:** return compact results: title/summary, object type, freshness,

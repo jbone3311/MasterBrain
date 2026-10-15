@@ -18,7 +18,8 @@ scoped Brain API. On the open development PR, one separately approved
 synthetic Email XLSX can be published as an occurrence-cited DataCore text
 document after a human-only digest/count review and separate worker
 publication (ADR-242), now reachable through a private, account-bound worker
-command (ADR-243). This is not live
+command (ADR-243); the server owns the bridge provenance revision (ADR-244).
+This is not live
 Fastmail, a cell-level citation or financial review; actual-image, hosted CI
 and restore gates remain open. The first-party `/brain` workspace and
 provider-neutral client can search current evidence, show exact source quotes,
