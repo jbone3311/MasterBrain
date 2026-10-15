@@ -182,6 +182,7 @@ class WorkerIdentity:
             frozenset({"brain.document.publish"}),
             frozenset({"brain.document.publish", "email.evidence.read"}),
             frozenset({"brain.source.ingest", "brain.document.publish"}),
+            frozenset({"brain.source.ingest", "brain.document.publish", "email.evidence.read"}),
             frozenset({"brain.document.publish", "brain.index.activate"}),
             frozenset({"brain.index.activate"}),
         }:

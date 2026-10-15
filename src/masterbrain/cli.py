@@ -33,6 +33,9 @@ from masterbrain.email_bridge_controller import (
     run_email_part_bridge_batch_controller,
     run_email_part_bridge_plan_controller,
 )
+from masterbrain.email_xlsx_publication_controller import (
+    run_email_xlsx_publication_controller,
+)
 from masterbrain.fileos_controller import run_fileos_controller
 from masterbrain.fileos_index_controller import run_fileos_index_controller
 from masterbrain.source_tier_email_controller import run_source_tier_email_controller
@@ -237,6 +240,14 @@ def build_parser() -> argparse.ArgumentParser:
     email_pdf_tier_replay.add_argument("--config", type=Path, required=True)
     email_pdf_tier_replay.add_argument("--review-id", required=True)
     email_pdf_tier_replay.add_argument("--check", action="store_true")
+    email_xlsx_publish = email_commands.add_parser(
+        "publish-reviewed-xlsx", help="Publish one human-reviewed synthetic Email XLSX"
+    )
+    email_xlsx_publish.add_argument("--config", type=Path, required=True)
+    email_xlsx_publish.add_argument("--review-id", required=True)
+    email_xlsx_publish.add_argument("--idempotency-key", type=UUID, required=True)
+    email_xlsx_publish.add_argument("--check", action="store_true")
+    email_xlsx_publish.add_argument("--tenant-bound-db", action="store_true")
     bridge_plan = email_commands.add_parser(
         "bridge-plan", help="Preview current Email versions for bridging"
     )
@@ -404,6 +415,14 @@ def main(argv: Sequence[str] | None = None) -> None:
                 raise ValueError("MASTERBRAIN_DSN is required")
             print(_json(run_source_tier_email_pdf_controller(
                 args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "email" and args.email_command == "publish-reviewed-xlsx":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_email_xlsx_publication_controller(
+                args.config, dsn, args.review_id, args.idempotency_key,
                 check=args.check, tenant_bound_db=args.tenant_bound_db,
             )))
         elif args.command == "fileos" and args.file_command == "archive-text":

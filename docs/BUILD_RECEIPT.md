@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Restricted Email XLSX publication command — current unmerged branch
+
+ADR-243 adds a tenant-bound, account-pinned private worker command for one
+ADR-242 review. Unit tests passed **12/12**. The command-to-PostgreSQL and
+adjacent bridge tests passed **6/6**, all PostgreSQL-marked executed, using
+a separate worker actor and tenant-bound login. It checked without selected
+result access, rejected a wrong account, published, idempotently replayed and
+returned cited text through Email-family search. Ruff and strict mypy over
+140 source files passed at this checkpoint. The complete local synthetic
+suite then passed **3,819 tests, 19 skipped, zero failed** in 5m30s on locked
+Python 3.11.13 and disposable loopback-only PostgreSQL 17.11;
+**690/691 PostgreSQL-marked tests executed**. Documentation links
+(344 Markdown files, 1,802 paths/fragments), structural gate and whitespace
+check passed. Actual-image command execution, hosted exact-head CI and
+independent populated restore remain open for ADR-243.
+
 ## Human/worker Email XLSX role correction — current unmerged branch
 
 ADR-242 and migration 0085 resolve the token-registry mismatch in ADR-241.

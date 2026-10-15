@@ -1,5 +1,10 @@
 # MasterBrain Roadmap
 
+ADR-243 adds an exact-review, account-pinned Email XLSX publication command
+with a tenant-bound worker login. Fictional command-to-PostgreSQL execution
+passes; the first-party review screen and actual-image/hosted/restore gates
+are still needed before this becomes an accepted operator workflow.
+
 Current correction: ADR-242 separates human XLSX inspection/review from
 worker-only document publication. Migration 0085 enforces an unexpired,
 exact-result human review for each new receipt; the human credential does not

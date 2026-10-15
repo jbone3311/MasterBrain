@@ -6,6 +6,32 @@ commands. The legacy `email-brain` command remains the Email capability surface.
 shared command moves, renames, quarantines, deletes or modifies a source file or
 mailbox.
 
+## Publish one reviewed synthetic Email XLSX text document
+
+After a human has used the ADR-242 inspection and publication-review API,
+store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It contains `version`, the exact `account_id`, absolute
+`credentials_file` and `token_file` paths. The token must be a worker token
+with **exactly** `brain.source.ingest`, `brain.document.publish` and
+`email.evidence.read`; the database login must be bound to that same tenant.
+Set `MASTERBRAIN_DSN` outside the config and arguments.
+
+```sh
+masterbrain email publish-reviewed-xlsx \
+  --config /private/operator/email-xlsx-publication.json \
+  --review-id xrev_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --idempotency-key 00000000-0000-4000-8000-000000000001 \
+  --tenant-bound-db --check
+```
+
+Check mode authenticates and checks the database binding but reads no selected
+review/result and publishes nothing. Omit `--check` only for the exact
+fictional review selected by the operator. Execution rechecks the human
+review, account, source, owner membership and worker credential inside the
+transaction; a replay with the same key returns the same content-free receipt.
+No provider request, mailbox effect, cell-level citation or financial claim
+is made. Live Fastmail, actual-image and hosted acceptance remain closed.
+
 ADR-218 adds a shared DataCore confined FileOS text replay used by statement
 proposals and human source-tier reviews. It re-reads only one already-authorized
 current source, verifies source bytes and the complete normalized text, and

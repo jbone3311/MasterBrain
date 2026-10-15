@@ -1,5 +1,11 @@
 # MasterBrain Security and Privacy
 
+ADR-243 requires an exact-scope worker credential and a tenant-bound database
+login for one reviewed synthetic Email XLSX publication. The private command
+pins one account, reauthenticates inside the publication transaction, has a
+nonpublishing check mode and suppresses sensitive errors. It does not fetch
+provider bytes or permit a live-source pilot.
+
 ADR-242 keeps Email XLSX human review separate from DataCore publication:
 owner-only inspection and digest/count review use Email scopes; only a
 worker with ingest/document scopes may publish. Migration 0085 guards every

@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-243 makes the reviewed synthetic Email XLSX bridge operable through a
+private worker command with exact scopes, account pin and tenant-bound SQL
+login. Fictional command-to-PostgreSQL check, wrong-account refusal,
+publication, replay and retrieval pass. The full local synthetic suite passes
+3,819 tests with 19 skips. This checkpoint still needs actual-image command
+execution, hosted CI and independent populated restore.
+
 ADR-242 corrects ADR-241's unreachable combined credential: the API now
 supports human-only, bounded XLSX result inspection and digest/count-bound
 publication review; a separate worker uses the private bridge. Migration

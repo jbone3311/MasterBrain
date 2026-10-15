@@ -1,5 +1,9 @@
 # MasterBrain Feature Inventory
 
+ADR-243 adds a private, account-pinned, tenant-bound worker command for one
+ADR-242-reviewed synthetic Email XLSX text derivative. It does not authorize
+live mail, a first-party review screen or cell-level spreadsheet citations.
+
 ADR-242 update: human XLSX inspection and exact digest/count review now use
 two owner-only API calls; a separately scoped private worker publishes the
 reviewed text. Migration 0085 enforces the split. Existing ADR-241 feature

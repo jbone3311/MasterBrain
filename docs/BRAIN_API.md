@@ -21,7 +21,8 @@ returns a bounded untrusted text page and exact digest/counts; a separate
 `POST /v1/brain/email-xlsx-results/{approval_id}/publication-reviews` seals
 those values for one hour without publication. Both require Email review and
 evidence-read scopes. The worker publication service is private and needs
-DataCore ingest/document scopes. There is no public endpoint to approve
+DataCore ingest/document scopes. ADR-243 makes that private service callable
+through one account-pinned, tenant-bound worker command. There is no public endpoint to approve
 extraction, invoke the worker bridge, fetch original XLSX bytes or assert
 cell-level financial truth. The first-party review screen and real-image/
 hosted gates remain open.

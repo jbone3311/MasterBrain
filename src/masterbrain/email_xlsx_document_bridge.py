@@ -193,7 +193,8 @@ class EmailXlsxDocumentBridge:
 
     def publish(
         self, ctx: TenantContext, review_id: str, idempotency_key: UUID,
-        *, authorize: Callable[[], None] | None = None,
+        *, expected_account_id: UUID | None = None,
+        authorize: Callable[[], None] | None = None,
     ) -> dict[str, Any]:
         """Worker publishes only the exact unexpired human-reviewed result."""
         for scope in ("brain.source.ingest", "brain.document.publish", "email.evidence.read"):
@@ -213,6 +214,8 @@ class EmailXlsxDocumentBridge:
                 ).fetchone()
                 if review is None:
                     raise NotFound()
+                if expected_account_id is not None and review["account_id"] != expected_account_id:
+                    raise AccessDenied("Email XLSX review belongs to another account")
                 approval = self._basis(conn, ctx, review["approval_id"])
                 clock = conn.execute("SELECT clock_timestamp() AS now").fetchone()
                 assert clock is not None

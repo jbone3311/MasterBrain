@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-243](adr/243_restricted_email_xlsx_publication_command.md) exposes one
+ADR-242 review through a private, account-pinned, tenant-bound worker command.
+Check mode reads no selected result; execution publishes only the reviewed
+synthetic text and has no Email source effect.
+
 [ADR-242](adr/242_split_email_xlsx_review_and_worker_publication.md) corrects
 ADR-241's role mismatch: a human inspects and seals one exact synthetic XLSX
 result; a separately scoped worker publishes it. Migration 0085 requires

@@ -1,5 +1,11 @@
 # Current MasterBrain code map
 
+ADR-243 adds [one-review Email XLSX publication command](../src/masterbrain/email_xlsx_publication_controller.py),
+its [private CLI](../src/masterbrain/cli.py), and fictional
+[unit](../tests/test_email_xlsx_publication_controller.py) and
+[command-to-PostgreSQL](../tests/test_email_xlsx_publication_controller_postgres.py)
+tests. See [ADR-243](adr/243_restricted_email_xlsx_publication_command.md).
+
 Updated 2026-10-15. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
