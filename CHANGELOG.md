@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-217: added append-only, human-reviewed source-tier classifications tied
+  to current evidence/version/document hashes and exact source quotes, with
+  source-scoped Brain API reads. These are not independent byte attestations
+  or approvals of financial facts.
+
 - ADR-216: added exact-hash synthetic FOS fact-verifier parity for tier
   heuristics, numeric variants and confirmation status; documented why these
   donor outcomes cannot certify MasterBrain financial claims.

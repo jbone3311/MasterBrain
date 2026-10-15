@@ -40,7 +40,9 @@ _ENTITY_ID = re.compile(r"^entity_[a-f0-9]{32}$")
 _PROJECT_ID = re.compile(r"^project_[a-f0-9]{32}$")
 _PROJECT_ARTIFACT_ID = re.compile(r"^partifact_[a-f0-9]{32}$")
 _PROJECT_FACT_ID = re.compile(r"^pfact_[a-f0-9]{32}$")
+_SOURCE_TIER_REVIEW_ID = re.compile(r"^stier_[a-f0-9]{32}$")
 _EVIDENCE_ID = re.compile(r"^evidence_[a-f0-9]{32}$")
+_SHA256 = re.compile(r"^[a-f0-9]{64}$")
 _EVENT_TYPE = re.compile(r"^[a-z][a-z0-9_.-]{0,99}$")
 _FACT_EXPORT_HEADER = (
     "# Source-stated project facts (partial export)\n\n"
@@ -628,6 +630,58 @@ class BrainReadClient:
             names.append(name)
         if names != sorted(set(names)):
             raise BrainClientError("invalid_response")
+        return data
+
+    def source_tier_reviews(self, evidence_id: str) -> dict[str, Any]:
+        """Read current human classifications, never a winning or verified tier."""
+        if not isinstance(evidence_id, str) or not _EVIDENCE_ID.fullmatch(evidence_id):
+            raise BrainClientError("invalid_request")
+        data = self._request(
+            "GET", f"/v1/knowledge/evidence/{evidence_id}/source-tier-reviews",
+        )
+        rows = data.get("reviews")
+        if (set(data) != {"evidence_id", "reviews", "truncated", "meaning",
+                         "untrusted_content"}
+                or data.get("evidence_id") != evidence_id
+                or not isinstance(rows, list) or len(rows) > 25
+                or type(data.get("truncated")) is not bool
+                or data.get("meaning") !=
+                "human_metadata_classification_not_byte_attestation_or_financial_truth"
+                or data.get("untrusted_content") is not True):
+            raise BrainClientError("invalid_response")
+        allowed = {
+            "T1": {"signed_instrument", "regulatory_filing"},
+            "T2": {"issuer_statement", "administrator_statement"},
+            "T3": {"internal_record", "other"},
+        }
+        prior: tuple[datetime, str] | None = None
+        for row in rows:
+            if not isinstance(row, dict) or set(row) != {
+                "id", "evidence_id", "source_version_id", "source_sha256",
+                "document_id", "document_sha256", "source_tier",
+                "authority_kind", "recorded_at",
+            }:
+                raise BrainClientError("invalid_response")
+            recorded = self._aware_datetime(row["recorded_at"])
+            position = (recorded, row["id"]) if recorded else None
+            if (row["evidence_id"] != evidence_id
+                    or not isinstance(row["id"], str)
+                    or not _SOURCE_TIER_REVIEW_ID.fullmatch(row["id"])
+                    or not isinstance(row["source_version_id"], str)
+                    or not _IDENTITY.fullmatch(row["source_version_id"])
+                    or not isinstance(row["document_id"], str)
+                    or not _IDENTITY.fullmatch(row["document_id"])
+                    or not isinstance(row["source_sha256"], str)
+                    or not _SHA256.fullmatch(row["source_sha256"])
+                    or not isinstance(row["document_sha256"], str)
+                    or not _SHA256.fullmatch(row["document_sha256"])
+                    or not isinstance(row["source_tier"], str)
+                    or row["source_tier"] not in allowed
+                    or not isinstance(row["authority_kind"], str)
+                    or row["authority_kind"] not in allowed[row["source_tier"]]
+                    or position is None or prior is not None and position >= prior):
+                raise BrainClientError("invalid_response")
+            prior = position
         return data
 
     def project_facts(

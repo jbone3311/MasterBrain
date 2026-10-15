@@ -20,10 +20,46 @@ ProjectArtifactIdentity = Annotated[str, Field(pattern=r"^partifact_[a-f0-9]{32}
 ProjectFactIdentity = Annotated[str, Field(pattern=r"^pfact_[a-f0-9]{32}$")]
 EntityIdentity = Annotated[str, Field(pattern=r"^entity_[a-f0-9]{32}$")]
 Predicate = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,99}$")]
+SourceVersionIdentity = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")]
+DocumentIdentity = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")]
+Sha256 = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 KnowledgeKind = Literal[
     "entity", "relationship", "claim", "event", "project", "commitment", "member", "correction"
 ]
 KnowledgeVisibility = Literal["retained", "unsuperseded"]
+
+
+class SourceTierReviewWrite(ClosedModel):
+    """Human classification of one current evidence version, not byte attestation."""
+
+    evidence_id: EvidenceIdentity
+    source_version_id: SourceVersionIdentity
+    source_sha256: Sha256
+    document_id: DocumentIdentity
+    document_sha256: Sha256
+    source_tier: Literal["T1", "T2", "T3"]
+    authority_kind: Literal[
+        "signed_instrument", "regulatory_filing", "issuer_statement",
+        "administrator_statement", "internal_record", "other",
+    ]
+    source_quote: str = Field(min_length=1, max_length=2000)
+
+    @model_validator(mode="after")
+    def review_shape(self) -> Self:
+        allowed = {
+            "T1": {"signed_instrument", "regulatory_filing"},
+            "T2": {"issuer_statement", "administrator_statement"},
+            "T3": {"internal_record", "other"},
+        }
+        if self.authority_kind not in allowed[self.source_tier]:
+            raise ValueError("source tier and authority kind disagree")
+        if not self.source_quote.strip() or "\x00" in self.source_quote:
+            raise ValueError("invalid source quote")
+        try:
+            self.source_quote.encode("utf-8", errors="strict")
+        except UnicodeError:
+            raise ValueError("invalid source quote") from None
+        return self
 
 
 class AssertionBase(ClosedModel):

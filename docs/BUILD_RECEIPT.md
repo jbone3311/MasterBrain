@@ -2,6 +2,28 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Current-source human tier review — ADR-217
+
+Migration 0075, the human-only POST/read-only source-scoped GET routes and the
+strict provider-neutral read client add an append-only T1/T2/T3 document-
+authority review tied to one current evidence/source version, stored SHA-256,
+normalized-document digest and exact quote. The SQL trigger independently
+checks current active unexcluded basis and reviewer context; the API also
+checks source grants. Fictional tests cover idempotency, unauthorized and
+assistant writes, granted assistant reads, stale/paused-source filtering,
+hash/quote mismatch, direct-SQL bypass, immutable rows and forged external
+client meaning. This is **not** independent original-byte verification or
+financial-claim approval, and FOS-Master is untouched.
+
+On the finalized migration and client code, the fresh disposable PostgreSQL
+17.11 / Python 3.14 suite passed **3,576 tests, 19 skipped**; 638 of 639
+PostgreSQL-marked cases executed (one intentional skip). Six browser suites
+passed **167/167**. Ruff, mypy on the changed Python modules, documentation
+link inventory and diff whitespace passed. Independent-container restore and
+hosted exact-head gates remain open. GitHub Actions jobs on this PR are not
+starting because the account reports failed payments or a spending limit;
+that is not a code test result and does not authorize merge.
+
 ## Latest predicate revision and Brain API discovery — ADR-215
 
 Migration 0074 corrects the SQL guard to select the latest project-fact

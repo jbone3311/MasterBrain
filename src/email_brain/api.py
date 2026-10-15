@@ -69,6 +69,7 @@ from masterbrain.knowledge_schema import (
     ProjectDossierRequest,
     ProjectFactPageRequest,
     ProjectFactWrite,
+    SourceTierReviewWrite,
     TimelineRequest,
 )
 from masterbrain.librarian_dossier_intake import (
@@ -89,6 +90,7 @@ from masterbrain.schemas import (
     GroundedAnswerRequest,
     UnifiedSearchRequest,
 )
+from masterbrain.source_tier_reviews import SourceTierReviews
 from masterbrain.statement_persistence import StatementProposalReader
 
 log = logging.getLogger("email_brain.requests")
@@ -184,6 +186,7 @@ def create_app(
     project_artifacts = ProjectArtifactLinks(store)
     project_dossier_markdown = ProjectDossierMarkdown(store)
     project_facts = ProjectFacts(store)
+    source_tier_reviews = SourceTierReviews(store)
     statement_proposals = StatementProposalReader(store)
     answers = GroundedAnswerService(brain, answer_selector)
     if browser_auth is not None:
@@ -1198,6 +1201,29 @@ def create_app(
             return project_artifacts.page(principal.context, project_id, body)
         except ValueError:
             raise HTTPException(422, "invalid_project_artifact_page") from None
+
+    @app.post("/v1/knowledge/evidence/{evidence_id}/source-tier-reviews", status_code=201)
+    def publish_source_tier_review(
+        evidence_id: str,
+        body: SourceTierReviewWrite,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        try:
+            return source_tier_reviews.publish(
+                principal.context, evidence_id, body, idempotency_key,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_source_tier_review") from None
+
+    @app.get("/v1/knowledge/evidence/{evidence_id}/source-tier-reviews")
+    def page_source_tier_reviews(
+        evidence_id: str,
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        return source_tier_reviews.current_for_evidence(principal.context, evidence_id)
 
     @app.get("/v1/knowledge/fact-predicates")
     def project_fact_predicate_catalog(

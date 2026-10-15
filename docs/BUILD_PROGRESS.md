@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Current-source tier review (2026-10-15, ADR-217, open PR)
+
+Human review can now classify a current, granted evidence document as T1, T2
+or T3 under a controlled authority kind and exact quote. The append-only SQL
+record pins source and normalized-text hashes; reads remove stale, paused,
+excluded or ungranted evidence before limiting. A strict external client
+preserves the "not byte-attested or financial truth" meaning. The finalized
+fresh-disposable-PostgreSQL suite passed 3,576 tests, 19 skipped (638 of 639
+PostgreSQL-marked executed); six browser suites passed 167/167. FOS-Master is
+unchanged. Trusted byte replay, PDF/OCR coverage, issuer review policy,
+financial publication, hosted CI and merge remain open.
+
 ## Exact pinned-donor Linux parity fixture (2026-10-06)
 
 The pinned scanner and its classifier now have byte-for-byte, hash-checked

@@ -1,5 +1,11 @@
 # MasterBrain Roadmap
 
+ADR-217 adds a human-reviewed, current-source tier classification route and
+append-only record; it is deliberately not an independent byte attestation.
+Next replay authorized source bytes and extraction coverage (PDF/OCR included),
+resolve conflicting authority reviews, and only then design financial-claim
+publication. The synthetic-only and no-FileOS-cutover gates remain in force.
+
 ADR-216 now pins the FOS fact-verifier's pure tier/variant/status behavior in
 fictional donor parity without treating donor `CONFIRMED` as a MasterBrain
 financial attestation. The next source-tier gate is an immutable, reviewed,

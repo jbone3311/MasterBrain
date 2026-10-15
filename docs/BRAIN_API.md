@@ -182,6 +182,19 @@ source effects or an alternate route through KnowledgeCore.
   IDs, not the quote itself. An aware cutoff and visible cursor bind paging;
   hidden evidence and successors are filtered before limit. A quote still
   needs export-time verification before appearing as a Markdown citation.
+- `POST /v1/knowledge/evidence/{evidence_id}/source-tier-reviews` — ADR-217
+  human-only document-authority classification. Requires `knowledge.review`,
+  `brain.content.read` and a UUID idempotency key. The closed body pins the
+  current evidence/source version and SHA-256, selected normalized document
+  and text SHA-256, exact source quote and matching T1/T2/T3 authority kind.
+  This is not source-byte attestation or financial-fact approval.
+- `GET /v1/knowledge/evidence/{evidence_id}/source-tier-reviews` — ADR-217
+  `knowledge.search` plus `brain.content.read`, current granted/unexcluded
+  evidence only. Returns at most 25 historical human classifications and a
+  truncation flag, without quotes or a computed winning tier. Conflicting
+  reviews are not resolved; old/stale evidence is filtered before limiting.
+  `BrainReadClient.source_tier_reviews()` validates the closed response and
+  refuses any upgraded financial-truth meaning.
 - `GET /v1/knowledge/fact-predicates` — ADR-215 read-only, bounded catalog of
   the database's latest project-fact predicate revisions, including
   deprecations. Requires `knowledge.search`; an assistant also needs ordinary

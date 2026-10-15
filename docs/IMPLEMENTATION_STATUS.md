@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-217 adds a current-source, source-granted human tier review record and
+Brain API read/write routes. The row pins the stored source/document hashes,
+exact quote and controlled T1/T2/T3 authority kind; an independent SQL guard
+checks the current basis and reviewer context. The strict read client refuses
+forged financial-truth meaning. This is a reviewed document classification,
+not a trusted byte replay, OCR-completeness proof, corroborated value,
+ownership statement or investment balance. Full fictional local PostgreSQL
+and browser suites pass; hosted and independent restore gates remain open.
+
 ADR-215 corrects catalog retirement: a newer deprecated revision now blocks
 new project facts instead of exposing an older active revision. The Brain API
 and provider-neutral client can list the database's latest bounded project-

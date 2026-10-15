@@ -25,8 +25,10 @@ from masterbrain.knowledge_schema import (
     ProjectFactPageRequest,
     ProjectFactWrite,
     ProjectWrite,
+    SourceTierReviewWrite,
 )
 from masterbrain.project_facts import ProjectFacts
+from masterbrain.source_tier_reviews import SourceTierReviews
 
 pytestmark = pytest.mark.postgres
 database, tenant = pg.database, pg.tenant
@@ -78,6 +80,182 @@ def _body(project_id: str, evidence_id: str, *, quote: str = QUOTE,
         confidence=1.0, observed_at=NOW, reviewed=True,
         supersedes_id=supersedes_id,
     )
+
+
+def _tier_body(store: Store, ctx: pg.TenantContext, evidence_id: str) -> SourceTierReviewWrite:
+    with store.transaction(ctx) as conn:
+        row = conn.execute(
+            "SELECT e.source_version_id,e.sha256,d.id AS document_id,"
+            "d.body_sha256 FROM brain_evidence e "
+            "JOIN brain_normalized_documents d ON d.tenant_id=e.tenant_id "
+            "AND d.evidence_id=e.id WHERE e.id=%s AND strpos(d.body,%s)>0 "
+            "ORDER BY d.id LIMIT 1", (evidence_id, QUOTE),
+        ).fetchone()
+    assert row is not None
+    return SourceTierReviewWrite(
+        evidence_id=evidence_id, source_version_id=row["source_version_id"],
+        source_sha256=row["sha256"], document_id=row["document_id"],
+        document_sha256=row["body_sha256"], source_tier="T3",
+        authority_kind="internal_record", source_quote=QUOTE,
+    )
+
+
+def test_source_tier_review_is_current_source_bound_and_not_financial_truth(database, tenant):
+    store, admin = database
+    ctx, _, _, evidence_id = _prepared(store, tenant)
+    body = _tier_body(store, ctx, evidence_id)
+    reviews = SourceTierReviews(store)
+    key = uuid4()
+    created = reviews.publish(ctx, evidence_id, body, key)
+    assert created["changed"] is True
+    assert created["review_kind"] == "human_metadata_classification"
+    assert reviews.publish(ctx, evidence_id, body, key) == {
+        **created, "changed": False,
+    }
+    current = reviews.current_for_evidence(ctx, evidence_id)
+    assert len(current["reviews"]) == 1
+    assert current["reviews"][0]["source_tier"] == "T3"
+    assert "not_byte_attestation_or_financial_truth" in current["meaning"]
+    assert "source_quote" not in current["reviews"][0]
+    with pytest.raises(Conflict):
+        reviews.publish(ctx, evidence_id, body.model_copy(update={
+            "source_quote": QUOTE[:10],
+        }), key)
+    with pytest.raises(NotFound):
+        reviews.publish(ctx, evidence_id, body.model_copy(update={
+            "source_sha256": "0" * 64,
+        }), uuid4())
+    with pytest.raises(NotFound):
+        reviews.publish(replace(ctx, source_ids=frozenset()), evidence_id, body, uuid4())
+    assert reviews.current_for_evidence(
+        replace(ctx, source_ids=frozenset()), evidence_id,
+    )["reviews"] == []
+    with pytest.raises(ValueError):
+        SourceTierReviewWrite.model_validate({
+            **body.model_dump(), "source_tier": "T1",
+        })
+    with pytest.raises(ValueError):
+        SourceTierReviewWrite.model_validate({
+            **body.model_dump(), "source_quote": " \t ",
+        })
+    with pytest.raises(psycopg.errors.RaiseException, match="invalid source tier review basis"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_source_tier_reviews(tenant_id,id,evidence_id,"
+                "source_version_id,source_sha256,document_id,document_sha256,"
+                "source_tier,authority_kind,source_quote,reviewer_id,idempotency_key,"
+                "request_sha256) VALUES (%s,%s,%s,%s,%s,%s,%s,'T3','internal_record',"
+                "%s,%s,%s,%s)",
+                (ctx.tenant_id, "stier_" + "f" * 32, evidence_id,
+                 body.source_version_id, "0" * 64, body.document_id,
+                 body.document_sha256, QUOTE, ctx.actor_id, uuid4(), "1" * 64),
+            )
+    with pytest.raises(psycopg.errors.RaiseException, match="reviewer context mismatch"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_source_tier_reviews(tenant_id,id,evidence_id,"
+                "source_version_id,source_sha256,document_id,document_sha256,"
+                "source_tier,authority_kind,source_quote,reviewer_id,idempotency_key,"
+                "request_sha256) VALUES (%s,%s,%s,%s,%s,%s,%s,'T3','internal_record',"
+                "%s,%s,%s,%s)",
+                (ctx.tenant_id, "stier_" + "e" * 32, evidence_id,
+                 body.source_version_id, body.source_sha256, body.document_id,
+                 body.document_sha256, QUOTE, uuid4(), uuid4(), "1" * 64),
+            )
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.errors.RaiseException):
+            conn.execute(
+                "UPDATE knowledge_source_tier_reviews SET source_tier='T2' "
+                "WHERE tenant_id=%s AND id=%s",
+                (ctx.tenant_id, created["object_id"]),
+            )
+        conn.rollback()
+        conn.execute(
+            "UPDATE brain_sources SET status='paused' WHERE tenant_id=%s "
+            "AND id=(SELECT v.source_id FROM brain_evidence e "
+            "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+            "AND v.id=e.source_version_id WHERE e.id=%s)",
+            (ctx.tenant_id, evidence_id),
+        )
+    assert reviews.current_for_evidence(ctx, evidence_id)["reviews"] == []
+    with pytest.raises(NotFound):
+        reviews.publish(ctx, evidence_id, body, uuid4())
+
+
+def test_source_tier_api_requires_human_review_and_source_enrollment(database, tenant):
+    store, _ = database
+    ctx, _, _, evidence_id = _prepared(store, tenant)
+    body = _tier_body(store, ctx, evidence_id)
+    with store.transaction(ctx) as conn:
+        source_id = conn.execute(
+            "SELECT v.source_id FROM brain_evidence e "
+            "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+            "AND v.id=e.source_version_id WHERE e.id=%s", (evidence_id,),
+        ).fetchone()["source_id"]
+
+    def credential(token: str, scopes: set[str], kind: str, sources=None) -> Credential:
+        return Credential(
+            token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+            tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+            scopes=scopes, expires_at=datetime.now(UTC) + timedelta(hours=1),
+            client_kind=kind, source_ids=sources,
+        )
+
+    owner_token = "fictional-tier-owner-" + uuid4().hex
+    assistant_token = "fictional-tier-assistant-" + uuid4().hex
+    denied_token = "fictional-tier-denied-" + uuid4().hex
+    credentials = [
+        credential(owner_token, {
+            "knowledge.review", "knowledge.search", "brain.content.read",
+        }, "human"),
+        credential(assistant_token, {
+            "knowledge.search", "brain.content.read",
+        }, "assistant", {source_id}),
+        credential(denied_token, {"knowledge.search"}, "human"),
+    ]
+    path = f"/v1/knowledge/evidence/{evidence_id}/source-tier-reviews"
+    with TestClient(create_app(store, TokenRegistry(credentials))) as api:
+        response = api.post(
+            path, json=body.model_dump(mode="json"), headers={
+                "Authorization": "Bearer " + owner_token,
+                "idempotency-key": str(uuid4()),
+            },
+        )
+        assert response.status_code == 201, response.text
+        assert response.json()["review_kind"] == "human_metadata_classification"
+        assert api.post(
+            path, json=body.model_dump(mode="json"), headers={
+                "Authorization": "Bearer " + assistant_token,
+                "idempotency-key": str(uuid4()),
+            },
+        ).status_code == 403
+        visible = api.get(path, headers={"Authorization": "Bearer " + assistant_token})
+        assert visible.status_code == 200, visible.text
+        assert visible.headers["cache-control"] == "no-store"
+        assert len(visible.json()["reviews"]) == 1
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=visible.json())
+            ),
+        ) as reader:
+            assert reader.source_tier_reviews(evidence_id) == visible.json()
+        forged = {**visible.json(), "meaning": "verified_investment_holding"}
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=forged)
+            ),
+        ) as reader, pytest.raises(BrainClientError, match="invalid_response"):
+            reader.source_tier_reviews(evidence_id)
+        assert api.get(path, headers={
+            "Authorization": "Bearer " + denied_token,
+        }).status_code == 403
+        assert api.post(
+            path, json={**body.model_dump(mode="json"), "extra": "forged"},
+            headers={"Authorization": "Bearer " + owner_token,
+                     "idempotency-key": str(uuid4())},
+        ).status_code == 422
 
 
 def test_project_fact_schema_rejects_invalid_source_text():

@@ -85,6 +85,16 @@ explicit, not inferred from filename.
 
 ## KnowledgeCore
 
+Migration `0075_reviewed_source_tier_classifications.sql` adds immutable,
+tenant-scoped human reviews of one current source evidence version. Each row
+pins the stored source hash, normalized-document hash, exact quote, controlled
+T1/T2/T3 authority kind, reviewer and idempotency key. SQL and API checks
+reject stale/paused/excluded or mismatched source/document bases; reads
+recheck current grants before returning bounded history. This classifies
+document authority, **not** independently retrieved bytes, extraction
+completeness, corroborated value or ownership
+([ADR-217](adr/217_current_source_tier_review.md)).
+
 Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
 immutable global catalog for **new** reviewed project-fact names. A SQL insert
 guard and the publication boundary require the active name/value-type/unit shape and
@@ -106,8 +116,9 @@ direct SQL shape checks repeat those constraints. Migration 0072 tightens
 both application and SQL quote matching to complete lexical tokens and
 validates existing typed rows without rewriting them. Historical untyped
 rows keep NULLs. The current-source fact report alone exposes the typed
-object, never an investment sum; ownership, FX and controlled predicate
-semantics remain open ([ADR-212](adr/212_exact_project_fact_measurement.md),
+object, never an investment sum; ownership and FX remain open, while the
+first reviewed-project predicate catalog now constrains new names
+([ADR-212](adr/212_exact_project_fact_measurement.md),
 [ADR-213](adr/213_project_fact_measurement_quote_tokens.md)).
 
 Migration `0064_private_statement_fileos_replay.sql` adds one append-only
@@ -281,9 +292,8 @@ The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
 ADR-202 now supplies a narrow project/event/commitment Markdown proposal route;
 ADR-205 adds members, and ADR-206 adds a separate project-fact queue;
 the remaining unimplemented additions are inferred-derivation/basis links,
-typed monetary units and uncertain due
-windows, expanded project-artifact dossier presentation and a compatible
-fact-name registry.
+uncertain due windows, expanded project-artifact dossier presentation and
+the owner-reviewed proposal/alias workflow for fact-name registry changes.
 New basis links must preserve transitive source grants. Existing Email attachment
 occurrences remain distinct even when their content hashes match. Project
 aliases, reviewed members, artifact links and source-stated project facts are
