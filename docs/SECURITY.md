@@ -1,5 +1,12 @@
 # MasterBrain Security and Privacy
 
+ADR-253 confines durable later FileOS v2 observations to a scoped private
+worker, an exact completed baseline, source-locked fresh no-follow scan and
+tenant-fenced immutable packet. A private reader sees only IDs, timestamps,
+counts, blocker codes and a digest, never root paths or file content. SQL
+fixes nonpublishing/no-absence flags; no public API or current-search query
+consumes the packet. Live roots and v2 cutover remain unapproved.
+
 ADR-244 removes reviewer control over the Email XLSX provenance revision.
 The API rejects an extra `code_revision`; code and SQL require the server's
 semantic bridge revision on every new review and publication receipt. This

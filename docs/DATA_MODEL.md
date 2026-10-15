@@ -1,5 +1,15 @@
 # MasterBrain Data Model
 
+Migration 0087 adds append-only `brain_fileos_v2_later_observation_packets`
+under forced tenant RLS and the tenant-login fence. Each row has an exact
+composite FK to one completed v2 baseline, private source/root and observation
+identity, a capped closed JSON candidate plus ADR-251 preview, and a canonical
+digest. SQL fixes `publishable=false`, `absence_authorized=false`, and
+`requires_review=true`, source-locks insertion against the latest v1 basis,
+and refuses update, delete and truncate. Private inspection revalidates the
+canonical digest and recomputes the classification. The table is not a v2
+later-run completion, absence ledger or active-current index (ADR-253).
+
 Migration 0086 adds insert guards for the semantic
 `email-xlsx-document-bridge-v2` revision on new Email XLSX publication reviews
 and receipts. The revision is set by server code, not human input; it is not

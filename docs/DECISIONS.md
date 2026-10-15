@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-253](adr/253_fileos_v2_later_observation_packet.md) records an immutable,
+private, source-locked later FileOS v2 observation against one exact completed
+baseline. It is a review packet only: no completed later run, absence authority,
+current-read activation or donor cutover.
+
 [ADR-252](adr/252_fileos_v2_completed_baseline_preview.md) binds ADR-251's
 later-observation policy preview to one exact, completed, owner-authorized
 FileOS v2 baseline under the tenant/source lock. It returns only counts,

@@ -126,6 +126,11 @@ worker revalidates its stage, source lock, latest v1 basis and completion
 digest, scans the explicitly bound root again, and returns only an ephemeral
 count/digest summary. It does not persist the later observation or activate
 current v2 reads.
+ADR-253 adds a separate immutable, tenant-fenced private review packet for
+that later observation. Its SQL guard binds the exact completed baseline,
+current v1 basis, source and root at insert; private reads revalidate packet
+digest and classification. Replays are historical. This packet is not a
+completed later run and has no absence or current-read authority.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

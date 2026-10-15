@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-253 now persists a private, immutable later-observation packet for
+repeatable review of the FileOS v2 baseline comparison. The next tranche is
+an exact per-row later-run ledger: process/hash/defer/error coverage, terminal
+outcomes, safe replay and rollback, followed by owner-reviewed live shadow.
+Only after those gates may v2 current visibility and eventual FOS-Master
+cutover be considered. This packet alone cannot authorize absence or current.
+
 ADR-252 now binds the later FileOS v2 preview to an actual completed baseline
 and fresh root scan in a private worker transaction. Next build and verify an
 immutable, tenant-fenced later-run ledger with exact hashed/deferred/excluded/

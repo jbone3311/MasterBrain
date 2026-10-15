@@ -76,6 +76,7 @@ from masterbrain.datacore.fileos_v2_index_generation import (
     FileOSV2IndexBuilder,
     FileOSV2SearchReviewer,
 )
+from masterbrain.datacore.fileos_v2_later_packets import FileOSV2LaterPacketStore
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
@@ -7562,12 +7563,83 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert later.blockers == ()
     assert later.publishable is False and later.absence_authorized is False
     assert len(later.preview_sha256) == 64
+    later_packets = FileOSV2LaterPacketStore(core)
+    first_later_id = uuid4()
+    first_later = later_packets.record(
+        completion_worker, completion_id, first_later_id, tmp_path
+    )
+    assert first_later.recorded is True
+    assert first_later.classification_counts["unchanged"] == 2
+    assert first_later.publishable is False and first_later.absence_authorized is False
+    assert later_packets.inspect(ctx, first_later_id) == replace(first_later, recorded=False)
     (tmp_path / "new.txt").unlink()
     possible_absence = later_previewer.preview(completion_worker, completion_id, tmp_path)
     assert possible_absence.counts["absence_candidate"] == 1
     assert possible_absence.absence_authorized is False
     assert possible_absence.preview_sha256 != later.preview_sha256
+    second_later_id = uuid4()
+    second_later = later_packets.record(
+        completion_worker, completion_id, second_later_id, tmp_path
+    )
+    assert second_later.classification_counts["absence_candidate"] == 1
+    assert second_later.absence_authorized is False
+    assert second_later.packet_sha256 != first_later.packet_sha256
     (tmp_path / "new.txt").write_bytes(b"synthetic donor-only proof")
+    assert later_packets.record(
+        completion_worker, completion_id, first_later_id, tmp_path
+    ) == replace(first_later, recorded=False)
+    with pytest.raises(Conflict, match="identity changed"):
+        later_packets.record(completion_worker, uuid4(), first_later_id, tmp_path)
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_later_observation_packets "
+            "WHERE completion_id=%s", (completion_id,),
+        ).fetchone()["n"] == 2
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 0
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_observation_packets "
+                "(tenant_id,id,actor_id,completion_id,source_id,root_binding_sha256,"
+                "baseline_completion_sha256,observed_at,packet_sha256,packet) "
+                "SELECT tenant_id,%s,actor_id,completion_id,source_id,root_binding_sha256,"
+                "baseline_completion_sha256,observed_at,packet_sha256,"
+                "packet || '{\"absence_authorized\":true}'::jsonb "
+                "FROM brain_fileos_v2_later_observation_packets WHERE id=%s",
+                (uuid4(), first_later_id),
+            )
+    forged_later_id = uuid4()
+    with store.transaction(ctx) as conn:
+        conn.execute(
+            "INSERT INTO brain_fileos_v2_later_observation_packets "
+            "(tenant_id,id,actor_id,completion_id,source_id,root_binding_sha256,"
+            "baseline_completion_sha256,observed_at,packet_sha256,packet) "
+            "SELECT tenant_id,%s,actor_id,completion_id,source_id,root_binding_sha256,"
+            "baseline_completion_sha256,observed_at,packet_sha256,"
+            "packet || '{\"preview\":{\"forged\":true}}'::jsonb "
+            "FROM brain_fileos_v2_later_observation_packets WHERE id=%s",
+            (forged_later_id, first_later_id),
+        )
+    with pytest.raises(Conflict, match="integrity requires review"):
+        later_packets.inspect(ctx, forged_later_id)
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_observation_packets CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_observation_packets "
+                "SET packet_sha256=%s WHERE id=%s", ("0" * 64, first_later_id),
+            )
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_packets.record(authorizing_human, completion_id, uuid4(), tmp_path)
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_packets.record(Principal(ctx, "worker"), completion_id, uuid4(), tmp_path)
+    with pytest.raises(NotFound):
+        later_packets.inspect(ctx, uuid4())
     with monkeypatch.context() as patched:
         patched.setattr(completed_preview_module, "_completion_sha", lambda *_: "0" * 64)
         with pytest.raises(Conflict, match="completion integrity requires review"):
@@ -7597,6 +7669,8 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     (wrong_root / "new.txt").write_bytes((tmp_path / "new.txt").read_bytes())
     with pytest.raises(Conflict, match="source requires review"):
         later_previewer.preview(completion_worker, completion_id, wrong_root)
+    with pytest.raises(Conflict, match="source requires review"):
+        later_packets.record(completion_worker, completion_id, uuid4(), wrong_root)
     with pytest.raises(Conflict, match="source requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, wrong_root)
     with pytest.raises(Conflict, match="source requires review"):
@@ -8144,6 +8218,8 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert completer.inspect(ctx, source_id)["latest_v1_matches"] is False
     with pytest.raises(Conflict, match="basis requires review"):
         later_previewer.preview(completion_worker, completion_id, tmp_path)
+    with pytest.raises(Conflict, match="basis requires review"):
+        later_packets.record(completion_worker, completion_id, uuid4(), tmp_path)
     with pytest.raises(Conflict, match="basis requires review"):
         search_reviewer.preview(human, source_id, generation.generation_id,
                                 "synthetic changed proof")

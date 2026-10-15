@@ -1,5 +1,11 @@
 # Current MasterBrain code map
 
+ADR-253 adds the [private later-observation packet store](../src/masterbrain/datacore/fileos_v2_later_packets.py),
+[immutable SQL ledger](../migrations/0087_fileos_v2_later_observation_packets.sql),
+and [fictional PostgreSQL lifecycle tests](../tests/test_postgres.py). The
+shared baseline/scan helper stays in the [ADR-252 preview](../src/masterbrain/datacore/fileos_v2_completed_preview.py).
+There is no CLI, public route, current index or absence-event consumer.
+
 ADR-252 adds a [completed-baseline-bound FileOS v2 preview](../src/masterbrain/datacore/fileos_v2_completed_preview.py)
 and extends the [fictional PostgreSQL v2 lifecycle test](../tests/test_postgres.py).
 It returns only an ephemeral summary; no later run or absence row is persisted.

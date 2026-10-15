@@ -550,6 +550,7 @@ def test_populated_upgrade_preserves_immutable_evidence(database, tmp_path):
             "0084_email_xlsx_document_bridge.sql",
             "0085_email_xlsx_publication_reviews.sql",
             "0086_email_xlsx_bridge_revision_guard.sql",
+            "0087_fileos_v2_later_observation_packets.sql",
         ]
         assert migrate(dsn, directory) == []
         with psycopg.connect(dsn) as conn:
@@ -632,6 +633,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
                 "0084_email_xlsx_document_bridge.sql",
                 "0085_email_xlsx_publication_reviews.sql",
                 "0086_email_xlsx_bridge_revision_guard.sql",
+                "0087_fileos_v2_later_observation_packets.sql",
             }:
                 (tmp_path / path.name).write_bytes(path.read_bytes())
         migrate(dsn, tmp_path)
@@ -710,6 +712,7 @@ def test_policy_migration_preserves_unknown_legacy_receipt(database, tmp_path):
             "0084_email_xlsx_document_bridge.sql",
             "0085_email_xlsx_publication_reviews.sql",
             "0086_email_xlsx_bridge_revision_guard.sql",
+            "0087_fileos_v2_later_observation_packets.sql",
         ]
         with psycopg.connect(dsn) as conn:
             assert conn.execute(
@@ -834,6 +837,7 @@ def test_archive_ledger_migration_refuses_preexisting_child_drift(database, tmp_
             "0084_email_xlsx_document_bridge.sql",
             "0085_email_xlsx_publication_reviews.sql",
             "0086_email_xlsx_bridge_revision_guard.sql",
+            "0087_fileos_v2_later_observation_packets.sql",
             }:
                 (pre_upgrade / path.name).write_bytes(path.read_bytes())
         migrate(dsn, pre_upgrade)

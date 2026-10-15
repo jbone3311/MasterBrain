@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-253 adds a private durable FileOS v2 later-observation **review packet**:
+one scoped worker records a fresh, completed-baseline-bound fictional scan;
+exact-ID replay returns the historical packet; private inspection verifies its
+digest and recomputes classification. Migration 0087 enforces tenant, source,
+baseline, root and fixed nonpublishing flags. Focused fictional PostgreSQL
+tests cover record, replay, multiple observations, forged data and no
+current/absence effect. This is not an authoritative completed later run;
+per-row outcome ledger, rollback, live shadow and cutover remain open.
+
 ADR-252 adds a private, worker-only FileOS v2 later-observation preview bound
 to one completed, owner-authorized baseline. It revalidates the immutable
 stage/packet/row ledger and latest v1 basis under the source lock, checks the

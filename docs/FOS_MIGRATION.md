@@ -247,6 +247,10 @@ ADR-252 now binds that policy preview to the real completed v2 baseline under
 the private source lock and a fresh synthetic root scan. Only an ephemeral
 count/digest summary returns; the immutable later-run ledger, absence/current
 semantics, live shadow and rollback are still open.
+ADR-253 retains the next synthetic observation as an immutable private review
+packet linked to that same completed baseline. It can be replayed and inspected
+without rescanning, but is explicitly not a per-row completed later-run ledger.
+Absence, v2 current reads, live shadow, rollback and donor cutover remain gated.
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then

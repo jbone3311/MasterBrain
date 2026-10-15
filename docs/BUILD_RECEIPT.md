@@ -2,6 +2,26 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Durable FileOS v2 later-observation packet — current unmerged branch
+
+ADR-253 and migration 0087 add a nonpublishing, source-locked, immutable
+review packet bound to the exact completed baseline. A focused fictional
+PostgreSQL 17.11 lifecycle test passed on disposable 127.0.0.1-only storage:
+record/read/replay, multiple observations including a possible missing-file
+row, root/scope/unknown/stale-v1 refusal, direct-SQL forged authority refusal,
+forged classification detection and mutation/truncate denial. The packet
+cannot authorize absence, a completed later run or current FileOS reads.
+The first full run found three stale test expectations: the protected-table
+and truncate-guard counts, and the exact migration inventory. After updating
+those fixtures, the affected PostgreSQL tests passed **21/21**, and a clean
+full fictional Python 3.14 / PostgreSQL 17.11 loopback rerun passed **3,853
+passed, 19 skipped, zero failed** in 12m44s; **694/695 PostgreSQL-marked tests
+executed**. The one PostgreSQL-marked skip remains the Docker-backed trial
+launcher. Node passed **178/178**; Ruff, strict mypy (144 source files), docs
+(354 Markdown files / 1,825 paths and fragments), whitespace and offline wheel
+build passed. The new private packet module is packaged. This is local
+fictional evidence, not hosted exact-head, live-root or cutover acceptance.
+
 ## Completed-baseline-bound FileOS v2 preview — current unmerged branch
 
 ADR-252 adds a private worker-only later-observation preview against the
