@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-198](adr/198_wells_fargo_brokerage_recipe_parity.md) pins a seventh
+synthetic-only donor statement recipe comparison for Wells Fargo brokerage.
+It preserves cash, lot and reconciliation behavior without publishing holdings
+or changing runtime FileOS.
+
 [ADR-197](adr/197_verified_project_dossier_markdown.md) specifies a
 synthetic-only, fail-closed cited Markdown view of one bounded reviewed
 project. Each older assertion's full stored quote is verified against its own

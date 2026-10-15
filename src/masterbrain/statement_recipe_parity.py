@@ -4,7 +4,7 @@ Extracted from FOS-Master at 218d5caec2f20b9047fd3eb8e027dc671acf0c15,
 _SYSTEM/tools/statement_extract.py
 (SHA-256 f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe).
 The parsing and reconciliation semantics are intentionally unchanged. See
-ADR-170, ADR-174, ADR-180, ADR-181, ADR-187 and ADR-191.
+ADR-170, ADR-174, ADR-180, ADR-181, ADR-187, ADR-191 and ADR-198.
 """
 
 from __future__ import annotations
@@ -703,4 +703,187 @@ def reconcile_wells_fargo_savings(
         item["amount"] for item in items
         if item["row_type"] == "transaction" and item["amount"] is not None
     ), 2)
+    return expected, actual
+
+
+# Pinned donor Wells Fargo brokerage recipe, retained as a pure comparison
+# baseline. Do not route its raw float rows into reviewed investment claims.
+_WFB_MONTHS = {month: f"{i:02d}" for i, month in enumerate(
+    ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST",
+     "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"], 1,
+)}
+_WFB_ACCOUNT_NO = re.compile(r"ACCOUNT\s*NUMBER:\s*(\d{4}-\d{4})")
+_WFB_PERIOD_CLEAN = re.compile(
+    r"Current period ending\s+([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})"
+)
+_WFB_PERIOD_HEADER = re.compile(
+    r"([A-Z]{3,9})\s*(\d{1,2}),\s*(\d{4})\s*-\s*[A-Z]{3,9}\s*\d{1,2},\s*(\d{4})"
+)
+_WFB_CLOSING_VALUE = re.compile(r"Closing\s*value\s*\$([\d,.]+)")
+_WFB_ASSET_VALUE = re.compile(r"Asset\s*value\s*\$[\d,.]+\s*100%\s*\$([\d,.]+)")
+_WFB_CASH_ROW = re.compile(
+    r"Total\s*Cash\s*and\s*Sweep\s*Balances\s*\$([\d,.]+)", re.IGNORECASE,
+)
+_WFB_HOLDING_TOTAL_ROW = re.compile(
+    r"^Total[ \t]+([\d,]+\.?\d*)[ \t]+\$?([\d,.]+)[ \t]*\$([\d,.]+)"
+    r"[ \t]+([\d,.]+)[ \t]*\$([\d,.]+)[ \t]*"
+    r"(-?\$[\d,.]+)[ \t]*(?:\$?([\d,]+)|N/A)[ \t]+(?:([\d.]+)|N/A)[ \t]*$",
+    re.MULTILINE,
+)
+_WFB_ACQUIRED_SINGLE_LOT_ROW = re.compile(
+    r"^Acquired\d{2}/\d{2}/\d{2}(?:nc)?[ \t]+([\d,]+\.?\d*)"
+    r"[ \t]+([\d,.]+)[ \t]+([\d,.]+)[ \t]+([\d,.]+)[ \t]+"
+    r"\$?([\d,.]+)[ \t]+(-?[\d,.]+)[^\n]*\n(?!Reinvestments)", re.MULTILINE,
+)
+_WFB_HOLDING_SINGLELINE_ROW = re.compile(
+    r"^([A-Z][A-Z0-9&,./\- ]{2,40}?)[ \t]+([\d,]+\.?\d*)"
+    r"[ \t]+([\d.]+)\*\*[ \t]+([\d,.]+)[ \t]+([\d,.]+)[ \t]+"
+    r"\$?([\d,.]+)[ \t]+(-?[\d,.]+)[ \t]+(?:\$?([\d,]+)|N/A)[ \t]+(?:([\d.]+)|N/A)[ \t]*$",
+    re.MULTILINE,
+)
+_WFB_TICKER_LINE = re.compile(r"^([A-Z][A-Z0-9\-]{0,9})\s*$", re.MULTILINE)
+_WFB_NAME_LINE = re.compile(r"^([A-Z][A-Z0-9&,./\- ]{2,40})\s*$", re.MULTILINE)
+_WFB_LOT_LINE = re.compile(r"^(?:Acquired\d|Reinvestments)")
+_WFB_TXN_ROW = re.compile(
+    r"^(\d{2}/\d{2})[ \t]+Cash[ \t]+([A-Z][A-Z/]*)[ \t]+(.+?)[ \t]+"
+    r"(-?[\d,]+\.\d{2})(?:[ \t]+[\d,]+\.\d{2})?[ \t]*$",
+    re.MULTILINE,
+)
+
+
+def _wfb_lookback_symbol(text: str, match_start: int, window: int = 220) -> str | None:
+    chunk = text[max(0, match_start - window):match_start]
+    symbols = _WFB_TICKER_LINE.findall(chunk)
+    return symbols[-1] if symbols else None
+
+
+def _wfb_lookback_name(
+    text: str, match_start: int, window: int = 260, max_lines: int = 5,
+) -> str | None:
+    """Preserve donor's bounded, best-effort wrapped security-name lookback."""
+    chunk = text[max(0, match_start - window):match_start]
+    lines = [line.strip() for line in chunk.splitlines() if line.strip()]
+    while lines and _WFB_LOT_LINE.match(lines[-1]):
+        lines.pop()
+    name_lines: list[str] = []
+    for line in reversed(lines):
+        if _WFB_NAME_LINE.match(line):
+            name_lines.insert(0, line)
+            if len(name_lines) >= max_lines:
+                break
+        else:
+            break
+    return " ".join(name_lines) if name_lines else None
+
+
+def parse_wells_fargo_brokerage(
+    text: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Return ordered pinned-donor brokerage rows without publication."""
+    summary: dict[str, Any] = {}
+    match = _WFB_ACCOUNT_NO.search(text)
+    summary["account_number"] = match.group(1) if match else None
+
+    match = _WFB_PERIOD_CLEAN.search(text)
+    if match:
+        month = match.group(1).upper()
+        summary["period"] = (
+            f"{match.group(3)}-{_WFB_MONTHS.get(month, month[:3])}"
+            if month in _WFB_MONTHS else None
+        )
+    else:
+        match = _WFB_PERIOD_HEADER.search(text)
+        summary["period"] = (
+            f"{match.group(4)}-{_WFB_MONTHS[match.group(1)]}"
+            if match and match.group(1) in _WFB_MONTHS else None
+        )
+
+    match = _WFB_CLOSING_VALUE.search(text)
+    summary["closing_value"] = _num(match.group(1)) if match else None
+    match = _WFB_ASSET_VALUE.search(text)
+    summary["asset_value"] = _num(match.group(1)) if match else None
+    items: list[dict[str, Any]] = []
+
+    match = _WFB_CASH_ROW.search(text)
+    if match:
+        items.append({
+            "row_type": "holding", "symbol": "CASH",
+            "description": "Cash and Sweep Balances", "amount": _num(match.group(1)),
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": "regex:wells_fargo_brokerage",
+        })
+
+    total_matches = list(_WFB_HOLDING_TOTAL_ROW.finditer(text))
+    for row in total_matches:
+        qty, origprice, origcost, curprice, mktval, gain, income, yld = row.groups()
+        symbol = _wfb_lookback_symbol(text, row.start())
+        items.append({
+            "row_type": "holding", "symbol": symbol,
+            "description": _wfb_lookback_name(text, row.start()) or symbol,
+            "quantity": _num(qty), "price": _num(curprice), "amount": _num(mktval),
+            "category": f"orig_cost={_num(origcost)};gain_loss={_num(gain)};yield_pct={_num(yld)}",
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": "regex:wells_fargo_brokerage", "confidence": 0.75,
+        })
+
+    acquired_matches = list(_WFB_ACQUIRED_SINGLE_LOT_ROW.finditer(text))
+    acquired_starts = [
+        row.start() for row in re.finditer(r"^Acquired\d{2}/\d{2}/\d{2}", text, re.MULTILINE)
+    ]
+    for row in acquired_matches:
+        window_end = row.end() + 600
+        next_acquired = next((position for position in acquired_starts
+                              if position > row.end()), None)
+        boundary = min(window_end, next_acquired) if next_acquired else window_end
+        if any(row.end() < total.start() < boundary for total in total_matches):
+            continue
+        qty, origprice, origcost, curprice, mktval, gain = row.groups()
+        symbol = _wfb_lookback_symbol(text, row.start())
+        items.append({
+            "row_type": "holding", "symbol": symbol,
+            "description": _wfb_lookback_name(text, row.start()) or symbol,
+            "quantity": _num(qty), "price": _num(curprice), "amount": _num(mktval),
+            "category": f"orig_cost={_num(origcost)};gain_loss={_num(gain)}",
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": "regex:wells_fargo_brokerage", "confidence": 0.65,
+        })
+
+    for row in _WFB_HOLDING_SINGLELINE_ROW.finditer(text):
+        name, qty, avgprice, origcost, curprice, mktval, gain, income, yld = row.groups()
+        ticker = _WFB_TICKER_LINE.search(text[row.end():row.end() + 30])
+        symbol = ticker.group(1) if ticker else None
+        items.append({
+            "row_type": "holding", "symbol": symbol or name.strip(),
+            "description": name.strip(), "quantity": _num(qty),
+            "price": _num(curprice), "amount": _num(mktval),
+            "category": (
+                f"orig_cost={_num(origcost)};gain_loss={_num(gain)};"
+                "avg_cost_gt_6_lots=true"
+            ),
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": "regex:wells_fargo_brokerage", "confidence": 0.7,
+        })
+
+    for date, txn_type, desc, amt in _WFB_TXN_ROW.findall(text):
+        desc = desc.strip()
+        if len(desc) < 2:
+            continue
+        items.append({
+            "row_type": "transaction", "line_date": date,
+            "description": f"{txn_type} {desc}"[:120], "amount": _num(amt),
+            "account_number": summary["account_number"], "period": summary["period"],
+            "extraction_method": "regex:wells_fargo_brokerage", "confidence": 0.6,
+        })
+    return summary, items
+
+
+def reconcile_wells_fargo_brokerage(
+    summary: dict[str, Any], items: list[dict[str, Any]],
+) -> tuple[float, float] | None:
+    """Preserve donor's closing-or-asset fallback and holding sum."""
+    expected = summary.get("closing_value") or summary.get("asset_value")
+    if expected is None:
+        return None
+    actual = round(sum(item["amount"] for item in items
+                       if item["row_type"] == "holding" and item["amount"]), 2)
     return expected, actual

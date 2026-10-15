@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-198 adds a seventh isolated, exact-hash FOS-Master statement recipe
+comparison for Wells Fargo brokerage. Fictional goldens cover cash, acquired
+lots, page-break lot deduplication, more-than-six-lot summaries, zero fallback,
+incomplete tails and reconciliation; an optional pinned-donor AST replay and
+1,000-row stress check protect the extraction. It is not connected to runtime
+intake, statement proposal publication, the Brain API or a live source. The
+donor remains unchanged; Wells Fargo credit-line, Schwab and intelligence
+reports still need their own corpus and acceptance.
+
 ADR-197 is merged on `main` via PR #232 as a synthetic-only tranche: an exact-project
 Markdown read combines independently bounded reviewed events, commitments,
 members/roles, related artifact occurrences and source-stated facts. It

@@ -77,8 +77,10 @@ analysis. ADR-187 adds a fifth isolated Jefferies baseline, preserving
 category-vs-security detail, negative cash and multi-lot grand totals while
 exposing unpriced positions and wrapped-activity omissions. ADR-191 adds a sixth isolated
 Wells Fargo *savings* baseline with daily-balance sign resolution and explicit
-low-confidence mismatch cases. Wells Fargo credit-line/brokerage, Schwab and
-donor reports remain unported; none of the six is a live investment analysis path.
+low-confidence mismatch cases. ADR-198 adds a seventh isolated Wells Fargo
+*brokerage* baseline for cash, lots, page-break duplicates and incomplete tails.
+Wells Fargo credit-line, Schwab and donor reports remain unported; none of the
+seven is a live investment analysis path.
 ADR-172 stores selected current-document candidates in an immutable tenant-fenced
 ledger, and ADR-173 permits a human owner to inspect bounded, source-rechecked
 unreviewed rows through the API. Neither proves a live holding, supplies a
