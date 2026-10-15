@@ -157,6 +157,44 @@ def test_entirely_image_only_pdf_remains_deferred() -> None:
     assert result.metadata.page_count == 1
 
 
+@pytest.mark.parametrize(
+    "second_cell,reason",
+    [("=1+2", "unsupported_features"), ("Z" * 1_001, "text_limit")],
+    ids=("uncached-formula", "overlong-cell"),
+)
+def test_xlsx_must_not_publish_when_formula_or_cell_would_be_omitted(
+    second_cell: str, reason: str, tmp_path: Path,
+) -> None:
+    from openpyxl import Workbook
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet["A1"] = "fictional source line"
+    sheet["B1"] = second_cell
+    output = BytesIO()
+    workbook.save(output)
+    workbook.close()
+    raw = output.getvalue()
+    expected = source(raw, "statement.xlsx", SHEET_TYPE)
+    result = decode_result(
+        process_request(encode_request(raw, expected.version_id, expected.locator,
+                                       expected.sha256, SHEET_TYPE)),
+        expected,
+    )
+    assert (result.status, result.reason, result.text) == ("deferred", reason, "")
+
+    path = tmp_path / "statement.xlsx"
+    path.write_bytes(raw)
+    item = snapshot_tree(
+        tmp_path, source_id="files_documents", observed_at=datetime(2026, 10, 15, tzinfo=UTC)
+    )["items"][0]
+    extracted = extract_document_source_version(tmp_path, item, DirectSyntheticProcessor())
+    assert (extracted.status, extracted.error_code, extracted.text) == (
+        ExtractionStatus.DEFERRED, reason, "",
+    )
+    assert path.read_bytes() == raw
+
+
 def test_contract_accepts_deterministic_archive_member_version_identity() -> None:
     raw = docx_bytes("archive member identity")
     digest = hashlib.sha256(raw).hexdigest()

@@ -2,6 +2,21 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Formula/overlong-cell XLSX deferral — ADR-221
+
+The restricted DataCore XLSX worker now reads formula cells visibly and
+defers any formula-bearing workbook instead of silently dropping an uncached
+formula. A cell over 1,000 normalized characters also defers instead of
+being truncated. Fictional mixed-row closed-contract and source-version tests
+pass with no published text and no source mutation; bounded plain XLSX still
+extracts. Focused document tests passed **15/15**; the exact-current local
+no-DSN suite passed **2,957 tests, 660 skipped** (642 PostgreSQL-marked
+skipped). Ruff, mypy over 119 source files, documentation checks (322
+Markdown files, 1,690 local links), and diff whitespace passed. Docker is
+unavailable locally. Database, container, hosted exact-head and independent
+restore gates remain open. No formula evaluation, complete spreadsheet
+coverage, financial attestation or FileOS cutover is claimed.
+
 ## Mixed-page PDF deferral — ADR-220
 
 The restricted DataCore PDF worker no longer publishes text from a multi-page

@@ -1,5 +1,16 @@
 # MasterBrain Build Progress
 
+## Spreadsheet omission guard (2026-10-15, ADR-221, open PR)
+
+Two authored fictional XLSX cases proved false extraction success: an
+uncached formula disappeared and an overlong cell was truncated. The worker
+now defers both with no published text. Source-version tests verify matching
+deferred outcomes and unchanged files; bounded non-formula XLSX remains
+extractable. Focused document tests passed 15/15; the full no-DSN local suite
+passed 2,957 with 660 skipped (642 PostgreSQL-marked skipped). Ruff, mypy
+and documentation checks passed. Formula evaluation and full feature coverage
+are not claimed. Database, container and hosted gates remain open.
+
 ## Mixed-page PDF completeness guard (2026-10-15, ADR-220, open PR)
 
 DataCore's restricted PDF worker now defers a mixed text/image-only PDF with

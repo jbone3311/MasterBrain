@@ -40,6 +40,10 @@ class _EncryptedPdf(Exception):
     pass
 
 
+class _CellTextLimit(Exception):
+    pass
+
+
 def _safe_property(value: object) -> str | None:
     if value is None:
         return None
@@ -236,7 +240,9 @@ def _cell_text(value: object) -> str:
         return ""
     text = str(value).replace("\x00", "").strip()
     text.encode("utf-8", errors="strict")
-    return text[:1_000]
+    if len(text) > 1_000:
+        raise _CellTextLimit()
+    return text
 
 
 def _extract_xlsx(raw: bytes, source: DocumentSource) -> DocumentResult:
@@ -246,7 +252,9 @@ def _extract_xlsx(raw: bytes, source: DocumentSource) -> DocumentResult:
     try:
         from openpyxl import load_workbook  # type: ignore[import-untyped]
 
-        workbook = load_workbook(BytesIO(raw), read_only=True, data_only=True, keep_links=False)
+        # Keep formula cells visible. data_only=True silently turns an uncached
+        # formula into None, which would falsely certify an incomplete sheet.
+        workbook = load_workbook(BytesIO(raw), read_only=True, data_only=False, keep_links=False)
         try:
             if len(workbook.sheetnames) > MAX_SHEETS:
                 return _outcome(source, "deferred", "structure_limit")
@@ -260,10 +268,15 @@ def _extract_xlsx(raw: bytes, source: DocumentSource) -> DocumentResult:
                 ):
                     return _outcome(source, "deferred", "structure_limit")
                 rows: list[str] = []
-                for row_number, row in enumerate(sheet.iter_rows(values_only=True), 1):
+                for row_number, row in enumerate(sheet.iter_rows(values_only=False), 1):
                     if row_number > MAX_ROWS_PER_SHEET or len(row) > MAX_COLUMNS:
                         return _outcome(source, "deferred", "structure_limit")
-                    values = [_cell_text(value) for value in row]
+                    if any(cell.data_type == "f" for cell in row):
+                        return _outcome(source, "deferred", "unsupported_features")
+                    try:
+                        values = [_cell_text(cell.value) for cell in row]
+                    except _CellTextLimit:
+                        return _outcome(source, "deferred", "text_limit")
                     cell_count += len(values)
                     if cell_count > MAX_CELLS:
                         return _outcome(source, "deferred", "structure_limit")

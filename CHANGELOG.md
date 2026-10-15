@@ -1,5 +1,9 @@
 # Changelog
 
+- ADR-221: DataCore now defers formula-bearing XLSX workbooks and overlong
+  cells rather than silently omitting uncached formulas or truncating cell
+  text while reporting successful extraction.
+
 - ADR-220: DataCore now defers a mixed text/image-only PDF instead of
   publishing an incomplete-looking extracted document. A fictional two-page
   closed-contract regression protects the behavior; PDF/OCR completeness

@@ -1,5 +1,10 @@
 # MasterBrain Roadmap
 
+ADR-221 closes two XLSX false-success cases: uncached formulas and overlong
+cells now defer with no published text. Full sheet/cell/feature coverage,
+formula/display policy and source-tier attestation are still required before
+using spreadsheet-derived financial facts.
+
 ADR-220 closes one unsafe PDF outcome: a mixed text/no-text document is now
 deferred with no published text rather than labeled fully extracted. This is
 not a complete PDF/OCR proof; per-page coverage, OCR, spreadsheet fidelity
