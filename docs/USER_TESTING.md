@@ -52,9 +52,12 @@ the normal reading/download/session-clearing checks. This exercises the real
 ingestion, database, API and UI. Keep all database files and credentials outside Git
 and Dropbox; never point the integration suite at a real database.
 
-The current machine does not include PostgreSQL/Docker. CI runs the disposable
-database/container/restore checks. The quick preview above remains usable without
-installing them; do not mistake it for a locally database-backed deployment.
+The authoring Mac now has PostgreSQL 17.11 and has run a disposable, database-
+backed synthetic combined-source smoke. Docker/hosted acceptance is separate.
+The quick preview above remains usable without PostgreSQL; do not mistake it
+for a database-backed deployment. For a fictional Email-plus-FileOS project,
+use the separate `init-masterbrain-demo`/`seed-masterbrain-demo` path in the
+[local guide](LOCAL_DEVELOPMENT.md), not a real folder or mailbox.
 
 ## Still not ready for live use
 

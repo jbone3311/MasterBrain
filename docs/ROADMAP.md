@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-208 now supplies a separate disposable combined-source demo for the owner
+to run locally: fictional Email and FileOS evidence flows through DataCore,
+Brain search and a cited reviewed project dossier. The old Email-only demo
+remains intact. Next product gates are hosted exact-head acceptance, an owner
+walkthrough and held-out questions, then separately authorized live-source
+and named-assistant trials; this fixture is not a pilot or FOS-Master cutover.
+
 ADR-207 implements a separate synthetic-only, private selected artifact-link
 Markdown proposal queue and transaction-bound reviewed publication on an open
 PR. Stage, private preview and explicit atomic human review check the current

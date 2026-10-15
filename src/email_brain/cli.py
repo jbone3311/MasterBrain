@@ -7,11 +7,12 @@ import hashlib
 import json
 import os
 import secrets
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Event
 from typing import Literal
-from uuid import UUID, uuid4
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 import psycopg
 import uvicorn
@@ -32,6 +33,15 @@ from email_brain.store import IngestItem, Store
 from email_brain.synthetic import fake_email
 from email_brain.synthetic_mailbox import MailboxSpec, export_mailbox, seed_mailbox
 from email_brain.tenant_db import TenantDbRoutes
+from masterbrain.datacore.fileos import snapshot_tree
+from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.knowledge import KnowledgeCore
+from masterbrain.knowledge_schema import ProjectWrite
+
+_DEMO_FILE_TEXT = (
+    "Cedar Harbor fictional planning brief. The October review joins email and files.\n"
+)
+_DEMO_REVISION = "synthetic-masterbrain-demo-v1"
 
 
 def _env(name: str) -> str:
@@ -48,10 +58,12 @@ def _private_file(path: Path, value: str) -> None:
         output.write(value)
 
 
-def provision_demo(state: Path) -> None:
-    if not state.is_absolute() or "Dropbox" in state.parts:
+def provision_demo(state: Path, *, masterbrain: bool = False) -> None:
+    if not state.is_absolute() or state.is_symlink() or "Dropbox" in state.parts:
         raise ValueError("state must use an absolute path outside Dropbox")
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if "Dropbox" in state.resolve(strict=True).parts or state.stat().st_mode & 0o077:
+        raise ValueError("state must be private and outside Dropbox")
     if (state / "credentials.json").exists() or (state / "owner-token.txt").exists():
         raise ValueError("demo credentials already exist; choose a new state directory")
     password = _env("EMAIL_BRAIN_RUNTIME_PASSWORD")
@@ -78,18 +90,22 @@ def provision_demo(state: Path) -> None:
             (account_id, tenant_id),
         )
     token = secrets.token_urlsafe(40)
+    scopes = [
+        "email.search", "email.evidence.read", "email.proposal.create",
+        "email.proposal.read", "email.review",
+    ]
+    if masterbrain:
+        scopes += [
+            "brain.search", "brain.evidence.read", "brain.content.read",
+            "brain.changes.read", "knowledge.search", "knowledge.read",
+            "knowledge.changes.read", "knowledge.review",
+        ]
     credential = [
         {
             "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
             "tenant_id": str(tenant_id),
             "actor_id": str(actor_id),
-            "scopes": [
-                "email.search",
-                "email.evidence.read",
-                "email.proposal.create",
-                "email.proposal.read",
-                "email.review",
-            ],
+            "scopes": scopes,
             "client_kind": "human",
             "expires_at": (datetime.now(UTC) + timedelta(days=7)).isoformat(),
         }
@@ -103,6 +119,8 @@ def provision_demo(state: Path) -> None:
             {"tenant_id": str(tenant_id), "actor_id": str(actor_id), "account_id": str(account_id)}
         ),
     )
+    if masterbrain:
+        _private_file(state / "masterbrain-demo.marker", _DEMO_REVISION + "\n")
     print(f"Synthetic owner created. Credentials are private files in {state}; token not logged.")
 
 
@@ -143,6 +161,93 @@ def seed(state: Path) -> None:
         ctx, UUID(data["account_id"]), None, "synthetic-complete-v1", items, synthetic_only=True
     )
     print(f"Synthetic page committed: {count} new events (replays are no-ops).")
+
+
+def seed_masterbrain(state: Path) -> None:
+    """Replay-safe fictional Email/FileOS fixture through shared DataCore."""
+    marker = state / "masterbrain-demo.marker"
+    if (not state.is_absolute() or state.is_symlink()
+            or "Dropbox" in state.resolve(strict=True).parts
+            or state.stat().st_mode & 0o077
+            or not marker.is_file() or marker.is_symlink()
+            or marker.read_text() != _DEMO_REVISION + "\n"):
+        raise ValueError("fresh private MasterBrain demo state required")
+    data = json.loads((state / "demo.json").read_text())
+    tenant_id, actor_id, account_id = (
+        UUID(data["tenant_id"]), UUID(data["actor_id"]), UUID(data["account_id"]),
+    )
+    store = Store(_env("EMAIL_BRAIN_DSN"))
+    ctx = TenantContext(
+        tenant_id, actor_id,
+        frozenset({
+            "brain.source.ingest", "brain.document.publish", "brain.search",
+            "knowledge.review",
+        }),
+        uuid4(),
+    )
+    with store.transaction(ctx) as conn:
+        exact_demo = conn.execute(
+            "SELECT 1 FROM tenants t JOIN mail_accounts a ON a.tenant_id=t.id "
+            "WHERE t.id=%s AND t.name='Synthetic demo' AND a.id=%s "
+            "AND a.provider='fastmail' AND a.address='owner@example.invalid' "
+            "AND a.secret_ref='synthetic:no-token' "
+            "AND a.provider_account_id IS NULL AND a.status='active'",
+            (tenant_id, account_id),
+        ).fetchone()
+        if exact_demo is None:
+            raise ValueError("combined seed requires the exact fictional demo account")
+    seed(state)
+    core = DataCoreStore(store)
+    plan = core.email_bridge_plan(ctx, account_id)
+    if len(plan["results"]) != 3 or plan["next_cursor"] is not None:
+        raise ValueError("fictional Email demo source is incomplete")
+    bridged = [
+        core.bridge_current_email_version(
+            ctx, UUID(row["legacy_version_id"]),
+            uuid5(NAMESPACE_URL, f"masterbrain-demo:{tenant_id}:{row['legacy_version_id']}"),
+            code_revision=_DEMO_REVISION, expected_account_id=account_id,
+        )
+        for row in plan["results"]
+    ]
+    root = state / "fictional-files"
+    if root.is_symlink():
+        raise ValueError("fictional FileOS demo root must not be a symlink")
+    root.mkdir(mode=0o700, exist_ok=True)
+    if root.stat().st_mode & 0o077:
+        raise ValueError("fictional FileOS demo root must be private")
+    file = root / "cedar-harbor-brief.txt"
+    if not file.exists():
+        _private_file(file, _DEMO_FILE_TEXT)
+    if file.is_symlink() or file.read_text() != _DEMO_FILE_TEXT:
+        raise ValueError("fictional FileOS demo source changed")
+    manifest = snapshot_tree(
+        root, source_id="files_demo",
+        observed_at=datetime(2026, 9, 22, 12, tzinfo=UTC),
+    )
+    if (len(manifest["items"]) != 1
+            or manifest["items"][0]["locator"] != file.name
+            or manifest["errors"]):
+        raise ValueError("fictional FileOS demo snapshot is incomplete")
+    core.import_fileos_snapshot(
+        ctx, manifest, uuid5(NAMESPACE_URL, f"masterbrain-demo-file:{tenant_id}"),
+    )
+    published = core.publish_text(
+        ctx, manifest["items"][0]["version_id"], _DEMO_FILE_TEXT,
+        code_revision=_DEMO_REVISION,
+    )
+    project = KnowledgeCore(store).publish(
+        ctx,
+        ProjectWrite(
+            kind="project", title="Cedar Harbor fictional project",
+            description="Fictional cross-source demonstration only", state="active",
+            evidence_ids=[bridged[0].evidence_id, published.evidence_id],
+            source_quote="Cedar Harbor fictional planning brief",
+            confidence=1.0, observed_at=datetime(2026, 9, 22, 12, tzinfo=UTC),
+            reviewed=True,
+        ),
+        uuid5(NAMESPACE_URL, f"masterbrain-demo-project:{tenant_id}"),
+    )
+    print(f"Fictional MasterBrain Email/FileOS project ready: {project.object_id}.")
 
 
 def seed_corpus(state: Path, count: int) -> None:
@@ -192,7 +297,7 @@ def seed_corpus(state: Path, count: int) -> None:
     print(f"Synthetic corpus ready: {count} fictional messages; no provider or model contacted.")
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="email-brain")
     commands = parser.add_subparsers(dest="command", required=True)
     migration = commands.add_parser("migrate", help="Administrator-only schema migration")
@@ -205,7 +310,7 @@ def main() -> None:
             "after a reviewed maintenance plan"
         ),
     )
-    for command in ("init-demo", "seed-demo"):
+    for command in ("init-demo", "seed-demo", "init-masterbrain-demo", "seed-masterbrain-demo"):
         commands.add_parser(command).add_argument("--state-dir", type=Path, required=True)
     corpus = commands.add_parser("seed-corpus", help="Import fictional emails, no provider calls")
     corpus.add_argument("--state-dir", type=Path, required=True)
@@ -258,7 +363,7 @@ def main() -> None:
             fixture_command.add_argument("--state-dir", type=Path, required=True)
             fixture_command.add_argument("--max-events", type=int, default=100)
             fixture_command.add_argument("--interval-seconds", type=int, default=0)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         if args.command == "migrate":
             print(
@@ -271,8 +376,12 @@ def main() -> None:
             )
         elif args.command == "init-demo":
             provision_demo(args.state_dir)
+        elif args.command == "init-masterbrain-demo":
+            provision_demo(args.state_dir, masterbrain=True)
         elif args.command == "seed-demo":
             seed(args.state_dir)
+        elif args.command == "seed-masterbrain-demo":
+            seed_masterbrain(args.state_dir)
         elif args.command == "seed-corpus":
             seed_corpus(args.state_dir, args.count)
         elif args.command == "export-test-mailbox":

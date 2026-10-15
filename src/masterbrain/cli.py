@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+from email_brain.cli import main as email_cli_main
 from masterbrain.archive_member_controller import (
     run_archive_document_batch_controller,
     run_archive_document_plan_controller,
@@ -90,6 +91,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="masterbrain")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("version", help="Show the MasterBrain manifest version")
+
+    demo = commands.add_parser("demo", help="Disposable fictional combined-source demo")
+    demo_commands = demo.add_subparsers(dest="demo_command", required=True)
+    demo_commands.add_parser("migrate", help="Migrate a fresh disposable database")
+    for action in ("init", "seed"):
+        demo_commands.add_parser(action).add_argument("--state-dir", type=Path, required=True)
+    demo_serve = demo_commands.add_parser("serve", help="Run the loopback-only demo API")
+    demo_serve.add_argument("--port", type=int, default=8080)
 
     datacore = commands.add_parser("datacore", help="Shared read-only DataCore commands")
     data_commands = datacore.add_subparsers(dest="data_command", required=True)
@@ -256,6 +265,15 @@ def main(argv: Sequence[str] | None = None) -> None:
     try:
         if args.command == "version":
             print("masterbrain-manifest-v1")
+        elif args.command == "demo":
+            if args.demo_command == "migrate":
+                email_cli_main(["migrate"])
+            elif args.demo_command == "init":
+                email_cli_main(["init-masterbrain-demo", "--state-dir", str(args.state_dir)])
+            elif args.demo_command == "seed":
+                email_cli_main(["seed-masterbrain-demo", "--state-dir", str(args.state_dir)])
+            else:
+                email_cli_main(["serve", "--port", str(args.port)])
         elif args.command == "datacore" and args.data_command == "hash":
             print(
                 _json({"algorithm": args.algorithm, "digest": file_hash(args.path, args.algorithm)})

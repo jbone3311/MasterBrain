@@ -10,6 +10,14 @@ malicious source content, compromised client/model output, parser exploits, conf
 deputy actions, cross-tenant access, credential theft, poisoned indexes, data
 exfiltration, destructive file/mail effects, and leakage through logs/backups.
 
+ADR-208's combined local demo is fictional and loopback-only. Its owner token
+adds Brain/Knowledge reads and Knowledge review but no worker ingestion,
+index activation or FileOS effect scopes; the seed uses an internal runtime
+context and a generated private text file, never a user-selected root or
+provider token. A database preflight requires the exact fictional tenant and
+unenrolled synthetic account before the seed may ingest or publish. It is not
+an identity-enrollment, hosted or live-source gate.
+
 ## Trust boundaries
 
 ADR-175's typed Fastmail `Email/query` mailbox/date filter and separate

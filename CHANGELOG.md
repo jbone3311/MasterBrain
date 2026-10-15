@@ -1,5 +1,11 @@
 # Changelog
 
+- Add a separate synthetic MasterBrain demo initializer/seed (ADR-208) that
+  bridges fictional Email into DataCore, publishes one fictional FileOS text
+  occurrence and exposes a cited cross-source project through the running
+  Brain API. Keep the older Email-only demo and its narrow token unchanged;
+  no real provider/root, worker authority or source effect is enabled.
+
 - Hold shared source-item and source-status row locks during private Knowledge
   proposal review, including every linked project/entity citation behind a
   proposed member role. Synthetic concurrent revocation tests cover direct

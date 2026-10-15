@@ -2,6 +2,35 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Branded disposable combined-source demo — ADR-208
+
+The old Email-only `init-demo`/`seed-demo` path was first run on a fresh
+disposable local PostgreSQL 17.11 cluster: migration, least-privilege runtime
+role, three fictional emails, loopback `serve`, authenticated `/readyz` and
+`/v1/search` succeeded. Its unchanged owner token returned **403** from
+`/v1/brain/search`, confirming that path did not demonstrate MasterBrain.
+
+The new combined demo was then run from a second fresh disposable cluster:
+all migrations, `init-masterbrain-demo`, `seed-masterbrain-demo`, and the real
+loopback API succeeded. `/v1/brain/search` returned both a fictional Email
+source and `files_demo` for `fictional`; the cited project dossier Markdown
+route returned 200 and a FileOS evidence citation. A second seed returned
+zero new Email events and the same project ID. The branded `masterbrain demo
+seed` entry point replayed the same fixture successfully. No provider, user
+root, external model or source effect was contacted. Both smoke clusters and
+the subsequent final-regression cluster, with their generated fictional
+credentials and logs, were stopped and removed.
+
+The final focused CLI/demo/controller tests passed **113/113**, including a
+wrong-account refusal before any Email event. The exact-current full Python
+3.14/PostgreSQL 17.11 suite passed **3,523 tests, nine skipped** (629 of 630
+PostgreSQL-marked cases executed). Browser tests passed **167/167**;
+Ruff, strict mypy (112 source files), docs links (309 Markdown files, 1,640
+paths/fragments) and diff whitespace checks passed. The local deployment gate
+passed **2,897 tests, 635 skipped** (three PostgreSQL-marked cases executed);
+it is not the full database proof. Hosted exact-head and merged-main gates
+remain required; this is not a live or hosted pilot.
+
 ## Private Knowledge proposal review source-state fence
 
 ADR-186/205 now hold shared PostgreSQL locks on all direct proposal evidence

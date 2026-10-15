@@ -9,6 +9,23 @@ from masterbrain import cli
 from masterbrain.cli import main
 
 
+@pytest.mark.parametrize(("command", "forwarded"), [
+    (["demo", "migrate"], ["migrate"]),
+    (["demo", "init", "--state-dir", "/private/tmp/fictional"],
+     ["init-masterbrain-demo", "--state-dir", "/private/tmp/fictional"]),
+    (["demo", "seed", "--state-dir", "/private/tmp/fictional"],
+     ["seed-masterbrain-demo", "--state-dir", "/private/tmp/fictional"]),
+    (["demo", "serve", "--port", "18089"], ["serve", "--port", "18089"]),
+])
+def test_branded_demo_uses_existing_bounded_local_entrypoint(
+    monkeypatch: pytest.MonkeyPatch, command: list[str], forwarded: list[str],
+) -> None:
+    received: list[list[str]] = []
+    monkeypatch.setattr(cli, "email_cli_main", lambda arguments: received.append(arguments))
+    main(command)
+    assert received == [forwarded]
+
+
 def test_cli_hash_and_compare(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     first = tmp_path / "one.txt"
     second = tmp_path / "two.txt"

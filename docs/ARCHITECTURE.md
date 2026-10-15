@@ -3,6 +3,11 @@
 Updated 2026-09-21. This document defines the target boundaries and migration
 constraints. [Implementation status](IMPLEMENTATION_STATUS.md) separates working code
 from designs. Existing detailed Email documents describe the Email capability.
+ADR-208's disposable combined demo exercises these boundaries without live
+sources: Email ingestion is bridged into DataCore, one generated FileOS text
+file is independently snapshotted/published, and KnowledgeCore cites both in
+a synthetic project served by the Brain API. It is an integration fixture,
+not a substitute for donor parity, hosted identity or source cutover.
 
 ## Context and components
 

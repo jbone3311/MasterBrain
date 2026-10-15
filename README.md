@@ -37,6 +37,10 @@ registered source does not imply a live connector, current index or query match.
 
 This is a testable prototype, **not** a hosted service, live mailbox or folder
 enrollment, AI-written conversation, source-write API, or FileOS replacement.
+ADR-208 adds a separate [disposable combined-source demo](docs/LOCAL_DEVELOPMENT.md)
+that starts the real loopback API, bridges fictional Email, publishes one
+fictional FileOS text file and exposes a cited project. The older Email-only
+demo remains unchanged; neither is a private live pilot.
 The owner still needs to complete the
 [fictional cross-source browser trial](docs/CROSS_SOURCE_TRIAL.md). See
 [current functions](docs/CURRENT_FUNCTIONS.md), the

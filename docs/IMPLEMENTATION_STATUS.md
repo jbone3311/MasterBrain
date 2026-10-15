@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-208 adds a separate, replay-safe combined-source local demo. A fresh
+disposable PostgreSQL instance, internal Email seed, DataCore Email bridge,
+fictional FileOS snapshot/text publication and reviewed synthetic project
+were exercised through a running loopback API: Brain search returned both
+source kinds and the project exported a current cited Markdown dossier. The
+old Email-only demo and its narrower token are unchanged. This is neither a
+live Fastmail/FileOS root pilot nor hosted/assistant acceptance.
+
 Private Knowledge proposal review now holds source-item and source-status
 locks from current-evidence validation through approval. Member review also
 locks the separately linked project and entity citation sources; a concurrent
