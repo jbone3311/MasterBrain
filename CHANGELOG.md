@@ -1,5 +1,13 @@
 # Changelog
 
+- Add ADR-207's synthetic-only selected artifact-link Markdown proposal queue,
+  human-only stage/preview/atomic review routes and migration 0070. Separate
+  current artifact and cited-basis occurrences, full quotes and grants are
+  rechecked; approved rows use the transaction-bound reviewed link publisher.
+  Extend the populated logical-restore fixture with pending and approved
+  fictional batches. Hosted acceptance, live import and FileOS cutover remain
+  open.
+
 - Extend synthetic-only dossier import to selected, cited project-member roles
   as private proposals (ADR-205). Keep the specific member and entity citation
   IDs immutable and recheck their current evidence at preview and human

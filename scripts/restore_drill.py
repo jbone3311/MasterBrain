@@ -51,6 +51,7 @@ from email_brain.schemas import (
 )
 from email_brain.store import AccessDenied, IngestItem, NotFound, Store
 from email_brain.synthetic_formats import pdf_bytes
+from masterbrain.artifact_proposals import ArtifactProposalBatches
 from masterbrain.datacore.contracts import stable_id
 from masterbrain.datacore.fileos import (
     ROOT_BINDING_VERSION,
@@ -61,10 +62,14 @@ from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.fact_proposals import FactProposalBatches
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
+    ArtifactProposalDecision,
+    ArtifactProposalReviewRequest,
     ClaimWrite,
     EntityWrite,
     FactProposalDecision,
     FactProposalReviewRequest,
+    ProjectArtifactLinkWrite,
+    ProjectArtifactPageRequest,
     ProjectDossierRequest,
     ProjectFactPageRequest,
     ProjectFactWrite,
@@ -74,6 +79,7 @@ from masterbrain.librarian_dossier_intake import (
     DossierProposalSelection,
     DossierProposalStageRequest,
 )
+from masterbrain.project_artifacts import ProjectArtifactLinks
 from masterbrain.project_dossier_markdown import ProjectDossierMarkdown
 from masterbrain.project_facts import ProjectFacts
 
@@ -338,6 +344,10 @@ class SeededTenant:
     fact_proposal_batch_id: str
     fact_proposal_id: str
     fact_proposal_fact_id: str | None
+    knowledge_project_artifact_id: str
+    artifact_proposal_batch_id: str
+    artifact_proposal_id: str
+    artifact_proposal_link_id: str | None
 
 
 class SyntheticDocumentProcessor:
@@ -636,6 +646,48 @@ def seed(
                 context, fact_batch["batch_id"],
             )["proposals"][0]["object_id"]
             require(fact_proposal_fact_id is not None, "fact restore approval missing")
+        artifact_body = ProjectArtifactLinkWrite(
+            artifact_evidence_id=brain_document.evidence_id,
+            basis_evidence_id=brain_document.evidence_id,
+            source_quote=body, relation="related", observed_at=now,
+        )
+        project_artifact = ProjectArtifactLinks(store).publish(
+            context, project.object_id, artifact_body, uuid4(),
+        )
+        claimed_artifact_id = "partifact_" + uuid4().hex
+        artifact_markdown = ProjectDossierMarkdown(store).export(
+            context, project.object_id, ProjectDossierRequest(),
+        )["markdown"].replace(project_artifact["object_id"], claimed_artifact_id)
+        artifact_batches = ArtifactProposalBatches(store)
+        artifact_batch = artifact_batches.stage(
+            context,
+            DossierProposalStageRequest(
+                markdown=artifact_markdown,
+                selections=[DossierProposalSelection(
+                    claimed_id=claimed_artifact_id,
+                    assertion=artifact_body.model_dump(mode="json"),
+                )],
+            ),
+            uuid4(),
+        )
+        artifact_preview = artifact_batches.preview(context, artifact_batch["batch_id"])
+        artifact_proposal_id = artifact_preview["proposals"][0]["proposal_id"]
+        artifact_proposal_link_id = None
+        if seed_index == 1:
+            artifact_batches.review(
+                context, artifact_batch["batch_id"],
+                ArtifactProposalReviewRequest(
+                    batch_sha256=artifact_batch["batch_sha256"],
+                    decisions=[ArtifactProposalDecision(
+                        proposal_id=artifact_proposal_id, decision="approved",
+                    )],
+                ),
+                uuid4(),
+            )
+            artifact_proposal_link_id = artifact_batches.preview(
+                context, artifact_batch["batch_id"],
+            )["proposals"][0]["object_id"]
+            require(artifact_proposal_link_id is not None, "artifact restore approval missing")
         items = [
             IngestItem("good-event", "good-message", "v1", now, synthetic_mime(keyword)),
             IngestItem("poison-event", "poison-message", "v1", now, b""),
@@ -815,6 +867,10 @@ def seed(
                 fact_batch["batch_id"],
                 fact_proposal_id,
                 fact_proposal_fact_id,
+                project_artifact["object_id"],
+                artifact_batch["batch_id"],
+                artifact_proposal_id,
+                artifact_proposal_link_id,
             )
         )
     return tenants
@@ -1100,6 +1156,38 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             pass
         else:
             raise DrillFailure("foreign restored fact proposal accessible")
+        artifacts = ProjectArtifactLinks(store).page(
+            ctx, current.knowledge_project_id, ProjectArtifactPageRequest(limit=3),
+        )["results"]
+        expected_link_ids = {current.knowledge_project_artifact_id}
+        if current.artifact_proposal_link_id is not None:
+            expected_link_ids.add(current.artifact_proposal_link_id)
+        require(
+            {link["object_id"] for link in artifacts} == expected_link_ids
+            and all(link["artifact_evidence_id"] == current.brain_evidence_id
+                    and link["basis_evidence_id"] == current.brain_evidence_id
+                    for link in artifacts),
+            "restored project artifact changed",
+        )
+        artifact_batches = ArtifactProposalBatches(store)
+        artifact_preview = artifact_batches.preview(ctx, current.artifact_proposal_batch_id)
+        require(
+            artifact_preview["row_count"] == 1
+            and len(artifact_preview["proposals"]) == 1
+            and artifact_preview["proposals"][0]["proposal_id"]
+            == current.artifact_proposal_id
+            and artifact_preview["proposals"][0]["status"]
+            == ("approved" if current.artifact_proposal_link_id else "proposed")
+            and artifact_preview["proposals"][0]["object_id"]
+            == current.artifact_proposal_link_id,
+            "restored private artifact proposal changed",
+        )
+        try:
+            artifact_batches.preview(ctx, foreign.artifact_proposal_batch_id)
+        except NotFound:
+            pass
+        else:
+            raise DrillFailure("foreign restored artifact proposal accessible")
         try:
             ProjectFacts(store).page(
                 ctx, foreign.knowledge_project_id, ProjectFactPageRequest(limit=1),

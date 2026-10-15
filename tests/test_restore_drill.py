@@ -14,6 +14,7 @@ from psycopg.conninfo import conninfo_to_dict
 from email_brain.attachments import receive_attachments
 from email_brain.normalize import normalize
 from email_brain.store import NotFound
+from masterbrain.artifact_proposals import ArtifactProposalBatches
 from masterbrain.fact_proposals import FactProposalBatches
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "restore_drill.py"
@@ -172,6 +173,7 @@ def test_populated_restore_seed_covers_pending_and_approved_fact_batches(databas
     store, admin = database
     tenants = drill.seed(admin, store, keyword_suffix=uuid4().hex[:8])
     assert [item.fact_proposal_fact_id is not None for item in tenants] == [False, True]
+    assert [item.artifact_proposal_link_id is not None for item in tenants] == [False, True]
     for current, foreign in ((tenants[0], tenants[1]), (tenants[1], tenants[0])):
         batches = FactProposalBatches(store)
         preview = batches.preview(current.context, current.fact_proposal_batch_id)
@@ -183,6 +185,20 @@ def test_populated_restore_seed_covers_pending_and_approved_fact_batches(databas
         assert preview["proposals"][0]["object_id"] == current.fact_proposal_fact_id
         with pytest.raises(NotFound):
             batches.preview(current.context, foreign.fact_proposal_batch_id)
+        artifact_batches = ArtifactProposalBatches(store)
+        artifact_preview = artifact_batches.preview(
+            current.context, current.artifact_proposal_batch_id,
+        )
+        assert artifact_preview["row_count"] == 1
+        assert artifact_preview["proposals"][0]["proposal_id"] == current.artifact_proposal_id
+        assert artifact_preview["proposals"][0]["status"] == (
+            "approved" if current.artifact_proposal_link_id else "proposed"
+        )
+        assert artifact_preview["proposals"][0]["object_id"] == (
+            current.artifact_proposal_link_id
+        )
+        with pytest.raises(NotFound):
+            artifact_batches.preview(current.context, foreign.artifact_proposal_batch_id)
 
 
 def test_cli_requires_explicit_opt_in_without_invoking_docker():

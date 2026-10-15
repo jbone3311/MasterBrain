@@ -333,7 +333,8 @@ source effects or an alternate route through KnowledgeCore.
   row. Claimed IDs are source-row selectors, not reserved publication IDs;
   approved rows receive new MasterBrain IDs. Event and commitment selections
   require an already existing local project ID. Facts are staged through
-  the separate ADR-206 route below; artifact links are not accepted. A
+  the separate ADR-206 route below; artifact links use ADR-207's separate
+  route. A
   member role never grants access.
 - `POST /v1/knowledge/dossier-markdown/fact-proposal-batches` — ADR-206
   synthetic-only, human-only staging of 1–50 selected `fact` rows from the
@@ -355,6 +356,22 @@ source effects or an alternate route through KnowledgeCore.
   project-fact publication path and issues a new ID; rejection stores only
   a reason. One invalid row rolls back all decisions and publications. No
   live source, artifact association or inferred fact is authorized.
+- `POST /v1/knowledge/dossier-markdown/artifact-proposal-batches` — ADR-207
+  synthetic-only, human-only staging of 1–50 selected `artifact link` lines
+  from the existing dossier. A closed typed sidecar supplies the full basis
+  quote and observation time omitted by Markdown. Exact line, current local
+  project, artifact occurrence, separately cited basis occurrence, source
+  kind, grants and full quote are checked before private immutable storage.
+  The claimed ID only selects a row; it is not the publication ID.
+- `GET /v1/knowledge/artifact-proposal-batches/{batch_id}` — human-only
+  private preview with `knowledge.review` and `brain.content.read`; rechecks
+  both evidence occurrences and the project under current grants.
+- `POST /v1/knowledge/artifact-proposal-batches/{batch_id}/review` — explicit
+  approve/reject decision for every row in one transaction, binding the
+  batch digest and a UUID key. Approval uses ADR-193's reviewed publication
+  path and issues a new link ID; rejection publishes no link. A bad row
+  aborts the entire batch. No assistant approval, live source or FileOS
+  source effect is authorized.
 - `GET /v1/knowledge/proposal-batches/{batch_id}` — human-only private preview
   requiring `knowledge.review` and `brain.content.read`. Rechecks current
   evidence/grants and returns ordered untrusted proposals plus decision status;

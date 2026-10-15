@@ -65,7 +65,11 @@ granted evidence. Migration 0068 retains the selected citation IDs in the
 immutable private proposal row, so preview and review cannot substitute a
 different quoted source after staging. The linked project and person/
 organization entity must also remain fully citeable. A role never conveys
-authorization; fact and artifact-link imports remain separately gated.
+authorization; fact and artifact-link imports use separate private ADR-206/207
+queues with human-only review, current cited-basis rechecks and no assistant
+read. Migration 0070 protects artifact proposals with forced RLS, tenant-login
+fencing, immutable rows and receipt-bound approval. Hosted and live-source
+acceptance remain gated.
 The SQL insert guard refuses new imported proposal rows missing a cited quote
 or member entity citation, and requires the quoted evidence to be in the
 proposal's direct evidence set. This closes an application-bypass gap for

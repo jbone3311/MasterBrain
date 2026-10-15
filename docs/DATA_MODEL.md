@@ -133,6 +133,17 @@ All five tables are forced-RLS, tenant-login-fenced, immutable and protected
 from TRUNCATE. They are private unreviewed storage, not fact search or a
 source-freshness certificate. No raw Markdown is stored.
 
+Migration `0070_private_project_artifact_proposals.sql` adds a separate
+ADR-207 private artifact-link batch, ordered proposals, explicit per-row
+decisions and an atomic review receipt. Each proposal retains the exact
+artifact evidence occurrence and independently cited basis occurrence, plus
+canonical typed payload and import-context digest, not raw Markdown.
+Approval binds a reviewed `knowledge_project_artifact_receipts` row and its
+new link ID; rejection has no link. Forced RLS, tenant-login fencing,
+tenant-composite keys, immutable/protected-truncate tables and deferred
+whole-batch closure preserve the separate proof. These rows are not an
+automatic current-file roster, inferred association or FileOS source effect.
+
 Migration `0057_private_statement_proposals.sql` implements ADR-172's separate
 append-only `knowledge_statement_proposals`, ordered
 `knowledge_statement_rows`, and actor-scoped idempotency

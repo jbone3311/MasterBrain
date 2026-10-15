@@ -1,10 +1,9 @@
 # ADR-207 — Project-artifact Markdown proposal boundary
 
-Status: accepted for a synthetic/disposable, incremental implementation on an
-open PR branch. The transactional publisher prerequisite is implemented and
-locally tested; no
-artifact staging, import approval, live source or FileOS cutover is claimed
-until its own code and gates pass.
+Status: synthetic/disposable implementation on an open PR branch. The
+transactional publisher and private artifact proposal stage/preview/human
+review are locally tested. Hosted and merged-main gates, live source and
+FileOS cutover are not accepted.
 
 ## Context
 
@@ -16,15 +15,15 @@ selected MasterBrain dossier renders relation, status, artifact source kind,
 artifact evidence ID, bounded basis-quote preview and basis citation. It does
 not render the full quote or observation time. ADR-200/201 inspect this as
 untrusted Markdown, while ADR-202/205/206 stage selected other row kinds.
-An artifact-link row is still refused for proposal staging.
+The generic proposal route still refuses artifact-link rows; ADR-207's
+separate route handles selected links.
 
 The generic ADR-186 proposal decision is foreign-keyed to a Knowledge
 assertion receipt. ADR-193 link publication instead creates a
 `knowledge_project_artifact_receipts` row. Sharing the generic queue or the
 fact-specific ADR-206 queue would weaken the approval proof or mislabel a
-link as a fact. The direct artifact publisher currently owns its own
-transaction; batch approval cannot call it atomically without a narrow
-refactor.
+link as a fact. The direct artifact publisher originally owned its own
+transaction; this implementation extracts a narrow caller-bound primitive.
 
 ## Decision
 
@@ -70,11 +69,13 @@ refactor.
    real-data acceptance. `retracted` remains an explicit reviewed row, not
    an automatic negation of another link. FOS-Master stays unchanged.
 
-The direct publisher now exposes an internal transaction-bound publication
-primitive and a reusable full-basis check. Its old route calls that same
-primitive. A synthetic second-link fault proves an earlier link and receipt
-do not survive transaction rollback. This is **not** artifact proposal
-storage, import, approval or a FileOS migration switch.
+Migration 0070 implements separate private forced-RLS artifact proposal,
+decision and review-receipt tables. The service stages selected rows from the
+existing export with a closed typed sidecar, previews under current grants and
+reviews every row atomically using the extracted transaction-bound direct
+publisher. The old direct route uses that same primitive. A synthetic
+second-link fault rolls back the earlier link and receipt. This is not a
+FileOS migration switch or a lossless dossier round trip.
 
 ## Acceptance and rollback
 

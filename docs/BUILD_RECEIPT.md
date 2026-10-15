@@ -2,6 +2,34 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Selected project-artifact Markdown proposals — ADR-207
+
+Migration 0070 and `ArtifactProposalBatches` add a separate private,
+synthetic-only 1–50-row queue for selected `artifact link` lines in the
+owner-selected MasterBrain dossier format. A closed sidecar supplies the full
+basis quote and observation time omitted from Markdown. Stage, owner-only
+preview and explicit atomic human review recheck the current project,
+artifact evidence occurrence and independently cited quote-basis occurrence
+under current grants. Approved rows use the same transaction-bound ADR-193
+publisher as direct reviewed links; rejected rows publish none. The forced-RLS
+tenant-fenced schema binds immutable import context, decisions and exact
+reviewed publication receipts. No raw Markdown is stored.
+
+The fresh local PostgreSQL 17.11 focused migration, security, API, atomic
+rollback and restore-fixture suites passed **50/50** after the final SQL
+approval guard. A fresh same-cluster source-to-target `pg_dump`/`pg_restore`
+preserved pending and approved fictional batches, whole-public-table snapshots,
+reviewed link visibility and cross-tenant refusal. Ruff, strict mypy (112
+files), 167/167 browser tests and documentation links (308 Markdown files,
+1,638 paths/fragments) passed. The deployment gate passed 2,891 tests with
+626 skipped; it executes only two PostgreSQL-marked tests and is not full
+PostgreSQL acceptance. The exact-current fresh-database full local Python
+3.14/PostgreSQL 17.11 suite passed **3,508 tests, nine skipped** (619 of 620
+PostgreSQL-marked tests executed). Hosted exact-head
+CI, strict-runtime, independent-container restore and merged-main gates remain
+unverified because GitHub jobs currently fail before any steps. No live source,
+automatic approval, FileOS effect or FOS-Master change occurred.
+
 ## Project-artifact batch-publication prerequisite — ADR-207
 
 ADR-207 now specifies a separate selected artifact-link proposal queue because

@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-207 adds a separate synthetic-only selected artifact-link Markdown queue
+on the open PR: exact selected line, typed full-quote sidecar, current local
+project, artifact and separately cited basis are checked at stage, private
+preview and atomic human review. Migration 0070 protects private immutable
+batches, decisions and reviewed publication receipts. Local full/restore
+tests are tracked in the build receipt. Hosted and merged-main acceptance,
+inferred basis, live-source use and FileOS cutover remain open.
+
 ADR-206 now adds selected project-fact Markdown staging into a separate,
 private synthetic proposal queue. Its typed sidecar supplies the full quote,
 evidence set, observation time, confidence and value type omitted by the
@@ -8,7 +16,7 @@ human review recheck current project and evidence grants. A fact-specific
 review receipt publishes approved rows through the same validated
 transaction-bound direct fact primitive; rejected rows never publish. This
 open-PR implementation has local synthetic tests, but hosted and merged-main
-gates remain outstanding. It is not artifact-link import, inferred-fact
+gates remain outstanding. It is not inferred-fact
 review, automatic approval, live-source access or a lossless round trip.
 
 ADR-205 extends the synthetic-only, owner-selected Markdown import to one
@@ -45,7 +53,8 @@ observation time, confidence and evidence links; visible fields must match
 exactly. Same-transaction current/full-quote checks and an immutable import
 context digest prevent altered citations and conflicting idempotent replay.
 No proposal is automatically reviewed; ADR-205 later adds member staging,
-while fact, artifact-link and inferred imports, live sources and full
+while fact and artifact-link imports now use separate ADR-206/207 queues;
+inferred imports, live sources and full
 round-trip fidelity remain open. Source claimed
 IDs are selection markers, not publication IDs; selected child rows require
 an existing local project. Local/hosted
