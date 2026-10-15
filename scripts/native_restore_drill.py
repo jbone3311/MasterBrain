@@ -155,6 +155,7 @@ def run_native_drill() -> dict[str, object]:
                 tenants = drill.seed(
                     source_dsn, source_store, object_root=root / "source_objects", keys=keys,
                 )
+                xlsx_seed = drill.seed_email_xlsx_publication(source_store, tenants[0])
                 source_bound = [
                     (
                         f"native_restore_source_tenant_{index}",
@@ -218,7 +219,10 @@ def run_native_drill() -> dict[str, object]:
                 drill.require(migrate(target_dsn, migrations) == [], "restored migrations differ")
                 restored_store = drill.make_runtime(target_dsn, "native_restore_target_runtime")
                 restored_store.blobs = target_blobs
-                drill.verify_restored(target_dsn, restored_store, tenants)
+                drill.verify_restored(target_dsn, restored_store, tenants, xlsx_seed)
+                drill.verify_restored_xlsx(
+                    restored_store, xlsx_seed, tenants[1].context,
+                )
                 drill.retire_unrestored_bindings(
                     target_dsn, tenants, [role for role, _ in source_bound],
                 )

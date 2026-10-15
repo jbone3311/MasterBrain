@@ -1,11 +1,11 @@
 # MasterBrain Implementation Status
 
-ADR-245's local native PostgreSQL 17.11 restore passed for the existing
-fictional cross-source seed: 120 tables, 385 rows, four external encrypted
-objects and two tenants with matching hashes and RLS checks. It proves the
-current schema can be dumped and restored locally, not that new XLSX
-review/receipt rows survive a populated restore. Hosted Docker restore,
-actual-image execution and feature-specific restore remain open.
+ADR-245's local native PostgreSQL 17.11 restore passed with a populated
+fictional XLSX review/publication: 120 tables, 424 rows, five external
+encrypted objects and two tenants with matching hashes and RLS checks. The
+restored reviewed document was searchable. This proves local populated-row
+durability, not isolated-worker execution; hosted Docker restore and
+actual-image execution remain open.
 
 ADR-244 removes caller-declared XLSX bridge code provenance. Server code
 and migration 0086 enforce one semantic revision for new review/receipt

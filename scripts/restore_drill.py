@@ -38,7 +38,8 @@ from email_brain.memory_schema import MemoryWrite, Trip
 from email_brain.migrate import grant_runtime, grant_tenant_runtime, migrate
 from email_brain.normalize import PARSER_VERSION, NormalizedMessage
 from email_brain.oidc import AccessTokenVerifier, OIDCAuthenticator, OIDCConfig, VerifiedToken
-from email_brain.pdf_contract import PdfPage, PdfResult, source_for
+from email_brain.pdf_contract import PdfPage, PdfResult
+from email_brain.pdf_contract import source_for as pdf_source_for
 from email_brain.recovery import Recovery
 from email_brain.recovery_jobs import RecoveryJobs
 from email_brain.rules.control import RuleControl
@@ -50,15 +51,22 @@ from email_brain.schemas import (
     SearchRequest,
 )
 from email_brain.store import AccessDenied, IngestItem, NotFound, Store
-from email_brain.synthetic_formats import pdf_bytes
+from email_brain.synthetic_formats import SHEET_TYPE, pdf_bytes, xlsx_bytes
 from masterbrain.artifact_proposals import ArtifactProposalBatches
 from masterbrain.datacore.contracts import stable_id
+from masterbrain.datacore.document_contract import source_for
+from masterbrain.datacore.document_worker import extract_document
 from masterbrain.datacore.fileos import (
     ROOT_BINDING_VERSION,
     SNAPSHOT_VERSION,
     fileos_inventory_policy,
 )
 from masterbrain.datacore.persistence import DataCoreStore
+from masterbrain.email_xlsx_approvals import EmailXlsxApprovals
+from masterbrain.email_xlsx_document_bridge import (
+    BRIDGE_CODE_REVISION,
+    EmailXlsxDocumentBridge,
+)
 from masterbrain.fact_proposals import FactProposalBatches
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
@@ -351,6 +359,16 @@ class SeededTenant:
     artifact_proposal_link_id: str | None
 
 
+@dataclass(frozen=True)
+class SeededXlsxPublication:
+    context: TenantContext
+    approval_id: str
+    review_id: str
+    document_id: str
+    evidence_id: str
+    text_sha256: str
+
+
 class SyntheticDocumentProcessor:
     """Known-answer result for restore, not real extraction/isolation acceptance."""
 
@@ -358,7 +376,7 @@ class SyntheticDocumentProcessor:
 
     def extract(self, raw: bytes, *, part_path: str, part_sha256: str) -> PdfResult:
         return PdfResult(
-            source_for(raw, part_path, part_sha256),
+            pdf_source_for(raw, part_path, part_sha256),
             "extracted",
             "bounded_pdf_v1",
             1,
@@ -880,6 +898,159 @@ def seed(
     return tenants
 
 
+def seed_email_xlsx_publication(store: Store, tenant: SeededTenant) -> SeededXlsxPublication:
+    """Populate the reviewed XLSX tables for restore integrity, not worker isolation."""
+    ctx = tenant.context
+    document = xlsx_bytes("Fictional Atlas", 2450, 3, "restorexlsxproof")
+    message = EmailMessage()
+    message["From"] = "sender@example.invalid"
+    message["To"] = "owner@example.invalid"
+    message["Subject"] = "Fictional restore workbook"
+    message.set_content("Synthetic restore workbook")
+    message.add_attachment(
+        document, maintype="application",
+        subtype=SHEET_TYPE.removeprefix("application/"), filename="rent.xlsx",
+    )
+    message.set_boundary("synthetic-restore-xlsx-boundary")
+    raw = message.as_bytes()
+    with store.transaction(ctx) as conn:
+        cursor = conn.execute(
+            "SELECT opaque_cursor FROM sync_cursors WHERE account_id=%s AND scope='email'",
+            (tenant.account_id,),
+        ).fetchone()
+    expected_cursor = cursor["opaque_cursor"] if cursor else None
+    require(
+        store.ingest_page(
+            ctx, tenant.account_id, expected_cursor, "synthetic-xlsx-restore-checkpoint",
+            [IngestItem(
+                "restore-xlsx-event", "restore-xlsx-message", "v1",
+                datetime(2026, 9, 20, 12, tzinfo=UTC), raw,
+            )], synthetic_only=True,
+        ) == 1,
+        "XLSX restore seed ingest failed",
+    )
+    with store.transaction(ctx) as conn:
+        receipt = conn.execute(
+            "SELECT ar.id,ar.evidence_id,ar.part_id,ar.sha256 "
+            "FROM attachment_receipts ar JOIN message_versions mv "
+            "ON mv.tenant_id=ar.tenant_id AND mv.account_id=ar.account_id "
+            "AND mv.id=ar.evidence_id WHERE ar.account_id=%s AND mv.raw_sha256=%s "
+            "AND ar.media_type=%s",
+            (tenant.account_id, hashlib.sha256(raw).hexdigest(), SHEET_TYPE),
+        ).fetchone()
+    require(receipt is not None, "XLSX restore seed attachment missing")
+    assert receipt is not None
+    core = DataCoreStore(store)
+    core.bridge_current_email_version(
+        ctx, receipt["evidence_id"], uuid4(), code_revision="synthetic-restore-v1",
+    )
+    core.bridge_email_attachment(
+        ctx, receipt["id"], uuid4(), code_revision="synthetic-restore-v1",
+    )
+    version = "sandbox-fileos-document-v1-" + "a" * 64
+    approval = EmailXlsxApprovals(store, version).approve(
+        Principal(ctx, "human"), tenant.account_id, receipt["id"], uuid4(),
+    )["approval_id"]
+    source = source_for(
+        document,
+        stable_id("version", hashlib.sha256(raw).hexdigest(), receipt["part_id"],
+                  receipt["sha256"]),
+        "attachment.xlsx", receipt["sha256"], SHEET_TYPE,
+    )
+    extracted = extract_document(document, source)
+    require(
+        extracted.status == "extracted" and extracted.reason == "bounded_xlsx_v1"
+        and extracted.metadata.sheet_count is not None
+        and extracted.metadata.cell_count is not None,
+        "XLSX restore seed extraction failed",
+    )
+    digest = hashlib.sha256(extracted.text.encode()).hexdigest()
+    with store.transaction(ctx) as conn:
+        basis = conn.execute(
+            "SELECT * FROM brain_email_xlsx_extraction_approvals WHERE id=%s",
+            (approval,),
+        ).fetchone()
+        require(basis is not None, "XLSX restore seed approval missing")
+        assert basis is not None
+        # The restore fixture inserts the deterministic result directly. The
+        # isolated worker path is proved in separate XLSX integration tests.
+        conn.execute(
+            "INSERT INTO brain_email_xlsx_extraction_results("
+            "tenant_id,approval_id,worker_actor_id,account_id,parent_version_id,"
+            "attachment_id,raw_sha256,part_path,part_sha256,processor_version,"
+            "text_sha256,extracted_text,sheet_count,cell_count) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                ctx.tenant_id, approval, ctx.actor_id, basis["account_id"],
+                basis["parent_version_id"], basis["attachment_id"],
+                basis["raw_sha256"], basis["part_path"], basis["part_sha256"],
+                version, digest, extracted.text, extracted.metadata.sheet_count,
+                extracted.metadata.cell_count,
+            ),
+        )
+    bridge = EmailXlsxDocumentBridge(store)
+    review = bridge.review(
+        Principal(ctx, "human"), approval, uuid4(),
+        expected_text_sha256=digest,
+        expected_sheet_count=extracted.metadata.sheet_count,
+        expected_cell_count=extracted.metadata.cell_count,
+    )["review_id"]
+    publication = bridge.publish(ctx, review, uuid4())
+    require(publication["changed"], "XLSX restore seed publication failed")
+    return SeededXlsxPublication(
+        ctx, approval, review, publication["document_id"],
+        publication["evidence_id"], digest,
+    )
+
+
+def verify_restored_xlsx(
+    store: Store, seeded: SeededXlsxPublication,
+    foreign: TenantContext | None = None,
+) -> None:
+    """Verify restored review, receipt, content, and current Email-family retrieval."""
+    with store.transaction(seeded.context) as conn:
+        review = conn.execute(
+            "SELECT code_revision,text_sha256 FROM brain_email_xlsx_publication_reviews "
+            "WHERE id=%s", (seeded.review_id,),
+        ).fetchone()
+        receipt = conn.execute(
+            "SELECT approval_id,review_id,document_id,evidence_id,text_sha256,code_revision "
+            "FROM brain_email_xlsx_document_bridge_receipts WHERE approval_id=%s",
+            (seeded.approval_id,),
+        ).fetchone()
+    require(
+        review is not None and receipt is not None
+        and review["code_revision"] == BRIDGE_CODE_REVISION
+        and review["text_sha256"] == seeded.text_sha256
+        and receipt["approval_id"] == seeded.approval_id
+        and receipt["review_id"] == seeded.review_id
+        and receipt["document_id"] == seeded.document_id
+        and receipt["evidence_id"] == seeded.evidence_id
+        and receipt["text_sha256"] == seeded.text_sha256
+        and receipt["code_revision"] == BRIDGE_CODE_REVISION,
+        "restored XLSX review or publication changed",
+    )
+    family = DataCoreStore(store).search_current_email_family(
+        seeded.context, "restorexlsxproof",
+    )
+    require(
+        any(hit.document_id == seeded.document_id for hit in family.documents),
+        "restored XLSX document is not retrievable",
+    )
+    if foreign is not None:
+        require(foreign.tenant_id != seeded.context.tenant_id, "foreign tenant required")
+        with store.transaction(foreign) as conn:
+            hidden = conn.execute(
+                "SELECT id FROM brain_email_xlsx_publication_reviews WHERE id=%s",
+                (seeded.review_id,),
+            ).fetchone()
+        require(hidden is None, "foreign tenant can read restored XLSX review")
+        foreign_family = DataCoreStore(store).search_current_email_family(
+            foreign, "restorexlsxproof",
+        )
+        require(not foreign_family.documents, "foreign tenant can search restored XLSX")
+
+
 def snapshot(admin: str, blobs: EncryptedBlobStore | None = None) -> dict[str, tuple[int, str]]:
     """Hash every public table row without exporting content into diagnostics."""
     results = {}
@@ -906,7 +1077,10 @@ def snapshot(admin: str, blobs: EncryptedBlobStore | None = None) -> dict[str, t
     return results
 
 
-def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> None:
+def verify_restored(
+    admin: str, store: Store, tenants: list[SeededTenant],
+    xlsx_seed: SeededXlsxPublication | None = None,
+) -> None:
     # SQL mapping/authorization proof only; signature/HTTP proof has separate fake-issuer tests.
     identity_auth = OIDCAuthenticator(
         store,
@@ -1312,8 +1486,9 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             == "mime_rejected",
             "restored recovery attempt changed",
         )
+        has_xlsx = xlsx_seed is not None and xlsx_seed.context.tenant_id == ctx.tenant_id
         require(
-            status["message_counts"]["ready"] == 1
+            status["message_counts"]["ready"] == (2 if has_xlsx else 1)
             and status["message_counts"]["quarantined"] == (2 if store.blobs else 1),
             "quarantine state changed",
         )
@@ -1335,12 +1510,14 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             )
             message_count = conn.execute("SELECT count(*) AS n FROM messages").fetchone()
             require(
-                message_count is not None and message_count["n"] == 1,
+                message_count is not None and message_count["n"] == (2 if has_xlsx else 1),
                 "unfiltered SQL tenant isolation failed",
             )
             cursor = conn.execute("SELECT opaque_cursor FROM sync_cursors").fetchone()
             require(
-                cursor is not None and cursor["opaque_cursor"] == "synthetic-checkpoint",
+                cursor is not None and cursor["opaque_cursor"] == (
+                    "synthetic-xlsx-restore-checkpoint" if has_xlsx else "synthetic-checkpoint"
+                ),
                 "restored checkpoint changed",
             )
         try:
@@ -1513,6 +1690,7 @@ def _run_drill(storage: Path) -> dict[str, object]:
         source_store = make_runtime(source_dsn, "restore_source_runtime")
         keys: dict[tuple[UUID, str], bytes] = {}
         tenants = seed(source_dsn, source_store, object_root=storage / "source", keys=keys)
+        xlsx_seed = seed_email_xlsx_publication(source_store, tenants[0])
         source_bound = [
             (
                 f"restore_source_tenant_{index}",
@@ -1595,7 +1773,8 @@ def _run_drill(storage: Path) -> dict[str, object]:
         require(migrate(target_dsn, root / "migrations") == [], "restored migrations differ")
         restored_store = make_runtime(target_dsn, "restore_target_runtime")
         restored_store.blobs = target_blobs
-        verify_restored(target_dsn, restored_store, tenants)
+        verify_restored(target_dsn, restored_store, tenants, xlsx_seed)
+        verify_restored_xlsx(restored_store, xlsx_seed, tenants[1].context)
         retire_unrestored_bindings(target_dsn, tenants, [role for role, _ in source_bound])
         target_bound = [
             (

@@ -134,8 +134,9 @@ grant access via a role, or approve any selected row automatically.
    Keep historical direct publications unverified until each displayed citation is checked
    against currently authorized evidence at export time. Do not add inferred
    fact publication through this slice.
-3. Specify a deterministic export format and build the fail-closed citation
-   verifier and bounded renderer. Golden fictional tests must cover duplicate
+3. Use the existing `masterbrain_project_dossier_markdown_v1` export as the
+   eventual importer contract; do not introduce a second Markdown dialect.
+   Keep its fail-closed citation verifier and bounded renderer. Golden fictional tests must cover duplicate
    attachment occurrences, revoked/excluded sources, unsupported old quotes,
    truncation and byte-stable output. The renderer is not a freshness or truth
    certificate.

@@ -178,6 +178,8 @@ def test_populated_restore_seed_covers_pending_and_approved_fact_batches(databas
         batches = FactProposalBatches(store)
         preview = batches.preview(current.context, current.fact_proposal_batch_id)
         assert preview["row_count"] == 1
+
+
         assert preview["proposals"][0]["proposal_id"] == current.fact_proposal_id
         assert preview["proposals"][0]["status"] == (
             "approved" if current.fact_proposal_fact_id else "proposed"
@@ -199,6 +201,20 @@ def test_populated_restore_seed_covers_pending_and_approved_fact_batches(databas
         )
         with pytest.raises(NotFound):
             artifact_batches.preview(current.context, foreign.artifact_proposal_batch_id)
+
+
+@pytest.mark.postgres
+def test_restore_seed_includes_reviewed_retrievable_xlsx(database):
+    store, admin = database
+    tenants = drill.seed(admin, store, keyword_suffix=uuid4().hex[:8])
+    tenant = tenants[0]
+    seeded = drill.seed_email_xlsx_publication(store, tenant)
+    drill.verify_restored_xlsx(store, seeded, tenants[1].context)
+    with store.transaction(tenant.context) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_email_xlsx_extraction_results "
+            "WHERE approval_id=%s", (seeded.approval_id,),
+        ).fetchone()["n"] == 1
 
 
 def test_cli_requires_explicit_opt_in_without_invoking_docker():
