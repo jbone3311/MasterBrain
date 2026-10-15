@@ -2,6 +2,29 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Remaining isolated FOS report row shapes — ADR-210
+
+The exact pinned read-only donor `reporting.py` from ADR-209 now also anchors
+`top_entities`, `entity_crossdomain` and `dollars_by_domain` comparisons.
+The global local Python 3.14 environment with DuckDB 1.5.4 and its SQLite
+extension ran **20/20** focused fictional tests, including all five donor
+functions at the pinned source hash, null/duplicate/filter/rounding goldens
+and repeated 1,000-row entity/money cases. The first donor replay caught a
+Python ties-to-even versus DuckDB half-away average mismatch; the candidate
+was corrected and rechecked. Unordered distinct-domain strings and equal-rank
+row order are presentation-normalized; the donor wall clock is omitted.
+
+The exact-current full local Python 3.14/PostgreSQL 17.11 suite in the locked
+project environment passed **3,533 tests, 19 skipped** (629 of 630
+PostgreSQL-marked cases executed). Its optional DuckDB replay tests skip
+because DuckDB is not a product dependency; explicit goldens still execute.
+Browser tests passed **167/167**. The separate deployment gate passed **2,907
+tests, 645 skipped** (three PostgreSQL-marked cases executed); it does not
+replace the full database suite. Ruff, strict mypy (113 source files), docs
+links and diff whitespace passed. No live database, Brain API report, verified
+holding or FOS-Master cutover follows. Hosted exact-head and merged-main gates
+remain required.
+
 ## Isolated FOS intelligence-report baseline — ADR-209
 
 Pinned read-only FOS-Master `_SYSTEM/tools/reporting.py` at commit

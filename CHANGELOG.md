@@ -1,9 +1,15 @@
 # Changelog
 
+- ADR-210: compared the remaining three pinned FOS intelligence-report row
+  shapes on fictional data, with direct local DuckDB donor replay, a 1,000-row
+  repeat and corrected half-away rounding. No runtime report, verified balance,
+  live source or FileOS cutover.
+
 - Pin FOS-Master's coverage/timeline intelligence-report semantics in an
   isolated fictional ADR-209 parity seed. Exact-hash local donor replay and
   1,000-row comparison preserve its status counts and year-prefix behavior;
-  no money/entity report, certified freshness or investment total is enabled.
+  no certified freshness or investment total is enabled. ADR-210 later adds
+  the other three report row shapes without a runtime report.
 
 - Add a separate synthetic MasterBrain demo initializer/seed (ADR-208) that
   bridges fictional Email into DataCore, publishes one fictional FileOS text

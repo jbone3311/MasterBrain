@@ -37,9 +37,10 @@ the direct donor replay; it cannot turn hosted goldens into a parity claim.
 
 ## Next gates and rollback
 
-Compare the remaining three reports separately, including entity identity,
-cross-domain spread, duplicate mentions, unsupported money totals, source
-grants, time/currentness and report ordering. Then design a MasterBrain-native
-report over authorized evidence and reviewed assertions; the donor schema is
-not a runtime contract. Rollback removes this isolated candidate and tests;
-no persisted data or donor files change.
+The later [ADR-210](210_fos_entity_money_report_baseline.md) compares the
+remaining three row shapes, including entity grouping, cross-domain spread,
+duplicate mentions, unsupported money totals and report ordering. Source
+grants and time/currentness remain product gates. Then design a
+MasterBrain-native report over authorized evidence and reviewed assertions;
+the donor schema is not a runtime contract. Rollback removes this isolated
+candidate and tests; no persisted data or donor files change.

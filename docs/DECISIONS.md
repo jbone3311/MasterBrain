@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-210](adr/210_fos_entity_money_report_baseline.md) compares the remaining
+three FOS intelligence-report row shapes on fictional data. Duplicate entity
+mentions, distinct-domain spread and DuckDB money rounding are pinned, but
+the numeric sum is expressly not an investment balance or runtime API.
+
 [ADR-209](adr/209_fos_report_baseline.md) pins the first isolated, synthetic
 FOS intelligence-report comparison: coverage and timeline only, with donor
 source hash and no runtime, financial-truth or cutover claim.

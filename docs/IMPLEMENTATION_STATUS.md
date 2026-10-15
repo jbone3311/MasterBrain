@@ -1,10 +1,19 @@
 # MasterBrain Implementation Status
 
-ADR-209 adds an isolated, nonpublishing comparison of the pinned FOS-Master
-`coverage` and `timeline` intelligence-report row semantics. Fictional goldens,
-exact-hash local donor replay and a 1,000-row repeat passed. It deliberately
-does not port the donor's money/entity reports, read live databases, certify
-source freshness, calculate investments or supply a Brain API report.
+ADR-210 extends the isolated ADR-209 donor comparison to `top_entities`,
+`entity_crossdomain` and `dollars_by_domain`. Fictional goldens and direct
+read-only pinned-donor DuckDB replay cover duplicate mentions, spread,
+filtering, rounding and 1,000-row repeats. All five donor report row shapes
+now have a local comparison, but there is no authorized runtime report,
+financial truth claim, live-source use or FOS-Master cutover. The donor money
+sum is explicitly unsafe as an investment total.
+
+ADR-209 first added an isolated, nonpublishing comparison of the pinned
+FOS-Master `coverage` and `timeline` intelligence-report row semantics.
+Fictional goldens, exact-hash local donor replay and a 1,000-row repeat passed.
+ADR-210 subsequently added the three remaining row-shape comparisons; neither
+tranche reads a live database, certifies source freshness, calculates
+investments or supplies a Brain API report.
 
 ADR-208 adds a separate, replay-safe combined-source local demo. A fresh
 disposable PostgreSQL instance, internal Email seed, DataCore Email bridge,
