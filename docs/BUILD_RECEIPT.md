@@ -2,6 +2,24 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Fictional cross-source launcher package freshness
+
+The documented macOS local-backend self-test initially failed before startup
+with `ModuleNotFoundError: masterbrain.statement_fileos_replay`: its
+non-editable installation reused a same-version package missing that newer
+module. Rebuilding only the local package made the same trial pass. The
+launcher now forces that rebuild on each start and the documented manual
+command does the same. The actual fictional local launcher then passed its
+Cedar Email/FileOS evidence, reviewed Knowledge, conflicting Maple dates and
+private statement replay checks. Focused tests passed **29**, with **1**
+Docker-only skip (18 of 19 PostgreSQL-marked cases executed). Full repository
+gate on the same Python 3.14 environment passed **3,433 tests, 7 skipped**
+(576 of 577 PostgreSQL-marked cases executed); six browser suites passed
+**167/167**. Ruff, strict mypy (108 source files), documentation links and
+diff checks passed. Hosted gates are pending at this branch checkpoint. The
+temporary trial cluster was stopped and removed by its launcher; no personal
+source was used.
+
 ## Wells Fargo brokerage donor recipe parity — ADR-198
 
 Merged [PR #234](https://github.com/jbone3311/MasterBrain/pull/234)

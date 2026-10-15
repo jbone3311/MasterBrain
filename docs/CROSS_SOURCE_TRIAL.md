@@ -10,15 +10,17 @@ running or local PostgreSQL 17 (`initdb` and `pg_ctl` on `PATH`). Use a supporte
 Python 3.13 or 3.14 environment. From the repository:
 
 ```sh
-uv sync --locked --extra dev --python '>=3.13,<3.15' --no-editable
+uv sync --locked --extra dev --python '>=3.13,<3.15' --no-editable --reinstall-package masterbrain
 uv run --no-sync python tests/cross_source_preview.py --synthetic-preview
 ```
 
 Alternatively double-click `Start-MasterBrain-Trial.command` in the checkout.
-The launcher uses the same locked non-editable installation and suppresses a
-second automatic sync when it starts Python. This avoids relying on an editable
-`.pth` file that some macOS environments mark hidden; it does not change the
-normal developer installation workflow.
+The launcher rebuilds only the local MasterBrain package on every start, then
+suppresses a second automatic sync when it starts Python. Without that rebuild,
+`uv` can reuse a non-editable install of the same version that predates newer
+source modules; the trial then fails at import before it reaches PostgreSQL.
+This avoids relying on an editable `.pth` file that some macOS environments
+mark hidden; it does not change the normal developer installation workflow.
 The launcher creates an isolated temporary PostgreSQL 17 container when Docker
 is available, otherwise a new private temporary PostgreSQL 17 cluster. You can
 choose explicitly with `--backend docker` or `--backend local`. It never connects
