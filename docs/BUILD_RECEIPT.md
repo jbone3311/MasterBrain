@@ -5,12 +5,16 @@ Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 ## Read-only intake of the current MasterBrain dossier format — ADR-200
 
 The owner selected ADR-197's export layout as the Librarian exchange format.
-This branch adds a bounded, no-I/O candidate inventory, not a proposal stage.
+Merged [PR #239](https://github.com/jbone3311/MasterBrain/pull/239) adds a bounded,
+no-I/O candidate inventory, not a proposal stage.
 Ten fictional parser cases and one actual fictional PostgreSQL exporter-to-
 parser case passed locally. The local Python 3.14/PostgreSQL 17.11 deployment
 gate passed **3,453 tests, 8 skipped** (576 of 577 PostgreSQL-marked tests
 executed). Ruff, strict mypy, documentation links and 167 browser tests passed.
-Hosted checks are pending at this branch checkpoint. The
+Exact-head [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38693058019),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38693058074)
+and [logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/38693058061)
+passed. Independent merged-main checks are pending. The
 input's IDs and citations remain unverified claims; no `observed_at`, full
 quote, approval or source freshness is inferred from the export.
 
@@ -1966,7 +1970,11 @@ FOS-Master was not changed. [PR #238](https://github.com/jbone3311/MasterBrain/p
 merged after exact-head [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38691046888),
 [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38691046822)
 and [logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/38691046882)
-completed successfully. Independent merged-main checks are still pending.
+completed successfully. Independent merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38692194979),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38692194998)
+and [logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/38692194985)
+also passed.
 
 PR [#106](https://github.com/jbone3311/MasterBrain/pull/106) merged its
 documentation receipt at `b1f3b058f34813db3d7a49547228ecc451f03691`.
