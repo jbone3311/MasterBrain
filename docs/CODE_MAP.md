@@ -1,5 +1,9 @@
 # Current MasterBrain code map
 
+ADR-251 adds a [pure consecutive FileOS v2 observation preview](../src/masterbrain/datacore/fileos_v2_consecutive_preview.py)
+with [fictional coverage tests](../tests/test_fileos_v2_consecutive_preview.py).
+It has no database binding, API, current read or absence-event authority.
+
 ADR-244 adds the [server-owned bridge revision](../src/masterbrain/email_xlsx_document_bridge.py)
 and [SQL guard](../migrations/0086_email_xlsx_bridge_revision_guard.sql),
 with refusal tests in the [bridge suite](../tests/test_email_xlsx_document_bridge_postgres.py).

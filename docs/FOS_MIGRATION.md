@@ -239,6 +239,10 @@ known policy gaps, real cloud placeholders, permission faults, live platform/nam
 behavior, owner-authorized live shadow, later v2 current/absence semantics and
 rollback still require review. No v2 activation or FOS-Master change is
 authorized by this result; see the [exact receipt](BUILD_RECEIPT.md).
+ADR-251 adds a pure, synthetic-only consecutive donor-observation preview for
+the later-run policy question. It separates possible absence from hashless,
+deferred, excluded and error-covered paths, but is not connected to an actual
+completed v2 baseline and cannot create absence or current-read authority.
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then

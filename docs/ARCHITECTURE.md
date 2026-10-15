@@ -116,6 +116,11 @@ its first implementation must remain private and SQL-fenced against activation.
 ADR-147 exposes only the existing human-scoped historical search comparison of
 one ready v2 generation with active v1 through a bounded Brain API route. That
 read path neither activates v2 nor changes FileOS current-state authority.
+ADR-251 adds an offline consecutive-observation policy preview for later v2
+runs. It distinguishes possible absence from hashless, deferred, excluded and
+error-covered membership, but is not bound to a completed baseline or allowed
+to publish absence/current state. A durable later-run transaction and rollback
+policy must be designed before any v2 read switch.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

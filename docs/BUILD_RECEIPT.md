@@ -2,6 +2,19 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Consecutive FileOS v2 observation preview — current unmerged branch
+
+ADR-251 adds a pure, nonpublishing later-observation classifier. Twelve fictional
+tests passed for changed/new/missing rows, symlink-directory and unrelated
+coverage errors, hashless-to-hashed transitions, dataless deferral,
+nonregular-file exclusion, a donor-equivalent 10-of-20 mass-loss blocker,
+incomplete prior coverage, source/root/policy/time mismatches and forged row
+identity, plus a 3,000-row unchanged stress case. Ruff and strict mypy over
+142 source files passed; an offline wheel build included the new module. The
+preview neither consults a completed database
+baseline nor writes an absence event, current index or source file;
+the later-run database and rollback gates are still open.
+
 ## Exact-source donor parity gate — current unmerged branch
 
 The older DataCore dedupe/extraction parity command now refuses a dirty

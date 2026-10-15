@@ -1,5 +1,11 @@
 # Architecture Decisions
 
+[ADR-251](adr/251_fileos_v2_consecutive_observation_preview.md) adds a
+read-only, nonpublishing comparison of two closed FileOS donor-policy
+observations. It distinguishes a possible absence from deferred, excluded,
+error-covered and hashless prior rows but never authorizes an absence event,
+current v2 read or FOS-Master cutover.
+
 [ADR-250](adr/250_fictional_xlsx_alpha_round_trip.md) treats the synthetic
 Email XLSX path as one round-trip contract from owner evidence selection
 through two separately scoped workers to cited retrieval and source-pause

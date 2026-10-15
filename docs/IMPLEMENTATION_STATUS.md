@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-251 adds a synthetic-only, pure FileOS v2 consecutive-observation preview.
+It validates both closed donor candidates, source/root/policy/time continuity,
+and separates possible absence from deferral, exclusions, scan errors and
+hashless prior rows. Twelve fictional cases, including 3,000-row stress, pass.
+It does not read the database,
+attest a completed v2 run, write an absence event, activate v2 current reads
+or alter FOS-Master. A durable later-run ledger and live shadow remain open.
+
 ADR-250 adds one disposable PostgreSQL round trip from fictional owner Email
 search/evidence and exact XLSX approval through separate extraction/review/
 publication identities to cited Brain retrieval. The actual API result and

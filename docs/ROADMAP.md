@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-251 supplies a tested, nonpublishing FileOS v2 later-observation
+classification: hashless, deferred, excluded and error-covered paths do not
+silently become absence. Next bind this policy to one actual completed v2
+baseline and fresh source scan under a tenant/source lock, then design the
+immutable later-run ledger, current visibility and rollback separately.
+No v2 activation, live-root authorization or FOS-Master cutover follows.
+
 ADR-250 now proves one complete fictional Email XLSX round trip using real
 owner/API and separate tenant-bound worker-controller calls with a simulated
 restricted processor, then hides the derivative when its source is paused.
