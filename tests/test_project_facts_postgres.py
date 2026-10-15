@@ -182,6 +182,25 @@ def test_project_fact_exact_quote_replay_and_visible_successor(database, tenant)
     assert retained_dossier["facts_truncated"] is True
 
 
+def test_transactional_fact_publication_rolls_back_whole_review(database, tenant):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    first_key = uuid4()
+    with pytest.raises(ValueError, match="quote lacks"):
+        with store.transaction(ctx) as conn:
+            facts._publish_in_transaction(
+                conn, ctx, project_id, _body(project_id, evidence_id), first_key,
+            )
+            facts._publish_in_transaction(
+                conn, ctx, project_id,
+                _body(project_id, evidence_id, quote="invented"), uuid4(),
+            )
+    assert facts.page(ctx, project_id, ProjectFactPageRequest())["results"] == []
+    published = facts.publish(ctx, project_id, _body(project_id, evidence_id), first_key)
+    assert published["changed"] is True
+
+
 def test_project_fact_other_tenant_and_wrong_project_denied(database, tenant):
     store, _ = database
     ctx, _, project_id, evidence_id = _prepared(store, tenant)

@@ -6,7 +6,10 @@ approval receipt is tied to generic Knowledge publications, while ADR-195
 project facts have a separate receipt and publication path. The next code
 checkpoint is therefore a separate private, atomic fact queue with exact
 export-line/citation matching, current source and project rechecks, explicit
-human decisions, and a synthetic export-to-review acceptance run. Artifact
+human decisions, and a synthetic export-to-review acceptance run. The existing
+fact publisher now has a tested transaction-bound primitive so that later
+batch review can publish all approved facts atomically; the queue and route
+are **not yet implemented**. Artifact
 links and inferred facts still need independent contracts. No live source or
 FOS-Master cutover follows from this design.
 

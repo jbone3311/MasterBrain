@@ -2,12 +2,31 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Project-fact transactional publication prerequisite — ADR-206
+
+The existing direct, reviewed project-fact write now calls its same validated
+publication logic inside an explicit caller-supplied transaction. A fictional
+two-fact test proves that a bad second quote rolls back the first fact and its
+idempotency receipt; the unchanged direct route remains covered by its prior
+tests. This enables a later atomic fact-batch review but does **not** create
+fact proposal storage, stage/preview/review routes or Markdown fact import.
+The exact local Python 3.14/PostgreSQL 17.11 full gate on a fresh disposable
+database passed **3,488 tests, nine skipped** (599 of 600 PostgreSQL-marked
+tests executed). The focused fact/import suites passed **27/27**. Six browser
+suites passed **167/167**; Ruff, strict mypy (109 source files), docs links
+(307 Markdown files, 1,624 paths/fragments), diff check and the repository
+deployment quality gate passed. The deployment gate skips most PostgreSQL
+tests and is not substituted for the full run. Hosted exact-head and
+merged-main gates remain unverified while GitHub Actions cannot start jobs
+because of the account billing/spending-limit block. FOS-Master and live
+sources were not changed.
+
 ## Project-fact Markdown proposal boundary — ADR-206 (design only)
 
 ADR-206 records the next synthetic-only selected-fact importer contract and
 its required acceptance tests. **No fact-stage route, fact proposal table or
-fact approval path was implemented in this checkpoint.** The existing fact
-selection remains fail-closed. The exact local Python 3.14/PostgreSQL 17.11
+fact approval path was implemented in that design checkpoint.** The existing
+fact selection remains fail-closed. The exact local Python 3.14/PostgreSQL 17.11
 full gate on a fresh disposable database passed **3,487 tests, nine skipped**
 (598 of 599 PostgreSQL-marked tests executed). Six browser suites passed
 **167/167**; Ruff, strict mypy (109 source files), docs links (307 Markdown

@@ -5,6 +5,9 @@ boundary. Facts cannot use ADR-186's generic approval receipt unchanged:
 reviewed project facts have their own publication receipt and validation path.
 Current fact rows remain inspectable in Markdown but are rejected by staging;
 the next code tranche is a private, explicitly reviewed synthetic fact queue.
+The direct fact publisher now exposes the same validated write within an
+existing transaction, with a fictional two-fact rollback test. This is a
+prerequisite, not an import or proposal path.
 
 ADR-205 extends the synthetic-only, owner-selected Markdown import to one
 selected project-member role per typed proposal row. A member needs an already

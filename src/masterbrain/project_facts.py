@@ -191,6 +191,16 @@ class ProjectFacts:
         self, ctx: TenantContext, project_id: str, body: ProjectFactWrite,
         idempotency_key: UUID,
     ) -> dict[str, Any]:
+        self._validate_publish(ctx, project_id, body, idempotency_key)
+        with self.store.transaction(ctx) as conn:
+            return self._publish_in_transaction(
+                conn, ctx, project_id, body, idempotency_key,
+            )
+
+    def _validate_publish(
+        self, ctx: TenantContext, project_id: str, body: ProjectFactWrite,
+        idempotency_key: UUID,
+    ) -> None:
         self.store.require(ctx, "knowledge.review")
         self.store.require(ctx, "brain.content.read")
         if ctx.identity is not None and ctx.identity.client_kind != "human":
@@ -201,6 +211,13 @@ class ProjectFacts:
             raise NotFound()
         if not isinstance(body, ProjectFactWrite) or body.project_id != project_id:
             raise ValueError("project fact subject mismatch")
+
+    def _publish_in_transaction(
+        self, conn: Any, ctx: TenantContext, project_id: str,
+        body: ProjectFactWrite, idempotency_key: UUID,
+    ) -> dict[str, Any]:
+        """Publish under the caller's transaction for atomic human batch review."""
+        self._validate_publish(ctx, project_id, body, idempotency_key)
         allowed = sorted(ctx.source_ids) if ctx.source_ids is not None else None
         payload = body.model_dump(mode="json")
         request_sha = hashlib.sha256(
@@ -209,83 +226,82 @@ class ProjectFacts:
         fact_id = stable_id(
             "pfact", str(ctx.tenant_id), str(ctx.actor_id), str(idempotency_key)
         )
-        with self.store.transaction(ctx) as conn:
-            conn.execute(
-                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
-                (f"{ctx.tenant_id}:pfact:{ctx.actor_id}:{idempotency_key}",),
-            )
-            project = conn.execute(
-                "WITH allowed AS (SELECT %s::text[] AS sources) "
-                "SELECT 1 FROM knowledge_projects p CROSS JOIN allowed "
-                "WHERE p.id=%s AND " + _visible_assertion_sql("p", "'project'", "p.id"),
-                (allowed, project_id),
+        conn.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+            (f"{ctx.tenant_id}:pfact:{ctx.actor_id}:{idempotency_key}",),
+        )
+        project = conn.execute(
+            "WITH allowed AS (SELECT %s::text[] AS sources) "
+            "SELECT 1 FROM knowledge_projects p CROSS JOIN allowed "
+            "WHERE p.id=%s AND " + _visible_assertion_sql("p", "'project'", "p.id"),
+            (allowed, project_id),
+        ).fetchone()
+        if project is None:
+            raise NotFound()
+        matched: set[str] = set()
+        for evidence_id in body.evidence_ids:
+            row = conn.execute(
+                "SELECT e.id, EXISTS (SELECT 1 FROM brain_normalized_documents d "
+                "WHERE d.tenant_id=e.tenant_id AND d.evidence_id=e.id "
+                "AND position(%s IN d.body)>0) AS quote_matches "
+                "FROM brain_evidence e "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id "
+                "JOIN brain_source_items i ON i.tenant_id=v.tenant_id "
+                "AND i.id=v.item_id AND i.source_id=v.source_id "
+                "JOIN brain_sources source ON source.tenant_id=i.tenant_id "
+                "AND source.id=i.source_id "
+                "WHERE e.id=%s AND i.current_version_id=v.id "
+                "AND source.status='active' "
+                "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
+                "AND (%s::text[] IS NULL OR source.id=ANY(%s::text[]))",
+                (body.source_quote, evidence_id, allowed, allowed),
             ).fetchone()
-            if project is None:
+            if row is None:
                 raise NotFound()
-            matched: set[str] = set()
-            for evidence_id in body.evidence_ids:
-                row = conn.execute(
-                    "SELECT e.id, EXISTS (SELECT 1 FROM brain_normalized_documents d "
-                    "WHERE d.tenant_id=e.tenant_id AND d.evidence_id=e.id "
-                    "AND position(%s IN d.body)>0) AS quote_matches "
-                    "FROM brain_evidence e "
-                    "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
-                    "AND v.id=e.source_version_id "
-                    "JOIN brain_source_items i ON i.tenant_id=v.tenant_id "
-                    "AND i.id=v.item_id AND i.source_id=v.source_id "
-                    "JOIN brain_sources source ON source.tenant_id=i.tenant_id "
-                    "AND source.id=i.source_id "
-                    "WHERE e.id=%s AND i.current_version_id=v.id "
-                    "AND source.status='active' "
-                    "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
-                    "AND (%s::text[] IS NULL OR source.id=ANY(%s::text[]))",
-                    (body.source_quote, evidence_id, allowed, allowed),
-                ).fetchone()
-                if row is None:
-                    raise NotFound()
-                if row["quote_matches"]:
-                    matched.add(evidence_id)
-            if body.quote_evidence_id not in matched:
-                raise ValueError("project fact quote lacks an exact source span")
-            if body.supersedes_id is not None:
-                prior_fact = conn.execute(
-                    "WITH allowed AS (SELECT %s::text[] AS sources) "
-                    "SELECT f.project_id,f.predicate,f.value_type "
-                    "FROM knowledge_project_facts f CROSS JOIN allowed "
-                    "WHERE f.id=%s AND " + _fact_evidence_visible_sql("f"),
-                    (allowed, body.supersedes_id),
-                ).fetchone()
-                if (prior_fact is None or prior_fact["project_id"] != project_id
-                    or prior_fact["predicate"] != body.predicate
-                    or prior_fact["value_type"] != body.value_type):
-                    raise NotFound()
-            prior = conn.execute(
-                "SELECT request_sha256,fact_id FROM knowledge_project_fact_receipts "
-                "WHERE actor_id=%s AND idempotency_key=%s",
-                (ctx.actor_id, idempotency_key),
+            if row["quote_matches"]:
+                matched.add(evidence_id)
+        if body.quote_evidence_id not in matched:
+            raise ValueError("project fact quote lacks an exact source span")
+        if body.supersedes_id is not None:
+            prior_fact = conn.execute(
+                "WITH allowed AS (SELECT %s::text[] AS sources) "
+                "SELECT f.project_id,f.predicate,f.value_type "
+                "FROM knowledge_project_facts f CROSS JOIN allowed "
+                "WHERE f.id=%s AND " + _fact_evidence_visible_sql("f"),
+                (allowed, body.supersedes_id),
             ).fetchone()
-            if prior is not None:
-                if prior["request_sha256"] != request_sha:
-                    raise Conflict("project fact idempotency key reused")
-                return {"object_id": prior["fact_id"], "changed": False, "reviewed": True}
-            conn.execute(
-                "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
-                "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
-                "quote_evidence_id,source_quote,observed_at,valid_from,valid_to,"
-                "supersedes_id,reviewer_id) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (ctx.tenant_id, fact_id, project_id, body.predicate, body.value,
-                 body.value_type, body.assertion_status, body.confidence,
-                 body.derivation, body.evidence_ids, body.quote_evidence_id,
-                 body.source_quote, body.observed_at, body.valid_from, body.valid_to,
-                 body.supersedes_id, ctx.actor_id),
-            )
-            conn.execute(
-                "INSERT INTO knowledge_project_fact_receipts(tenant_id,actor_id,"
-                "idempotency_key,request_sha256,fact_id) VALUES (%s,%s,%s,%s,%s)",
-                (ctx.tenant_id, ctx.actor_id, idempotency_key, request_sha, fact_id),
-            )
-            self.store.audit(conn, ctx, "knowledge.project_fact_published", "pfact", fact_id)
+            if (prior_fact is None or prior_fact["project_id"] != project_id
+                or prior_fact["predicate"] != body.predicate
+                or prior_fact["value_type"] != body.value_type):
+                raise NotFound()
+        prior = conn.execute(
+            "SELECT request_sha256,fact_id FROM knowledge_project_fact_receipts "
+            "WHERE actor_id=%s AND idempotency_key=%s",
+            (ctx.actor_id, idempotency_key),
+        ).fetchone()
+        if prior is not None:
+            if prior["request_sha256"] != request_sha:
+                raise Conflict("project fact idempotency key reused")
+            return {"object_id": prior["fact_id"], "changed": False, "reviewed": True}
+        conn.execute(
+            "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+            "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,valid_from,valid_to,"
+            "supersedes_id,reviewer_id) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (ctx.tenant_id, fact_id, project_id, body.predicate, body.value,
+             body.value_type, body.assertion_status, body.confidence,
+             body.derivation, body.evidence_ids, body.quote_evidence_id,
+             body.source_quote, body.observed_at, body.valid_from, body.valid_to,
+             body.supersedes_id, ctx.actor_id),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_project_fact_receipts(tenant_id,actor_id,"
+            "idempotency_key,request_sha256,fact_id) VALUES (%s,%s,%s,%s,%s)",
+            (ctx.tenant_id, ctx.actor_id, idempotency_key, request_sha, fact_id),
+        )
+        self.store.audit(conn, ctx, "knowledge.project_fact_published", "pfact", fact_id)
         return {"object_id": fact_id, "changed": True, "reviewed": True}
 
     def page(
