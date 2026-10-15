@@ -2,6 +2,20 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Encrypted Email source size — ADR-222
+
+A fictional encrypted retained-MIME test first reproduced a `NULL`
+source-version size when bridging Email into DataCore. The bridge now uses
+PostgreSQL's generated `raw_size`, valid for inline and encrypted storage.
+The regression checks the exact raw SHA-256 and byte size, authorized blob
+recovery, and unchanged inline bridge behavior. Focused encrypted/inline
+bridge tests passed **2/2**. The full disposable PostgreSQL 17.11 / Python
+3.14 suite passed **3,599 tests, 19 skipped** (645/646 PostgreSQL-marked
+executed). Ruff, mypy over 119 source files and documentation links passed.
+No live account or source was used; FOS-Master was not changed. Hosted exact-
+head and independent restore remain required before merge. This is source
+identity repair, not independently replayed Email bytes or financial truth.
+
 ## Formula/overlong-cell XLSX deferral — ADR-221
 
 The restricted DataCore XLSX worker now reads formula cells visibly and

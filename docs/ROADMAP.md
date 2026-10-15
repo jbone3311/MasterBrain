@@ -1,5 +1,10 @@
 # MasterBrain Roadmap
 
+ADR-222 removes an encrypted-Email bridge blocker: source-version byte size
+now follows the storage-independent retained MIME size. Next prove authorized
+current Email bytes reproduce the published text under a pinned parser and
+record a point-in-time replay receipt; this does not authorize live mail.
+
 ADR-221 closes two XLSX false-success cases: uncached formulas and overlong
 cells now defer with no published text. Full sheet/cell/feature coverage,
 formula/display policy and source-tier attestation are still required before

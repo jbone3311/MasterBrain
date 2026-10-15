@@ -31,6 +31,7 @@ from psycopg.types.json import Jsonb
 
 from email_brain.api import create_app
 from email_brain.auth import Credential, Principal, TokenRegistry
+from email_brain.blobs import EncryptedBlobStore
 from email_brain.connectors.fastmail import MAIL, FastmailReadClient
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_identity_lookup, grant_runtime, grant_tenant_runtime, migrate
@@ -919,6 +920,38 @@ def test_email_bridge_is_replayable_searchable_and_closed(
             "WHERE tenant_id=%s AND legacy_version_id=%s",
             (ctx.tenant_id, legacy),
         )
+
+
+def test_email_bridge_preserves_encrypted_mime_source_size(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path,
+) -> None:
+    store, _admin = database
+    ctx, account = tenant
+    backend = EncryptedBlobStore(
+        tmp_path / "fictional-ciphertext",
+        {(ctx.tenant_id, "test-key"): bytes(range(32))},
+        {ctx.tenant_id: "test-key"},
+    )
+    encrypted = Store(store.dsn, blobs=backend)
+    message = item(key="encrypted-bridge-1", body="Fictional encrypted bridge proof")
+    assert message.raw is not None
+    encrypted.ingest_page(ctx, account, None, "encrypted-bridge-page", [message])
+    legacy = encrypted.search(ctx, SearchRequest(query="encrypted bridge proof"))[0]["evidence_id"]
+    bridged = DataCoreStore(encrypted).bridge_current_email_version(
+        datacore_context(ctx), legacy, uuid4(), code_revision="encrypted-email-bridge-v1",
+    )
+    with encrypted.transaction(datacore_context(ctx)) as conn:
+        raw = conn.execute(
+            "SELECT raw_mime,raw_size FROM raw_objects WHERE account_id=%s", (account,),
+        ).fetchone()
+        version = conn.execute(
+            "SELECT size_bytes,sha256 FROM brain_source_versions WHERE id=%s",
+            (bridged.version_id,),
+        ).fetchone()
+    assert raw is not None and raw["raw_mime"] is None
+    assert raw["raw_size"] == version["size_bytes"] == len(message.raw)
+    assert version["sha256"] == hashlib.sha256(message.raw).hexdigest()
+    assert encrypted.load_raw(ctx, account, version["sha256"]) == message.raw
 
 
 def test_email_bridge_rejects_historical_and_hidden_versions(

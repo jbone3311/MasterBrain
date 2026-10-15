@@ -1,5 +1,15 @@
 # MasterBrain Build Progress
 
+## Encrypted Email bridge size (2026-10-15, ADR-222, open PR)
+
+A fictional encrypted-MIME PostgreSQL regression reproduced a null source-
+version size at bridge time. DataCore now reads the generated retained-object
+byte size, preserving the source hash and size for inline and encrypted
+storage. The focused encrypted/inline tests passed 2/2. The full disposable
+PostgreSQL 17.11 / Python 3.14 suite passed 3,599 with 19 skipped (645/646
+PostgreSQL-marked executed); Ruff, mypy and docs passed. This is not the
+planned independent Email-byte replay or live-mail authorization.
+
 ## Spreadsheet omission guard (2026-10-15, ADR-221, open PR)
 
 Two authored fictional XLSX cases proved false extraction success: an

@@ -1225,7 +1225,7 @@ class DataCoreStore:
                 "v.provider_version,v.snapshot,v.parser_version,v.recorded_at,"
                 "m.raw_sha256 AS current_raw_sha256,m.parser_version AS current_parser_version,"
                 "m.subject,m.sender,m.clean_text,m.received_at,m.deleted,m.quarantined,"
-                "a.provider,octet_length(r.raw_mime) AS raw_size "
+                "a.provider,r.raw_size AS raw_size "
                 "FROM message_versions v JOIN messages m ON m.tenant_id=v.tenant_id "
                 "AND m.account_id=v.account_id AND m.id=v.message_id "
                 "JOIN mail_accounts a ON a.tenant_id=v.tenant_id AND a.id=v.account_id "
