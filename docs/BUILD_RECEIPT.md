@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Tenant-bound Email replay command — ADR-224
+
+`masterbrain email replay-tier-text` now checks or executes one reviewed
+direct-parser Email replay under a private exact two-scope worker token and a
+DBA-enrolled tenant-bound PostgreSQL login. The closed config binds one
+account. Check mode validates the active account and optional existing private
+blob root/key manifest but does not read the selected MIME or review row or
+write a receipt. Execution supports inline and authenticated encrypted
+retained MIME, rechecks credentials inside the final transaction, returns no
+source text, and makes no source change. Fictional command-to-database tests
+refuse shared and owner DSNs, wrong account and wrong scope. Underlying
+ADR-223 faults cover ciphertext changes, stale source and revocation rollback.
+
+Focused command/replay tests passed **21/21**. The full disposable PostgreSQL
+17.11 / Python 3.14 suite passed **3,628 tests, 19 skipped** (653/654
+PostgreSQL-marked executed). Ruff, mypy over 122 source files, documentation
+links (325 Markdown files, 1,691 local paths/fragments) and diff whitespace
+passed. No live account or FOS-Master change. Hosted exact-head CI and
+independent restore remain required before merge. No issuer authenticity,
+attachment/PDF completeness or financial publication is claimed.
+
 ## Retained Email byte/text replay — ADR-223
 
 Migration 0077 records one immutable digest-only worker-observed replay for a
@@ -20,9 +41,9 @@ final full disposable PostgreSQL 17.11 / Python 3.14 suite passed **3,613
 tests, 19 skipped** (651/652 PostgreSQL-marked executed). Ruff, mypy over
 121 source files, documentation links (324 Markdown files, 1,691 local
 paths/fragments), and diff whitespace passed. No live account or FOS-Master
-change. A tenant-bound operator command, hosted exact-head CI and independent
-restore remain open before merge. This receipt is not sender authenticity,
-attachment/PDF completeness or financial approval.
+change. ADR-224 now supplies a tenant-bound operator command; hosted exact-head
+CI and independent restore remain open before merge. This receipt is not
+sender authenticity, attachment/PDF completeness or financial approval.
 
 ## Encrypted Email source size — ADR-222
 

@@ -1,20 +1,31 @@
 # MasterBrain Implementation Status
 
+ADR-224 exposes ADR-223's current reviewed direct-parser Email MIME replay as
+an exact tenant-bound operator command. A two-scope worker token and one
+configured account are mandatory. Check mode validates private credentials,
+account, database binding and optional encrypted storage without reading the
+selected MIME or writing a receipt. Fictional inline/encrypted command-to-
+database tests pass locally; no live account, attachment/PDF completeness,
+financial approval or FileOS cutover is claimed. Hosted and independent
+restore gates remain open.
+
 ADR-219 exposes the FileOS tier-text replay through a restricted operator
 command with a mandatory tenant-bound database login, exact review/source
 selection and a document-publish-only worker token. Check mode never reads
 the selected file or writes a receipt; execution reauthenticates inside the
 final transaction. Synthetic command-to-database execution and revocation
-rollback pass locally. No live source, PDF/OCR completeness, Email-byte
-replay, financial approval or FileOS cutover is claimed.
+rollback pass locally. No live source, PDF/OCR completeness, financial
+approval or FileOS cutover is claimed; ADR-223/224 later add direct-parser
+Email replay separately.
 
 ADR-218 adds a point-in-time FileOS text-byte replay receipt for an ADR-217
 human tier review and moves the shared confined read/text derivation into
 DataCore. The older statement replay uses that same path without changing its
 contract. This is an internal worker-scoped operation, not an exposed command
 or a guarantee of later file freshness. Production worker credential gating,
-PDF/OCR and spreadsheet coverage, Email-byte replay and financial publication
-remain open. Full fictional local PostgreSQL/browser gates pass; hosted and
+PDF/OCR and spreadsheet coverage and financial publication remain open;
+ADR-223/224 later add direct-parser Email replay. Full fictional local
+PostgreSQL/browser gates pass; hosted and
 independent restore gates remain open.
 
 ADR-217 adds a current-source, source-granted human tier review record and

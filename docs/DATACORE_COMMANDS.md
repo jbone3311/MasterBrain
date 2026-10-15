@@ -38,6 +38,36 @@ certificate or approval of a financial fact. Only fictional local sources
 have been tested; do not point this at a live root without a separately
 authorized pilot and hosted/restore gates.
 
+## Replay one reviewed retained Email text source
+
+Store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It has one `account_id`, absolute `credentials_file` and
+`token_file`, and optional paired `blob_root` and `keys_file` for encrypted
+retained MIME. The key manifest is a private 0600 JSON file with `tenant_id`
+and 1–100 unique `{key_id,key_hex}` entries; the root already exists as a
+private 0700 directory. Do not put a provider token or DSN in this config.
+The worker token must have **exactly** `brain.document.publish` and
+`email.evidence.read`; the DSN in `MASTERBRAIN_DSN` must be a DBA-enrolled
+tenant-bound login for that worker.
+
+```sh
+masterbrain email replay-tier-text \
+  --config /private/operator/email-tier-replay.json \
+  --review-id stier_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode authenticates and checks config, account, login and optional blob
+root/key manifest without reading the selected MIME or review row and without
+writing a receipt. Omit `--check` to replay exactly that review. Execution
+verifies the review belongs to the configured account, re-reads only its
+retained inline or authenticated encrypted MIME, recomputes the complete
+direct-parser DataCore text and rechecks the token inside the final
+transaction. The digest-only receipt is a point-in-time observation, not
+sender authenticity, attachment completeness, live freshness or financial
+approval. Only fictional accounts have been tested; a live account requires
+separate owner authorization and hosted/restore gates.
+
 Every database-backed private `masterbrain` command below accepts
 `--tenant-bound-db` on both `--check` and execution (ADRs 135, 138 and 139).
 With this opt-in, `MASTERBRAIN_DSN` must be a DBA-enrolled login bound to the

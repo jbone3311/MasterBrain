@@ -3,19 +3,29 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import secrets
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
 import psycopg
 import pytest
 import test_postgres as pg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 
 from email_brain.blobs import EncryptedBlobStore
+from email_brain.migrate import grant_tenant_runtime
 from email_brain.schemas import SearchRequest
 from email_brain.store import AccessDenied, Conflict, IngestItem, NotFound, Store
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge_schema import SourceTierReviewWrite
+from masterbrain.source_tier_email_controller import (
+    EmailTierReplayControllerError,
+    run_source_tier_email_controller,
+)
 from masterbrain.source_tier_email_replay import SourceTierEmailReplayStore
 from masterbrain.source_tier_reviews import SourceTierReviews
 
@@ -114,6 +124,10 @@ def test_email_replay_requires_scopes_current_version_and_grant(database, tenant
         replay.record_current_text_replay(
             replace(_worker(ctx), source_ids=frozenset()), review_id,
         )
+    with pytest.raises(NotFound):
+        replay.record_current_text_replay(
+            _worker(ctx), review_id, expected_account_id=uuid4(),
+        )
     newer = pg.item(key="email-tier-new", body="A newer fictional message")
     store.ingest_page(ctx, account, "email-tier-stale-page", "email-tier-new-page", [newer])
     with pytest.raises(Conflict, match="basis changed"):
@@ -196,3 +210,91 @@ def test_email_version_race_after_byte_read_rolls_back(
             "SELECT count(*) AS n FROM knowledge_source_tier_email_replays "
             "WHERE review_id=%s", (review_id,),
         ).fetchone()["n"] == 0
+
+
+@pytest.mark.parametrize("encrypted", [False, True], ids=["inline", "encrypted"])
+def test_tenant_bound_operator_command_checks_then_replays_one_email(
+    database, tenant, tmp_path: Path, encrypted: bool,
+) -> None:
+    base, admin = database
+    ctx, account = tenant
+    state = tmp_path / "private-state"
+    state.mkdir(mode=0o700)
+    config: dict[str, object] = {"version": 1, "account_id": str(account)}
+    store = base
+    if encrypted:
+        blob_root = state / "ciphertext"
+        blobs = EncryptedBlobStore(
+            blob_root, {(ctx.tenant_id, "test-key"): bytes(range(32))},
+            {ctx.tenant_id: "test-key"},
+        )
+        store = Store(base.dsn, blobs=blobs)
+        keys_file = state / "keys.json"
+        keys_file.write_text(json.dumps({
+            "tenant_id": str(ctx.tenant_id),
+            "keys": [{"key_id": "test-key", "key_hex": bytes(range(32)).hex()}],
+        }))
+        keys_file.chmod(0o600)
+        config.update({"blob_root": str(blob_root), "keys_file": str(keys_file)})
+    review_id, _version_id, raw = _fixture(
+        store, ctx, account, key="email-tier-operator",
+    )
+    token = secrets.token_urlsafe(40)
+    token_path = state / "token"
+    token_path.write_text(token)
+    token_path.chmod(0o600)
+    credentials_path = state / "credentials.json"
+    credentials_path.write_text(json.dumps([{
+        "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+        "tenant_id": str(ctx.tenant_id), "actor_id": str(ctx.actor_id),
+        "scopes": ["brain.document.publish", "email.evidence.read"],
+        "client_kind": "worker",
+        "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+    }]))
+    credentials_path.chmod(0o600)
+    config.update({
+        "credentials_file": str(credentials_path), "token_file": str(token_path),
+    })
+    config_path = state / "email-tier.json"
+    config_path.write_text(json.dumps(config))
+    config_path.chmod(0o600)
+
+    role = "test_email_tier_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                sql.Identifier(role), sql.Literal(password),
+            )
+        )
+        grant_tenant_runtime(conn, role, ctx.tenant_id)
+    bound_dsn = make_conninfo(admin, user=role, password=password)
+    for refused in (store.dsn, admin):
+        with pytest.raises(EmailTierReplayControllerError):
+            run_source_tier_email_controller(
+                config_path, refused, review_id, check=True, tenant_bound_db=True,
+            )
+    check = run_source_tier_email_controller(
+        config_path, bound_dsn, review_id, check=True, tenant_bound_db=True,
+    )
+    assert check == {
+        "configuration_valid": True, "execution_verified": False,
+        "source_effects": False, "data_effects": False,
+    }
+    with store.transaction(_worker(ctx)) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM knowledge_source_tier_email_replays "
+            "WHERE review_id=%s", (review_id,),
+        ).fetchone()["n"] == 0
+    result = run_source_tier_email_controller(
+        config_path, bound_dsn, review_id, tenant_bound_db=True,
+    )
+    assert result["worker_observed_text_replay"] is True
+    assert result["financial_claim_approved"] is False
+    assert store.load_raw(ctx, account, hashlib.sha256(raw).hexdigest()) == raw
+    config_path.write_text(json.dumps({**config, "account_id": str(uuid4())}))
+    config_path.chmod(0o600)
+    with pytest.raises(EmailTierReplayControllerError, match="sensitive details suppressed"):
+        run_source_tier_email_controller(
+            config_path, bound_dsn, review_id, tenant_bound_db=True,
+        )

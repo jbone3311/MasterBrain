@@ -1,15 +1,20 @@
 # MasterBrain Roadmap
 
+ADR-224 now exposes the reviewed Email MIME replay as an exact authenticated
+operator command with a mandatory tenant-bound login and check mode that
+reads no selected MIME or review row. Fictional inline and encrypted paths
+are tested. Next: attachment/PDF byte derivation, issuer/conflict policy,
+independent restore and hosted gates; no live mailbox or financial claim.
+
 ADR-223 adds a point-in-time worker-observed Email MIME-to-text replay for a
 current reviewed direct-parser message, covering inline and encrypted retained
-bytes. Next expose it through a tenant-bound operator command, prove other
+bytes. ADR-224 now exposes it through a tenant-bound operator command; prove other
 parser/attachment/PDF derivations and resolve authority conflicts before any
 financial publication. No live mailbox or source-tier cutover is authorized.
 
 ADR-222 removes an encrypted-Email bridge blocker: source-version byte size
-now follows the storage-independent retained MIME size. Next prove authorized
-current Email bytes reproduce the published text under a pinned parser and
-record a point-in-time replay receipt; this does not authorize live mail.
+now follows the storage-independent retained MIME size. ADR-223/224 provide
+the later direct-parser text replay and command; neither authorizes live mail.
 
 ADR-221 closes two XLSX false-success cases: uncached formulas and overlong
 cells now defer with no published text. Full sheet/cell/feature coverage,
@@ -25,7 +30,7 @@ ADR-219 now exposes the ADR-218 FileOS text replay as one exact, authenticated
 operator command with a mandatory tenant-bound database login and no-source-
 read check mode. Fictional local execution and revocation rollback are tested;
 no live root has been used. Next: PDF/OCR and spreadsheet completeness,
-equivalent Email-byte replay, issuer/conflict policy, independent restore and
+other Email attachment/PDF byte replay, issuer/conflict policy, independent restore and
 hosted gates before using a tier in any financial publication.
 
 ADR-218 now records a point-in-time, worker-observed FileOS **text** replay

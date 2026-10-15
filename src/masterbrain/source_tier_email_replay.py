@@ -7,6 +7,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 from email_brain.blobs import BlobError
 from email_brain.domain.models import TenantContext
@@ -54,8 +55,11 @@ _BASIS_SQL = (
 
 def _checked_basis(
     row: dict[str, Any] | None, ctx: TenantContext,
+    expected_account_id: UUID | None,
 ) -> dict[str, Any]:
     if row is None or (ctx.source_ids is not None and row["source_id"] not in ctx.source_ids):
+        raise NotFound()
+    if expected_account_id is not None and row["account_id"] != expected_account_id:
         raise NotFound()
     if (
         row["source_kind"] != "email"
@@ -93,7 +97,8 @@ class SourceTierEmailReplayStore:
 
     def record_current_text_replay(
         self, ctx: TenantContext, review_id: str,
-        *, authorize: Callable[[], None] | None = None,
+        *, expected_account_id: UUID | None = None,
+        authorize: Callable[[], None] | None = None,
     ) -> dict[str, Any]:
         """Verify one current direct-parser Email and seal a digest-only receipt."""
         self.store.require(ctx, "brain.document.publish")
@@ -102,8 +107,12 @@ class SourceTierEmailReplayStore:
             raise AccessDenied("worker identity required")
         if type(review_id) is not str or _REVIEW_ID.fullmatch(review_id) is None:
             raise NotFound()
+        if expected_account_id is not None and not isinstance(expected_account_id, UUID):
+            raise ValueError("invalid_expected_account")
         with self.store.transaction(ctx) as conn:
-            before = _checked_basis(conn.execute(_BASIS_SQL, (review_id,)).fetchone(), ctx)
+            before = _checked_basis(
+                conn.execute(_BASIS_SQL, (review_id,)).fetchone(), ctx, expected_account_id,
+            )
         try:
             raw = self.store.load_raw(
                 ctx, before["account_id"], before["source_sha256"],
@@ -121,7 +130,8 @@ class SourceTierEmailReplayStore:
             raise Conflict("source tier Email retained bytes unavailable or changed") from None
         with self.store.transaction(ctx) as conn:
             after = _checked_basis(
-                conn.execute(_BASIS_SQL + " FOR SHARE OF i,s,m", (review_id,)).fetchone(), ctx,
+                conn.execute(_BASIS_SQL + " FOR SHARE OF i,s,m", (review_id,)).fetchone(),
+                ctx, expected_account_id,
             )
             if after != before:
                 raise Conflict("source tier Email replay basis changed")

@@ -1,8 +1,8 @@
 # ADR-223 — Worker-observed retained Email byte/text replay
 
 Status: implemented and exercised with fictional inline and encrypted MIME
-on an open PR. Hosted exact-head, independent restore and operator-command
-gates remain open. No live mailbox is authorized.
+on an open PR. ADR-224 adds a restricted operator command; hosted exact-head
+and independent restore gates remain open. No live mailbox is authorized.
 
 ## Context
 
@@ -50,6 +50,6 @@ authorization revocation before receipt insertion, idempotence, and protected
 table behavior. Run the full disposable-PostgreSQL suite, strict runtime,
 restore and hosted exact-head gates before merge.
 
-Next add a restricted tenant-bound operator command with a no-byte-read check
-mode and final credential recheck. Attachment/PDF source-byte derivation,
+ADR-224 adds the restricted tenant-bound operator command with a no-byte-read
+check mode and final credential recheck. Attachment/PDF source-byte derivation,
 source-tier conflict policy and financial publication remain separate gates.

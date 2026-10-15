@@ -35,6 +35,7 @@ from masterbrain.email_bridge_controller import (
 )
 from masterbrain.fileos_controller import run_fileos_controller
 from masterbrain.fileos_index_controller import run_fileos_index_controller
+from masterbrain.source_tier_email_controller import run_source_tier_email_controller
 from masterbrain.source_tier_fileos_controller import run_source_tier_fileos_controller
 
 
@@ -204,6 +205,12 @@ def build_parser() -> argparse.ArgumentParser:
     bridge.add_argument("--evidence-id", type=UUID, required=True)
     bridge.add_argument("--idempotency-key", type=UUID, required=True)
     bridge.add_argument("--check", action="store_true")
+    email_tier_replay = email_commands.add_parser(
+        "replay-tier-text", help="Replay one reviewed retained Email text source with a worker"
+    )
+    email_tier_replay.add_argument("--config", type=Path, required=True)
+    email_tier_replay.add_argument("--review-id", required=True)
+    email_tier_replay.add_argument("--check", action="store_true")
     bridge_plan = email_commands.add_parser(
         "bridge-plan", help="Preview current Email versions for bridging"
     )
@@ -256,6 +263,7 @@ def build_parser() -> argparse.ArgumentParser:
         archive_batch,
         archive_document_batch,
         bridge,
+        email_tier_replay,
         bridge_plan,
         bridge_batch,
         part_plan,
@@ -336,6 +344,14 @@ def main(argv: Sequence[str] | None = None) -> None:
             if not dsn:
                 raise ValueError("MASTERBRAIN_DSN is required")
             print(_json(run_source_tier_fileos_controller(
+                args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "email" and args.email_command == "replay-tier-text":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_source_tier_email_controller(
                 args.config, dsn, args.review_id,
                 check=args.check, tenant_bound_db=args.tenant_bound_db,
             )))

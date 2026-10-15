@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Tenant-bound Email tier replay command (2026-10-15, ADR-224, open PR)
+
+`masterbrain email replay-tier-text` now targets exactly one reviewed Email
+under an account-bound, two-scope worker token and tenant-bound database login.
+Check mode validates private config, active account and optional encrypted
+storage without reading selected MIME or writing a receipt. Fictional inline
+and encrypted command-to-database tests reject shared/owner DSNs; actual
+execution keeps retained bytes unchanged. Focused command/replay tests passed
+21/21; the full disposable PostgreSQL 17.11 / Python 3.14 suite passed 3,628
+with 19 skipped (653/654 PostgreSQL-marked executed). Ruff, mypy and docs
+passed. No live account, financial claim or FileOS cutover is authorized.
+
 ## Retained Email byte/text replay (2026-10-15, ADR-223, open PR)
 
 A worker-only operation now reads one current reviewed Email's retained MIME,

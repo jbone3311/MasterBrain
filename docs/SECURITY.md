@@ -133,8 +133,8 @@ open. Consequently no public verified-source or investment claim is exposed.
   repeats current/grant/exclusion checks and can recheck worker authorization.
   Encrypted blob authentication and database guards do not independently
   attest the sender, prove complete attachment parsing, or make a compromised
-  general runtime login harmless. A restricted tenant-bound command and hosted
-  restore/CI gates remain open; no live mailbox is authorized.
+  general runtime login harmless. ADR-224 adds a restricted tenant-bound
+  command; hosted restore/CI gates remain open and no live mailbox is authorized.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their
   exact extracted-text spans and digest do not prove the source-byte-to-text
   derivation, current source grant, source tier, independent corroboration or a

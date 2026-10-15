@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-224: exposed one reviewed retained-Email text replay through a
+  tenant-bound operator command with exact worker scopes, account binding,
+  no-MIME-read check mode, optional private encrypted storage and final
+  credential recheck. Fictional inline/encrypted command paths are tested.
+
 - ADR-223: added a worker-only, point-in-time retained-MIME replay for one
   current reviewed Email message. It recomputes the exact pinned-parser
   DataCore text from inline or encrypted bytes and stores a digest-only
