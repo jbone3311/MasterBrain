@@ -2,6 +2,17 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Exact-current-head local validation — 0c320a5
+
+Fresh lockfile-resolved Python 3.11.13 and fresh disposable PostgreSQL
+17.11 passed the complete discovered Python suite: **3,693 passed, 19
+skipped** (667/668 PostgreSQL-marked executed). The six browser suites passed
+**167/167**. Ruff, strict mypy over 128 source files, the 332-Markdown /
+1,737-local-reference docs check, diff check and the structural deployment
+gate passed. This is a local gate on the pushed ADR-231 code, not a successful
+actual-image, hosted exact-head or independent Docker restore result. No
+live data was used; FOS-Master remained unchanged.
+
 ## Email PDF account transition fence — ADR-231
 
 Migration 0080 adds a directly granted tenant-bound function that locks only

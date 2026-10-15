@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Exact-current-head local gate (2026-10-15, commit 0c320a5)
+
+A fresh lockfile-resolved Python 3.11.13 environment and new disposable
+PostgreSQL 17.11 database passed the complete discovered Python suite:
+**3,693 passed, 19 skipped**; 667 of 668 PostgreSQL-marked tests executed
+(one skipped). All six browser suites passed **167/167**. Ruff, mypy over 128
+source files, docs links (332 Markdown / 1,737 local paths/fragments), diff
+check and the repository structural deployment gate passed. This validates
+the current account-fence head locally, not its actual container images,
+hosted exact-head CI or independent Docker restore. GitHub jobs are still
+stopped before starting by the payment/spending-limit restriction.
+
 ## Email PDF account transition fence (2026-10-15, ADR-231, open PR)
 
 Migration 0080 gives only tenant-bound worker logins a narrow function that

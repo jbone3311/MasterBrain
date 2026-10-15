@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+Current local validation on code head `0c320a5`: a clean locked Python 3.11
+and disposable PostgreSQL 17.11 passed 3,693 discovered Python tests with 19
+skipped; browser 167/167, Ruff, mypy, docs and structural gate passed. Hosted
+exact-head CI and independent Docker restore have not run because GitHub jobs
+are blocked before start by account payment/spending limits. This is not a
+real-container or live-source acceptance.
+
 ADR-231 adds a tenant-bound account row-lock function in migration 0080 and
 acquires the existing account advisory lock before the final reviewed Email
 PDF receipt check. Fictional races prove that a controlled disconnect winning
