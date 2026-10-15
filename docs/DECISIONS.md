@@ -1,5 +1,11 @@
 # Architecture Decisions
 
+[ADR-200](adr/200_masterbrain_dossier_format_intake.md) adopts the existing
+ADR-197 Markdown export as the owner-selected Librarian exchange format. Its
+first intake slice is a bounded, read-only, untrusted candidate inventory;
+the export lacks full publication metadata, so no Knowledge proposal is
+staged or approved from it.
+
 This is an ADR index plus historical decision summaries. New detailed decisions
 live in [adr/](adr/). Later explicit decisions supersede earlier limitations without
 rewriting their history. The current status is in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).

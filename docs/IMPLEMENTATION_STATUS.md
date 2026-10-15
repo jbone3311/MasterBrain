@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-200 is a synthetic-only, read-only intake checkpoint for the owner-selected
+MasterBrain dossier export format. It inventories fixed sections and claimed
+IDs/citations under strict bounds; a fictional database test parses an actual
+ADR-197 export. It does not verify input citations, stage Knowledge proposals,
+infer an observation time from the export cutoff, import full assertion fields,
+approve rows or complete a Librarian round trip. Hosted validation is pending
+at this branch checkpoint.
+
 ADR-199 adds an eighth isolated, exact-hash FOS-Master statement recipe
 comparison for Wells Fargo Priority Credit Line supplied text. Nine fictional
 goldens and pinned-donor replay cover both donor layouts, debt-negative

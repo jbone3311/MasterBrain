@@ -1,7 +1,8 @@
 # Librarian Markdown interoperability review
 
-Status: design review with a bounded synthetic-only export, not an
-implemented importer or complete round trip. Originally reviewed
+Status: design review with a bounded synthetic-only export and ADR-200's
+read-only candidate inventory parser, not proposal staging or a complete round
+trip. Originally reviewed
 against `main` at `8d053d8` on 2026-10-14; ADR-182 later implements the
 project-alias slice. The [umbrella issue](https://github.com/jbone3311/MasterBrain/issues/174)
 and its twelve children are proposals, not evidence that a capability works. This
@@ -76,6 +77,14 @@ full quote against current authorized evidence at export time and refuses an
 uncitable or overfull whole-project view. It neither imports external Markdown
 nor adds inferred facts or proves source freshness.
 
+The owner selected that current export as the Librarian exchange format.
+[ADR-200](adr/200_masterbrain_dossier_format_intake.md) adds a pure,
+synthetic-only reader for its fixed envelope and row inventory. The Markdown
+contains only quote previews and lacks observed times, all evidence links and
+other publication fields, so this inventory is explicitly untrusted and never
+stages or approves a proposal. A later stage path must retrieve and recheck
+current authorized evidence and require the missing fields and human review.
+
 1. Existing foundations are ADR-169's code-first boundary, ADR-182/183's
    reviewed aliases and roles, ADR-186's private source-stated proposal queue,
    and ADR-193/194's reviewed artifact-link history. None is a Markdown
@@ -91,11 +100,12 @@ nor adds inferred facts or proves source freshness.
    attachment occurrences, revoked/excluded sources, unsupported old quotes,
    truncation and byte-stable output. The renderer is not a freshness or truth
    certificate.
-4. Obtain an owner-approved sanitized example of the actual Librarian Markdown
-   layout; the review prompt does not define a parseable grammar. Add a
-   proposal-only importer into ADR-186's private queue with fictional fixtures,
-   zero reviewed rows before approval and no model dependency. Pre-index
-   exclusions must precede any separately authorized live fetch.
+4. Use the owner-selected ADR-197 export layout and ADR-200's read-only
+   inventory as the parser baseline. Design a separate proposal-only staging
+   path into ADR-186's private queue, with current full-quote/evidence checks,
+   explicit missing metadata, fictional fixtures, zero reviewed rows before
+   approval and no model dependency. Pre-index exclusions must precede any
+   separately authorized live fetch.
 5. Design typed inference-to-reviewed-basis links with transitive evidence
    grants before accepting an inferred proposal. Never encode assertion IDs as
    `knowledge_evidence.evidence_id` or weaken stated-quote requirements. Test

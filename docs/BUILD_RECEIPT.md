@@ -2,6 +2,18 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Read-only intake of the current MasterBrain dossier format — ADR-200
+
+The owner selected ADR-197's export layout as the Librarian exchange format.
+This branch adds a bounded, no-I/O candidate inventory, not a proposal stage.
+Ten fictional parser cases and one actual fictional PostgreSQL exporter-to-
+parser case passed locally. The local Python 3.14/PostgreSQL 17.11 deployment
+gate passed **3,453 tests, 8 skipped** (576 of 577 PostgreSQL-marked tests
+executed). Ruff, strict mypy, documentation links and 167 browser tests passed.
+Hosted checks are pending at this branch checkpoint. The
+input's IDs and citations remain unverified claims; no `observed_at`, full
+quote, approval or source freshness is inferred from the export.
+
 ## Wells Fargo credit-line donor text parity — ADR-199
 
 The isolated recipe comparison pins FOS-Master commit
@@ -1950,7 +1962,11 @@ The final-tree Python 3.14.7 suite and separate deployment gate each passed
 suites passed **143 tests**. Locked dependency sync, Ruff, strict mypy over
 98 source files, documentation and diff checks passed. This is local/synthetic
 evidence, not hosted acceptance, legacy-worker routing or issue #7 closure.
-FOS-Master was not changed.
+FOS-Master was not changed. [PR #238](https://github.com/jbone3311/MasterBrain/pull/238)
+merged after exact-head [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38691046888),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38691046822)
+and [logical restore](https://github.com/jbone3311/MasterBrain/actions/runs/38691046882)
+completed successfully. Independent merged-main checks are still pending.
 
 PR [#106](https://github.com/jbone3311/MasterBrain/pull/106) merged its
 documentation receipt at `b1f3b058f34813db3d7a49547228ecc451f03691`.
