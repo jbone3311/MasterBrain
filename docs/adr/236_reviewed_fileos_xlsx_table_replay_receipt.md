@@ -1,6 +1,7 @@
 # ADR-236 — Reviewed FileOS XLSX row-layout replay receipt
 
 Status: implemented for synthetic-only, worker-initiated use on an open PR.
+ADR-237 subsequently adds a private, exact-source operator command.
 
 ## Decision
 
@@ -30,6 +31,6 @@ are observed by the pinned child, not independently authenticated by the
 existing indexed-text digest. This receipt is not a source-freshness
 certificate after the transaction, cell-level citation, searchable table,
 financial approval, proof against a compromised worker, or FileOS cutover.
-An exact private operator command, actual-image execution, hosted CI and
-independent restore remain separate gates. No live root or FOS-Master change
-is authorized.
+ADR-237 subsequently adds the private operator command. Actual-image
+execution, hosted CI and independent restore remain separate gates. No live
+root or FOS-Master change is authorized.

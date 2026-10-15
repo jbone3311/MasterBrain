@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-237](adr/237_restricted_fileos_xlsx_table_replay_command.md) exposes
+one reviewed FileOS XLSX table replay through a private exact-source,
+tenant-bound command with a no-selected-workbook-read check mode.
+
 [ADR-236](adr/236_reviewed_fileos_xlsx_table_replay_receipt.md) binds one
 current, human-reviewed FileOS XLSX to a tenant-fenced, immutable digest-only
 row-layout receipt. It does not publish cell values or approve financial facts.

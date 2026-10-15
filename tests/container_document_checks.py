@@ -12,6 +12,7 @@ import pytest
 import test_postgres as pg
 from test_datacore_documents import hostile_ooxml
 from test_source_tier_fileos_pdf_replay_postgres import _prepared, _review, worker
+from test_source_tier_fileos_xlsx_table_replay_postgres import _prepared as xlsx_prepared
 
 from email_brain.domain.models import TenantContext
 from email_brain.store import Store
@@ -26,6 +27,9 @@ from masterbrain.datacore.fileos import fileos_root_binding_sha256, snapshot_tre
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.datacore.xlsx_tables_processor import DockerXlsxTableProcessor
 from masterbrain.source_tier_fileos_pdf_replay import SourceTierFileOSPdfReplayStore
+from masterbrain.source_tier_fileos_xlsx_table_replay import (
+    SourceTierFileOSXlsxTableReplayStore,
+)
 
 database, tenant = pg.database, pg.tenant
 
@@ -248,3 +252,41 @@ def test_actual_image_replays_one_reviewed_pdf_without_source_effects(
     assert saved["text_sha256"] == hashlib.sha256(result.text.encode()).hexdigest()
     assert saved["normalizer"] == processor.processor_version
     assert saved["page_count"] == 1
+
+
+@pytest.mark.postgres
+def test_actual_image_seals_one_reviewed_xlsx_layout_without_source_effects(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID],
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exercise ADR-236 through the actual immutable image, not a fake pipe."""
+    image = os.environ.get("MASTERBRAIN_DOCUMENT_IMAGE_ID")
+    if not image:
+        pytest.fail("explicit document container checks require an approved prebuilt image")
+    store, _, ctx, root, processor, review_id, _, _, raw = xlsx_prepared(
+        database, tenant, tmp_path, monkeypatch, image_id=image, fake_pipe=False,
+    )
+    source = root / "statement.xlsx"
+    before_mtime = source.stat().st_mtime_ns
+    receipt = SourceTierFileOSXlsxTableReplayStore(
+        store, processor,
+    ).record_current_xlsx_table_replay(worker(ctx), review_id, root)
+    assert receipt == {
+        "review_id": review_id, "worker_observed_xlsx_table_replay": True,
+        "source_effects": False, "financial_claim_approved": False,
+    }
+    assert source.read_bytes() == raw and source.stat().st_mtime_ns == before_mtime
+    with store.transaction(worker(ctx)) as conn:
+        saved = conn.execute(
+            "SELECT source_sha256,source_size_bytes,text_sha256,normalizer,"
+            "table_processor_version,row_layout_sha256,sheet_count,row_count,cell_count "
+            "FROM knowledge_source_tier_fileos_xlsx_table_replays WHERE review_id=%s",
+            (review_id,),
+        ).fetchone()
+    assert saved is not None
+    assert saved["source_sha256"] == hashlib.sha256(raw).hexdigest()
+    assert saved["source_size_bytes"] == len(raw)
+    assert saved["normalizer"] == "sandbox-fileos-document-v1-" + image[7:]
+    assert saved["table_processor_version"] == processor.processor_version
+    assert len(saved["row_layout_sha256"]) == 64
+    assert (saved["sheet_count"], saved["row_count"], saved["cell_count"]) == (1, 2, 8)

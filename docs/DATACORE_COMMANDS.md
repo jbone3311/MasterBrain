@@ -67,6 +67,32 @@ does not modify files. This is point-in-time text-layer derivation, not OCR,
 visual completeness, issuer authenticity, current-on-disk freshness or a
 financial fact. No live root is authorized.
 
+## Replay one reviewed FileOS XLSX row layout
+
+Store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It has one `source_id`, absolute `root`, immutable
+`document_image_id` (`sha256:` plus 64 lowercase hex characters), absolute
+`docker_binary`, `credentials_file` and `token_file`. The worker token must
+have exactly `brain.document.publish`; `MASTERBRAIN_DSN` must be a DBA-enrolled
+login bound to that worker's tenant. Keep the DSN outside config and arguments.
+
+```sh
+masterbrain fileos replay-tier-xlsx-tables \
+  --config /private/operator/xlsx-tier-replay.json \
+  --review-id stier_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode verifies configuration, worker, tenant-bound login and root identity
+without reading the selected workbook or review, constructing a processor or
+writing a receipt. Omit `--check` only for one explicitly selected fictional
+review. Execution reopens the confined XLSX, runs the exact pinned isolated
+table worker, verifies its rendered values against the indexed document text,
+rechecks source/grant/worker and stores only an immutable digest/count receipt.
+No cell values are published; it is not a currentness certificate, financial
+truth, live-root authorization or FileOS cutover. The actual-image and hosted
+gates remain open.
+
 ## Replay one reviewed retained Email text source
 
 Store a closed version-1 JSON config in a private 0600 file under a 0700

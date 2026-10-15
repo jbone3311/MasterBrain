@@ -3,18 +3,24 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import secrets
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
 import psycopg
 import pytest
 import test_postgres as pg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 from test_sandbox_runner import IMAGE, fake_docker
 from test_statement_persistence_postgres import worker
 
 import masterbrain.datacore.current_fileos_xlsx_table_replay as replay_core
+import masterbrain.source_tier_fileos_xlsx_table_controller as control
+from email_brain.migrate import grant_tenant_runtime
 from email_brain.store import AccessDenied, Conflict, NotFound
 from email_brain.synthetic_formats import SHEET_TYPE, xlsx_bytes
 from masterbrain.datacore.contracts import stable_id
@@ -34,7 +40,10 @@ database, tenant = pg.database, pg.tenant
 QUOTE = "Fictional Atlas"
 
 
-def _prepared(database, tenant, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def _prepared(
+    database, tenant, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    *, image_id: str = IMAGE, fake_pipe: bool = True,
+):
     store, admin = database
     ctx = tenant[0]
     root = tmp_path / "fictional-xlsx"
@@ -82,7 +91,7 @@ def _prepared(database, tenant, tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
             "INSERT INTO brain_normalized_documents(tenant_id,id,evidence_id,normalizer,"
             "body_sha256,body) VALUES (%s,%s,%s,%s,%s,%s)",
             (ctx.tenant_id, document_id, evidence_id,
-             "sandbox-fileos-document-v1-" + IMAGE.removeprefix("sha256:"),
+             "sandbox-fileos-document-v1-" + image_id.removeprefix("sha256:"),
              hashlib.sha256(document.text.encode()).hexdigest(), document.text),
         )
     reviewer = replace(
@@ -98,10 +107,11 @@ def _prepared(database, tenant, tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
         reviewer, evidence_id, body, uuid4(),
     )["object_id"]
     request = encode_request(raw, version_id, "statement.xlsx", digest, SHEET_TYPE)
-    processor, _, _ = fake_docker(
-        monkeypatch, processor=DockerXlsxTableProcessor(IMAGE),
-        output=process_request(request),
-    )
+    processor = DockerXlsxTableProcessor(image_id)
+    if fake_pipe:
+        processor, _, _ = fake_docker(
+            monkeypatch, processor=processor, output=process_request(request),
+        )
     return store, admin, ctx, root, processor, review_id, item_id, version_id, raw
 
 
@@ -212,3 +222,77 @@ def test_current_version_race_refuses_receipt(
             "SELECT count(*) AS n FROM knowledge_source_tier_fileos_xlsx_table_replays "
             "WHERE review_id=%s", (review_id,),
         ).fetchone()["n"] == 0
+
+
+def test_tenant_bound_command_checks_then_replays_one_review(
+    database, tenant, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, admin, ctx, root, processor, review_id, _, _, raw = _prepared(
+        database, tenant, tmp_path, monkeypatch,
+    )
+    state = tmp_path / "private-state"
+    state.mkdir(mode=0o700)
+    token = secrets.token_urlsafe(40)
+    token_path = state / "token"
+    token_path.write_text(token)
+    token_path.chmod(0o600)
+    credentials_path = state / "credentials.json"
+    credentials_path.write_text(json.dumps([{
+        "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+        "tenant_id": str(ctx.tenant_id), "actor_id": str(ctx.actor_id),
+        "scopes": ["brain.document.publish"], "client_kind": "worker",
+        "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+    }]))
+    credentials_path.chmod(0o600)
+    with store.transaction(worker(ctx)) as conn:
+        source_id = conn.execute(
+            "SELECT id FROM brain_sources WHERE tenant_id=%s AND kind='fileos' "
+            "AND root_binding_sha256=%s",
+            (ctx.tenant_id, fileos_root_binding_sha256(root)),
+        ).fetchone()["id"]
+    config_path = state / "xlsx-replay.json"
+    config = {
+        "version": 1, "source_id": source_id, "root": str(root),
+        "document_image_id": IMAGE, "docker_binary": "/usr/bin/docker",
+        "credentials_file": str(credentials_path), "token_file": str(token_path),
+    }
+    config_path.write_text(json.dumps(config))
+    config_path.chmod(0o600)
+    role = "test_xlsx_tier_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                sql.Identifier(role), sql.Literal(password),
+            )
+        )
+        grant_tenant_runtime(conn, role, ctx.tenant_id)
+    bound_dsn = make_conninfo(admin, user=role, password=password)
+    monkeypatch.setattr(control, "DockerXlsxTableProcessor", lambda *args, **kwargs: processor)
+    for refused in (store.dsn, admin):
+        with pytest.raises(control.FileOSTierXlsxTableControllerError):
+            control.run_source_tier_fileos_xlsx_table_controller(
+                config_path, refused, review_id, check=True, tenant_bound_db=True,
+            )
+    checked = control.run_source_tier_fileos_xlsx_table_controller(
+        config_path, bound_dsn, review_id, check=True, tenant_bound_db=True,
+    )
+    assert checked["execution_verified"] is False
+    with store.transaction(worker(ctx)) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM knowledge_source_tier_fileos_xlsx_table_replays "
+            "WHERE review_id=%s", (review_id,),
+        ).fetchone()["n"] == 0
+    executed = control.run_source_tier_fileos_xlsx_table_controller(
+        config_path, bound_dsn, review_id, tenant_bound_db=True,
+    )
+    assert executed["worker_observed_xlsx_table_replay"] is True
+    assert executed["financial_claim_approved"] is False
+    assert (root / "statement.xlsx").read_bytes() == raw
+    config["source_id"] = "wrong_source"
+    config_path.write_text(json.dumps(config))
+    config_path.chmod(0o600)
+    with pytest.raises(control.FileOSTierXlsxTableControllerError):
+        control.run_source_tier_fileos_xlsx_table_controller(
+            config_path, bound_dsn, review_id, tenant_bound_db=True,
+        )

@@ -1,18 +1,26 @@
 # MasterBrain Implementation Status
 
+ADR-237 adds `masterbrain fileos replay-tier-xlsx-tables` with a closed
+private config, exact review/source binding, mandatory tenant-bound worker
+login and check mode that reads no selected workbook. Fictional command and
+command-to-PostgreSQL tests pass. The actual-image reviewed receipt test is
+collected but not run locally. Hosted/restore and live-root gates remain open.
+
 ADR-236 now binds the confined XLSX table proof to one current human source-
 tier review and stores only an immutable, tenant-fenced layout receipt after
 a second locked source check. A fresh disposable PostgreSQL 17.11 run passed
 11 focused replay and migration tests; Ruff and strict focused mypy passed.
-There is no operator command, table API/index, cell-level citation, live root,
-financial approval or FOS-Master cutover. Actual-image, hosted and independent
+ADR-237 adds the operator command; there is no table API/index, cell-level
+citation, live root, financial approval or FOS-Master cutover. Actual-image,
+hosted and independent
 restore gates remain open.
 
 ADR-235 now proves a fictional FileOS XLSX can be re-read through a confined
 source root and the same pinned document image, with source/text and physical
 row-layout digests. The primitive is pure and nonpublishing; ADR-236 adds a
-current human-review receipt. No API table read, live root or source effect is enabled. The actual-
-image case is collected but not run locally; hosted/restore gates remain.
+current human-review receipt. No API table read, live root or source effect is
+enabled. The actual-image case is collected but not run locally; hosted/restore
+gates remain.
 
 At code commit `5165a03`, a fresh local PostgreSQL 17.11 and locked Python
 3.11.13 ran the full CI-mode Python suite: 3,726 passed, 18 skipped and one

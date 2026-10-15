@@ -1,5 +1,12 @@
 # MasterBrain Data Model
 
+Migration 0081 adds an append-only, tenant-fenced
+`knowledge_source_tier_fileos_xlsx_table_replays` row keyed by one human
+source-tier review. It binds the current FileOS evidence/document/version,
+source/text SHA-256s, root binding, exact image-version pair and bounded
+sheet/row/cell counts to a row-layout SHA-256. It stores no cell values or
+currentness claim; ADR-237 exposes only an exact private worker command.
+
 This document combines implemented source-neutral tables with the remaining target
 model. Migrations `0015` through `0021` implement the first DataCore,
 KnowledgeCore and FileOS completion/freshness slices; names not identified as

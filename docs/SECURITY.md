@@ -1,5 +1,15 @@
 # MasterBrain Security and Privacy
 
+ADR-235–237's fictional FileOS XLSX row-layout replay is worker-only and
+nonpublishing. Its private command requires a tenant-bound database login,
+exact source/review ID, one immutable image and an expiring one-scope worker
+credential. Check mode opens no selected workbook. Execution uses a no-follow
+root read, exact source/text hashes, a final locked current-source check and
+worker reauthentication; the protected receipt contains only digests/counts.
+Physical cell coordinates are an isolated-worker observation, not an
+independent cryptographic proof or financial assertion. There is no table
+content API, live-root permission or FileOS cutover.
+
 ADR-203's Schwab recipe is isolated supplied-text comparison code. Its
 old-template matches cannot prove that a PDF was extracted faithfully; the
 scanned and redesigned-template cases may return no rows. No candidate reaches
