@@ -3,18 +3,24 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import secrets
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
 import psycopg
 import pytest
 import test_postgres as pg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 from test_sandbox_runner import IMAGE, fake_docker
 from test_statement_persistence_postgres import worker
 
 import masterbrain.datacore.current_fileos_pdf_replay as replay_core
+import masterbrain.source_tier_fileos_pdf_controller as control
+from email_brain.migrate import grant_tenant_runtime
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from email_brain.synthetic_formats import pdf_bytes
 from masterbrain.datacore.contracts import stable_id
@@ -270,5 +276,86 @@ def test_between_read_version_change_and_direct_sql_guard(
         with pytest.raises(psycopg.errors.RaiseException):
             with conn.transaction():
                 conn.execute("TRUNCATE knowledge_source_tier_fileos_pdf_replays")
+
+
+def test_tenant_bound_command_checks_then_replays_only_selected_pdf(
+    database, tenant, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, admin, ctx, root, processor, document_id, _, _, _ = _prepared(
+        database, tenant, tmp_path, monkeypatch,
+    )
+    review_id = _review(store, ctx, document_id)
+    state = tmp_path / "private-state"
+    state.mkdir(mode=0o700)
+    token = secrets.token_urlsafe(40)
+    token_path = state / "token"
+    token_path.write_text(token)
+    token_path.chmod(0o600)
+    credentials = [{
+        "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+        "tenant_id": str(ctx.tenant_id), "actor_id": str(ctx.actor_id),
+        "scopes": ["brain.document.publish"], "client_kind": "worker",
+        "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+    }]
+    credentials_path = state / "credentials.json"
+    credentials_path.write_text(json.dumps(credentials))
+    credentials_path.chmod(0o600)
+    config_path = state / "pdf-replay.json"
+    config = {
+        "version": 1, "source_id": "placeholder", "root": str(root),
+        "document_image_id": IMAGE, "docker_binary": "/usr/bin/docker",
+        "credentials_file": str(credentials_path), "token_file": str(token_path),
+    }
+    with store.transaction(worker(ctx)) as conn:
+        source_id = conn.execute(
+            "SELECT i.source_id FROM brain_normalized_documents d "
+            "JOIN brain_evidence e ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id "
+            "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+            "AND v.id=e.source_version_id "
+            "JOIN brain_source_items i ON i.tenant_id=v.tenant_id AND i.id=v.item_id "
+            "WHERE d.id=%s", (document_id,),
+        ).fetchone()["source_id"]
+    config["source_id"] = source_id
+    config_path.write_text(json.dumps(config))
+    config_path.chmod(0o600)
+    role = "test_pdf_tier_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                sql.Identifier(role), sql.Literal(password),
+            )
+        )
+        grant_tenant_runtime(conn, role, ctx.tenant_id)
+    bound_dsn = make_conninfo(admin, user=role, password=password)
+    monkeypatch.setattr(control, "DockerDocumentProcessor", lambda *args, **kwargs: processor)
+    before = (root / "statement.pdf").read_bytes()
+    for refused in (store.dsn, admin):
+        with pytest.raises(control.FileOSTierPdfControllerError):
+            control.run_source_tier_fileos_pdf_controller(
+                config_path, refused, review_id, check=True, tenant_bound_db=True,
+            )
+    check = control.run_source_tier_fileos_pdf_controller(
+        config_path, bound_dsn, review_id, check=True, tenant_bound_db=True,
+    )
+    assert check["execution_verified"] is False
+    with store.transaction(worker(ctx)) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM knowledge_source_tier_fileos_pdf_replays "
+            "WHERE review_id=%s", (review_id,),
+        ).fetchone()["n"] == 0
+    executed = control.run_source_tier_fileos_pdf_controller(
+        config_path, bound_dsn, review_id, tenant_bound_db=True,
+    )
+    assert executed["worker_observed_pdf_text_replay"] is True
+    assert executed["financial_claim_approved"] is False
+    assert (root / "statement.pdf").read_bytes() == before
+    config["source_id"] = "wrong_source"
+    config_path.write_text(json.dumps(config))
+    config_path.chmod(0o600)
+    with pytest.raises(control.FileOSTierPdfControllerError):
+        control.run_source_tier_fileos_pdf_controller(
+            config_path, bound_dsn, review_id, tenant_bound_db=True,
+        )
 
 

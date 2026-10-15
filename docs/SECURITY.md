@@ -139,8 +139,9 @@ open. Consequently no public verified-source or investment claim is exposed.
   exact output from an image-pinned restricted document processor before a
   final current/grant/authorization recheck and digest-only receipt. SQL alone
   does not attest that the processor ran, and text-layer agreement is not OCR
-  or visual completeness. The worker still needs a tenant-bound operator
-  command and real immutable-image container validation; no live FileOS or
+  or visual completeness. ADR-227 adds a tenant-bound, exact-source operator
+  command whose check mode does not read the selected PDF or construct Docker;
+  actual immutable-image container validation remains open. No live FileOS or
   financial publication is authorized.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their
   exact extracted-text spans and digest do not prove the source-byte-to-text

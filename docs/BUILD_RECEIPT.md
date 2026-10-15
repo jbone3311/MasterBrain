@@ -2,6 +2,24 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Tenant-bound FileOS PDF replay command — ADR-227
+
+The private command authenticates an exact document-only worker, pins source
+and immutable image syntax, refuses shared/owner database logins and can
+preflight without reading the selected PDF, review row or Docker processor.
+Execution reauthenticates inside ADR-226's final transaction and returns a
+digest-only result. Focused fictional unit and command-to-PostgreSQL tests
+passed **18/18** using a simulated restricted processor; source bytes were
+unchanged. The full disposable PostgreSQL 17.11 / Python 3.11 suite passed
+**3,654 tests, 19 skipped** (657/658 PostgreSQL-marked executed). Browser
+tests passed **167/167**; Ruff, mypy over 125 source files, docs (328 Markdown,
+1,716 local paths/fragments) and the post-suite structural deployment gate
+passed. The standalone gate's first unprivileged local-launcher attempt hit a
+permission refusal; the exact launcher test passed when rerun with the same
+system permissions as the successful full suite. Real-image container,
+hosted exact-head and independent restore gates remain open. No live root or
+financial publication was used.
+
 ## Reviewed FileOS PDF replay receipt — ADR-226
 
 Migration 0078 and a worker-only store now seal one immutable digest-only

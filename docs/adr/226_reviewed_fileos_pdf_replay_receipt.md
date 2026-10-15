@@ -2,8 +2,8 @@
 
 Status: implemented and tested with fictional PostgreSQL and a simulated
 restricted document pipe on an open PR. Hosted exact-head, real immutable-image
-container and independent restore gates remain open. No live root or financial
-claim is authorized.
+container and independent restore gates remain open. ADR-227 adds the narrow
+operator command. No live root or financial claim is authorized.
 
 ## Context
 
@@ -40,6 +40,6 @@ idempotence, changed source and wrong scope/source refusal, authorization
 revocation rollback, between-read source-version race, SQL trigger protection,
 cross-tenant denial, no financial claim and unchanged source bytes. Run the
 full disposable suite, static checks, hosted exact-head CI and independent
-restore before merge. Next add an exact tenant-bound operator command with
-no-source-read check mode, then test the real immutable-image container and
+restore before merge. ADR-227 adds an exact tenant-bound operator command with
+no-source-read check mode; next test the real immutable-image container and
 remaining PDF/OCR and issuer-conflict coverage. No live cutover follows.

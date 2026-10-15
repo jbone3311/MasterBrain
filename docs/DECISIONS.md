@@ -1,5 +1,48 @@
 # Architecture Decisions
 
+[ADR-227](adr/227_restricted_fileos_pdf_tier_replay_command.md) exposes one
+reviewed FileOS PDF text-layer replay through an exact, tenant-bound private
+command with a no-selected-PDF-read check mode. Synthetic execution does not
+authorize a live root, financial claim or FileOS cutover.
+
+[ADR-226](adr/226_reviewed_fileos_pdf_replay_receipt.md) binds the confined
+PDF derivation to one current human tier review and an immutable digest-only
+receipt. The receipt is not OCR, issuer proof or financial truth.
+
+[ADR-225](adr/225_confined_fileos_pdf_derivation_replay.md) adds a
+nonpublishing, exact-byte FileOS PDF text-layer replay through the pinned
+restricted processor. Image-only and changed sources fail closed.
+
+[ADR-224](adr/224_restricted_email_tier_replay_command.md) exposes one
+reviewed retained-Email text replay through a tenant-bound, exact-account
+operator command with no selected MIME read in check mode.
+
+[ADR-223](adr/223_retained_email_text_replay.md) proves one direct-parser
+Email text projection from current retained MIME (inline or encrypted) and
+stores a point-in-time digest receipt, not sender authenticity.
+
+[ADR-222](adr/222_encrypted_email_bridge_source_size.md) binds bridged
+encrypted Email versions to their actual retained MIME byte size.
+
+[ADR-221](adr/221_xlsx_formula_and_cell_deferral.md) defers formula-bearing
+or overlong-cell XLSX instead of publishing incomplete-looking text.
+
+[ADR-220](adr/220_pdf_missing_page_deferral.md) defers mixed text/no-text PDFs
+instead of treating partial page coverage as complete extraction.
+
+[ADR-219](adr/219_restricted_source_tier_replay_command.md) exposes the
+bounded FileOS text replay through one tenant-bound worker command.
+
+[ADR-218](adr/218_source_tier_fileos_text_replay.md) binds confined FileOS
+text bytes to one current human source-tier review and digest-only receipt.
+
+[ADR-217](adr/217_current_source_tier_review.md) stores a human source-tier
+classification of current evidence without calling it byte attestation.
+
+[ADR-216](adr/216_fos_fact_verifier_parity_and_attestation_boundary.md) pins
+donor fact-verifier semantics in isolated fictional parity, not verified
+financial claims.
+
 [ADR-215](adr/215_project_fact_catalog_discovery_and_retirement.md) makes the
 database's latest predicate revision authoritative, including deprecation,
 and exposes a bounded read-only Brain API catalog with strict client checks.

@@ -37,6 +37,7 @@ from masterbrain.fileos_controller import run_fileos_controller
 from masterbrain.fileos_index_controller import run_fileos_index_controller
 from masterbrain.source_tier_email_controller import run_source_tier_email_controller
 from masterbrain.source_tier_fileos_controller import run_source_tier_fileos_controller
+from masterbrain.source_tier_fileos_pdf_controller import run_source_tier_fileos_pdf_controller
 
 
 def _json(value: Any) -> str:
@@ -145,6 +146,13 @@ def build_parser() -> argparse.ArgumentParser:
     tier_replay.add_argument("--review-id", required=True)
     tier_replay.add_argument("--check", action="store_true")
     tier_replay.add_argument("--tenant-bound-db", action="store_true")
+    pdf_tier_replay = file_commands.add_parser(
+        "replay-tier-pdf", help="Replay one reviewed FileOS PDF text layer with a worker"
+    )
+    pdf_tier_replay.add_argument("--config", type=Path, required=True)
+    pdf_tier_replay.add_argument("--review-id", required=True)
+    pdf_tier_replay.add_argument("--check", action="store_true")
+    pdf_tier_replay.add_argument("--tenant-bound-db", action="store_true")
     archive_text = file_commands.add_parser(
         "archive-text", help="Publish one selected archive text member"
     )
@@ -344,6 +352,14 @@ def main(argv: Sequence[str] | None = None) -> None:
             if not dsn:
                 raise ValueError("MASTERBRAIN_DSN is required")
             print(_json(run_source_tier_fileos_controller(
+                args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "fileos" and args.file_command == "replay-tier-pdf":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_source_tier_fileos_pdf_controller(
                 args.config, dsn, args.review_id,
                 check=args.check, tenant_bound_db=args.tenant_bound_db,
             )))

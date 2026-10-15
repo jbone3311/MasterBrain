@@ -1,9 +1,16 @@
 # MasterBrain Roadmap
 
+ADR-227 exposes ADR-226's current reviewed FileOS PDF text-layer receipt as
+one exact, tenant-bound operator command. Its check mode reads no selected PDF
+or review row and does not construct the processor; fictional execution is
+tested. Next: actual immutable-image container, independent restore, Email
+attachment PDF derivation, OCR/visual coverage and issuer/conflict policy.
+No live root, financial claim or FileOS cutover is authorized.
+
 ADR-226 now binds the confined FileOS PDF text-layer replay to one current
 human source-tier review and stores an immutable digest-only receipt after a
-second locked source and worker-authorization check. Next is a tenant-bound
-operator command, actual immutable-image container validation, independent
+second locked source and worker-authorization check. ADR-227 supplies the
+tenant-bound command; actual immutable-image container validation, independent
 restore, OCR/visual coverage and issuer-conflict policy before any financial
 claim or FileOS cutover. Synthetic-only owner authorization still applies.
 

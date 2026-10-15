@@ -12,6 +12,8 @@ current source, verifies source bytes and the complete normalized text, and
 records a point-in-time immutable receipt. ADR-219 adds one explicit operator
 command for a selected review; it is not an unattended live-root executor.
 PDF/OCR/spreadsheet completeness and Email-byte replay remain separate gates.
+ADR-226/227 later add a separate PDF **text-layer** replay and exact command;
+they do not establish visual completeness, OCR or financial truth.
 
 ## Replay one reviewed FileOS text source
 
@@ -37,6 +39,33 @@ source file. The receipt is a historical observation, not a live freshness
 certificate or approval of a financial fact. Only fictional local sources
 have been tested; do not point this at a live root without a separately
 authorized pilot and hosted/restore gates.
+
+## Replay one reviewed FileOS PDF text layer
+
+Store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It has `source_id`, absolute `root`, immutable `document_image_id`
+(`sha256:` plus 64 lowercase hex characters), absolute `docker_binary`,
+`credentials_file` and `token_file`. The token must belong to a worker with
+**only** `brain.document.publish`. Set `MASTERBRAIN_DSN` to a DBA-enrolled
+login bound to the same tenant; do not put the DSN in config or arguments.
+
+```sh
+masterbrain fileos replay-tier-pdf \
+  --config /private/operator/pdf-tier-replay.json \
+  --review-id stier_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode validates config, credential, tenant-bound login and physical
+root identity but does **not** read the selected PDF or review row, construct
+the document processor, contact Docker or write a receipt. It checks image
+identity syntax, not installed image availability. Omit `--check` only for an
+explicitly selected fictional review. Execution reopens the confined PDF,
+re-runs the exact pinned isolated processor, rechecks the source and worker
+inside the final transaction and stores a digest-only immutable receipt. It
+does not modify files. This is point-in-time text-layer derivation, not OCR,
+visual completeness, issuer authenticity, current-on-disk freshness or a
+financial fact. No live root is authorized.
 
 ## Replay one reviewed retained Email text source
 

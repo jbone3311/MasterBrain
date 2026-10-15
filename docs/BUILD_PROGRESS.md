@@ -1,5 +1,18 @@
 # MasterBrain Build Progress
 
+## Tenant-bound FileOS PDF replay command (2026-10-15, ADR-227, open PR)
+
+`masterbrain fileos replay-tier-pdf` now checks or executes exactly one
+reviewed PDF under a closed source/root/image config, document-only worker
+token and DBA-bound tenant login. Check mode does not select or read the PDF,
+construct the processor or write a receipt. Fictional unit and command-to-
+PostgreSQL tests passed 18/18, including shared/owner DSN refusal, source-ID
+binding and unchanged source bytes. The full disposable PostgreSQL 17.11 /
+Python 3.11 suite passed 3,654 tests with 19 skipped (657/658 PostgreSQL-
+marked executed). Browser tests passed 167/167; Ruff, mypy, docs and the
+post-suite structural deployment gate passed. No live source or actual
+immutable-image container was used; hosted/restore gates remain.
+
 ## Reviewed FileOS PDF replay receipt (2026-10-15, ADR-226, open PR)
 
 One worker operation now binds ADR-225's confined PDF/text proof to an exact

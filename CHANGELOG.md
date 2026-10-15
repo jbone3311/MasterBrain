@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-227: exposed one current reviewed FileOS PDF text-layer replay through
+  a tenant-bound, exact-source operator command with no-selected-PDF-read
+  check mode, pinned image config and final worker reauthentication. Fictional
+  command-to-database tests pass; no live root or financial claim is involved.
+
 - ADR-226: added a worker-only, digest-only reviewed FileOS PDF replay receipt
   with final current-source/authorization recheck, protected migration 0078
   and fictional PostgreSQL fault tests. No operator command, OCR, live root or
