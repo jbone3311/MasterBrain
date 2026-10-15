@@ -1,5 +1,15 @@
 # MasterBrain Roadmap
 
+ADR-206 specifies, but does **not yet implement**, the next selected
+source-stated project-fact Markdown proposal tranche. The existing ADR-186
+approval receipt is tied to generic Knowledge publications, while ADR-195
+project facts have a separate receipt and publication path. The next code
+checkpoint is therefore a separate private, atomic fact queue with exact
+export-line/citation matching, current source and project rechecks, explicit
+human decisions, and a synthetic export-to-review acceptance run. Artifact
+links and inferred facts still need independent contracts. No live source or
+FOS-Master cutover follows from this design.
+
 ADR-205 adds selected project-member roles to the synthetic Markdown-to-
 private-proposal path, with exact member/entity citation IDs retained and
 rechecked through human review. The next Librarian import gates are typed
