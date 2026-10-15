@@ -4,7 +4,7 @@ Extracted from FOS-Master at 218d5caec2f20b9047fd3eb8e027dc671acf0c15,
 _SYSTEM/tools/statement_extract.py
 (SHA-256 f5b0c8bc5c0c9f01fa8decdecba36a27b81ccfd212894409472bac8526b577fe).
 The parsing and reconciliation semantics are intentionally unchanged. See
-ADR-170, ADR-174, ADR-180, ADR-181, ADR-187, ADR-191, ADR-198 and ADR-199.
+ADR-170, ADR-174, ADR-180, ADR-181, ADR-187, ADR-191, ADR-198, ADR-199 and ADR-203.
 """
 
 from __future__ import annotations
@@ -1086,4 +1086,170 @@ def reconcile_wells_fargo_loc(
         return None
     expected = round(ending - beginning, 2)
     actual = round(sum(item["amount"] for item in items if item["amount"] is not None), 2)
+    return expected, actual
+
+
+# ADR-203: isolated exact-semantics comparison for supplied Schwab text only.
+# Scanned and redesigned-template statements may produce no rows; this parser
+# must not be presented as complete PDF extraction or a reviewed holding.
+_SCHW_ACCT_PERIOD = re.compile(
+    r"Account Number\s+Statement Period\s*\n"
+    r".*?(\d{3,4}-\d{3,4})\s+([A-Za-z]+)\s+\d{1,2}-\d{1,2},\s*(\d{4})"
+)
+_SCHW_TOTAL_INV_DETAIL = re.compile(r"Total Investment Detail\s+\$?\s*([\d,]+\.\d{2})")
+_SCHW_ACCT_VALUE_ASOF = re.compile(
+    r"Account Value as of\s+\d{1,2}/\d{1,2}/\d{4}:\$\s*([\d,]+\.\d{2})"
+)
+_SCHW_NAME = r"[A-Za-z0-9&'/:\-®# ]"
+_SCHW_INLINE_SYMBOL = re.compile(r":([A-Z]{2,6})$")
+_SCHW_BANK_SWEEP_ROW = re.compile(
+    rf"^(?!Total\b|SYMBOL\b)([A-Z]{_SCHW_NAME}{{1,40}}?)\s+"
+    r"([\d,]+\.\d{2})\s+([\d,]+\.\d{2})(?!\s+[\d,]+\.\d)(?=\s|$)",
+    re.MULTILINE,
+)
+_SCHW_HOLDING_ROW = re.compile(
+    rf"^(?!Total\b|SYMBOL\b)([A-Z]{_SCHW_NAME}{{1,55}}?)\s+"
+    r"([\d,]+\.\d{2,4})\s+([\d,]+\.\d{2,5})\s+([\d,]+\.\d{2})(?=\s|$)",
+    re.MULTILINE,
+)
+_SCHW_SYMBOL = re.compile(r"SYMBOL:\s*([A-Z0-9.]+)")
+_SCHW_DW_ROW = re.compile(
+    r"^(\d{2}/\d{2}/\d{2})\s+(\d{2}/\d{2}/\d{2})\s+(.+?)\s+(-?\(?[\d,]+\.\d{2}\)?)\s*$",
+    re.MULTILINE,
+)
+_SCHW_PS_ROW = re.compile(
+    r"^(\d{2}/\d{2}/\d{2})\s+(\d{2}/\d{2}/\d{2})\s+"
+    r"(Bought|Sold|Reinvested Shares|Sold Short|Bought To Cover)\s+"
+    r"(.+?)\s+(-?\(?[\d,]+\.\d{2}\)?)\s*$",
+    re.MULTILINE,
+)
+
+
+def _schw_signed(value: str) -> float | None:
+    if value and value.strip().startswith("(") and value.strip().endswith(")"):
+        parsed = _num(value.strip()[1:-1])
+        return -parsed if parsed is not None else None
+    return _num(value)
+
+
+def parse_charles_schwab(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Return pinned donor Schwab summary and ordered rows without publication."""
+    text = re.sub(r"\(cid:\d+\)", " ", text)
+    summary: dict[str, Any] = {}
+    match = _SCHW_ACCT_PERIOD.search(text)
+    if match:
+        summary["account_number"] = match.group(1)
+        month, year = match.group(2), match.group(3)
+        summary["period"] = f"{year}-{_MONTHS.get(month.upper()[:3], '??')}"
+    else:
+        summary["account_number"] = None
+        summary["period"] = None
+    match = _SCHW_TOTAL_INV_DETAIL.search(text)
+    summary["total_investment_detail"] = _num(match.group(1)) if match else None
+    match = _SCHW_ACCT_VALUE_ASOF.search(text)
+    summary["account_value"] = _num(match.group(1)) if match else None
+
+    items: list[dict[str, Any]] = []
+    investment = re.search(
+        r"Investment Detail - (?:Cash and )?Bank Sweep(.*?)(?:\nTransaction Detail\b|\Z)",
+        text, re.S,
+    )
+    if investment:
+        block = investment.group(1)
+        for name, starting, ending in _SCHW_BANK_SWEEP_ROW.findall(block):
+            items.append({
+                "row_type": "holding", "description": name.strip(), "symbol": "CASH",
+                "amount": _num(ending), "category": f"starting_balance={_num(starting)}",
+                "period": summary["period"], "account_number": summary["account_number"],
+                "extraction_method": "regex:charles_schwab", "confidence": 0.9,
+            })
+
+        holdings = _SCHW_HOLDING_ROW.findall(block)
+        symbols = _SCHW_SYMBOL.findall(block)
+        inline = [_SCHW_INLINE_SYMBOL.search(name) for name, *_ in holdings]
+        needs_zip = sum(1 for item in inline if not item)
+        mismatch = needs_zip != len(symbols)
+        zip_i = 0
+        for (name, quantity, price, value), inline_match in zip(
+            holdings, inline, strict=True,
+        ):
+            if inline_match:
+                symbol = inline_match.group(1)
+                description = name[:inline_match.start()].strip()
+            else:
+                symbol = symbols[zip_i] if zip_i < len(symbols) else None
+                description = name.strip()
+                zip_i += 1
+            items.append({
+                "row_type": "holding", "description": description, "symbol": symbol,
+                "quantity": _num(quantity), "price": _num(price), "amount": _num(value),
+                "category": "security", "period": summary["period"],
+                "account_number": summary["account_number"],
+                "extraction_method": "regex:charles_schwab",
+                "confidence": 0.85 if not mismatch else 0.65,
+            })
+
+    deposits = re.search(
+        r"Transaction Detail - Deposits & Withdrawals(.*?)"
+        r"(?:\nTransaction Detail - Dividends|\nTotal Transaction Detail|\Z)",
+        text, re.S,
+    )
+    if deposits:
+        for first, _second, description, amount in _SCHW_DW_ROW.findall(deposits.group(1)):
+            if description.lower().startswith("total ") or "credit/(debit)" in description.lower():
+                continue
+            items.append({
+                "row_type": "transaction", "line_date": first,
+                "description": description.strip()[:120], "amount": _schw_signed(amount),
+                "category": "deposit_withdrawal", "period": summary["period"],
+                "account_number": summary["account_number"],
+                "extraction_method": "regex:charles_schwab", "confidence": 0.85,
+            })
+
+    dividends = re.search(
+        r"Transaction Detail - Dividends & Interest(.*?)"
+        r"(?:\nTotal Dividends & Interest|\nTotal Transaction Detail|\Z)",
+        text, re.S,
+    )
+    if dividends:
+        for first, _second, description, amount in _SCHW_DW_ROW.findall(dividends.group(1)):
+            if description.lower().startswith("total ") or "credit/(debit)" in description.lower():
+                continue
+            items.append({
+                "row_type": "transaction", "line_date": first,
+                "description": description.strip()[:120], "amount": _schw_signed(amount),
+                "category": "dividend_interest", "period": summary["period"],
+                "account_number": summary["account_number"],
+                "extraction_method": "regex:charles_schwab", "confidence": 0.85,
+            })
+
+    purchases = re.search(
+        r"Transaction Detail - Purchases & Sales(.*?)"
+        r"(?:\nTransaction Detail - Deposits|\nTotal Purchases & Sales\b.*?\n|\Z)",
+        text, re.S,
+    )
+    if purchases:
+        for first, _second, action, description, amount in _SCHW_PS_ROW.findall(
+            purchases.group(1)
+        ):
+            items.append({
+                "row_type": "transaction", "line_date": first,
+                "description": f"{action} {description.strip()}"[:120],
+                "amount": _schw_signed(amount), "category": "purchase_sale",
+                "period": summary["period"], "account_number": summary["account_number"],
+                "extraction_method": "regex:charles_schwab(low_confidence_desc)",
+                "confidence": 0.5,
+            })
+    return summary, items
+
+
+def reconcile_charles_schwab(
+    summary: dict[str, Any], items: list[dict[str, Any]],
+) -> tuple[float, float] | None:
+    """Preserve the donor's investment-detail or account-value fallback."""
+    expected = summary.get("total_investment_detail") or summary.get("account_value")
+    if expected is None:
+        return None
+    actual = round(sum(item["amount"] for item in items
+                       if item["row_type"] == "holding" and item["amount"]), 2)
     return expected, actual
