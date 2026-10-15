@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+Private Knowledge proposal review now holds source-item and source-status
+locks from current-evidence validation through approval. Member review also
+locks the separately linked project and entity citation sources; a concurrent
+source pause or current-version change waits for the transaction. This is a
+synthetic-only transaction fence, not a live provider or Email exclusion
+policy snapshot, and the generic direct Knowledge publisher is unchanged.
+
 The fictional Cedar Harbor cross-source trial now tests the owner-selected
 Markdown through actual fact and artifact-link proposal API routes and
 explicit human review, then reopens both reviewed results and original

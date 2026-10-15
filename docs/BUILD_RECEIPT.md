@@ -2,6 +2,26 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Private Knowledge proposal review source-state fence
+
+ADR-186/205 now hold shared PostgreSQL locks on all direct proposal evidence
+source-item/current-pointer and source-status rows through stage, preview and
+review transactions. For a proposed project member, the review also locks
+every direct citation basis behind the separately linked project and entity.
+Two fictional concurrency tests try to revoke a current pointer and pause a
+source after validation but before approval; both updates time out on the
+held lock and approval commits. The complete focused Knowledge proposal and
+Markdown importer suites passed **26/26** on disposable local PostgreSQL
+17.11. The exact-current full Python 3.14/PostgreSQL 17.11 suite passed
+**3,515 tests, nine skipped** (626 of 627 PostgreSQL-marked cases executed).
+Ruff, strict mypy (112 files), docs links (308 Markdown files, 1,638 paths and
+fragments), browser **167/167**, and diff whitespace checks passed. The local
+deployment gate passed **2,891 tests, 633 skipped** (only two PostgreSQL-
+marked cases executed), so it is not the full database proof. Hosted
+exact-head CI and merged-main acceptance remain unverified. These locks do
+not freeze Email exclusion-policy edits or external provider state; generic
+direct Knowledge publication is unchanged. All inputs were fictional.
+
 ## Fact and artifact source-row transaction fence
 
 ADR-206/207 direct and proposal-reviewed publication now holds PostgreSQL

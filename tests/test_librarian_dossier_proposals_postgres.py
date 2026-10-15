@@ -375,6 +375,55 @@ def test_member_private_preview_and_review_recheck_entity_source(database, tenan
         ).fetchone()[0] == 0
 
 
+def test_member_review_holds_linked_entity_citation_source_until_commit(
+    database, tenant, monkeypatch,
+):
+    store, admin = database
+    ctx, account, project_id, evidence_id = _prepared(store, tenant)
+    body, entity_evidence = _separate_entity_member_candidate(
+        store, ctx, account, project_id, evidence_id,
+    )
+    batches = KnowledgeProposalBatches(store)
+    staged = DossierProposalImport(store).stage(ctx, body, uuid4())
+    page = batches.preview(ctx, staged["batch_id"])
+    original = KnowledgeProposalBatches._lock_linked_citation_basis
+    checked = False
+
+    def check_after_entity_lock(conn, context, allowed, kind, object_id):
+        nonlocal checked
+        original(conn, context, allowed, kind, object_id)
+        if kind == "entity" and not checked:
+            checked = True
+            for statement in (
+                "UPDATE brain_source_items i SET current_version_id=NULL "
+                "FROM brain_source_versions v JOIN brain_evidence e "
+                "ON e.tenant_id=v.tenant_id AND e.source_version_id=v.id "
+                "WHERE i.tenant_id=v.tenant_id AND i.id=v.item_id "
+                "AND e.tenant_id=%s AND e.id=%s",
+                "UPDATE brain_sources s SET status='paused' "
+                "FROM brain_source_versions v JOIN brain_evidence e "
+                "ON e.tenant_id=v.tenant_id AND e.source_version_id=v.id "
+                "WHERE s.tenant_id=v.tenant_id AND s.id=v.source_id "
+                "AND e.tenant_id=%s AND e.id=%s",
+            ):
+                with pytest.raises(psycopg.errors.LockNotAvailable):
+                    with psycopg.connect(admin) as other:
+                        other.execute("SET lock_timeout='100ms'")
+                        other.execute(statement, (ctx.tenant_id, entity_evidence))
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(KnowledgeProposalBatches, "_lock_linked_citation_basis",
+                        staticmethod(check_after_entity_lock))
+        result = batches.review(ctx, staged["batch_id"], KnowledgeProposalReviewRequest(
+            batch_sha256=staged["batch_sha256"],
+            decisions=[KnowledgeProposalDecision(
+                proposal_id=page["proposals"][0]["proposal_id"],
+                decision="approved",
+            )],
+        ), uuid4())
+    assert checked and result["approved"] == 1
+
+
 def test_two_rows_stage_private_replay_then_explicit_mixed_review(database, tenant):
     store, admin = database
     ctx, _, project_id, evidence_id = _prepared(store, tenant)

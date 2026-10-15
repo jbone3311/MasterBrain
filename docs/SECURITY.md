@@ -70,7 +70,12 @@ queues with human-only review, current cited-basis rechecks and no assistant
 read. Migration 0070 protects artifact proposals with forced RLS, tenant-login
 fencing, immutable rows and receipt-bound approval. Hosted and live-source
 acceptance remain gated.
-The direct and proposal-reviewed fact/artifact writers now hold shared row
+The private Knowledge proposal reviewer holds shared locks on direct evidence
+source items and source rows until commit. For a member role it also locks all
+sources backing the linked project and entity citations. This closes the
+current-pointer/status revocation gap between its review check and approval;
+it does not serialize Email exclusion-policy edits, external provider state,
+or generic direct Knowledge publication. The direct and proposal-reviewed fact/artifact writers now hold shared row
 locks on each validated source item and source status until transaction
 commit. This closes a current-pointer/status change between check and
 publication; it does not serialize all Email exclusion updates or establish

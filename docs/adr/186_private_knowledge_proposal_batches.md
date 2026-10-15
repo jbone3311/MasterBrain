@@ -26,7 +26,11 @@ rows searchable or treating a batch as blanket approval.
   a bounded source quote appearing exactly in at least one linked normalized
   document, and current, active, nonexcluded evidence at stage time. The human
   preview and review recheck the same source/evidence/quote basis under current
-  source grants. An excluded or revoked basis is not disclosed or approved.
+  source grants. During the review transaction, row locks on each direct
+  evidence source item and source keep its current-version pointer and active
+  status stable through publication. An excluded or revoked basis is not
+  disclosed or approved. This lock does not freeze external provider state or
+  concurrently edited exclusion policy, and does not change direct publication.
 - The preview requires a human reviewer with `knowledge.review` and
   `brain.content.read`; it returns only one exact batch, ordered and bounded.
   No assistant or ordinary Knowledge search/dossier/changes route can read the

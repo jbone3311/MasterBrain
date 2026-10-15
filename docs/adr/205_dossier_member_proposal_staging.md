@@ -31,7 +31,10 @@ role over an existing local project. A role is knowledge, never access control.
   specifically cited member evidence, and current/granted/nonexcluded full
   citation bases for the linked project and entity. Source revocation,
   exclusion, stale versions or an altered entity citation fail closed; one bad
-  selected row rolls back the whole batch. Keep the ADR-202 import-context
+  selected row rolls back the whole batch. At review, lock the source item and
+  source rows behind every linked project/entity citation, in addition to the
+  member's direct evidence, so their current pointer and active status cannot
+  change between validation and publication. Keep the ADR-202 import-context
   digest and per-row human decision contract unchanged.
 - For new proposal inserts, a SQL guard requires any batch with an import
   context digest to retain its row's cited quote evidence; imported member

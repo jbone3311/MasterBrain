@@ -1,5 +1,12 @@
 # Changelog
 
+- Hold shared source-item and source-status row locks during private Knowledge
+  proposal review, including every linked project/entity citation behind a
+  proposed member role. Synthetic concurrent revocation tests cover direct
+  proposal evidence and the separate entity citation. This does not change
+  generic direct publication, Email exclusion-policy serialization or live
+  provider state.
+
 - Hold shared PostgreSQL locks on each checked source item and source-status
   row through direct and proposal-reviewed fact/artifact publication. A
   concurrent current-version or active-status update now waits until the

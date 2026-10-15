@@ -113,6 +113,55 @@ def test_forty_private_proposals_review_38_atomically_and_replay(database, tenan
     assert sum(row["status"] == "rejected" for row in reviewed["proposals"]) == 2
 
 
+def test_review_holds_direct_evidence_source_state_until_commit(
+    database, tenant, monkeypatch,
+):
+    store, admin = database
+    ctx, evidence_id = prepared(store, tenant)
+    queue = KnowledgeProposalBatches(store)
+    staged = queue.stage(
+        ctx, KnowledgeProposalStageRequest(proposals=[proposal(evidence_id, 1)]), uuid4(),
+    )
+    page = queue.preview(ctx, staged["batch_id"])
+    original = KnowledgeProposalBatches._visible_basis
+    checked = False
+
+    def check_after_validation(conn, context, assertion, *args):
+        nonlocal checked
+        original(conn, context, assertion, *args)
+        if not checked:
+            checked = True
+            for statement in (
+                "UPDATE brain_source_items i SET current_version_id=NULL "
+                "FROM brain_source_versions v JOIN brain_evidence e "
+                "ON e.tenant_id=v.tenant_id AND e.source_version_id=v.id "
+                "WHERE i.tenant_id=v.tenant_id AND i.id=v.item_id "
+                "AND e.tenant_id=%s AND e.id=%s",
+                "UPDATE brain_sources s SET status='paused' "
+                "FROM brain_source_versions v JOIN brain_evidence e "
+                "ON e.tenant_id=v.tenant_id AND e.source_version_id=v.id "
+                "WHERE s.tenant_id=v.tenant_id AND s.id=v.source_id "
+                "AND e.tenant_id=%s AND e.id=%s",
+            ):
+                with pytest.raises(psycopg.errors.LockNotAvailable):
+                    with psycopg.connect(admin) as other:
+                        other.execute("SET lock_timeout='100ms'")
+                        other.execute(statement, (ctx.tenant_id, evidence_id))
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(KnowledgeProposalBatches, "_visible_basis",
+                        staticmethod(check_after_validation))
+        result = queue.review(ctx, staged["batch_id"],
+                              KnowledgeProposalReviewRequest(
+                                  batch_sha256=staged["batch_sha256"],
+                                  decisions=[KnowledgeProposalDecision(
+                                      proposal_id=page["proposals"][0]["proposal_id"],
+                                      decision="approved",
+                                  )],
+                              ), uuid4())
+    assert checked and result["approved"] == 1
+
+
 def test_review_failure_rolls_back_every_row_and_hidden_basis(database, tenant):
     store, admin = database
     ctx, evidence_id = prepared(store, tenant)

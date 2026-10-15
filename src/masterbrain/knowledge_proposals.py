@@ -65,6 +65,37 @@ class KnowledgeProposalBatches:
             raise AccessDenied("human identity required")
 
     @staticmethod
+    def _lock_linked_citation_basis(
+        conn: Any, ctx: TenantContext, allowed: list[str] | None,
+        kind: str, object_id: str,
+    ) -> None:
+        """Hold every linked source item/status stable through proposal publication."""
+        linked = conn.execute(
+            "SELECT evidence_id FROM knowledge_evidence "
+            "WHERE tenant_id=%s AND target_kind=%s AND target_id=%s",
+            (ctx.tenant_id, kind, object_id),
+        ).fetchall()
+        ids = {row["evidence_id"] for row in linked}
+        if not ids:
+            raise Conflict("uncitable reviewed assertion")
+        locked = conn.execute(
+            "SELECT e.id FROM brain_evidence e "
+            "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+            "AND v.id=e.source_version_id "
+            "JOIN brain_source_items i ON i.tenant_id=v.tenant_id "
+            "AND i.id=v.item_id AND i.source_id=v.source_id "
+            "JOIN brain_sources s ON s.tenant_id=i.tenant_id AND s.id=i.source_id "
+            "WHERE e.tenant_id=%s AND e.id=ANY(%s) "
+            "AND i.current_version_id=v.id AND s.status='active' "
+            "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
+            "AND (%s::text[] IS NULL OR s.id=ANY(%s::text[])) "
+            "FOR SHARE OF i,s",
+            (ctx.tenant_id, list(ids), allowed, allowed),
+        ).fetchall()
+        if {row["id"] for row in locked} != ids:
+            raise Conflict("uncitable reviewed assertion")
+
+    @staticmethod
     def _visible_basis(
         conn: Any, ctx: TenantContext, assertion: KnowledgeAssertion,
         required_quote_evidence_id: str | None = None,
@@ -85,7 +116,8 @@ class KnowledgeProposalBatches:
             "JOIN brain_sources s ON s.tenant_id=i.tenant_id AND s.id=i.source_id "
             "WHERE e.id=ANY(%s) AND i.current_version_id=v.id AND s.status='active' "
             "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
-            "AND (%s::text[] IS NULL OR s.id=ANY(%s::text[]))",
+            "AND (%s::text[] IS NULL OR s.id=ANY(%s::text[])) "
+            "FOR SHARE OF i,s",
             (assertion.source_quote, evidence_ids, allowed, allowed),
         ).fetchall()
         if {row["id"] for row in rows} != set(evidence_ids):
@@ -119,6 +151,12 @@ class KnowledgeProposalBatches:
                 "person", "organization",
             }:
                 raise NotFound()
+            for kind, object_id in (
+                ("project", assertion.project_id), ("entity", assertion.entity_id),
+            ):
+                KnowledgeProposalBatches._lock_linked_citation_basis(
+                    conn, ctx, allowed, kind, object_id,
+                )
             _verified_assertion_citation(
                 conn, ctx.tenant_id, allowed, "project", assertion.project_id,
                 references["project_quote"],
