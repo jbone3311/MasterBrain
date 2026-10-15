@@ -6,7 +6,10 @@ PR. Stage, private preview and explicit atomic human review check the current
 project, exact artifact and separately cited basis occurrence, full quote and
 source grants. A local same-cluster populated logical restore passed; exact-head
 hosted CI, strict-runtime, independent-container restore and merged-main gates
-remain. Next stress same-hash distinct occurrences and larger mixed batches.
+remain. Same-hash distinct occurrences and a 25-row mixed batch with
+late-fault rollback now pass locally; the current exporter permits at most
+25 artifact lines in one Markdown exchange. Next: hosted gates, then a
+separately designed paged exchange for overfull dossiers.
 Artifact IDs are evidence occurrences, not content hashes or automatic FileOS
 effects. FOS-Master remains untouched.
 
@@ -22,18 +25,16 @@ citation, source-scope denial at all three gates and revocation between
 inspection and staging. A local same-cluster source-to-target logical
 dump/restore now preserves pending and approved batches and their private
 visibility; the independent-container hosted restore remains unverified.
-Next: broader stress and hosted restore confirmation;
-obtain exact-head hosted CI/strict-runtime/restore and merged-main gates;
-then complete ADR-207 hosted acceptance and design typed inferred basis separately. This
+Next: obtain exact-head hosted CI/strict-runtime/restore and merged-main gates
+for ADR-206/207, then design typed inferred basis separately. This
 is not an automatic or lossless round trip, live-source gate or FOS-Master
 cutover.
 
 ADR-205 adds selected project-member roles to the synthetic Markdown-to-
 private-proposal path, with exact member/entity citation IDs retained and
-rechecked through human review. The next Librarian import gates are typed
-source-stated project facts and related artifact links, each with their own
-provenance and atomic publication contracts; inferred claims need a separate
-typed basis model. This is not automatic dossier generation, a lossless round
+rechecked through human review. ADR-206/207 now provide the separate synthetic
+fact and artifact-link gates; inferred claims still need a typed basis model.
+This is not automatic dossier generation, a lossless round
 trip, live-source acceptance or FOS-Master cutover.
 
 ADR-204 proves a small, synthetic Cedar Harbor company dossier through the
@@ -41,7 +42,7 @@ existing compact/Markdown API and external client: reviewed project, event,
 commitment, source-stated fact and linked FileOS artifact with original evidence.
 It is a known-answer integration case, not automatic knowledge generation or
 source freshness. Next: owner walkthrough, held-out cross-source questions,
-approval-gated Markdown import of facts/artifact links, then explicit
+the synthetic fact/artifact approval round-trip trial, then explicit
 live-source and financial source-tier gates. The owner chose MasterBrain's
 current Markdown export as the Librarian import format; do not invent missing
 full quotes or observation metadata from that lossy export.
@@ -59,7 +60,8 @@ format, provide missing typed metadata, and hold them for explicit ADR-186
 human review. It binds exact Markdown/selection context to the immutable batch
 and rechecks full quotes on specifically cited current evidence. ADR-205 later
 adds member staging; ADR-206 now adds a separate selected source-stated
-project-fact queue. Artifact-link staging, inference/basis links, full-fidelity
+project-fact queue; ADR-207 later adds separate artifact-link staging.
+Inference/basis links, full-fidelity
 round trip and live-source acceptance remain separate gates.
 
 ADR-201 adds an owner-only current-evidence inspection of the selected

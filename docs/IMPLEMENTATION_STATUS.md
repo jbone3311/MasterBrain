@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+The fictional Cedar Harbor cross-source trial now tests the owner-selected
+Markdown through actual fact and artifact-link proposal API routes and
+explicit human review, then reopens both reviewed results and original
+evidence. It does not automate sidecar creation, infer new facts, accept live
+sources or prove a lossless dossier round trip. Exact validation is in the
+build receipt.
+
 ADR-207 adds a separate synthetic-only selected artifact-link Markdown queue
 on the open PR: exact selected line, typed full-quote sidecar, current local
 project, artifact and separately cited basis are checked at stage, private

@@ -2,6 +2,31 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Fictional cross-source dossier export-to-review acceptance
+
+The Cedar Harbor synthetic Email/FileOS trial now exercises the actual Brain
+API across one owner workflow: export the current cited Markdown, select a
+FileOS-backed project fact and artifact link with explicit typed sidecars,
+stage each in its separate private queue, verify neither appears in the
+dossier before review, approve each with a human credential, then read both
+reviewed results and drill down to the original FileOS evidence. A file-only
+assistant still cannot read the Email-and-FileOS project dossier. This is a
+synthetic acceptance path for the existing format and routes, not automatic
+import, lossless round trip, live provider trial or financial truth claim.
+The complete cross-source suite passed **31 tests, one skipped** (20 of 21
+PostgreSQL-marked cases executed). A fresh local Python 3.14/PostgreSQL 17.11
+full run passed **3,511 tests, nine skipped** (622 of 623 PostgreSQL-marked
+cases executed). Ruff, strict mypy (112 files), browser 167/167 and docs
+links passed. The deployment gate passed **2,891 tests, 629 skipped** with
+local PostgreSQL permission (only two PostgreSQL-marked cases executed); it
+does not replace the full database run. Hosted exact-head gates
+remain required. GitHub's exact-head CI for prior
+commit `eff2b67` ([run 38728904161](https://github.com/jbone3311/MasterBrain/actions/runs/38728904161))
+failed with zero executed steps; its check annotation says recent account
+payments failed or the spending limit needs increasing. That is a runner
+start/billing block, not a passing or failing code-test verdict. No branch
+protection bypass or merge is authorized by local success.
+
 ## Selected project-artifact Markdown proposals — ADR-207
 
 Migration 0070 and `ArtifactProposalBatches` add a separate private,

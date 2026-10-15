@@ -1,5 +1,11 @@
 # Changelog
 
+- Extend the fictional Cedar Harbor Email/FileOS acceptance trial through
+  MasterBrain's current Markdown export, separate private fact/artifact-link
+  proposal APIs, explicit human approval, reviewed dossier reads, original
+  evidence drill-down and file-only assistant denial. No automatic import or
+  live-source approval is implied.
+
 - Add ADR-207's synthetic-only selected artifact-link Markdown proposal queue,
   human-only stage/preview/atomic review routes and migration 0070. Separate
   current artifact and cited-basis occurrences, full quotes and grants are
