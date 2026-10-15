@@ -1,5 +1,9 @@
 # Changelog
 
+- Rebuild the local non-editable MasterBrain package when starting the fictional
+  cross-source trial. A stale same-version wheel could omit newer modules and
+  fail before the trial opened; the launcher now refreshes just that package.
+
 - Add a seventh isolated FOS-Master statement recipe baseline for Wells Fargo
   brokerage (ADR-198), with fictional cash/lot/reconciliation goldens,
   exact-hash donor replay and 1,000-row repeatability. This is nonpublishing

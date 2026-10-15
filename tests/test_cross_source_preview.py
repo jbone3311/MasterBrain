@@ -945,7 +945,10 @@ def test_mac_trial_command_selects_patched_python_and_forwards_test_options():
     command = ASSETS.parents[1] / "Start-MasterBrain-Trial.command"
     script = command.read_text(encoding="utf-8")
     assert "--python '>=3.13,<3.15'" in script
-    assert "uv sync --locked --extra dev --python '>=3.13,<3.15' --no-editable" in script
+    assert (
+        "uv sync --locked --extra dev --python '>=3.13,<3.15' --no-editable "
+        "--reinstall-package masterbrain" in script
+    )
     assert (
         'uv run --no-sync python tests/cross_source_preview.py --synthetic-preview "$@"'
         in script
