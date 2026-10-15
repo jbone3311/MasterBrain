@@ -2,6 +2,22 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Full local synthetic gate at code commit `5165a03` — not hosted acceptance
+
+On locked Python 3.11.13 and a fresh, disposable loopback PostgreSQL 17.11
+cluster, a forced `CI=1` full `pytest -q` run finished with **3,726 passed,
+18 skipped, one failed** in 8m52s. All **670 PostgreSQL-marked tests** were
+collected and executed; none skipped. The single failure was
+`test_actual_disposable_docker_launcher`, which intentionally fails in CI mode
+when Docker is unavailable on this Mac. It did not expose a code or database
+regression, but the full CI gate is **not green** and no actual container image
+was tested. Seven browser test files passed **167/167**. Repository-wide Ruff
+and mypy (132 source files), the structural deployment gate and documentation
+link check passed. The temporary PostgreSQL cluster was stopped and its
+synthetic-only directory removed after the run. Hosted exact-head workflows
+remain blocked before job steps by GitHub account payment/spending limits;
+independent image/restore and release gates are still open.
+
 ## Bounded XLSX physical rows and cells — current branch
 
 An additive pure guard now re-renders projected cell values into the exact

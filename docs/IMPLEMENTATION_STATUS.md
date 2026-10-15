@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+At code commit `5165a03`, a fresh local PostgreSQL 17.11 and locked Python
+3.11.13 ran the full CI-mode Python suite: 3,726 passed, 18 skipped and one
+failure solely because the actual Docker-backed trial requires Docker on this
+Mac. All 670 PostgreSQL-marked tests executed. Browser 167/167, repository-
+wide Ruff/mypy, structural deployment and docs checks passed. This is strong
+local synthetic evidence, not green full CI, actual-image validation, hosted
+acceptance or production readiness. The exact receipt is in
+[BUILD_RECEIPT](BUILD_RECEIPT.md); hosted jobs still fail before starting due
+to account payment/spending limits.
+
 ADR-234 adds a separate fixed-profile XLSX row/cell projector that retains
 physical sheet/row and positional cell information without changing indexed
 text. Fictional pinned-donor plain/1,000-row values match; formulas yield no
