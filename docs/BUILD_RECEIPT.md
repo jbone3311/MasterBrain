@@ -2,6 +2,34 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Opt-in reviewed exact-decimal measurement — ADR-212
+
+Migration 0071 adds nullable, immutable `amount_decimal`, `unit_code` and
+`currency_code` to reviewed project facts. Fictional tests publish one typed
+exact-decimal currency fact from a separate current Email quote, keep a
+legacy fact untyped, read both through the source-scoped report and external
+client, and reject malformed, NULL currency/unit or missing amount tokens
+through direct SQL inserts. The NULL tests caught and corrected a PostgreSQL
+three-valued `CHECK` edge case before the migration was committed. Pure model
+cases refuse floats, exponent syntax, mismatched values and unsupported
+unit/currency shapes. The populated restore seed now
+includes typed facts in both pending and approved private proposal paths;
+targeted upgrade/restore suites passed **52/52**. This verifies the local
+fixture and schema upgrade, not an independent-container logical restore.
+
+After fixing exact migration-list expectations and preserving the original
+Librarian quote fixture, the exact-current full local Python 3.14/PostgreSQL
+17.11 suite passed **3,545 tests, 19 skipped** (630 of 631 PostgreSQL-marked
+cases executed). Browser tests passed **167/167**. The local deployment gate
+passed **2,918 tests, 646 skipped** (three PostgreSQL-marked cases executed);
+the ten optional DuckDB donor replays still skip in the locked environment.
+Ruff, strict mypy (113 source files), docs links (313 Markdown files, 1,667
+paths/fragments) and diff whitespace passed. Local Docker is unavailable,
+so the independent container restore gate is not locally verified. Hosted
+exact-head and merged-main gates remain required. This is not a verified
+holding, FX conversion, owner allocation, aggregate balance, live-source
+pilot or FileOS cutover.
+
 ## Current-evidence project fact report — ADR-211
 
 The new read-only `/v1/knowledge/projects/{project_id}/facts/report` route

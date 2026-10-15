@@ -1,6 +1,6 @@
 # MasterBrain Feature Inventory
 
-Updated 2026-10-15 through ADR-211's first authorized fact-report page. The current
+Updated 2026-10-15 through ADR-212's opt-in reviewed measurement. The current
 owner-selected Librarian exchange layout is MasterBrain's ADR-197 Markdown
 export; ADR-200/201 can inventory it, but this is not an automatic or lossless
 round trip.
@@ -70,7 +70,8 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Entities | People, organizations, places, accounts, artifacts; aliases | Reviewed append/read implemented |
 | Relationships | Typed, directional, temporal, evidence-backed | Reviewed append/read implemented |
 | Facts/claims | Assertion, value, confidence, reviewer, valid/observed time | Reviewed append/read implemented |
-| Project fact report | Source-granted current-evidence reviewed statements with citations and uncertainty | ADR-211 provides a bounded predicate-grouped API/client page with divergent-preview and incomplete-comparison flags; no numeric total, controlled unit/currency, ownership, complete dossier or hosted acceptance |
+| Project fact report | Source-granted current-evidence reviewed statements with citations and uncertainty | ADR-211 provides a bounded predicate-grouped API/client page with divergent-preview and incomplete-comparison flags; ADR-212 adds optional typed measurements, but no numeric total, ownership, complete dossier or hosted acceptance |
+| Typed project measurements | Exact decimal and unit/currency without a fabricated balance | ADR-212 permits optional literal quote-backed measurement on new reviewed facts, exposed only in the report; old facts remain untyped, and no ownership, FX, predicate registry, aggregation or hosted acceptance exists |
 | Statement extraction proposals | Separate grouped, exact-decimal rows with evidence and explicit unreviewed state | ADR-172 private ledger and ADR-173 human-only paged source-quote preview on synthetic data; no owner approval, verified holding, other recipe, live source or investment dossier |
 | Events/timeline | Event time distinct from ingestion time | Reviewed event records and ADR-160 bounded occurrence timeline implemented; merged-main CI/restore passed. No cross-kind timeline or source freshness claim |
 | Projects | State and evidence; future members/milestones/decisions | Reviewed base record and ADR-162 compact exact-project dossier with separately bounded, source-aware linked events and commitments, including undated records, merged with exact-head and merged-main gates green. This is not a state reducer or live-currentness claim. |

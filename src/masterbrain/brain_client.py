@@ -761,7 +761,13 @@ class BrainReadClient:
             if (not isinstance(predicate, str) or not _EVENT_TYPE.fullmatch(predicate)
                     or not isinstance(facts, list) or not facts
                     or len(facts) > limit or any(
-                        not self._valid_project_fact(row, project_id, cutoff)
+                        not isinstance(row, dict)
+                        or not self._valid_project_fact(
+                            {key: value for key, value in row.items()
+                             if key != "measurement"}, project_id, cutoff,
+                        )
+                        or "measurement" not in row
+                        or not self._valid_report_measurement(row)
                         or row["predicate"] != predicate for row in facts
                     )):
                 raise BrainClientError("invalid_response")
@@ -795,6 +801,31 @@ class BrainReadClient:
         ):
             raise BrainClientError("invalid_response")
         return data
+
+    @staticmethod
+    def _valid_report_measurement(row: dict[str, Any]) -> bool:
+        measurement = row.get("measurement")
+        if measurement is None:
+            return True
+        if not isinstance(measurement, dict) or set(measurement) != {
+            "amount", "unit", "currency", "meaning",
+        }:
+            return False
+        amount, unit, currency = (
+            measurement["amount"], measurement["unit"], measurement["currency"]
+        )
+        return bool(
+            row.get("value_type") == "number"
+            and row.get("value_truncated") is False
+            and isinstance(amount, str)
+            and re.fullmatch(r"-?(?:0|[1-9][0-9]{0,21})(?:\.[0-9]{1,8})?", amount)
+            and row.get("value_preview") == amount
+            and unit in {"currency", "shares", "percent", "count"}
+            and ((unit == "currency" and isinstance(currency, str)
+                  and re.fullmatch(r"[A-Z]{3}", currency))
+                 or (unit != "currency" and currency is None))
+            and measurement["meaning"] == "reviewed_source_stated_not_balance"
+        )
 
     @classmethod
     def _valid_project_fact(cls, row: Any, project_id: str, cutoff: datetime) -> bool:

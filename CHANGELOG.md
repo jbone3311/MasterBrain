@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-212: added opt-in exact-decimal amount, unit and currency metadata to
+  newly reviewed project facts via additive migration 0071. App and SQL
+  require matching value and literal source-quote tokens; the scoped report
+  exposes a source-stated typed field but still computes no financial total.
+
 - ADR-211: added a current-evidence, source-granted project fact report route
   and validated external read client. It groups one reviewed page, flags
   divergent previews and disputed rows, and refuses numeric aggregation or

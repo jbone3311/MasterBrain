@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-212](adr/212_exact_project_fact_measurement.md) adds opt-in exact-decimal
+unit/currency metadata to newly reviewed project facts. Existing values stay
+untyped; the report labels measurements as source-stated and still refuses
+numeric totals.
+
 [ADR-211](adr/211_current_project_fact_report.md) exposes a first source-
 granted, current-evidence project fact report from reviewed KnowledgeCore rows.
 It groups one bounded page with citation IDs and uncertainty flags, never a

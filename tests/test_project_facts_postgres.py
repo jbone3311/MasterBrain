@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from uuid import uuid4
 
 import httpx
@@ -32,9 +33,10 @@ QUOTE = "Fictional Melron deal briefing"
 NOW = datetime(2026, 10, 14, tzinfo=UTC)
 
 
-def _source(store: Store, ctx: pg.TenantContext, account, key: str, cursor: str | None) -> str:
+def _source(store: Store, ctx: pg.TenantContext, account, key: str, cursor: str | None,
+            body: str = QUOTE) -> str:
     store.ingest_page(ctx, account, cursor, key, [
-        replace(pg.item(key, body=QUOTE), provider_id=key),
+        replace(pg.item(key, body=body), provider_id=key),
     ])
     with store.transaction(ctx) as conn:
         legacy_id = conn.execute(
@@ -84,6 +86,101 @@ def test_project_fact_schema_rejects_invalid_source_text():
         _body(project_id, evidence_id, value="invalid\x00value")
     with pytest.raises(ValueError):
         _body(project_id, evidence_id, quote="invalid\ud800quote")
+
+
+def test_project_fact_exact_measurement_stays_typed_only_in_report(database, tenant):
+    store, admin = database
+    ctx, account, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    legacy = facts.publish(ctx, project_id, _body(project_id, evidence_id), uuid4())
+    amount_quote = "Fictional amount 100.25 USD"
+    amount_evidence = _source(
+        store, ctx, account, "fictional-typed-fact-message",
+        "fictional-fact-message-1", body=amount_quote,
+    )
+    body = ProjectFactWrite.model_validate({
+        **_body(project_id, amount_evidence, value="100.25", quote=amount_quote).model_dump(),
+        "value_type": "number",
+        "measurement": {"amount": "100.25", "unit": "currency", "currency": "USD"},
+    })
+    typed = facts.publish(ctx, project_id, body, uuid4())
+    report = facts.report(ctx, project_id, ProjectFactPageRequest())
+    by_id = {row["object_id"]: row for group in report["groups"] for row in group["facts"]}
+    assert by_id[legacy["object_id"]]["measurement"] is None
+    assert by_id[typed["object_id"]]["measurement"] == {
+        "amount": "100.25", "unit": "currency", "currency": "USD",
+        "meaning": "reviewed_source_stated_not_balance",
+    }
+    assert "measurement" not in facts.page(ctx, project_id, ProjectFactPageRequest())[
+        "results"
+    ][0]
+    assert report["numeric_aggregation"] == "none_units_currency_ownership_unverified"
+    token = "fictional-typed-fact-" + uuid4().hex
+    credential = Credential(
+        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"knowledge.search"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="human",
+    )
+    with TestClient(create_app(store, TokenRegistry([credential]))) as api:
+        response = api.get(
+            f"/v1/knowledge/projects/{project_id}/facts/report",
+            params={"limit": 10},
+            headers={"Authorization": "Bearer " + token},
+        )
+        assert response.status_code == 200, response.text
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=response.json())
+            ),
+        ) as reader:
+            assert any(
+                row["measurement"] is not None
+                for group in reader.project_fact_report(project_id, limit=10)["groups"]
+                for row in group["facts"]
+            )
+    with psycopg.connect(admin) as conn:
+        row = conn.execute(
+            "SELECT amount_decimal,unit_code,currency_code FROM knowledge_project_facts "
+            "WHERE tenant_id=%s AND id=%s", (ctx.tenant_id, typed["object_id"]),
+        ).fetchone()
+    assert row == (Decimal("100.25"), "currency", "USD")
+    with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+            "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+            "unit_code,currency_code) SELECT tenant_id,%s,project_id,predicate,"
+            "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+            "unit_code,'usd' FROM knowledge_project_facts WHERE tenant_id=%s AND id=%s",
+            ("pfact_" + "f" * 32, ctx.tenant_id, typed["object_id"]),
+        )
+    with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+            "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+            "unit_code,currency_code) SELECT tenant_id,%s,project_id,predicate,"
+            "'200.00',value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,reviewer_id,200.00,"
+            "unit_code,currency_code FROM knowledge_project_facts "
+            "WHERE tenant_id=%s AND id=%s",
+            ("pfact_" + "e" * 32, ctx.tenant_id, typed["object_id"]),
+        )
+    for suffix, unit, currency in (("d", None, "USD"), ("c", "currency", None)):
+        with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+                "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+                "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+                "unit_code,currency_code) SELECT tenant_id,%s,project_id,predicate,"
+                "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+                "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+                "%s,%s FROM knowledge_project_facts WHERE tenant_id=%s AND id=%s",
+                ("pfact_" + suffix * 32, unit, currency, ctx.tenant_id, typed["object_id"]),
+            )
 
 
 def test_project_fact_markdown_byte_budget_preserves_paging(database, tenant):

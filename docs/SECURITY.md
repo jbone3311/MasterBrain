@@ -333,6 +333,15 @@ and any replacement of the explicit no-aggregation label with a financial
 total claim. No content scope, provider token, source path, raw bytes or
 write authority is added.
 
+ADR-212's typed fact metadata is opt-in and immutable on the existing
+tenant-fenced table. The application accepts only a restricted exact-decimal
+string, matching value, closed unit/currency tuple and literal tokens in the
+verified current source quote. SQL independently rejects malformed tuples,
+numeric/value mismatch and missing quote tokens on direct inserts. The
+source can still be wrong, an amount can be a transaction rather than a
+holding, and a three-letter code is not an exchange-rate or ISO-validity
+assertion. The report labels the field source-stated and never totals it.
+
 ADR-196's separate synthetic fact-fragment export requires content-read as
 well as Knowledge search authority. Its tenant-fenced read rechecks project,
 every fact evidence grant/current version/exclusion and the full exact quote

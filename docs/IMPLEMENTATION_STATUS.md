@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-212 adds optional exact-decimal, unit and currency metadata to **new**
+human-reviewed project facts under migration 0071. The amount string and unit
+token must occur in the still-current source quote; old facts remain untyped.
+Only the source-granted ADR-211 report exposes the typed object and strict
+external client validation. No ownership, currency conversion, automatic
+number extraction, certified balance or numeric aggregation is present.
+Local fictional PostgreSQL and pure validation tests pass; hosted gates remain.
+
 ADR-211 adds a read-only, source-granted project fact report API and validated
 external-client method. It groups one bounded page of current-evidence,
 reviewed source-stated facts by predicate; differing asserted previews and

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from datetime import timedelta
 from typing import Annotated, Any, Literal, Self
@@ -389,6 +390,26 @@ class ProjectDossierRequest(ClosedModel):
         return value
 
 
+_CANONICAL_AMOUNT = re.compile(r"^-?(?:0|[1-9][0-9]{0,21})(?:\.[0-9]{1,8})?$")
+
+
+class ProjectFactMeasurement(ClosedModel):
+    amount: str
+    unit: Literal["currency", "shares", "percent", "count"]
+    currency: str | None = None
+
+    @model_validator(mode="after")
+    def closed_measurement(self) -> Self:
+        if not _CANONICAL_AMOUNT.fullmatch(self.amount):
+            raise ValueError("amount must be an exact canonical decimal string")
+        if self.unit == "currency":
+            if self.currency is None or not re.fullmatch(r"[A-Z]{3}", self.currency):
+                raise ValueError("currency amount requires a three-letter code")
+        elif self.currency is not None:
+            raise ValueError("noncurrency unit cannot carry a currency code")
+        return self
+
+
 class ProjectFactWrite(AssertionBase):
     kind: Literal["project_fact"]
     project_id: ProjectIdentity
@@ -398,6 +419,7 @@ class ProjectFactWrite(AssertionBase):
     assertion_status: Literal["asserted", "disputed", "retracted"] = "asserted"
     derivation: Literal["source_stated"] = "source_stated"
     quote_evidence_id: EvidenceIdentity
+    measurement: ProjectFactMeasurement | None = None
 
     @model_validator(mode="after")
     def quote_basis(self) -> Self:
@@ -407,6 +429,18 @@ class ProjectFactWrite(AssertionBase):
             raise ValueError("project fact text contains NUL")
         self.source_quote.encode("utf-8", errors="strict")
         self.value.encode("utf-8", errors="strict")
+        if self.measurement is not None and (
+            self.value_type != "number" or self.value != self.measurement.amount
+        ):
+            raise ValueError("typed measurement requires matching canonical number value")
+        if self.measurement is not None:
+            token = (
+                self.measurement.currency if self.measurement.unit == "currency"
+                else self.measurement.unit
+            )
+            if (token is None or self.measurement.amount not in self.source_quote
+                    or token not in self.source_quote):
+                raise ValueError("typed amount and unit must occur in exact source quote")
         return self
 
 

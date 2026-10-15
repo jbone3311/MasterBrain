@@ -85,6 +85,15 @@ explicit, not inferred from filename.
 
 ## KnowledgeCore
 
+Migration `0071_reviewed_project_fact_measurements.sql` adds nullable,
+immutable exact-decimal `amount_decimal`, `unit_code` and `currency_code` to
+reviewed project facts. The opt-in typed write requires a matching canonical
+decimal `value` and literal amount/unit tokens in the current exact source
+quote; direct SQL shape checks repeat those constraints. Historical rows keep
+NULLs. The current-source fact report alone exposes the typed object, never
+an investment sum; ownership, FX and controlled predicate semantics remain
+open ([ADR-212](adr/212_exact_project_fact_measurement.md)).
+
 Migration `0064_private_statement_fileos_replay.sql` adds one append-only
 `knowledge_statement_fileos_replays` row per proposal. Its tenant-composite
 links and SQL basis guard bind the existing proposal/document/evidence/current

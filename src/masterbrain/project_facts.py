@@ -76,7 +76,8 @@ def visible_project_fact_rows(
     rows = conn.execute(
         _FACT_COMMON + "SELECT f.id,f.project_id,f.predicate,f.value,f.value_type,"
         "f.assertion_status,f.derivation,f.confidence,f.evidence_ids,"
-        "f.quote_evidence_id," + ("f.source_quote," if include_quote else "")
+        "f.quote_evidence_id,f.amount_decimal,f.unit_code,f.currency_code,"
+        + ("f.source_quote," if include_quote else "")
         + "f.observed_at,f.valid_from,f.valid_to,f.recorded_at "
         + _FACT_FROM + "WHERE f.project_id=%s AND f.recorded_at<=allowed.cutoff "
         "AND p.recorded_at<=allowed.cutoff AND " + _FACT_VISIBLE
@@ -338,13 +339,16 @@ class ProjectFacts:
             "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
             "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
             "quote_evidence_id,source_quote,observed_at,valid_from,valid_to,"
-            "supersedes_id,reviewer_id) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "supersedes_id,reviewer_id,amount_decimal,unit_code,currency_code) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (ctx.tenant_id, fact_id, project_id, body.predicate, body.value,
              body.value_type, body.assertion_status, body.confidence,
              body.derivation, body.evidence_ids, body.quote_evidence_id,
              body.source_quote, body.observed_at, body.valid_from, body.valid_to,
-             body.supersedes_id, ctx.actor_id),
+             body.supersedes_id, ctx.actor_id,
+             body.measurement.amount if body.measurement else None,
+             body.measurement.unit if body.measurement else None,
+             body.measurement.currency if body.measurement else None),
         )
         conn.execute(
             "INSERT INTO knowledge_project_fact_receipts(tenant_id,actor_id,"
@@ -381,7 +385,33 @@ class ProjectFacts:
         self, ctx: TenantContext, project_id: str, request: ProjectFactPageRequest,
     ) -> dict[str, Any]:
         """Group one current-authorized fact page without amount aggregation."""
-        page = self.page(ctx, project_id, request)
+        self.store.require(ctx, "knowledge.search")
+        if (not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id)
+                or not isinstance(request, ProjectFactPageRequest)):
+            raise NotFound()
+        allowed = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        with self.store.transaction(ctx) as conn:
+            rows, cutoff = _read_fact_page(conn, allowed, project_id, request)
+            self.store.audit(conn, ctx, "knowledge.project_fact_report_read", "project")
+        visible = rows[:request.limit]
+        facts = []
+        for row in visible:
+            measurement = None
+            if row["amount_decimal"] is not None:
+                measurement = {
+                    "amount": row["value"], "unit": row["unit_code"],
+                    "currency": row["currency_code"],
+                    "meaning": "reviewed_source_stated_not_balance",
+                }
+            facts.append({**compact_project_fact(row), "measurement": measurement})
+        page = {
+            "project_id": project_id,
+            "results": facts,
+            "next_cursor": visible[-1]["id"] if len(rows) > request.limit and visible else None,
+            "recorded_cutoff_at": cutoff,
+            "limit": request.limit,
+            "visibility": request.visibility,
+        }
         return _report_from_fact_page(page, after=request.after)
 
     def export_markdown(

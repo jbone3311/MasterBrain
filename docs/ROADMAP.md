@@ -2,8 +2,9 @@
 
 ADR-211 now supplies the first authorized current-evidence project fact report
 through KnowledgeCore and the external client. The next financial/report step
-is a controlled predicate and exact unit/currency/ownership model, followed
-by a known-answer fictional company dossier; no donor money sum is promoted
+is a controlled predicate and ownership model on top of ADR-212's opt-in
+exact-decimal unit/currency fact field, followed by a known-answer fictional
+company dossier; no donor money sum is promoted
 to an investment balance. Hosted gates are still pending.
 
 ADR-209/210 compare all five FOS intelligence-report row shapes in isolated,

@@ -1,0 +1,55 @@
+"""Closed exact-decimal measurement validation, not a balance calculator."""
+
+from datetime import UTC, datetime
+
+import pytest
+
+from masterbrain.knowledge_schema import ProjectFactMeasurement, ProjectFactWrite
+
+
+def _fact(measurement: dict, value: str = "100.25", value_type: str = "number",
+          quote: str = "The fictional figure was 100.25 USD shares percent count."):
+    return ProjectFactWrite(
+        kind="project_fact", project_id="project_" + "1" * 32,
+        predicate="capital.amount", value=value, value_type=value_type,
+        evidence_ids=["evidence_" + "2" * 32],
+        quote_evidence_id="evidence_" + "2" * 32,
+        source_quote=quote,
+        confidence=1.0, observed_at=datetime(2026, 10, 15, tzinfo=UTC),
+        reviewed=True, measurement=measurement,
+    )
+
+
+def test_exact_decimal_currency_and_noncurrency_contract():
+    fact = _fact({"amount": "100.25", "unit": "currency", "currency": "USD"})
+    assert fact.measurement == ProjectFactMeasurement(
+        amount="100.25", unit="currency", currency="USD",
+    )
+    assert _fact({"amount": "100.25", "unit": "shares"}).measurement.currency is None
+    assert _fact({"amount": "100.25", "unit": "count"}).measurement.unit == "count"
+
+
+@pytest.mark.parametrize("amount", ["1e3", "+1", "01", "1.123456789", "NaN", "Infinity", 1.0])
+def test_noncanonical_or_float_amount_rejected(amount):
+    with pytest.raises(ValueError):
+        _fact({"amount": amount, "unit": "currency", "currency": "USD"})
+
+
+def test_mismatched_value_and_currency_shape_rejected():
+    with pytest.raises(ValueError):
+        _fact({"amount": "100.25", "unit": "currency", "currency": "USD"}, value="100")
+    with pytest.raises(ValueError):
+        _fact({"amount": "100.25", "unit": "currency", "currency": "USD"},
+              value_type="text")
+    with pytest.raises(ValueError):
+        _fact({"amount": "100.25", "unit": "currency"})
+    with pytest.raises(ValueError):
+        _fact({"amount": "100.25", "unit": "shares", "currency": "USD"})
+    with pytest.raises(ValueError):
+        _fact({"amount": "100.25", "unit": "currency", "currency": "usd"})
+    with pytest.raises(ValueError):
+        _fact({"amount": "100.25", "unit": "currency", "currency": "USD"},
+              quote="The source says 100.25 EUR.")
+    with pytest.raises(ValueError):
+        _fact({"amount": "100.25", "unit": "currency", "currency": "USD"},
+              quote="The source says 200.00 USD.")

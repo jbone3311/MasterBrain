@@ -190,7 +190,10 @@ source effects or an alternate route through KnowledgeCore.
   comparison incomplete. It explicitly performs no amount aggregation and
   is not an investment balance or complete dossier. Enrolled assistants see
   only their granted sources; `BrainReadClient.project_fact_report` validates
-  the closed response before use.
+  the closed response before use. ADR-212 adds an optional exact-decimal
+  measurement with unit and currency code to newly reviewed rows here only;
+  old/untyped rows carry `measurement: null`. Even typed figures are source-
+  stated, not verified holdings, and the route still never sums them.
 - `GET /v1/knowledge/projects/{project_id}/facts/markdown` — ADR-196
   synthetic-only, bounded **fact fragment**, requiring both
   `knowledge.search` and `brain.content.read`. It rechecks the complete

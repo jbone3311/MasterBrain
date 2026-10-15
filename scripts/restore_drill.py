@@ -71,6 +71,7 @@ from masterbrain.knowledge_schema import (
     ProjectArtifactLinkWrite,
     ProjectArtifactPageRequest,
     ProjectDossierRequest,
+    ProjectFactMeasurement,
     ProjectFactPageRequest,
     ProjectFactWrite,
     ProjectWrite,
@@ -470,7 +471,7 @@ def seed(
         now = datetime(2026, 9, 20, tzinfo=UTC)
         source_id = "files_" + keyword
         locator = "restore-proof.txt"
-        body = f"masterbrainrestore {keyword} source evidence"
+        body = f"masterbrainrestore {keyword} source evidence 100.25 USD"
         body_bytes = body.encode()
         body_sha = hashlib.sha256(body_bytes).hexdigest()
         brain_item_id = stable_id("item", source_id, locator)
@@ -603,7 +604,10 @@ def seed(
         )
         fact_body = ProjectFactWrite(
             kind="project_fact", project_id=project.object_id,
-            predicate="restore.status", value=f"restored project fact {keyword}",
+            predicate="restore.amount", value="100.25", value_type="number",
+            measurement=ProjectFactMeasurement(
+                amount="100.25", unit="currency", currency="USD",
+            ),
             evidence_ids=[brain_document.evidence_id],
             quote_evidence_id=brain_document.evidence_id,
             source_quote=body, confidence=1, observed_at=now, reviewed=True,
@@ -1138,6 +1142,19 @@ def verify_restored(admin: str, store: Store, tenants: list[SeededTenant]) -> No
             {fact["object_id"] for fact in facts} == expected_fact_ids
             and all(fact["quote_evidence_id"] == current.brain_evidence_id for fact in facts),
             "restored project fact changed",
+        )
+        report = ProjectFacts(store).report(
+            ctx, current.knowledge_project_id, ProjectFactPageRequest(limit=3),
+        )
+        report_facts = [fact for group in report["groups"] for fact in group["facts"]]
+        require(
+            {fact["object_id"] for fact in report_facts} == expected_fact_ids
+            and all(fact["measurement"] == {
+                "amount": "100.25", "unit": "currency", "currency": "USD",
+                "meaning": "reviewed_source_stated_not_balance",
+            } for fact in report_facts)
+            and report["numeric_aggregation"] == "none_units_currency_ownership_unverified",
+            "restored reviewed measurement changed",
         )
         fact_batches = FactProposalBatches(store)
         fact_preview = fact_batches.preview(ctx, current.fact_proposal_batch_id)
