@@ -2,6 +2,23 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Confined FileOS PDF derivation primitive — ADR-225
+
+The nonpublishing helper reopens one confined, source-hash-bound PDF and
+requires its exact text to be reproduced by the image-pinned restricted
+document processor. It reports only source/text digests, byte count,
+normalizer and page count. Eight fictional unit tests passed using the
+existing simulated restricted-pipe contract. The full non-PostgreSQL suite in
+a clean disposable Python 3.11 environment passed **2,983 tests, 18 skipped**;
+654 PostgreSQL-marked tests were deselected. Ruff, mypy over 123 source files,
+and the documentation inventory (326 Markdown files, 1,694 local links) passed.
+The preexisting checkout virtual environment has stale duplicate package
+metadata and caused four subprocess-import failures on the first run; the
+clean environment removed that test-environment artifact without changing
+product code. This is not a database receipt, real Docker execution, OCR,
+visual completeness, issuer proof, financial publication or live FileOS
+acceptance. Hosted exact-head and independent restore remain open.
+
 ## Tenant-bound Email replay command — ADR-224
 
 `masterbrain email replay-tier-text` now checks or executes one reviewed

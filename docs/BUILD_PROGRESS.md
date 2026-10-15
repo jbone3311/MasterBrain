@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Confined FileOS PDF derivation primitive (2026-10-15, ADR-225, open PR)
+
+DataCore can now reopen one fictional PDF through a no-follow confined reader,
+re-run the exact restricted document processor/image identity and compare its
+entire published text. The result is digest-only and nonpublishing. Eight
+focused tests passed using the simulated restricted-pipe harness, including
+changed/symlinked bytes, wrong hashes, image-only deferral and invented text.
+In a fresh disposable Python 3.11 environment the full non-PostgreSQL suite
+passed 2,983 tests with 18 skipped; 654 PostgreSQL-marked tests were deselected.
+Ruff, mypy and documentation links passed. A database receipt, real container execution, OCR,
+issuer policy and live-source authority remain separate gates.
+
 ## Tenant-bound Email tier replay command (2026-10-15, ADR-224, open PR)
 
 `masterbrain email replay-tier-text` now targets exactly one reviewed Email

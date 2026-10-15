@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-225 adds the first confined FileOS PDF text-layer replay primitive: exact
+source bytes are re-read and re-extracted through the pinned restricted
+document processor, with digest-only output and no database write. The next
+gate is a tenant-bound source-tier receipt with final database/currentness
+checks, real immutable-image container validation and independent restore;
+image-only/OCR, issuer and financial truth remain unresolved.
+
 ADR-224 now exposes the reviewed Email MIME replay as an exact authenticated
 operator command with a mandatory tenant-bound login and check mode that
 reads no selected MIME or review row. Fictional inline and encrypted paths

@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-225: added a nonpublishing confined FileOS PDF byte-to-text replay
+  primitive, bound to the exact restricted document processor and its image
+  normalizer. Fictional digest, source-change, symlink, image-only and
+  invented-text regressions pass; no receipt or financial claim is created.
+
 - ADR-224: exposed one reviewed retained-Email text replay through a
   tenant-bound operator command with exact worker scopes, account binding,
   no-MIME-read check mode, optional private encrypted storage and final
