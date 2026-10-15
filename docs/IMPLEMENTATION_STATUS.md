@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+ADR-193 adds a synthetic-only, human-reviewed association between one exact
+project and one exact Email/FileOS evidence occurrence, with a separately
+quoted current basis. A bounded Brain API page returns link status, source
+kind and evidence IDs only after project, artifact and basis grants pass; it
+does not expose paths, text or an inferred match. Immutable tenant-fenced
+migration 0065 and fictional PostgreSQL/API/client tests cover replay,
+cross-tenant/source denial, exclusion and pagination. A full related-files
+dossier, historical artifact display, Markdown export and live-source
+acceptance remain open. Branch/hosted verification is in the build receipt.
+
 ADR-192 closes a project-alias citation hole in ADR-186's synthetic private
 proposal batches: every alias quote must appear in its own current, granted,
 nonexcluded normalized evidence at stage, preview and review. This does not

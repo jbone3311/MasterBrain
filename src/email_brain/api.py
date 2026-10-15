@@ -60,9 +60,12 @@ from masterbrain.knowledge_schema import (
     KnowledgePublishRequest,
     KnowledgeSearchRequest,
     ProjectAliasLookupRequest,
+    ProjectArtifactLinkWrite,
+    ProjectArtifactPageRequest,
     ProjectDossierRequest,
     TimelineRequest,
 )
+from masterbrain.project_artifacts import ProjectArtifactLinks
 from masterbrain.schemas import (
     BrainSearchRequest,
     CurrentGroupedSearchRequest,
@@ -160,6 +163,7 @@ def create_app(
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
+    project_artifacts = ProjectArtifactLinks(store)
     statement_proposals = StatementProposalReader(store)
     answers = GroundedAnswerService(brain, answer_selector)
     if browser_auth is not None:
@@ -1044,6 +1048,33 @@ def create_app(
             return knowledge.commitments_due(principal.context, body)
         except ValueError:
             raise HTTPException(422, "invalid_due_commitments") from None
+
+    @app.post("/v1/knowledge/projects/{project_id}/artifacts", status_code=201)
+    def publish_project_artifact(
+        project_id: str,
+        body: ProjectArtifactLinkWrite,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        try:
+            return project_artifacts.publish(
+                principal.context, project_id, body, idempotency_key,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_project_artifact") from None
+
+    @app.get("/v1/knowledge/projects/{project_id}/artifacts")
+    def page_project_artifacts(
+        project_id: str,
+        body: Annotated[ProjectArtifactPageRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return project_artifacts.page(principal.context, project_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_project_artifact_page") from None
 
     @app.get("/v1/knowledge/projects/{project_id}/dossier")
     def knowledge_project_dossier(

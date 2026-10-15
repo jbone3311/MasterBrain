@@ -2,6 +2,30 @@
 
 Updated 2026-10-14 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Reviewed project-to-artifact links — ADR-193
+
+The `codex/reviewed-project-artifacts` branch adds a human-reviewed link from
+one project to one exact Email/FileOS evidence occurrence, an exact-quoted
+basis, a bounded source-scoped Brain API page, reference-client validation,
+and forward-only migration 0065. Eight fictional focused PostgreSQL cases
+passed, covering an exact FileOS occurrence linked to an Email-founded
+project, independent source grants, two-account grants, 30 hidden links
+before a visible page result,
+duplicate-content occurrence identities, quote/currentness/exclusion and
+replay denial, cross-tenant denial, immutable/SQL guards and API scopes.
+No personal root, live mail, provider effect or FOS-Master file was touched.
+The disposable Python 3.14/PostgreSQL 17.11 full suite passed 3,393 tests
+with six skips (558 of 559 PostgreSQL-marked cases executed) before the final
+stale-version and FileOS cross-source cases were added; all eight focused
+PostgreSQL cases passed afterward. The final committed head awaits hosted CI.
+The protected-table and populated migration tests passed after the two new
+guarded tables and migration 0065 were included in their exact inventories.
+All six browser suites passed 165/165. Ruff, mypy (106 source files), docs
+links, diff checks and the local repository deployment gate passed (2,836
+tests, 563 skips; the gate's PostgreSQL coverage is separate from the full
+suite). Hosted exact-head and merged-main checks are pending; this section is
+not a final merge receipt until those gates pass.
+
 ## Project-proposal alias citation gate — ADR-192
 
 Merged [PR #222](https://github.com/jbone3311/MasterBrain/pull/222) requires each proposed project alias quote to occur exactly in its

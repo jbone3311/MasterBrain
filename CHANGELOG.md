@@ -2,6 +2,11 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add reviewed project-to-artifact evidence-occurrence links and a bounded,
+  source-scoped Brain API page (ADR-193). A human selects the link and exact
+  quoted basis; duplicate-content occurrences remain distinct. This is link
+  history, not automatic matching, a Markdown exporter or a file effect.
+
 - Require each proposed project alias quote to appear exactly in its own
   current, granted evidence at stage, preview and review (ADR-192). This
   closes one proposal-citation hole; historical direct publications are not

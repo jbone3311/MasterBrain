@@ -190,15 +190,25 @@ dossiers include independently bounded members; source-scoped reads require
 visibility of the member and both linked assertions. This is not a computed
 current roster or a strict role registry, and historical rows are unchanged.
 
+Migration `0065_reviewed_project_artifacts.sql` adds an append-only, tenant-
+fenced reviewed association from one exact project to one exact DataCore
+evidence occurrence. The separate basis evidence and quote explain the link;
+the artifact may be an Email attachment whose parent message carries the
+quote. Actor-scoped receipts make writes idempotent. The bounded read returns
+current-authorized link history, source kind and evidence IDs, not source text,
+paths, a computed current relation or a Markdown dossier. Same-hash Email
+attachments remain distinct by occurrence evidence ID.
+
 The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
 [ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions,
 not existing columns or routes: a Markdown proposal importer, derivation/basis links,
 typed monetary units and uncertain due
-windows, project-artifact associations and a compatible fact-name registry.
+windows, expanded project-artifact dossier presentation and a compatible
+fact-name registry.
 New basis links must preserve transitive source grants. Existing Email attachment
 occurrences remain distinct even when their content hashes match. No migration
-for these other proposed KnowledgeCore additions has landed; project aliases
-and reviewed members are the separate ADR-182/183 exceptions.
+for the remaining proposed KnowledgeCore additions has landed; project aliases,
+reviewed members and artifact links are separate ADR-182/183/193 slices.
 
 Knowledge uses bitemporal thinking: when something was true (`valid_time`) is distinct
 from when MasterBrain learned it (`observed_time`). Missing or conflicting evidence is

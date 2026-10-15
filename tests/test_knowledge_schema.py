@@ -13,6 +13,8 @@ from masterbrain.knowledge_schema import (
     KnowledgeSearchRequest,
     MemberWrite,
     ProjectAliasLookupRequest,
+    ProjectArtifactLinkWrite,
+    ProjectArtifactPageRequest,
     ProjectDossierRequest,
     ProjectWrite,
     TimelineRequest,
@@ -142,6 +144,30 @@ def test_reviewed_project_member_is_closed_evidence_linked_and_temporal() -> Non
     ):
         with pytest.raises(ValidationError):
             MemberWrite.model_validate({**base, **update})
+
+
+def test_project_artifact_contract_is_closed_and_quote_is_sql_safe() -> None:
+    base = {
+        "artifact_evidence_id": EVIDENCE,
+        "basis_evidence_id": EVIDENCE,
+        "source_quote": "Fictional evidence line",
+        "relation": "related",
+        "observed_at": NOW,
+    }
+    assert ProjectArtifactLinkWrite.model_validate(base).assertion_status == "asserted"
+    for update in (
+        {"source_quote": "bad\x00quote"},
+        {"source_quote": "bad\ud800quote"},
+        {"relation": "move / delete"},
+        {"artifact_evidence_id": "evidence_bad"},
+        {"extra": "unexpected"},
+    ):
+        with pytest.raises(ValidationError):
+            ProjectArtifactLinkWrite.model_validate({**base, **update})
+    with pytest.raises(ValidationError):
+        ProjectArtifactPageRequest(limit=True)
+    with pytest.raises(ValidationError):
+        ProjectArtifactPageRequest(after="partifact_" + "1" * 32)
 
 
 def test_knowledge_search_visibility_is_closed_and_defaults_to_retained() -> None:

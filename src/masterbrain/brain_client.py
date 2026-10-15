@@ -18,6 +18,7 @@ from masterbrain.knowledge_schema import (
     DueCommitmentsRequest,
     KnowledgeVisibility,
     ProjectAliasLookupRequest,
+    ProjectArtifactPageRequest,
     ProjectDossierRequest,
     TimelineRequest,
     normalize_project_alias,
@@ -36,6 +37,7 @@ _EVENT_ID = re.compile(r"^event_[a-f0-9]{32}$")
 _COMMITMENT_ID = re.compile(r"^commitment_[a-f0-9]{32}$")
 _ENTITY_ID = re.compile(r"^entity_[a-f0-9]{32}$")
 _PROJECT_ID = re.compile(r"^project_[a-f0-9]{32}$")
+_PROJECT_ARTIFACT_ID = re.compile(r"^partifact_[a-f0-9]{32}$")
 _EVIDENCE_ID = re.compile(r"^evidence_[a-f0-9]{32}$")
 _EVENT_TYPE = re.compile(r"^[a-z][a-z0-9_.-]{0,99}$")
 _CURRENT_LAYERS = frozenset(
@@ -490,6 +492,82 @@ class BrainReadClient:
         if order != sorted(order):
             raise BrainClientError("invalid_response")
         return data
+
+    def project_artifacts(
+        self, project_id: str, *, limit: int = 10,
+        recorded_cutoff_at: datetime | None = None, after: str | None = None,
+    ) -> dict[str, Any]:
+        """Page reviewed links to exact, currently authorized evidence IDs."""
+        if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
+            raise BrainClientError("invalid_request")
+        if (
+            type(limit) is not int
+            or recorded_cutoff_at is not None
+            and not isinstance(recorded_cutoff_at, datetime)
+            or after is not None and not isinstance(after, str)
+        ):
+            raise BrainClientError("invalid_request")
+        try:
+            request = ProjectArtifactPageRequest(
+                limit=limit, recorded_cutoff_at=recorded_cutoff_at, after=after,
+            )
+        except ValidationError:
+            raise BrainClientError("invalid_request") from None
+        query = httpx.QueryParams(request.model_dump(mode="json", exclude_none=True))
+        data = self._request("GET", f"/v1/knowledge/projects/{project_id}/artifacts?{query}")
+        rows = data.get("results")
+        cutoff = self._aware_datetime(data.get("recorded_cutoff_at"))
+        cursor = data.get("next_cursor")
+        if (
+            data.get("project_id") != project_id
+            or data.get("limit") != limit or type(data.get("limit")) is not int
+            or data.get("coverage") != "current_authorized_evidence_reviewed_link_history"
+            or data.get("untrusted_content") is not True
+            or cutoff is None
+            or recorded_cutoff_at is not None and cutoff != recorded_cutoff_at
+            or not isinstance(rows, list) or len(rows) > limit
+            or any(not self._valid_project_artifact(row, cutoff) for row in rows)
+            or len({row["object_id"] for row in rows}) != len(rows)
+            or cursor is not None and (
+                not rows or len(rows) != limit or not isinstance(cursor, str)
+                or not _PROJECT_ARTIFACT_ID.fullmatch(cursor)
+                or cursor != rows[-1]["object_id"] or cursor == after
+            )
+        ):
+            raise BrainClientError("invalid_response")
+        order = [(self._aware_datetime(row["recorded_at"]), row["object_id"])
+                 for row in rows]
+        if order != sorted(order, reverse=True):
+            raise BrainClientError("invalid_response")
+        return data
+
+    @classmethod
+    def _valid_project_artifact(cls, row: Any, cutoff: datetime) -> bool:
+        if not isinstance(row, dict):
+            return False
+        recorded = cls._aware_datetime(row.get("recorded_at"))
+        observed = cls._aware_datetime(row.get("observed_at"))
+        return bool(
+            set(row) == {
+                "object_kind", "object_id", "artifact_evidence_id",
+                "basis_evidence_id", "artifact_source_kind", "relation",
+                "assertion_status", "observed_at", "recorded_at",
+            }
+            and row.get("artifact_source_kind") in {"email", "fileos"}
+            and
+            row.get("object_kind") == "project_artifact"
+            and isinstance(row.get("object_id"), str)
+            and _PROJECT_ARTIFACT_ID.fullmatch(row["object_id"])
+            and isinstance(row.get("artifact_evidence_id"), str)
+            and _EVIDENCE_ID.fullmatch(row["artifact_evidence_id"])
+            and isinstance(row.get("basis_evidence_id"), str)
+            and _EVIDENCE_ID.fullmatch(row["basis_evidence_id"])
+            and isinstance(row.get("relation"), str)
+            and _EVENT_TYPE.fullmatch(row["relation"])
+            and row.get("assertion_status") in {"asserted", "retracted"}
+            and observed is not None and recorded is not None and recorded <= cutoff
+            and "source_quote" not in row
+        )
 
     def project_dossier(
         self,

@@ -233,6 +233,16 @@ older links. Unknown and hidden project IDs share not-found behavior. Only a
 fixed dossier-read audit code is recorded, never project text or IDs. A
 recorded-time cutoff is not source freshness or a cross-request snapshot.
 
+ADR-193's project-artifact write is human-only and requires review plus
+content-read authority. It verifies the exact project grant, both current
+evidence occurrences and the basis quote; replay rechecks them after grant
+or exclusion changes. The bounded read checks project and both evidence
+grants, currentness and exclusion before pagination, returns no quote, source
+path or bytes, and rejects a hidden cursor. The append-only tenant-fenced
+table and SQL trigger refuse stale/excluded evidence and invented quotes;
+they do not make a compromised database owner harmless. Existing evidence
+drill-down remains separately scoped and no source effect is authorized.
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,

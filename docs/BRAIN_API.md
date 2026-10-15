@@ -153,6 +153,21 @@ source effects or an alternate route through KnowledgeCore.
   whose direct evidence is wholly granted (ADR-143).
 - `POST /v1/knowledge/assertions` — implemented human-reviewed, evidence-required
   append with a UUID idempotency key.
+- `POST /v1/knowledge/projects/{project_id}/artifacts` — ADR-193 human-only
+  reviewed association of one exact project to one exact DataCore evidence
+  occurrence. Requires `knowledge.review`, `brain.content.read` and a UUID
+  idempotency key. A distinct basis evidence ID and exact quote justify the
+  association; both evidence IDs and the project must be current and fully
+  granted. It does not fetch a provider, move a file or approve an inference.
+- `GET /v1/knowledge/projects/{project_id}/artifacts` — ADR-193 bounded
+  source-scoped page of 1–25 reviewed link-history rows under
+  `knowledge.search`. Results contain relation/status, source kind and exact
+  artifact/basis evidence IDs, not text or paths. `recorded_cutoff_at` and
+  `after` bind paging; a hidden cursor is not found. Only currently active,
+  nonexcluded evidence from granted sources is shown. Evidence expansion
+  retains its separate scope. The cutoff is not source freshness or a durable
+  cross-request snapshot; retractions remain explicit history and do not
+  automatically negate a previous row.
 - `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
   relationship, claim, event, project, commitment, member and correction records.
   ADR-158 adds an optional `visibility` of `retained` (default) or

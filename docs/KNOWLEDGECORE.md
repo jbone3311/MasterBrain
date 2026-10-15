@@ -32,6 +32,11 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
   later registry is not yet enforced; a role never confers access. The project
   dossier returns a separately limited member list. Source-scoped reads require
   the member and both linked assertions to be visible before limit or cursor.
+- ADR-193 adds a separate reviewed association from one exact project to one
+  exact Email/FileOS evidence occurrence, with a distinct exact-quoted basis.
+  It is not a general Knowledge assertion kind or automatic project match.
+  A bounded link-history API filters project, artifact and basis source grants
+  before paging. Same-hash attachment occurrences remain separate IDs.
 - Corrections link an old assertion to a replacement without updating or deleting
   either assertion. Conflicting claims can coexist and are returned independently.
 - All knowledge and evidence-link tables use forced PostgreSQL row-level security,
@@ -80,6 +85,8 @@ reviewed facts remain open gates; assistants cannot use the proposal preview.
 | `GET /v1/knowledge/changes` | `knowledge.changes.read` | Bounded chronological change page, with member linked-source filtering |
 | `GET /v1/knowledge/projects/{project_id}/dossier` | `knowledge.search` | Independently bounded reviewed events, commitments and members; no current-roster claim |
 | `GET /v1/knowledge/projects/resolve` | `knowledge.search` | Bounded, source-scoped reviewed candidates for an exact normalized alias; ambiguous names are not merged |
+| `POST /v1/knowledge/projects/{project_id}/artifacts` | `knowledge.review` + `brain.content.read` | Human-only exact evidence-occurrence link and quoted basis; idempotent append |
+| `GET /v1/knowledge/projects/{project_id}/artifacts` | `knowledge.search` | Current-authorized, cutoff-paged reviewed link history; evidence IDs/source kind only |
 
 Returned titles, excerpts, values and source quotes are untrusted source-derived
 content. Clients must not treat them as instructions. `knowledge.review` cannot be
@@ -107,7 +114,7 @@ requires deterministic parsing and proposal-only import before any reviewed
 publication. The [twelve-gap review](LIBRARIAN_INTEROP.md) separates already
 implemented FileOS CSV/XLSX and Email attachment occurrence evidence from the
 missing table locators, inference basis, proposal queue and Markdown export.
-ADR-182/183 implement aliases and reviewed role assertions;
+ADR-182/183/193 implement aliases, reviewed roles and project-artifact links;
 the other proposed behaviors remain outside runtime. Human review and source-
 grant checks remain mandatory.
 

@@ -155,6 +155,11 @@ erasing retained evidence. Legacy Email search remains authoritative.
 KnowledgeCore converts DataCore evidence into versioned, cited knowledge. A claim may
 be supported, contradicted, superseded, or uncertain. Current state is a projection,
 not a destructive overwrite of history.
+ADR-193 adds a reviewed project-to-artifact association without changing
+DataCore evidence identity: an Email attachment occurrence or FileOS version is
+linked by exact evidence ID, with a separate exact-quoted basis. Source-grant
+filters precede the bounded link-history read; it neither auto-matches nor
+performs any source effect.
 ADR-158's optional `unsuperseded` query is a source-grant-aware leaf of
 the reviewed supersession/correction graph. ADR-159 composes that projection
 into the grouped Brain current-search and Ask Knowledge layer while keeping

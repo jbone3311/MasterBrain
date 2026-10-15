@@ -10,6 +10,11 @@ mail. ADR-029/030 remain bounded MIME recovery; no implicit permission expansion
 
 ## Accepted
 
+[ADR-193](adr/193_reviewed_project_artifact_links.md) adds human-reviewed links
+from an exact project to an exact Email/FileOS evidence occurrence, with a
+separately quoted basis and source-scoped, bounded link-history API. It neither
+auto-matches files nor creates a complete Markdown dossier or source effect.
+
 [ADR-192](adr/192_project_proposal_alias_quote_gate.md) requires each proposed
 project alias quote to match its own currently authorized normalized evidence
 at stage, preview and review. Older direct reviewed publication remains a

@@ -15,6 +15,7 @@ EvidenceIdentity = Annotated[str, Field(pattern=r"^evidence_[a-f0-9]{32}$")]
 EventIdentity = Annotated[str, Field(pattern=r"^event_[a-f0-9]{32}$")]
 CommitmentIdentity = Annotated[str, Field(pattern=r"^commitment_[a-f0-9]{32}$")]
 ProjectIdentity = Annotated[str, Field(pattern=r"^project_[a-f0-9]{32}$")]
+ProjectArtifactIdentity = Annotated[str, Field(pattern=r"^partifact_[a-f0-9]{32}$")]
 EntityIdentity = Annotated[str, Field(pattern=r"^entity_[a-f0-9]{32}$")]
 Predicate = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,99}$")]
 KnowledgeKind = Literal[
@@ -322,6 +323,45 @@ class ProjectDossierRequest(ClosedModel):
         if isinstance(value, bool):
             raise ValueError("boolean limit is invalid")
         return value
+
+
+class ProjectArtifactLinkWrite(ClosedModel):
+    artifact_evidence_id: EvidenceIdentity
+    basis_evidence_id: EvidenceIdentity
+    source_quote: str = Field(min_length=1, max_length=2000)
+    relation: Predicate
+    assertion_status: Literal["asserted", "retracted"] = "asserted"
+    observed_at: AwareDatetime
+
+    @field_validator("source_quote")
+    @classmethod
+    def valid_quote(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("source quote contains NUL")
+        try:
+            value.encode("utf-8", errors="strict")
+        except UnicodeEncodeError:
+            raise ValueError("source quote is not valid UTF-8") from None
+        return value
+
+
+class ProjectArtifactPageRequest(ClosedModel):
+    limit: int = Field(default=10, ge=1, le=25)
+    recorded_cutoff_at: AwareDatetime | None = None
+    after: ProjectArtifactIdentity | None = None
+
+    @field_validator("limit", mode="before")
+    @classmethod
+    def integer_limit(cls, value: object) -> object:
+        if isinstance(value, bool):
+            raise ValueError("boolean limit is invalid")
+        return value
+
+    @model_validator(mode="after")
+    def cursor_needs_cutoff(self) -> Self:
+        if self.after is not None and self.recorded_cutoff_at is None:
+            raise ValueError("artifact cursor requires recorded_cutoff_at")
+        return self
 
 
 class ProjectAliasLookupRequest(ClosedModel):

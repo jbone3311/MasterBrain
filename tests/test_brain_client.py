@@ -19,6 +19,61 @@ DUE_COMMITMENT = "commitment_" + "c" * 32
 DOSSIER_PROJECT = "project_" + "d" * 32
 DOSSIER_MEMBER = "member_" + "e" * 32
 DOSSIER_ENTITY = "entity_" + "f" * 32
+ARTIFACT_LINK = "partifact_" + "1" * 32
+
+
+def test_project_artifact_client_validates_bounded_evidence_links() -> None:
+    row = {
+        "object_kind": "project_artifact", "object_id": ARTIFACT_LINK,
+        "artifact_evidence_id": TIMELINE_EVIDENCE,
+        "basis_evidence_id": TIMELINE_EVIDENCE,
+        "artifact_source_kind": "fileos",
+        "relation": "related", "assertion_status": "asserted",
+        "observed_at": TIMELINE_START.isoformat(),
+        "recorded_at": TIMELINE_START.isoformat(),
+    }
+    payload = {
+        "project_id": DOSSIER_PROJECT, "results": [row],
+        "next_cursor": None, "recorded_cutoff_at": TIMELINE_START.isoformat(),
+        "limit": 1,
+        "coverage": "current_authorized_evidence_reviewed_link_history",
+        "untrusted_content": True,
+    }
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json=payload)
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler),
+    ) as client:
+        assert client.project_artifacts(
+            DOSSIER_PROJECT, limit=1, recorded_cutoff_at=TIMELINE_START,
+        )["results"][0]["artifact_evidence_id"] == TIMELINE_EVIDENCE
+        assert "limit=1" in str(calls[0].url)
+        for arguments in (
+            {"project_id": "project_bad"}, {"limit": True}, {"limit": 26},
+            {"after": "partifact_bad"},
+            {"recorded_cutoff_at": TIMELINE_START.replace(tzinfo=None)},
+        ):
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                client.project_artifacts(**{"project_id": DOSSIER_PROJECT, **arguments})
+        for key, value in (
+            ("coverage", "verified_current_truth"),
+            ("results", [{**row, "source_quote": "private text"}]),
+            ("results", [{**row, "artifact_evidence_id": "evidence_bad"}]),
+            ("next_cursor", "partifact_" + "2" * 32),
+        ):
+            payload[key] = value
+            with pytest.raises(BrainClientError, match="invalid_response"):
+                client.project_artifacts(
+                    DOSSIER_PROJECT, limit=1, recorded_cutoff_at=TIMELINE_START,
+                )
+            payload[key] = [row] if key == "results" else (
+                None if key == "next_cursor" else
+                "current_authorized_evidence_reviewed_link_history"
+            )
 
 
 def dossier_result() -> dict[str, object]:
