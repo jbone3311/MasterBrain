@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+ADR-207 specifies the selected artifact-link Markdown proposal boundary.
+The existing reviewed artifact publisher is transaction-bound and its
+fictional second-write fault rolls back the first link and receipt. This is
+only the atomic-publication prerequisite; a separate private queue,
+stage/preview/review routes, populated-restore proof and hosted acceptance
+remain. Artifact IDs are evidence occurrences, not content hashes or
+automatic FileOS effects. FOS-Master remains the untouched donor.
+
 ADR-206 now implements a **synthetic-only** selected source-stated
 project-fact Markdown proposal path on an open PR branch. Facts use separate
 private, atomic batch/decision tables because their reviewed publication

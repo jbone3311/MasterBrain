@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Project-artifact batch-publication prerequisite — ADR-207
+
+ADR-207 now specifies a separate selected artifact-link proposal queue because
+ADR-193 approvals have their own publication receipt. The first prerequisite
+refactors only the existing direct reviewed artifact publisher to accept a
+caller-bound transaction and return the currently verified artifact source
+kind. The direct API retains its current authorization, exact project, two
+separate evidence/currentness and basis-quote checks, idempotency and audit.
+A fictional transaction test proves a bad second link rolls back the first
+link and its receipt; the artifact suite passed **9/9**. The fresh full local
+Python 3.14/PostgreSQL 17.11 run passed **3,499 tests, nine skipped** (610 of
+611 PostgreSQL-marked tests executed). Ruff and strict mypy (110 source
+files) passed; browser suites passed **167/167**, docs links passed (308
+Markdown files, 1,632 paths/fragments), and the deployment gate passed
+(2,891 passed, 617 skipped). That gate skips most PostgreSQL tests and is
+not the full-suite substitute. No artifact proposal schema or
+stage/preview/review route is implemented by this prerequisite. Exact-head
+hosted CI, strict-runtime,
+logical restore and independent merged-main gates remain unverified; no
+live source or FOS-Master change occurred.
+
 ## Populated project-fact proposal restore fixture — ADR-206
 
 The synthetic logical-restore drill now seeds one pending and one explicitly

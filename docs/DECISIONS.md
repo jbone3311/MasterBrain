@@ -1,5 +1,12 @@
 # Architecture Decisions
 
+[ADR-207](adr/207_project_artifact_markdown_proposal_boundary.md) specifies
+separate private selected artifact-link proposals because their approved
+receipt differs from generic Knowledge and project-fact receipts. Its
+transaction-bound direct publisher prerequisite is now locally tested; no
+import or FileOS
+cutover is implied by that refactor.
+
 [ADR-206](adr/206_project_fact_markdown_proposal_boundary.md) adds a
 synthetic-only, private project-fact Markdown proposal path with explicit
 human batch decisions and a fact-specific publication receipt. It remains on
