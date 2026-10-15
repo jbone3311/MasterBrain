@@ -1,11 +1,12 @@
 # MasterBrain Implementation Status
 
-ADR-196 is a branch implementation candidate for a bounded, synthetic-only
+ADR-196 is merged on `main` via PR #230 as a bounded, synthetic-only
 Markdown **fact fragment**. It reuses ADR-195's pre-limit current-source and
 exact-quote visibility, adds a separate content-read scope, escapes all
 untrusted text, and reports partial coverage with a cursor. This is not a
 complete project dossier or a live-source acceptance result; local and hosted
-gates are tracked in the build receipt.
+gates are tracked in the build receipt; exact-head and independent merged-main
+full CI, strict runtime and populated restore all passed.
 
 ADR-195 is merged on `main` via PR #228 as a synthetic-only, source-stated
 project-fact capability. A distinct

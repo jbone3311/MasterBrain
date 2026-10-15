@@ -1,7 +1,8 @@
 # ADR-196 — Citation-safe project-fact Markdown fragment
 
-Status: proposed synthetic-only implementation. This is one export tranche,
-not a complete Librarian dossier, live-source acceptance, or FileOS cutover.
+Status: accepted, merged in PR #230 after exact-head gates. This is one
+synthetic-only export tranche, not a complete Librarian dossier, live-source
+acceptance, or FileOS cutover.
 
 ## Context
 

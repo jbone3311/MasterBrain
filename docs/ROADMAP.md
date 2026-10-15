@@ -1,6 +1,6 @@
 # MasterBrain Roadmap
 
-ADR-196 is the next synthetic implementation candidate: a source-grant-safe,
+ADR-196 is merged via PR #230: a source-grant-safe,
 export-time quote-rechecked **project-facts Markdown fragment** with a fixed
 partial-coverage warning. It does not render older unverified project,
 event, commitment, member or artifact text as cited prose. The following

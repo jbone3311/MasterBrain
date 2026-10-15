@@ -21,7 +21,9 @@ read-only views. Reviewed project aliases can return multiple source-scoped
 deal candidates; they do not merge projects or select a current truth. The
 reviewed project dossier also shows bounded, evidence-linked people and
 organizations with roles; these are historical assertions, not a current
-roster or access permissions. The
+roster or access permissions. A separately authorized API read can export a
+bounded, citation-rechecked Markdown fragment of source-stated project facts;
+it is not a complete Librarian dossier. The
 pinned FOS-Master donor remains untouched and its FileOS
 shadow comparison is nonpublishing.
 

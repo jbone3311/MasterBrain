@@ -2,9 +2,9 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
-## Citation-safe project-fact Markdown fragment — ADR-196 (branch candidate)
+## Citation-safe project-fact Markdown fragment — ADR-196
 
-The `codex/citation-safe-fact-export` branch adds an explicitly partial,
+Merged [PR #230](https://github.com/jbone3311/MasterBrain/pull/230) adds an explicitly partial,
 source-scoped fact-fragment read with export-time full-quote verification,
 bounded escaped Markdown, a separate content-read grant and a closed
 reference-client response. Fictional focused tests passed **12/12** on a
@@ -15,9 +15,16 @@ the pure client/output tests passed **97/97**. The full local deployment gate
 then passed **3,418 tests, 6 skipped** on the disposable PostgreSQL cluster;
 569 of 570 PostgreSQL-marked cases executed. All six browser suites passed
 **167/167**. Ruff, strict mypy (107 source files), documentation links and
-diff checks passed. The branch has not yet passed exact-head hosted full CI,
-strict runtime, populated restore, or a merged-main gate. These checks do
-not establish live-source acceptance. No FOS-Master files were changed.
+diff checks passed. Exact PR head `3a80cfa8f74543bcee16c712c9f77891c58610d1`
+passed [full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38674708295),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38674708304)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38674708293).
+Squash merge `02d5f295d8f99249ebfb15c2b6cba6ab6d62ba0e` landed on `main`.
+Its independent [strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38675715398)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38675715454)
+passed, as did independent [merged-main full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38675715438).
+These checks do not establish live-source acceptance. No
+FOS-Master files were changed.
 
 ## Source-stated reviewed project facts — ADR-195
 
