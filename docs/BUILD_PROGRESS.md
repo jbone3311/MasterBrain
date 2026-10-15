@@ -2,6 +2,12 @@
 
 ## Reviewed Email attachment PDF receipt (2026-10-15, ADR-229, open PR)
 
+An additional fictional PostgreSQL regression now proves identical PDF/MIME
+bytes in two distinct provider messages require two independent source-tier
+reviews and append-only replay receipts. All six ADR-229 focused PostgreSQL
+tests passed locally on PostgreSQL 17.11 and Python 3.14.7; this follow-up has
+not rerun the full locked Python 3.11 suite or hosted/restore gates.
+
 Migration 0079 and a worker-only store now bind a current reviewed attachment
 document, approved extraction and exact retained parent MIME to ADR-228's
 complete isolated text-layer proof. The receipt is append-only, tenant-fenced

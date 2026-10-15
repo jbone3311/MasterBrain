@@ -4,6 +4,12 @@ Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Reviewed Email attachment PDF receipt — ADR-229
 
+Follow-up occurrence gate: a new fictional two-message case uses identical
+retained MIME and PDF hashes yet verifies distinct message, attachment,
+evidence and review-bound receipt identities. All **6/6** focused ADR-229
+PostgreSQL tests passed locally on PostgreSQL 17.11 / Python 3.14.7. The
+full locked Python 3.11 suite below predates this test-only addition.
+
 Migration 0079 and a worker-only store now seal one current, human-reviewed
 Email attachment's approved PDF text-layer derivation from its exact retained
 parent MIME. The immutable, forced-RLS, tenant-login-fenced row carries only

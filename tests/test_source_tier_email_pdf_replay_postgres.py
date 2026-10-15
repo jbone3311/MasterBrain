@@ -9,9 +9,12 @@ from uuid import uuid4
 import psycopg
 import pytest
 import test_postgres as pg
-from test_document_jobs import setup
+from test_document_jobs import VERSION, setup
+from test_recovery_jobs import worker_principal
 from test_sandbox_runner import IMAGE, fake_docker
 
+from email_brain.auth import Principal
+from email_brain.document_jobs import POLICY, DocumentJobs
 from email_brain.pdf_contract import encode_request
 from email_brain.pdf_processor import DockerPdfProcessor
 from email_brain.pdf_worker import process_request
@@ -257,3 +260,105 @@ def test_retrospectively_excluded_parent_refuses_receipt(
             "SELECT count(*) AS n FROM knowledge_source_tier_email_pdf_replays "
             "WHERE review_id=%s", (review_id,),
         ).fetchone()["n"] == 0
+
+
+def test_identical_pdf_in_two_messages_needs_two_independent_reviews(
+    database, tenant, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, admin, ctx, account, raw, processor, first_review, first_receipt = _prepared(
+        database, tenant, monkeypatch,
+    )
+    second_event = "fictional-pdf-second-occurrence"
+    store.ingest_page(
+        ctx, account, "document-ready", "document-ready-second",
+        [replace(
+            pg.item(second_event), provider_id="provider-message-2", raw=raw,
+        )],
+    )
+    with store.transaction(ctx) as conn:
+        second = conn.execute(
+            "SELECT a.id,a.sha256,a.evidence_id,v.raw_sha256 "
+            "FROM attachment_receipts a JOIN message_versions v "
+            "ON v.tenant_id=a.tenant_id AND v.id=a.evidence_id "
+            "JOIN messages m ON m.tenant_id=v.tenant_id AND m.id=v.message_id "
+            "WHERE m.provider_message_id='provider-message-2'",
+        ).fetchone()
+    assert second is not None and second["id"] != first_receipt
+    assert second["raw_sha256"] == hashlib.sha256(raw).hexdigest()
+    jobs = DocumentJobs(store, VERSION)
+    jobs.enqueue(
+        Principal(ctx, "human"), account, second["id"], VERSION, POLICY, uuid4(),
+    )
+    job_worker = worker_principal(admin, ctx)
+    job_worker = replace(
+        job_worker,
+        context=replace(
+            job_worker.context, scopes=frozenset({"email.document.process"}),
+        ),
+    )
+    fake_docker(
+        monkeypatch, processor=processor,
+        output=process_request(encode_request(raw, "1.2", second["sha256"])),
+    )
+    completed = jobs.run_once(job_worker, account, processor)
+    assert completed is not None and completed["status"] == "completed"
+    assert completed["extraction_id"] is not None
+    core = DataCoreStore(store)
+    bridge_ctx = pg.datacore_context(ctx)
+    core.bridge_current_email_version(
+        bridge_ctx, second["evidence_id"], uuid4(),
+        code_revision="email-pdf-tier-test-v1",
+    )
+    core.bridge_email_attachment(
+        bridge_ctx, second["id"], uuid4(),
+        code_revision="email-pdf-tier-test-v1",
+    )
+    derived = core.bridge_email_document_extraction(
+        bridge_ctx, completed["extraction_id"], uuid4(),
+        code_revision="email-pdf-tier-test-v1",
+    )
+    reviewer = replace(
+        ctx, scopes=ctx.scopes | frozenset({"knowledge.review", "brain.content.read"}),
+    )
+    with store.transaction(reviewer) as conn:
+        row = conn.execute(
+            "SELECT d.evidence_id,d.body_sha256,e.source_version_id,e.sha256 "
+            "FROM brain_normalized_documents d JOIN brain_evidence e "
+            "ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id WHERE d.id=%s",
+            (derived.document_id,),
+        ).fetchone()
+    assert row is not None
+    second_review = SourceTierReviews(store).publish(
+        reviewer, row["evidence_id"], SourceTierReviewWrite(
+            evidence_id=row["evidence_id"], document_id=derived.document_id,
+            document_sha256=row["body_sha256"],
+            source_version_id=row["source_version_id"], source_sha256=row["sha256"],
+            source_tier="T3", authority_kind="internal_record",
+            source_quote="pdfonlyproof",
+        ), uuid4(),
+    )["object_id"]
+    replay = SourceTierEmailPdfReplayStore(store, processor)
+    for review_id in (first_review, second_review):
+        fake_docker(
+            monkeypatch, processor=processor,
+            output=process_request(encode_request(raw, "1.2", second["sha256"])),
+        )
+        replay.record_current_pdf_replay(
+            _worker(ctx), review_id, expected_account_id=account,
+        )
+    with store.transaction(_worker(ctx)) as conn:
+        rows = conn.execute(
+            "SELECT review_id,evidence_id,parent_version_id,legacy_attachment_id,"
+            "part_sha256,raw_sha256 FROM knowledge_source_tier_email_pdf_replays "
+            "WHERE review_id IN (%s,%s) ORDER BY review_id",
+            (first_review, second_review),
+        ).fetchall()
+    assert len(rows) == 2
+    assert {row["review_id"] for row in rows} == {first_review, second_review}
+    assert len({row["evidence_id"] for row in rows}) == 2
+    assert len({row["parent_version_id"] for row in rows}) == 2
+    assert {row["legacy_attachment_id"] for row in rows} == {
+        first_receipt, second["id"],
+    }
+    assert len({row["part_sha256"] for row in rows}) == 1
+    assert len({row["raw_sha256"] for row in rows}) == 1

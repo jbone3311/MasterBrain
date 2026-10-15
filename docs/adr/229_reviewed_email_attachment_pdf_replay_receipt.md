@@ -57,9 +57,10 @@ retry, distinct same-hash occurrences, changed parent/current child/part,
 excluded/paused/revoked sources and wrong tenant. Test SQL RLS, immutable
 guards, independent trigger rejection and final authorization rollback.
 The current focused tests cover receipt/retry, changed parent, paused source,
-retroactive exclusion, lost grant, wrong account/tenant, trigger/immutability
-and authorization rollback; same-hash database occurrences still need their
-own case. Run exact-head hosted PostgreSQL and populated
+retroactive exclusion, lost grant, wrong account/tenant, trigger/immutability,
+authorization rollback and two distinct Email occurrences of identical PDF
+bytes retaining separate parent/review/receipt identities. Run exact-head
+hosted PostgreSQL and populated
 independent restore before merge. A later ADR must add a tenant-bound private
 command with shared/owner login refusal and an actual immutable-image gate.
 No live account is authorized. Roll back by stopping the worker; preserve the
