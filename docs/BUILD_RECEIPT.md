@@ -4,7 +4,10 @@ Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Fictional cross-source launcher package freshness
 
-The documented macOS local-backend self-test initially failed before startup
+Merged [PR #236](https://github.com/jbone3311/MasterBrain/pull/236)
+(`d4287c259c31c83d3d345d2dd78cba38eb7354af`) repairs the fictional
+trial launcher. The documented macOS local-backend self-test initially failed
+before startup
 with `ModuleNotFoundError: masterbrain.statement_fileos_replay`: its
 non-editable installation reused a same-version package missing that newer
 module. Rebuilding only the local package made the same trial pass. The
@@ -16,9 +19,17 @@ Docker-only skip (18 of 19 PostgreSQL-marked cases executed). Full repository
 gate on the same Python 3.14 environment passed **3,433 tests, 7 skipped**
 (576 of 577 PostgreSQL-marked cases executed); six browser suites passed
 **167/167**. Ruff, strict mypy (108 source files), documentation links and
-diff checks passed. Hosted gates are pending at this branch checkpoint. The
-temporary trial cluster was stopped and removed by its launcher; no personal
-source was used.
+diff checks passed. Exact PR head
+`a5084cbe43e4a44c2de977669a703ce4378dd6d5` passed
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38687025908),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38687025828)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38687025737).
+Independent merged-main
+[full CI](https://github.com/jbone3311/MasterBrain/actions/runs/38687781537),
+[strict runtime](https://github.com/jbone3311/MasterBrain/actions/runs/38687781589)
+and [populated restore](https://github.com/jbone3311/MasterBrain/actions/runs/38687781558)
+also passed. The temporary trial cluster was stopped and removed by its
+launcher; no personal source was used.
 
 ## Wells Fargo brokerage donor recipe parity — ADR-198
 
