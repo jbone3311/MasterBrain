@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import re
 from dataclasses import asdict, dataclass
 from io import BytesIO
 
@@ -67,6 +68,40 @@ _OUTCOMES = {
     "text_limit": "deferred",
     "invalid_document": "failed",
 }
+_SHA256 = re.compile(r"^[a-f0-9]{64}$")
+
+
+def _indexed_text(sheets: tuple[XlsxSheet, ...]) -> str:
+    return "\n\n".join(
+        f"[Sheet: {sheet.name}]\n"
+        + "\n".join("\t".join(row.values) for row in sheet.rows)
+        for sheet in sheets
+    ).strip()
+
+
+def require_indexed_text_digest(
+    projection: XlsxTableProjection, expected_sha256: str,
+) -> str:
+    """Bind cells to an already-known DataCore document body digest.
+
+    This checks the exact existing `bounded_xlsx_v1` text layout. It does not
+    independently prove a child parsed the source bytes or authorize a read.
+    """
+    if (
+        type(projection) is not XlsxTableProjection
+        or projection.status != "extracted"
+        or projection.reason != "bounded_xlsx_tables_v1"
+        or type(expected_sha256) is not str
+        or _SHA256.fullmatch(expected_sha256) is None
+    ):
+        raise DocumentUnavailable()
+    text = _indexed_text(projection.sheets)
+    if not text or len(text) > MAX_TEXT_CHARS:
+        raise DocumentUnavailable()
+    digest = hashlib.sha256(text.encode("utf-8", errors="strict")).hexdigest()
+    if not hmac.compare_digest(digest, expected_sha256):
+        raise DocumentUnavailable()
+    return digest
 
 
 def encode_projection(result: XlsxTableProjection) -> bytes:
@@ -223,8 +258,12 @@ def project_xlsx_tables(raw: bytes, source: DocumentSource) -> XlsxTableProjecti
                     )
             if nonempty == 0:
                 return _outcome(source, "deferred", "empty_document")
-            return XlsxTableProjection(source, "extracted", "bounded_xlsx_tables_v1",
-                                       tuple(sheets), cell_count)
+            result = XlsxTableProjection(
+                source, "extracted", "bounded_xlsx_tables_v1", tuple(sheets), cell_count,
+            )
+            if len(_indexed_text(result.sheets)) > MAX_TEXT_CHARS:
+                return _outcome(source, "deferred", "text_limit")
+            return result
         finally:
             book.close()
     except _CellTextLimit:

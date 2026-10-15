@@ -23,6 +23,15 @@ isolation checks as the existing document processor. A pinned image is part
 of the trust base: a malicious but validly-shaped response from a compromised
 image is not independently proven by JSON validation.
 
+The pure `require_indexed_text_digest` guard deterministically renders the
+table's values in the exact existing `bounded_xlsx_v1` text layout and refuses
+a mismatched normalized-document body digest. Separator bytes count toward the
+same 200,000-character limit: a table cannot claim success where indexed text
+would defer. This binds displayed values and order to an already-known document
+body, **not physical row coordinates**: that text omits blank-row positions.
+Exact source bytes, the pinned isolated worker and current-source authorization
+remain necessary before a reviewed coordinate or citation can be claimed.
+
 ## Donor baseline and limits
 
 The ADR-233 pinned FOS-Master replay matches ordinary header-candidate and

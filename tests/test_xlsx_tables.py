@@ -17,10 +17,12 @@ from masterbrain.datacore.document_contract import (
     encode_request,
     source_for,
 )
+from masterbrain.datacore.document_worker import extract_document
 from masterbrain.datacore.xlsx_tables import (
     decode_projection,
     encode_projection,
     project_xlsx_tables,
+    require_indexed_text_digest,
 )
 from masterbrain.datacore.xlsx_tables_processor import DockerXlsxTableProcessor
 from masterbrain.datacore.xlsx_tables_worker import process_request
@@ -77,11 +79,47 @@ def test_thousand_row_tail_is_addressable_not_truncated() -> None:
     assert result.sheets[0].rows[-1].values == ("Fictional-999", "1099", "review")
 
 
+@pytest.mark.parametrize("hidden", [False, True])
+def test_cells_bind_to_the_exact_existing_indexed_document_digest(hidden: bool) -> None:
+    raw = _workbook(rows=3, hidden=hidden)
+    source = _source(raw)
+    indexed = extract_document(raw, source)
+    projection = project_xlsx_tables(raw, source)
+    assert indexed.status == "extracted" and projection.status == "extracted"
+    digest = hashlib.sha256(indexed.text.encode()).hexdigest()
+    assert require_indexed_text_digest(projection, digest) == digest
+    with pytest.raises(DocumentUnavailable):
+        require_indexed_text_digest(projection, "0" * 64)
+    changed_row = replace(
+        projection.sheets[0].rows[1],
+        values=("Fictional-0", "999", ""),
+    )
+    changed_sheet = replace(
+        projection.sheets[0],
+        rows=(projection.sheets[0].rows[0], changed_row, *projection.sheets[0].rows[2:]),
+    )
+    forged = replace(projection, sheets=(changed_sheet, *projection.sheets[1:]))
+    with pytest.raises(DocumentUnavailable):
+        require_indexed_text_digest(forged, digest)
+    # The indexed text does not encode physical row coordinates. The pinned
+    # worker/source identity, not this text digest alone, attests positions.
+    moved = replace(projection.sheets[0].rows[1], number=3)
+    moved_sheet = replace(
+        projection.sheets[0],
+        rows=(projection.sheets[0].rows[0], moved, *projection.sheets[0].rows[2:]),
+    )
+    assert require_indexed_text_digest(
+        replace(projection, sheets=(moved_sheet, *projection.sheets[1:])), digest,
+    ) == digest
+
+
 def test_formula_or_changed_bytes_return_no_partial_cells() -> None:
     raw = _workbook(formula=True)
     formula = project_xlsx_tables(raw, _source(raw))
     assert formula.status == "deferred" and formula.reason == "unsupported_features"
     assert formula.sheets == () and formula.cell_count == 0
+    with pytest.raises(DocumentUnavailable):
+        require_indexed_text_digest(formula, "0" * 64)
     changed = project_xlsx_tables(raw + b"changed", _source(raw))
     assert changed.status == "failed" and changed.sheets == ()
     wrong_digest = project_xlsx_tables(raw, replace(_source(raw), sha256="0" * 64))
@@ -99,6 +137,26 @@ def test_empty_and_mislabeled_bytes_do_not_yield_table() -> None:
     invalid = b"not an XLSX"
     failed = project_xlsx_tables(invalid, _source(invalid))
     assert failed.status == "failed" and failed.reason == "invalid_document"
+
+
+def test_separator_budget_matches_existing_indexed_text_refusal() -> None:
+    book = Workbook()
+    sheet = book.active
+    for row_number in range(150):
+        sheet.append([
+            hashlib.sha256(f"{row_number}:{column}".encode()).hexdigest()[:27]
+            for column in range(50)
+        ])
+    output = BytesIO()
+    book.save(output)
+    book.close()
+    raw = output.getvalue()
+    source = _source(raw)
+    indexed = extract_document(raw, source)
+    projection = project_xlsx_tables(raw, source)
+    assert indexed.status == "deferred" and indexed.reason == "text_limit"
+    assert projection.status == "deferred" and projection.reason == "text_limit"
+    assert projection.sheets == ()
 
 
 def test_closed_pipe_contract_rejects_forged_source_rows_and_status() -> None:
