@@ -89,6 +89,82 @@ def test_project_fact_schema_rejects_invalid_source_text():
         _body(project_id, evidence_id, quote="invalid\ud800quote")
 
 
+def test_predicate_catalog_api_and_external_client_show_database_authority(database, tenant):
+    store, _ = database
+    ctx, _, _, _ = _prepared(store, tenant)
+    token = "fictional-registry-" + uuid4().hex
+    credential = Credential(
+        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"knowledge.search"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="human",
+    )
+    assistant_token = "fictional-registry-assistant-" + uuid4().hex
+    denied_token = "fictional-registry-denied-" + uuid4().hex
+    assistant = Credential(
+        token_sha256=hashlib.sha256(assistant_token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"knowledge.search"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="assistant",
+        source_ids={"fictional_catalog_source"},
+    )
+    with pytest.raises(ValueError, match="source enrollment"):
+        Credential(
+            token_sha256=hashlib.sha256(uuid4().hex.encode()).hexdigest(),
+            tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+            scopes={"knowledge.search"},
+            expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="assistant",
+            source_ids=None,
+        )
+    denied = Credential(
+        token_sha256=hashlib.sha256(denied_token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"brain.content.read"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="human",
+    )
+    with TestClient(create_app(store, TokenRegistry([
+        credential, assistant, denied,
+    ]))) as api:
+        response = api.get(
+            "/v1/knowledge/fact-predicates",
+            headers={"Authorization": "Bearer " + token},
+        )
+        assert response.status_code == 200, response.text
+        assert response.headers["cache-control"] == "no-store"
+        catalog = response.json()
+        assert catalog["scope"] == "new_project_fact_writes_only"
+        assert catalog["historical_unregistered_rows_possible"] is True
+        assert catalog["alias_mapping"] == "none"
+        assert [(row["name"], row["status"]) for row in catalog["entries"]] == [
+            (name, "active") for name in sorted(PROJECT_FACT_PREDICATES)
+        ]
+        assert api.get(
+            "/v1/knowledge/fact-predicates",
+            headers={"Authorization": "Bearer " + assistant_token},
+        ).json() == catalog
+        assert api.get(
+            "/v1/knowledge/fact-predicates",
+            headers={"Authorization": "Bearer " + denied_token},
+        ).status_code == 403
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=catalog)
+            ),
+        ) as reader:
+            assert reader.project_fact_predicates() == catalog
+
+
+def test_predicate_catalog_fails_closed_when_running_code_disagrees_with_sql(
+    database, tenant, monkeypatch,
+):
+    store, _ = database
+    ctx, _, _, _ = _prepared(store, tenant)
+    monkeypatch.delitem(PROJECT_FACT_PREDICATES, "loi.price")
+    with pytest.raises(RuntimeError, match="code/database mismatch"):
+        ProjectFacts(store).predicate_catalog(ctx)
+
+
 def test_project_fact_registry_matches_sql_and_blocks_unregistered_direct_writes(
     database, tenant,
 ):

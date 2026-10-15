@@ -21,6 +21,7 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 | `timeline(start, end, ...)` | `GET /v1/knowledge/timeline` | `knowledge.search`; bounded reviewed-event occurrence window (ADR-160) |
 | `commitments_due(start, end, ...)` | `GET /v1/knowledge/commitments-due` | `knowledge.search`; bounded reviewed-commitment due window (ADR-161, merged synthetic read) |
 | `project_fact_report(project_id, ...)` | `GET /v1/knowledge/projects/{project_id}/facts/report` | `knowledge.search`; ADR-211 grouped one-page source-stated reviewed facts, ADR-212 validates optional exact-decimal unit/currency metadata, no money aggregation or certified balance |
+| `project_fact_predicates()` | `GET /v1/knowledge/fact-predicates` | `knowledge.search` and assistant source enrollment; ADR-215 bounded, latest-database-revision project-fact write vocabulary, not a fact source or alias/approval API |
 
 The server remains the authority for identity, tenant, scopes, source visibility
 and freshness. In the synthetic bootstrap path, an assistant must be enrolled

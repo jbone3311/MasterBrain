@@ -14,7 +14,11 @@ from uuid import UUID
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.contracts import stable_id
-from masterbrain.fact_predicates import require_registered_fact
+from masterbrain.fact_predicates import (
+    PROJECT_FACT_PREDICATES,
+    registry_status_with_latest,
+    require_registered_fact,
+)
 from masterbrain.knowledge import _visible_assertion_sql
 from masterbrain.knowledge_schema import ProjectFactPageRequest, ProjectFactWrite
 
@@ -225,6 +229,44 @@ def _read_fact_page(
 class ProjectFacts:
     store: Store
 
+    def predicate_catalog(self, ctx: TenantContext) -> dict[str, Any]:
+        """Expose the database's latest public vocabulary, never source content."""
+        self.store.require(ctx, "knowledge.search")
+        with self.store.transaction(ctx) as conn:
+            rows = conn.execute(
+                "SELECT name,version,value_type,unit_code,description,status FROM ("
+                "SELECT DISTINCT ON (name) name,version,value_type,unit_code,"
+                "description,status FROM knowledge_project_fact_predicates "
+                "ORDER BY name,version DESC) latest ORDER BY name LIMIT 101"
+            ).fetchall()
+            if len(rows) > 100:
+                raise RuntimeError("project fact predicate catalog exceeds response bound")
+            active = {row["name"]: row for row in rows if row["status"] == "active"}
+            if set(active) != set(PROJECT_FACT_PREDICATES) or any(
+                active[name]["version"] != spec.version
+                or active[name]["value_type"] != spec.value_type
+                or active[name]["unit_code"] != spec.unit
+                or active[name]["description"] != spec.description
+                for name, spec in PROJECT_FACT_PREDICATES.items()
+            ):
+                raise RuntimeError("project fact predicate code/database mismatch")
+            self.store.audit(
+                conn, ctx, "knowledge.fact_predicate_catalog_read", "registry", "project_fact",
+            )
+        return {
+            "scope": "new_project_fact_writes_only",
+            "registry_authority": "database_latest_revision",
+            "historical_unregistered_rows_possible": True,
+            "alias_mapping": "none",
+            "entries": [
+                {"name": row["name"], "version": row["version"],
+                 "value_type": row["value_type"], "unit": row["unit_code"],
+                 "description": row["description"], "status": row["status"]}
+                for row in rows
+            ],
+            "untrusted_content": True,
+        }
+
     def publish(
         self, ctx: TenantContext, project_id: str, body: ProjectFactWrite,
         idempotency_key: UUID,
@@ -336,10 +378,21 @@ class ProjectFacts:
             if prior["request_sha256"] != request_sha:
                 raise Conflict("project fact idempotency key reused")
             return {"object_id": prior["fact_id"], "changed": False, "reviewed": True}
-        require_registered_fact(
+        expected_spec = require_registered_fact(
             body.predicate, body.value_type,
             body.measurement.unit if body.measurement else None,
         )
+        latest_spec = conn.execute(
+            "SELECT version,status,value_type,unit_code "
+            "FROM knowledge_project_fact_predicates WHERE name=%s "
+            "ORDER BY version DESC LIMIT 1", (body.predicate,),
+        ).fetchone()
+        status = registry_status_with_latest(
+            body.predicate, body.value_type,
+            body.measurement.unit if body.measurement else None, latest_spec,
+        )
+        if status != "active" or latest_spec["version"] != expected_spec.version:
+            raise ValueError("project fact predicate registry review required: " + status)
         conn.execute(
             "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
             "value,value_type,assertion_status,confidence,derivation,evidence_ids,"

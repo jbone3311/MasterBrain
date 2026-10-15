@@ -182,6 +182,13 @@ source effects or an alternate route through KnowledgeCore.
   IDs, not the quote itself. An aware cutoff and visible cursor bind paging;
   hidden evidence and successors are filtered before limit. A quote still
   needs export-time verification before appearing as a Markdown citation.
+- `GET /v1/knowledge/fact-predicates` — ADR-215 read-only, bounded catalog of
+  the database's latest project-fact predicate revisions, including
+  deprecations. Requires `knowledge.search`; an assistant also needs ordinary
+  source enrollment. It contains no tenant/source facts, but is marked
+  untrusted, noncacheable and scoped only to **new** project-fact writes.
+  Historical unregistered facts and lack of alias mapping are explicit.
+  `BrainReadClient.project_fact_predicates()` validates the closed response.
 - `GET /v1/knowledge/projects/{project_id}/facts/report` — ADR-211 groups one
   current-authorized reviewed fact page by predicate under `knowledge.search`.
   Each fact keeps its source IDs and status. Page-local divergent asserted
@@ -364,7 +371,8 @@ source effects or an alternate route through KnowledgeCore.
 - `GET /v1/knowledge/fact-proposal-batches/{batch_id}` — human-only private
   preview with both scopes, current project/evidence rechecks, untrusted
   proposed payloads, ordered decision status and `registry_status` (`active`,
-  `unknown` or `shape_mismatch`). Ordinary search, dossier
+  `unknown`, `shape_mismatch`, `deprecated` or `version_mismatch`), checked
+  against the latest database revision. Ordinary search, dossier
   and assistant reads never expose unreviewed facts.
 - `POST /v1/knowledge/fact-proposal-batches/{batch_id}/review` — human-only
   explicit approve/reject decision for **every** fact in one transaction,

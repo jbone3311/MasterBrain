@@ -584,6 +584,52 @@ class BrainReadClient:
             and "source_quote" not in row
         )
 
+    def project_fact_predicates(self) -> dict[str, Any]:
+        """Discover current write vocabulary; never treat it as a fact source."""
+        data = self._request("GET", "/v1/knowledge/fact-predicates")
+        entries = data.get("entries")
+        if (
+            set(data) != {"scope", "registry_authority",
+                          "historical_unregistered_rows_possible", "alias_mapping",
+                          "entries", "untrusted_content"}
+            or data.get("scope") != "new_project_fact_writes_only"
+            or data.get("registry_authority") != "database_latest_revision"
+            or data.get("historical_unregistered_rows_possible") is not True
+            or data.get("alias_mapping") != "none"
+            or data.get("untrusted_content") is not True
+            or not isinstance(entries, list) or not 1 <= len(entries) <= 100
+        ):
+            raise BrainClientError("invalid_response")
+        names: list[str] = []
+        for row in entries:
+            if not isinstance(row, dict) or set(row) != {
+                "name", "version", "value_type", "unit", "description", "status",
+            }:
+                raise BrainClientError("invalid_response")
+            name, unit = row["name"], row["unit"]
+            unit_ok = isinstance(unit, str) and unit in {
+                "currency", "shares", "percent", "count",
+            }
+            if (not isinstance(name, str) or not _EVENT_TYPE.fullmatch(name)
+                    or type(row["version"]) is not int or row["version"] < 1
+                    or not isinstance(row["value_type"], str)
+                    or row["value_type"] not in {
+                        "text", "number", "date", "boolean", "reference",
+                    }
+                    or (row["value_type"] == "number") is not
+                    unit_ok
+                    or not unit_ok and unit is not None
+                    or not isinstance(row["description"], str)
+                    or not 1 <= len(row["description"]) <= 300
+                    or "\x00" in row["description"]
+                    or not isinstance(row["status"], str)
+                    or row["status"] not in {"active", "deprecated"}):
+                raise BrainClientError("invalid_response")
+            names.append(name)
+        if names != sorted(set(names)):
+            raise BrainClientError("invalid_response")
+        return data
+
     def project_facts(
         self, project_id: str, *, visibility: KnowledgeVisibility = "unsuperseded",
         limit: int = 10, recorded_cutoff_at: datetime | None = None,

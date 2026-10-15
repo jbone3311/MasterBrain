@@ -93,6 +93,10 @@ and their original names; no historical fact is reclassified. This first
 catalog does not yet govern generic claims, events or roles, or supply an
 owner-reviewed unknown-name proposal path
 ([ADR-214](adr/214_project_fact_predicate_catalog.md)).
+Migration 0074 makes the newest revision authoritative even when deprecated;
+the read-only Brain API lists those latest revisions, not a reconstructed
+older active state
+([ADR-215](adr/215_project_fact_catalog_discovery_and_retirement.md)).
 
 Migration `0071_reviewed_project_fact_measurements.sql` adds nullable,
 immutable exact-decimal `amount_decimal`, `unit_code` and `currency_code` to

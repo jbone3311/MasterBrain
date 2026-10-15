@@ -70,6 +70,38 @@ def _migrations_before(tmp_path: Path, limit: int) -> Path:
     return earlier
 
 
+def test_latest_deprecated_fact_predicate_blocks_new_sql_publication(
+    scratch_database: tuple[str, str],
+) -> None:
+    admin_dsn, _ = scratch_database
+    migrate(admin_dsn, MIGRATIONS)
+    with psycopg.connect(admin_dsn) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_project_fact_predicates(name,version,value_type,"
+            "unit_code,description,status) VALUES "
+            "('loi.price',2,'number','currency','Deprecated fictional LOI price','deprecated')"
+        )
+        latest = conn.execute(
+            "SELECT status FROM knowledge_project_fact_predicates "
+            "WHERE name='loi.price' ORDER BY version DESC LIMIT 1"
+        ).fetchone()
+        assert latest == ("deprecated",)
+        with pytest.raises(psycopg.errors.RaiseException, match="active registered shape"):
+            with conn.transaction():
+                conn.execute(
+                    "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,"
+                    "predicate,value,value_type,assertion_status,confidence,"
+                    "evidence_ids,quote_evidence_id,source_quote,observed_at,"
+                    "reviewer_id,amount_decimal,unit_code,currency_code) "
+                    "VALUES (%s,%s,%s,'loi.price','1','number','asserted',1,"
+                    "%s,%s,'1 USD',%s,%s,1,'currency','USD')",
+                    (uuid4(), "pfact_" + "1" * 32, "project_" + "2" * 32,
+                     ["evidence_" + "3" * 32], "evidence_" + "3" * 32,
+                     datetime(2026, 10, 15, tzinfo=UTC), uuid4()),
+                )
+        conn.rollback()
+
+
 def _migrate_before_repair(dsn: str, tmp_path: Path) -> None:
     earlier = _migrations_before(tmp_path, 29)
     assert len(migrate(dsn, earlier)) == 28
@@ -488,6 +520,7 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
         "0071_reviewed_project_fact_measurements.sql",
         "0072_reviewed_project_fact_measurement_tokens.sql",
         "0073_project_fact_predicate_registry.sql",
+        "0074_project_fact_predicate_latest_revision.sql",
     ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:

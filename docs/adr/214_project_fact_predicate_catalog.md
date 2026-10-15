@@ -35,6 +35,9 @@ Migration 0073 adds a nullable registry-version column to the existing fact
 table. Old rows retain NULL and their original predicate/value; no historical
 fact is rewritten or certified. Existing read formats are unchanged. A new
 fact under a previously used name must satisfy the current registered shape.
+ADR-215 corrects the initial guard's latest-**active** lookup: the newest
+revision, including a deprecated one, is authoritative, and a read-only API
+allows clients to discover it without granting vocabulary edit authority.
 An exact legacy idempotent replay remains available while its current source
 basis is still authorized; the registry cannot authorize a new fact or bypass
 the existing source check.

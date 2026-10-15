@@ -1,5 +1,10 @@
 # MasterBrain Roadmap
 
+ADR-215 makes latest-revision retirement effective and lets clients discover
+the actual SQL vocabulary. Next complete issue #183 with a human-reviewed
+vocabulary proposal/version process and explicit alias compatibility; the
+read-only catalog is not an edit workflow.
+
 ADR-214 now controls new project-fact predicate names and their value/unit
 shapes. Next complete issue #183 with owner-reviewed name proposals,
 unambiguous deprecated aliases and generic claim/event/role coverage, while

@@ -28,6 +28,47 @@ ARTIFACT_LINK = "partifact_" + "1" * 32
 PROJECT_FACT = "pfact_" + "2" * 32
 
 
+def test_project_fact_catalog_client_rejects_forged_or_malformed_vocabulary() -> None:
+    payload = {
+        "scope": "new_project_fact_writes_only",
+        "registry_authority": "database_latest_revision",
+        "historical_unregistered_rows_possible": True,
+        "alias_mapping": "none",
+        "entries": [{
+            "name": "loi.price", "version": 1, "value_type": "number",
+            "unit": "currency", "description": "Fictional source-stated price.",
+            "status": "active",
+        }],
+        "untrusted_content": True,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1/knowledge/fact-predicates"
+        return httpx.Response(200, json=payload)
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler),
+    ) as client:
+        assert client.project_fact_predicates()["entries"][0]["name"] == "loi.price"
+        for change in (
+            {"scope": "all_facts"}, {"historical_unregistered_rows_possible": False},
+            {"alias_mapping": "automatic"}, {"untrusted_content": False},
+            {"entries": []},
+            {"entries": [{**payload["entries"][0], "version": True}]},
+            {"entries": [{**payload["entries"][0], "value_type": "text",
+                          "unit": "shares"}]},
+            {"entries": [{**payload["entries"][0], "unit": []}]},
+            {"entries": [{**payload["entries"][0], "status": []}]},
+            {"entries": [{**payload["entries"][0], "name": "bad name"}]},
+            {"entries": payload["entries"] * 2},
+        ):
+            saved = {key: payload[key] for key in change}
+            payload.update(change)
+            with pytest.raises(BrainClientError, match="invalid_response"):
+                client.project_fact_predicates()
+            payload.update(saved)
+
+
 def test_project_facts_client_validates_source_stated_page() -> None:
     fact = dossier_result()["facts"][0]
     payload = {

@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-215: fixed project-fact catalog retirement so the latest deprecated
+  revision cannot revive an older active one. Added a bounded, database-
+  authoritative Brain API discovery route and strict external client;
+  private proposal previews now reflect latest SQL status.
+
 - ADR-214: added a versioned, guarded project-fact predicate catalog in code
   and migration 0073. New reviewed facts require a registered name, value
   type and measurement unit; historical rows remain unchanged. The broader

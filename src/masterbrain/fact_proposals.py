@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.contracts import stable_id
-from masterbrain.fact_predicates import registry_status
+from masterbrain.fact_predicates import registry_status_with_latest
 from masterbrain.knowledge_proposals import _sha
 from masterbrain.knowledge_schema import FactProposalReviewRequest, ProjectFactWrite
 from masterbrain.librarian_dossier_intake import (
@@ -213,6 +213,13 @@ class FactProposalBatches:
             raise NotFound()
         with self.store.transaction(ctx) as conn:
             header, rows = self._rows(conn, ctx, batch_id)
+            names = sorted({row["payload"]["predicate"] for row in rows})
+            latest_rows = conn.execute(
+                "SELECT DISTINCT ON (name) name,version,status,value_type,unit_code "
+                "FROM knowledge_project_fact_predicates WHERE name=ANY(%s) "
+                "ORDER BY name,version DESC", (names,),
+            ).fetchall()
+            latest = {row["name"]: row for row in latest_rows}
             self.store.audit(conn, ctx, "knowledge.fact_proposal_batch_read", "batch")
         return {
             "batch_id": batch_id, "batch_sha256": header["request_sha256"],
@@ -222,9 +229,10 @@ class FactProposalBatches:
             "proposals": [
                 {"proposal_id": row["id"], "ordinal": row["ordinal"],
                  "claimed_id": row["claimed_id"], "assertion": row["payload"],
-                 "registry_status": registry_status(
+                 "registry_status": registry_status_with_latest(
                      row["payload"]["predicate"], row["payload"]["value_type"],
                      (row["payload"].get("measurement") or {}).get("unit"),
+                     latest.get(row["payload"]["predicate"]),
                  ),
                  "status": row["decision"] or "proposed", "reason": row["reason"],
                  "object_kind": "project_fact" if row["fact_id"] else None,

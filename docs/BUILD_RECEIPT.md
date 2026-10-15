@@ -2,6 +2,35 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Latest predicate revision and Brain API discovery — ADR-215
+
+Migration 0074 corrects the SQL guard to select the latest project-fact
+predicate revision even when it is deprecated. A fictional later-deprecated
+`loi.price` row blocks a direct new insert; the older active row cannot be
+revived. Publication compares the same latest database revision with the
+checked-in code after exact idempotent replay. The new scoped, no-store
+`GET /v1/knowledge/fact-predicates` route and strict external client return
+the latest bounded database catalog, including deprecations and an explicit
+historical-unregistered warning. It refuses code/SQL drift rather than
+advertising a name the runtime cannot publish. Fictional tests cover human and enrolled
+assistant access, missing-scope denial, malformed/forged client responses,
+private proposal status and migration/recovery/restore paths. The targeted
+suite passed **196/196**, including all **64** PostgreSQL-marked cases.
+The code/SQL drift refusal and latest-deprecation cases then passed in a
+three-test PostgreSQL focus run after the final consistency check.
+
+The exact-current full local Python 3.14/PostgreSQL 17.11 suite passed
+**3,563 tests, 19 skipped** (636 of 637 PostgreSQL-marked cases executed).
+Browser tests passed **167/167**. The repository quality gate passed
+**2,930 tests, 652 skipped** (three PostgreSQL-marked cases executed).
+Ruff, strict mypy (113 source files), documentation links (316 Markdown
+files, 1,688 local paths/fragments) and diff whitespace passed. Optional
+DuckDB donor replays still skip in the locked venv; independent-container
+logical restore is unavailable locally without Docker. Hosted exact-head and
+merged-main gates remain required. No owner-editable vocabulary, alias
+mapping, live-source acceptance, investment total or FOS-Master cutover is
+claimed.
+
 ## New reviewed project-fact predicate catalog — ADR-214
 
 Migration 0073 seeds five versioned predicate definitions and enforces the

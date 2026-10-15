@@ -1199,6 +1199,14 @@ def create_app(
         except ValueError:
             raise HTTPException(422, "invalid_project_artifact_page") from None
 
+    @app.get("/v1/knowledge/fact-predicates")
+    def project_fact_predicate_catalog(
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        return project_facts.predicate_catalog(principal.context)
+
     @app.post("/v1/knowledge/projects/{project_id}/facts", status_code=201)
     def publish_project_fact(
         project_id: str,

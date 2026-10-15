@@ -1,5 +1,13 @@
 # MasterBrain Implementation Status
 
+ADR-215 corrects catalog retirement: a newer deprecated revision now blocks
+new project facts instead of exposing an older active revision. The Brain API
+and provider-neutral client can list the database's latest bounded project-
+fact vocabulary without source content; enrolled assistants and scoped human
+clients can read it. Private fact-proposal preview reflects latest SQL status,
+but no vocabulary-edit or automatic alias capability exists. Local fictional
+focused tests pass; hosted and independent restore gates remain.
+
 ADR-214 adds a versioned, code-and-SQL-controlled predicate catalog for **new
 reviewed project facts**. Unknown names, wrong value types and wrong/missing
 measurement units are rejected after exact idempotent replay and by the SQL guard.

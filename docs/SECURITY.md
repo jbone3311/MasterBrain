@@ -85,6 +85,10 @@ New fact publication checks its active name/type/unit after any exact
 idempotent receipt, and SQL repeats the check for direct inserts. Unknown
 names can remain in the human-only fact proposal queue but cannot be
 approved or exposed as reviewed knowledge until a catalog migration exists.
+Migration 0074 and the publication check select the latest revision including
+deprecated entries, so an older active row cannot be revived by omission.
+The read-only catalog is source-content-free but remains scoped, no-store and
+marked untrusted for external clients; it cannot grant review or source access.
 The private Knowledge proposal reviewer holds shared locks on direct evidence
 source items and source rows until commit. For a member role it also locks all
 sources backing the linked project and entity citations. This closes the

@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+[ADR-215](adr/215_project_fact_catalog_discovery_and_retirement.md) makes the
+database's latest predicate revision authoritative, including deprecation,
+and exposes a bounded read-only Brain API catalog with strict client checks.
+
 [ADR-214](adr/214_project_fact_predicate_catalog.md) pins a versioned
 checked-in predicate vocabulary for new reviewed project facts. Publication
 code and SQL guard the name/type/unit shape; legacy rows are not reclassified.

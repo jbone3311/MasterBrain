@@ -7,6 +7,7 @@ import pytest
 from masterbrain.fact_predicates import (
     PROJECT_FACT_PREDICATES,
     registry_status,
+    registry_status_with_latest,
     require_registered_fact,
 )
 from masterbrain.knowledge_schema import ProjectFactWrite
@@ -51,3 +52,16 @@ def test_unknown_or_wrong_shape_never_publishes_as_a_registered_fact():
     ):
         with pytest.raises(ValueError, match="registry review"):
             require_registered_fact(predicate, value_type, unit)
+
+
+def test_latest_database_revision_can_deprecate_but_not_revive_old_version():
+    active = {"version": 1, "status": "active", "value_type": "number",
+              "unit_code": "currency"}
+    assert registry_status_with_latest("loi.price", "number", "currency", active) == "active"
+    assert registry_status_with_latest(
+        "loi.price", "number", "currency", {**active, "version": 2, "status": "deprecated"},
+    ) == "deprecated"
+    assert registry_status_with_latest(
+        "loi.price", "number", "currency", {**active, "version": 2},
+    ) == "version_mismatch"
+    assert registry_status_with_latest("loi.price", "number", "currency", None) == "unknown"
