@@ -17,6 +17,8 @@ from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.contracts import stable_id
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
+    CommitmentWrite,
+    EventWrite,
     KnowledgeAssertion,
     KnowledgeProposalReviewRequest,
     KnowledgeProposalStageRequest,
@@ -25,6 +27,12 @@ from masterbrain.knowledge_schema import (
 
 _ASSERTION: TypeAdapter[KnowledgeAssertion] = TypeAdapter(KnowledgeAssertion)
 _BATCH_ID = re.compile(r"^kbatch_[a-f0-9]{32}$")
+_SHA256 = re.compile(r"^[a-f0-9]{64}$")
+_IMPORT_TABLES = {
+    "project": "knowledge_projects",
+    "event": "knowledge_events",
+    "commitment": "knowledge_commitments",
+}
 
 
 def _sha(value: Any) -> str:
@@ -54,7 +62,10 @@ class KnowledgeProposalBatches:
             raise AccessDenied("human identity required")
 
     @staticmethod
-    def _visible_basis(conn: Any, ctx: TenantContext, assertion: KnowledgeAssertion) -> None:
+    def _visible_basis(
+        conn: Any, ctx: TenantContext, assertion: KnowledgeAssertion,
+        required_quote_evidence_id: str | None = None,
+    ) -> None:
         """All evidence must be current, granted and unexcluded; quote exact in one."""
         evidence_ids = list(assertion.evidence_ids)
         allowed = sorted(ctx.source_ids) if ctx.source_ids is not None else None
@@ -77,6 +88,11 @@ class KnowledgeProposalBatches:
             raise NotFound()
         if not any(row["quote_matches"] for row in rows):
             raise ValueError("proposal quote lacks an exact source span")
+        if required_quote_evidence_id is not None and not any(
+            row["id"] == required_quote_evidence_id and row["quote_matches"]
+            for row in rows
+        ):
+            raise ValueError("imported quote lacks its cited source span")
         if isinstance(assertion, ProjectWrite):
             for alias in assertion.aliases:
                 matched = conn.execute(
@@ -90,15 +106,29 @@ class KnowledgeProposalBatches:
 
     def stage(
         self, ctx: TenantContext, body: KnowledgeProposalStageRequest,
-        idempotency_key: UUID,
+        idempotency_key: UUID, *, import_context_sha256: str | None = None,
+        import_claims: list[tuple[str, str]] | None = None,
     ) -> dict[str, Any]:
         self.store.require(ctx, "knowledge.review")
         self._human(ctx)
         if not isinstance(idempotency_key, UUID):
             raise ValueError("UUID idempotency key required")
+        if (import_context_sha256 is None) != (import_claims is None):
+            raise ValueError("incomplete import binding")
+        if import_context_sha256 is not None and (
+            not isinstance(import_context_sha256, str)
+            or not _SHA256.fullmatch(import_context_sha256)
+            or not isinstance(import_claims, list)
+            or len(import_claims) != len(body.proposals)
+        ):
+            raise ValueError("invalid import binding")
         parsed = [_canonical(raw) for raw in body.proposals]
         payloads = [payload for _, payload in parsed]
-        request_sha = _sha(payloads)
+        request_sha = (
+            _sha(payloads) if import_context_sha256 is None
+            else _sha({"proposals": payloads,
+                       "import_context_sha256": import_context_sha256})
+        )
         batch_id = stable_id(
             "kbatch", str(ctx.tenant_id), str(ctx.actor_id), str(idempotency_key)
         )
@@ -108,23 +138,52 @@ class KnowledgeProposalBatches:
                 (f"{ctx.tenant_id}:kbatch:{ctx.actor_id}:{idempotency_key}",),
             )
             prior = conn.execute(
-                "SELECT request_sha256,row_count FROM knowledge_proposal_batches "
+                "SELECT request_sha256,row_count,import_context_sha256 "
+                "FROM knowledge_proposal_batches "
                 "WHERE proposer_id=%s AND idempotency_key=%s",
                 (ctx.actor_id, idempotency_key),
             ).fetchone()
             if prior is not None:
-                if prior["request_sha256"] != request_sha or prior["row_count"] != len(parsed):
+                if (prior["request_sha256"] != request_sha
+                        or prior["row_count"] != len(parsed)
+                        or prior["import_context_sha256"] != import_context_sha256):
                     raise Conflict("proposal batch idempotency key reused")
                 self._rows(conn, ctx, batch_id)
                 return {"batch_id": batch_id, "batch_sha256": request_sha,
                         "row_count": len(parsed), "changed": False, "reviewed": False}
-            for assertion, _ in parsed:
-                self._visible_basis(conn, ctx, assertion)
+            for ordinal, (assertion, _) in enumerate(parsed):
+                claimed_id = citation_id = table = None
+                if import_claims is not None:
+                    claimed_id, citation_id = import_claims[ordinal]
+                    table = _IMPORT_TABLES.get(assertion.kind)
+                    if (table is None or citation_id not in assertion.evidence_ids
+                            or not re.fullmatch(
+                                rf"^{assertion.kind}_[a-f0-9]{{32}}", claimed_id,
+                            )):
+                        raise ValueError("invalid imported proposal claim")
+                self._visible_basis(conn, ctx, assertion, citation_id)
+                if table is not None and claimed_id is not None:
+                    existing = conn.execute(
+                        f"SELECT 1 FROM public.{table} "
+                        "WHERE tenant_id=%s AND id=%s LIMIT 1",
+                        (ctx.tenant_id, claimed_id),
+                    ).fetchone()
+                    if existing is not None:
+                        raise Conflict("imported claim already exists")
+                    if isinstance(assertion, (EventWrite, CommitmentWrite)):
+                        project = conn.execute(
+                            "SELECT 1 FROM public.knowledge_projects "
+                            "WHERE tenant_id=%s AND id=%s LIMIT 1",
+                            (ctx.tenant_id, assertion.project_id),
+                        ).fetchone()
+                        if project is None:
+                            raise NotFound()
             conn.execute(
                 "INSERT INTO knowledge_proposal_batches(tenant_id,id,proposer_id,"
-                "idempotency_key,request_sha256,row_count) VALUES (%s,%s,%s,%s,%s,%s)",
+                "idempotency_key,request_sha256,row_count,import_context_sha256) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s)",
                 (ctx.tenant_id, batch_id, ctx.actor_id, idempotency_key,
-                 request_sha, len(parsed)),
+                 request_sha, len(parsed), import_context_sha256),
             )
             for ordinal, (assertion, payload) in enumerate(parsed):
                 proposal_id = stable_id("kproposal", batch_id, str(ordinal))
@@ -150,7 +209,8 @@ class KnowledgeProposalBatches:
         conn: Any, ctx: TenantContext, batch_id: str,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         header = conn.execute(
-            "SELECT id,request_sha256,row_count FROM knowledge_proposal_batches "
+            "SELECT id,request_sha256,row_count,import_context_sha256 "
+            "FROM knowledge_proposal_batches "
             "WHERE id=%s", (batch_id,),
         ).fetchone()
         if header is None:
@@ -182,7 +242,12 @@ class KnowledgeProposalBatches:
                 raise Conflict("proposal evidence mismatch")
             KnowledgeProposalBatches._visible_basis(conn, ctx, assertion)
             payloads.append(payload)
-        if _sha(payloads) != header["request_sha256"]:
+        expected_sha = (
+            _sha(payloads) if header["import_context_sha256"] is None
+            else _sha({"proposals": payloads,
+                       "import_context_sha256": header["import_context_sha256"]})
+        )
+        if expected_sha != header["request_sha256"]:
             raise Conflict("proposal batch digest mismatch")
         return header, rows
 
@@ -195,7 +260,7 @@ class KnowledgeProposalBatches:
         with self.store.transaction(ctx) as conn:
             header, rows = self._rows(conn, ctx, batch_id)
             self.store.audit(conn, ctx, "knowledge.proposal_batch_read", "batch", batch_id)
-            return {
+            result = {
                 "batch_id": batch_id, "batch_sha256": header["request_sha256"],
                 "row_count": header["row_count"], "reviewed": False,
                 "untrusted_content": True,
@@ -208,6 +273,9 @@ class KnowledgeProposalBatches:
                     for row in rows
                 ],
             }
+            if header["import_context_sha256"] is not None:
+                result["import_context_sha256"] = header["import_context_sha256"]
+            return result
 
     def review(
         self, ctx: TenantContext, batch_id: str,

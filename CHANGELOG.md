@@ -1,5 +1,9 @@
 # Changelog
 
+- Add ADR-202's synthetic-only project/event/commitment Markdown-to-private-
+  proposal stage. Exact rows, full cited quotes, current source grants and an
+  immutable import digest are required; human review remains a separate step.
+
 - Add ADR-201's synthetic-only owner inspection route for imported MasterBrain
   dossier Markdown. It refuses altered, stale, excluded or ungranted citation
   previews as a whole; it does not stage proposals or approve knowledge.

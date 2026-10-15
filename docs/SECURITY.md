@@ -47,6 +47,13 @@ the reviewer must make every decision explicitly. This is synthetic-only and
   proof. ADR-201's separate owner-only inspection checks imported Markdown
   quote previews against each claimed current/granted/nonexcluded evidence ID;
   it has no proposal write and does not recover full quotes or observation time.
+ADR-202 adds a separate human-only, synthetic Markdown-to-private-proposal
+stage. Its immutable import digest binds exact Markdown and selected IDs to
+the typed batch; the write transaction rechecks the full quote on each selected
+current cited evidence, as well as every direct evidence grant. Unknown,
+stale, excluded or mismatched rows abort the entire batch. A staged row remains
+unreviewed and inaccessible to assistants/search until explicit per-row human
+review. No live source, model authority or FileOS effect is added.
 
 ADR-189 adds a separate, synthetic-only FileOS statement replay boundary. A
 worker, never a public API reader, selects one current proposal under tenant

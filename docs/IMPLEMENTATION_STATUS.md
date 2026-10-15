@@ -1,5 +1,17 @@
 # MasterBrain Implementation Status
 
+ADR-202 adds a synthetic-only human route that stages selected project,
+event and commitment rows from the owner-selected Markdown format as private
+ADR-186 proposals. The typed sidecar must supply omitted full quotes,
+observation time, confidence and evidence links; visible fields must match
+exactly. Same-transaction current/full-quote checks and an immutable import
+context digest prevent altered citations and conflicting idempotent replay.
+No proposal is automatically reviewed; member, fact, artifact-link and inferred
+imports, live sources and full round-trip fidelity remain open. Source claimed
+IDs are selection markers, not publication IDs; selected child rows require
+an existing local project. Local/hosted
+validation is tracked in the build receipt.
+
 ADR-201 adds a synthetic-only, human-only Brain API inspection of the
 owner-selected MasterBrain dossier Markdown. It checks every claimed quote
 preview against that citation's current, granted, nonexcluded normalized
