@@ -26,11 +26,16 @@ identity (`account_id`, `attachment_id`, `parent_version_id`, `safe_filename`,
 are identifiers and display metadata, not original workbook bytes. The worker
 publication service is private and needs
 DataCore ingest/document scopes. ADR-243 makes that private service callable
-through one account-pinned, tenant-bound worker command. There is no public endpoint to approve
-extraction, invoke the worker bridge, fetch original XLSX bytes or assert
-cell-level financial truth. ADR-246's first-party screen can inspect and
-review an existing synthetic approval ID after validating the complete
-displayed text digest; it does not create an approval or publish a document.
+through one account-pinned, tenant-bound worker command. ADR-247 adds a
+human-only `POST /v1/accounts/{account_id}/attachments/{receipt_id}/xlsx-approvals`
+for one current synthetic attachment. It requires an idempotency UUID and a
+separately configured `serve --xlsx-document-processor-version` pin; neither
+the browser nor caller can choose the image. It returns an `xapp_` approval ID
+without running extraction. There is no public endpoint to invoke the worker
+bridge, fetch original XLSX bytes or assert cell-level financial truth.
+ADR-246's first-party screen can inspect and review an existing synthetic
+approval ID after validating the complete displayed text digest; it does not
+create an approval or publish a document.
 Actual-browser, real-image and hosted gates remain open.
 
 ADR-244 removes caller-supplied `code_revision` from the publication-review

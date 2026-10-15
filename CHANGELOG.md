@@ -1,5 +1,9 @@
 # Changelog
 
+- Expose human-only, idempotent approval of one current synthetic Email XLSX
+  attachment through the API. A new server-side XLSX processor pin is distinct
+  from the existing PDF pin. Approval does not run extraction or publish.
+
 - Add a first-party synthetic XLSX result-review screen for an existing
   approval ID. It displays every bounded text page, recomputes the complete
   UTF-8 SHA-256 in the browser, and requires a separate explicit human review

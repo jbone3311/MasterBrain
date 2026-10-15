@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
 from uuid import uuid4
 
 import psycopg
 import pytest
 import test_postgres as pg
+from fastapi.testclient import TestClient
 
-from email_brain.auth import Principal
+from email_brain.api import create_app
+from email_brain.auth import Credential, Principal, TokenRegistry
 from email_brain.store import AccessDenied, NotFound
 from email_brain.synthetic_formats import SHEET_TYPE, xlsx_bytes
 from masterbrain.datacore.contracts import stable_id
@@ -62,6 +65,41 @@ def _prepared(database, tenant, *, document: bytes | None = None):
         bridge_ctx, receipt["id"], uuid4(), code_revision="xlsx-approval-test-v1",
     )
     return store, admin, ctx, account, receipt["id"], raw, document
+
+
+def test_owner_api_approves_only_one_current_synthetic_xlsx(database, tenant) -> None:
+    store, _, ctx, account, receipt, _, _ = _prepared(database, tenant)
+    token = "fictional-xlsx-approval-" + uuid4().hex
+    owner = Credential(
+        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"email.review", "email.evidence.read"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="human",
+    )
+    headers = {"Authorization": f"Bearer {token}", "Idempotency-Key": str(uuid4())}
+    path = f"/v1/accounts/{account}/attachments/{receipt}/xlsx-approvals"
+    with TestClient(create_app(store, TokenRegistry([owner]),
+                               xlsx_document_processor_version=VERSION)) as api:
+        first = api.post(path, headers=headers)
+        assert first.status_code == 201
+        assert first.json()["approval_id"].startswith("xapp_")
+        assert first.json()["changed"] is True
+        assert first.json()["mailbox_effects"] is False
+        assert first.json()["document_published"] is False
+        again = api.post(path, headers=headers)
+        assert again.status_code == 201
+        assert again.json() == {**first.json(), "changed": False}
+        assert api.post(path, headers={"Authorization": f"Bearer {token}"}).status_code == 422
+        missing = path.replace(str(receipt), str(uuid4()))
+        assert api.post(missing, headers=headers).status_code == 404
+    with TestClient(create_app(store, TokenRegistry([owner]))) as api:
+        assert api.post(path, headers=headers).status_code == 503
+    assistant = owner.model_copy(update={
+        "client_kind": "assistant", "scopes": {"brain.search"},
+    })
+    with TestClient(create_app(store, TokenRegistry([assistant]),
+                               xlsx_document_processor_version=VERSION)) as api:
+        assert api.post(path, headers=headers).status_code == 403
 
 
 def test_exact_human_approval_is_immutable_and_does_not_publish(database, tenant) -> None:

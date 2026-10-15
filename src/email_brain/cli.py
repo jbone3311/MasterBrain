@@ -412,6 +412,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     serve.add_argument("--recovery-parser-version", default=None)
     serve.add_argument("--document-processor-version", default=None)
+    serve.add_argument("--xlsx-document-processor-version", default=None)
     for name, help_text in (
         ("process-jobs", "Run explicitly approved MIME recovery jobs"),
         ("process-documents", "Run explicitly approved synthetic PDF jobs"),
@@ -589,6 +590,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 registry,
                 recovery_parser_version=args.recovery_parser_version,
                 document_processor_version=args.document_processor_version,
+                xlsx_document_processor_version=args.xlsx_document_processor_version,
                 browser_auth=browser_auth,
             )
             uvicorn.run(

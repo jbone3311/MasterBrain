@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-247 exposes an exact synthetic Email XLSX extraction approval via a
+human-only API with a separate server-pinned XLSX image version. The focused
+disposable PostgreSQL test covers first approval, idempotent replay, no pin,
+missing attachment, missing key and assistant denial. Approval creates no
+result, document or source effect; first-party source selection and the
+private extraction command still need implementation.
+
 ADR-246 adds the first-party synthetic XLSX result-review screen for an
 existing approval ID. Seven focused DOM cases, 174/174 first-party Node cases,
 the fixed static route and a fictional PostgreSQL API-to-UI response contract

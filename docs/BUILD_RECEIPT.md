@@ -2,6 +2,21 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Synthetic XLSX source-attached approval API — current unmerged branch
+
+ADR-247 exposes the existing exact-attachment, human-only synthetic XLSX
+approval through an API route with a distinct server-owned processor pin.
+One focused real PostgreSQL 17.11 test passed on a fresh socket-only disposable
+cluster, including idempotent replay, missing pin/key/receipt and assistant
+denial; the cluster was stopped and removed. At this source checkpoint, the
+broad Python 3.14 local run passed **3,137 / 707 skipped** in 1m59s, with
+**4/693 PostgreSQL-marked executed** and 689 skipped without a test DSN.
+The first-party Node suite passed **174/174**; Ruff, strict mypy over 140
+source files, and offline documentation links (348 Markdown files, 1,810
+paths/fragments) passed. An offline wheel build succeeded. The skipped
+PostgreSQL tests are not passes. This is not worker extraction, publication,
+a complete exact-head PostgreSQL suite or a live-source result.
+
 ## First-party synthetic XLSX result review — current unmerged branch
 
 ADR-246 adds a browser-only human review screen for an existing synthetic XLSX

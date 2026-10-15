@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-247](adr/247_synthetic_email_xlsx_approval_api.md) exposes exact
+synthetic Email XLSX extraction approval through a human-only API with a
+server-pinned XLSX processor independent of PDF processing. It does not run
+extraction, publish or admit live mail.
+
 [ADR-246](adr/246_first_party_synthetic_xlsx_result_review.md) adds a
 first-party human screen for an existing fictional XLSX result. It verifies
 all displayed pages against the sealed digest before explicit review, while

@@ -52,6 +52,7 @@ from masterbrain.answers import (
 from masterbrain.artifact_proposals import ArtifactProposalBatches
 from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReviewer
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
+from masterbrain.email_xlsx_approvals import EmailXlsxApprovals
 from masterbrain.email_xlsx_document_bridge import EmailXlsxDocumentBridge
 from masterbrain.fact_proposals import FactProposalBatches
 from masterbrain.knowledge import KnowledgeCore
@@ -162,6 +163,7 @@ def create_app(
     answer_selector: AnswerSelector | None = _LOCAL_ANSWER_SELECTOR,
     recovery_parser_version: str | None = None,
     document_processor_version: str | None = None,
+    xlsx_document_processor_version: str | None = None,
     browser_auth: BrowserAuth | None = None,
 ) -> FastAPI:
     if browser_auth is not None and browser_auth.authenticator is not registry:
@@ -179,6 +181,10 @@ def create_app(
     message_reader = MessageReader(store)
     memory = Memory(store)
     brain = brain_store or DataCoreStore(store)
+    email_xlsx_approvals = (
+        EmailXlsxApprovals(store, xlsx_document_processor_version)
+        if xlsx_document_processor_version is not None else None
+    )
     email_xlsx_bridge = EmailXlsxDocumentBridge(store)
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
@@ -969,6 +975,22 @@ def create_app(
             "ranking": "within_layer_only",
             "untrusted_content": True,
         }
+
+    @app.post(
+        "/v1/accounts/{account_id}/attachments/{receipt_id}/xlsx-approvals",
+        status_code=201,
+    )
+    def approve_email_xlsx_extraction(
+        account_id: UUID,
+        receipt_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if email_xlsx_approvals is None:
+            raise HTTPException(503, "xlsx_processor_unavailable")
+        return email_xlsx_approvals.approve(
+            principal, account_id, receipt_id, idempotency_key,
+        )
 
     @app.post("/v1/brain/email-xlsx-results/{approval_id}/inspect")
     def inspect_email_xlsx_result(
