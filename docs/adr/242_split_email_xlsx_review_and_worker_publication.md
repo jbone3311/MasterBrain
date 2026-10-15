@@ -1,6 +1,6 @@
 # ADR-242 — Separate Email XLSX human review from worker publication
 
-Status: implemented on an open PR with fictional PostgreSQL coverage. Actual-image execution, hosted exact-head CI and independent populated restore remain unverified. No live account is authorized.
+Status: implemented on an open PR with fictional PostgreSQL coverage and a local populated restore pass at `0c64f8b`. Actual-image execution, hosted exact-head CI and independent review remain unverified. No live account is authorized.
 
 ## Context
 

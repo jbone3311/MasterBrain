@@ -1,5 +1,11 @@
 # MasterBrain Implementation Status
 
+The exact `0c64f8b` code head passed the complete fictional local suite on
+Python 3.14 and fresh disposable PostgreSQL 17.11: 3,823 passed, 19 skipped,
+zero failed; 691/692 PostgreSQL-marked tests executed. The cluster was removed.
+Hosted exact-head checks still stopped before job steps for account billing,
+and immutable-image XLSX execution and independent review remain open.
+
 ADR-245's local native PostgreSQL 17.11 restore passed with a populated
 fictional XLSX review/publication: 120 tables, 424 rows, five external
 encrypted objects and two tenants with matching hashes and RLS checks. The

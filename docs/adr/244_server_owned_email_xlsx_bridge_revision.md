@@ -1,6 +1,6 @@
 # ADR-244 — Server-owned Email XLSX bridge revision
 
-Status: implemented on an open PR with fictional PostgreSQL coverage. Actual-image execution, hosted exact-head CI and independent populated restore remain open.
+Status: implemented on an open PR with fictional PostgreSQL coverage and a local populated restore pass at `0c64f8b`. Actual-image execution, hosted exact-head CI and independent review remain open.
 
 ## Context
 

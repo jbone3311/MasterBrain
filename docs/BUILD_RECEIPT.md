@@ -4,6 +4,15 @@ Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
 ## Native synthetic logical restore — current unmerged branch
 
+At exact code head `0c64f8b`, the full fictional local suite passed on Python
+3.14 and one fresh disposable loopback-only PostgreSQL 17.11 cluster:
+**3,823 passed, 19 skipped, zero failed** in 7m44s; **691/692
+PostgreSQL-marked tests executed**. The newly added XLSX restore-seed test
+executed. The owned cluster was confirmed stopped and removed. Strict mypy
+passed across 140 source files. The one skipped PostgreSQL-marked test and
+18 other skips remain skips, not passes. Hosted exact-head CI and immutable
+document-image execution remain unverified.
+
 ADR-245 adds an opt-in, fresh-cluster-only PostgreSQL 17 native restore drill
 using the existing fictional seed and verification routines. On local
 PostgreSQL **17.11**, it passed across two separate loopback-only clusters:
