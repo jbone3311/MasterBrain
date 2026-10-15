@@ -2,12 +2,18 @@
 
 ## Unreleased — after v0.2.0a2
 
+- Add a synthetic-only, citation-rechecked Markdown fragment for one page of
+  source-stated reviewed project facts (ADR-196). It requires separate
+  content-read authority, escapes untrusted text, preserves source-scoped
+  pagination and labels partial coverage. It is not a complete Librarian
+  dossier, an inferred-fact export or a live-source acceptance result.
+
 - Add synthetic-only, human-reviewed source-stated project facts and an
   independently bounded, current-authorized project-facts dossier/API view
   (ADR-195). New writes require an exact normalized-source quote and frozen
   evidence set; hidden-source successors cannot suppress visible facts.
-  Inference, generic Knowledge search inclusion and Markdown citation export
-  remain separate gates.
+  Inference, generic Knowledge search inclusion and a complete Markdown
+  dossier remain separate gates.
 
 - Add a fourth, independently bounded reviewed-artifact section to exact
   project dossiers and the owner workspace (ADR-194). Current source grants,

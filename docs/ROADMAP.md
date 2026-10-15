@@ -1,13 +1,21 @@
 # MasterBrain Roadmap
 
+ADR-196 is the next synthetic implementation candidate: a source-grant-safe,
+export-time quote-rechecked **project-facts Markdown fragment** with a fixed
+partial-coverage warning. It does not render older unverified project,
+event, commitment, member or artifact text as cited prose. The following
+tranche must establish per-line citation contracts for those sections before
+a complete Librarian dossier can be exported. The proposal-only Markdown
+importer and inferred-basis model remain separate gates.
+
 ADR-195's synthetic implementation is merged via PR #228: direct source-stated, exact-quote-checked
-project facts and a source-scoped dossier section. It is not a Markdown export,
+project facts and a source-scoped dossier section. It is not a complete Markdown export,
 an inferred-fact path or live-source acceptance. Exact PR-head and independent
 merged-main gates passed.
 
 ADR-193 supplies reviewed project-to-artifact evidence links. ADR-194 adds a
 separately bounded, current-authorized artifact section to the project dossier
-and owner workspace. The next export slice must render only
+and owner workspace. Export must render only
 currently authorized, export-time-verified citations. Neither step is
 automatic association, a computed current file roster, a complete Librarian
 round trip, or a FileOS effect.

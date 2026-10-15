@@ -7,6 +7,7 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
+import httpx
 import psycopg
 import pytest
 import test_postgres as pg
@@ -15,6 +16,7 @@ from fastapi.testclient import TestClient
 from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
 from email_brain.store import Conflict, NotFound, Store
+from masterbrain.brain_client import BrainReadClient
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
     ProjectDossierRequest,
@@ -84,8 +86,43 @@ def test_project_fact_schema_rejects_invalid_source_text():
         _body(project_id, evidence_id, quote="invalid\ud800quote")
 
 
-def test_project_fact_exact_quote_replay_and_visible_successor(database, tenant):
+def test_project_fact_markdown_byte_budget_preserves_paging(database, tenant):
     store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    for _ in range(30):
+        facts.publish(
+            ctx, project_id,
+            _body(project_id, evidence_id, value="\x01" * 4000), uuid4(),
+        )
+    first = facts.export_markdown(ctx, project_id, ProjectFactPageRequest(limit=25))
+    assert 1 <= first["fact_count"] < 25
+    assert first["next_cursor"] is not None
+    assert len(first["markdown"].encode("utf-8")) <= 32_768
+    assert facts.export_markdown(
+        ctx, project_id, ProjectFactPageRequest(
+            limit=25, recorded_cutoff_at=first["recorded_cutoff_at"],
+        ),
+    )["markdown"] == first["markdown"]
+    total = first["fact_count"]
+    cursor = first["next_cursor"]
+    while cursor is not None:
+        page = facts.export_markdown(
+            ctx, project_id, ProjectFactPageRequest(
+                limit=25, recorded_cutoff_at=first["recorded_cutoff_at"],
+                after=cursor,
+            ),
+        )
+        assert page["fact_count"] > 0
+        assert len(page["markdown"].encode("utf-8")) <= 32_768
+        total += page["fact_count"]
+        assert page["next_cursor"] != cursor
+        cursor = page["next_cursor"]
+    assert total == 30
+
+
+def test_project_fact_exact_quote_replay_and_visible_successor(database, tenant):
+    store, admin = database
     ctx, _, project_id, evidence_id = _prepared(store, tenant)
     facts = ProjectFacts(store)
     with pytest.raises(ValueError, match="quote lacks"):
@@ -103,6 +140,26 @@ def test_project_fact_exact_quote_replay_and_visible_successor(database, tenant)
     assert page["results"][0]["derivation"] == "source_stated"
     assert page["results"][0]["quote_evidence_id"] == evidence_id
     assert "source_quote" not in page["results"][0]
+    exported = facts.export_markdown(ctx, project_id, ProjectFactPageRequest())
+    assert exported["fact_count"] == 1
+    assert exported["next_cursor"] is None
+    assert first["object_id"] in exported["markdown"]
+    assert evidence_id in exported["markdown"]
+    assert QUOTE in exported["markdown"]
+    assert "partial export" in exported["markdown"]
+    assert len(exported["markdown"].encode("utf-8")) <= 32_768
+    assert facts.export_markdown(
+        ctx, project_id,
+        ProjectFactPageRequest(recorded_cutoff_at=exported["recorded_cutoff_at"]),
+    )["markdown"] == exported["markdown"]
+    with psycopg.connect(admin) as conn:
+        audit = conn.execute(
+            "SELECT resource_type,resource_id,metadata FROM audit_events "
+            "WHERE tenant_id=%s AND event_type='knowledge.project_facts_markdown_export' "
+            "ORDER BY occurred_at DESC LIMIT 1",
+            (ctx.tenant_id,),
+        ).fetchone()
+    assert audit == ("project", None, {})
     successor = facts.publish(
         ctx, project_id,
         _body(project_id, evidence_id, value="Two hundred fictional units",
@@ -136,6 +193,8 @@ def test_project_fact_other_tenant_and_wrong_project_denied(database, tenant):
     foreign_ctx = replace(foreign_ctx, scopes=ctx.scopes)
     with pytest.raises(NotFound):
         facts.page(foreign_ctx, project_id, ProjectFactPageRequest())
+    with pytest.raises(NotFound):
+        facts.export_markdown(foreign_ctx, project_id, ProjectFactPageRequest())
     with pytest.raises(NotFound):
         facts.publish(foreign_ctx, project_id, _body(project_id, evidence_id), uuid4())
 
@@ -177,6 +236,13 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
         visible["object_id"],
     ]
     assert restricted_page["next_cursor"] is None
+    restricted_export = facts.export_markdown(
+        scoped, project_id, ProjectFactPageRequest(limit=1),
+    )
+    assert restricted_export["fact_count"] == 1
+    assert restricted_export["next_cursor"] is None
+    assert visible["object_id"] in restricted_export["markdown"]
+    assert "Hidden fictional value" not in restricted_export["markdown"]
     restricted_dossier = KnowledgeCore(store).project_dossier(
         scoped, project_id, ProjectDossierRequest(fact_limit=1),
     )
@@ -186,6 +252,22 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
     assert restricted_dossier["facts_truncated"] is False
     unrestricted = facts.page(ctx, project_id, ProjectFactPageRequest(limit=1))
     assert unrestricted["next_cursor"] is not None
+    unrestricted_export = facts.export_markdown(
+        ctx, project_id, ProjectFactPageRequest(limit=1),
+    )
+    assert unrestricted_export["next_cursor"] is not None
+    next_export = facts.export_markdown(
+        ctx, project_id, ProjectFactPageRequest(
+            limit=1, recorded_cutoff_at=unrestricted_export["recorded_cutoff_at"],
+            after=unrestricted_export["next_cursor"],
+        ),
+    )
+    assert next_export["fact_count"] == 1
+    with pytest.raises(NotFound):
+        facts.export_markdown(scoped, project_id, ProjectFactPageRequest(
+            limit=1, recorded_cutoff_at=unrestricted_export["recorded_cutoff_at"],
+            after=unrestricted_export["next_cursor"],
+        ))
     with pytest.raises(NotFound):
         facts.page(scoped, project_id, ProjectFactPageRequest(
             limit=1, recorded_cutoff_at=unrestricted["recorded_cutoff_at"],
@@ -202,6 +284,9 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
         visible["object_id"],
     ]
     assert after_exclusion["next_cursor"] is None
+    assert "Hidden fictional value" not in facts.export_markdown(
+        ctx, project_id, ProjectFactPageRequest(limit=1),
+    )["markdown"]
     with pytest.raises(NotFound):
         facts.publish(ctx, project_id, _body(project_id, hidden_evidence), uuid4())
 
@@ -285,7 +370,22 @@ def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
         assert dossier.status_code == 200, dossier.text
         assert dossier.json()["facts"][0]["object_id"] == created.json()["object_id"]
         assert dossier.json()["fact_limit"] == 1
+        exported = api.get(path + "/markdown", params={"limit": 1})
+        assert exported.status_code == 200, exported.text
+        assert exported.headers["cache-control"] == "no-store"
+        assert exported.json()["fact_count"] == 1
+        assert evidence_id in exported.json()["markdown"]
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=exported.json())
+            ),
+        ) as reader:
+            assert reader.project_fact_markdown(project_id, limit=1)[
+                "markdown"
+            ] == exported.json()["markdown"]
         assert api.get(path, params={"limit": 0}).status_code == 422
+        assert api.get(path + "/markdown", params={"limit": 0}).status_code == 422
         assert api.get(path, params={"after": "pfact_bad"}).status_code == 422
         assert api.post(
             path, json={**payload, "derivation": "inferred"},
@@ -293,6 +393,48 @@ def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
         ).status_code == 422
     with client({"knowledge.review"}) as denied:
         assert denied.get(path).status_code == 403
+    with client({"knowledge.search"}) as denied:
+        assert denied.get(path + "/markdown").status_code == 403
+    with client({"brain.content.read"}) as denied:
+        assert denied.get(path + "/markdown").status_code == 403
+
+
+def test_project_fact_markdown_assistant_enrollment_filters_before_export(database, tenant):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    ProjectFacts(store).publish(
+        ctx, project_id, _body(project_id, evidence_id), uuid4(),
+    )
+    with store.transaction(ctx) as conn:
+        source_id = conn.execute(
+            "SELECT v.source_id FROM brain_evidence e JOIN brain_source_versions v "
+            "ON v.tenant_id=e.tenant_id AND v.id=e.source_version_id WHERE e.id=%s",
+            (evidence_id,),
+        ).fetchone()["source_id"]
+    token = "fictional-fact-assistant-" + uuid4().hex
+
+    def client(source_ids: set[str]) -> TestClient:
+        credential = Credential(
+            token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+            tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+            scopes={"knowledge.search", "brain.content.read"},
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            client_kind="assistant", source_ids=source_ids,
+        )
+        return TestClient(
+            create_app(store, TokenRegistry([credential])),
+            headers={"Authorization": "Bearer " + token},
+        )
+
+    with client({source_id}) as allowed:
+        response = allowed.get(f"/v1/knowledge/projects/{project_id}/facts/markdown")
+        assert response.status_code == 200, response.text
+        assert evidence_id in response.json()["markdown"]
+    with client({"fictional_other_source"}) as hidden:
+        response = hidden.get(f"/v1/knowledge/projects/{project_id}/facts/markdown")
+        assert response.status_code == 404
+    with pytest.raises(ValueError):
+        client(set())
 
 
 def test_project_fact_can_quote_fileos_but_requires_both_source_grants(
@@ -340,6 +482,15 @@ def test_project_fact_can_quote_fileos_but_requires_both_source_grants(
     assert [row["object_id"] for row in facts.page(
         email_only, project_id, ProjectFactPageRequest(),
     )["results"]] == [first["object_id"]]
+    scoped_export = facts.export_markdown(
+        email_only, project_id, ProjectFactPageRequest(),
+    )
+    assert first["object_id"] in scoped_export["markdown"]
+    assert created["object_id"] not in scoped_export["markdown"]
+    assert file_evidence not in scoped_export["markdown"]
+    full_export = facts.export_markdown(ctx, project_id, ProjectFactPageRequest())
+    assert created["object_id"] in full_export["markdown"]
+    assert file_evidence in full_export["markdown"]
     assert [row["object_id"] for row in KnowledgeCore(store).project_dossier(
         email_only, project_id, ProjectDossierRequest(fact_limit=1),
     )["facts"]] == [first["object_id"]]

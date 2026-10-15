@@ -182,6 +182,17 @@ source effects or an alternate route through KnowledgeCore.
   IDs, not the quote itself. An aware cutoff and visible cursor bind paging;
   hidden evidence and successors are filtered before limit. A quote still
   needs export-time verification before appearing as a Markdown citation.
+- `GET /v1/knowledge/projects/{project_id}/facts/markdown` — ADR-196
+  synthetic-only, bounded **fact fragment**, requiring both
+  `knowledge.search` and `brain.content.read`. It rechecks the complete
+  current source-grant/exclusion set and full quote in the quote evidence's
+  current normalized body before limiting. The JSON response contains at most
+  25 one-line, Markdown-escaped facts with a JSON-escaped value and short quote
+  excerpt, exact evidence ID, cutoff and visible next cursor. The output is
+  untrusted data, never a prompt or a complete dossier. It exports no
+  events, commitments, members, related artifacts or inferred statements;
+  source freshness and real-world truth are not certified. The reference
+  client's `project_fact_markdown` validates closed metadata and the bound.
 - `POST /v1/knowledge/search` — implemented compact lexical retrieval across entity,
   relationship, claim, event, project, commitment, member and correction records.
   ADR-158 adds an optional `visibility` of `retained` (default) or

@@ -1,5 +1,12 @@
 # MasterBrain Implementation Status
 
+ADR-196 is a branch implementation candidate for a bounded, synthetic-only
+Markdown **fact fragment**. It reuses ADR-195's pre-limit current-source and
+exact-quote visibility, adds a separate content-read scope, escapes all
+untrusted text, and reports partial coverage with a cursor. This is not a
+complete project dossier or a live-source acceptance result; local and hosted
+gates are tracked in the build receipt.
+
 ADR-195 is merged on `main` via PR #228 as a synthetic-only, source-stated
 project-fact capability. A distinct
 immutable, tenant-fenced table freezes the direct evidence set and quote basis;
@@ -8,7 +15,7 @@ normalized-text quote. A separately paged Brain API read and independently
 bounded dossier section filter every source before limits, with reference
 client and inert owner-workspace validation. The fact is **not** in generic
 Knowledge lexical search/change feed yet; no inferred basis, controlled
-predicate registry, typed currency, Markdown citation verifier/export or
+predicate registry, typed currency, complete Markdown dossier or
 live-source acceptance is claimed. Exact PR-head and independent merged-main
 full CI, strict-runtime and populated restore all passed.
 
@@ -18,8 +25,8 @@ client validate and show exact evidence IDs under current source grants; the
 same visibility predicate as ADR-193 runs before the dossier limit. This
 remains synthetic-only and does not present a computed current file roster,
 filenames/bytes, source freshness or export-ready citations. Source-scoped
-export-time citation checks and a Markdown renderer remain open; ADR-195 adds
-only the narrow source-stated fact path.
+export-time citation checks for older assertions and a complete Markdown
+renderer remain open; ADR-196 adds only the narrow source-stated fact fragment.
 
 ADR-193 adds a synthetic-only, human-reviewed association between one exact
 project and one exact Email/FileOS evidence occurrence, with a separately

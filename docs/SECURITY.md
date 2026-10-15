@@ -265,6 +265,16 @@ text. This is synthetic-only, not a semantic noninterference proof, hosted
 identity acceptance, inferred-basis authorization, or a Markdown export-time
 citation verifier.
 
+ADR-196's separate synthetic fact-fragment export requires content-read as
+well as Knowledge search authority. Its tenant-fenced read rechecks project,
+every fact evidence grant/current version/exclusion and the full exact quote
+before sorting or limiting; a hidden fact or successor consumes no page slot.
+It emits only escaped, byte-bounded fact lines with opaque evidence IDs and a
+fixed partial-coverage warning. The audit contains a fixed operation only,
+not a project ID, source quote or value. Returned Markdown remains untrusted
+data: it cannot grant tools, be interpreted as a prompt, prove current truth,
+or revoke a fragment already delivered before a later source-grant change.
+
 ## Privacy-safe failure observability
 
 The REST boundary records a server-generated request ID, fixed route template,

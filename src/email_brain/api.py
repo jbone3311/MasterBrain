@@ -1105,6 +1105,19 @@ def create_app(
         except ValueError:
             raise HTTPException(422, "invalid_project_fact_page") from None
 
+    @app.get("/v1/knowledge/projects/{project_id}/facts/markdown")
+    def export_project_facts_markdown(
+        project_id: str,
+        body: Annotated[ProjectFactPageRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return project_facts.export_markdown(principal.context, project_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_project_fact_export") from None
+
     @app.get("/v1/knowledge/projects/{project_id}/dossier")
     def knowledge_project_dossier(
         project_id: str,

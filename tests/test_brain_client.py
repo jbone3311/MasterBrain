@@ -6,7 +6,12 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 
-from masterbrain.brain_client import MAX_RESPONSE_BYTES, BrainClientError, BrainReadClient
+from masterbrain.brain_client import (
+    _FACT_EXPORT_HEADER,
+    MAX_RESPONSE_BYTES,
+    BrainClientError,
+    BrainReadClient,
+)
 
 LAYERS = (
     "fileos", "archive_members", "archive_documents", "archive_images",
@@ -64,6 +69,54 @@ def test_project_facts_client_validates_source_stated_page() -> None:
         payload["results"] = [fact]
     assert len(calls) == 4
     assert calls[0].url.path == f"/v1/knowledge/projects/{DOSSIER_PROJECT}/facts"
+
+
+def test_project_fact_markdown_client_rejects_malformed_fragment() -> None:
+    heading = _FACT_EXPORT_HEADER
+    line = (
+        f"- `deal.note` (asserted; fact `{PROJECT_FACT}`): value \"fictional\"; "
+        f"exact quote \"fictional source\"; citation `{TIMELINE_EVIDENCE}`.\n"
+    )
+    payload = {
+        "project_id": DOSSIER_PROJECT,
+        "markdown": heading + line,
+        "fact_count": 1, "next_cursor": None,
+        "recorded_cutoff_at": TIMELINE_START.isoformat(),
+        "limit": 1, "visibility": "unsuperseded",
+        "coverage": "current_authorized_source_stated_project_facts_only",
+        "untrusted_content": True,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == (
+            f"/v1/knowledge/projects/{DOSSIER_PROJECT}/facts/markdown"
+        )
+        return httpx.Response(
+            200, content=json.dumps(payload).encode("utf-8"),
+            headers={"content-type": "application/json"},
+        )
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler),
+    ) as client:
+        assert client.project_fact_markdown(
+            DOSSIER_PROJECT, limit=1, recorded_cutoff_at=TIMELINE_START,
+        )["fact_count"] == 1
+        for arguments in ({"limit": True}, {"limit": 26}, {"after": "bad"}):
+            with pytest.raises(BrainClientError, match="invalid_request"):
+                client.project_fact_markdown(DOSSIER_PROJECT, **arguments)
+        for change in (
+            {"fact_count": 2}, {"coverage": "complete_dossier"},
+            {"next_cursor": "pfact_bad"}, {"markdown": "# forged\n"},
+            {"markdown": heading + "\ud800"},
+        ):
+            saved = {key: payload[key] for key in change}
+            payload.update(change)
+            with pytest.raises(BrainClientError, match="invalid_response"):
+                client.project_fact_markdown(
+                    DOSSIER_PROJECT, limit=1, recorded_cutoff_at=TIMELINE_START,
+                )
+            payload.update(saved)
 
 
 def test_project_artifact_client_validates_bounded_evidence_links() -> None:
