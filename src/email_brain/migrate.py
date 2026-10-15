@@ -10,6 +10,7 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "knowledge_project_fact_predicates",
     "knowledge_entities",
     "knowledge_entity_aliases",
     "knowledge_project_aliases",

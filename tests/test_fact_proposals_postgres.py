@@ -109,6 +109,34 @@ def test_fact_markdown_private_stage_preview_review_and_replay(database, tenant)
         ).fetchone()[0] == 1
 
 
+def test_unknown_fact_name_stays_private_and_cannot_be_approved(database, tenant):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _candidate(store, ctx, project_id, evidence_id)
+    raw = body.model_dump(mode="json")
+    raw["markdown"] = raw["markdown"].replace("deal.note", "unlisted.note")
+    raw["selections"][0]["assertion"]["predicate"] = "unlisted.note"
+    service = FactProposalBatches(store)
+    staged = service.stage(ctx, DossierProposalStageRequest.model_validate(raw), uuid4())
+    preview = service.preview(ctx, staged["batch_id"])
+    row = preview["proposals"][0]
+    assert row["registry_status"] == "unknown"
+    assert row["object_id"] is None
+    with pytest.raises(ValueError, match="registry review"):
+        service.review(ctx, staged["batch_id"], _decisions(
+            staged, ([row], ["approved"]),
+        ), uuid4())
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_fact_proposal_decisions "
+            "WHERE tenant_id=%s AND batch_id=%s", (ctx.tenant_id, staged["batch_id"]),
+        ).fetchone()[0] == 0
+    rejected = service.review(ctx, staged["batch_id"], _decisions(
+        staged, ([row], ["rejected"]),
+    ), uuid4())
+    assert rejected["approved"] == 0 and rejected["rejected"] == 1
+
+
 def test_fact_batch_mixed_decisions_and_stale_source_refusal(database, tenant):
     store, admin = database
     ctx, _, project_id, evidence_id = _prepared(store, tenant)

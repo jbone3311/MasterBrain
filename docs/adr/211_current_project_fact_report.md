@@ -41,7 +41,9 @@ source-enrolled assistant allow/deny, stale-version refusal, closed query
 limits, no-store responses, and client rejection of a forged investment-total
 label. A pure test proves grouping, page/truncation warnings and absence of a
 total. This is a page-local orientation report, not a complete dossier: a
-future financial report requires controlled predicates, [ADR-212's](212_exact_project_fact_measurement.md)
+future financial report requires complete predicate coverage beyond
+[ADR-214's](214_project_fact_predicate_catalog.md) first project-fact catalog,
+[ADR-212's](212_exact_project_fact_measurement.md)
 opt-in exact decimal units/currencies plus complete coverage, ownership,
 deduplication, source-tier attestation, conflict
 review and a known-answer cross-source company corpus. The current source

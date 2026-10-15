@@ -18,6 +18,7 @@ from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
 from email_brain.store import Conflict, NotFound, Store
 from masterbrain.brain_client import BrainClientError, BrainReadClient
+from masterbrain.fact_predicates import PROJECT_FACT_PREDICATES
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
     ProjectDossierRequest,
@@ -71,7 +72,7 @@ def _body(project_id: str, evidence_id: str, *, quote: str = QUOTE,
           value: str = "One hundred fictional units",
           supersedes_id: str | None = None) -> ProjectFactWrite:
     return ProjectFactWrite(
-        kind="project_fact", project_id=project_id, predicate="capital.amount",
+        kind="project_fact", project_id=project_id, predicate="deal.note",
         value=value, value_type="text", evidence_ids=[evidence_id],
         quote_evidence_id=evidence_id, source_quote=quote,
         confidence=1.0, observed_at=NOW, reviewed=True,
@@ -88,6 +89,63 @@ def test_project_fact_schema_rejects_invalid_source_text():
         _body(project_id, evidence_id, quote="invalid\ud800quote")
 
 
+def test_project_fact_registry_matches_sql_and_blocks_unregistered_direct_writes(
+    database, tenant,
+):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    existing = ProjectFacts(store).publish(
+        ctx, project_id, _body(project_id, evidence_id), uuid4(),
+    )
+    with psycopg.connect(admin) as conn:
+        rows = conn.execute(
+            "SELECT name,version,value_type,unit_code,description,status "
+            "FROM knowledge_project_fact_predicates ORDER BY name"
+        ).fetchall()
+        assert rows == [
+            (name, spec.version, spec.value_type, spec.unit, spec.description, "active")
+            for name, spec in sorted(PROJECT_FACT_PREDICATES.items())
+        ]
+        version = conn.execute(
+            "SELECT predicate_registry_version FROM knowledge_project_facts "
+            "WHERE tenant_id=%s AND id=%s", (ctx.tenant_id, existing["object_id"]),
+        ).fetchone()
+        assert version == (1,)
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE knowledge_project_fact_predicates SET description='forged' "
+            "WHERE name='deal.note' AND version=1"
+        )
+    for suffix, name in (("9", "unlisted.note"), ("8", "capital.amount")):
+        with pytest.raises(psycopg.errors.RaiseException, match="registered shape"):
+            with store.transaction(ctx) as conn:
+                conn.execute(
+                    "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+                    "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+                    "quote_evidence_id,source_quote,observed_at,reviewer_id) "
+                    "SELECT tenant_id,%s,project_id,%s,value,value_type,"
+                    "assertion_status,confidence,derivation,evidence_ids,"
+                    "quote_evidence_id,source_quote,observed_at,reviewer_id "
+                    "FROM knowledge_project_facts WHERE id=%s",
+                    ("pfact_" + suffix * 32, name, existing["object_id"]),
+                )
+
+
+def test_registry_change_preserves_exact_reviewed_idempotent_replay(
+    database, tenant, monkeypatch,
+):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    body = _body(project_id, evidence_id)
+    key = uuid4()
+    first = facts.publish(ctx, project_id, body, key)
+    monkeypatch.delitem(PROJECT_FACT_PREDICATES, "deal.note")
+    assert facts.publish(ctx, project_id, body, key) == {**first, "changed": False}
+    with pytest.raises(ValueError, match="registry review"):
+        facts.publish(ctx, project_id, body, uuid4())
+
+
 def test_project_fact_exact_measurement_stays_typed_only_in_report(database, tenant):
     store, admin = database
     ctx, account, project_id, evidence_id = _prepared(store, tenant)
@@ -100,6 +158,7 @@ def test_project_fact_exact_measurement_stays_typed_only_in_report(database, ten
     )
     body = ProjectFactWrite.model_validate({
         **_body(project_id, amount_evidence, value="100.25", quote=amount_quote).model_dump(),
+        "predicate": "capital.amount",
         "value_type": "number",
         "measurement": {"amount": "100.25", "unit": "currency", "currency": "USD"},
     })
@@ -170,7 +229,9 @@ def test_project_fact_exact_measurement_stays_typed_only_in_report(database, ten
             ("pfact_" + "e" * 32, ctx.tenant_id, typed["object_id"]),
         )
     for suffix, unit, currency in (("d", None, "USD"), ("c", "currency", None)):
-        with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+        expected = (psycopg.errors.RaiseException if unit is None
+                    else psycopg.errors.CheckViolation)
+        with pytest.raises(expected), psycopg.connect(admin) as conn:
             conn.execute(
                 "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
                 "value,value_type,assertion_status,confidence,derivation,evidence_ids,"

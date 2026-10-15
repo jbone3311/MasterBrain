@@ -25,8 +25,17 @@ def test_exact_decimal_currency_and_noncurrency_contract():
     assert fact.measurement == ProjectFactMeasurement(
         amount="100.25", unit="currency", currency="USD",
     )
-    assert _fact({"amount": "100.25", "unit": "shares"}).measurement.currency is None
-    assert _fact({"amount": "100.25", "unit": "count"}).measurement.unit == "count"
+    assert ProjectFactMeasurement(amount="100.25", unit="shares").currency is None
+    assert ProjectFactMeasurement(amount="100.25", unit="count").unit == "count"
+
+
+def test_registered_financial_predicate_requires_its_declared_type_and_unit():
+    from masterbrain.fact_predicates import require_registered_fact
+
+    unregistered_unit = _fact({"amount": "100.25", "unit": "shares"})
+    with pytest.raises(ValueError, match="registry review"):
+        require_registered_fact(unregistered_unit.predicate, unregistered_unit.value_type,
+                                unregistered_unit.measurement.unit)
 
 
 @pytest.mark.parametrize("amount", ["1e3", "+1", "01", "1.123456789", "NaN", "Infinity", 1.0])

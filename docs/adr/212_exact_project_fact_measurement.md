@@ -48,8 +48,9 @@ The report still returns `numeric_aggregation=none_units_currency_ownership_unve
 Prove literal quote binding, rejected floats/exponents/unknown units/currency
 shape, SQL direct-insert refusal, old-row NULL preservation, source-grant and
 stale-evidence filtering, API/client typed round trip, idempotency and populated
-upgrade/restore on fictional PostgreSQL. Future tranches need a controlled
-predicate registry, robust source-text number parsing, ownership and
+upgrade/restore on fictional PostgreSQL. ADR-214 begins a controlled
+project-fact predicate catalog; future tranches still need generic vocabulary
+coverage and name proposals, robust source-text number parsing, ownership and
 multiple-currency policy, duplicate/reconciliation handling, conflict review
 and a known-answer company corpus before any amount total is displayed.
 Rollback removes the opt-in code path and route field while retaining any

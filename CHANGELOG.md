@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-214: added a versioned, guarded project-fact predicate catalog in code
+  and migration 0073. New reviewed facts require a registered name, value
+  type and measurement unit; historical rows remain unchanged. The broader
+  name-proposal/alias registry remains open.
+
 - ADR-213: tightened reviewed measurement citation checks from substrings to
   complete amount and unit/currency quote tokens in both the write model and
   additive migration 0072. Existing typed rows are validated without rewrite;

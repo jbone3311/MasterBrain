@@ -78,6 +78,13 @@ queues with human-only review, current cited-basis rechecks and no assistant
 read. Migration 0070 protects artifact proposals with forced RLS, tenant-login
 fencing, immutable rows and receipt-bound approval. Hosted and live-source
 acceptance remain gated.
+ADR-214's global project-fact predicate catalog contains only reviewed code
+vocabulary, no tenant or source data. Runtime roles can read it but cannot
+change it; row-mutation and truncate guards prevent accidental edits.
+New fact publication checks its active name/type/unit after any exact
+idempotent receipt, and SQL repeats the check for direct inserts. Unknown
+names can remain in the human-only fact proposal queue but cannot be
+approved or exposed as reviewed knowledge until a catalog migration exists.
 The private Knowledge proposal reviewer holds shared locks on direct evidence
 source items and source rows until commit. For a member role it also locks all
 sources backing the linked project and entity citations. This closes the

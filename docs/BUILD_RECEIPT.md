@@ -2,6 +2,31 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## New reviewed project-fact predicate catalog — ADR-214
+
+Migration 0073 seeds five versioned predicate definitions and enforces the
+latest active name/value-type/unit shape on every new fact insert, including
+direct SQL. The publication boundary checks the same catalog only after
+an exact idempotency receipt; a test compares every code definition with
+the SQL rows. Historical facts are not rewritten.
+The first focused run caught guard-order and protected-table count changes;
+those test expectations were updated without relaxing either guard. A later
+compatibility correction moved publication validation after exact idempotent
+receipt lookup, retained private staging of unknown names, labelled preview
+status, and refused approval atomically. The revised targeted pure suite
+passed **24/24**; project-fact/proposal, restore and migration/recovery tests
+passed **96/96** (all 62 PostgreSQL-marked cases executed). The exact-current
+full local Python 3.14/PostgreSQL 17.11 suite passed **3,558 tests, 19
+skipped** (633 of 634 PostgreSQL-marked cases executed). Browser tests passed
+**167/167**. The repository quality gate passed **2,928 tests, 649 skipped**
+(three PostgreSQL-marked cases executed). Ruff, strict mypy (113 source files),
+docs links (315 Markdown files, 1,680 local paths/fragments) and diff
+whitespace passed. Optional DuckDB donor replays skip in the locked venv;
+independent-container logical restore is unavailable locally without Docker.
+Hosted exact-head and merged-main gates remain required. No generic
+claim/event/role registry, alias mapping or dedicated vocabulary proposal
+queue is claimed.
+
 ## Complete measurement quote tokens — ADR-213
 
 Migration 0072 replaces ADR-212's literal-substring SQL check with complete

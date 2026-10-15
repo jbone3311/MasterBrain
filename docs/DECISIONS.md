@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-214](adr/214_project_fact_predicate_catalog.md) pins a versioned
+checked-in predicate vocabulary for new reviewed project facts. Publication
+code and SQL guard the name/type/unit shape; legacy rows are not reclassified.
+Issue #183's aliases and private vocabulary proposals remain open.
+
 [ADR-213](adr/213_project_fact_measurement_quote_tokens.md) refuses partial
 amount and unit/currency matches in source-stated measurement quotes at both
 application and SQL boundaries. Existing typed rows are checked during the

@@ -1,5 +1,11 @@
 # MasterBrain Roadmap
 
+ADR-214 now controls new project-fact predicate names and their value/unit
+shapes. Next complete issue #183 with owner-reviewed name proposals,
+unambiguous deprecated aliases and generic claim/event/role coverage, while
+preserving old facts and safe replay. Then add ownership/source-tier semantics
+and the known-answer cross-source company dossier before any financial total.
+
 ADR-213 closes a misleading substring-citation path in ADR-212's typed
 measurement field. The next product tranche remains a controlled fact-name
 registry, ownership/source-tier semantics and a known-answer cross-source

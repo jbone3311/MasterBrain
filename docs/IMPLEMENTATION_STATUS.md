@@ -1,5 +1,16 @@
 # MasterBrain Implementation Status
 
+ADR-214 adds a versioned, code-and-SQL-controlled predicate catalog for **new
+reviewed project facts**. Unknown names, wrong value types and wrong/missing
+measurement units are rejected after exact idempotent replay and by the SQL guard.
+Historical rows retain their original predicate and NULL registry version;
+read formats are unchanged. Unknown names can enter the private fact-proposal
+queue with an explicit preview warning but cannot be approved until a
+reviewed catalog migration. This does not yet cover generic claims, events
+or roles, map deprecated aliases, or provide a dedicated owner-approved
+registry proposal queue. Issue #183 remains open. Local fictional
+focused gates pass; hosted and independent restore gates remain.
+
 ADR-213 strengthens ADR-212's quote binding: a typed amount and its
 unit/currency must appear as complete lexical tokens, not substrings of a
 larger figure or word. Migration 0072 validates previously typed rows and

@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.contracts import stable_id
+from masterbrain.fact_predicates import registry_status
 from masterbrain.knowledge_proposals import _sha
 from masterbrain.knowledge_schema import FactProposalReviewRequest, ProjectFactWrite
 from masterbrain.librarian_dossier_intake import (
@@ -221,6 +222,10 @@ class FactProposalBatches:
             "proposals": [
                 {"proposal_id": row["id"], "ordinal": row["ordinal"],
                  "claimed_id": row["claimed_id"], "assertion": row["payload"],
+                 "registry_status": registry_status(
+                     row["payload"]["predicate"], row["payload"]["value_type"],
+                     (row["payload"].get("measurement") or {}).get("unit"),
+                 ),
                  "status": row["decision"] or "proposed", "reason": row["reason"],
                  "object_kind": "project_fact" if row["fact_id"] else None,
                  "object_id": row["fact_id"]}

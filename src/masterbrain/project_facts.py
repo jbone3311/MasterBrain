@@ -14,6 +14,7 @@ from uuid import UUID
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.contracts import stable_id
+from masterbrain.fact_predicates import require_registered_fact
 from masterbrain.knowledge import _visible_assertion_sql
 from masterbrain.knowledge_schema import ProjectFactPageRequest, ProjectFactWrite
 
@@ -335,6 +336,10 @@ class ProjectFacts:
             if prior["request_sha256"] != request_sha:
                 raise Conflict("project fact idempotency key reused")
             return {"object_id": prior["fact_id"], "changed": False, "reviewed": True}
+        require_registered_fact(
+            body.predicate, body.value_type,
+            body.measurement.unit if body.measurement else None,
+        )
         conn.execute(
             "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
             "value,value_type,assertion_status,confidence,derivation,evidence_ids,"

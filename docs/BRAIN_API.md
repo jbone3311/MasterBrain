@@ -358,15 +358,20 @@ source effects or an alternate route through KnowledgeCore.
   fields are rejected. The exact line, cited quote evidence, current local
   project and all evidence grants are checked before an immutable private
   batch is staged. Claimed `pfact_...` IDs are selectors, not publication IDs.
+  An unknown predicate may be staged privately but cannot be published until
+  a reviewed registry version defines its name/type/unit; staging is not
+  vocabulary approval.
 - `GET /v1/knowledge/fact-proposal-batches/{batch_id}` — human-only private
   preview with both scopes, current project/evidence rechecks, untrusted
-  proposed payloads and ordered decision status. Ordinary search, dossier
+  proposed payloads, ordered decision status and `registry_status` (`active`,
+  `unknown` or `shape_mismatch`). Ordinary search, dossier
   and assistant reads never expose unreviewed facts.
 - `POST /v1/knowledge/fact-proposal-batches/{batch_id}/review` — human-only
   explicit approve/reject decision for **every** fact in one transaction,
   binding the exact batch digest and a UUID key. Approval uses the reviewed
   project-fact publication path and issues a new ID; rejection stores only
-  a reason. One invalid row rolls back all decisions and publications. No
+  a reason. An unknown or mismatched predicate cannot be approved; one invalid
+  row rolls back all decisions and publications. No
   live source, artifact association or inferred fact is authorized.
 - `POST /v1/knowledge/dossier-markdown/artifact-proposal-batches` — ADR-207
   synthetic-only, human-only staging of 1–50 selected `artifact link` lines

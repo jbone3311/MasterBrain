@@ -85,6 +85,15 @@ explicit, not inferred from filename.
 
 ## KnowledgeCore
 
+Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
+immutable global catalog for **new** reviewed project-fact names. A SQL insert
+guard and the publication boundary require the active name/value-type/unit shape and
+stamp the selected registry version on new rows. Historical rows retain NULL
+and their original names; no historical fact is reclassified. This first
+catalog does not yet govern generic claims, events or roles, or supply an
+owner-reviewed unknown-name proposal path
+([ADR-214](adr/214_project_fact_predicate_catalog.md)).
+
 Migration `0071_reviewed_project_fact_measurements.sql` adds nullable,
 immutable exact-decimal `amount_decimal`, `unit_code` and `currency_code` to
 reviewed project facts. The opt-in typed write requires a matching canonical

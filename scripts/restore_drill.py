@@ -604,7 +604,7 @@ def seed(
         )
         fact_body = ProjectFactWrite(
             kind="project_fact", project_id=project.object_id,
-            predicate="restore.amount", value="100.25", value_type="number",
+            predicate="capital.amount", value="100.25", value_type="number",
             measurement=ProjectFactMeasurement(
                 amount="100.25", unit="currency", currency="USD",
             ),
