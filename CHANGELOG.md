@@ -1,5 +1,10 @@
 # Changelog
 
+- ADR-218: extracted a shared DataCore confined FileOS byte/text replay and
+  added an immutable worker-observed replay receipt for current human
+  source-tier reviews. Statement replay behavior remains tested; no source
+  file or financial claim is changed.
+
 - ADR-217: added append-only, human-reviewed source-tier classifications tied
   to current evidence/version/document hashes and exact source quotes, with
   source-scoped Brain API reads. These are not independent byte attestations

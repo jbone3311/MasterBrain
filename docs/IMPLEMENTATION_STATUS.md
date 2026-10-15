@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-218 adds a point-in-time FileOS text-byte replay receipt for an ADR-217
+human tier review and moves the shared confined read/text derivation into
+DataCore. The older statement replay uses that same path without changing its
+contract. This is an internal worker-scoped operation, not an exposed command
+or a guarantee of later file freshness. Production worker credential gating,
+PDF/OCR and spreadsheet coverage, Email-byte replay and financial publication
+remain open. Full fictional local PostgreSQL/browser gates pass; hosted and
+independent restore gates remain open.
+
 ADR-217 adds a current-source, source-granted human tier review record and
 Brain API read/write routes. The row pins the stored source/document hashes,
 exact quote and controlled T1/T2/T3 authority kind; an independent SQL guard

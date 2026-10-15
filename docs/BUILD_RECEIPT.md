@@ -2,6 +2,27 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Shared FileOS text replay for reviewed tiers — ADR-218
+
+Migration 0076 and an internal worker-scoped operation add one immutable,
+point-in-time FileOS text replay receipt per human source-tier review. The
+confined read plus exact source-byte/text derivation now live in DataCore and
+are shared with the older statement replay. No API/CLI executor, unattended
+live root, PDF/OCR completeness, Email-byte replay or financial-claim approval
+was added. FOS-Master was not modified.
+
+Fictional focused tests cover BOM/CRLF normalization, source/text digests,
+wrong root, changed file, symlink, source-version race, source grants,
+concurrent idempotence, direct-SQL basis guard, protected table and unchanged
+statement replay. Migration/recovery/protected-table focus passed **41/41**.
+The full disposable PostgreSQL 17.11 / Python 3.14 suite passed **3,580
+tests, 19 skipped** (642 of 643 PostgreSQL-marked executed; one intentional
+skip). Six browser suites passed **167/167**. Ruff, mypy over 118 source files,
+documentation links (319 Markdown files, 1,690 paths/fragments) and diff
+whitespace passed. Hosted exact-head and independent restore remain open;
+GitHub's account payment/spending-limit failure has prevented hosted jobs
+from starting on prior heads and must be checked again on this head.
+
 ## Current-source human tier review — ADR-217
 
 Migration 0075, the human-only POST/read-only source-scoped GET routes and the

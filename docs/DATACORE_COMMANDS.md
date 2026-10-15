@@ -6,6 +6,15 @@ commands. The legacy `email-brain` command remains the Email capability surface.
 shared command moves, renames, quarantines, deletes or modifies a source file or
 mailbox.
 
+ADR-218 adds an **internal** shared DataCore confined FileOS text replay used
+by statement proposals and human source-tier reviews. It re-reads only one
+already-authorized current source, verifies source bytes and the complete
+normalized text, and records a point-in-time immutable receipt. There is no
+public `masterbrain` subcommand or unattended live-root executor for this yet;
+the tested operation is `SourceTierFileOSReplayStore.record_current_text_replay`
+inside a scoped worker. PDF/OCR/spreadsheet completeness and Email-byte replay
+remain separate gates.
+
 Every database-backed private `masterbrain` command below accepts
 `--tenant-bound-db` on both `--check` and execution (ADRs 135, 138 and 139).
 With this opt-in, `MASTERBRAIN_DSN` must be a DBA-enrolled login bound to the

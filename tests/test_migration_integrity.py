@@ -522,6 +522,7 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
         "0073_project_fact_predicate_registry.sql",
         "0074_project_fact_predicate_latest_revision.sql",
         "0075_reviewed_source_tier_classifications.sql",
+        "0076_source_tier_fileos_text_replay.sql",
     ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:

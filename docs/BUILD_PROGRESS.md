@@ -1,5 +1,17 @@
 # MasterBrain Build Progress
 
+## Shared FileOS text replay (2026-10-15, ADR-218, open PR)
+
+DataCore now owns one confined read and byte-to-text derivation proof shared
+by historical statement proposals and current human source-tier reviews.
+Migration 0076 records an immutable, current-source-bound, point-in-time
+worker replay receipt. Fictional faults include changed bytes, wrong root,
+symlink and source-version race; the original statement replay still passes.
+Full disposable-PostgreSQL tests passed 3,580 with 19 skipped (642/643
+PostgreSQL-marked executed), browser 167/167, Ruff/mypy/docs passed. No
+live root, public worker command, PDF/OCR completeness, Email-byte replay,
+investment approval or FileOS cutover is claimed.
+
 ## Current-source tier review (2026-10-15, ADR-217, open PR)
 
 Human review can now classify a current, granted evidence document as T1, T2

@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-218 now records a point-in-time, worker-observed FileOS **text** replay
+for an ADR-217 human tier review. The confined read and exact byte-to-text
+proof are shared DataCore machinery with the older statement-proposal replay.
+Next: PDF/OCR and spreadsheet coverage proofs, equivalent authorized Email
+bytes, issuer/conflict policy and a restricted operator command. Neither a
+stored replay nor a tier review is a verified investment claim or cutover.
+
 ADR-217 adds a human-reviewed, current-source tier classification route and
 append-only record; it is deliberately not an independent byte attestation.
 Next replay authorized source bytes and extraction coverage (PDF/OCR included),

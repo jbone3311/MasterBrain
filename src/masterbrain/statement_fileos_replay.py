@@ -13,15 +13,12 @@ from typing import Any
 
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
-from masterbrain.datacore.confined_files import (
-    ConfinedFileChanged,
-    ConfinedFileTooLarge,
-    ConfinedFileUnavailable,
-    read_confined_file,
+from masterbrain.datacore.current_fileos_text_replay import (
+    CurrentFileOSFileUnavailable,
+    replay_current_fileos_text,
 )
 from masterbrain.datacore.extraction import EXTRACTOR_VERSION, MAX_SOURCE_BYTES
 from masterbrain.datacore.fileos import fileos_root_binding_sha256
-from masterbrain.statement_derivation import prove_fileos_text_derivation
 
 _PROPOSAL_ID = re.compile(r"^statement_[a-f0-9]{32}$")
 
@@ -94,25 +91,18 @@ class StatementFileOSReplayStore:
                 conn.execute(_BASIS_SQL, (proposal_id,)).fetchone(), ctx, root_sha256
             )
         try:
-            opened = read_confined_file(
-                root, before["locator"], max_bytes=MAX_SOURCE_BYTES, capture_bytes=True
-            )
-        except (ConfinedFileUnavailable, ConfinedFileChanged, ConfinedFileTooLarge):
-            raise Conflict("statement FileOS source unavailable or changed") from None
-        if opened.raw is None:
-            raise Conflict("statement FileOS source unavailable or changed")
-        try:
-            proof = prove_fileos_text_derivation(
-                opened.raw,
+            proof = replay_current_fileos_text(
+                root,
                 locator=before["locator"],
+                root_binding_sha256=root_sha256,
                 source_sha256=before["source_sha256"],
                 source_size_bytes=before["size_bytes"],
                 text=before["body"],
                 text_sha256=before["text_sha256"],
                 normalizer=before["normalizer"],
             )
-            if fileos_root_binding_sha256(root) != root_sha256:
-                raise ValueError("root_changed")
+        except CurrentFileOSFileUnavailable:
+            raise Conflict("statement FileOS source unavailable or changed") from None
         except (OSError, RuntimeError, ValueError):
             raise Conflict("statement FileOS text replay failed") from None
 

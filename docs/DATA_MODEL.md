@@ -95,6 +95,16 @@ document authority, **not** independently retrieved bytes, extraction
 completeness, corroborated value or ownership
 ([ADR-217](adr/217_current_source_tier_review.md)).
 
+Migration `0076_source_tier_fileos_text_replay.sql` adds one immutable,
+tenant-scoped point-in-time worker replay receipt per reviewed tier. It binds
+the review to the same current FileOS evidence, source version and text
+document, source/text digest, byte count, normalizer and physical-root digest.
+The SQL guard repeats those identity/currentness checks; DataCore's shared
+confined reader must independently re-read the file and reproduce the exact
+text before the receipt can be written. This supports only bounded built-in
+text extraction, not PDF/OCR completeness or ongoing on-disk freshness
+([ADR-218](adr/218_source_tier_fileos_text_replay.md)).
+
 Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
 immutable global catalog for **new** reviewed project-fact names. A SQL insert
 guard and the publication boundary require the active name/value-type/unit shape and
