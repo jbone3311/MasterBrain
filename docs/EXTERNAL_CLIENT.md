@@ -32,6 +32,10 @@ The current-search and extractive Ask responses include
 no visible grant, or `not_searched` for a focus-excluded kind. Empty hits from a
 registered source are not proof that the source has no relevant content; use
 `current_coverage()` for bridge/generation readiness and respect its paging.
+The client validates this map when supplied, including focus exclusions and
+human-versus-enrolled availability states. It refuses malformed metadata rather
+than passing it to an assistant. An older server may omit the map for
+compatibility; omission means **unknown**, never "registered" or "absent".
 ADR-133 adds two source-scoped status reads. ADR-134 adds the bounded answer
 read over the same current, separately authorized evidence; ADR-144 supplies
 a local deterministic default selector and retains explicit disablement.

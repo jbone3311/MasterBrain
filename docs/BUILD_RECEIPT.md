@@ -2,6 +2,18 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## External assistant source-availability response guard — current branch
+
+The read-only reference client now validates ADR-168's optional Email/FileOS
+`coverage.source_availability` map on both current-search and extractive Ask.
+It rejects malformed keys/states, a focus-excluded kind presented as searched,
+and human-versus-enrolled state contradictions. A legacy server omitting the
+map remains compatible, but the omission is unknown availability, never proof
+of registration or absence. Fictional client, service and answer suites passed
+**177 tests** locally on Python 3.14, and Ruff and whitespace checks passed.
+This is a response-contract guard, not hosted assistant integration or a
+live-source connectivity/readiness proof.
+
 ## Cross-source price disagreement without a fabricated balance — current branch
 
 A new fictional PostgreSQL/API case publishes two separate reviewed `loi.price`

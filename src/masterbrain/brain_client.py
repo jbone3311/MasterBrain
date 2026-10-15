@@ -76,6 +76,7 @@ _FOCUS_LAYERS = {
         "fileos", "archive_members", "archive_documents", "archive_images",
     }),
 }
+_SOURCE_AVAILABILITY = frozenset({"registered", "not_registered", "not_available"})
 
 
 class BrainClientError(RuntimeError):
@@ -231,6 +232,7 @@ class BrainReadClient:
             or not isinstance(coverage, dict)
             or coverage.get("complete") is not False
             or coverage.get("source_focus", "all") != source_focus
+            or not self._valid_source_availability(coverage, source_focus)
             or any(layers[name] for name in _CURRENT_LAYERS - _FOCUS_LAYERS[source_focus])
         ):
             raise BrainClientError("invalid_response")
@@ -266,6 +268,7 @@ class BrainReadClient:
             or not isinstance(coverage.get("answer_context_truncated", False), bool)
             or not isinstance(coverage.get("answer_output_truncated", False), bool)
             or coverage.get("source_focus", "all") != source_focus
+            or not self._valid_source_availability(coverage, source_focus)
             or not isinstance(citations, list)
             or len(citations) > 4
             or any(not self._valid_quote_citation(item) for item in citations)
@@ -282,6 +285,29 @@ class BrainReadClient:
         ):
             raise BrainClientError("invalid_response")
         return data
+
+    @staticmethod
+    def _valid_source_availability(coverage: dict[str, Any], source_focus: SourceFocus) -> bool:
+        """Validate ADR-168 metadata when present; absence means legacy unknown."""
+        if "source_availability" not in coverage:
+            return True
+        availability = coverage["source_availability"]
+        if not isinstance(availability, dict) or set(availability) != {"email", "fileos"}:
+            return False
+        source_access = coverage.get("source_access")
+        for kind in ("email", "fileos"):
+            status = availability[kind]
+            if source_focus not in ("all", kind):
+                if status != "not_searched":
+                    return False
+            elif (
+                not isinstance(status, str)
+                or status not in _SOURCE_AVAILABILITY
+                or (source_access == "tenant_sources" and status == "not_available")
+                or (source_access == "enrolled_sources_only" and status == "not_registered")
+            ):
+                return False
+        return True
 
     @staticmethod
     def _within_answer_text_budget(
