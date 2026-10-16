@@ -1,7 +1,9 @@
-# ADR-261 — Proposed owner adjudication of historical FileOS discrepancies
+# ADR-261 — Historical FileOS row decisions and proposed run adjudication
 
-Status: **proposed, not implemented**. No approval or current-read authority
-is added by this document.
+Status: **partially implemented**. Append-only historical row decisions are
+implemented in migration 0093 and the Brain API. Run-level signoff, absence
+approval, live shadow and current-read authority remain **proposed and
+unimplemented**. A row disposition is never file or deletion authority.
 
 ## Problem
 
@@ -13,14 +15,16 @@ erasing its audit trail, and bound to the precise immutable run and rows the
 owner saw. The Brain API host must not need filesystem or donor-source
 authority merely to record that decision.
 
-## Proposed contract
+## Contract and implementation boundary
 
 1. Record append-only, idempotent human decisions in batches of at most 100
    exact prior rows. Each row names its locator, classification state and
    opaque prior version from the ADR-254 closure. Permit only controlled
    dispositions: `investigate`, `dispute_classification`, or
    `acknowledge_historical_observation`. Do not accept free-text source
-   content. Repeated idempotency keys must return the same digest or fail.
+   content. Repeated idempotency keys replay only the exact stored decision;
+   changed payloads fail. **Implemented.** HTTP requests also obey the
+   existing 32 KiB body limit, so the effective batch may be below 100 rows.
 2. The service and SQL independently bind every decision to tenant, human
    reviewer, source, ready later generation, completed run digest and closure
    digest. Revalidate active source, latest v1/root basis, source grant,
@@ -28,25 +32,30 @@ authority merely to record that decision.
    stale/mismatched or cross-tenant rows. Events are immutable and tenant-RLS
    fenced; later corrections append a new decision. Reads expose the latest
    decision and its audit history without treating it as a source fact.
-3. A separate run-level review would require explicit acknowledgement of
+   **Implemented** by `FileOSV2LaterRowDecisions`, bounded history readback,
+   `v2-later-review-rows` latest-decision metadata and migration 0093. The
+   service requires a human principal; SQL independently checks the actor,
+   tenant, exact run/closure/row and current source/v1/root basis, but the
+   database does not itself store a client-kind claim.
+3. **Not implemented.** A separate run-level review would require explicit acknowledgement of
    every possible-absence and coverage-ambiguous row, plus mass-loss and
    prior-coverage flags, against the exact decision snapshot. A held,
    disputed, incomplete, or changed-source run cannot advance. Even an
    acknowledged historical observation is **not** a confirmed deletion,
    absence event, file effect, v2 activation or donor cutover.
-4. Before any current-read activation proposal, a separately approved live
+4. **Not implemented.** Before any current-read activation proposal, a separately approved live
    shadow must produce a fresh no-follow source observation and parity
    evidence; an operator must prove rollback to the retained v1 pointer in
    a bounded synthetic drill. Hosted exact-head CI, independent review and
    owner acceptance remain mandatory. FOS-Master remains unchanged.
 
-## Acceptance before implementation
+## Acceptance and remaining gates
 
-Resolve whether `acknowledge_historical_observation` is the right owner-facing
-wording; it must never look like permission to delete a file. Then test a
-fictional mixture of possible absence, deferred/excluded/error coverage and
-mass loss; 100-row boundaries; corrected decisions; idempotent replay;
-stale-root/changed-v1 refusal; forged SQL rows and reviewer identity;
-tenant/source isolation; replay after restore; and zero change to current
-search, absence tables and donor files. Keep the API read-only until the
-write-specific contract and SQL guards pass those tests.
+The first row-decision tranche tests fictional atomic batches, corrections,
+idempotent replay, historical possible absence, bounded history, stale v1,
+source-grant and worker denial, forged SQL row/reviewer, immutable storage,
+and unchanged current search. Further 100-row, mixed-coverage/mass-loss,
+tenant isolation and populated-restore stress remain before run-level
+signoff. The owner-facing `acknowledge_historical_observation` wording still
+needs acceptance; it does **not** authorize deletion or absence. No live data
+or donor modification is part of this tranche.

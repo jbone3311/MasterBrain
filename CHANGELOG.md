@@ -1,5 +1,10 @@
 # Changelog
 
+- Add human-only append-only decisions on exact historical FileOS later-run
+  classifications, with latest-decision and bounded history reads. Migration
+  0093 enforces tenant/actor/exact-row binding and immutability. The decisions
+  do not authorize absence, current search, file effects or donor cutover.
+
 - Add bounded human inspection of exact historical later FileOS prior-row
   classifications, including possible-missing candidates. Results are
   source-bound, revalidated, read-only and explicitly nonauthoritative for

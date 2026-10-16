@@ -44,6 +44,15 @@ row and prior classification; private inspection recomputes the whole
 projection and canonical digest. It does not hold processing outcomes or
 advance source freshness (ADR-254).
 
+Migration 0093 adds append-only `brain_fileos_v2_later_row_decisions` keyed by
+tenant, reviewer and idempotency UUID. Each event binds one source, ready
+historical generation, run/digest, closure/digest, exact prior locator/state/
+version and controlled disposition. Forced tenant RLS, a tenant-login fence,
+source-locked insertion guards and mutation/truncate denial protect it.
+Corrections append events; historical row inspection projects the latest.
+This table is not an absence ledger, source-effect queue or current index
+(ADR-261).
+
 Migration 0087 adds append-only `brain_fileos_v2_later_observation_packets`
 under forced tenant RLS and the tenant-login fence. Each row has an exact
 composite FK to one completed v2 baseline, private source/root and observation

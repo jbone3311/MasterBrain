@@ -35,6 +35,12 @@ Gmail / Graph / IMAP / JMAP             Filesystem / Dropbox / OneDrive
 
 ## Boundary rules
 
+ADR-261 stores human historical classification decisions as append-only
+DataCore review metadata, separate from FileOS run, current-index and
+absence authority. The Brain API can show latest decision and history; it
+cannot turn one into a file operation or current-state assertion. Run-level
+signoff and any live/rollback transition require separate gates.
+
 ADR-260 pages exact immutable later-run prior-row classifications through a
 human-only Brain API view. It revalidates the closure and ADR-259 basis;
 classification of a possible-missing file is never absence authority. Owner

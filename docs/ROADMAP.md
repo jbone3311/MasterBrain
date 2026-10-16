@@ -1,15 +1,18 @@
 # MasterBrain Roadmap
 
-[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) is a
-**proposal only** for append-only, exact-row human discrepancy decisions and
-a later run-level review. No decision writer, absence approval, live shadow
-or current-read activation exists yet; the wording and fail-closed tests
-must be settled before implementation.
+[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) now has the
+first durable tranche: append-only, exact-row human historical decisions,
+latest-decision inspection and paged history. Next stress the 100-row and
+mixed-coverage boundaries, prove populated restore, settle owner wording,
+then design separately gated run-level signoff, fresh live shadow and bounded
+rollback. No row decision approves absence, current-read activation, file
+effects or FOS-Master cutover. Hosted exact-head checks remain required.
 
 ADR-260 makes the underlying historical FileOS prior-row classifications
 inspectable in bounded, source-bound pages, including possible-missing and
-coverage-ambiguous rows. The next gate is an explicit owner adjudication
-contract bound to one exact run/generation and a fresh observation, followed
+coverage-ambiguous rows. ADR-261 adds exact historical row decisions; the
+next gate is a separate run-level owner signoff contract bound to one exact
+decision snapshot and fresh observation, followed
 by rollback-ready activation policy, owner-approved live shadow, hosted
 exact-head checks and independent review. Inspection alone changes no
 current read, absence event or donor runtime.

@@ -1,5 +1,16 @@
 # MasterBrain Implementation Status
 
+ADR-261 now implements append-only, idempotent **historical row decisions**
+for an exact ready later FileOS generation and immutable coverage closure.
+An authorized human can submit a bounded batch, see the latest disposition
+beside each historical row, and page prior decisions. Migration 0093 and the
+service revalidate source, v1/root/run/closure and exact row identity; direct
+SQL mutation is denied. Synthetic PostgreSQL tests cover atomic replay,
+correction, history, source/worker denial, stale basis and forged writes.
+These decisions neither confirm absence nor change current FileOS search,
+files or donor state. Run-level signoff, owner-approved live shadow, rollback,
+hosted CI and current v2 activation remain open.
+
 ADR-260 adds a bounded human-only API page over the exact historical
 prior-row classifications of a ready later FileOS generation. It shares
 ADR-259's source-grant and active-source/root/run checks and independently

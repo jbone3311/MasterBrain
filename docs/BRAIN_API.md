@@ -112,10 +112,28 @@ change privileged historical Email routes, and is synthetic-only proof.
   `next_offset`, all classification counts and run review flags. It uses the
   same three scopes and fresh source/run/closure checks as the historical
   search comparison. Rows are untrusted; `absence_authorized` and
-  `current_read_active` are always false (ADR-260).
+  `current_read_active` are always false. Each row can include its latest
+  historical decision, but this does not promote it to current evidence
+  (ADRs 260–261).
+- `POST /v1/brain/sources/{source_id}/v2-later-row-decisions` — implemented
+  human-only append-only disposition of 1–100 exact prior classification rows
+  in one named ready historical generation. Each item supplies a UUID
+  `idempotency_key`, exact `locator`, `state`, nullable `prior_version_id`,
+  and one of `investigate`, `dispute_classification` or
+  `acknowledge_historical_observation`. Duplicate keys/locators fail. Exact
+  replay returns `replayed_count`; a correction needs a new key. The same
+  three review/search/evidence scopes and source grant apply. The existing
+  32 KiB request-body cap may limit practical batch size. It returns fixed
+  no-absence/no-current/no-source-effect flags (ADR-261).
+- `POST /v1/brain/sources/{source_id}/v2-later-row-decision-history` —
+  implemented human-only, source-bound bounded history for one exact prior
+  `locator` in a ready generation. Request fields are `generation_id`,
+  `locator`, `offset` and `limit`; response includes total, ordered decision
+  events and `next_offset`. It does not expose source bytes or activate v2.
 
-ADR-142 admits enrolled assistants to the five exact-source FileOS reads above
-and the aggregate/retained Brain searches. An ungranted source is
+ADR-142 admits enrolled assistants to the previously defined five exact-source
+FileOS **current-read** routes and the aggregate/retained Brain searches, not
+to the human-only historical preview or decision routes above. An ungranted source is
 indistinguishable from an unknown source (not found); the check occurs after
 transaction-time OIDC revocation validation. It does not grant original bytes,
 source effects or an alternate route through KnowledgeCore.

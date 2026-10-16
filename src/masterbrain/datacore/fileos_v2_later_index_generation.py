@@ -72,7 +72,7 @@ class FileOSV2LaterReviewRows:
     state: str | None
     offset: int
     total_rows: int
-    rows: tuple[dict[str, str], ...]
+    rows: tuple[dict[str, Any], ...]
     next_offset: int | None
     candidate_visibility: str = "historical_preview"
     absence_authorized: bool = False
@@ -242,6 +242,26 @@ class FileOSV2LaterSearchReviewer:
             if state is not None:
                 rows = [row for row in rows if row["state"] == state]
             selected = tuple(dict(row) for row in rows[offset:offset + limit])
+            if selected:
+                decisions = conn.execute(
+                    "SELECT DISTINCT ON (locator) locator,disposition,reviewer_id,"
+                    "recorded_at,idempotency_key "
+                    "FROM brain_fileos_v2_later_row_decisions "
+                    "WHERE tenant_id=%s AND generation_id=%s "
+                    "AND locator=ANY(%s::text[]) "
+                    "ORDER BY locator,recorded_at DESC,idempotency_key DESC",
+                    (ctx.tenant_id, generation_id,
+                     [row["locator"] for row in selected]),
+                ).fetchall()
+                latest = {row["locator"]: row for row in decisions}
+                for row in selected:
+                    if decision := latest.get(row["locator"]):
+                        row["latest_decision"] = {
+                            "disposition": decision["disposition"],
+                            "reviewer_id": str(decision["reviewer_id"]),
+                            "recorded_at": decision["recorded_at"].isoformat(),
+                            "idempotency_key": str(decision["idempotency_key"]),
+                        }
             next_offset = offset + len(selected) if offset + len(selected) < len(rows) else None
             self.core.store.audit(
                 conn, ctx, "brain.fileos_v2_later_review_rows",

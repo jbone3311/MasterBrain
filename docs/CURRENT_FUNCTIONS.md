@@ -1,5 +1,13 @@
 # Current MasterBrain functions
 
+ADR-261 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-row-decisions`
+for append-only exact historical classification decisions and
+`POST /v1/brain/sources/{source_id}/v2-later-row-decision-history` for bounded
+readback. `v2-later-review-rows` now includes the latest decision per row.
+These routes require FileOS transition review, Brain search and evidence-read
+scopes plus a source grant. They cannot confirm absence, activate current
+search, modify a source or replace FOS-Master.
+
 ADR-260 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-review-rows`
 to page the immutable prior-row classifications of a named historical later
 generation, optionally filtered by state. Possible-missing rows are visible

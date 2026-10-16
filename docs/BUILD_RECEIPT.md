@@ -2,6 +2,39 @@
 
 Updated 2026-10-16 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Historical FileOS row decisions — ADR-261 unmerged branch
+
+Migration 0093 and `FileOSV2LaterRowDecisions` now store human-only,
+append-only, exact historical row dispositions against a ready later-run
+generation and closure. The first tranche tests atomic batch replay,
+correction by a new event, latest-decision and bounded history reads,
+possible-absence labeling, source/worker denial, stale-v1 refusal, forged
+SQL rows/reviewer and mutation/truncation refusal. An unrecognized or
+changed-source row is rejected; current FileOS search and absence authority
+remain unchanged. The pinned FOS-Master donor remains clean and unmodified.
+
+The exact working-tree Python 3.14 suite on disposable loopback PostgreSQL
+17.11 passed **3,856 / 19 skipped / zero failed** in **11m21s**;
+**694/695 PostgreSQL-marked tests executed**. The one PostgreSQL-marked
+skip is Docker-backed. Focused migration/recovery/protected-table checks
+passed **41/41** and the later FileOS lifecycle/API test passed **1/1**.
+Node passed **185/185**; Ruff, strict mypy (150 source files), offline docs
+(362 Markdown files / 1,865 links/fragments before the final wording edit),
+structural gate, diff whitespace and offline wheel build passed. The wheel
+includes the new module. The full suite took three minutes longer than the
+previous 8m21s receipt; the large synthetic database commit was CPU-active
+without a lock blocker, so this is a performance signal, not an SLA.
+
+Two initial partial full runs found a **local virtual-environment packaging
+issue**, not a product assertion: a child test process could not import the
+repo package, including with `python -I`. Installing the freshly built
+offline wheel into only this checkout's virtual environment fixed both
+focused subprocess tests; the clean full run above used that wheel and
+`PYTHONPATH=src`. Those interrupted partial runs are not counted as passes.
+Hosted exact-head CI, actual-image execution, run-level owner signoff,
+fresh live shadow, rollback, current-v2 activation and donor cutover remain
+open. No real mail, files or provider tokens were used.
+
 ## Later FileOS classification scale gate and proposed owner decision
 
 The ADR-260 historical row-review API now has direct fictional 3,000-row
@@ -15,10 +48,11 @@ same test revision passed **3,856 / 19 skipped / zero failed** in 8m21s;
 Ruff, strict mypy (149 source files), offline docs (362 Markdown files /
 1,860 paths and fragments), diff whitespace and offline wheel build passed.
 
-[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) describes
-the next proposed, **unimplemented** append-only owner-decision contract.
-No decision writer, approval, v2 activation, file effect, live shadow or
-donor cutover is claimed. Hosted exact-head CI remains a separate gate.
+At head `653828d`, [ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md)
+was still a proposed, **unimplemented** append-only owner-decision contract.
+The newer tranche above implements historical row decisions only. It does
+not implement run-level signoff, absence approval, v2 activation, file
+effect, live shadow or donor cutover. Hosted exact-head CI is separate.
 
 ## Human historical later FileOS row inspection — current unmerged branch
 

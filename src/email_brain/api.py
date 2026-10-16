@@ -54,6 +54,9 @@ from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReview
 from masterbrain.datacore.fileos_v2_later_index_generation import (
     FileOSV2LaterSearchReviewer,
 )
+from masterbrain.datacore.fileos_v2_later_row_decisions import (
+    FileOSV2LaterRowDecisions,
+)
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
 from masterbrain.email_xlsx_approvals import EmailXlsxApprovals
 from masterbrain.email_xlsx_document_bridge import EmailXlsxDocumentBridge
@@ -94,6 +97,8 @@ from masterbrain.schemas import (
     EmailXlsxReviewRequest,
     EvidenceContentRequest,
     FileOSV2LaterReviewRowsRequest,
+    FileOSV2LaterRowDecisionHistoryRequest,
+    FileOSV2LaterRowDecisionsRequest,
     FileOSV2SearchPreviewRequest,
     GroundedAnswerRequest,
     UnifiedSearchRequest,
@@ -192,6 +197,7 @@ def create_app(
     email_xlsx_bridge = EmailXlsxDocumentBridge(store)
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
     fileos_v2_later_reviewer = FileOSV2LaterSearchReviewer(brain)
+    fileos_v2_later_row_decisions = FileOSV2LaterRowDecisions(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
     fact_proposals = FactProposalBatches(store)
@@ -969,6 +975,32 @@ def create_app(
             "current_read_active": page.current_read_active,
             "untrusted_content": True,
         }
+
+    @app.post("/v1/brain/sources/{source_id}/v2-later-row-decisions", status_code=201)
+    def brain_source_v2_later_row_decisions(
+        source_id: str,
+        body: FileOSV2LaterRowDecisionsRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return fileos_v2_later_row_decisions.record(principal, source_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+
+    @app.post("/v1/brain/sources/{source_id}/v2-later-row-decision-history")
+    def brain_source_v2_later_row_decision_history(
+        source_id: str,
+        body: FileOSV2LaterRowDecisionHistoryRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return fileos_v2_later_row_decisions.history(principal, source_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
 
     @app.post("/v1/brain/fileos-search")
     def brain_current_fileos_search(

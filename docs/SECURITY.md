@@ -1,5 +1,14 @@
 # MasterBrain Security and Privacy
 
+ADR-261 requires a human principal, three review/search/evidence scopes and
+an exact source grant for historical row decisions and history. SQL checks
+the actor, tenant, ready run, closure, exact row, active source and latest
+v1/root basis under a source lock; events are immutable and forced-RLS.
+Corrections append events instead of overwriting history. Responses label
+locators/decisions untrusted and grant no absence, current-read or file
+authority. The database guard itself relies on actor context, while the
+service enforces client kind; the database does not carry a human-kind claim.
+
 ADR-260 permits only a human with transition-review, search and evidence-read
 scopes to inspect bounded historical prior-row classifications. Source-grant
 denial precedes lookup; source/run/root and immutable coverage are rechecked

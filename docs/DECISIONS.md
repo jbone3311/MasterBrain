@@ -1,9 +1,9 @@
 # Architecture Decisions
 
-[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) records the
-next proposed, **unimplemented** owner-decision contract for exact historical
-FileOS discrepancies. Acknowledging an observation must not become absence
-authority, activation or a file effect.
+[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) implements
+append-only, exact-row historical human decisions, latest readback and bounded
+history. Run-level signoff and activation remain proposals. Acknowledging an
+observation is not absence authority, activation or a file effect.
 
 [ADR-260](adr/260_human_later_fileos_classification_review.md) exposes
 deterministically paged prior-row classifications of one ready historical

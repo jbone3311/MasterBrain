@@ -1,5 +1,12 @@
 # Current MasterBrain code map
 
+ADR-261 adds [historical row decisions](../src/masterbrain/datacore/fileos_v2_later_row_decisions.py),
+[migration 0093](../migrations/0093_fileos_v2_later_row_decisions.sql),
+[closed requests](../src/masterbrain/schemas.py) and
+[human API routes](../src/email_brain/api.py). The
+[fictional PostgreSQL lifecycle](../tests/test_postgres.py) covers replay,
+correction, history, SQL forgery and unchanged current reads.
+
 ADR-260 adds the [historical prior-row reviewer](../src/masterbrain/datacore/fileos_v2_later_index_generation.py),
 [closed request](../src/masterbrain/schemas.py),
 [Brain API route](../src/email_brain/api.py) and
