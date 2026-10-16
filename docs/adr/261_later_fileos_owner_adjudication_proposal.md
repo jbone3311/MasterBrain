@@ -54,8 +54,10 @@ authority merely to record that decision.
 The first row-decision tranche tests fictional atomic batches, corrections,
 idempotent replay, historical possible absence, bounded history, stale v1,
 source-grant and worker denial, forged SQL row/reviewer, immutable storage,
-and unchanged current search. Further 100-row, mixed-coverage/mass-loss,
-tenant isolation and populated-restore stress remain before run-level
-signoff. The owner-facing `acknowledge_historical_observation` wording still
-needs acceptance; it does **not** authorize deletion or absence. No live data
+and unchanged current search. The 100-row service boundary and a populated
+two-cluster synthetic restore now pass. Mixed-coverage/mass-loss,
+tenant-login isolation after restore and hosted exact-head stress remain
+before run-level signoff. The owner-facing
+`acknowledge_historical_observation` wording still needs acceptance; it does
+**not** authorize deletion or absence. No live data
 or donor modification is part of this tranche.

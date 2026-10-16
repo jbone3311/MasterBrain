@@ -28,6 +28,7 @@ from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from psycopg.types.json import Jsonb
+from pydantic import ValidationError
 
 from email_brain.api import create_app
 from email_brain.auth import Credential, Principal, TokenRegistry
@@ -9567,6 +9568,40 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
     assert review_page.classification_counts["unchanged"] == 3000
     assert review_page.absence_authorized is False
     assert review_page.current_read_active is False
+    decision_items = [
+        {
+            "idempotency_key": str(uuid4()),
+            "locator": row["locator"],
+            "state": row["state"],
+            "prior_version_id": row.get("prior_version_id"),
+            "disposition": "investigate",
+        }
+        for row in review_page.rows
+    ]
+    hundred = FileOSV2LaterRowDecisionsRequest.model_validate({
+        "generation_id": later_generation.generation_id,
+        "decisions": decision_items,
+    })
+    row_decisions = FileOSV2LaterRowDecisions(core)
+    assert row_decisions.record(human, source_id, hundred)["recorded_count"] == 100
+    assert row_decisions.record(human, source_id, hundred)["replayed_count"] == 100
+    with pytest.raises(ValidationError):
+        FileOSV2LaterRowDecisionsRequest.model_validate({
+            "generation_id": later_generation.generation_id,
+            "decisions": [*decision_items, {
+                **decision_items[0], "idempotency_key": str(uuid4()),
+            }],
+        })
+    decided_page = FileOSV2LaterSearchReviewer(core).review_rows(
+        human, source_id, later_generation.generation_id, offset=2900, limit=100,
+    )
+    assert len(decided_page.rows) == 100
+    assert all(
+        row["latest_decision"]["disposition"] == "investigate"
+        for row in decided_page.rows
+    )
+    assert decided_page.absence_authorized is False
+    assert decided_page.current_read_active is False
     absent_page = FileOSV2LaterSearchReviewer(core).review_rows(
         human, source_id, later_generation.generation_id,
         state="absence_candidate", limit=100,

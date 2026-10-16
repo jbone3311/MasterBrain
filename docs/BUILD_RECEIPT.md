@@ -2,6 +2,28 @@
 
 Updated 2026-10-16 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Historical FileOS decision scale and populated restore — test checkpoint
+
+The complete fictional 3,000-file later FileOS pipeline now records a final
+100-row historical decision batch, replays the same 100 exact keys, rejects a
+101-row request and reads back 100 latest dispositions without changing
+current search or absence authority. The focused PostgreSQL 17.11 test passed
+**1/1 in 3m36s**. This is a 100-row service and schema boundary, not a 100-row
+HTTP payload guarantee: the Brain API's separate 32 KiB body cap still applies.
+
+The resulting fictional database was dumped and restored into a **second,
+empty, disposable PostgreSQL 17.11 cluster** with `--single-transaction`,
+`--exit-on-error`, `--no-owner` and `--no-acl`. The repository-defined marker
+roles had to be bootstrapped first; the first attempt failed atomically and
+left zero public tables, and the retry succeeded. Source and restore each
+held exactly 100 distinct decision keys and locators with the same ordered
+content digest `d8571d8c7a2cc9c0614e95169ce5d273`. Restored storage still
+had forced RLS and three enabled guard triggers; a direct update was denied
+by the append-only trigger. This is local synthetic restore evidence, not
+hosted restore, tenant-login behavioral proof, a complete backup SLA, owner
+signoff or live FileOS acceptance. Ruff, strict mypy (150 source files),
+documentation links and diff whitespace passed after the test change.
+
 ## Historical FileOS row decisions — ADR-261 unmerged branch
 
 Migration 0093 and `FileOSV2LaterRowDecisions` now store human-only,

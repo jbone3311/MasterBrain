@@ -2,9 +2,10 @@
 
 [ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) now has the
 first durable tranche: append-only, exact-row human historical decisions,
-latest-decision inspection and paged history. Next stress the 100-row and
-mixed-coverage boundaries, prove populated restore, settle owner wording,
-then design separately gated run-level signoff, fresh live shadow and bounded
+latest-decision inspection and paged history. The 100-row service boundary
+and a two-cluster populated synthetic restore now pass locally. Next stress
+mixed coverage and mass-loss cases, settle owner wording, then design
+separately gated run-level signoff, fresh live shadow and bounded
 rollback. No row decision approves absence, current-read activation, file
 effects or FOS-Master cutover. Hosted exact-head checks remain required.
 
