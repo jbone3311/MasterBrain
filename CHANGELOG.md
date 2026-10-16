@@ -1,5 +1,12 @@
 # Changelog
 
+- Add an exact, nonactivating shared DataCore index generation for a
+  completed historical later FileOS v2 run. Database guards close hashed
+  item and chunk membership and refuse direct activation. A 3,000-file
+  synthetic stress case exposed and then verified a fix for the inherited
+  readiness-count timeout. Current FileOS search and FOS-Master remain
+  unchanged.
+
 - Add a synthetic-only historical FileOS v2 later-run completion bound to a
   ready exact-row document attempt and a fresh donor-policy scan. Its
   possible-absence/mass-loss/coverage review flags and source lock are

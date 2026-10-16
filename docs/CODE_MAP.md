@@ -1,5 +1,10 @@
 # Current MasterBrain code map
 
+ADR-258 adds the [later shared-index builder](../src/masterbrain/datacore/fileos_v2_later_index_generation.py),
+[additive generation basis and SQL guards](../migrations/0092_fileos_v2_later_shared_index_generation.sql)
+and [fictional PostgreSQL lifecycle/stress coverage](../tests/test_postgres.py).
+The ready generation is historical; SQL bars activation.
+
 ADR-257 adds the [historical later-run completer](../src/masterbrain/datacore/fileos_v2_later_run_completion.py),
 [immutable SQL receipt](../migrations/0091_fileos_v2_later_run_completions.sql)
 and [fictional PostgreSQL lifecycle test](../tests/test_postgres.py). The

@@ -35,6 +35,11 @@ Gmail / Graph / IMAP / JMAP             Filesystem / Dropbox / OneDrive
 
 ## Boundary rules
 
+ADR-258 extends the shared DataCore generation tables with an exact
+historical later-run basis. It indexes only source-bound, processed hashed
+rows and verified base chunks. The database denies activation; neither
+Brain API current search nor FileOS absence logic consumes this generation.
+
 ADR-257's later FileOS v2 run completion is a historical processing receipt:
 it binds a ready row-outcome ledger to a fresh, exact donor-policy observation
 and retains possible-absence/mass-loss review flags. No current-search,

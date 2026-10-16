@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-258](adr/258_fileos_v2_later_shared_index_generation.md) puts one
+historical later FileOS v2 run into the shared DataCore generation tables.
+Only exact hashed rows and base chunks may be indexed. SQL refuses activation;
+read comparison, live shadow, rollback and donor cutover remain separate.
+
 [ADR-257](adr/257_fileos_v2_historical_later_run_completion.md) seals one
 historical later FileOS v2 run only after a ready per-row document attempt and
 fresh matching source scan. It records possible-absence/mass-loss/coverage

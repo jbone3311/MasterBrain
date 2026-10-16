@@ -1,5 +1,11 @@
 # MasterBrain Security and Privacy
 
+ADR-258's later shared-index builder is a scoped private worker. SQL binds
+the exact historical run and ready attempt, independently closes hashed item
+and base-chunk membership, rechecks the latest v1/source-root basis and
+refuses `v2_later` activation. This is private historical search material,
+not an assistant-visible current source or an authorization for deletion.
+
 ADR-257's later-run completion is worker-only and checks a ready exact
 attempt against a fresh source-locked, no-follow donor observation. Composite
 foreign keys and a database guard refuse a forged ready basis, counts,

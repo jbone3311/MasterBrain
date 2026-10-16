@@ -85,6 +85,9 @@ from masterbrain.datacore.fileos_v2_later_document_publication import (
     FileOSV2LaterDocumentPublisher,
 )
 from masterbrain.datacore.fileos_v2_later_evidence import FileOSV2LaterEvidencePreparer
+from masterbrain.datacore.fileos_v2_later_index_generation import (
+    FileOSV2LaterIndexBuilder,
+)
 from masterbrain.datacore.fileos_v2_later_packets import FileOSV2LaterPacketStore
 from masterbrain.datacore.fileos_v2_later_run_completion import FileOSV2LaterRunCompleter
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
@@ -4536,6 +4539,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     with pytest.raises(NotFound):
         knowledge.get(other, "claim", second_claim.object_id)
 
+    # This long integration case can exceed five minutes under RLS/CI load.
     token = secrets.token_urlsafe(40)
     api = TestClient(
         create_app(
@@ -4556,7 +4560,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
                             "knowledge.changes.read",
                             "knowledge.review",
                         },
-                        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+                        expires_at=datetime.now(UTC) + timedelta(hours=1),
                         client_kind="human",
                     )
                 ]
@@ -4720,7 +4724,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         token_sha256=hashlib.sha256(assistant_token.encode()).hexdigest(),
         tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
         scopes={"brain.search", "knowledge.search"},
-        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
         client_kind="assistant", source_ids={"files_knowledge"},
     )])))
     assistant_reviewed = assistant_api.post(
@@ -7752,6 +7756,122 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert later_completer.complete(
         completion_worker, later_attempt_id, later_run_id, tmp_path
     ) == replace(later_run, recorded=False)
+    later_indexer = FileOSV2LaterIndexBuilder(core)
+    later_index_worker = Principal(
+        replace(later_publication_worker.context, scopes=
+                later_publication_worker.context.scopes | frozenset({
+                    "brain.fileos.transition.index",
+                })),
+        "worker",
+    )
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_indexer.build(
+            authorizing_human, later_run_id, code_revision="test-v2-later-index"
+        )
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_indexer.build(
+            completion_worker, later_run_id, code_revision="test-v2-later-index"
+        )
+    later_generation = later_indexer.build(
+        later_index_worker, later_run_id, code_revision="test-v2-later-index"
+    )
+    assert later_generation.recorded is True
+    assert later_generation.item_count == 3
+    assert later_generation.document_count == 3
+    assert later_generation.chunk_count >= 3
+    assert later_generation.current_read_active is False
+    assert later_indexer.build(
+        later_index_worker, later_run_id, code_revision="test-v2-later-index"
+    ) == replace(later_generation, recorded=False)
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_index_generation_chunks "
+            "WHERE generation_id=%s AND text ILIKE '%%later-only%%'",
+            (later_generation.generation_id,),
+        ).fetchone()["n"] >= 1
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 later index basis"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,"
+                "run_actor_id,run_id,observed_at,plan_sha256,code_revision,"
+                "chunker_version,item_count,document_count,chunk_count,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts) "
+                "SELECT tenant_id,'forged_later_wrong_count',source_id,NULL,NULL,"
+                "observed_at,%s,code_revision,chunker_version,0,0,0,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts "
+                "FROM brain_index_generations WHERE id=%s",
+                ("1" * 64, later_generation.generation_id),
+            )
+    with pytest.raises(psycopg.Error, match="item membership is not exact"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,"
+                "run_actor_id,run_id,observed_at,plan_sha256,code_revision,"
+                "chunker_version,item_count,document_count,chunk_count,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts) "
+                "SELECT tenant_id,'forged_later_no_items',source_id,NULL,NULL,"
+                "observed_at,%s,code_revision,chunker_version,item_count,0,0,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts "
+                "FROM brain_index_generations WHERE id=%s",
+                ("2" * 64, later_generation.generation_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_receipts("
+                "tenant_id,generation_id,source_id) VALUES (%s,%s,%s)",
+                (ctx.tenant_id, "forged_later_no_items", source_id),
+            )
+    with pytest.raises(psycopg.Error, match="item membership is not exact"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,"
+                "run_actor_id,run_id,observed_at,plan_sha256,code_revision,"
+                "chunker_version,item_count,document_count,chunk_count,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts) "
+                "SELECT tenant_id,'forged_later_wrong_outcome',source_id,NULL,NULL,"
+                "observed_at,%s,code_revision,chunker_version,item_count,"
+                "document_count,chunk_count,basis_kind,v2_later_run_id,"
+                "v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts "
+                "FROM brain_index_generations WHERE id=%s",
+                ("3" * 64, later_generation.generation_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_items(tenant_id,generation_id,"
+                "source_id,item_id,version_id,outcome,disposition,evidence_id,"
+                "document_id) SELECT tenant_id,'forged_later_wrong_outcome',source_id,"
+                "item_id,version_id,CASE WHEN item_id=(SELECT min(item_id) FROM "
+                "brain_index_generation_items WHERE generation_id=%s) THEN 'empty' "
+                "ELSE outcome END,disposition,evidence_id,document_id "
+                "FROM brain_index_generation_items WHERE generation_id=%s",
+                (later_generation.generation_id, later_generation.generation_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_chunks(tenant_id,generation_id,"
+                "source_id,document_id,id,ordinal,start_offset,end_offset,text,sha256) "
+                "SELECT tenant_id,'forged_later_wrong_outcome',source_id,document_id,"
+                "id,ordinal,start_offset,end_offset,text,sha256 "
+                "FROM brain_index_generation_chunks WHERE generation_id=%s",
+                (later_generation.generation_id,),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_receipts("
+                "tenant_id,generation_id,source_id) VALUES (%s,%s,%s)",
+                (ctx.tenant_id, "forged_later_wrong_outcome", source_id),
+            )
+    with pytest.raises(psycopg.Error, match="activation is not authorized"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_activations(tenant_id,actor_id,"
+                "idempotency_key,source_id,generation_id,previous_generation_id,"
+                "request_hash) VALUES (%s,%s,%s,%s,%s,NULL,%s)",
+                (ctx.tenant_id, ctx.actor_id, uuid4(), source_id,
+                 later_generation.generation_id, "0" * 64),
+            )
     with pytest.raises(Conflict, match="already completed"):
         later_completer.complete(
             completion_worker, later_attempt_id, uuid4(), tmp_path
@@ -8989,6 +9109,44 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
             "SELECT count(*) AS n FROM brain_fileos_v2_document_attempt_items "
             "WHERE attempt_id=%s AND document_id IS NOT NULL", (attempt.attempt_id,),
         ).fetchone()["n"] == 3000
+    later_packet_id, later_closure_id = uuid4(), uuid4()
+    later_preparation_id, later_attempt_id, later_run_id = uuid4(), uuid4(), uuid4()
+    completion_worker = Principal(
+        replace(worker.context, scopes=worker.context.scopes | frozenset({
+            "brain.fileos.transition.complete",
+        })), "worker",
+    )
+    later_packet = FileOSV2LaterPacketStore(core).record(
+        completion_worker, completed.completion_id, later_packet_id, tmp_path
+    )
+    assert later_packet.classification_counts["unchanged"] == 3000
+    FileOSV2LaterCoverageStore(core).seal(
+        completion_worker, later_packet_id, later_closure_id
+    )
+    later_prepared = FileOSV2LaterEvidencePreparer(core).prepare(
+        worker, later_closure_id, later_preparation_id, tmp_path
+    )
+    assert later_prepared.hashed_count == 3000
+    later_attempt = FileOSV2LaterDocumentPublisher(core).publish(
+        publication_worker, later_preparation_id, later_attempt_id, tmp_path,
+        code_revision="test-v2-later-publication-stress",
+    )
+    assert later_attempt.ready is True
+    assert later_attempt.counts["extracted"] == 3000
+    later_run = FileOSV2LaterRunCompleter(core).complete(
+        completion_worker, later_attempt_id, later_run_id, tmp_path
+    )
+    assert later_run.classification_counts["unchanged"] == 3000
+    later_generation = FileOSV2LaterIndexBuilder(core).build(
+        Principal(replace(publication_worker.context,
+                          scopes=publication_worker.context.scopes
+                          | frozenset({"brain.fileos.transition.index"})), "worker"),
+        later_run_id, code_revision="test-v2-later-index-stress",
+    )
+    assert (later_generation.item_count, later_generation.document_count,
+            later_generation.chunk_count) == (3000, 3000, 3000)
+    assert later_generation.current_read_active is False
+    assert core.search_current_fileos(ctx, "fictional prepared evidence") == []
 
 
 def test_fileos_v2_staging_three_thousand_hashless_rows(

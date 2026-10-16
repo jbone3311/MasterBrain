@@ -2,6 +2,34 @@
 
 Updated 2026-10-16 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Historical later FileOS v2 shared index — current unmerged branch
+
+ADR-258 and migration 0092 add a distinct `v2_later` basis to the existing
+DataCore generation/item/chunk/receipt tables. A scoped worker builds only
+the exact hashed rows of a ready ADR-257 historical run; SQL rejects forged
+or missing membership and activation. A full fictional 3,000-hash later
+packet → coverage → evidence → documents → run → generation stress case
+passed, with 3,000 exact indexed documents/chunks and no current FileOS
+search result. The first stress run exposed a timeout in the inherited v1
+receipt-count query; the migration now routes later generations through the
+indexed v2 counting path while retaining a separate exact-membership guard.
+An unrelated long KnowledgeCore fixture's five-minute fictional credentials
+expired under the slower combined run; only that test fixture's two token
+windows were lengthened. Product credential expiry is unchanged.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,856 passed, 19 skipped, zero failed**
+in 14m19s; **694/695 PostgreSQL-marked tests executed**. The sole
+PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (149 source files), offline docs (359 Markdown
+files / 1,848 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the later-index builder. The unchanged pinned
+FOS-Master 3,000-file shadow matched **3,004** ordinary/replay/changed/
+candidate/metadata rows with six explicit policy differences. This is
+local fictional evidence, not hosted exact-head, actual-image, live root,
+rollback, activation or donor-cutover acceptance. The combined-suite
+duration is a performance signal for future profiling, not a live SLA.
+
 ## Historical later FileOS v2 run completion — current unmerged branch
 
 ADR-257 and migration 0091 bind one ready ADR-256 row-outcome attempt to a

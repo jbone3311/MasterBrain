@@ -1,5 +1,13 @@
 # MasterBrain Data Model
 
+Migration 0092 adds `v2_later` as a third, exact basis on the existing
+`brain_index_generations` parent. It references one immutable ADR-257 run
+and ready attempt; the shared item/chunk/receipt children require every
+hashed attempt row and exact normalized-document chunk. Hashless, excluded
+and possible-absence observations remain in the run/coverage ledgers.
+The new activation trigger rejects every `v2_later` generation. Existing
+v1 and baseline-v2 basis constraints remain disjoint (ADR-258).
+
 Migration 0091 adds immutable `brain_fileos_v2_later_run_completions`.
 Composite keys bind one ready document attempt, preparation, closure and
 observation packet; one completion is permitted per packet. The source-lock

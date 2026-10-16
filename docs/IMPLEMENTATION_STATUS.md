@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+ADR-258 adds a private shared DataCore index generation over one ready
+ADR-257 historical later run. SQL binds exact run/attempt digests, hashed
+item and base-chunk membership and denies activation. Deferred, excluded and
+possible-missing rows remain in the run ledger, not fake index items.
+Fictional PostgreSQL lifecycle coverage proves replay, forged-parent/item
+refusal and unchanged current reads; a 3,000-file later stress path passes
+after indexed readiness counting replaced a timed-out v1-style scan. Human
+comparison, live shadow, rollback policy, hosted and donor
+cutover gates remain open.
+
 ADR-257 adds a private, immutable historical later FileOS v2 run completion.
 It requires a ready ADR-256 attempt and a fresh exact source scan after that
 attempt. Migration 0091 binds the packet, closure, preparation and attempt,

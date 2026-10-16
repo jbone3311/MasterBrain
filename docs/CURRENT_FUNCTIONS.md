@@ -1,5 +1,10 @@
 # Current MasterBrain functions
 
+ADR-258 adds a private, synthetic-only builder for a ready historical
+`v2_later` generation in the shared DataCore index. It can be built/replayed
+with a scoped worker, but SQL prohibits activation; no public API or current
+search uses it. A human comparison path and live-source acceptance remain open.
+
 ADR-257 adds a private, synthetic-only historical FileOS v2 later-run
 completion library. A scoped worker supplies an exact ready ADR-256 attempt
 and source root; a fresh matching scan seals one tenant-fenced receipt per

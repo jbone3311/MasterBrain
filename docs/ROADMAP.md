@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-258 now assembles the later-run hashes into a ready, historical generation
+on the shared DataCore index substrate. The next product-facing step is a
+human-only comparison of a named later generation with active v1, followed
+by explicit possible-absence/mass-loss review, rollback-ready activation
+policy, owner-approved live shadow and hosted gates. No generation is made
+current and FOS-Master remains the operational donor.
+
 ADR-257 now seals a completed **historical** later FileOS v2 run from one
 ready row-outcome attempt and a fresh matching source observation. Possible
 absence, mass-loss and ambiguous prior coverage remain explicit review flags;
