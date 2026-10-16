@@ -1,5 +1,14 @@
 # MasterBrain Data Model
 
+Migration 0091 adds immutable `brain_fileos_v2_later_run_completions`.
+Composite keys bind one ready document attempt, preparation, closure and
+observation packet; one completion is permitted per packet. The source-lock
+guard rechecks the latest v1/root basis, closed outcome and classification
+counts, and derived possible-absence/mass-loss/coverage flags. SQL fixes
+nonpublishing, noncurrent, no-absence and review-required status. This is a
+historical completion, not a shared index activation or freshness authority
+for current FileOS search (ADR-257).
+
 Migration 0090 adds immutable `brain_fileos_v2_later_document_attempts` and
 `brain_fileos_v2_later_document_attempt_items`. A composite FK binds one
 attempt to an exact ADR-255 preparation; blocked attempts may be retried,
@@ -7,8 +16,8 @@ but a partial unique index permits only one ready attempt. Item FKs bind hashed 
 prepared versions and extracted documents to the same evidence. A deferred
 SQL guard checks every current closure row and exact outcome counts. Fixed
 false publication/absence flags, forced tenant RLS/login fence, source-lock
-and protected truncation apply. This is historical processing, not a v2
-completed-run or active-index table (ADR-256).
+and protected truncation apply. This is historical processing, not itself a
+v2 completed-run or active-index table (ADR-256).
 
 Migration 0089 adds private, immutable
 `brain_fileos_v2_later_evidence_preparations` and

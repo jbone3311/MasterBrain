@@ -35,6 +35,12 @@ Gmail / Graph / IMAP / JMAP             Filesystem / Dropbox / OneDrive
 
 ## Boundary rules
 
+ADR-257's later FileOS v2 run completion is a historical processing receipt:
+it binds a ready row-outcome ledger to a fresh, exact donor-policy observation
+and retains possible-absence/mass-loss review flags. No current-search,
+absence-event or source-effect path consumes it. Generation readiness,
+activation and rollback remain separate decisions.
+
 Source adapters discover changes, fetch source bytes/metadata, translate source
 identities, and—later—execute separately approved source effects. They do not own
 shared extraction, knowledge, or retrieval.

@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-257](adr/257_fileos_v2_historical_later_run_completion.md) seals one
+historical later FileOS v2 run only after a ready per-row document attempt and
+fresh matching source scan. It records possible-absence/mass-loss/coverage
+review flags but changes no current read, absence event or donor runtime.
+
 [ADR-256](adr/256_fileos_v2_later_document_attempt.md) processes the exact
 later FileOS v2 hashed evidence into historical normalized documents and
 seals an outcome for each accepted current row. It does not complete a later

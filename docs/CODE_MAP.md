@@ -1,5 +1,10 @@
 # Current MasterBrain code map
 
+ADR-257 adds the [historical later-run completer](../src/masterbrain/datacore/fileos_v2_later_run_completion.py),
+[immutable SQL receipt](../migrations/0091_fileos_v2_later_run_completions.sql)
+and [fictional PostgreSQL lifecycle test](../tests/test_postgres.py). The
+receipt has no current-index, absence-event or source-effect consumer.
+
 ADR-256 adds the [historical later FileOS document publisher](../src/masterbrain/datacore/fileos_v2_later_document_publication.py),
 [exact-row SQL attempt ledger](../migrations/0090_fileos_v2_later_document_attempts.sql)
 and [fictional PostgreSQL lifecycle coverage](../tests/test_postgres.py).
@@ -41,7 +46,7 @@ its [private CLI](../src/masterbrain/cli.py), and fictional
 [command-to-PostgreSQL](../tests/test_email_xlsx_publication_controller_postgres.py)
 tests. See [ADR-243](adr/243_restricted_email_xlsx_publication_command.md).
 
-Updated 2026-10-15. Existing files, not a proposed directory tree. Python modular
+Updated 2026-10-16. Existing files, not a proposed directory tree. Python modular
 service, vanilla-JavaScript owner UI; no React application or installed RAG framework.
 The retained `email_brain` tree is the Email capability. New shared code begins under
 `masterbrain`; an additive bridge can now map selected current Email evidence without

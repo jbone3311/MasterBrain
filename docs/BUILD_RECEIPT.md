@@ -1,6 +1,31 @@
 # Build and validation receipt
 
-Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-16 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+
+## Historical later FileOS v2 run completion — current unmerged branch
+
+ADR-257 and migration 0091 bind one ready ADR-256 row-outcome attempt to a
+fresh, exact donor-policy source observation and append a historical later-run
+receipt. It records separate possible-absence, mass-loss and prior-coverage
+review flags while SQL fixes nonpublishing, noncurrent, no-absence status.
+Fictional PostgreSQL lifecycle tests prove blocked-attempt and source-drift
+refusal, direct-SQL forged-flag refusal, clean and possible-absence receipts,
+replay, one completion per packet and mutation/truncation denial. Migration,
+recovery and protected-table checks passed **41/41**. The pinned, unchanged
+FOS-Master 3,000-file shadow matched **3,004** ordinary/replay/changed/
+candidate/metadata rows; six known policy differences remain explicit.
+
+The complete fictional Python 3.14 suite passed on fresh disposable
+PostgreSQL 17.11 bound only to **127.0.0.1**: **3,856 passed, 19 skipped,
+zero failed** in 6m58s; **694/695 PostgreSQL-marked tests executed**. The
+sole PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (148 source files), offline docs (358 Markdown
+files / 1,844 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the new completer. An earlier run against a
+reused disposable database was interrupted after its migration checksum
+correctly rejected an in-flight SQL edit; the fresh exact-source rerun above
+is the acceptance result. No actual-image, hosted exact-head, live root,
+activation, rollback or FOS-Master cutover is claimed.
 
 ## Historical later FileOS v2 document attempt — current unmerged branch
 

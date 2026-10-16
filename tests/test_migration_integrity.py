@@ -537,6 +537,7 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
         "0088_fileos_v2_later_coverage_closures.sql",
         "0089_fileos_v2_later_evidence_preparations.sql",
         "0090_fileos_v2_later_document_attempts.sql",
+        "0091_fileos_v2_later_run_completions.sql",
     ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:

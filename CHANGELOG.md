@@ -1,5 +1,15 @@
 # Changelog
 
+- Add a synthetic-only historical FileOS v2 later-run completion bound to a
+  ready exact-row document attempt and a fresh donor-policy scan. Its
+  possible-absence/mass-loss/coverage review flags and source lock are
+  database-checked. It does not activate current reads, infer absence, mutate
+  files or change the FOS-Master donor.
+
+- Add retryable historical FileOS v2 document attempts: a failed extraction
+  is sealed as blocked, while only one ready attempt may complete an exact
+  later evidence preparation. Normalized derivatives remain historical.
+
 - Add one disposable synthetic XLSX alpha round-trip test across owner Email
   search/evidence, exact approval, isolated-worker simulation, bounded result
   inspection, explicit review, separate publication worker and cited Brain

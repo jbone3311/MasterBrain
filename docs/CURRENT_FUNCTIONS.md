@@ -1,5 +1,11 @@
 # Current MasterBrain functions
 
+ADR-257 adds a private, synthetic-only historical FileOS v2 later-run
+completion library. A scoped worker supplies an exact ready ADR-256 attempt
+and source root; a fresh matching scan seals one tenant-fenced receipt per
+packet with explicit review flags. It has no CLI or public API yet and grants
+no current-read, absence-event or source-effect authority.
+
 ADR-247 adds a human-only, source-attached synthetic XLSX extraction approval
 API when `serve --xlsx-document-processor-version` is configured. ADR-248 adds
 an explicit selection/approval control beside eligible inspected Email evidence.
@@ -11,7 +17,7 @@ revision or publish; the private worker records that guarded revision.
 ADR-250 tests the entire fictional API/worker/retrieval sequence with a
 simulated isolated processor and source-pause denial.
 
-Updated 2026-10-15; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
+Updated 2026-10-16; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
 verification. “Available” below means executable in this repository with
 synthetic/disposable inputs; it does **not** mean hosted, connected to real accounts,
 approved for private data, or production accepted. The exact-commit gates are in

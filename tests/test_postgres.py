@@ -86,6 +86,7 @@ from masterbrain.datacore.fileos_v2_later_document_publication import (
 )
 from masterbrain.datacore.fileos_v2_later_evidence import FileOSV2LaterEvidencePreparer
 from masterbrain.datacore.fileos_v2_later_packets import FileOSV2LaterPacketStore
+from masterbrain.datacore.fileos_v2_later_run_completion import FileOSV2LaterRunCompleter
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
@@ -7688,6 +7689,82 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert later_publisher.inspect(ctx, later_attempt_id) == replace(
         later_attempt, recorded=False
     )
+    later_completer = FileOSV2LaterRunCompleter(core)
+    later_run_id = uuid4()
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_completer.complete(authorizing_human, later_attempt_id, later_run_id, tmp_path)
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_completer.complete(worker, later_attempt_id, later_run_id, tmp_path)
+    with pytest.raises(Conflict, match="basis requires review"):
+        later_completer.complete(
+            completion_worker, blocked_later_id, uuid4(), tmp_path
+        )
+    later_add.write_bytes(b"synthetic completion drift")
+    with pytest.raises(Conflict, match="source changed"):
+        later_completer.complete(
+            completion_worker, later_attempt_id, later_run_id, tmp_path
+        )
+    later_add.write_bytes(b"synthetic later-only evidence")
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 later run completion"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_run_completions(tenant_id,id,"
+                "actor_id,attempt_id,preparation_id,closure_id,packet_id,"
+                "baseline_completion_id,source_id,root_binding_sha256,"
+                "attempt_sha256,preparation_sha256,closure_sha256,packet_sha256,"
+                "processed_counts,classification_counts,review_flags,"
+                "observed_at,run_sha256) "
+                "SELECT a.tenant_id,%s,%s,a.id,p.id,p.closure_id,p.packet_id,"
+                "p.completion_id,p.source_id,p.root_binding_sha256,"
+                "a.attempt_sha256,p.preparation_sha256,c.closure_sha256,"
+                "p.packet_sha256,a.counts,q.packet->'preview'->'counts',"
+                "%s,clock_timestamp(),%s "
+                "FROM brain_fileos_v2_later_document_attempts a "
+                "JOIN brain_fileos_v2_later_evidence_preparations p "
+                "ON p.tenant_id=a.tenant_id AND p.id=a.preparation_id "
+                "JOIN brain_fileos_v2_later_coverage_closures c "
+                "ON c.tenant_id=p.tenant_id AND c.id=p.closure_id "
+                "JOIN brain_fileos_v2_later_observation_packets q "
+                "ON q.tenant_id=p.tenant_id AND q.id=p.packet_id WHERE a.id=%s",
+                (
+                    uuid4(), ctx.actor_id,
+                    Jsonb({"possible_absence": True, "mass_loss": False,
+                           "prior_coverage": False}),
+                    "0" * 64, later_attempt_id,
+                ),
+            )
+    later_run = later_completer.complete(
+        completion_worker, later_attempt_id, later_run_id, tmp_path
+    )
+    assert later_run.recorded is True
+    assert later_run.processed_counts == later_attempt.counts
+    assert later_run.classification_counts["unchanged"] == 2
+    assert later_run.review_flags == {
+        "possible_absence": False, "mass_loss": False, "prior_coverage": False,
+    }
+    assert later_run.publishable is False
+    assert later_run.current_read_active is False
+    assert later_run.absence_authorized is False
+    assert later_run.requires_review is True
+    assert later_completer.inspect(ctx, later_run_id) == replace(
+        later_run, recorded=False
+    )
+    assert later_completer.complete(
+        completion_worker, later_attempt_id, later_run_id, tmp_path
+    ) == replace(later_run, recorded=False)
+    with pytest.raises(Conflict, match="already completed"):
+        later_completer.complete(
+            completion_worker, later_attempt_id, uuid4(), tmp_path
+        )
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_run_completions CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_run_completions "
+                "SET absence_authorized=true WHERE id=%s", (later_run_id,),
+            )
     assert core.search_current_fileos(ctx, "later-only") == []
     with pytest.raises(psycopg.Error, match="protected record"):
         with psycopg.connect(admin) as conn:
@@ -7748,12 +7825,35 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert second_later.classification_counts["absence_candidate"] == 1
     assert second_later.absence_authorized is False
     assert second_later.packet_sha256 != first_later.packet_sha256
+    second_closure_id, second_preparation_id = uuid4(), uuid4()
+    second_attempt_id, second_run_id = uuid4(), uuid4()
+    coverage_store.seal(completion_worker, second_later_id, second_closure_id)
+    later_evidence.prepare(worker, second_closure_id, second_preparation_id, tmp_path)
+    second_attempt = later_publisher.publish(
+        later_publication_worker, second_preparation_id, second_attempt_id,
+        tmp_path, code_revision="test-v2-later-documents",
+    )
+    assert second_attempt.ready is True
+    second_run = later_completer.complete(
+        completion_worker, second_attempt_id, second_run_id, tmp_path
+    )
+    assert second_run.review_flags["possible_absence"] is True
+    assert second_run.review_flags["mass_loss"] is False
+    assert second_run.absence_authorized is False
+    assert second_run.current_read_active is False
+    assert later_completer.inspect(ctx, second_run_id) == replace(
+        second_run, recorded=False
+    )
+    third_later_id = uuid4()
+    third_later = later_packets.record(
+        completion_worker, completion_id, third_later_id, tmp_path
+    )
     later_add.unlink()
     later_junk.unlink()
     forged_closure_id = uuid4()
     forged_closure = saved_closure.copy()
-    forged_closure["packet_sha256"] = second_later.packet_sha256
-    forged_closure["observed_at"] = second_later.observed_at.isoformat()
+    forged_closure["packet_sha256"] = third_later.packet_sha256
+    forged_closure["observed_at"] = third_later.observed_at.isoformat()
     with pytest.raises(psycopg.errors.CheckViolation):
         with store.transaction(ctx) as conn:
             conn.execute(
@@ -7761,9 +7861,9 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "actor_id,packet_id,completion_id,source_id,packet_sha256,"
                 "observed_at,closure_sha256,closure) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
-                    ctx.tenant_id, uuid4(), ctx.actor_id, second_later_id,
-                    completion_id, source_id, second_later.packet_sha256,
-                    second_later.observed_at, _canonical_digest(forged_closure),
+                    ctx.tenant_id, uuid4(), ctx.actor_id, third_later_id,
+                    completion_id, source_id, third_later.packet_sha256,
+                    third_later.observed_at, _canonical_digest(forged_closure),
                     Jsonb({**forged_closure, "absence_authorized": True}),
                 ),
             )
@@ -7773,9 +7873,9 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             "actor_id,packet_id,completion_id,source_id,packet_sha256,"
             "observed_at,closure_sha256,closure) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
-                ctx.tenant_id, forged_closure_id, ctx.actor_id, second_later_id,
-                completion_id, source_id, second_later.packet_sha256,
-                second_later.observed_at, _canonical_digest(forged_closure),
+                ctx.tenant_id, forged_closure_id, ctx.actor_id, third_later_id,
+                completion_id, source_id, third_later.packet_sha256,
+                third_later.observed_at, _canonical_digest(forged_closure),
                 Jsonb(forged_closure),
             ),
         )
@@ -7844,7 +7944,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_fileos_v2_later_observation_packets "
             "WHERE completion_id=%s", (completion_id,),
-        ).fetchone()["n"] == 2
+        ).fetchone()["n"] == 3
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
             (source_id,),

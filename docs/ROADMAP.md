@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+ADR-257 now seals a completed **historical** later FileOS v2 run from one
+ready row-outcome attempt and a fresh matching source observation. Possible
+absence, mass-loss and ambiguous prior coverage remain explicit review flags;
+none authorizes current reads or deletion. Next assemble an exact shared
+index generation over the completed run, prove rollback semantics, then run
+owner-approved live shadow and hosted gates before any bounded activation.
+FOS-Master stays operational and unchanged.
+
 ADR-256 now publishes historical normalized documents and seals explicit
 outcomes for every current row of an accepted later FileOS v2 observation.
 Next design the completed later-run authority separately: blocked/error

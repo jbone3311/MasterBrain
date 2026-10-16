@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-257 adds a private, immutable historical later FileOS v2 run completion.
+It requires a ready ADR-256 attempt and a fresh exact source scan after that
+attempt. Migration 0091 binds the packet, closure, preparation and attempt,
+checks counts and review flags in SQL, and fixes no-current/no-absence flags.
+Fictional PostgreSQL lifecycle tests cover blocked and changed refusal, a
+clean run and one possible-absence run. This is **not** a current generation,
+source freshness for Brain search, absence approval, live shadow or cutover.
+Hosted and rollback/activation gates remain open.
+
 ADR-256 adds private later FileOS v2 historical document attempts. A worker
 extracts exact ADR-255 hashed evidence through existing bounded processors,
 publishes normalized DataCore text/chunks, and seals a result for each

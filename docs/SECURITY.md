@@ -1,5 +1,13 @@
 # MasterBrain Security and Privacy
 
+ADR-257's later-run completion is worker-only and checks a ready exact
+attempt against a fresh source-locked, no-follow donor observation. Composite
+foreign keys and a database guard refuse a forged ready basis, counts,
+classification or review flags. The immutable, forced-RLS receipt contains
+counts and digests, not paths or bytes; it has no public route, current-read,
+absence-event or source-effect consumer. Historical success is not live
+source authorization or proof of donor replacement.
+
 ADR-256 confines later FileOS v2 document processing to an exact-scope
 private worker. It rechecks the source-bound preparation and performs two
 confined, source-locked scans around bounded extraction; the terminal row
