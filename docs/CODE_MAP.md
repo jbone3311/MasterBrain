@@ -1,5 +1,11 @@
 # Current MasterBrain code map
 
+ADR-256 adds the [historical later FileOS document publisher](../src/masterbrain/datacore/fileos_v2_later_document_publication.py),
+[exact-row SQL attempt ledger](../migrations/0090_fileos_v2_later_document_attempts.sql)
+and [fictional PostgreSQL lifecycle coverage](../tests/test_postgres.py).
+It reuses the DataCore text/document processors but has no active-index,
+freshness, absence or source-effect consumer.
+
 ADR-255 adds [later hashed-evidence preparation](../src/masterbrain/datacore/fileos_v2_later_evidence.py)
 and [immutable exact-row SQL](../migrations/0089_fileos_v2_later_evidence_preparations.sql),
 reusing the baseline's [shared source-bound evidence primitive](../src/masterbrain/datacore/fileos_v2_preparation.py).

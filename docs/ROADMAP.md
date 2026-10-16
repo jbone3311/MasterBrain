@@ -1,5 +1,12 @@
 # MasterBrain Roadmap
 
+ADR-256 now publishes historical normalized documents and seals explicit
+outcomes for every current row of an accepted later FileOS v2 observation.
+Next design the completed later-run authority separately: blocked/error
+coverage, mass-loss and absence review, generation readiness and rollback.
+Then run owner-approved live shadow before any v2 current read or FOS-Master
+cutover. Historical document success alone is not source freshness.
+
 ADR-255 now prepares source-bound DataCore evidence for every exact later
 FileOS v2 hashed row after a matching fresh scan. Next publish historical
 normalized derivatives under exact prepared-version checks and seal terminal

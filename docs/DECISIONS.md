@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-256](adr/256_fileos_v2_later_document_attempt.md) processes the exact
+later FileOS v2 hashed evidence into historical normalized documents and
+seals an outcome for each accepted current row. It does not complete a later
+run, infer absence or change current FileOS reads.
+
 [ADR-255](adr/255_fileos_v2_later_hashed_evidence.md) re-scans one exact
 ADR-254 closure under the source lock and prepares policy-scoped,
 source-bound DataCore evidence for its hashed rows. It does not publish

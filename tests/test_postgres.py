@@ -49,6 +49,7 @@ from masterbrain.brain_client import BrainReadClient
 from masterbrain.datacore import fileos_donor_transition as transition_module
 from masterbrain.datacore import fileos_v2_completed_preview as completed_preview_module
 from masterbrain.datacore import fileos_v2_document_publication as document_publication_module
+from masterbrain.datacore import fileos_v2_later_document_publication as later_document_module
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
 from masterbrain.datacore.archive_member_contract import decode_result as decode_member_result
 from masterbrain.datacore.archive_member_contract import encode_request as encode_member_request
@@ -77,6 +78,12 @@ from masterbrain.datacore.fileos_v2_index_generation import (
     FileOSV2SearchReviewer,
 )
 from masterbrain.datacore.fileos_v2_later_coverage import FileOSV2LaterCoverageStore
+from masterbrain.datacore.fileos_v2_later_document_publication import (
+    OUTCOMES as LATER_DOCUMENT_OUTCOMES,
+)
+from masterbrain.datacore.fileos_v2_later_document_publication import (
+    FileOSV2LaterDocumentPublisher,
+)
 from masterbrain.datacore.fileos_v2_later_evidence import FileOSV2LaterEvidencePreparer
 from masterbrain.datacore.fileos_v2_later_packets import FileOSV2LaterPacketStore
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
@@ -7561,6 +7568,8 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert private_baseline["absence_authorized"] is False
     later_add = tmp_path / "later_add.txt"
     later_add.write_bytes(b"synthetic later-only evidence")
+    later_junk = tmp_path / "~$draft.docx"
+    later_junk.write_bytes(b"synthetic excluded Office lock")
     later_previewer = FileOSV2CompletedPreviewer(core)
     later = later_previewer.preview(completion_worker, completion_id, tmp_path)
     assert later.counts["unchanged"] == 2
@@ -7590,9 +7599,11 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             "SELECT closure FROM brain_fileos_v2_later_coverage_closures WHERE id=%s",
             (closure_id,),
         ).fetchone()["closure"]
-        assert len(saved_closure["current_rows"]) == 3
+        assert len(saved_closure["current_rows"]) == 4
         assert len(saved_closure["prior_rows"]) == 2
-        assert all(row["kind"] == "hashed" for row in saved_closure["current_rows"])
+        assert {row["kind"] for row in saved_closure["current_rows"]} == {
+            "hashed", "excluded",
+        }
     later_evidence = FileOSV2LaterEvidencePreparer(core)
     later_preparation_id = uuid4()
     later_add.write_bytes(b"synthetic later drift")
@@ -7609,6 +7620,87 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert later_evidence.inspect(ctx, later_preparation_id) == replace(
         later_prepared, recorded=False
     )
+    later_publisher = FileOSV2LaterDocumentPublisher(core)
+    later_publication_worker = Principal(
+        replace(worker.context, scopes=worker.context.scopes | frozenset({
+            "brain.fileos.transition.publish", "brain.document.publish",
+        })),
+        "worker",
+    )
+    later_attempt_id = uuid4()
+    later_add.write_bytes(b"synthetic publication drift")
+    with pytest.raises(Conflict, match="source changed"):
+        later_publisher.publish(
+            later_publication_worker, later_preparation_id, later_attempt_id,
+            tmp_path, code_revision="test-v2-later-documents",
+        )
+    later_add.write_bytes(b"synthetic later-only evidence")
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 later document attempt counts"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_document_attempts(tenant_id,id,"
+                "actor_id,preparation_id,closure_id,packet_id,completion_id,"
+                "source_id,root_binding_sha256,preparation_sha256,code_revision,"
+                "text_extractor_version,document_processor_version,counts,"
+                "ready,observed_at,attempt_sha256) "
+                "SELECT tenant_id,%s,%s,id,closure_id,packet_id,completion_id,"
+                "source_id,root_binding_sha256,preparation_sha256,'forged',"
+                "'forged',NULL,%s,true,clock_timestamp(),%s "
+                "FROM brain_fileos_v2_later_evidence_preparations WHERE id=%s",
+                (
+                    uuid4(), ctx.actor_id,
+                    Jsonb({outcome: 0 for outcome in LATER_DOCUMENT_OUTCOMES}),
+                    "0" * 64, later_preparation_id,
+                ),
+            )
+    original_later_extract = later_document_module.extract_source_version
+
+    def failed_later_add(root: Path, item: dict[str, Any]) -> ExtractionResult:
+        if item["locator"] == "later_add.txt":
+            return ExtractionResult(item["version_id"], item["locator"], ExtractionStatus.FAILED)
+        return original_later_extract(root, item)
+
+    blocked_later_id = uuid4()
+    with monkeypatch.context() as patched:
+        patched.setattr(later_document_module, "extract_source_version", failed_later_add)
+        blocked_later = later_publisher.publish(
+            later_publication_worker, later_preparation_id, blocked_later_id,
+            tmp_path, code_revision="test-v2-later-documents",
+        )
+    assert blocked_later.ready is False
+    assert blocked_later.counts["failed"] == 1
+    assert blocked_later.counts["extracted"] == 2
+    assert blocked_later.counts["excluded_source"] == 1
+    assert later_publisher.publish(
+        later_publication_worker, later_preparation_id, blocked_later_id,
+        tmp_path, code_revision="test-v2-later-documents",
+    ) == replace(blocked_later, recorded=False)
+    later_attempt = later_publisher.publish(
+        later_publication_worker, later_preparation_id, later_attempt_id, tmp_path,
+        code_revision="test-v2-later-documents",
+    )
+    assert later_attempt.recorded is True
+    assert later_attempt.ready is True
+    assert later_attempt.counts["extracted"] == 3
+    assert later_attempt.counts["excluded_source"] == 1
+    assert later_attempt.counts["scan_error"] == 0
+    assert later_attempt.publishable is False and later_attempt.absence_authorized is False
+    assert later_publisher.inspect(ctx, later_attempt_id) == replace(
+        later_attempt, recorded=False
+    )
+    assert core.search_current_fileos(ctx, "later-only") == []
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_document_attempts CASCADE")
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_document_attempt_items CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_document_attempt_items "
+                "SET outcome='failed' WHERE attempt_id=%s", (later_attempt_id,),
+            )
     with pytest.raises(psycopg.Error, match="protected record"):
         with psycopg.connect(admin) as conn:
             conn.execute("TRUNCATE brain_fileos_v2_later_evidence_preparations CASCADE")
@@ -7636,6 +7728,14 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         assert later_row["current_version_id"] is None
         assert later_row["prepared_version_id"] is not None
         assert later_row["storage"] == "source_bound"
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_later_document_attempt_items "
+            "WHERE attempt_id=%s", (later_attempt_id,),
+        ).fetchone()["n"] == 4
+        assert conn.execute(
+            "SELECT outcome FROM brain_fileos_v2_later_document_attempt_items "
+            "WHERE attempt_id=%s AND locator='~$draft.docx'", (later_attempt_id,),
+        ).fetchone()["outcome"] == "excluded_source"
     (tmp_path / "new.txt").unlink()
     possible_absence = later_previewer.preview(completion_worker, completion_id, tmp_path)
     assert possible_absence.counts["absence_candidate"] == 1
@@ -7649,6 +7749,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert second_later.absence_authorized is False
     assert second_later.packet_sha256 != first_later.packet_sha256
     later_add.unlink()
+    later_junk.unlink()
     forged_closure_id = uuid4()
     forged_closure = saved_closure.copy()
     forged_closure["packet_sha256"] = second_later.packet_sha256
@@ -7707,6 +7808,20 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert later_evidence.prepare(
         worker, closure_id, later_preparation_id, tmp_path
     ) == replace(later_prepared, recorded=False)
+    assert later_publisher.publish(
+        later_publication_worker, later_preparation_id, later_attempt_id, tmp_path,
+        code_revision="test-v2-later-documents",
+    ) == replace(later_attempt, recorded=False)
+    with pytest.raises(Conflict, match="already ready"):
+        later_publisher.publish(
+            later_publication_worker, later_preparation_id, uuid4(), tmp_path,
+            code_revision="test-v2-later-documents",
+        )
+    with pytest.raises(Conflict, match="integrity requires review"):
+        later_publisher.publish(
+            later_publication_worker, later_preparation_id, later_attempt_id, tmp_path,
+            code_revision="different-revision",
+        )
     with pytest.raises(Conflict, match="identity changed"):
         later_evidence.prepare(worker, closure_id, uuid4(), tmp_path)
     with pytest.raises(AccessDenied, match="worker required"):
@@ -7888,7 +8003,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "SELECT count(*) AS n FROM brain_change_events WHERE source_id=%s",
                 (source_id,),
             ).fetchone()["n"]
-            == 1
+            == 4
         )
     assert core.fileos_freshness(ctx, source_id)["latest_complete_run"]["run_id"] == run_id
     with psycopg.connect(admin) as conn:

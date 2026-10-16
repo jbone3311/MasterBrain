@@ -139,6 +139,11 @@ ADR-255 uses a fresh source-locked no-follow rescan to match that closure
 exactly, then reuses the baseline's policy-scoped source-version/evidence
 primitive for each hashed row. The private mapping is immutable; no current
 pointer, document, later-run completion or absence event changes.
+ADR-256 adds a separate private document attempt over that later evidence:
+recheck source before and after confined extraction, publish historical
+DataCore derivatives for successful hashes, and seal one outcome per accepted
+current row. It does not advance run freshness, authorize absence or activate
+a v2 current index. Scan-error observations still stop before preparation.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for

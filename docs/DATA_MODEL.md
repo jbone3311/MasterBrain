@@ -1,5 +1,15 @@
 # MasterBrain Data Model
 
+Migration 0090 adds immutable `brain_fileos_v2_later_document_attempts` and
+`brain_fileos_v2_later_document_attempt_items`. A composite FK binds one
+attempt to an exact ADR-255 preparation; blocked attempts may be retried,
+but a partial unique index permits only one ready attempt. Item FKs bind hashed outcomes to
+prepared versions and extracted documents to the same evidence. A deferred
+SQL guard checks every current closure row and exact outcome counts. Fixed
+false publication/absence flags, forced tenant RLS/login fence, source-lock
+and protected truncation apply. This is historical processing, not a v2
+completed-run or active-index table (ADR-256).
+
 Migration 0089 adds private, immutable
 `brain_fileos_v2_later_evidence_preparations` and
 `brain_fileos_v2_later_prepared_rows`. Composite packet/closure FKs,

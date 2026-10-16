@@ -47,12 +47,13 @@ freshness certificate, or a live-source test. The
 pinned FOS-Master donor remains untouched and its FileOS
 shadow comparison is nonpublishing.
 The development branch also has a private, synthetic-only FileOS v2 baseline
-and later-observation path (ADRs 251–255): a completed-baseline-bound scan,
+and later-observation path (ADRs 251–256): a completed-baseline-bound scan,
 immutable observation packet, exact historical row-coverage closure and
-source-bound evidence for matching later hashed rows. These are historical
-inputs, **not** a completed later run, absence authority, current
-FileOS read switch or FOS-Master replacement. The next gate is terminal
-per-row document processing with replay and rollback, followed by owner-reviewed live
+source-bound evidence for matching later hashed rows, followed by historical
+document attempts with exact row outcomes. These are **not** a completed
+later run, absence authority, current FileOS read switch or FOS-Master
+replacement. The next gate is completed-run semantics with reviewed error,
+absence and rollback policy, followed by owner-reviewed live
 shadow and hosted validation. See [implementation status](docs/IMPLEMENTATION_STATUS.md)
 and [FileOS migration plan](docs/FOS_MIGRATION.md).
 

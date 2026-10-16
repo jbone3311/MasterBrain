@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+ADR-256 adds private later FileOS v2 historical document attempts. A worker
+extracts exact ADR-255 hashed evidence through existing bounded processors,
+publishes normalized DataCore text/chunks, and seals a result for each
+accepted current row. Fictional PostgreSQL coverage includes a later-only
+text file, an excluded Office lock file, failed-attempt replay and retry to
+one ready historical attempt, drift refusal, direct-SQL
+omission and no current/absence effect. Scan-error observations still fail
+before preparation; this is not a completed later run. Hosted, actual-image,
+live shadow, rollback, current-read and donor-cutover gates remain open.
+
 ADR-255 adds private later FileOS v2 hashed-evidence preparation. A worker
 rechecks the completed baseline and ADR-254 closure, rescans the bound root,
 refuses drift/errors, and inserts or reuses exact policy-scoped source-bound

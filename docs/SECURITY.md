@@ -1,5 +1,13 @@
 # MasterBrain Security and Privacy
 
+ADR-256 confines later FileOS v2 document processing to an exact-scope
+private worker. It rechecks the source-bound preparation and performs two
+confined, source-locked scans around bounded extraction; the terminal row
+ledger is immutable, tenant-fenced and cannot authorize absence/current
+state. A changed source refuses final sealing. Successful historical text
+derivatives may create DataCore change records, but they do not change v1
+current pointers, latest-complete freshness or source files.
+
 ADR-255 requires a scoped private worker and fresh confined source rescan
 before preparing any later FileOS v2 hash. The scan must match the sealed
 closure exactly and have no errors; deferred/excluded/error rows never get

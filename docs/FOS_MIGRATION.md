@@ -260,6 +260,11 @@ sealed hashed rows only after an exact fresh donor-policy rescan. A new later-
 only file is represented without becoming current. Document publication,
 terminal processing of all rows, completed later-run semantics, rollback,
 live shadow and cutover remain separate gates.
+ADR-256 now processes accepted later hashed rows into historical normalized
+documents and seals one explicit outcome per current row. Deferred/excluded
+rows are accounted without fabricated content; scan errors still block at
+preparation. The attempt is not a completed later run, current index or
+absence authority. FOS-Master remains unchanged.
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then

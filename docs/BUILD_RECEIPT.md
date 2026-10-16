@@ -2,6 +2,32 @@
 
 Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Historical later FileOS v2 document attempt — current unmerged branch
+
+ADR-256 and migration 0090 extract exact later hashed evidence into
+historical normalized DataCore documents, then seal one outcome per current
+observation row. The fictional PostgreSQL lifecycle and migration/protected-
+table checks passed **22/22**. A later-only text file produced a historical
+document, an excluded Office lock file received `excluded_source`, drift and
+direct-SQL incomplete attempts were refused, a simulated failed extraction
+sealed a blocked attempt and a clean retry sealed the sole ready attempt,
+replay/immutability held, and
+current FileOS search, current pointers, freshness and absence remained
+unchanged. The pinned, unchanged FOS-Master 3,000-file synthetic shadow
+matched **3,004** ordinary/replay/changed/candidate rows, with six known
+policy differences still explicit.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,855 passed, 19 skipped, zero failed**
+in 6m55s; **694/695 PostgreSQL-marked tests executed**. The sole
+PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (147 source files), offline docs (357 Markdown
+files / 1,840 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the new publisher. This is local fictional
+evidence, not hosted exact-head, actual-image, live-root or cutover acceptance.
+Scan-error observations cannot yet enter the preparation path; this attempt
+is not a completed later FileOS run.
+
 ## Source-bound later FileOS v2 hash evidence — current unmerged branch
 
 ADR-255 and migration 0089 prepare historical DataCore source versions and
