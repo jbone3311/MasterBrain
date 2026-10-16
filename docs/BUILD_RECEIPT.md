@@ -35,6 +35,12 @@ Hosted exact-head CI, actual-image execution, run-level owner signoff,
 fresh live shadow, rollback, current-v2 activation and donor cutover remain
 open. No real mail, files or provider tokens were used.
 
+At pushed code head `199e677`, all **12 hosted check runs failed before
+starting**. The exact-head `gate` annotation says recent account payments
+failed or the spending limit needs increasing. This is a hosted billing
+block, not a Python, PostgreSQL or JavaScript test failure. PR #245 remains
+open and must not be merged on local-only evidence.
+
 ## Later FileOS classification scale gate and proposed owner decision
 
 The ADR-260 historical row-review API now has direct fictional 3,000-row
