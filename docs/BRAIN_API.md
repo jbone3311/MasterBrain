@@ -104,6 +104,15 @@ change privileged historical Email routes, and is synthetic-only proof.
   or ungranted sources and wrong-source generations return 404; stale or
   paused basis returns 409. Neither hits nor non-hits establish current
   FileOS state or absence, and no activation occurs (ADR-259).
+- `POST /v1/brain/sources/{source_id}/v2-later-review-rows` — implemented
+  human-only inspection of the exact prior-row classifications behind one
+  named ready historical later generation. The closed request takes
+  `generation_id`, optional exact `state`, `offset` (0–20,000) and `limit`
+  (1–100). It returns deterministic relative-locator pages, total and
+  `next_offset`, all classification counts and run review flags. It uses the
+  same three scopes and fresh source/run/closure checks as the historical
+  search comparison. Rows are untrusted; `absence_authorized` and
+  `current_read_active` are always false (ADR-260).
 
 ADR-142 admits enrolled assistants to the five exact-source FileOS reads above
 and the aggregate/retained Brain searches. An ungranted source is

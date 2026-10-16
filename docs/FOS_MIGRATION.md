@@ -54,7 +54,8 @@ Golden fixtures are synthetic and contain no private FileOS data.
 
 | Tranche | Donor baseline | MasterBrain location | Parity | Status |
 |---|---|---|---|---|
-| DC-002AC human later search comparison | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_index_generation.py`, Brain API, ADR-259 | Fictional human/worker, source-grant, second-run review-flag and unchanged-current-search checks | Historical and nonactivating; absence review, rollback, live shadow, hosted gates and cutover remain open |
+| DC-002AD human later classification inspection | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_index_generation.py`, Brain API, ADR-260 | Fictional exact prior-row paging, possible-absence candidate, worker/source-grant and closed-input checks | Historical and nonactivating; owner adjudication, rollback, live shadow, hosted gates and cutover remain open |
+| DC-002AC human later search comparison | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_index_generation.py`, Brain API, ADR-259 | Fictional human/worker, source-grant, second-run review-flag and unchanged-current-search checks | Historical and nonactivating; classification inspection now ADR-260, while owner adjudication, rollback, live shadow, hosted gates and cutover remain open |
 | DC-002AB later shared generation | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_index_generation.py`, migration 0092, ADR-258 | Fictional exact ready-run/hashed-item/chunk assembly, forged SQL and activation refusal; 3,000-file later stress and full local suite pass | Historical and nonactivating; human comparison now ADR-259, while live shadow, rollback, hosted gates and cutover remain open |
 | DC-002AA historical later-run completion | Pinned FOS-Master `218d5cae` donor scanner/policy; donor unchanged | `fileos_v2_later_run_completion.py`, migration 0091, ADR-257 | Fictional clean/possible-absence run, ready-attempt and fresh-scan binding, SQL forgery/immutability checks; local full suite 3,856 passed/19 skipped; 3,004-row donor shadow unchanged | Historical only; generation assembly, rollback, owner-approved live shadow, hosted gates, current reads and cutover remain open |
 | EB-006I first-party XLSX result review | ADR-242–244 synthetic exact result/review bridge; FOS-Master unchanged | `web/xlsx_review.js`, Email owner screen, ADR-246 | Bounded pages, browser-computed full-text SHA-256, exact human review, stale-session/refusal tests and fictional API-to-UI shape pass | Existing approval ID required; no browser worker power, approval queue, actual-browser/image/hosted gate, live mail or cutover |
@@ -277,7 +278,8 @@ ADR-258 now assembles an exact later-run shared DataCore generation and
 checks its hashed item and chunk membership in SQL. It cannot be activated;
 ADR-259 now adds the human historical comparison with separate result layers
 and run review flags; it changes no current read or donor source. The next
-gates are possible-absence review,
+step, ADR-260, exposes exact historical prior-row classifications for bounded
+human inspection. The remaining gates are explicit owner adjudication,
 rollback-ready policy, live shadow and hosted validation.
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,

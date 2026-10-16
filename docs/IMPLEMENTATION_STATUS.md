@@ -1,5 +1,15 @@
 # MasterBrain Implementation Status
 
+ADR-260 adds a bounded human-only API page over the exact historical
+prior-row classifications of a ready later FileOS generation. It shares
+ADR-259's source-grant and active-source/root/run checks and independently
+validates the immutable coverage closure. A fictional PostgreSQL lifecycle
+test covers paging, possible absence, closed API bounds, worker/source-grant
+denial and unchanged current search; the full local fictional suite passes.
+This is inspection, not an owner decision, current v2 activation, absence
+authority or FileOS cutover. Hosted gates and rollback-ready policy remain
+separate.
+
 ADR-259 implements a human-only Brain API comparison of one ready historical
 later FileOS generation with active v1. Both result layers are bounded and
 separately ranked; completed-run review flags travel with the response.

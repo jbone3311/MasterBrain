@@ -9,12 +9,19 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from email_brain.auth import Principal
+from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Conflict, NotFound
 from masterbrain.datacore.contracts import stable_id
-from masterbrain.datacore.fileos_v2_later_run_completion import FileOSV2LaterRunCompleter
+from masterbrain.datacore.fileos_v2_consecutive_preview import _STATES
+from masterbrain.datacore.fileos_v2_later_coverage import FileOSV2LaterCoverageStore
+from masterbrain.datacore.fileos_v2_later_run_completion import (
+    FileOSV2LaterRunCompleter,
+    FileOSV2LaterRunCompletion,
+)
 from masterbrain.datacore.persistence import (
     _IDENTITY,
     INDEX_CHUNKER_VERSION,
@@ -55,12 +62,101 @@ class FileOSV2LaterSearchPreview:
     candidate_visibility: str = "historical_preview"
 
 
+@dataclass(frozen=True, slots=True)
+class FileOSV2LaterReviewRows:
+    source_id: str
+    run_id: UUID
+    generation_id: str
+    review_flags: dict[str, bool]
+    classification_counts: dict[str, int]
+    state: str | None
+    offset: int
+    total_rows: int
+    rows: tuple[dict[str, str], ...]
+    next_offset: int | None
+    candidate_visibility: str = "historical_preview"
+    absence_authorized: bool = False
+    current_read_active: bool = False
+
+
 class FileOSV2LaterSearchReviewer:
     """Human-only comparison; a ready generation is never a current source."""
 
     def __init__(self, core: DataCoreStore) -> None:
         self.core = core
         self.runs = FileOSV2LaterRunCompleter(core)
+        self.coverage = FileOSV2LaterCoverageStore(core)
+
+    def _candidate_locked(
+        self, conn: Connection[dict[str, Any]], ctx: TenantContext,
+        source_id: str, generation_id: str,
+    ) -> tuple[FileOSV2LaterRunCompletion, str | None, UUID]:
+        conn.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+            (f"{ctx.tenant_id}:fileos-source:{source_id}",),
+        )
+        candidate = conn.execute(
+            "SELECT g.id,g.v2_later_run_id,g.v2_later_run_sha256,"
+            "r.attempt_id,r.closure_id,r.baseline_completion_id,"
+            "r.root_binding_sha256 "
+            "FROM brain_index_generations g "
+            "JOIN brain_index_generation_receipts ready "
+            "ON ready.tenant_id=g.tenant_id AND ready.generation_id=g.id "
+            "AND ready.ready_at IS NOT NULL "
+            "JOIN brain_fileos_v2_later_run_completions r "
+            "ON r.tenant_id=g.tenant_id AND r.id=g.v2_later_run_id "
+            "AND r.source_id=g.source_id "
+            "AND r.attempt_id=g.v2_later_attempt_id "
+            "AND r.run_sha256=g.v2_later_run_sha256 "
+            "WHERE g.tenant_id=%s AND g.id=%s AND g.source_id=%s "
+            "AND g.basis_kind='v2_later'",
+            (ctx.tenant_id, generation_id, source_id),
+        ).fetchone()
+        if candidate is None:
+            raise NotFound()
+        run = self.runs._saved(
+            conn, candidate["v2_later_run_id"], candidate["attempt_id"],
+            None, None,
+        )
+        baseline = conn.execute(
+            "SELECT c.prior_run_id,s.prior_actor_id,s.prior_observed_at "
+            "FROM brain_fileos_v2_baseline_completions c "
+            "JOIN brain_fileos_v2_staged_inventories s "
+            "ON s.tenant_id=c.tenant_id AND s.id=c.stage_id "
+            "WHERE c.id=%s", (candidate["baseline_completion_id"],),
+        ).fetchone()
+        latest = conn.execute(
+            "SELECT actor_id,run_id,observed_at,root_binding_sha256 "
+            "FROM brain_fileos_run_receipts WHERE source_id=%s "
+            "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
+            (source_id,),
+        ).fetchone()
+        source = conn.execute(
+            "SELECT root_binding_sha256,status FROM brain_sources "
+            "WHERE id=%s AND kind='fileos'", (source_id,),
+        ).fetchone()
+        if (
+            run is None or run.source_id != source_id
+            or run.run_sha256 != candidate["v2_later_run_sha256"]
+            or baseline is None or latest is None or source is None
+            or source["status"] != "active"
+            or latest["actor_id"] != baseline["prior_actor_id"]
+            or latest["run_id"] != baseline["prior_run_id"]
+            or latest["observed_at"] != baseline["prior_observed_at"]
+            or latest["root_binding_sha256"] != candidate["root_binding_sha256"]
+            or source["root_binding_sha256"] != candidate["root_binding_sha256"]
+        ):
+            raise Conflict("FileOS v2 later review basis requires review")
+        active = conn.execute(
+            "SELECT a.generation_id,g.basis_kind FROM brain_index_activations a "
+            "JOIN brain_index_generations g ON g.tenant_id=a.tenant_id "
+            "AND g.id=a.generation_id WHERE a.source_id=%s "
+            "ORDER BY a.activated_at DESC,a.idempotency_key DESC LIMIT 1",
+            (source_id,),
+        ).fetchone()
+        if active is not None and active["basis_kind"] != "v1":
+            raise Conflict("FileOS v2 later current policy requires review")
+        return run, active["generation_id"] if active else None, candidate["closure_id"]
 
     def preview(
         self, principal: Principal, source_id: str, generation_id: str,
@@ -86,69 +182,9 @@ class FileOSV2LaterSearchReviewer:
         if ctx.source_ids is not None and source_id not in ctx.source_ids:
             raise NotFound()
         with self.core.store.transaction(ctx) as conn:
-            conn.execute(
-                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
-                (f"{ctx.tenant_id}:fileos-source:{source_id}",),
+            run, active_id, _closure_id = self._candidate_locked(
+                conn, ctx, source_id, generation_id
             )
-            candidate = conn.execute(
-                "SELECT g.id,g.v2_later_run_id,g.v2_later_run_sha256,"
-                "r.attempt_id,r.baseline_completion_id,r.root_binding_sha256 "
-                "FROM brain_index_generations g "
-                "JOIN brain_index_generation_receipts ready "
-                "ON ready.tenant_id=g.tenant_id AND ready.generation_id=g.id "
-                "AND ready.ready_at IS NOT NULL "
-                "JOIN brain_fileos_v2_later_run_completions r "
-                "ON r.tenant_id=g.tenant_id AND r.id=g.v2_later_run_id "
-                "AND r.attempt_id=g.v2_later_attempt_id "
-                "AND r.run_sha256=g.v2_later_run_sha256 "
-                "WHERE g.tenant_id=%s AND g.id=%s AND g.source_id=%s "
-                "AND g.basis_kind='v2_later'",
-                (ctx.tenant_id, generation_id, source_id),
-            ).fetchone()
-            if candidate is None:
-                raise NotFound()
-            run = self.runs._saved(
-                conn, candidate["v2_later_run_id"], candidate["attempt_id"],
-                None, None,
-            )
-            baseline = conn.execute(
-                "SELECT c.prior_run_id,s.prior_actor_id,s.prior_observed_at "
-                "FROM brain_fileos_v2_baseline_completions c "
-                "JOIN brain_fileos_v2_staged_inventories s "
-                "ON s.tenant_id=c.tenant_id AND s.id=c.stage_id "
-                "WHERE c.id=%s", (candidate["baseline_completion_id"],),
-            ).fetchone()
-            latest = conn.execute(
-                "SELECT actor_id,run_id,observed_at,root_binding_sha256 "
-                "FROM brain_fileos_run_receipts WHERE source_id=%s "
-                "ORDER BY observed_at DESC,completed_at DESC,run_id DESC LIMIT 1",
-                (source_id,),
-            ).fetchone()
-            source = conn.execute(
-                "SELECT root_binding_sha256,status FROM brain_sources "
-                "WHERE id=%s AND kind='fileos'", (source_id,),
-            ).fetchone()
-            if (
-                run is None or run.run_sha256 != candidate["v2_later_run_sha256"]
-                or baseline is None or latest is None or source is None
-                or source["status"] != "active"
-                or latest["actor_id"] != baseline["prior_actor_id"]
-                or latest["run_id"] != baseline["prior_run_id"]
-                or latest["observed_at"] != baseline["prior_observed_at"]
-                or latest["root_binding_sha256"] != candidate["root_binding_sha256"]
-                or source["root_binding_sha256"] != candidate["root_binding_sha256"]
-            ):
-                raise Conflict("FileOS v2 later search basis requires review")
-            active = conn.execute(
-                "SELECT a.generation_id,g.basis_kind FROM brain_index_activations a "
-                "JOIN brain_index_generations g ON g.tenant_id=a.tenant_id "
-                "AND g.id=a.generation_id WHERE a.source_id=%s "
-                "ORDER BY a.activated_at DESC,a.idempotency_key DESC LIMIT 1",
-                (source_id,),
-            ).fetchone()
-            if active is not None and active["basis_kind"] != "v1":
-                raise Conflict("FileOS v2 later current policy requires review")
-            active_id = active["generation_id"] if active else None
             active_hits = (
                 _search_fileos_generation(conn, ctx.tenant_id, active_id, query, limit)
                 if active_id is not None else []
@@ -163,6 +199,58 @@ class FileOSV2LaterSearchReviewer:
             return FileOSV2LaterSearchPreview(
                 source_id, run.run_id, generation_id, active_id,
                 dict(run.review_flags), tuple(active_hits), tuple(candidate_hits),
+            )
+
+    def review_rows(
+        self, principal: Principal, source_id: str, generation_id: str,
+        *, state: str | None = None, offset: int = 0, limit: int = 50,
+    ) -> FileOSV2LaterReviewRows:
+        """Page exact prior-row classifications, never infer or approve absence."""
+        if principal.client_kind != "human":
+            raise AccessDenied("human FileOS later transition review required")
+        ctx = principal.context
+        for scope in (
+            "brain.fileos.transition.review", "brain.search", "brain.evidence.read"
+        ):
+            self.core.store.require(ctx, scope)
+        if (
+            not isinstance(source_id, str) or not _IDENTITY.fullmatch(source_id)
+            or not isinstance(generation_id, str)
+            or not _IDENTITY.fullmatch(generation_id)
+            or state is not None and state not in _STATES
+            or not isinstance(offset, int) or isinstance(offset, bool)
+            or not 0 <= offset <= 20000
+            or not isinstance(limit, int) or isinstance(limit, bool)
+            or not 1 <= limit <= 100
+        ):
+            raise ValueError("invalid FileOS v2 later review rows request")
+        if ctx.source_ids is not None and source_id not in ctx.source_ids:
+            raise NotFound()
+        with self.core.store.transaction(ctx) as conn:
+            run, _active_id, closure_id = self._candidate_locked(
+                conn, ctx, source_id, generation_id
+            )
+            self.coverage._inspect_locked(conn, closure_id)
+            closure_row = conn.execute(
+                "SELECT closure FROM brain_fileos_v2_later_coverage_closures "
+                "WHERE id=%s", (closure_id,),
+            ).fetchone()
+            if closure_row is None:
+                raise Conflict("FileOS v2 later coverage requires review")
+            closure = closure_row["closure"]
+            rows = closure["prior_rows"]
+            if state is not None:
+                rows = [row for row in rows if row["state"] == state]
+            selected = tuple(dict(row) for row in rows[offset:offset + limit])
+            next_offset = offset + len(selected) if offset + len(selected) < len(rows) else None
+            self.core.store.audit(
+                conn, ctx, "brain.fileos_v2_later_review_rows",
+                "index_generation", generation_id,
+            )
+            return FileOSV2LaterReviewRows(
+                source_id, run.run_id, generation_id, dict(run.review_flags),
+                dict(run.classification_counts), state, offset, len(rows),
+                selected, next_offset,
             )
 
 

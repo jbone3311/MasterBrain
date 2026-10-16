@@ -1,5 +1,10 @@
 # Changelog
 
+- Add bounded human inspection of exact historical later FileOS prior-row
+  classifications, including possible-missing candidates. Results are
+  source-bound, revalidated, read-only and explicitly nonauthoritative for
+  absence, current search or file effects.
+
 - Add a human-only, source-bound comparison of a ready historical later
   FileOS generation with active v1 search, including run review flags and
   distinct result layers. Harden baseline-v2 preview against paused or

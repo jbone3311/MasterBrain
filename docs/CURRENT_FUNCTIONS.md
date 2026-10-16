@@ -1,5 +1,10 @@
 # Current MasterBrain functions
 
+ADR-260 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-review-rows`
+to page the immutable prior-row classifications of a named historical later
+generation, optionally filtered by state. Possible-missing rows are visible
+for review, not approved as absences; the route is read-only.
+
 ADR-259 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-search-preview`
 for a named ready historical later FileOS generation. It shows active-v1 and
 historical candidate hits in separate bounded layers with completed-run

@@ -2,6 +2,31 @@
 
 Updated 2026-10-16 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Human historical later FileOS row inspection — current unmerged branch
+
+ADR-260 adds a bounded, human-only view of the immutable prior-row
+classifications behind one ready historical later FileOS generation. It
+reuses the ADR-259 source/run/root guard and independently revalidates the
+ADR-254 closure. A fictional PostgreSQL/API lifecycle test pages unchanged
+rows, filters one exact possible-absence row from a second generation,
+rejects worker/ungranted/wrong-generation/invalid requests, and confirms
+`absence_authorized=false`, `current_read_active=false` and unchanged current
+search. An explicit source-ID join and reviewer check were added before the
+final full run; an earlier partial run was interrupted for that hardening,
+not counted as acceptance.
+
+The complete fictional Python 3.14 suite then passed on disposable
+PostgreSQL 17.11 bound only to **127.0.0.1**: **3,856 passed, 19 skipped,
+zero failed** in 8m44s; **694/695 PostgreSQL-marked tests executed**. The
+single PostgreSQL-marked skip is the Docker-backed trial launcher. The
+first-party Node suite passed **185/185**; Ruff, strict mypy (149 source
+files), offline docs (361 Markdown files / 1,857 paths and fragments),
+diff whitespace, repository structural gate and offline wheel build passed.
+The unchanged pinned FOS-Master checkout remains the donor; the full suite
+includes its fictional parity corpus. This is local synthetic evidence,
+not hosted CI, an actual isolated image, owner adjudication, live shadow,
+activation, rollback or donor-cutover acceptance.
+
 ## Human historical later FileOS comparison — current unmerged branch
 
 ADR-259 adds a source-bound human-only comparison of a named ready historical

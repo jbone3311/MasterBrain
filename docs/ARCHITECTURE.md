@@ -35,6 +35,11 @@ Gmail / Graph / IMAP / JMAP             Filesystem / Dropbox / OneDrive
 
 ## Boundary rules
 
+ADR-260 pages exact immutable later-run prior-row classifications through a
+human-only Brain API view. It revalidates the closure and ADR-259 basis;
+classification of a possible-missing file is never absence authority. Owner
+adjudication, activation, rollback and donor cutover remain separate.
+
 ADR-259 adds a human-only, source-bound Brain API comparison of a ready
 historical later generation and active v1. It rechecks the completed run,
 root/v1 basis and active source; result layers are not a current-read or

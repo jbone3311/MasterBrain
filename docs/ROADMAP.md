@@ -1,5 +1,13 @@
 # MasterBrain Roadmap
 
+ADR-260 makes the underlying historical FileOS prior-row classifications
+inspectable in bounded, source-bound pages, including possible-missing and
+coverage-ambiguous rows. The next gate is an explicit owner adjudication
+contract bound to one exact run/generation and a fresh observation, followed
+by rollback-ready activation policy, owner-approved live shadow, hosted
+exact-head checks and independent review. Inspection alone changes no
+current read, absence event or donor runtime.
+
 ADR-259 now lets a human compare a named historical later FileOS generation
 with active v1 in separate bounded result layers. The next gate is a formal
 possible-absence/mass-loss review and rollback-ready activation policy;

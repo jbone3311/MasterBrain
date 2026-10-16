@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-260](adr/260_human_later_fileos_classification_review.md) exposes
+deterministically paged prior-row classifications of one ready historical
+later FileOS generation to a scoped human reviewer. Possible-missing rows
+remain discrepancies, not approved absences or current FileOS state.
+
 [ADR-259](adr/259_human_later_fileos_search_comparison.md) adds a human-only,
 source-bound, read-only comparison of a ready historical later FileOS v2
 generation with active v1. It exposes run review flags but grants no current

@@ -29,6 +29,20 @@ class FileOSV2SearchPreviewRequest(ClosedModel):
         return value
 
 
+FileOSV2ReviewState = Literal[
+    "unchanged", "changed", "deferred_prior", "excluded_prior",
+    "error_covered_prior", "unobserved_prior", "absence_candidate",
+    "newly_hashed_prior", "unobserved_hashless_prior",
+]
+
+
+class FileOSV2LaterReviewRowsRequest(ClosedModel):
+    generation_id: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")
+    state: FileOSV2ReviewState | None = None
+    offset: int = Field(default=0, ge=0, le=20000, strict=True)
+    limit: int = Field(default=50, ge=1, le=100, strict=True)
+
+
 class EmailFamilySearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     message_limit: int = Field(default=10, ge=1, le=25, strict=True)

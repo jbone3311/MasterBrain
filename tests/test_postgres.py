@@ -7794,6 +7794,28 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert {hit.locator for hit in later_preview.candidate_hits} == {
         "later_add.txt",
     }
+    first_rows = later_search_reviewer.review_rows(
+        authorizing_human, source_id, later_generation.generation_id,
+        offset=0, limit=1,
+    )
+    assert first_rows.total_rows == 2
+    assert len(first_rows.rows) == 1
+    assert first_rows.next_offset == 1
+    assert first_rows.rows[0]["state"] == "unchanged"
+    second_rows = later_search_reviewer.review_rows(
+        authorizing_human, source_id, later_generation.generation_id,
+        offset=first_rows.next_offset, limit=1,
+    )
+    assert second_rows.total_rows == 2
+    assert second_rows.next_offset is None
+    assert len(second_rows.rows) == 1
+    assert second_rows.rows[0]["locator"] != first_rows.rows[0]["locator"]
+    assert first_rows.absence_authorized is False
+    assert first_rows.current_read_active is False
+    with pytest.raises(AccessDenied, match="human FileOS later"):
+        later_search_reviewer.review_rows(
+            later_index_worker, source_id, later_generation.generation_id,
+        )
     with pytest.raises(NotFound):
         later_search_reviewer.preview(
             Principal(replace(authorizing_human.context,
@@ -7815,6 +7837,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
     later_review_path = f"/v1/brain/sources/{source_id}/v2-later-search-preview"
+    later_rows_path = f"/v1/brain/sources/{source_id}/v2-later-review-rows"
     later_review_body = {
         "generation_id": later_generation.generation_id,
         "query": "later-only", "limit": 10,
@@ -7835,6 +7858,42 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             "later_add.txt",
         }
         assert body["untrusted_content"] is True
+        row_response = client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id, "limit": 1},
+            headers=headers,
+        )
+        assert row_response.status_code == 200, row_response.text
+        row_body = row_response.json()
+        assert row_body["total_rows"] == 2
+        assert row_body["next_offset"] == 1
+        assert row_body["rows"] == [first_rows.rows[0]]
+        assert row_body["absence_authorized"] is False
+        assert row_body["current_read_active"] is False
+        assert row_body["untrusted_content"] is True
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id,
+                  "state": "not_a_state"},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id,
+                  "limit": 0},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id,
+                  "unexpected": True},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": "index_generation_v2_later_" + "0" * 32},
+            headers=headers,
+        ).status_code == 404
         assert client.post(
             later_review_path, json={**later_review_body, "limit": 0},
             headers=headers,
@@ -7853,6 +7912,11 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     with TestClient(create_app(store, OtherSourceHumanAuthenticator())) as client:
         assert client.post(
             later_review_path, json=later_review_body,
+            headers={"Authorization": "Bearer " + later_review_token},
+        ).status_code == 404
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id},
             headers={"Authorization": "Bearer " + later_review_token},
         ).status_code == 404
     with store.transaction(ctx) as conn:
@@ -8045,6 +8109,29 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert second_preview.review_flags["possible_absence"] is True
     assert second_preview.candidate_visibility == "historical_preview"
     assert second_preview.active_v1_hits == ()
+    absence_rows = later_search_reviewer.review_rows(
+        authorizing_human, source_id, second_generation.generation_id,
+        state="absence_candidate",
+    )
+    assert absence_rows.classification_counts["absence_candidate"] == 1
+    assert absence_rows.total_rows == 1
+    assert absence_rows.rows[0]["locator"] == "new.txt"
+    assert absence_rows.rows[0]["state"] == "absence_candidate"
+    assert absence_rows.review_flags["possible_absence"] is True
+    assert absence_rows.absence_authorized is False
+    with TestClient(create_app(store, TokenRegistry([later_review_credential]))) as client:
+        absence_response = client.post(
+            later_rows_path,
+            json={"generation_id": second_generation.generation_id,
+                  "state": "absence_candidate"},
+            headers={"Authorization": "Bearer " + later_review_token},
+        )
+        assert absence_response.status_code == 200, absence_response.text
+        absence_body = absence_response.json()
+        assert absence_body["rows"] == [absence_rows.rows[0]]
+        assert absence_body["review_flags"]["possible_absence"] is True
+        assert absence_body["absence_authorized"] is False
+        assert absence_body["current_read_active"] is False
     assert second_generation.current_read_active is False
     assert core.search_current_fileos(ctx, "later-only") == []
     third_later_id = uuid4()

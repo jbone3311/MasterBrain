@@ -93,6 +93,7 @@ from masterbrain.schemas import (
     EmailXlsxInspectRequest,
     EmailXlsxReviewRequest,
     EvidenceContentRequest,
+    FileOSV2LaterReviewRowsRequest,
     FileOSV2SearchPreviewRequest,
     GroundedAnswerRequest,
     UnifiedSearchRequest,
@@ -934,6 +935,38 @@ def create_app(
                 "active_v1": compact(comparison.active_v1_hits),
                 "candidate_v2_later": compact(comparison.candidate_hits),
             },
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/sources/{source_id}/v2-later-review-rows")
+    def brain_source_v2_later_review_rows(
+        source_id: str,
+        body: FileOSV2LaterReviewRowsRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            page = fileos_v2_later_reviewer.review_rows(
+                principal, source_id, body.generation_id,
+                state=body.state, offset=body.offset, limit=body.limit,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+        return {
+            "source_id": page.source_id,
+            "run_id": str(page.run_id),
+            "generation_id": page.generation_id,
+            "candidate_visibility": page.candidate_visibility,
+            "review_flags": page.review_flags,
+            "classification_counts": page.classification_counts,
+            "state": page.state,
+            "offset": page.offset,
+            "total_rows": page.total_rows,
+            "rows": list(page.rows),
+            "next_offset": page.next_offset,
+            "absence_authorized": page.absence_authorized,
+            "current_read_active": page.current_read_active,
             "untrusted_content": True,
         }
 

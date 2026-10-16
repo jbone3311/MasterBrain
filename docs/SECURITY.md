@@ -1,5 +1,12 @@
 # MasterBrain Security and Privacy
 
+ADR-260 permits only a human with transition-review, search and evidence-read
+scopes to inspect bounded historical prior-row classifications. Source-grant
+denial precedes lookup; source/run/root and immutable coverage are rechecked
+under a source lock. Relative locators and reasons are untrusted metadata,
+never logged, and no original bytes or root path are returned. A possible
+absence is not approved deletion or current-source proof.
+
 ADR-259's historical-later comparison is human-only and requires transition
 review, search and evidence scopes. An ungranted source is hidden before
 generation lookup; paused or stale sources are refused. Independent result

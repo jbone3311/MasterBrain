@@ -1,5 +1,11 @@
 # Current MasterBrain code map
 
+ADR-260 adds the [historical prior-row reviewer](../src/masterbrain/datacore/fileos_v2_later_index_generation.py),
+[closed request](../src/masterbrain/schemas.py),
+[Brain API route](../src/email_brain/api.py) and
+[fictional lifecycle/API checks](../tests/test_postgres.py). It revalidates
+the ADR-254 closure and changes no current FileOS path.
+
 ADR-259 adds a [human historical-later reviewer](../src/masterbrain/datacore/fileos_v2_later_index_generation.py)
 and [Brain API route](../src/email_brain/api.py), covered by fictional
 [PostgreSQL/API lifecycle tests](../tests/test_postgres.py). No activation or
