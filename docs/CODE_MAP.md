@@ -1,5 +1,10 @@
 # Current MasterBrain code map
 
+ADR-259 adds a [human historical-later reviewer](../src/masterbrain/datacore/fileos_v2_later_index_generation.py)
+and [Brain API route](../src/email_brain/api.py), covered by fictional
+[PostgreSQL/API lifecycle tests](../tests/test_postgres.py). No activation or
+current-search route is added.
+
 ADR-258 adds the [later shared-index builder](../src/masterbrain/datacore/fileos_v2_later_index_generation.py),
 [additive generation basis and SQL guards](../migrations/0092_fileos_v2_later_shared_index_generation.sql)
 and [fictional PostgreSQL lifecycle/stress coverage](../tests/test_postgres.py).

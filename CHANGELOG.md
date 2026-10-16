@@ -1,5 +1,10 @@
 # Changelog
 
+- Add a human-only, source-bound comparison of a ready historical later
+  FileOS generation with active v1 search, including run review flags and
+  distinct result layers. Harden baseline-v2 preview against paused or
+  ungranted sources. This changes no current search or donor files.
+
 - Add an exact, nonactivating shared DataCore index generation for a
   completed historical later FileOS v2 run. Database guards close hashed
   item and chunk membership and refuse direct activation. A 3,000-file

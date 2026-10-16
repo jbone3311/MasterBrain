@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-259](adr/259_human_later_fileos_search_comparison.md) adds a human-only,
+source-bound, read-only comparison of a ready historical later FileOS v2
+generation with active v1. It exposes run review flags but grants no current
+read, absence or activation authority.
+
 [ADR-258](adr/258_fileos_v2_later_shared_index_generation.md) puts one
 historical later FileOS v2 run into the shared DataCore generation tables.
 Only exact hashed rows and base chunks may be indexed. SQL refuses activation;

@@ -87,6 +87,7 @@ from masterbrain.datacore.fileos_v2_later_document_publication import (
 from masterbrain.datacore.fileos_v2_later_evidence import FileOSV2LaterEvidencePreparer
 from masterbrain.datacore.fileos_v2_later_index_generation import (
     FileOSV2LaterIndexBuilder,
+    FileOSV2LaterSearchReviewer,
 )
 from masterbrain.datacore.fileos_v2_later_packets import FileOSV2LaterPacketStore
 from masterbrain.datacore.fileos_v2_later_run_completion import FileOSV2LaterRunCompleter
@@ -7783,6 +7784,77 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert later_indexer.build(
         later_index_worker, later_run_id, code_revision="test-v2-later-index"
     ) == replace(later_generation, recorded=False)
+    later_search_reviewer = FileOSV2LaterSearchReviewer(core)
+    later_preview = later_search_reviewer.preview(
+        authorizing_human, source_id, later_generation.generation_id, "later-only"
+    )
+    assert later_preview.candidate_visibility == "historical_preview"
+    assert later_preview.active_v1_hits == ()
+    assert later_preview.review_flags == later_run.review_flags
+    assert {hit.locator for hit in later_preview.candidate_hits} == {
+        "later_add.txt",
+    }
+    with pytest.raises(NotFound):
+        later_search_reviewer.preview(
+            Principal(replace(authorizing_human.context,
+                              source_ids=frozenset({"other_files"})), "human"),
+            source_id, later_generation.generation_id, "later-only",
+        )
+    with pytest.raises(AccessDenied, match="human FileOS later"):
+        later_search_reviewer.preview(
+            later_index_worker, source_id, later_generation.generation_id,
+            "later-only",
+        )
+    later_review_token = "synthetic-fileos-v2-later-review-" + "x" * 32
+    later_review_credential = Credential(
+        token_sha256=hashlib.sha256(later_review_token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"brain.fileos.transition.review", "brain.search",
+                "brain.evidence.read"},
+        client_kind="human",
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+    )
+    later_review_path = f"/v1/brain/sources/{source_id}/v2-later-search-preview"
+    later_review_body = {
+        "generation_id": later_generation.generation_id,
+        "query": "later-only", "limit": 10,
+    }
+    with TestClient(create_app(store, TokenRegistry([later_review_credential]))) as client:
+        headers = {"Authorization": "Bearer " + later_review_token}
+        response = client.post(
+            later_review_path, json=later_review_body, headers=headers
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["run_id"] == str(later_run_id)
+        assert body["candidate_visibility"] == "historical_preview"
+        assert body["review_flags"] == later_run.review_flags
+        assert body["coverage"] == "historical_later_comparison_not_current_fileos"
+        assert body["layers"]["active_v1"] == []
+        assert {hit["locator"] for hit in body["layers"]["candidate_v2_later"]} == {
+            "later_add.txt",
+        }
+        assert body["untrusted_content"] is True
+        assert client.post(
+            later_review_path, json={**later_review_body, "limit": 0},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_review_path, json={**later_review_body, "unexpected": True},
+            headers=headers,
+        ).status_code == 422
+    class OtherSourceHumanAuthenticator:
+        def authenticate(self, _token: str) -> Principal:
+            return Principal(
+                replace(authorizing_human.context,
+                        source_ids=frozenset({"other_files"})), "human",
+            )
+
+    with TestClient(create_app(store, OtherSourceHumanAuthenticator())) as client:
+        assert client.post(
+            later_review_path, json=later_review_body,
+            headers={"Authorization": "Bearer " + later_review_token},
+        ).status_code == 404
     with store.transaction(ctx) as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_index_generation_chunks "
@@ -7964,6 +8036,17 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert later_completer.inspect(ctx, second_run_id) == replace(
         second_run, recorded=False
     )
+    second_generation = later_indexer.build(
+        later_index_worker, second_run_id, code_revision="test-v2-later-index"
+    )
+    second_preview = later_search_reviewer.preview(
+        authorizing_human, source_id, second_generation.generation_id, "later-only"
+    )
+    assert second_preview.review_flags["possible_absence"] is True
+    assert second_preview.candidate_visibility == "historical_preview"
+    assert second_preview.active_v1_hits == ()
+    assert second_generation.current_read_active is False
+    assert core.search_current_fileos(ctx, "later-only") == []
     third_later_id = uuid4()
     third_later = later_packets.record(
         completion_worker, completion_id, third_later_id, tmp_path
@@ -8528,6 +8611,12 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     with pytest.raises(NotFound):
         search_reviewer.preview(human, "files_wrong_source", generation.generation_id,
                                 "synthetic changed proof")
+    with pytest.raises(NotFound):
+        search_reviewer.preview(
+            Principal(replace(human.context,
+                              source_ids=frozenset({"files_wrong_source"})), "human"),
+            source_id, generation.generation_id, "synthetic changed proof",
+        )
     with pytest.raises(NotFound):
         search_reviewer.preview(
             Principal(replace(human.context, tenant_id=other_tenant,

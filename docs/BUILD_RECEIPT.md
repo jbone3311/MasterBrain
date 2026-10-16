@@ -2,6 +2,29 @@
 
 Updated 2026-10-16 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Human historical later FileOS comparison — current unmerged branch
+
+ADR-259 adds a source-bound human-only comparison of a named ready historical
+later FileOS generation with the source's active v1 lexical view. It returns
+separate bounded layers and the completed run's review flags, including
+possible absence, without changing current reads, absence events or source
+files. The existing baseline-v2 preview now rejects an ungranted or paused
+source. Fictional PostgreSQL lifecycle/API coverage includes a later-only
+file, a second possible-absence generation, worker and source-grant denial,
+closed inputs and unchanged current search. The focused lifecycle test passed.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,856 passed, 19 skipped, zero failed**
+in 8m44s; **694/695 PostgreSQL-marked tests executed**. The single
+PostgreSQL-marked skip is the Docker-backed trial launcher. The first-party
+Node suite passed **185/185**; Ruff, strict mypy (149 source files), offline
+docs (360 Markdown files / 1,852 paths and fragments), diff whitespace,
+repository structural gate and offline wheel build passed. The wheel includes
+the reviewer and API. The pinned FOS-Master donor checkout is still clean at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`; the full suite includes its
+synthetic parity corpus. This is local fictional evidence, not hosted CI,
+actual-image, live-source, rollback, activation or donor-cutover acceptance.
+
 ## Historical later FileOS v2 shared index — current unmerged branch
 
 ADR-258 and migration 0092 add a distinct `v2_later` basis to the existing

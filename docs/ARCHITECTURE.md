@@ -35,6 +35,11 @@ Gmail / Graph / IMAP / JMAP             Filesystem / Dropbox / OneDrive
 
 ## Boundary rules
 
+ADR-259 adds a human-only, source-bound Brain API comparison of a ready
+historical later generation and active v1. It rechecks the completed run,
+root/v1 basis and active source; result layers are not a current-read or
+absence decision. The DataCore activation guard remains unchanged.
+
 ADR-258 extends the shared DataCore generation tables with an exact
 historical later-run basis. It indexes only source-bound, processed hashed
 rows and verified base chunks. The database denies activation; neither

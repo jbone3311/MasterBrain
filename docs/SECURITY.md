@@ -1,5 +1,12 @@
 # MasterBrain Security and Privacy
 
+ADR-259's historical-later comparison is human-only and requires transition
+review, search and evidence scopes. An ungranted source is hidden before
+generation lookup; paused or stale sources are refused. Independent result
+layers are marked untrusted and historical, never current evidence of file
+presence or absence. The baseline-v2 comparison now enforces the same
+source-grant and active-source checks.
+
 ADR-258's later shared-index builder is a scoped private worker. SQL binds
 the exact historical run and ready attempt, independently closes hashed item
 and base-chunk membership, rechecks the latest v1/source-root basis and

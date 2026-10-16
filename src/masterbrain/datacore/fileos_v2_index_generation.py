@@ -93,6 +93,8 @@ class FileOSV2SearchReviewer:
             or not 1 <= limit <= 50
         ):
             raise ValueError("invalid FileOS v2 search preview")
+        if ctx.source_ids is not None and source_id not in ctx.source_ids:
+            raise NotFound()
         with self.core.store.transaction(ctx) as conn:
             conn.execute(
                 "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
@@ -124,13 +126,14 @@ class FileOSV2SearchReviewer:
                 (ctx.tenant_id, source_id),
             ).fetchone()
             source = conn.execute(
-                "SELECT root_binding_sha256 FROM brain_sources "
+                "SELECT root_binding_sha256,status FROM brain_sources "
                 "WHERE tenant_id=%s AND id=%s AND kind='fileos'",
                 (ctx.tenant_id, source_id),
             ).fetchone()
             if (
                 latest is None
                 or source is None
+                or source["status"] != "active"
                 or latest["actor_id"] != candidate["prior_actor_id"]
                 or latest["run_id"] != candidate["prior_run_id"]
                 or latest["observed_at"] != candidate["prior_observed_at"]

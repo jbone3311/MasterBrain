@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-259 implements a human-only Brain API comparison of one ready historical
+later FileOS generation with active v1. Both result layers are bounded and
+separately ranked; completed-run review flags travel with the response.
+Source grants, active-source status, latest v1/root basis and the immutable
+later run are rechecked. No later generation can become current through this
+route. Fictional lifecycle/API tests pass; full and hosted validation remain
+separate. Activation/rollback policy, owner-approved live shadow and donor
+cutover remain open.
+
 ADR-258 adds a private shared DataCore index generation over one ready
 ADR-257 historical later run. SQL binds exact run/attempt digests, hashed
 item and base-chunk membership and denies activation. Deferred, excluded and

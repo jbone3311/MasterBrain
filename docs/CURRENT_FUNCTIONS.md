@@ -1,9 +1,15 @@
 # Current MasterBrain functions
 
+ADR-259 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-search-preview`
+for a named ready historical later FileOS generation. It shows active-v1 and
+historical candidate hits in separate bounded layers with completed-run
+review flags. It is read-only and cannot establish current state or absence.
+
 ADR-258 adds a private, synthetic-only builder for a ready historical
 `v2_later` generation in the shared DataCore index. It can be built/replayed
-with a scoped worker, but SQL prohibits activation; no public API or current
-search uses it. A human comparison path and live-source acceptance remain open.
+with a scoped worker, but SQL prohibits activation; only ADR-259's human
+historical comparison uses it. Current search and live-source acceptance
+remain open.
 
 ADR-257 adds a private, synthetic-only historical FileOS v2 later-run
 completion library. A scoped worker supplies an exact ready ADR-256 attempt

@@ -94,6 +94,16 @@ change privileged historical Email routes, and is synthetic-only proof.
   wrong-source generations return 404, stale v1/root basis returns 409, and
   invalid input returns generic 422. This does not activate v2 or establish
   FileOS parity/cutover (ADR-147).
+- `POST /v1/brain/sources/{source_id}/v2-later-search-preview` — implemented
+  human-only comparison of one named, ready historical later-run generation
+  against active v1. The closed request uses `generation_id`, `query` and
+  `limit` (1–50 per layer); the response separates `active_v1` and
+  `candidate_v2_later`, names the completed run and its review flags, and
+  labels the candidate `historical_preview`. It requires the same three
+  transition-review/search/evidence scopes as baseline v2 preview. Missing
+  or ungranted sources and wrong-source generations return 404; stale or
+  paused basis returns 409. Neither hits nor non-hits establish current
+  FileOS state or absence, and no activation occurs (ADR-259).
 
 ADR-142 admits enrolled assistants to the five exact-source FileOS reads above
 and the aggregate/retained Brain searches. An ungranted source is
