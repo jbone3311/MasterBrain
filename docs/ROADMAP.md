@@ -1,5 +1,11 @@
 # MasterBrain Roadmap
 
+[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) is a
+**proposal only** for append-only, exact-row human discrepancy decisions and
+a later run-level review. No decision writer, absence approval, live shadow
+or current-read activation exists yet; the wording and fail-closed tests
+must be settled before implementation.
+
 ADR-260 makes the underlying historical FileOS prior-row classifications
 inspectable in bounded, source-bound pages, including possible-missing and
 coverage-ambiguous rows. The next gate is an explicit owner adjudication

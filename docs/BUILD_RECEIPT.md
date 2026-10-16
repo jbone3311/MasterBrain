@@ -2,6 +2,24 @@
 
 Updated 2026-10-16 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Later FileOS classification scale gate and proposed owner decision
+
+The ADR-260 historical row-review API now has direct fictional 3,000-row
+stress coverage in the existing full later FileOS generation path. The
+focused test passes its final 100-row page, exact first/last locator,
+classification totals, empty absence filter and no-current/no-absence
+flags in 3m42s for the **whole** generation pipeline; this is not an API
+latency SLA. The full Python 3.14 / loopback PostgreSQL 17.11 suite on the
+same test revision passed **3,856 / 19 skipped / zero failed** in 8m21s;
+**694/695 PostgreSQL-marked tests executed**. Node passed **185/185**;
+Ruff, strict mypy (149 source files), offline docs (362 Markdown files /
+1,860 paths and fragments), diff whitespace and offline wheel build passed.
+
+[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) describes
+the next proposed, **unimplemented** append-only owner-decision contract.
+No decision writer, approval, v2 activation, file effect, live shadow or
+donor cutover is claimed. Hosted exact-head CI remains a separate gate.
+
 ## Human historical later FileOS row inspection — current unmerged branch
 
 ADR-260 adds a bounded, human-only view of the immutable prior-row

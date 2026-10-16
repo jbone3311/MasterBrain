@@ -9322,6 +9322,25 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
     assert (later_generation.item_count, later_generation.document_count,
             later_generation.chunk_count) == (3000, 3000, 3000)
     assert later_generation.current_read_active is False
+    review_page = FileOSV2LaterSearchReviewer(core).review_rows(
+        human, source_id, later_generation.generation_id, offset=2900, limit=100,
+    )
+    assert review_page.total_rows == 3000
+    assert len(review_page.rows) == 100
+    assert review_page.rows[0]["locator"] == "proof-2900.txt"
+    assert review_page.rows[-1]["locator"] == "proof-2999.txt"
+    assert all(row["state"] == "unchanged" for row in review_page.rows)
+    assert review_page.next_offset is None
+    assert review_page.classification_counts["unchanged"] == 3000
+    assert review_page.absence_authorized is False
+    assert review_page.current_read_active is False
+    absent_page = FileOSV2LaterSearchReviewer(core).review_rows(
+        human, source_id, later_generation.generation_id,
+        state="absence_candidate", limit=100,
+    )
+    assert absent_page.total_rows == 0
+    assert absent_page.rows == ()
+    assert absent_page.next_offset is None
     assert core.search_current_fileos(ctx, "fictional prepared evidence") == []
 
 

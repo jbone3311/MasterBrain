@@ -37,6 +37,8 @@ current FileOS authority.
 On fictional PostgreSQL data, page an unchanged run and an exact
 `absence_candidate` row from a later run. Check filter/count consistency,
 closed bounds, unknown generation, human/worker and source-grant denials,
-and unchanged current search/absence authority. Run the full local and
-hosted gates. Rollback removes only the read route; the immutable coverage
-and run remain historical. FOS-Master stays unchanged.
+and unchanged current search/absence authority. The existing 3,000-row
+fictional later-generation stress case now checks its final 100-row page,
+counts and an empty absence filter; this is a scale check, not a live SLA.
+Run the full local and hosted gates. Rollback removes only the read route;
+the immutable coverage and run remain historical. FOS-Master stays unchanged.
