@@ -2,6 +2,21 @@
 
 Updated 2026-10-20 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## Newer FOS-Master donor review — documentation checkpoint
+
+Compared the unchanged local parity pin `218d5cae` with FOS-Master remote
+`main` at `eb774fc` (11 newer commits). Reviewed the archive-aware FTS,
+hybrid/filename search, safe archive move, mass-phantom repoint guard and
+the other report/session changes; see the [delta inventory](FOS_DONOR_DELTA_2026_10.md)
+and proposed [ADR-263](adr/263_current_working_file_search_visibility_proposal.md).
+In a detached temporary checkout of `eb774fc`, selected fictional
+content-search, FTS, safe-file-operation and archive tests passed **38/38**
+in 0.30s. The repoint self-test was **not run** because its setup opens the
+donor's operational SQLite schema. No real domain files or donor database
+were read, no donor working-tree files were changed, and no MasterBrain search
+runtime was altered. The old exact donor pin remains the active parity basis.
+Offline docs passed **365 Markdown files / 1,879 links and fragments**.
+
 ## Historical FileOS review snapshot — ADR-262 unmerged branch
 
 The human-only historical review summary now binds one ready later FileOS

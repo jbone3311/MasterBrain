@@ -236,6 +236,7 @@ roadmap item is not an implementation claim.
 - [Synthetic alpha test guide](docs/ALPHA_TESTING.md)
 - [Fictional cross-source browser trial](docs/CROSS_SOURCE_TRIAL.md)
 - [Shared DataCore/FileOS commands](docs/DATACORE_COMMANDS.md)
+- [Newer FOS-Master donor delta and proposed joint search visibility](docs/FOS_DONOR_DELTA_2026_10.md)
 - [Source and provenance contract](docs/SOURCE_PROVENANCE.md)
 - [DataCore persistence and lexical retrieval](docs/DATACORE_PERSISTENCE.md)
 - [FileOS read-only extraction](docs/FILEOS_EXTRACTION.md)

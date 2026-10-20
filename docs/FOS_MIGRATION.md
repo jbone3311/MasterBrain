@@ -16,6 +16,10 @@ migration ledger below.
 ## Donor inventory
 
 The detailed file/test catalog is [FOS_TOOL_INVENTORY.md](FOS_TOOL_INVENTORY.md).
+The later 11-commit donor delta through `eb774fc` is separately reviewed in
+[FOS_DONOR_DELTA_2026_10.md](FOS_DONOR_DELTA_2026_10.md). It does not silently
+replace the pinned `218d5cae` golden baseline. Its archive-aware search
+behavior has a proposed, nonimplementing [ADR-263](adr/263_current_working_file_search_visibility_proposal.md).
 
 | Candidate group | Representative donor files | Tests | Destination | Risk / decision |
 |---|---|---|---|---|

@@ -1,5 +1,15 @@
 # MasterBrain Roadmap
 
+The current FOS-Master remote is 11 commits ahead of the `218d5cae` parity
+pin. [The reviewed donor delta](FOS_DONOR_DELTA_2026_10.md) identifies
+latest-working-file search, audited archive moves and a mass-phantom repoint
+guard as the relevant changes; it is **not** a new indexing engine.
+[ADR-263](adr/263_current_working_file_search_visibility_proposal.md)
+proposes a single Email/FOS Brain search experience with optional, explicit
+superseded-file visibility. This is not implemented yet. Preserve donor
+operation and the existing current-search semantics until source-bound policy,
+all-derived-layer filtering and synthetic parity pass.
+
 Product boundary: keep one MasterBrain repository/API/UI with optional internal
 EmailBrain and FOS Brain capabilities. FOS Brain is the planned FileOS-facing
 name inside MasterBrain, not a second permanent repository. Refresh the pinned
