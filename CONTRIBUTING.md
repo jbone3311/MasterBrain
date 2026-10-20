@@ -25,6 +25,15 @@ parity before refactoring behavior.
 
 ## Make one independently verifiable increment
 
+Open work-in-progress PRs as **drafts**. Draft pushes run only bounded static,
+documentation and browser feedback; their three required aggregate checks are
+intentionally red. Before asking to merge, run the relevant full local
+synthetic suite, mark the PR ready for review, and wait for full CI, populated
+restore and strict-runtime checks on the exact final candidate. Any later
+commit to a ready PR reruns those checks. Do not merge on a draft feedback
+pass, old-head result, skipped job, or manual dispatch. See
+[ADR-264](docs/adr/264_draft_pr_ci_cost_gate.md) for the cost/safety tradeoff.
+
 1. Choose an existing [backlog ID](docs/BACKLOG.md). State the user outcome,
    included work and explicit exclusions in the GitHub build issue.
 2. Read security, architecture, data model, decisions and the applicable contract.
