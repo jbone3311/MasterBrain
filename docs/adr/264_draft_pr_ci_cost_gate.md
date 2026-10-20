@@ -10,8 +10,8 @@ benchmark also starts whenever its path filter matches the PR's aggregate diff.
 That is useful for a merge candidate, but wasteful while a large PR is actively
 being revised. GitHub Actions minutes are billed by job runtime. A prior green
 commit is not evidence for a changed head, and a skipped required job can count
-as success. The account's current Actions payment/spending gate prevents hosted
-jobs from starting; this ADR does not repair billing or claim a cost measurement.
+as success. Earlier PR-head jobs were blocked by the account payment/spending
+gate; this ADR does not repair billing or claim a measured cost reduction.
 
 ## Decision
 
@@ -48,8 +48,12 @@ secrets, live sources, migrations, product behavior or FOS-Master state change.
 
 Validate YAML syntax, event/condition cases (draft, ready, main and failed
 full job), local static/docs/browser checks, then observe one hosted draft and
-one hosted ready transition with exact SHA and effective protection once Actions
-billing allows jobs to start. Confirm a ready candidate with a failed full job
+one hosted ready transition with exact SHA and effective protection. PR #259's
+first hosted draft run on `8573e62` proved feedback succeeded, all heavy jobs
+were skipped, and all three required aggregates failed intentionally. The
+effective `main` branch rule was read from GitHub and still requires those
+three checks with administrator enforcement. A ready transition and actual
+billed-minute comparison remain unverified. Confirm a ready candidate with a failed full job
 cannot merge. If any required check is missing or unexpectedly green, keep PRs
 unmerged and revert the workflow change in a reviewed PR; do not remove the
 required contexts or administer a silent bypass. Compare actual billed runner

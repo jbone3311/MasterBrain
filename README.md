@@ -70,8 +70,9 @@ or live-source approval.
 Draft PRs now use cheaper feedback while their required aggregate checks stay
 red; marking a PR ready runs the full exact-head checks
 ([ADR-264](docs/adr/264_draft_pr_ci_cost_gate.md)). The hosted Actions
-payment/spending gate must be resolved before that transition can be verified
-or any blocked PR merged.
+payment/spending gate blocked earlier PRs; PR #259's hosted draft feedback now
+starts, but a ready exact-head full run remains a separate requirement before
+this workflow change or any other blocked PR is merged.
 The internal `email_brain` package remains for compatibility and identifies the
 original Email capability, not the final product. New source-neutral code enters
 through `masterbrain.datacore`, `masterbrain.knowledge`, and the Brain API
