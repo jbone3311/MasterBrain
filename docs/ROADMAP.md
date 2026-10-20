@@ -1,5 +1,19 @@
 # MasterBrain Roadmap
 
+Product boundary: keep one MasterBrain repository/API/UI with optional internal
+EmailBrain and FOS Brain capabilities. FOS Brain is the planned FileOS-facing
+name inside MasterBrain, not a second permanent repository. Refresh the pinned
+FOS-Master donor inventory as its working code advances, then import only
+parity-proven behavior; do not rename or retire the donor on a roadmap date.
+
+ADR-262 now makes the exact latest historical row-decision snapshot visible
+as a compact digest with unresolved counts and explicit run flags. The next
+FileOS tranche is a separately authorized, immutable **historical run review**
+bound to that digest and explicit flag acknowledgements. It must refuse
+missing, held or disputed required rows and invalidate on any later
+correction. Even then, live shadow, rollback, hosted CI and owner acceptance
+precede any v2 current-read or donor cutover.
+
 [ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) now has the
 first durable tranche: append-only, exact-row human historical decisions,
 latest-decision inspection and paged history. The 100-row service boundary

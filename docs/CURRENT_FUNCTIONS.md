@@ -1,5 +1,11 @@
 # Current MasterBrain functions
 
+ADR-262 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-review-summary`
+for a compact digest and counts of the exact latest historical row decisions.
+It separates missing, held and acknowledged ambiguous rows and names run
+flags needing later acknowledgement. It records no run-level signoff and
+grants no current, absence or file authority.
+
 ADR-261 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-row-decisions`
 for append-only exact historical classification decisions and
 `POST /v1/brain/sources/{source_id}/v2-later-row-decision-history` for bounded

@@ -130,6 +130,15 @@ change privileged historical Email routes, and is synthetic-only proof.
   `locator` in a ready generation. Request fields are `generation_id`,
   `locator`, `offset` and `limit`; response includes total, ordered decision
   events and `next_offset`. It does not expose source bytes or activate v2.
+- `POST /v1/brain/sources/{source_id}/v2-later-review-summary` — implemented
+  human-only compact summary of one named ready historical generation. The
+  closed request contains only `generation_id`; the response binds run and
+  closure to a canonical `decision_snapshot_sha256`, counts required prior
+  rows with missing, held or acknowledged latest decisions and lists true
+  review flags requiring later explicit acknowledgement. It uses the same
+  three scopes, source grant and fresh source/run/closure checks as ADR-261.
+  `row_decisions_complete` is **not** run signoff; fixed flags deny absence,
+  current search and file effects (ADR-262).
 
 ADR-142 admits enrolled assistants to the previously defined five exact-source
 FileOS **current-read** routes and the aggregate/retained Brain searches, not

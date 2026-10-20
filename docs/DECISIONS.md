@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-262](adr/262_historical_fileos_review_snapshot.md) adds a compact,
+human-only digest of exact historical FileOS row decisions, unresolved counts
+and pending run flags. It is a read-only prerequisite for, not a substitute
+for, separately reviewed run-level signoff or v2 activation.
+
 [ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) implements
 append-only, exact-row historical human decisions, latest readback and bounded
 history. Run-level signoff and activation remain proposals. Acknowledging an

@@ -1,5 +1,11 @@
 # Current MasterBrain code map
 
+ADR-262 adds the pure [historical review snapshot](../src/masterbrain/datacore/fileos_v2_later_review_snapshot.py),
+its [source-bound service](../src/masterbrain/datacore/fileos_v2_later_row_decisions.py),
+[closed request and API route](../src/email_brain/api.py), and
+[mixed-coverage tests](../tests/test_fileos_v2_later_review_snapshot.py).
+It writes no run-level approval or current FileOS state.
+
 ADR-261 adds [historical row decisions](../src/masterbrain/datacore/fileos_v2_later_row_decisions.py),
 [migration 0093](../migrations/0093_fileos_v2_later_row_decisions.sql),
 [closed requests](../src/masterbrain/schemas.py) and

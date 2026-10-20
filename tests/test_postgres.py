@@ -132,6 +132,7 @@ from masterbrain.knowledge_schema import (
     TimelineRequest,
 )
 from masterbrain.schemas import (
+    FileOSV2LaterReviewSummaryRequest,
     FileOSV2LaterRowDecisionHistoryRequest,
     FileOSV2LaterRowDecisionsRequest,
 )
@@ -7819,6 +7820,16 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert first_rows.absence_authorized is False
     assert first_rows.current_read_active is False
     row_decisions = FileOSV2LaterRowDecisions(core)
+    first_summary_request = FileOSV2LaterReviewSummaryRequest.model_validate({
+        "generation_id": later_generation.generation_id,
+    })
+    first_summary = row_decisions.summary(
+        authorizing_human, source_id, first_summary_request
+    )
+    assert first_summary["total_prior_rows"] == 2
+    assert first_summary["required_row_decisions"] == 0
+    assert first_summary["row_decisions_complete"] is True
+    assert first_summary["run_signoff_recorded"] is False
     batch_items = [
         {
             "idempotency_key": str(uuid4()),
@@ -7839,6 +7850,9 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert row_decisions.record(
         authorizing_human, source_id, batch_body
     )["replayed_count"] == 2
+    assert row_decisions.summary(
+        authorizing_human, source_id, first_summary_request
+    )["decision_snapshot_sha256"] != first_summary["decision_snapshot_sha256"]
     invalid_batch = FileOSV2LaterRowDecisionsRequest.model_validate({
         "generation_id": later_generation.generation_id,
         "decisions": [
@@ -7851,6 +7865,8 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         row_decisions.record(authorizing_human, source_id, invalid_batch)
     with pytest.raises(AccessDenied, match="human FileOS later"):
         row_decisions.record(later_index_worker, source_id, batch_body)
+    with pytest.raises(AccessDenied, match="human FileOS later"):
+        row_decisions.summary(later_index_worker, source_id, first_summary_request)
     with store.transaction(ctx) as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM brain_fileos_v2_later_row_decisions "
@@ -7883,6 +7899,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     later_review_path = f"/v1/brain/sources/{source_id}/v2-later-search-preview"
     later_rows_path = f"/v1/brain/sources/{source_id}/v2-later-review-rows"
     later_decisions_path = f"/v1/brain/sources/{source_id}/v2-later-row-decisions"
+    later_summary_path = f"/v1/brain/sources/{source_id}/v2-later-review-summary"
     later_history_path = (
         f"/v1/brain/sources/{source_id}/v2-later-row-decision-history"
     )
@@ -7979,6 +7996,10 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         ).status_code == 404
         assert client.post(
             later_decisions_path, json=batch_body.model_dump(mode="json"),
+            headers={"Authorization": "Bearer " + later_review_token},
+        ).status_code == 404
+        assert client.post(
+            later_summary_path, json=first_summary_request.model_dump(mode="json"),
             headers={"Authorization": "Bearer " + later_review_token},
         ).status_code == 404
         assert client.post(
@@ -8187,6 +8208,18 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert absence_rows.rows[0]["state"] == "absence_candidate"
     assert absence_rows.review_flags["possible_absence"] is True
     assert absence_rows.absence_authorized is False
+    absence_summary_request = FileOSV2LaterReviewSummaryRequest.model_validate({
+        "generation_id": second_generation.generation_id,
+    })
+    unreviewed_summary = row_decisions.summary(
+        authorizing_human, source_id, absence_summary_request
+    )
+    assert unreviewed_summary["required_row_decisions"] == 1
+    assert unreviewed_summary["missing_required_rows"] == 1
+    assert unreviewed_summary["row_decisions_complete"] is False
+    assert unreviewed_summary["flag_acknowledgements_required"] == [
+        "possible_absence"
+    ]
     decision_key = uuid4()
     decision_payload = {
         "generation_id": second_generation.generation_id,
@@ -8207,6 +8240,14 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert recorded_decision["absence_authorized"] is False
     assert recorded_decision["current_read_active"] is False
     assert recorded_decision["source_effect_authorized"] is False
+    investigated_summary = row_decisions.summary(
+        authorizing_human, source_id, absence_summary_request
+    )
+    assert investigated_summary["held_required_rows"] == 1
+    assert investigated_summary["row_decisions_complete"] is False
+    assert investigated_summary["decision_snapshot_sha256"] != (
+        unreviewed_summary["decision_snapshot_sha256"]
+    )
     assert row_decisions.record(authorizing_human, source_id, decision_body)[
         "replayed_count"
     ] == 1
@@ -8241,6 +8282,13 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     )
     assert latest_absence.rows[0]["latest_decision"]["disposition"] == (
         "dispute_classification"
+    )
+    disputed_summary = row_decisions.summary(
+        authorizing_human, source_id, absence_summary_request
+    )
+    assert disputed_summary["held_required_rows"] == 1
+    assert disputed_summary["decision_snapshot_sha256"] != (
+        investigated_summary["decision_snapshot_sha256"]
     )
     history_body = FileOSV2LaterRowDecisionHistoryRequest.model_validate({
         "generation_id": second_generation.generation_id,
@@ -8343,6 +8391,22 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         )
         assert api_history.json()["absence_authorized"] is False
         assert api_history.json()["source_effect_authorized"] is False
+        api_summary = client.post(
+            later_summary_path,
+            json={"generation_id": second_generation.generation_id},
+            headers={"Authorization": "Bearer " + later_review_token},
+        )
+        assert api_summary.status_code == 200, api_summary.text
+        assert api_summary.json()["row_decisions_complete"] is True
+        assert api_summary.json()["flag_acknowledgements_required"] == [
+            "possible_absence"
+        ]
+        assert api_summary.json()["decision_snapshot_sha256"] != (
+            disputed_summary["decision_snapshot_sha256"]
+        )
+        assert api_summary.json()["run_signoff_recorded"] is False
+        assert api_summary.json()["absence_authorized"] is False
+        assert api_summary.json()["current_read_active"] is False
     assert second_generation.current_read_active is False
     assert core.search_current_fileos(ctx, "later-only") == []
     third_later_id = uuid4()
@@ -9602,6 +9666,19 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
     )
     assert decided_page.absence_authorized is False
     assert decided_page.current_read_active is False
+    compact_summary = row_decisions.summary(
+        human, source_id,
+        FileOSV2LaterReviewSummaryRequest.model_validate({
+            "generation_id": later_generation.generation_id,
+        }),
+    )
+    assert compact_summary["total_prior_rows"] == 3000
+    assert compact_summary["required_row_decisions"] == 0
+    assert compact_summary["row_decisions_complete"] is True
+    assert len(compact_summary["decision_snapshot_sha256"]) == 64
+    assert compact_summary["run_signoff_recorded"] is False
+    assert compact_summary["absence_authorized"] is False
+    assert compact_summary["current_read_active"] is False
     absent_page = FileOSV2LaterSearchReviewer(core).review_rows(
         human, source_id, later_generation.generation_id,
         state="absence_candidate", limit=100,

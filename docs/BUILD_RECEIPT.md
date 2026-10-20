@@ -1,6 +1,26 @@
 # Build and validation receipt
 
-Updated 2026-10-16 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-20 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+
+## Historical FileOS review snapshot — ADR-262 unmerged branch
+
+The human-only historical review summary now binds one ready later FileOS
+generation to its exact run, immutable closure, review flags and latest
+append-only row decisions. It returns a canonical digest and compact counts
+for acknowledged, held and missing required historical row decisions. A
+correction changes the digest. The response explicitly grants no run signoff,
+absence authority, current-read switch or source effect. This remains a
+synthetic-only review aid, not permission to cut over FOS-Master.
+
+On a fresh disposable PostgreSQL 17.11 database, the complete Python 3.14
+suite passed **3,861 / 19 skipped / zero failed** in **18m00s**;
+**694/695 PostgreSQL-marked tests executed**. The five new pure snapshot
+cases and focused real-PostgreSQL/API lifecycle passed separately. Ruff,
+strict mypy (151 source files), first-party Node **185/185**, offline docs,
+structural gate, diff check and offline wheel build passed. The long local
+commit in the 3,000-file stress path is a performance signal, not a throughput
+SLA. Hosted exact-head CI remains blocked before jobs start by the account's
+Actions billing annotation; it is not counted as a pass.
 
 ## Historical FileOS decision scale and populated restore — test checkpoint
 
@@ -19,8 +39,10 @@ left zero public tables, and the retry succeeded. Source and restore each
 held exactly 100 distinct decision keys and locators with the same ordered
 content digest `d8571d8c7a2cc9c0614e95169ce5d273`. Restored storage still
 had forced RLS and three enabled guard triggers; a direct update was denied
-by the append-only trigger. This is local synthetic restore evidence, not
-hosted restore, tenant-login behavioral proof, a complete backup SLA, owner
+by the append-only trigger. A restored login bound to the owning fictional
+tenant saw 100 decisions; an unrelated tenant-bound login saw zero even after
+forging the owner's tenant session setting. This is local synthetic restore
+evidence, not hosted restore, a complete backup SLA, owner
 signoff or live FileOS acceptance. Ruff, strict mypy (150 source files),
 documentation links and diff whitespace passed after the test change.
 

@@ -53,6 +53,11 @@ Corrections append events; historical row inspection projects the latest.
 This table is not an absence ledger, source-effect queue or current index
 (ADR-261).
 
+ADR-262 derives a nonpersisted `decision_snapshot_sha256` from one exact
+historical generation/run/closure, its prior classifications, review flags
+and latest decision identities. It is a read-only review cursor for a future
+run-level ledger, not an approval row or current-source state.
+
 Migration 0087 adds append-only `brain_fileos_v2_later_observation_packets`
 under forced tenant RLS and the tenant-login fence. Each row has an exact
 composite FK to one completed v2 baseline, private source/root and observation

@@ -56,7 +56,9 @@ index. A human can now compare that named generation with active v1 using
 separate historical and current-result layers and explicit run review flags.
 An authorized human API caller can page the exact historical prior-row classifications,
 including possible-missing candidates, then record an append-only historical
-disposition and inspect corrections. The decisions do not approve absence.
+disposition and inspect corrections. A compact read-only summary hashes the
+exact latest decisions and shows unresolved rows and run flags; it is not a
+run-level approval. The decisions do not approve absence.
 This is **not** absence authority, a current FileOS read switch or
 FOS-Master replacement. The next gate is run-level signoff and rollback
 policy, followed by owner-reviewed live
@@ -118,6 +120,13 @@ clients ([ADR-149](docs/adr/149_assistant_legacy_email_denial.md)). This is
 authorization hardening, not hosted assistant acceptance.
 
 ## Product shape
+
+MasterBrain remains **one product and one destination repository**. EmailBrain
+and **FOS Brain** are optional internal source capabilities, not competing
+products, databases or permanent GitHub forks. FOS Brain is the intended name
+for the FileOS capability after migration; FOS-Master remains the independent,
+working donor until its behavior and newer changes pass parity and cutover gates.
+The Brain API reports which source capabilities are enrolled and authorized.
 
 ```text
 Email sources ─┐

@@ -12,8 +12,10 @@ from email_brain.store import AccessDenied, Conflict, NotFound
 from masterbrain.datacore.fileos_v2_later_index_generation import (
     FileOSV2LaterSearchReviewer,
 )
+from masterbrain.datacore.fileos_v2_later_review_snapshot import historical_review_snapshot
 from masterbrain.datacore.persistence import _IDENTITY, DataCoreStore
 from masterbrain.schemas import (
+    FileOSV2LaterReviewSummaryRequest,
     FileOSV2LaterRowDecisionHistoryRequest,
     FileOSV2LaterRowDecisionsRequest,
 )
@@ -23,6 +25,65 @@ class FileOSV2LaterRowDecisions:
     def __init__(self, core: DataCoreStore) -> None:
         self.core = core
         self.reviewer = FileOSV2LaterSearchReviewer(core)
+
+    def summary(
+        self, principal: Principal, source_id: str,
+        body: FileOSV2LaterReviewSummaryRequest,
+    ) -> dict[str, Any]:
+        if principal.client_kind != "human":
+            raise AccessDenied("human FileOS later review required")
+        ctx = principal.context
+        for scope in (
+            "brain.fileos.transition.review", "brain.search", "brain.evidence.read"
+        ):
+            self.core.store.require(ctx, scope)
+        if (
+            not isinstance(source_id, str) or not _IDENTITY.fullmatch(source_id)
+            or not isinstance(body, FileOSV2LaterReviewSummaryRequest)
+        ):
+            raise ValueError("invalid FileOS later review summary request")
+        if ctx.source_ids is not None and source_id not in ctx.source_ids:
+            raise NotFound()
+        with self.core.store.transaction(ctx) as conn:
+            run, _active_id, closure_id = self.reviewer._candidate_locked(
+                conn, ctx, source_id, body.generation_id
+            )
+            closure = self.reviewer.coverage._inspect_locked(conn, closure_id)
+            closure_row = conn.execute(
+                "SELECT closure FROM brain_fileos_v2_later_coverage_closures "
+                "WHERE tenant_id=%s AND id=%s", (ctx.tenant_id, closure_id),
+            ).fetchone()
+            if closure_row is None:
+                raise Conflict("FileOS later review closure requires review")
+            rows = conn.execute(
+                "SELECT DISTINCT ON (locator) locator,state,prior_version_id,"
+                "disposition,reviewer_id,idempotency_key,recorded_at "
+                "FROM brain_fileos_v2_later_row_decisions "
+                "WHERE tenant_id=%s AND source_id=%s AND generation_id=%s "
+                "ORDER BY locator,recorded_at DESC,idempotency_key DESC",
+                (ctx.tenant_id, source_id, body.generation_id),
+            ).fetchall()
+            result = historical_review_snapshot(
+                source_id=source_id,
+                generation_id=body.generation_id,
+                run_id=str(run.run_id),
+                run_sha256=run.run_sha256,
+                closure_id=str(closure_id),
+                closure_sha256=closure.closure_sha256,
+                review_flags=dict(run.review_flags),
+                prior_rows=closure_row["closure"]["prior_rows"],
+                latest_decisions=[{
+                    **row,
+                    "reviewer_id": str(row["reviewer_id"]),
+                    "idempotency_key": str(row["idempotency_key"]),
+                    "recorded_at": row["recorded_at"].isoformat(),
+                } for row in rows],
+            )
+            self.core.store.audit(
+                conn, ctx, "brain.fileos_v2_later_review_summary",
+                "index_generation", body.generation_id,
+            )
+            return result
 
     def record(
         self, principal: Principal, source_id: str,

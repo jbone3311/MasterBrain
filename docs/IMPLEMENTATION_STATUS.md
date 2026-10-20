@@ -1,5 +1,14 @@
 # MasterBrain Implementation Status
 
+ADR-262 now computes a deterministic, read-only snapshot of one ready
+historical later FileOS generation's exact prior rows and latest decisions.
+The human-only API returns a digest, counts of missing/held/acknowledged
+ambiguous rows and true run flags requiring separate acknowledgement. A
+correction changes the digest. Mixed-coverage and mass-loss pure tests plus a
+fictional PostgreSQL/API lifecycle pass. This is neither run-level signoff
+nor absence, source-effect or current-read authority; hosted and live-shadow
+gates remain open.
+
 ADR-261 now implements append-only, idempotent **historical row decisions**
 for an exact ready later FileOS generation and immutable coverage closure.
 An authorized human can submit a bounded batch, see the latest disposition

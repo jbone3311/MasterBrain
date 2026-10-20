@@ -1,5 +1,13 @@
 # MasterBrain Security and Privacy
 
+ADR-262's read-only historical summary uses the same human, source-grant and
+three-scope boundary as ADR-261. It revalidates the ready run, active
+source/v1/root and immutable closure under the source lock, then hashes exact
+latest decision identities. The response is compact and does not disclose a
+bulk locator list. Unreviewed or disputed rows remain held; a digest or
+`row_decisions_complete` boolean never authorizes absence, current search,
+file effects or donor replacement.
+
 ADR-261 requires a human principal, three review/search/evidence scopes and
 an exact source grant for historical row decisions and history. SQL checks
 the actor, tenant, ready run, closure, exact row, active source and latest

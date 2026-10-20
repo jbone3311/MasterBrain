@@ -97,6 +97,7 @@ from masterbrain.schemas import (
     EmailXlsxReviewRequest,
     EvidenceContentRequest,
     FileOSV2LaterReviewRowsRequest,
+    FileOSV2LaterReviewSummaryRequest,
     FileOSV2LaterRowDecisionHistoryRequest,
     FileOSV2LaterRowDecisionsRequest,
     FileOSV2SearchPreviewRequest,
@@ -999,6 +1000,19 @@ def create_app(
     ) -> dict[str, Any]:
         try:
             return fileos_v2_later_row_decisions.history(principal, source_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+
+    @app.post("/v1/brain/sources/{source_id}/v2-later-review-summary")
+    def brain_source_v2_later_review_summary(
+        source_id: str,
+        body: FileOSV2LaterReviewSummaryRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return fileos_v2_later_row_decisions.summary(principal, source_id, body)
         except ValueError:
             raise HTTPException(422, "invalid_request") from None
 

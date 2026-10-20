@@ -3,6 +3,11 @@
 Updated 2026-09-21. This document defines the target boundaries and migration
 constraints. [Implementation status](IMPLEMENTATION_STATUS.md) separates working code
 from designs. Existing detailed Email documents describe the Email capability.
+EmailBrain and the future FOS Brain are optional capabilities inside this one
+MasterBrain codebase, sharing DataCore, KnowledgeCore, the Brain API and its
+identity model. Naming FOS Brain does not fork, rename or retire the separate
+FOS-Master donor; current donor changes require a refreshed inventory and
+parity corpus before adoption.
 ADR-208's disposable combined demo exercises these boundaries without live
 sources: Email ingestion is bridged into DataCore, one generated FileOS text
 file is independently snapshotted/published, and KnowledgeCore cites both in
@@ -34,6 +39,12 @@ Gmail / Graph / IMAP / JMAP             Filesystem / Dropbox / OneDrive
 ```
 
 ## Boundary rules
+
+ADR-262 computes a read-only decision snapshot digest and compact unresolved
+counts over historical FileOS rows. This is a prerequisite for a separate
+run-level review ledger; it is not a current-source projection or authority
+transfer. Later corrections change the digest, so future signoff must bind to
+and recheck one exact snapshot.
 
 ADR-261 stores human historical classification decisions as append-only
 DataCore review metadata, separate from FileOS run, current-index and

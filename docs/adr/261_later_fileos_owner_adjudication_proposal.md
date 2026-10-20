@@ -55,8 +55,8 @@ The first row-decision tranche tests fictional atomic batches, corrections,
 idempotent replay, historical possible absence, bounded history, stale v1,
 source-grant and worker denial, forged SQL row/reviewer, immutable storage,
 and unchanged current search. The 100-row service boundary and a populated
-two-cluster synthetic restore now pass. Mixed-coverage/mass-loss,
-tenant-login isolation after restore and hosted exact-head stress remain
+two-cluster synthetic restore and restored tenant-login isolation now pass.
+Mixed-coverage/mass-loss and hosted exact-head stress remain
 before run-level signoff. The owner-facing
 `acknowledge_historical_observation` wording still needs acceptance; it does
 **not** authorize deletion or absence. No live data

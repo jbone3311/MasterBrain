@@ -67,6 +67,10 @@ class FileOSV2LaterRowDecisionHistoryRequest(ClosedModel):
     limit: int = Field(default=25, ge=1, le=100, strict=True)
 
 
+class FileOSV2LaterReviewSummaryRequest(ClosedModel):
+    generation_id: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")
+
+
 class EmailFamilySearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     message_limit: int = Field(default=10, ge=1, le=25, strict=True)

@@ -1,5 +1,9 @@
 # Changelog
 
+- Add a compact, human-only historical FileOS review summary that hashes the
+  exact latest row-decision snapshot and counts unresolved coverage without
+  recording run signoff or changing current FileOS state (ADR-262).
+
 - Add human-only append-only decisions on exact historical FileOS later-run
   classifications, with latest-decision and bounded history reads. Migration
   0093 enforces tenant/actor/exact-row binding and immutability. The decisions
