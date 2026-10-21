@@ -1,6 +1,7 @@
 name: Strict sender runtime
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches: [main]
 permissions:
@@ -10,6 +11,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   supported:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -38,6 +40,7 @@ jobs:
       - run: uv run python -c "import sys; print(sys.version)"
       - run: uv run pytest -q tests/test_strict_runtime.py tests/test_rule_control.py tests/test_review_fixes.py
   unsupported:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -72,8 +75,13 @@ jobs:
     steps:
       - name: Require both runtime matrices to succeed
         env:
+          IS_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft }}
           SUPPORTED_RESULT: ${{ needs.supported.result }}
           UNSUPPORTED_RESULT: ${{ needs.unsupported.result }}
         run: |
+          if [ "$IS_DRAFT" = true ]; then
+            echo "A draft cannot satisfy the required runtime check."
+            exit 1
+          fi
           test "$SUPPORTED_RESULT" = success
           test "$UNSUPPORTED_RESULT" = success

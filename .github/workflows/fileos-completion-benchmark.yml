@@ -3,6 +3,7 @@ name: Synthetic FileOS completion benchmark
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - .github/workflows/fileos-completion-benchmark.yml
       - scripts/benchmark_fileos_v1_completion.py
@@ -21,8 +22,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: fileos-benchmark-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   synthetic-ledger:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
