@@ -1,0 +1,5 @@
+{
+  "schema": 1,
+  "_comment": "Factory files this Product keeps as EXACT copies because they run where no Factory exists (FACTORY.md runtime copies, Q-492). MasterBrain keeps none: the deployed application never imports the Factory (DECISIONS.md:678), and _SYSTEM/tools/factory_import.py is the installed development-session import helper, not a runtime copy. Checked by the Factory's runtime_copy_check.py.",
+  "copies": []
+}

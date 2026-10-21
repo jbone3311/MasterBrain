@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# MasterBrain pre-commit — refuse what must never enter git (WO-2026-10-21-1 item 8).
+# Real mail, files, credentials, dumps and live databases never go in git (README "Develop and
+# verify"); .gitignore keeps them out of `git add .`, and this catches `git add -f` and renames.
+# Self-contained on purpose: Codex and Claude sessions share this repo, and neither may need the
+# Factory beside it for the guard to hold. Prints how many staged paths it examined.
+set -uo pipefail
+staged="$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR)" || {
+  echo "✗ pre-commit: could not list staged files — refusing (fail-closed)"; exit 1; }
+n=0; viol=""
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  n=$((n + 1))
+  case "$f" in
+    .env.example|*/.env.example) : ;;
+    tests/fixtures/*) : ;;                                    # synthetic fixtures are the rule
+    *.env|*.env.*|.env) viol="$viol\n  $f  (plaintext env file)" ;;
+    *.db|*.db-wal|*.db-shm|*.sqlite|*.sqlite3|*.dump) viol="$viol\n  $f  (database or dump)" ;;
+    *.eml|*.mbox|*.pst|*.ost) viol="$viol\n  $f  (real mail store)" ;;
+    *.pem|*.key|*.p12|*.pfx|id_rsa|id_ed25519|*.agekey) viol="$viol\n  $f  (private key material)" ;;
+    _SYSTEM/_PRIVATE/*|secrets/*|backups/*) viol="$viol\n  $f  (private tier)" ;;
+  esac
+done <<LIST
+$staged
+LIST
+if git diff --cached -U0 --diff-filter=ACMR -- . ':(exclude)tests/fixtures' \
+     | grep -qE '^\+.*(-----BEGIN [A-Z ]*PRIVATE KEY-----|AGE-SECRET-KEY-1[0-9A-Z]+)'; then
+  viol="$viol\n  <staged content>  (a private key block)"
+fi
+if [ -n "$viol" ]; then
+  printf "✗ pre-commit: %d staged path(s) examined — refused:%b\n" "$n" "$viol"
+  echo "  Unstage it (git restore --staged <path>). Synthetic test data belongs under tests/fixtures/."
+  exit 1
+fi
+echo "✓ pre-commit: $n staged path(s) examined — no data, key or credential file"

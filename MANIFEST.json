@@ -1,4 +1,15 @@
 {
+  "role": "product",
+  "system_id": "masterbrain",
+  "system_name": "MasterBrain",
+  "manual_name": "MASTERBRAIN",
+  "paths": {
+    "root": ".",
+    "system": "_SYSTEM",
+    "dropbox_root": "~/Library/CloudStorage/Dropbox/CW-MasterBrain",
+    "intake": "~/Library/CloudStorage/Dropbox/CW-MasterBrain/_INTAKE-MasterBrain",
+    "_note": "Factory identity keys (WO-2026-10-21-1 item 1), added beside the capability manifest, which is unchanged. Code lives in git; data and generated output live in the Dropbox tier (owner 2026-10-20). No git repository may live in Dropbox (Factory KB PAT-43)."
+  },
   "schema_version": 1,
   "product": {
     "id": "masterbrain",

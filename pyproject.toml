@@ -60,7 +60,13 @@ masterbrain = ["web/*"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["tests/fixtures/pinned_fos_master"]  # Exact donor source; never reformatted.
+extend-exclude = [
+  "tests/fixtures/pinned_fos_master",  # Exact donor source; never reformatted.
+  # Installed by the Factory and checked byte-for-byte against its templates at every bind;
+  # editing them here would break that check, so they are never reformatted either.
+  ".claude/hooks/cw_scope_guard.py",
+  "_SYSTEM/tools/factory_import.py",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
