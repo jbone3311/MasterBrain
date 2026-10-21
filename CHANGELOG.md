@@ -5,7 +5,8 @@
   XLSX extraction reads the true sheet extent so an understated dimension
   cannot hide cells or formulas; reviewed facts under retired or unregistered
   predicates stay correctable (migration 0094). Populated restore-seed tests
-  move to `tests/test_restore_drill_postgres.py`.
+  move to `tests/test_restore_drill_postgres.py`. The XLSX review view marks
+  invisible formatting characters so the reviewed text cannot hide them.
 
 - Add an explanatory `docs/concepts` institutional-knowledge layer and connect
   repository navigation, contributor guidance and documentation ownership. Preserve

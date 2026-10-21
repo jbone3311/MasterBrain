@@ -46,6 +46,13 @@ Actions billing gate cleared also failed on the first one.
    deprecated or unregistered. Migration 0094 enforces this in SQL; the Python
    publish path skips the registry check only for such successors.
 
+4. The first-party XLSX review view shows each Unicode format character
+   (category Cf, plus U+2028/U+2029) as a visible `⟨U+XXXX⟩` marker with a
+   per-page warning, so bidi overrides and zero-width characters cannot make
+   the reviewed text look different from what is published. The browser still
+   verifies the digest over the exact raw text; the server contract is
+   unchanged.
+
 ## Verification
 
 Each fix has a regression test that fails on the unfixed code: a mixed-case
@@ -56,6 +63,7 @@ predicate (registry row inserted in a rolled-back transaction). Results are in
 
 ## Not decided here
 
-Separation of human duties across XLSX approval/review/publication, revocation
-of an unexpired approval, and bidi/format-character flagging in the review view
-remain open review findings for separate ADRs.
+Separation of human duties across XLSX approval/review/publication,
+revocation of an unexpired approval, and whether an idempotent publish replay
+should return its receipt after the approval or review expires remain open
+review findings for separate ADRs.

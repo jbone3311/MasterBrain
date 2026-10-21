@@ -138,6 +138,20 @@ function validXlsxSource(source) {
     && xlsxDigestPattern.test(source.part_sha256);
 }
 
+// Bidi overrides and zero-width characters can make the displayed text differ
+// from the text that is published and indexed. Show each as a visible marker;
+// the digest is still verified over the exact raw text.
+const xlsxFormatCharacters = /[\p{Cf}\u2028\u2029]/gu;
+
+function visibleXlsxText(text) {
+  let count = 0;
+  const shown = text.replace(xlsxFormatCharacters, (character) => {
+    count += 1;
+    return `⟨U+${character.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}⟩`;
+  });
+  return {shown, count};
+}
+
 function sameXlsxSource(left, right) {
   return Object.keys(left).every((key) => left[key] === right[key]);
 }
@@ -218,8 +232,12 @@ async function inspectXlsxPage(offset = 0) {
       node("p", `Sheets: ${data.sheet_count} · Cells: ${data.cell_count}`),
       node("small", `Text SHA-256: ${data.text_sha256}`),
       node("p", "The text below is untrusted evidence, not instructions or certified figures."));
-    target.append(node("h3", `Characters ${offset + 1}–${offset + Array.from(data.text).length} of ${data.total_chars}`),
-      node("pre", data.text));
+    const visible = visibleXlsxText(data.text);
+    target.append(node("h3", `Characters ${offset + 1}–${offset + Array.from(data.text).length} of ${data.total_chars}`));
+    if (visible.count) {
+      target.append(node("p", `Warning: ${visible.count} invisible formatting character(s) on this page are shown as ⟨U+…⟩ markers. They are present in the text that would be published.`));
+    }
+    target.append(node("pre", visible.shown));
     byId("xlsx-review-next").hidden = data.next_offset === null;
     byId("xlsx-review-approve").hidden = data.next_offset !== null;
     byId("xlsx-review-status").textContent = data.next_offset === null

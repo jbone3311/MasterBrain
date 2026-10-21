@@ -60,6 +60,21 @@ test("inspects every bounded page before exact human review; browser never publi
   assert.ok(calls.every((call) => !call.url.includes("publish")));
 });
 
+test("invisible formatting characters are shown as markers and still digest-verified", async () => {
+  const text = "USD \u202e0001\u202c\u200b";
+  const hash = createHash("sha256").update(text).digest("hex");
+  const app = prepare(async (url) => {
+    if (url.endsWith("/inspect")) return response(page(0, text, null, Array.from(text).length, hash));
+    assert.fail(`unexpected request: ${url}`);
+  });
+  await app.element("xlsx-review-form").onsubmit({preventDefault() {}});
+  const shown = app.element("xlsx-review-result").textContent;
+  assert.ok(shown.includes("USD ⟨U+202E⟩0001⟨U+202C⟩⟨U+200B⟩"));
+  assert.ok(shown.includes("3 invisible formatting character(s)"));
+  assert.ok(!/[\u202e\u202c\u200b]/u.test(shown));
+  assert.equal(app.element("xlsx-review-approve").hidden, false);
+});
+
 test("uncertain review retries only the same exact idempotency key", async () => {
   const keys = [];
   const hash = createHash("sha256").update("fictional").digest("hex");
