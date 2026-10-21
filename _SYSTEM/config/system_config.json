@@ -1,0 +1,19 @@
+{
+  "_schema_version": "1.2",
+  "_standard": "STD-CONFIG-001",
+  "_note": "ONE config file for the Factory development layer (WO-2026-10-21-1 item 6). The bind's writer is a read-modify-write: it adds factory_contract_version and last_verified_factory_commit and keeps the rest. The deployed application does not read this file.",
+  "system_id": "masterbrain",
+  "system_name": "MasterBrain",
+  "cw_prefix": "MasterBrain",
+  "version": "0.2.0a2",
+  "role": "product",
+  "intake_dir": "_INTAKE-MasterBrain",
+  "tools_dir": "scripts",
+  "_note_tools_dir": "MasterBrain's own tooling lives in scripts/ (parity, restore drill, docs check); it has no _SYSTEM/tools tree.",
+  "features": {
+    "queue_management": false,
+    "lineage_tracking": false
+  },
+  "_note_features": "Neither the spoke-state queue DB nor the lineage DB exists here; the open-items queue is the JSON file in _SYSTEM/_MEMORY/.",
+  "factory_contract_version": 2
+}
