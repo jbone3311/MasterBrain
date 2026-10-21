@@ -292,6 +292,7 @@ def protected_database(
             "0092_fileos_v2_later_shared_index_generation.sql",
             "0093_fileos_v2_later_row_decisions.sql",
             "0094_project_fact_correction_keeps_shape.sql",
+            "0095_dossier_proposal_decision_binding.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:

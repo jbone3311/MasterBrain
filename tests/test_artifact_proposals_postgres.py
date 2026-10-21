@@ -121,7 +121,11 @@ def test_artifact_batch_mixed_decisions_and_stale_source_refusal(database, tenan
         _review(staged, preview["proposals"], ["approved", "rejected"]), uuid4(),
     )
     assert result["approved"] == result["rejected"] == 1
-    another = service.stage(ctx, body, uuid4())
+    with pytest.raises(Conflict, match="already approved"):
+        service.stage(ctx, body, uuid4())
+    another = service.stage(ctx, DossierProposalStageRequest(
+        markdown=body.markdown, selections=body.selections[1:],
+    ), uuid4())
     with psycopg.connect(admin) as conn:
         conn.execute(
             "UPDATE brain_source_items i SET current_version_id=NULL "

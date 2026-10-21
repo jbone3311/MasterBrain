@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-266](adr/266_reachable_tier_reviews_and_single_dossier_approval.md)
+pages source-tier reviews with a cursor and all-page tier counts, approves an
+imported dossier claim once, and binds fact-proposal approvals to the exact
+published fact and current reviewer (migration 0095).
+
 [ADR-265](adr/265_review_fixes_collation_xlsx_extent_fact_correction.md)
 compares SQL-read locators in byte order, reads an XLSX sheet's true extent
 rather than its declared dimension, and keeps reviewed facts under retired or

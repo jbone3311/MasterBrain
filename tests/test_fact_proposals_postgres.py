@@ -151,7 +151,11 @@ def test_fact_batch_mixed_decisions_and_stale_source_refusal(database, tenant):
         uuid4(),
     )
     assert result["approved"] == result["rejected"] == 1
-    another = service.stage(ctx, body, uuid4())
+    with pytest.raises(Conflict, match="already approved"):
+        service.stage(ctx, body, uuid4())
+    another = service.stage(ctx, DossierProposalStageRequest(
+        markdown=body.markdown, selections=body.selections[1:],
+    ), uuid4())
     with psycopg.connect(admin) as conn:
         conn.execute(
             "UPDATE brain_source_items i SET current_version_id=NULL "
@@ -266,6 +270,58 @@ def test_fact_review_holds_current_item_and_source_until_commit(
         assert conn.execute(
             "SELECT status FROM brain_sources WHERE id=%s", (source_id,),
         ).fetchone()["status"] == "active"
+
+
+def test_same_dossier_claim_is_approved_once_across_batches(database, tenant):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    body = _candidate(store, ctx, project_id, evidence_id)
+    service = FactProposalBatches(store)
+    first = service.stage(ctx, body, uuid4())
+    second = service.stage(ctx, body, uuid4())
+    before = len(ProjectFacts(store).page(ctx, project_id, ProjectFactPageRequest())["results"])
+    for staged in (first, second):
+        staged["preview"] = service.preview(ctx, staged["batch_id"])["proposals"]
+    service.review(ctx, first["batch_id"], _decisions(
+        first, (first["preview"], ["approved"])), uuid4())
+    with pytest.raises(Conflict, match="already approved"):
+        service.review(ctx, second["batch_id"], _decisions(
+            second, (second["preview"], ["approved"])), uuid4())
+    with pytest.raises(Conflict, match="already approved"):
+        service.stage(ctx, body, uuid4())
+    after = ProjectFacts(store).page(ctx, project_id, ProjectFactPageRequest())["results"]
+    assert len(after) == before + 1
+    assert service.review(ctx, second["batch_id"], _decisions(
+        second, (second["preview"], ["rejected"])), uuid4())["rejected"] == 1
+
+
+def test_sql_refuses_approval_naming_an_unrelated_fact_or_other_reviewer(database, tenant):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    service = FactProposalBatches(store)
+    staged = service.stage(ctx, _candidate(store, ctx, project_id, evidence_id), uuid4())
+    proposal = service.preview(ctx, staged["batch_id"])["proposals"][0]
+    key = uuid4()
+    unrelated = ProjectFacts(store).publish(
+        ctx, project_id, _body(project_id, evidence_id, value="Unrelated fictional"), key,
+    )["object_id"]
+    insert = (
+        "INSERT INTO knowledge_fact_proposal_decisions(tenant_id,batch_id,"
+        "proposal_id,decision,reviewer_id,publication_key,fact_id) "
+        "VALUES (%s,%s,%s,'approved',%s,%s,%s)"
+    )
+    with pytest.raises(psycopg.Error, match="invalid fact proposal approval receipt"):
+        with store.transaction(ctx) as conn:
+            conn.execute(insert, (ctx.tenant_id, staged["batch_id"],
+                                  proposal["proposal_id"], ctx.actor_id, key, unrelated))
+    with pytest.raises(psycopg.Error, match="reviewer must be the current actor"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_fact_proposal_decisions(tenant_id,batch_id,"
+                "proposal_id,decision,reviewer_id,reason) "
+                "VALUES (%s,%s,%s,'rejected',%s,'No')",
+                (ctx.tenant_id, staged["batch_id"], proposal["proposal_id"], uuid4()),
+            )
 
 
 def test_fact_proposal_sql_tenant_immutability_and_citation_guards(database, tenant):

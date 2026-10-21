@@ -1412,8 +1412,11 @@ def create_app(
         principal: Annotated[
             Principal, Depends(require("knowledge.search", assistant_source_aware=True))
         ],
+        after: Annotated[str | None, Query(max_length=40)] = None,
     ) -> dict[str, Any]:
-        return source_tier_reviews.current_for_evidence(principal.context, evidence_id)
+        return source_tier_reviews.current_for_evidence(
+            principal.context, evidence_id, after=after,
+        )
 
     @app.get("/v1/knowledge/fact-predicates")
     def project_fact_predicate_catalog(

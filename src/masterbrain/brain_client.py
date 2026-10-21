@@ -658,19 +658,33 @@ class BrainReadClient:
             raise BrainClientError("invalid_response")
         return data
 
-    def source_tier_reviews(self, evidence_id: str) -> dict[str, Any]:
+    def source_tier_reviews(
+        self, evidence_id: str, *, after: str | None = None,
+    ) -> dict[str, Any]:
         """Read current human classifications, never a winning or verified tier."""
-        if not isinstance(evidence_id, str) or not _EVIDENCE_ID.fullmatch(evidence_id):
+        if not isinstance(evidence_id, str) or not _EVIDENCE_ID.fullmatch(evidence_id) or (
+            after is not None
+            and (not isinstance(after, str) or not _SOURCE_TIER_REVIEW_ID.fullmatch(after))
+        ):
             raise BrainClientError("invalid_request")
+        query = f"?{httpx.QueryParams({'after': after})}" if after is not None else ""
         data = self._request(
-            "GET", f"/v1/knowledge/evidence/{evidence_id}/source-tier-reviews",
+            "GET", f"/v1/knowledge/evidence/{evidence_id}/source-tier-reviews{query}",
         )
         rows = data.get("reviews")
-        if (set(data) != {"evidence_id", "reviews", "truncated", "meaning",
-                         "untrusted_content"}
+        counts = data.get("tier_counts")
+        cursor = data.get("next_cursor")
+        if (set(data) != {"evidence_id", "reviews", "truncated", "next_cursor",
+                         "tier_counts", "meaning", "untrusted_content"}
                 or data.get("evidence_id") != evidence_id
                 or not isinstance(rows, list) or len(rows) > 25
                 or type(data.get("truncated")) is not bool
+                or not isinstance(counts, dict) or set(counts) != {"T1", "T2", "T3"}
+                or any(type(value) is not int or value < 0 for value in counts.values())
+                or sum(counts.values()) < len(rows)
+                or (cursor is not None) is not data.get("truncated")
+                or cursor is not None and (not rows or cursor != rows[-1].get("id"))
+                or cursor is not None and cursor == after
                 or data.get("meaning") !=
                 "human_metadata_classification_not_byte_attestation_or_financial_truth"
                 or data.get("untrusted_content") is not True):

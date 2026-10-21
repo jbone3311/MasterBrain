@@ -1,5 +1,10 @@
 # Changelog
 
+- Make source-tier reviews reachable past the first page with a cursor and
+  all-page tier counts; approve an imported dossier fact or artifact claim
+  once; bind fact-proposal approvals to the exact published fact and the
+  current reviewer (ADR-266, migration 0095).
+
 - Fix three review findings (ADR-265): historical later-FileOS reads compare
   locators in byte order so en-US databases no longer reject valid attempts;
   XLSX extraction reads the true sheet extent so an understated dimension

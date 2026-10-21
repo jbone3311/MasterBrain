@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -98,6 +99,47 @@ def _tier_body(store: Store, ctx: pg.TenantContext, evidence_id: str) -> SourceT
         document_sha256=row["body_sha256"], source_tier="T3",
         authority_kind="internal_record", source_quote=QUOTE,
     )
+
+
+def test_buried_source_tier_reviews_stay_reachable_and_counted(database, tenant):
+    store, _ = database
+    ctx, _, _, evidence_id = _prepared(store, tenant)
+    reviews = SourceTierReviews(store)
+    t3 = _tier_body(store, ctx, evidence_id)
+    oldest = reviews.publish(ctx, evidence_id, t3, uuid4())["object_id"]
+    t1 = SourceTierReviewWrite.model_validate({
+        **t3.model_dump(), "source_tier": "T1", "authority_kind": "signed_instrument",
+    })
+    for _ in range(26):
+        reviews.publish(ctx, evidence_id, t1, uuid4())
+    first = reviews.current_for_evidence(ctx, evidence_id)
+    assert len(first["reviews"]) == 25 and first["truncated"] is True
+    assert first["tier_counts"] == {"T1": 26, "T2": 0, "T3": 1}
+    assert first["next_cursor"] == first["reviews"][-1]["id"]
+    assert oldest not in {row["id"] for row in first["reviews"]}
+    second = reviews.current_for_evidence(ctx, evidence_id, after=first["next_cursor"])
+    assert [row["id"] for row in second["reviews"]][-1] == oldest
+    assert len(second["reviews"]) == 2 and second["next_cursor"] is None
+    assert second["truncated"] is False and second["tier_counts"] == first["tier_counts"]
+    for bad in ("stier_" + "0" * 32, "not-a-cursor"):
+        with pytest.raises(NotFound):
+            reviews.current_for_evidence(ctx, evidence_id, after=bad)
+    with BrainReadClient(
+        "https://brain.example", "fictional-token",
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=json.loads(
+            json.dumps(first, default=lambda value: value.isoformat())))),
+    ) as reader:
+        assert reader.source_tier_reviews(evidence_id)["next_cursor"] == first["next_cursor"]
+    for forged in (
+        {**first, "tier_counts": {"T1": 1, "T2": 0, "T3": 0}},
+        {**first, "next_cursor": None},
+    ):
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(lambda _, body=forged: httpx.Response(
+                200, json=json.loads(json.dumps(body, default=lambda value: value.isoformat())))),
+        ) as reader, pytest.raises(BrainClientError, match="invalid_response"):
+            reader.source_tier_reviews(evidence_id)
 
 
 def test_source_tier_review_is_current_source_bound_and_not_financial_truth(database, tenant):

@@ -106,6 +106,14 @@ class ArtifactProposalBatches:
                     (claimed_id,),
                 ).fetchone() is not None:
                     raise Conflict("imported artifact claim already exists")
+                if conn.execute(
+                    "SELECT 1 FROM knowledge_artifact_proposals p "
+                    "JOIN knowledge_artifact_proposal_decisions d "
+                    "ON d.tenant_id=p.tenant_id AND d.proposal_id=p.id "
+                    "WHERE p.claimed_id=%s AND d.decision='approved' LIMIT 1",
+                    (claimed_id,),
+                ).fetchone() is not None:
+                    raise Conflict("imported artifact claim was already approved")
                 claims.append((claimed_id, link.artifact_evidence_id,
                                link.basis_evidence_id, artifact_kind))
             context_sha = _sha({
@@ -284,6 +292,18 @@ class ArtifactProposalBatches:
                         (row["claimed_id"],),
                     ).fetchone() is not None:
                         raise Conflict("imported artifact claim already exists")
+                    conn.execute(
+                        "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                        (f"{ctx.tenant_id}:kaclaim:{row['claimed_id']}",),
+                    )
+                    if conn.execute(
+                        "SELECT 1 FROM knowledge_artifact_proposals p "
+                        "JOIN knowledge_artifact_proposal_decisions d "
+                        "ON d.tenant_id=p.tenant_id AND d.proposal_id=p.id "
+                        "WHERE p.claimed_id=%s AND d.decision='approved' LIMIT 1",
+                        (row["claimed_id"],),
+                    ).fetchone() is not None:
+                        raise Conflict("imported artifact claim was already approved")
                     link, _ = _canonical_link(row["payload"])
                     publication_key = uuid5(
                         NAMESPACE_URL, "knowledge-artifact-proposal:" + row["id"],

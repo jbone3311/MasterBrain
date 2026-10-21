@@ -2,6 +2,19 @@
 
 Updated 2026-10-20 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-266 review fixes — local checkpoint
+
+Pages source-tier reviews with a cursor and all-page tier counts, approves an
+imported dossier claim once, and binds fact-proposal approvals to the exact
+published fact and current reviewer (migration 0095). The three new
+PostgreSQL regression tests failed on the pre-fix code.
+
+On a fresh disposable PostgreSQL 17.11 `en_US.UTF-8` database (macOS ICU), the
+complete Python 3.11.13 suite passed **3,814 / 71 skipped / zero failed** in
+9m43s with **698/699 PostgreSQL-marked tests executed**. Ruff, strict mypy
+(151 source files), first-party Node **179/179**, offline docs and diff check
+passed. Hosted exact-head CI is the remaining gate.
+
 ## ADR-265 review fixes — exact-code checkpoint `c4faadc`
 
 Fixes three independent-review findings and the first hosted full-suite failure

@@ -129,6 +129,16 @@ class FactProposalBatches:
                     (claimed_id,),
                 ).fetchone() is not None:
                     raise Conflict("imported fact claim already exists")
+                # Imported facts get new IDs, so re-staging the same dossier
+                # under another key is caught by its approved claim instead.
+                if conn.execute(
+                    "SELECT 1 FROM knowledge_fact_proposals p "
+                    "JOIN knowledge_fact_proposal_decisions d "
+                    "ON d.tenant_id=p.tenant_id AND d.proposal_id=p.id "
+                    "WHERE p.claimed_id=%s AND d.decision='approved' LIMIT 1",
+                    (claimed_id,),
+                ).fetchone() is not None:
+                    raise Conflict("imported fact claim was already approved")
             conn.execute(
                 "INSERT INTO knowledge_fact_proposal_batches(tenant_id,id,proposer_id,"
                 "idempotency_key,request_sha256,import_context_sha256,row_count) "
@@ -293,6 +303,18 @@ class FactProposalBatches:
                         (row["claimed_id"],),
                     ).fetchone() is not None:
                         raise Conflict("imported fact claim already exists")
+                    conn.execute(
+                        "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                        (f"{ctx.tenant_id}:kfclaim:{row['claimed_id']}",),
+                    )
+                    if conn.execute(
+                        "SELECT 1 FROM knowledge_fact_proposals p "
+                        "JOIN knowledge_fact_proposal_decisions d "
+                        "ON d.tenant_id=p.tenant_id AND d.proposal_id=p.id "
+                        "WHERE p.claimed_id=%s AND d.decision='approved' LIMIT 1",
+                        (row["claimed_id"],),
+                    ).fetchone() is not None:
+                        raise Conflict("imported fact claim was already approved")
                     fact, _ = _canonical_fact(row["payload"])
                     publication_key = uuid5(
                         NAMESPACE_URL, "knowledge-fact-proposal:" + row["id"],

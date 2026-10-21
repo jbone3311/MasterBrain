@@ -269,11 +269,13 @@ source effects or an alternate route through KnowledgeCore.
   This is not source-byte attestation or financial-fact approval.
 - `GET /v1/knowledge/evidence/{evidence_id}/source-tier-reviews` — ADR-217
   `knowledge.search` plus `brain.content.read`, current granted/unexcluded
-  evidence only. Returns at most 25 historical human classifications and a
-  truncation flag, without quotes or a computed winning tier. Conflicting
-  reviews are not resolved; old/stale evidence is filtered before limiting.
-  `BrainReadClient.source_tier_reviews()` validates the closed response and
-  refuses any upgraded financial-truth meaning.
+  evidence only. Returns at most 25 historical human classifications per
+  page (newest first), a truncation flag, `next_cursor` for `after=<review
+  id>` and `tier_counts` over all current visible reviews (ADR-266), without
+  quotes or a computed winning tier. Conflicting reviews are not resolved;
+  old/stale evidence is filtered before limiting.
+  `BrainReadClient.source_tier_reviews(after=...)` validates the closed
+  response and refuses any upgraded financial-truth meaning.
 - `GET /v1/knowledge/fact-predicates` — ADR-215 read-only, bounded catalog of
   the database's latest project-fact predicate revisions, including
   deprecations. Requires `knowledge.search`; an assistant also needs ordinary
