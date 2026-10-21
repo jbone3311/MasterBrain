@@ -1,5 +1,10 @@
 # Architecture Decisions
 
+[ADR-265](adr/265_review_fixes_collation_xlsx_extent_fact_correction.md)
+compares SQL-read locators in byte order, reads an XLSX sheet's true extent
+rather than its declared dimension, and keeps reviewed facts under retired or
+unregistered predicates correctable (migration 0094).
+
 [ADR-262](adr/262_historical_fileos_review_snapshot.md) adds a compact,
 human-only digest of exact historical FileOS row decisions, unresolved counts
 and pending run flags. It is a read-only prerequisite for, not a substitute

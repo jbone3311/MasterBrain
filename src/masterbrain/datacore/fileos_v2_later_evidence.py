@@ -114,7 +114,7 @@ class FileOSV2LaterEvidencePreparer:
                 "AND v.id=r.prepared_version_id "
                 "JOIN brain_evidence e ON e.tenant_id=r.tenant_id "
                 "AND e.id=r.evidence_id "
-                "WHERE r.preparation_id=%s ORDER BY r.locator",
+                "WHERE r.preparation_id=%s ORDER BY r.locator COLLATE \"C\"",
                 (preparation_id,),
             ).fetchall()
             policy_sha = _canonical_digest(candidate["policy"])

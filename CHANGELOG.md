@@ -1,5 +1,12 @@
 # Changelog
 
+- Fix three review findings (ADR-265): historical later-FileOS reads compare
+  locators in byte order so en-US databases no longer reject valid attempts;
+  XLSX extraction reads the true sheet extent so an understated dimension
+  cannot hide cells or formulas; reviewed facts under retired or unregistered
+  predicates stay correctable (migration 0094). Populated restore-seed tests
+  move to `tests/test_restore_drill_postgres.py`.
+
 - Add an explanatory `docs/concepts` institutional-knowledge layer and connect
   repository navigation, contributor guidance and documentation ownership. Preserve
   canonical PRD/architecture/ADR authority and dated research; describe future RFC

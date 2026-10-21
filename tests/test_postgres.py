@@ -7579,7 +7579,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert private_baseline["latest_v1_matches"] is True
     assert private_baseline["current_read_active"] is False
     assert private_baseline["absence_authorized"] is False
-    later_add = tmp_path / "later_add.txt"
+    later_add = tmp_path / "Later_add.txt"
     later_add.write_bytes(b"synthetic later-only evidence")
     later_junk = tmp_path / "~$draft.docx"
     later_junk.write_bytes(b"synthetic excluded Office lock")
@@ -7669,7 +7669,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     original_later_extract = later_document_module.extract_source_version
 
     def failed_later_add(root: Path, item: dict[str, Any]) -> ExtractionResult:
-        if item["locator"] == "later_add.txt":
+        if item["locator"] == "Later_add.txt":
             return ExtractionResult(item["version_id"], item["locator"], ExtractionStatus.FAILED)
         return original_later_extract(root, item)
 
@@ -7799,7 +7799,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert later_preview.active_v1_hits == ()
     assert later_preview.review_flags == later_run.review_flags
     assert {hit.locator for hit in later_preview.candidate_hits} == {
-        "later_add.txt",
+        "Later_add.txt",
     }
     first_rows = later_search_reviewer.review_rows(
         authorizing_human, source_id, later_generation.generation_id,
@@ -7920,7 +7920,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         assert body["coverage"] == "historical_later_comparison_not_current_fileos"
         assert body["layers"]["active_v1"] == []
         assert {hit["locator"] for hit in body["layers"]["candidate_v2_later"]} == {
-            "later_add.txt",
+            "Later_add.txt",
         }
         assert body["untrusted_content"] is True
         row_response = client.post(
@@ -8143,7 +8143,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
             "JOIN brain_source_versions v ON v.tenant_id=p.tenant_id "
             "AND v.id=p.prepared_version_id "
             "JOIN brain_evidence e ON e.tenant_id=p.tenant_id AND e.id=p.evidence_id "
-            "WHERE p.preparation_id=%s AND p.locator='later_add.txt'",
+            "WHERE p.preparation_id=%s AND p.locator='Later_add.txt'",
             (later_preparation_id,),
         ).fetchone()
         assert later_row is not None

@@ -354,7 +354,7 @@ def test_project_fact_registry_matches_sql_and_blocks_unregistered_direct_writes
     with psycopg.connect(admin) as conn:
         rows = conn.execute(
             "SELECT name,version,value_type,unit_code,description,status "
-            "FROM knowledge_project_fact_predicates ORDER BY name"
+            "FROM knowledge_project_fact_predicates ORDER BY name COLLATE \"C\""
         ).fetchall()
         assert rows == [
             (name, spec.version, spec.value_type, spec.unit, spec.description, "active")
@@ -398,6 +398,50 @@ def test_registry_change_preserves_exact_reviewed_idempotent_replay(
     assert facts.publish(ctx, project_id, body, key) == {**first, "changed": False}
     with pytest.raises(ValueError, match="registry review"):
         facts.publish(ctx, project_id, body, uuid4())
+
+
+def test_retired_or_unregistered_predicate_fact_stays_correctable(
+    database, tenant, monkeypatch,
+):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    first = facts.publish(ctx, project_id, _body(project_id, evidence_id), uuid4())
+    second = facts.publish(
+        ctx, project_id, _body(project_id, evidence_id, value="Second fictional"), uuid4(),
+    )
+    monkeypatch.delitem(PROJECT_FACT_PREDICATES, "deal.note")
+    with pytest.raises(ValueError, match="registry review"):
+        facts.publish(ctx, project_id, _body(project_id, evidence_id, value="New chain"), uuid4())
+    retraction = ProjectFactWrite.model_validate({
+        **_body(project_id, evidence_id, supersedes_id=first["object_id"]).model_dump(),
+        "assertion_status": "retracted",
+    })
+    assert facts.publish(ctx, project_id, retraction, uuid4())["changed"] is True
+    copy = (
+        "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+        "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+        "quote_evidence_id,source_quote,observed_at,reviewer_id,supersedes_id) "
+        "SELECT tenant_id,%s,project_id,predicate,value,value_type,"
+        "'retracted',confidence,derivation,evidence_ids,"
+        "quote_evidence_id,source_quote,observed_at,reviewer_id,%s "
+        "FROM knowledge_project_facts WHERE id=%s"
+    )
+    with psycopg.connect(admin) as conn, conn.transaction(force_rollback=True):
+        conn.execute(
+            "INSERT INTO knowledge_project_fact_predicates"
+            "(name,version,value_type,unit_code,description,status) "
+            "VALUES ('deal.note',99,'text',NULL,'retired in a rolled-back test','deprecated')"
+        )
+        conn.execute(copy, ("pfact_" + "7" * 32, second["object_id"], second["object_id"]))
+        version = conn.execute(
+            "SELECT predicate_registry_version FROM knowledge_project_facts WHERE id=%s",
+            ("pfact_" + "7" * 32,),
+        ).fetchone()
+        assert version == (1,)
+        with pytest.raises(psycopg.errors.RaiseException, match="registered shape"):
+            with conn.transaction():
+                conn.execute(copy, ("pfact_" + "6" * 32, None, second["object_id"]))
 
 
 def test_project_fact_exact_measurement_stays_typed_only_in_report(database, tenant):

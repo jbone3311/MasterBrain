@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import zipfile
 from dataclasses import replace
 from io import BytesIO
 
@@ -124,6 +126,44 @@ def test_formula_or_changed_bytes_return_no_partial_cells() -> None:
     assert changed.status == "failed" and changed.sheets == ()
     wrong_digest = project_xlsx_tables(raw, replace(_source(raw), sha256="0" * 64))
     assert wrong_digest.status == "failed" and wrong_digest.sheets == ()
+
+
+def _understated_dimension(*, formula: bool) -> bytes:
+    """A workbook whose <dimension> claims A1:B2 while cells exist beyond it."""
+    book = Workbook()
+    sheet = book.active
+    sheet["B2"] = "synthetic inside"
+    sheet["C3"] = "synthetic beyond"
+    if formula:
+        sheet["D9"] = "=1+1"
+    output = BytesIO()
+    book.save(output)
+    book.close()
+    source, rewritten = zipfile.ZipFile(BytesIO(output.getvalue())), BytesIO()
+    with zipfile.ZipFile(rewritten, "w", zipfile.ZIP_DEFLATED) as target:
+        for info in source.infolist():
+            data = source.read(info)
+            if info.filename == "xl/worksheets/sheet1.xml":
+                data, count = re.subn(rb'<dimension ref="[^"]*"', b'<dimension ref="A1:B2"', data)
+                assert count == 1
+            target.writestr(info, data)
+    return rewritten.getvalue()
+
+
+def test_understated_dimension_cannot_hide_cells_or_formulas() -> None:
+    raw = _understated_dimension(formula=False)
+    table = project_xlsx_tables(raw, _source(raw))
+    assert table.status == "extracted"
+    cells = {value for sheet in table.sheets for row in sheet.rows for value in row.values}
+    assert {"synthetic inside", "synthetic beyond"} <= cells
+    indexed = extract_document(raw, _source(raw))
+    assert indexed.status == "extracted" and "synthetic beyond" in (indexed.text or "")
+    hidden_formula = _understated_dimension(formula=True)
+    for result in (
+        project_xlsx_tables(hidden_formula, _source(hidden_formula)),
+        extract_document(hidden_formula, _source(hidden_formula)),
+    ):
+        assert result.status == "deferred" and result.reason == "unsupported_features"
 
 
 def test_empty_and_mislabeled_bytes_do_not_yield_table() -> None:

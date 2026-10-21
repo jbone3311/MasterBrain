@@ -254,8 +254,22 @@ def project_xlsx_tables(raw: bytes, source: DocumentSource) -> XlsxTableProjecti
                     isinstance(max_col, int) and max_col > MAX_COLUMNS
                 ):
                     return _outcome(source, "deferred", "structure_limit")
+                # Read-only iteration is bounded by the declared <dimension>; a
+                # writer that understates it would hide cells (and formulas)
+                # from an extraction still reported complete. Measure the real
+                # extent and recheck it; a truthful dimension reads identically.
+                sheet.reset_dimensions()
+                if next(sheet.iter_rows(min_row=1, min_col=1), None) is not None:
+                    sheet.calculate_dimension(force=True)  # fails on an empty sheet
+                max_row, max_col = sheet.max_row, sheet.max_column
+                if (isinstance(max_row, int) and max_row > MAX_ROWS_PER_SHEET) or (
+                    isinstance(max_col, int) and max_col > MAX_COLUMNS
+                ):
+                    return _outcome(source, "deferred", "structure_limit")
                 rows: list[XlsxRow] = []
-                for row_number, row in enumerate(sheet.iter_rows(values_only=False), 1):
+                for row_number, row in enumerate(
+                    sheet.iter_rows(min_row=1, min_col=1, values_only=False), 1,
+                ):
                     if row_number > MAX_ROWS_PER_SHEET or len(row) > MAX_COLUMNS:
                         return _outcome(source, "deferred", "structure_limit")
                     if any(cell.data_type == "f" for cell in row):

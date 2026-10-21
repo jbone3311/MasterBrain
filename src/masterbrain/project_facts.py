@@ -237,7 +237,7 @@ class ProjectFacts:
                 "SELECT name,version,value_type,unit_code,description,status FROM ("
                 "SELECT DISTINCT ON (name) name,version,value_type,unit_code,"
                 "description,status FROM knowledge_project_fact_predicates "
-                "ORDER BY name,version DESC) latest ORDER BY name LIMIT 101"
+                "ORDER BY name,version DESC) latest ORDER BY name COLLATE \"C\" LIMIT 101"
             ).fetchall()
             if len(rows) > 100:
                 raise RuntimeError("project fact predicate catalog exceeds response bound")
@@ -341,14 +341,16 @@ class ProjectFacts:
         if body.supersedes_id is not None:
             prior_fact = conn.execute(
                 "WITH allowed AS (SELECT %s::text[] AS sources) "
-                "SELECT f.project_id,f.predicate,f.value_type "
+                "SELECT f.project_id,f.predicate,f.value_type,f.unit_code "
                 "FROM knowledge_project_facts f CROSS JOIN allowed "
                 "WHERE f.id=%s AND " + _fact_evidence_visible_sql("f"),
                 (allowed, body.supersedes_id),
             ).fetchone()
             if (prior_fact is None or prior_fact["project_id"] != project_id
                 or prior_fact["predicate"] != body.predicate
-                or prior_fact["value_type"] != body.value_type):
+                or prior_fact["value_type"] != body.value_type
+                or prior_fact["unit_code"]
+                != (body.measurement.unit if body.measurement else None)):
                 raise NotFound()
 
     def _publish_in_transaction(
@@ -378,21 +380,27 @@ class ProjectFacts:
             if prior["request_sha256"] != request_sha:
                 raise Conflict("project fact idempotency key reused")
             return {"object_id": prior["fact_id"], "changed": False, "reviewed": True}
-        expected_spec = require_registered_fact(
-            body.predicate, body.value_type,
-            body.measurement.unit if body.measurement else None,
-        )
-        latest_spec = conn.execute(
-            "SELECT version,status,value_type,unit_code "
-            "FROM knowledge_project_fact_predicates WHERE name=%s "
-            "ORDER BY version DESC LIMIT 1", (body.predicate,),
-        ).fetchone()
-        status = registry_status_with_latest(
-            body.predicate, body.value_type,
-            body.measurement.unit if body.measurement else None, latest_spec,
-        )
-        if status != "active" or latest_spec["version"] != expected_spec.version:
-            raise ValueError("project fact predicate registry review required: " + status)
+        # ADR-265: the registry gates new fact chains. A correction or
+        # retraction keeps its prior's exact shape, already checked under the
+        # same lock, so a deprecated or unregistered predicate stays correctable.
+        if body.supersedes_id is None:
+            expected_spec = require_registered_fact(
+                body.predicate, body.value_type,
+                body.measurement.unit if body.measurement else None,
+            )
+            latest_spec = conn.execute(
+                "SELECT version,status,value_type,unit_code "
+                "FROM knowledge_project_fact_predicates WHERE name=%s "
+                "ORDER BY version DESC LIMIT 1", (body.predicate,),
+            ).fetchone()
+            status = registry_status_with_latest(
+                body.predicate, body.value_type,
+                body.measurement.unit if body.measurement else None, latest_spec,
+            )
+            if status != "active" or latest_spec["version"] != expected_spec.version:
+                raise ValueError(
+                    "project fact predicate registry review required: " + status
+                )
         conn.execute(
             "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
             "value,value_type,assertion_status,confidence,derivation,evidence_ids,"

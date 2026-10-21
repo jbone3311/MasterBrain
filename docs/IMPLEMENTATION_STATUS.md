@@ -155,8 +155,9 @@ approval/result queue or end-to-end worker workflow.
 The exact `0c64f8b` code head passed the complete fictional local suite on
 Python 3.14 and fresh disposable PostgreSQL 17.11: 3,823 passed, 19 skipped,
 zero failed; 691/692 PostgreSQL-marked tests executed. The cluster was removed.
-Hosted exact-head checks still stopped before job steps for account billing,
-and immutable-image XLSX execution and independent review remain open.
+Hosted checks now start (the billing gate cleared on 2026-10-20); their first
+full run found the collation defect fixed by ADR-265. An independent review
+was completed; immutable-image XLSX execution remains open.
 
 ADR-245's local native PostgreSQL 17.11 restore passed with a populated
 fictional XLSX review/publication: 120 tables, 424 rows, five external

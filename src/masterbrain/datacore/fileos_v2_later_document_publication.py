@@ -122,7 +122,7 @@ class FileOSV2LaterDocumentPublisher:
             "SELECT locator,item_id,candidate_version_id,prepared_version_id,"
             "evidence_id,sha256,size_bytes,media_type "
             "FROM brain_fileos_v2_later_prepared_rows "
-            "WHERE preparation_id=%s ORDER BY locator",
+            "WHERE preparation_id=%s ORDER BY locator COLLATE \"C\"",
             (preparation_id,),
         ).fetchall()
         mapping = {row["locator"]: row for row in prepared_rows}
@@ -185,7 +185,7 @@ class FileOSV2LaterDocumentPublisher:
             "SELECT locator,kind,item_id,candidate_version_id,"
             "prepared_version_id,evidence_id,outcome,document_id "
             "FROM brain_fileos_v2_later_document_attempt_items "
-            "WHERE attempt_id=%s ORDER BY locator",
+            "WHERE attempt_id=%s ORDER BY locator COLLATE \"C\"",
             (attempt_id,),
         ).fetchall()
         try:
