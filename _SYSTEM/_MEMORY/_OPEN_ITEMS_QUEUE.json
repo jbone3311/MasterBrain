@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0",
+  "generated": "2026-10-21",
+  "items": [],
+  "_note": "The single queue of deferred committed work for development sessions (Rule 29). Product backlog that lives in GitHub issues or docs/ is not copied here; an item lands here when a session defers work it committed to."
+}
