@@ -79,6 +79,14 @@ routes; legacy `email.*` compatibility routes are reserved for human/operator
 clients ([ADR-149](docs/adr/149_assistant_legacy_email_denial.md)). This is
 authorization hardening, not hosted assistant acceptance.
 
+## Getting started
+
+- **Try it** with fictional data: double-click `Start-MasterBrain-Trial.command`
+  (needs `uv`, plus Docker Desktop or PostgreSQL 17). It connects no mail account
+  and scans no personal folder. Walkthrough: [docs/CROSS_SOURCE_TRIAL.md](docs/CROSS_SOURCE_TRIAL.md).
+- **Develop** on it: [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md), and the
+  check list under [Develop and verify](#develop-and-verify) below.
+
 ## Product shape
 
 ```text
@@ -249,7 +257,7 @@ uv run mypy src
 uv run pytest -q
 node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_documents.test.cjs
 node --test tests/web_reader.test.cjs tests/web_memory.test.cjs
-uv run python scripts/deployment_gate.py
+uv run python scripts/repo_file_gate.py
 uv run python scripts/check_docs.py
 uv run masterbrain --help
 ```

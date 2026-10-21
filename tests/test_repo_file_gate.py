@@ -6,8 +6,8 @@ from types import SimpleNamespace
 
 
 def load_gate():
-    path = Path(__file__).resolve().parents[1] / "scripts" / "deployment_gate.py"
-    spec = importlib.util.spec_from_file_location("deployment_gate_for_test", path)
+    path = Path(__file__).resolve().parents[1] / "scripts" / "repo_file_gate.py"
+    spec = importlib.util.spec_from_file_location("repo_file_gate_for_test", path)
     assert spec is not None and spec.loader is not None
     gate = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gate)
@@ -15,7 +15,7 @@ def load_gate():
 
 
 def test_structural_gate_skips_only_its_duplicate_pytest_run(monkeypatch, capsys) -> None:
-    deployment_gate = load_gate()
+    repo_file_gate = load_gate()
     calls = []
 
     def fake_run(command, **kwargs):
@@ -24,13 +24,13 @@ def test_structural_gate_skips_only_its_duplicate_pytest_run(monkeypatch, capsys
             return SimpleNamespace(stdout=b"")
         return SimpleNamespace(returncode=0)
 
-    monkeypatch.setattr(deployment_gate.subprocess, "run", fake_run)
-    deployment_gate.main(structural_only=True)
+    monkeypatch.setattr(repo_file_gate.subprocess, "run", fake_run)
+    repo_file_gate.main(structural_only=True)
     assert calls == [("git", "ls-files", "-z")]
     assert "repository structural gate" in capsys.readouterr().out
 
     calls.clear()
-    deployment_gate.main()
+    repo_file_gate.main()
     assert calls[0] == ("git", "ls-files", "-z")
     assert calls[1][-3:] == ("-m", "pytest", "-q")
     assert "repository quality gate" in capsys.readouterr().out
