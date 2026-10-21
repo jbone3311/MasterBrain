@@ -3,8 +3,9 @@
 Requirements: Python 3.11+, `uv`, and PostgreSQL 17 (local installation or Docker).
 No real mail, cloud account, provider token, or model is needed. The included
 `compose.yaml` starts only PostgreSQL, on loopback, with a named Docker volume.
-Docker was not installed on the authoring Mac; CI runs real PostgreSQL 17. This
-does not mean a local demo has already been started on Jim's computer.
+The authoring Mac also has local PostgreSQL 17.11; the combined synthetic demo
+was exercised against a disposable database. This does not establish hosted
+or live-source readiness.
 
 ## Keep runtime state off Dropbox
 
@@ -14,7 +15,7 @@ private configuration and existing administrator-managed mappings; it rejects
 simultaneous bootstrap credentials and stays loopback-only. Unit tests generate
 keys and intercept every issuer request; no real registration is needed or implied.
 
-Use a private directory such as `~/Library/Application Support/CW-EmailBrain`.
+Use a private directory such as `~/Library/Application Support/MasterBrain`.
 Keep secrets, credential files and local environments outside the synced checkout.
 For a Dropbox checkout, set `UV_PROJECT_ENVIRONMENT` to an absolute path outside
 Dropbox before `uv sync`. A normal non-synced checkout may use ignored `.venv`.
@@ -38,10 +39,47 @@ Load these variables privately, then from the checkout:
 uv sync --locked --extra dev
 docker compose up -d postgres
 uv run email-brain migrate
-uv run email-brain init-demo --state-dir "~/Library/Application Support/CW-EmailBrain"
-uv run email-brain seed-demo --state-dir "~/Library/Application Support/CW-EmailBrain"
+uv run email-brain init-demo --state-dir "~/Library/Application Support/MasterBrain"
+uv run email-brain seed-demo --state-dir "~/Library/Application Support/MasterBrain"
 uv run email-brain serve
 ```
+
+For a **new, disposable combined-source MasterBrain demo**, use the branded
+entry point with the same private environment variables on a fresh database:
+
+```sh
+uv run masterbrain demo migrate
+uv run masterbrain demo init --state-dir "~/Library/Application Support/MasterBrain"
+uv run masterbrain demo seed --state-dir "~/Library/Application Support/MasterBrain"
+uv run masterbrain demo serve
+```
+
+Use a fresh database/cluster: initialization deliberately refuses an existing
+`email_brain_runtime` role or credential files. The new seed imports three
+fictional emails, bridges their current versions into DataCore, snapshots one
+generated fictional text file under the private state directory, publishes its
+text, and creates one explicitly synthetic reviewed project citing both source
+occurrences. The seed also records a complete fictional FileOS run and activates
+its immutable search generation, so both sources appear in the **current**
+Brain search rather than only the older combined search. It prints the project
+ID. Search `briefing` at `/brain` to see the same quoted Melron project phrase
+in Email and FileOS results, or open the
+project dossier through the Brain API. The fictional dossier contains one
+undated briefing event, one proposed reply request with no invented due date,
+one source-stated note and a link to the generated file. It intentionally has
+no person/role assertion because the fixture does not establish a project role.
+Its Markdown can be inspected by the
+owner's review-scoped API, but inspection only verifies cited quote previews;
+it does not automatically publish imported assertions. Running the seed again
+is idempotent. The underlying `email-brain`
+`init-masterbrain-demo`/`seed-masterbrain-demo` aliases remain for compatibility.
+The v2 marker requires a newly initialized disposable demo state; the older v1
+fixture is not silently rewritten.
+The owner token has Brain/Knowledge read
+and Knowledge review scopes but no worker or file-effect scopes. The older
+Email-only demo remains unchanged. Neither demo uses a real source or safely
+enrolls a real assistant. Do not reuse the disposable fixture database as a
+private pilot; follow the separate enrollment and restore gates first.
 
 `init-demo` creates a synthetic tenant/account and least-privileged runtime role;
 it refuses existing roles/credentials rather than replacing them. Privately read
@@ -77,7 +115,7 @@ For a larger fictional inbox, use this **instead of** `seed-demo` on a fresh
 initialized synthetic account:
 
 ```sh
-uv run email-brain seed-corpus --state-dir "~/Library/Application Support/CW-EmailBrain" --count 256
+uv run email-brain seed-corpus --state-dir "~/Library/Application Support/MasterBrain" --count 256
 ```
 
 Includes projects, receipts, meetings, newsletters, multilingual mail, untrusted

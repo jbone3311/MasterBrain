@@ -1,5 +1,24 @@
 # Testing and Evaluations
 
+ADR-246's first-party XLSX screen has seven focused DOM tests, 174/174 total
+first-party Node tests, a fixed static-route check and one executed fictional
+PostgreSQL/API-to-UI response contract. These do not prove an actual browser,
+accessibility or isolated document-image run.
+
+The `0c64f8b` fictional full-suite run on a fresh local PostgreSQL 17.11
+cluster passed 3,823 tests with 19 skips and no failures (691/692
+PostgreSQL-marked executed). See [BUILD_RECEIPT.md](BUILD_RECEIPT.md) for the
+exact gate separation; this does not imply hosted or immutable-image success.
+
+ADR-245 adds `python scripts/native_restore_drill.py --run-disposable` for a
+fresh, synthetic-only local PostgreSQL 17 dump/restore when Docker is absent.
+It accepts no DSN/archive/path and is not the hosted Docker gate. The seed now
+contains a fictional approved XLSX, reviewed result, published DataCore document
+and immutable receipt; the native drill verifies those populated rows survive
+restore and the document remains retrievable. The restore fixture inserts its
+deterministic extraction result directly; isolated-worker execution is a separate
+gate. The hosted Docker path uses the same seed but has not executed on this head.
+
 ADR-046 adds [structured-memory tests](../tests/test_memory.py),
 [actual SQL/API tests](../tests/test_memory_postgres.py), and
 [owner-interface contracts](../tests/web_memory.test.cjs). They cover typed claims,

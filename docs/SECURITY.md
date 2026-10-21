@@ -1,5 +1,106 @@
 # MasterBrain Security and Privacy
 
+ADR-262's read-only historical summary uses the same human, source-grant and
+three-scope boundary as ADR-261. It revalidates the ready run, active
+source/v1/root and immutable closure under the source lock, then hashes exact
+latest decision identities. The response is compact and does not disclose a
+bulk locator list. Unreviewed or disputed rows remain held; a digest or
+`row_decisions_complete` boolean never authorizes absence, current search,
+file effects or donor replacement.
+
+ADR-261 requires a human principal, three review/search/evidence scopes and
+an exact source grant for historical row decisions and history. SQL checks
+the actor, tenant, ready run, closure, exact row, active source and latest
+v1/root basis under a source lock; events are immutable and forced-RLS.
+Corrections append events instead of overwriting history. Responses label
+locators/decisions untrusted and grant no absence, current-read or file
+authority. The database guard itself relies on actor context, while the
+service enforces client kind; the database does not carry a human-kind claim.
+
+ADR-260 permits only a human with transition-review, search and evidence-read
+scopes to inspect bounded historical prior-row classifications. Source-grant
+denial precedes lookup; source/run/root and immutable coverage are rechecked
+under a source lock. Relative locators and reasons are untrusted metadata,
+never logged, and no original bytes or root path are returned. A possible
+absence is not approved deletion or current-source proof.
+
+ADR-259's historical-later comparison is human-only and requires transition
+review, search and evidence scopes. An ungranted source is hidden before
+generation lookup; paused or stale sources are refused. Independent result
+layers are marked untrusted and historical, never current evidence of file
+presence or absence. The baseline-v2 comparison now enforces the same
+source-grant and active-source checks.
+
+ADR-258's later shared-index builder is a scoped private worker. SQL binds
+the exact historical run and ready attempt, independently closes hashed item
+and base-chunk membership, rechecks the latest v1/source-root basis and
+refuses `v2_later` activation. This is private historical search material,
+not an assistant-visible current source or an authorization for deletion.
+
+ADR-257's later-run completion is worker-only and checks a ready exact
+attempt against a fresh source-locked, no-follow donor observation. Composite
+foreign keys and a database guard refuse a forged ready basis, counts,
+classification or review flags. The immutable, forced-RLS receipt contains
+counts and digests, not paths or bytes; it has no public route, current-read,
+absence-event or source-effect consumer. Historical success is not live
+source authorization or proof of donor replacement.
+
+ADR-256 confines later FileOS v2 document processing to an exact-scope
+private worker. It rechecks the source-bound preparation and performs two
+confined, source-locked scans around bounded extraction; the terminal row
+ledger is immutable, tenant-fenced and cannot authorize absence/current
+state. A changed source refuses final sealing. Successful historical text
+derivatives may create DataCore change records, but they do not change v1
+current pointers, latest-complete freshness or source files.
+
+ADR-255 requires a scoped private worker and fresh confined source rescan
+before preparing any later FileOS v2 hash. The scan must match the sealed
+closure exactly and have no errors; deferred/excluded/error rows never get
+invented content. The immutable, tenant-fenced mapping reuses only matching
+policy-scoped source-bound evidence. No public API, source effect, current
+pointer or absence authority consumes it.
+
+ADR-254 makes the FileOS later-row coverage closure private, immutable and
+tenant-fenced. Only a scoped worker may seal it from a validated packet;
+private readers receive counts/digest, never locators. Direct SQL cannot set
+its publishable or absence flags, and private reads detect forged row content
+even when a forged digest matches that content. No API, current-search or
+source-effect path consumes this historical closure.
+
+ADR-253 confines durable later FileOS v2 observations to a scoped private
+worker, an exact completed baseline, source-locked fresh no-follow scan and
+tenant-fenced immutable packet. A private reader sees only IDs, timestamps,
+counts, blocker codes and a digest, never root paths or file content. SQL
+fixes nonpublishing/no-absence flags; no public API or current-search query
+consumes the packet. Live roots and v2 cutover remain unapproved.
+
+ADR-244 removes reviewer control over the Email XLSX provenance revision.
+The API rejects an extra `code_revision`; code and SQL require the server's
+semantic bridge revision on every new review and publication receipt. This
+does not equate a semantic transform revision with a Git commit.
+
+ADR-243 requires an exact-scope worker credential and a tenant-bound database
+login for one reviewed synthetic Email XLSX publication. The private command
+pins one account, reauthenticates inside the publication transaction, has a
+nonpublishing check mode and suppresses sensitive errors. It does not fetch
+provider bytes or permit a live-source pilot.
+
+ADR-242 keeps Email XLSX human review separate from DataCore publication:
+owner-only inspection and digest/count review use Email scopes; only a
+worker with ingest/document scopes may publish. Migration 0085 guards every
+new receipt with an unexpired review and current exact-source/result checks.
+This does not authorize live mail or certify extracted financial values.
+
+ADR-235–237's fictional FileOS XLSX row-layout replay is worker-only and
+nonpublishing. Its private command requires a tenant-bound database login,
+exact source/review ID, one immutable image and an expiring one-scope worker
+credential. Check mode opens no selected workbook. Execution uses a no-follow
+root read, exact source/text hashes, a final locked current-source check and
+worker reauthentication; the protected receipt contains only digests/counts.
+Physical cell coordinates are an isolated-worker observation, not an
+independent cryptographic proof or financial assertion. There is no table
+content API, live-root permission or FileOS cutover.
+
 ADR-203's Schwab recipe is isolated supplied-text comparison code. Its
 old-template matches cannot prove that a PDF was extracted faithfully; the
 scanned and redesigned-template cases may return no rows. No candidate reaches
@@ -9,6 +110,14 @@ MasterBrain processes highly sensitive email and files. Its threat model include
 malicious source content, compromised client/model output, parser exploits, confused
 deputy actions, cross-tenant access, credential theft, poisoned indexes, data
 exfiltration, destructive file/mail effects, and leakage through logs/backups.
+
+ADR-208's combined local demo is fictional and loopback-only. Its owner token
+adds Brain/Knowledge reads and Knowledge review but no worker ingestion,
+index activation or FileOS effect scopes; the seed uses an internal runtime
+context and a generated private text file, never a user-selected root or
+provider token. A database preflight requires the exact fictional tenant and
+unenrolled synthetic account before the seed may ingest or publish. It is not
+an identity-enrollment, hosted or live-source gate.
 
 ## Trust boundaries
 
@@ -59,6 +168,54 @@ current cited evidence, as well as every direct evidence grant. Unknown,
 stale, excluded or mismatched rows abort the entire batch. A staged row remains
 unreviewed and inaccessible to assistants/search until explicit per-row human
 review. No live source, model authority or FileOS effect is added.
+ADR-205 extends that route to selected role rows only when both their member
+quote and displayed entity identity/citation exactly match current local,
+granted evidence. Migration 0068 retains the selected citation IDs in the
+immutable private proposal row, so preview and review cannot substitute a
+different quoted source after staging. The linked project and person/
+organization entity must also remain fully citeable. A role never conveys
+authorization; fact and artifact-link imports use separate private ADR-206/207
+queues with human-only review, current cited-basis rechecks and no assistant
+read. Migration 0070 protects artifact proposals with forced RLS, tenant-login
+fencing, immutable rows and receipt-bound approval. Hosted and live-source
+acceptance remain gated.
+ADR-214's global project-fact predicate catalog contains only reviewed code
+vocabulary, no tenant or source data. Runtime roles can read it but cannot
+change it; row-mutation and truncate guards prevent accidental edits.
+New fact publication checks its active name/type/unit after any exact
+idempotent receipt, and SQL repeats the check for direct inserts. Unknown
+names can remain in the human-only fact proposal queue but cannot be
+approved or exposed as reviewed knowledge until a catalog migration exists.
+Migration 0074 and the publication check select the latest revision including
+deprecated entries, so an older active row cannot be revived by omission.
+The read-only catalog is source-content-free but remains scoped, no-store and
+marked untrusted for external clients; it cannot grant review or source access.
+The private Knowledge proposal reviewer holds shared locks on direct evidence
+source items and source rows until commit. For a member role it also locks all
+sources backing the linked project and entity citations. This closes the
+current-pointer/status revocation gap between its review check and approval;
+it does not serialize Email exclusion-policy edits, external provider state,
+or generic direct Knowledge publication. The direct and proposal-reviewed fact/artifact writers now hold shared row
+locks on each validated source item and source status until transaction
+commit. This closes a current-pointer/status change between check and
+publication; it does not serialize all Email exclusion updates or establish
+provider freshness. Source-scoped reads still recheck current visibility.
+The SQL insert guard refuses new imported proposal rows missing a cited quote
+or member entity citation, and requires the quoted evidence to be in the
+proposal's direct evidence set. This closes an application-bypass gap for
+new rows without reinterpreting historical ADR-202 proposals; it is not a
+claim that a database owner or compromised migration role is harmless.
+ADR-206 keeps imported source-stated project facts in a separate private,
+forced-RLS queue because fact approvals have a different reviewed receipt.
+The human-only stage/preview/review routes require both review and content
+scopes; each rechecks the current local project and every direct source grant,
+with the full quote in the specifically cited evidence. The selected line and
+typed sidecar are bound to one immutable import digest, and SQL refuses a
+proposal whose quote citation differs from or falls outside its payload
+evidence set. Every approval or rejection is explicit and atomic; no staged
+fact enters search or the dossier. This remains synthetic-only; compromised
+database ownership, inferred basis, live source and artifact effects are not
+covered.
 
 ADR-189 adds a separate, synthetic-only FileOS statement replay boundary. A
 worker, never a public API reader, selects one current proposal under tenant
@@ -71,6 +228,50 @@ open. Consequently no public verified-source or investment claim is exposed.
 
 - Email, files, archives, metadata, OCR, extracted text, links, and model output are
   untrusted data. They cannot grant permission or select credentials/tools.
+- ADR-223's internal Email replay reads only one current reviewed direct-parser
+  message through the authorized retained-MIME path, rechecks exact bytes and
+  normalized text, and stores a digest-only receipt. The final transaction
+  repeats current/grant/exclusion checks and can recheck worker authorization.
+  Encrypted blob authentication and database guards do not independently
+  attest the sender, prove complete attachment parsing, or make a compromised
+  general runtime login harmless. ADR-224 adds a restricted tenant-bound
+  command; hosted restore/CI gates remain open and no live mailbox is authorized.
+- ADR-228 separately replays one bounded Email PDF attachment from the exact
+  retained parent MIME through the pinned isolated PDF worker. It checks the
+  MIME/part digests and complete published text without parsing PDF bytes in
+  the parent. The pure proof has no database-currentness, review receipt or
+  operator command; it cannot certify visual/OCR completeness, sender or
+  financial truth, and grants no Brain API access to retained MIME or Docker.
+- ADR-229 binds that proof to one current human-reviewed attachment occurrence
+  and an immutable, digest-only tenant-fenced receipt. Its final transaction
+  locks source item, parent item, source and message rows, rechecks current
+  account/job status and optional worker authorization, and has no public
+  route or source effect. Account/job state is not row-locked by this worker;
+  a concurrent transition after the final check is not claimed serialized.
+  It remains synthetic-only and cannot justify a financial fact or live mail.
+- ADR-230 adds only a private, exact-account command for that receipt. It
+  requires a tenant-bound login and two-scope worker token, pins an immutable
+  PDF image and reauthenticates within the receipt transaction. Its check mode
+  does not read a selected MIME/PDF or start a processor and is not an
+  execution proof. Actual-image, hosted, independent restore and account/job
+  transition gates remain before any live-source use.
+- ADR-231 narrows the account transition gap without granting worker UPDATE:
+  the worker takes the controlled transition's advisory lock, then a bound-
+  login-only definer function locks the exact account row `FOR SHARE`. A direct
+  privileged status update must wait on that row even if it omits the
+  advisory lock. Completed approval jobs are terminal and protected by their
+  transition trigger. The function's actor GUC is not an independent identity
+  authenticator; the private command remains responsible for worker-token
+  authentication and final reauthentication. This fence does not make a
+  malicious database owner, live provider or financial claim safe.
+- ADR-225/226's FileOS PDF worker reopens one confined source and compares its
+  exact output from an image-pinned restricted document processor before a
+  final current/grant/authorization recheck and digest-only receipt. SQL alone
+  does not attest that the processor ran, and text-layer agreement is not OCR
+  or visual completeness. ADR-227 adds a tenant-bound, exact-source operator
+  command whose check mode does not read the selected PDF or construct Docker;
+  actual immutable-image container validation remains open. No live FileOS or
+  financial publication is authorized.
 - ADR-171's private statement candidates are likewise untrusted proposals. Their
   exact extracted-text spans and digest do not prove the source-byte-to-text
   derivation, current source grant, source tier, independent corroboration or a
@@ -279,6 +480,23 @@ rejects malformed responses before rendering source-derived previews as inert
 text. This is synthetic-only, not a semantic noninterference proof, hosted
 identity acceptance, inferred-basis authorization, or a Markdown export-time
 citation verifier.
+
+ADR-211's report is a read-only projection of that same current-authorized
+fact page, not a second visibility query. Hidden facts are filtered before
+the report's 1–25-row limit; an ungranted assistant cannot infer their count
+from the groups or cursor. The external client rejects malformed group flags
+and any replacement of the explicit no-aggregation label with a financial
+total claim. No content scope, provider token, source path, raw bytes or
+write authority is added.
+
+ADR-212's typed fact metadata is opt-in and immutable on the existing
+tenant-fenced table. The application accepts only a restricted exact-decimal
+string, matching value, closed unit/currency tuple and literal tokens in the
+verified current source quote. SQL independently rejects malformed tuples,
+numeric/value mismatch and missing quote tokens on direct inserts. The
+source can still be wrong, an amount can be a transaction rather than a
+holding, and a three-letter code is not an exchange-rate or ISO-validity
+assertion. The report labels the field source-stated and never totals it.
 
 ADR-196's separate synthetic fact-fragment export requires content-read as
 well as Knowledge search authority. Its tenant-fenced read rechecks project,
@@ -525,6 +743,14 @@ hashed item and published chunk at readiness, and rejects direct-SQL v2
 activation. It does not reopen source files, grant a new read route or infer
 absence. The private builder remains synthetic/disposable until full gates
 pass; FOS-Master remains the unchanged operational donor.
+
+ADR-252's private later-observation preview requires a worker with the existing
+`brain.fileos.transition.verify` and `brain.changes.read` scopes. It rechecks
+the completed baseline and immutable stage under the source lock, uses an
+explicit root-bound no-follow scan, and returns no locators or content. It
+audits only an opaque completion ID. A possible missing file is not an absence
+event; scan errors suppress such candidates. No assistant route or v2 current
+switch consumes this ephemeral preview.
 
 Rebuild preview is bounded to 50 current-ledger items and returns opaque identities,
 dispositions and counts without paths or text. It uses the source completion lock and

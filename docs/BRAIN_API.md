@@ -12,6 +12,39 @@ and external-client acceptance remain targets [documented separately](USER_INTER
 ADR-147 exposes ADR-128's FileOS v2 comparison through one human-only,
 historical-preview route. It is not current v2 visibility or cutover.
 
+ADR-241/242 add a synthetic-only, separately human-reviewed Email XLSX
+derivative behind existing Brain search and Email-family search. Its result
+is bounded text citing the attachment occurrence; generic search, evidence
+content and Email-family search hide it if the exact parent/source ceases to
+be current. A human-only `POST /v1/brain/email-xlsx-results/{approval_id}/inspect`
+returns a bounded untrusted text page and exact digest/counts; a separate
+`POST /v1/brain/email-xlsx-results/{approval_id}/publication-reviews` seals
+those values for one hour without publication. Both require Email review and
+evidence-read scopes. Each inspection page also carries the exact source
+identity (`account_id`, `attachment_id`, `parent_version_id`, `safe_filename`,
+`part_path`, `part_sha256`); clients must reject a change across pages. These
+are identifiers and display metadata, not original workbook bytes. The worker
+publication service is private and needs
+DataCore ingest/document scopes. ADR-243 makes that private service callable
+through one account-pinned, tenant-bound worker command. ADR-247 adds a
+human-only `POST /v1/accounts/{account_id}/attachments/{receipt_id}/xlsx-approvals`
+for one current synthetic attachment. It requires an idempotency UUID and a
+separately configured `serve --xlsx-document-processor-version` pin; neither
+the browser nor caller can choose the image. It returns an `xapp_` approval ID
+without running extraction. There is no public endpoint to invoke the worker
+bridge, fetch original XLSX bytes or assert cell-level financial truth.
+ADR-246's first-party screen can inspect and review an existing synthetic
+approval ID after validating the complete displayed text digest. ADR-248 adds
+an inspected-evidence source-selection control and an explicit approval click
+using ADR-247's route. Neither screen operation runs extraction or publishes
+a document.
+Actual-browser, real-image and hosted gates remain open.
+
+ADR-244 removes caller-supplied `code_revision` from the publication-review
+request. The server records its own semantic bridge revision, and the database
+rejects new review/receipt rows claiming another revision. Unknown request
+fields return 422; a human review cannot attest the executing code.
+
 ## Progressive access
 
 1. **Orient:** return compact results: title/summary, object type, freshness,
@@ -61,9 +94,55 @@ change privileged historical Email routes, and is synthetic-only proof.
   wrong-source generations return 404, stale v1/root basis returns 409, and
   invalid input returns generic 422. This does not activate v2 or establish
   FileOS parity/cutover (ADR-147).
+- `POST /v1/brain/sources/{source_id}/v2-later-search-preview` — implemented
+  human-only comparison of one named, ready historical later-run generation
+  against active v1. The closed request uses `generation_id`, `query` and
+  `limit` (1–50 per layer); the response separates `active_v1` and
+  `candidate_v2_later`, names the completed run and its review flags, and
+  labels the candidate `historical_preview`. It requires the same three
+  transition-review/search/evidence scopes as baseline v2 preview. Missing
+  or ungranted sources and wrong-source generations return 404; stale or
+  paused basis returns 409. Neither hits nor non-hits establish current
+  FileOS state or absence, and no activation occurs (ADR-259).
+- `POST /v1/brain/sources/{source_id}/v2-later-review-rows` — implemented
+  human-only inspection of the exact prior-row classifications behind one
+  named ready historical later generation. The closed request takes
+  `generation_id`, optional exact `state`, `offset` (0–20,000) and `limit`
+  (1–100). It returns deterministic relative-locator pages, total and
+  `next_offset`, all classification counts and run review flags. It uses the
+  same three scopes and fresh source/run/closure checks as the historical
+  search comparison. Rows are untrusted; `absence_authorized` and
+  `current_read_active` are always false. Each row can include its latest
+  historical decision, but this does not promote it to current evidence
+  (ADRs 260–261).
+- `POST /v1/brain/sources/{source_id}/v2-later-row-decisions` — implemented
+  human-only append-only disposition of 1–100 exact prior classification rows
+  in one named ready historical generation. Each item supplies a UUID
+  `idempotency_key`, exact `locator`, `state`, nullable `prior_version_id`,
+  and one of `investigate`, `dispute_classification` or
+  `acknowledge_historical_observation`. Duplicate keys/locators fail. Exact
+  replay returns `replayed_count`; a correction needs a new key. The same
+  three review/search/evidence scopes and source grant apply. The existing
+  32 KiB request-body cap may limit practical batch size. It returns fixed
+  no-absence/no-current/no-source-effect flags (ADR-261).
+- `POST /v1/brain/sources/{source_id}/v2-later-row-decision-history` —
+  implemented human-only, source-bound bounded history for one exact prior
+  `locator` in a ready generation. Request fields are `generation_id`,
+  `locator`, `offset` and `limit`; response includes total, ordered decision
+  events and `next_offset`. It does not expose source bytes or activate v2.
+- `POST /v1/brain/sources/{source_id}/v2-later-review-summary` — implemented
+  human-only compact summary of one named ready historical generation. The
+  closed request contains only `generation_id`; the response binds run and
+  closure to a canonical `decision_snapshot_sha256`, counts required prior
+  rows with missing, held or acknowledged latest decisions and lists true
+  review flags requiring later explicit acknowledgement. It uses the same
+  three scopes, source grant and fresh source/run/closure checks as ADR-261.
+  `row_decisions_complete` is **not** run signoff; fixed flags deny absence,
+  current search and file effects (ADR-262).
 
-ADR-142 admits enrolled assistants to the five exact-source FileOS reads above
-and the aggregate/retained Brain searches. An ungranted source is
+ADR-142 admits enrolled assistants to the previously defined five exact-source
+FileOS **current-read** routes and the aggregate/retained Brain searches, not
+to the human-only historical preview or decision routes above. An ungranted source is
 indistinguishable from an unknown source (not found); the check occurs after
 transaction-time OIDC revocation validation. It does not grant original bytes,
 source effects or an alternate route through KnowledgeCore.
@@ -182,6 +261,40 @@ source effects or an alternate route through KnowledgeCore.
   IDs, not the quote itself. An aware cutoff and visible cursor bind paging;
   hidden evidence and successors are filtered before limit. A quote still
   needs export-time verification before appearing as a Markdown citation.
+- `POST /v1/knowledge/evidence/{evidence_id}/source-tier-reviews` — ADR-217
+  human-only document-authority classification. Requires `knowledge.review`,
+  `brain.content.read` and a UUID idempotency key. The closed body pins the
+  current evidence/source version and SHA-256, selected normalized document
+  and text SHA-256, exact source quote and matching T1/T2/T3 authority kind.
+  This is not source-byte attestation or financial-fact approval.
+- `GET /v1/knowledge/evidence/{evidence_id}/source-tier-reviews` — ADR-217
+  `knowledge.search` plus `brain.content.read`, current granted/unexcluded
+  evidence only. Returns at most 25 historical human classifications per
+  page (newest first), a truncation flag, `next_cursor` for `after=<review
+  id>` and `tier_counts` over all current visible reviews (ADR-266), without
+  quotes or a computed winning tier. Conflicting reviews are not resolved;
+  old/stale evidence is filtered before limiting.
+  `BrainReadClient.source_tier_reviews(after=...)` validates the closed
+  response and refuses any upgraded financial-truth meaning.
+- `GET /v1/knowledge/fact-predicates` — ADR-215 read-only, bounded catalog of
+  the database's latest project-fact predicate revisions, including
+  deprecations. Requires `knowledge.search`; an assistant also needs ordinary
+  source enrollment. It contains no tenant/source facts, but is marked
+  untrusted, noncacheable and scoped only to **new** project-fact writes.
+  Historical unregistered facts and lack of alias mapping are explicit.
+  `BrainReadClient.project_fact_predicates()` validates the closed response.
+- `GET /v1/knowledge/projects/{project_id}/facts/report` — ADR-211 groups one
+  current-authorized reviewed fact page by predicate under `knowledge.search`.
+  Each fact keeps its source IDs and status. Page-local divergent asserted
+  previews and disputed/retracted rows are signals for review, not certified
+  contradictions. Continuation, prior cursor and truncated values mark
+  comparison incomplete. It explicitly performs no amount aggregation and
+  is not an investment balance or complete dossier. Enrolled assistants see
+  only their granted sources; `BrainReadClient.project_fact_report` validates
+  the closed response before use. ADR-212 adds an optional exact-decimal
+  measurement with unit and currency code to newly reviewed rows here only;
+  old/untyped rows carry `measurement: null`. Even typed figures are source-
+  stated, not verified holdings, and the route still never sums them.
 - `GET /v1/knowledge/projects/{project_id}/facts/markdown` — ADR-196
   synthetic-only, bounded **fact fragment**, requiring both
   `knowledge.search` and `brain.content.read`. It rechecks the complete
@@ -315,21 +428,69 @@ source effects or an alternate route through KnowledgeCore.
   Any mismatch returns a generic conflict with no partial inventory. The
   response is untrusted candidate context, explicitly not a full-quote,
   source-freshness or truth certificate and never a staged proposal.
-- `POST /v1/knowledge/dossier-markdown/proposal-batches` — ADR-202
+- `POST /v1/knowledge/dossier-markdown/proposal-batches` — ADR-202/205
   synthetic-only, human-only staging of 1–50 explicitly selected project,
-  event or commitment rows from the exact ADR-197 Markdown format. Requires
+  event, commitment or member rows from the exact ADR-197 Markdown format. Requires
   `knowledge.review`, `brain.content.read` and a UUID idempotency key. Each
   selected typed payload must supply the full source quote, observation time,
   confidence and evidence IDs omitted by Markdown; visible fields must match
   the selected line exactly. The write transaction rechecks the full quote on
   the *specifically cited* current, granted, nonexcluded evidence and binds an
   immutable digest of the Markdown/selection context to the private ADR-186
-  batch. Same actor/key with changed input conflicts. This route stages no
+  batch. New imports also retain the exact cited evidence IDs for stage,
+  preview and review rechecks. A member needs an existing local project and
+  person/organization entity; the displayed entity name, full quote and its
+  separate citation must match that local entity. Same actor/key with changed
+  input conflicts. This route stages no
   reviewed assertion; the separate human batch-review route decides every
   row. Claimed IDs are source-row selectors, not reserved publication IDs;
   approved rows receive new MasterBrain IDs. Event and commitment selections
-  require an already existing local project ID. Members, facts and artifact
-  links are not accepted in this tranche.
+  require an already existing local project ID. Facts are staged through
+  the separate ADR-206 route below; artifact links use ADR-207's separate
+  route. A
+  member role never grants access.
+- `POST /v1/knowledge/dossier-markdown/fact-proposal-batches` — ADR-206
+  synthetic-only, human-only staging of 1–50 selected `fact` rows from the
+  same bounded dossier format. Requires `knowledge.review`,
+  `brain.content.read`, a UUID idempotency key and a closed typed sidecar
+  for each selected fact. Sidecars supply the full quote, complete direct
+  evidence, value type, confidence and observed time that Markdown omits;
+  `reviewed`, inferred derivation, supersession and unrendered valid-time
+  fields are rejected. The exact line, cited quote evidence, current local
+  project and all evidence grants are checked before an immutable private
+  batch is staged. Claimed `pfact_...` IDs are selectors, not publication IDs.
+  An unknown predicate may be staged privately but cannot be published until
+  a reviewed registry version defines its name/type/unit; staging is not
+  vocabulary approval.
+- `GET /v1/knowledge/fact-proposal-batches/{batch_id}` — human-only private
+  preview with both scopes, current project/evidence rechecks, untrusted
+  proposed payloads, ordered decision status and `registry_status` (`active`,
+  `unknown`, `shape_mismatch`, `deprecated` or `version_mismatch`), checked
+  against the latest database revision. Ordinary search, dossier
+  and assistant reads never expose unreviewed facts.
+- `POST /v1/knowledge/fact-proposal-batches/{batch_id}/review` — human-only
+  explicit approve/reject decision for **every** fact in one transaction,
+  binding the exact batch digest and a UUID key. Approval uses the reviewed
+  project-fact publication path and issues a new ID; rejection stores only
+  a reason. An unknown or mismatched predicate cannot be approved; one invalid
+  row rolls back all decisions and publications. No
+  live source, artifact association or inferred fact is authorized.
+- `POST /v1/knowledge/dossier-markdown/artifact-proposal-batches` — ADR-207
+  synthetic-only, human-only staging of 1–50 selected `artifact link` lines
+  from the existing dossier. A closed typed sidecar supplies the full basis
+  quote and observation time omitted by Markdown. Exact line, current local
+  project, artifact occurrence, separately cited basis occurrence, source
+  kind, grants and full quote are checked before private immutable storage.
+  The claimed ID only selects a row; it is not the publication ID.
+- `GET /v1/knowledge/artifact-proposal-batches/{batch_id}` — human-only
+  private preview with `knowledge.review` and `brain.content.read`; rechecks
+  both evidence occurrences and the project under current grants.
+- `POST /v1/knowledge/artifact-proposal-batches/{batch_id}/review` — explicit
+  approve/reject decision for every row in one transaction, binding the
+  batch digest and a UUID key. Approval uses ADR-193's reviewed publication
+  path and issues a new link ID; rejection publishes no link. A bad row
+  aborts the entire batch. No assistant approval, live source or FileOS
+  source effect is authorized.
 - `GET /v1/knowledge/proposal-batches/{batch_id}` — human-only private preview
   requiring `knowledge.review` and `brain.content.read`. Rechecks current
   evidence/grants and returns ordered untrusted proposals plus decision status;

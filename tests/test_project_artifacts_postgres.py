@@ -171,6 +171,35 @@ def test_artifact_link_quote_project_grant_and_sql_guards(database, tenant):
     assert len(links.page(ctx, project_id, ProjectArtifactPageRequest())["results"]) == 1
 
 
+def test_transaction_bound_artifact_publication_rolls_back_whole_batch(database, tenant):
+    store, admin = database
+    ctx, _, project_id, basis_id, artifact_id = _prepared(store, tenant)
+    links = ProjectArtifactLinks(store)
+    first_key = uuid4()
+    with pytest.raises(ValueError, match="exact source span"):
+        with store.transaction(ctx) as conn:
+            assert links._validate_basis_in_transaction(
+                conn, ctx, project_id, _body(artifact_id, basis_id),
+            ) == "email"
+            links._publish_in_transaction(
+                conn, ctx, project_id, _body(artifact_id, basis_id), first_key,
+            )
+            links._publish_in_transaction(
+                conn, ctx, project_id,
+                _body(artifact_id, basis_id, quote="fictional false quote"), uuid4(),
+            )
+    assert links.page(ctx, project_id, ProjectArtifactPageRequest())["results"] == []
+    with psycopg.connect(admin) as conn:
+        assert conn.execute(
+            "SELECT count(*) FROM knowledge_project_artifact_receipts "
+            "WHERE tenant_id=%s AND actor_id=%s AND idempotency_key=%s",
+            (ctx.tenant_id, ctx.actor_id, first_key),
+        ).fetchone()[0] == 0
+    assert links.publish(
+        ctx, project_id, _body(artifact_id, basis_id), first_key,
+    )["changed"] is True
+
+
 def test_artifact_link_hidden_after_email_exclusion(database, tenant):
     store, admin = database
     ctx, _, project_id, basis_id, artifact_id = _prepared(store, tenant)

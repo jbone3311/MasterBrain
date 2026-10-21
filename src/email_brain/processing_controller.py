@@ -178,8 +178,12 @@ class WorkerIdentity:
         if scopes not in {
             frozenset({"email.process"}),
             frozenset({"email.document.process"}),
+            frozenset({"email.document.process", "email.evidence.read"}),
             frozenset({"email.ingest"}),
+            frozenset({"brain.document.publish"}),
+            frozenset({"brain.document.publish", "email.evidence.read"}),
             frozenset({"brain.source.ingest", "brain.document.publish"}),
+            frozenset({"brain.source.ingest", "brain.document.publish", "email.evidence.read"}),
             frozenset({"brain.document.publish", "brain.index.activate"}),
             frozenset({"brain.index.activate"}),
         }:

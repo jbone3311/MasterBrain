@@ -49,12 +49,24 @@ from masterbrain.answers import (
     LocalExtractiveSelector,
     answer_search_query,
 )
+from masterbrain.artifact_proposals import ArtifactProposalBatches
 from masterbrain.datacore.fileos_v2_index_generation import FileOSV2SearchReviewer
+from masterbrain.datacore.fileos_v2_later_index_generation import (
+    FileOSV2LaterSearchReviewer,
+)
+from masterbrain.datacore.fileos_v2_later_row_decisions import (
+    FileOSV2LaterRowDecisions,
+)
 from masterbrain.datacore.persistence import DataCoreStore, SearchHit
+from masterbrain.email_xlsx_approvals import EmailXlsxApprovals
+from masterbrain.email_xlsx_document_bridge import EmailXlsxDocumentBridge
+from masterbrain.fact_proposals import FactProposalBatches
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_proposals import KnowledgeProposalBatches
 from masterbrain.knowledge_schema import (
+    ArtifactProposalReviewRequest,
     DueCommitmentsRequest,
+    FactProposalReviewRequest,
     KnowledgeProposalReviewRequest,
     KnowledgeProposalStageRequest,
     KnowledgePublishRequest,
@@ -65,6 +77,7 @@ from masterbrain.knowledge_schema import (
     ProjectDossierRequest,
     ProjectFactPageRequest,
     ProjectFactWrite,
+    SourceTierReviewWrite,
     TimelineRequest,
 )
 from masterbrain.librarian_dossier_intake import (
@@ -80,11 +93,18 @@ from masterbrain.schemas import (
     BrainSearchRequest,
     CurrentGroupedSearchRequest,
     EmailFamilySearchRequest,
+    EmailXlsxInspectRequest,
+    EmailXlsxReviewRequest,
     EvidenceContentRequest,
+    FileOSV2LaterReviewRowsRequest,
+    FileOSV2LaterReviewSummaryRequest,
+    FileOSV2LaterRowDecisionHistoryRequest,
+    FileOSV2LaterRowDecisionsRequest,
     FileOSV2SearchPreviewRequest,
     GroundedAnswerRequest,
     UnifiedSearchRequest,
 )
+from masterbrain.source_tier_reviews import SourceTierReviews
 from masterbrain.statement_persistence import StatementProposalReader
 
 log = logging.getLogger("email_brain.requests")
@@ -153,6 +173,7 @@ def create_app(
     answer_selector: AnswerSelector | None = _LOCAL_ANSWER_SELECTOR,
     recovery_parser_version: str | None = None,
     document_processor_version: str | None = None,
+    xlsx_document_processor_version: str | None = None,
     browser_auth: BrowserAuth | None = None,
 ) -> FastAPI:
     if browser_auth is not None and browser_auth.authenticator is not registry:
@@ -170,14 +191,24 @@ def create_app(
     message_reader = MessageReader(store)
     memory = Memory(store)
     brain = brain_store or DataCoreStore(store)
+    email_xlsx_approvals = (
+        EmailXlsxApprovals(store, xlsx_document_processor_version)
+        if xlsx_document_processor_version is not None else None
+    )
+    email_xlsx_bridge = EmailXlsxDocumentBridge(store)
     fileos_v2_reviewer = FileOSV2SearchReviewer(brain)
+    fileos_v2_later_reviewer = FileOSV2LaterSearchReviewer(brain)
+    fileos_v2_later_row_decisions = FileOSV2LaterRowDecisions(brain)
     knowledge = knowledge_store or KnowledgeCore(store)
     knowledge_proposals = KnowledgeProposalBatches(store)
+    fact_proposals = FactProposalBatches(store)
+    artifact_proposals = ArtifactProposalBatches(store)
     dossier_markdown_inspection = DossierMarkdownInspection(store)
     dossier_proposal_import = DossierProposalImport(store)
     project_artifacts = ProjectArtifactLinks(store)
     project_dossier_markdown = ProjectDossierMarkdown(store)
     project_facts = ProjectFacts(store)
+    source_tier_reviews = SourceTierReviews(store)
     statement_proposals = StatementProposalReader(store)
     answers = GroundedAnswerService(brain, answer_selector)
     if browser_auth is not None:
@@ -347,6 +378,10 @@ def create_app(
     @app.get("/document_review.js", include_in_schema=False)
     def document_javascript() -> FileResponse:
         return FileResponse(WEB / "document_review.js", media_type="text/javascript")
+
+    @app.get("/xlsx_review.js", include_in_schema=False)
+    def xlsx_review_javascript() -> FileResponse:
+        return FileResponse(WEB / "xlsx_review.js", media_type="text/javascript")
 
     @app.get("/style.css", include_in_schema=False)
     def stylesheet() -> FileResponse:
@@ -863,6 +898,124 @@ def create_app(
             "untrusted_content": True,
         }
 
+    @app.post("/v1/brain/sources/{source_id}/v2-later-search-preview")
+    def brain_source_v2_later_search_preview(
+        source_id: str,
+        body: FileOSV2SearchPreviewRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            comparison = fileos_v2_later_reviewer.preview(
+                principal, source_id, body.generation_id, body.query,
+                limit=body.limit,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+
+        def compact(hits: tuple[SearchHit, ...]) -> list[dict[str, Any]]:
+            return [
+                {
+                    "chunk_id": hit.chunk_id,
+                    "document_id": hit.document_id,
+                    "evidence_id": hit.evidence_id,
+                    "source_id": hit.source_id,
+                    "locator": hit.locator,
+                    "excerpt": hit.excerpt,
+                    "rank": hit.rank,
+                }
+                for hit in hits
+            ]
+
+        return {
+            "source_id": comparison.source_id,
+            "run_id": str(comparison.run_id),
+            "candidate_generation_id": comparison.candidate_generation_id,
+            "active_v1_generation_id": comparison.active_v1_generation_id,
+            "candidate_visibility": comparison.candidate_visibility,
+            "review_flags": comparison.review_flags,
+            "ranking": "within_generation_only",
+            "coverage": "historical_later_comparison_not_current_fileos",
+            "limit_per_generation": body.limit,
+            "layers": {
+                "active_v1": compact(comparison.active_v1_hits),
+                "candidate_v2_later": compact(comparison.candidate_hits),
+            },
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/sources/{source_id}/v2-later-review-rows")
+    def brain_source_v2_later_review_rows(
+        source_id: str,
+        body: FileOSV2LaterReviewRowsRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            page = fileos_v2_later_reviewer.review_rows(
+                principal, source_id, body.generation_id,
+                state=body.state, offset=body.offset, limit=body.limit,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+        return {
+            "source_id": page.source_id,
+            "run_id": str(page.run_id),
+            "generation_id": page.generation_id,
+            "candidate_visibility": page.candidate_visibility,
+            "review_flags": page.review_flags,
+            "classification_counts": page.classification_counts,
+            "state": page.state,
+            "offset": page.offset,
+            "total_rows": page.total_rows,
+            "rows": list(page.rows),
+            "next_offset": page.next_offset,
+            "absence_authorized": page.absence_authorized,
+            "current_read_active": page.current_read_active,
+            "untrusted_content": True,
+        }
+
+    @app.post("/v1/brain/sources/{source_id}/v2-later-row-decisions", status_code=201)
+    def brain_source_v2_later_row_decisions(
+        source_id: str,
+        body: FileOSV2LaterRowDecisionsRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return fileos_v2_later_row_decisions.record(principal, source_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+
+    @app.post("/v1/brain/sources/{source_id}/v2-later-row-decision-history")
+    def brain_source_v2_later_row_decision_history(
+        source_id: str,
+        body: FileOSV2LaterRowDecisionHistoryRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return fileos_v2_later_row_decisions.history(principal, source_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+
+    @app.post("/v1/brain/sources/{source_id}/v2-later-review-summary")
+    def brain_source_v2_later_review_summary(
+        source_id: str,
+        body: FileOSV2LaterReviewSummaryRequest,
+        principal: Annotated[
+            Principal, Depends(require("brain.fileos.transition.review", human=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return fileos_v2_later_row_decisions.summary(principal, source_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_request") from None
+
     @app.post("/v1/brain/fileos-search")
     def brain_current_fileos_search(
         body: BrainSearchRequest,
@@ -953,6 +1106,52 @@ def create_app(
             "untrusted_content": True,
         }
 
+    @app.post(
+        "/v1/accounts/{account_id}/attachments/{receipt_id}/xlsx-approvals",
+        status_code=201,
+    )
+    def approve_email_xlsx_extraction(
+        account_id: UUID,
+        receipt_id: UUID,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if email_xlsx_approvals is None:
+            raise HTTPException(503, "xlsx_processor_unavailable")
+        return email_xlsx_approvals.approve(
+            principal, account_id, receipt_id, idempotency_key,
+        )
+
+    @app.post("/v1/brain/email-xlsx-results/{approval_id}/inspect")
+    def inspect_email_xlsx_result(
+        approval_id: str,
+        body: EmailXlsxInspectRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+    ) -> dict[str, Any]:
+        try:
+            return email_xlsx_bridge.inspect(
+                principal, approval_id, offset=body.offset, max_chars=body.max_chars,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_email_xlsx_review") from None
+
+    @app.post("/v1/brain/email-xlsx-results/{approval_id}/publication-reviews", status_code=201)
+    def review_email_xlsx_publication(
+        approval_id: str,
+        body: EmailXlsxReviewRequest,
+        principal: Annotated[Principal, Depends(require("email.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        try:
+            return email_xlsx_bridge.review(
+                principal, approval_id, idempotency_key,
+                expected_text_sha256=body.expected_text_sha256,
+                expected_sheet_count=body.expected_sheet_count,
+                expected_cell_count=body.expected_cell_count,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_email_xlsx_review") from None
+
     @app.post("/v1/knowledge/assertions", status_code=201)
     def publish_knowledge(
         body: KnowledgePublishRequest,
@@ -1013,6 +1212,82 @@ def create_app(
         if "brain.content.read" not in principal.context.scopes:
             raise HTTPException(403, "scope_denied")
         return knowledge_proposals.preview(principal.context, batch_id)
+
+    @app.post("/v1/knowledge/dossier-markdown/fact-proposal-batches", status_code=201)
+    def stage_dossier_fact_proposals(
+        body: DossierProposalStageRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        try:
+            return fact_proposals.stage(principal.context, body, idempotency_key)
+        except ValueError:
+            raise HTTPException(422, "invalid_dossier_fact_proposal") from None
+
+    @app.get("/v1/knowledge/fact-proposal-batches/{batch_id}")
+    def preview_fact_proposals(
+        batch_id: str,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        return fact_proposals.preview(principal.context, batch_id)
+
+    @app.post("/v1/knowledge/fact-proposal-batches/{batch_id}/review")
+    def review_fact_proposals(
+        batch_id: str,
+        body: FactProposalReviewRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        try:
+            return fact_proposals.review(
+                principal.context, batch_id, body, idempotency_key,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_fact_proposal_review") from None
+
+    @app.post("/v1/knowledge/dossier-markdown/artifact-proposal-batches", status_code=201)
+    def stage_dossier_artifact_proposals(
+        body: DossierProposalStageRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        try:
+            return artifact_proposals.stage(principal.context, body, idempotency_key)
+        except ValueError:
+            raise HTTPException(422, "invalid_dossier_artifact_proposal") from None
+
+    @app.get("/v1/knowledge/artifact-proposal-batches/{batch_id}")
+    def preview_artifact_proposals(
+        batch_id: str,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        return artifact_proposals.preview(principal.context, batch_id)
+
+    @app.post("/v1/knowledge/artifact-proposal-batches/{batch_id}/review")
+    def review_artifact_proposals(
+        batch_id: str,
+        body: ArtifactProposalReviewRequest,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        if "brain.content.read" not in principal.context.scopes:
+            raise HTTPException(403, "scope_denied")
+        try:
+            return artifact_proposals.review(
+                principal.context, batch_id, body, idempotency_key,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_artifact_proposal_review") from None
 
     @app.post("/v1/knowledge/proposal-batches/{batch_id}/review")
     def review_knowledge_proposals(
@@ -1117,6 +1392,40 @@ def create_app(
         except ValueError:
             raise HTTPException(422, "invalid_project_artifact_page") from None
 
+    @app.post("/v1/knowledge/evidence/{evidence_id}/source-tier-reviews", status_code=201)
+    def publish_source_tier_review(
+        evidence_id: str,
+        body: SourceTierReviewWrite,
+        principal: Annotated[Principal, Depends(require("knowledge.review", human=True))],
+        idempotency_key: Annotated[UUID, Header()],
+    ) -> dict[str, Any]:
+        try:
+            return source_tier_reviews.publish(
+                principal.context, evidence_id, body, idempotency_key,
+            )
+        except ValueError:
+            raise HTTPException(422, "invalid_source_tier_review") from None
+
+    @app.get("/v1/knowledge/evidence/{evidence_id}/source-tier-reviews")
+    def page_source_tier_reviews(
+        evidence_id: str,
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+        after: Annotated[str | None, Query(max_length=40)] = None,
+    ) -> dict[str, Any]:
+        return source_tier_reviews.current_for_evidence(
+            principal.context, evidence_id, after=after,
+        )
+
+    @app.get("/v1/knowledge/fact-predicates")
+    def project_fact_predicate_catalog(
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        return project_facts.predicate_catalog(principal.context)
+
     @app.post("/v1/knowledge/projects/{project_id}/facts", status_code=201)
     def publish_project_fact(
         project_id: str,
@@ -1154,6 +1463,19 @@ def create_app(
             return project_facts.export_markdown(principal.context, project_id, body)
         except ValueError:
             raise HTTPException(422, "invalid_project_fact_export") from None
+
+    @app.get("/v1/knowledge/projects/{project_id}/facts/report")
+    def report_project_facts(
+        project_id: str,
+        body: Annotated[ProjectFactPageRequest, Query()],
+        principal: Annotated[
+            Principal, Depends(require("knowledge.search", assistant_source_aware=True))
+        ],
+    ) -> dict[str, Any]:
+        try:
+            return project_facts.report(principal.context, project_id, body)
+        except ValueError:
+            raise HTTPException(422, "invalid_project_fact_report") from None
 
     @app.get("/v1/knowledge/projects/{project_id}/dossier")
     def knowledge_project_dossier(

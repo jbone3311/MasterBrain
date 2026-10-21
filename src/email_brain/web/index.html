@@ -44,6 +44,15 @@ This channel is for synthetic accounts only and is separate from held-message MI
 <button id="documents-more" type="button" hidden>More PDF history</button>
 <p class="processing-note">History shows up to 50 approvals per page. Refresh manually for changes. Worker availability is unknown.
 Closing this page clears local selections, not saved approvals. Cancel unfinished jobs to revoke consent; running extraction may finish but cannot publish after cancellation.</p></section>
+<section aria-labelledby="xlsx-review-title"><h2 id="xlsx-review-title">Synthetic spreadsheet extraction and result review</h2>
+<p>Search and inspect a message, select one eligible XLSX attachment, then explicitly approve that exact source for isolated extraction. Approval lasts one hour and does not run the worker. After the separate worker saves a result, enter its approval ID and inspect every page before reviewing the exact text digest and sheet/cell counts. Text is untrusted and unscanned; neither approval is a financial certification. A separate worker must publish the reviewed document. This screen does not change mail or files.</p>
+<div id="xlsx-source-selection" aria-live="polite"></div>
+<form id="xlsx-review-form"><label for="xlsx-approval-id">XLSX approval ID</label>
+<div class="row"><input id="xlsx-approval-id" maxlength="37" required placeholder="xapp_…" autocomplete="off"><button>Inspect result</button></div></form>
+<div id="xlsx-review-status" role="status" aria-live="polite"></div>
+<div id="xlsx-review-result" aria-live="polite"></div>
+<button id="xlsx-review-next" type="button" hidden>Inspect next page</button>
+<button id="xlsx-review-approve" type="button" hidden>Approve this exact result</button></section>
 <section><h2>Propose a project</h2><p>For example: “Make Melron a project.” Nothing is applied automatically.</p>
 <form id="project-form"><label for="project-name">Project name</label><input id="project-name" maxlength="120" required>
 <label for="project-reason">Why add it?</label><textarea id="project-reason" maxlength="2000" required></textarea>
@@ -60,4 +69,4 @@ Closing this page clears local selections, not saved approvals. Cancel unfinishe
 <p>Approval records your decision only. Approved rules need a separate sample preview and activation. Other proposal types are not yet applied.</p>
 <div id="proposals" aria-live="polite"></div></section>
 <footer>No external scripts, images, model calls, or browser storage.</footer>
-</main><script src="/app.js"></script><script src="/document_review.js"></script><script src="/message_reader.js"></script></body></html>
+</main><script src="/app.js"></script><script src="/document_review.js"></script><script src="/message_reader.js"></script><script src="/xlsx_review.js"></script></body></html>

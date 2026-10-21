@@ -6,6 +6,177 @@ commands. The legacy `email-brain` command remains the Email capability surface.
 shared command moves, renames, quarantines, deletes or modifies a source file or
 mailbox.
 
+## Extract one approved synthetic Email XLSX privately
+
+After the owner selects and explicitly approves one eligible XLSX attachment,
+store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It contains `version`, the exact `account_id`, immutable
+`document_image_id` (`sha256:` plus 64 lowercase hex characters), absolute
+`docker_binary`, `credentials_file` and `token_file`; optional `blob_root` and
+`keys_file` must both be present or absent. The token must be a **worker**
+credential with exactly `email.document.process` and `email.evidence.read`.
+The database login must be DBA-bound to the same tenant. Supply its DSN in
+`MASTERBRAIN_DSN`, not the config or arguments.
+
+```sh
+masterbrain email extract-approved-xlsx \
+  --config /private/operator/email-xlsx-extraction.json \
+  --approval-id xapp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode verifies private config, worker identity, tenant binding and the
+synthetic account without reading the selected approval or workbook. Omit
+`--check` only for the exact fictional approval selected by the operator.
+Execution rechecks the source and image before and after restricted extraction,
+seals a complete private text digest/count result, and has no mailbox or
+document-publication effect. The owner then inspects/reviews the result in
+the first-party screen; `publish-reviewed-xlsx` is a different worker command.
+No live Fastmail or actual-image acceptance is claimed.
+
+## Publish one reviewed synthetic Email XLSX text document
+
+After a human has used the ADR-242 inspection and publication-review API,
+store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It contains `version`, the exact `account_id`, absolute
+`credentials_file` and `token_file` paths. The token must be a worker token
+with **exactly** `brain.source.ingest`, `brain.document.publish` and
+`email.evidence.read`; the database login must be bound to that same tenant.
+Set `MASTERBRAIN_DSN` outside the config and arguments.
+
+```sh
+masterbrain email publish-reviewed-xlsx \
+  --config /private/operator/email-xlsx-publication.json \
+  --review-id xrev_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --idempotency-key 00000000-0000-4000-8000-000000000001 \
+  --tenant-bound-db --check
+```
+
+Check mode authenticates and checks the database binding but reads no selected
+review/result and publishes nothing. Omit `--check` only for the exact
+fictional review selected by the operator. Execution rechecks the human
+review, account, source, owner membership and worker credential inside the
+transaction; a replay with the same key returns the same content-free receipt.
+No provider request, mailbox effect, cell-level citation or financial claim
+is made. Live Fastmail, actual-image and hosted acceptance remain closed.
+
+ADR-218 adds a shared DataCore confined FileOS text replay used by statement
+proposals and human source-tier reviews. It re-reads only one already-authorized
+current source, verifies source bytes and the complete normalized text, and
+records a point-in-time immutable receipt. ADR-219 adds one explicit operator
+command for a selected review; it is not an unattended live-root executor.
+PDF/OCR/spreadsheet completeness and Email-byte replay remain separate gates.
+ADR-226/227 later add a separate PDF **text-layer** replay and exact command;
+they do not establish visual completeness, OCR or financial truth.
+
+## Replay one reviewed FileOS text source
+
+Store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It has `source_id`, absolute `root`, absolute `credentials_file`
+and `token_file`. The token must belong to a worker with **only**
+`brain.document.publish`; the database login must be DBA-bound to the same
+tenant. Keep the DSN in `MASTERBRAIN_DSN`, not in arguments or config.
+
+```sh
+masterbrain fileos replay-tier-text \
+  --config /private/operator/tier-replay.json \
+  --review-id stier_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode authenticates and checks config, tenant-bound login and physical
+root identity; it does **not** read the selected file or write a receipt.
+After checking, omit `--check` to replay exactly that review. Execution
+rechecks the current source/version, root, source grant, normalized body and
+worker token before recording one immutable receipt. It never modifies a
+source file. The receipt is a historical observation, not a live freshness
+certificate or approval of a financial fact. Only fictional local sources
+have been tested; do not point this at a live root without a separately
+authorized pilot and hosted/restore gates.
+
+## Replay one reviewed FileOS PDF text layer
+
+Store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It has `source_id`, absolute `root`, immutable `document_image_id`
+(`sha256:` plus 64 lowercase hex characters), absolute `docker_binary`,
+`credentials_file` and `token_file`. The token must belong to a worker with
+**only** `brain.document.publish`. Set `MASTERBRAIN_DSN` to a DBA-enrolled
+login bound to the same tenant; do not put the DSN in config or arguments.
+
+```sh
+masterbrain fileos replay-tier-pdf \
+  --config /private/operator/pdf-tier-replay.json \
+  --review-id stier_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode validates config, credential, tenant-bound login and physical
+root identity but does **not** read the selected PDF or review row, construct
+the document processor, contact Docker or write a receipt. It checks image
+identity syntax, not installed image availability. Omit `--check` only for an
+explicitly selected fictional review. Execution reopens the confined PDF,
+re-runs the exact pinned isolated processor, rechecks the source and worker
+inside the final transaction and stores a digest-only immutable receipt. It
+does not modify files. This is point-in-time text-layer derivation, not OCR,
+visual completeness, issuer authenticity, current-on-disk freshness or a
+financial fact. No live root is authorized.
+
+## Replay one reviewed FileOS XLSX row layout
+
+Store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It has one `source_id`, absolute `root`, immutable
+`document_image_id` (`sha256:` plus 64 lowercase hex characters), absolute
+`docker_binary`, `credentials_file` and `token_file`. The worker token must
+have exactly `brain.document.publish`; `MASTERBRAIN_DSN` must be a DBA-enrolled
+login bound to that worker's tenant. Keep the DSN outside config and arguments.
+
+```sh
+masterbrain fileos replay-tier-xlsx-tables \
+  --config /private/operator/xlsx-tier-replay.json \
+  --review-id stier_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode verifies configuration, worker, tenant-bound login and root identity
+without reading the selected workbook or review, constructing a processor or
+writing a receipt. Omit `--check` only for one explicitly selected fictional
+review. Execution reopens the confined XLSX, runs the exact pinned isolated
+table worker, verifies its rendered values against the indexed document text,
+rechecks source/grant/worker and stores only an immutable digest/count receipt.
+No cell values are published; it is not a currentness certificate, financial
+truth, live-root authorization or FileOS cutover. The actual-image and hosted
+gates remain open.
+
+## Replay one reviewed retained Email text source
+
+Store a closed version-1 JSON config in a private 0600 file under a 0700
+directory. It has one `account_id`, absolute `credentials_file` and
+`token_file`, and optional paired `blob_root` and `keys_file` for encrypted
+retained MIME. The key manifest is a private 0600 JSON file with `tenant_id`
+and 1–100 unique `{key_id,key_hex}` entries; the root already exists as a
+private 0700 directory. Do not put a provider token or DSN in this config.
+The worker token must have **exactly** `brain.document.publish` and
+`email.evidence.read`; the DSN in `MASTERBRAIN_DSN` must be a DBA-enrolled
+tenant-bound login for that worker.
+
+```sh
+masterbrain email replay-tier-text \
+  --config /private/operator/email-tier-replay.json \
+  --review-id stier_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --tenant-bound-db --check
+```
+
+Check mode authenticates and checks config, account, login and optional blob
+root/key manifest without reading the selected MIME or review row and without
+writing a receipt. Omit `--check` to replay exactly that review. Execution
+verifies the review belongs to the configured account, re-reads only its
+retained inline or authenticated encrypted MIME, recomputes the complete
+direct-parser DataCore text and rechecks the token inside the final
+transaction. The digest-only receipt is a point-in-time observation, not
+sender authenticity, attachment completeness, live freshness or financial
+approval. Only fictional accounts have been tested; a live account requires
+separate owner authorization and hosted/restore gates.
+
 Every database-backed private `masterbrain` command below accepts
 `--tenant-bound-db` on both `--check` and execution (ADRs 135, 138 and 139).
 With this opt-in, `MASTERBRAIN_DSN` must be a DBA-enrolled login bound to the

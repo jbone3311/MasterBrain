@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 const path = require("node:path");
+const {webcrypto} = require("node:crypto");
 
 class Element {
   constructor(tag = "div") {
@@ -41,10 +42,11 @@ function harness(fetch, extras = {}) {
     crypto: {randomUUID() {
       const id = `00000000-0000-4000-8000-${String(900 + uuids.length).padStart(12, "0")}`;
       uuids.push(id); return id;
-    }},
+    }, subtle: webcrypto.subtle},
+    TextEncoder,
     ...extras,
   });
-  for (const name of ["app.js", "document_review.js", "message_reader.js"]) {
+  for (const name of ["app.js", "document_review.js", "message_reader.js", "xlsx_review.js"]) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/email_brain/web", name), "utf8"), context);
   }
   return {element, uuids, evaluate: (code) => vm.runInContext(code, context)};

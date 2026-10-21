@@ -70,6 +70,38 @@ def _migrations_before(tmp_path: Path, limit: int) -> Path:
     return earlier
 
 
+def test_latest_deprecated_fact_predicate_blocks_new_sql_publication(
+    scratch_database: tuple[str, str],
+) -> None:
+    admin_dsn, _ = scratch_database
+    migrate(admin_dsn, MIGRATIONS)
+    with psycopg.connect(admin_dsn) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_project_fact_predicates(name,version,value_type,"
+            "unit_code,description,status) VALUES "
+            "('loi.price',2,'number','currency','Deprecated fictional LOI price','deprecated')"
+        )
+        latest = conn.execute(
+            "SELECT status FROM knowledge_project_fact_predicates "
+            "WHERE name='loi.price' ORDER BY version DESC LIMIT 1"
+        ).fetchone()
+        assert latest == ("deprecated",)
+        with pytest.raises(psycopg.errors.RaiseException, match="active registered shape"):
+            with conn.transaction():
+                conn.execute(
+                    "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,"
+                    "predicate,value,value_type,assertion_status,confidence,"
+                    "evidence_ids,quote_evidence_id,source_quote,observed_at,"
+                    "reviewer_id,amount_decimal,unit_code,currency_code) "
+                    "VALUES (%s,%s,%s,'loi.price','1','number','asserted',1,"
+                    "%s,%s,'1 USD',%s,%s,1,'currency','USD')",
+                    (uuid4(), "pfact_" + "1" * 32, "project_" + "2" * 32,
+                     ["evidence_" + "3" * 32], "evidence_" + "3" * 32,
+                     datetime(2026, 10, 15, tzinfo=UTC), uuid4()),
+                )
+        conn.rollback()
+
+
 def _migrate_before_repair(dsn: str, tmp_path: Path) -> None:
     earlier = _migrations_before(tmp_path, 29)
     assert len(migrate(dsn, earlier)) == 28
@@ -482,6 +514,34 @@ def test_project_dossier_indexes_preserve_populated_assertion_heaps(
         "0065_reviewed_project_artifacts.sql",
         "0066_reviewed_project_facts.sql",
         "0067_dossier_import_batch_binding.sql",
+        "0068_dossier_proposal_citation_binding.sql",
+        "0069_private_project_fact_proposals.sql",
+        "0070_private_project_artifact_proposals.sql",
+        "0071_reviewed_project_fact_measurements.sql",
+        "0072_reviewed_project_fact_measurement_tokens.sql",
+        "0073_project_fact_predicate_registry.sql",
+        "0074_project_fact_predicate_latest_revision.sql",
+        "0075_reviewed_source_tier_classifications.sql",
+        "0076_source_tier_fileos_text_replay.sql",
+        "0077_source_tier_email_text_replay.sql",
+        "0078_source_tier_fileos_pdf_replay.sql",
+        "0079_source_tier_email_pdf_replay.sql",
+        "0080_email_pdf_replay_account_lock.sql",
+        "0081_source_tier_fileos_xlsx_table_replay.sql",
+        "0082_email_xlsx_extraction_approvals.sql",
+        "0083_email_xlsx_extraction_results.sql",
+        "0084_email_xlsx_document_bridge.sql",
+        "0085_email_xlsx_publication_reviews.sql",
+        "0086_email_xlsx_bridge_revision_guard.sql",
+        "0087_fileos_v2_later_observation_packets.sql",
+        "0088_fileos_v2_later_coverage_closures.sql",
+        "0089_fileos_v2_later_evidence_preparations.sql",
+        "0090_fileos_v2_later_document_attempts.sql",
+        "0091_fileos_v2_later_run_completions.sql",
+        "0092_fileos_v2_later_shared_index_generation.sql",
+        "0093_fileos_v2_later_row_decisions.sql",
+        "0094_project_fact_correction_keeps_shape.sql",
+        "0095_dossier_proposal_decision_binding.sql",
     ]
     assert migrate(admin_dsn, MIGRATIONS) == []
     with psycopg.connect(admin_dsn) as conn:

@@ -1,9 +1,302 @@
 # Changelog
 
+- Make source-tier reviews reachable past the first page with a cursor and
+  all-page tier counts; approve an imported dossier fact or artifact claim
+  once; bind fact-proposal approvals to the exact published fact and the
+  current reviewer (ADR-266, migration 0095).
+
+- Fix three review findings (ADR-265): historical later-FileOS reads compare
+  locators in byte order so en-US databases no longer reject valid attempts;
+  XLSX extraction reads the true sheet extent so an understated dimension
+  cannot hide cells or formulas; reviewed facts under retired or unregistered
+  predicates stay correctable (migration 0094). Populated restore-seed tests
+  move to `tests/test_restore_drill_postgres.py`. The XLSX review view marks
+  invisible formatting characters so the reviewed text cannot hide them.
+
 - Add an explanatory `docs/concepts` institutional-knowledge layer and connect
   repository navigation, contributor guidance and documentation ownership. Preserve
   canonical PRD/architecture/ADR authority and dated research; describe future RFC
   triggers without creating an RFC system. Documentation only.
+
+- Add a compact, human-only historical FileOS review summary that hashes the
+  exact latest row-decision snapshot and counts unresolved coverage without
+  recording run signoff or changing current FileOS state (ADR-262).
+
+- Add human-only append-only decisions on exact historical FileOS later-run
+  classifications, with latest-decision and bounded history reads. Migration
+  0093 enforces tenant/actor/exact-row binding and immutability. The decisions
+  do not authorize absence, current search, file effects or donor cutover.
+
+- Add bounded human inspection of exact historical later FileOS prior-row
+  classifications, including possible-missing candidates. Results are
+  source-bound, revalidated, read-only and explicitly nonauthoritative for
+  absence, current search or file effects.
+
+- Add a human-only, source-bound comparison of a ready historical later
+  FileOS generation with active v1 search, including run review flags and
+  distinct result layers. Harden baseline-v2 preview against paused or
+  ungranted sources. This changes no current search or donor files.
+
+- Add an exact, nonactivating shared DataCore index generation for a
+  completed historical later FileOS v2 run. Database guards close hashed
+  item and chunk membership and refuse direct activation. A 3,000-file
+  synthetic stress case exposed and then verified a fix for the inherited
+  readiness-count timeout. Current FileOS search and FOS-Master remain
+  unchanged.
+
+- Add a synthetic-only historical FileOS v2 later-run completion bound to a
+  ready exact-row document attempt and a fresh donor-policy scan. Its
+  possible-absence/mass-loss/coverage review flags and source lock are
+  database-checked. It does not activate current reads, infer absence, mutate
+  files or change the FOS-Master donor.
+
+- Add retryable historical FileOS v2 document attempts: a failed extraction
+  is sealed as blocked, while only one ready attempt may complete an exact
+  later evidence preparation. Normalized derivatives remain historical.
+
+- Add one disposable synthetic XLSX alpha round-trip test across owner Email
+  search/evidence, exact approval, isolated-worker simulation, bounded result
+  inspection, explicit review, separate publication worker and cited Brain
+  retrieval. Pausing the source hides the derivative; no live data is used.
+
+- Add `masterbrain email extract-approved-xlsx` for one account-pinned,
+  human-approved synthetic attachment. A separate worker identity and
+  tenant-bound login run the pinned isolated extractor; check mode reads no
+  selected MIME and execution seals only a private result, not a document.
+
+- Add first-party source-attached selection and explicit approval for one
+  eligible synthetic Email XLSX. Selection alone does not write; approval
+  returns an `xapp_` ID for a separately scoped extraction worker. The screen
+  cannot run extraction, publish or change sources.
+
+- Expose human-only, idempotent approval of one current synthetic Email XLSX
+  attachment through the API. A new server-side XLSX processor pin is distinct
+  from the existing PDF pin. Approval does not run extraction or publish.
+
+- Add a first-party synthetic XLSX result-review screen for an existing
+  approval ID. It displays every bounded text page, recomputes the complete
+  UTF-8 SHA-256 in the browser, and requires a separate explicit human review
+  click. It cannot create the approval, run or impersonate a worker, publish
+  a document, or change mail/files. The local populated restore and full
+  disposable-PostgreSQL suite passed before this UI slice; hosted/image and
+  actual-browser gates remain open.
+
+- Add a native two-cluster PostgreSQL 17 synthetic dump/restore drill and
+  populate it with an approved, reviewed and published fictional XLSX.
+  The restored document is retrievable, its review/receipt is preserved and
+  a foreign tenant cannot read it. This complements, not replaces, the
+  hosted Docker restore gate.
+
+- Add a separate human-authorized synthetic Email XLSX DataCore bridge. It
+  publishes only a complete exact-approved result with reviewer-supplied
+  digest/counts, immutable occurrence receipt, deterministic chunks and
+  provenance. Generic and Email-family reads recheck currentness; no
+  cell-level or financial claim, live mail or FOS cutover is enabled.
+
+- Recheck the approving owner's membership and caller authorization before
+  reading retained Email XLSX MIME or replaying a cached extraction result.
+  Add revoked-owner and replay tests plus a collected actual-image
+  approval-to-result test; no publication boundary changes.
+
+- Seal one exact-approved synthetic Email XLSX extraction through the pinned
+  isolated DataCore worker in a separate immutable result table. The result
+  remains private; no Brain search, live mailbox or financial claim is enabled.
+
+- Add a separate, human-only synthetic Email XLSX extraction approval bound
+  to an exact current bridged attachment, parent MIME, source event and pinned
+  processor. Protected SQL and disposable PostgreSQL tests pass; this does not
+  run extraction, publish text or enable live Fastmail. PDF jobs stay PDF-only.
+
+- Expand the pinned FOS-Master XLSX comparison with sparse/multi-sheet and
+  exact row-cap cases; preserve the donor and explicit policy differences.
+
+- Add a fictional cross-source conflicting-price API acceptance case: two
+  exact-cited Email/FileOS `loi.price` statements remain separate, the owner
+  sees a disagreement without any total, and an Email-scoped assistant cannot
+  see or infer the FileOS row. No ownership or investment truth is claimed.
+
+- Make the pinned FOS-Master donor-policy shadow repeatable at the 9,994-file
+  v1 transition capacity. The exact-donor local run and new test compare
+  9,998 ordinary rows across replay/change/metadata paths and retain the six
+  explicit blockers; no source policy or FileOS cutover changed.
+
+- Exercise the published `masterbrain demo seed` command in the PostgreSQL
+  regression, in addition to its underlying service. A fresh disposable
+  command-to-loopback-API walkthrough verified migration, initialization,
+  idempotent seed, both-source search/focus and cited Markdown inspection.
+
+- Expand the disposable combined-source dossier with exact-quote, replay-safe
+  event, proposed reply request, source-stated note and generated-file link.
+  The request's relative due date remains unresolved and no person/role is
+  invented. The real Brain API test verifies one row per section after replay.
+
+- Correct the fictional combined-source project so its cited Melron phrase
+  occurs in both the linked email and file. The demo v2 marker requires fresh
+  disposable state instead of silently rewriting a v1 fixture; tests verify
+  the original evidence bodies through the Brain API.
+
+- Complete and activate the fictional FileOS search generation in the
+  combined-source demo. Its current Brain search now returns both Email and
+  FileOS, and the exported dossier passes the owner-only Markdown citation
+  inspection API. Disposable PostgreSQL regression tests cover replay and
+  both-source coverage; no live source is enabled.
+
+- ADR-231: closed the reviewed Email PDF account-status race with the shared
+  tenant/account advisory lock and a narrow tenant-bound account row-lock
+  function. Synthetic concurrent, privilege, migration and recovery tests
+  pass; live mail and real-container gates remain closed.
+
+- ADR-230: added a restricted, tenant-bound Email attachment PDF replay
+  command with exact account/review, pinned image and no-selected-MIME-read
+  check mode. Fictional controller/CLI and command-to-PostgreSQL tests pass;
+  real-container and hosted gates remain, and no live mail or financial claim
+  is enabled.
+
+- ADR-229: sealed one current reviewed Email attachment PDF text-layer replay
+  in an occurrence-specific, tenant-fenced immutable digest receipt after
+  retained-MIME proof and final checks. Fictional PostgreSQL/RLS tests pass;
+  ADR-230 later adds a restricted operator command; no live mail or financial
+  claim is enabled.
+
+- ADR-228: added a nonpublishing, exact retained-MIME/part Email PDF text-layer
+  replay proof through the pinned isolated worker, with fictional complete,
+  changed, partial and same-hash occurrence tests. No receipt or live mail.
+
+- Prepared an explicit CI check that replays a fictional reviewed FileOS PDF
+  through the actual pinned document image into its protected PostgreSQL
+  receipt. The container result remains pending until hosted jobs start.
+
+- ADR-227: exposed one current reviewed FileOS PDF text-layer replay through
+  a tenant-bound, exact-source operator command with no-selected-PDF-read
+  check mode, pinned image config and final worker reauthentication. Fictional
+  command-to-database tests pass; no live root or financial claim is involved.
+
+- ADR-226: added a worker-only, digest-only reviewed FileOS PDF replay receipt
+  with final current-source/authorization recheck, protected migration 0078
+  and fictional PostgreSQL fault tests. No operator command, OCR, live root or
+  financial publication is implied.
+
+- ADR-225: added a nonpublishing confined FileOS PDF byte-to-text replay
+  primitive, bound to the exact restricted document processor and its image
+  normalizer. Fictional digest, source-change, symlink, image-only and
+  invented-text regressions pass; no receipt or financial claim is created.
+
+- ADR-224: exposed one reviewed retained-Email text replay through a
+  tenant-bound operator command with exact worker scopes, account binding,
+  no-MIME-read check mode, optional private encrypted storage and final
+  credential recheck. Fictional inline/encrypted command paths are tested.
+
+- ADR-223: added a worker-only, point-in-time retained-MIME replay for one
+  current reviewed Email message. It recomputes the exact pinned-parser
+  DataCore text from inline or encrypted bytes and stores a digest-only
+  immutable receipt; no live mail or financial claim is involved.
+
+- ADR-222: fixed encrypted Email-to-DataCore bridging by using the retained
+  object's generated byte size rather than its nullable inline MIME column.
+  Fictional encrypted and inline bridge regressions protect source identity.
+
+- ADR-221: DataCore now defers formula-bearing XLSX workbooks and overlong
+  cells rather than silently omitting uncached formulas or truncating cell
+  text while reporting successful extraction.
+
+- ADR-220: DataCore now defers a mixed text/image-only PDF instead of
+  publishing an incomplete-looking extracted document. A fictional two-page
+  closed-contract regression protects the behavior; PDF/OCR completeness
+  remains a separate gate.
+
+- ADR-219: added a tenant-bound, document-only worker command for one reviewed
+  FileOS text replay, with no-read check mode, source-ID binding, scrubbed
+  failures and final-transaction credential recheck. Only fictional local
+  execution has been tested.
+
+- ADR-218: extracted a shared DataCore confined FileOS byte/text replay and
+  added an immutable worker-observed replay receipt for current human
+  source-tier reviews. Statement replay behavior remains tested; no source
+  file or financial claim is changed.
+
+- ADR-217: added append-only, human-reviewed source-tier classifications tied
+  to current evidence/version/document hashes and exact source quotes, with
+  source-scoped Brain API reads. These are not independent byte attestations
+  or approvals of financial facts.
+
+- ADR-216: added exact-hash synthetic FOS fact-verifier parity for tier
+  heuristics, numeric variants and confirmation status; documented why these
+  donor outcomes cannot certify MasterBrain financial claims.
+
+- ADR-215: fixed project-fact catalog retirement so the latest deprecated
+  revision cannot revive an older active one. Added a bounded, database-
+  authoritative Brain API discovery route and strict external client;
+  private proposal previews now reflect latest SQL status.
+
+- ADR-214: added a versioned, guarded project-fact predicate catalog in code
+  and migration 0073. New reviewed facts require a registered name, value
+  type and measurement unit; historical rows remain unchanged. The broader
+  name-proposal/alias registry remains open.
+
+- ADR-213: tightened reviewed measurement citation checks from substrings to
+  complete amount and unit/currency quote tokens in both the write model and
+  additive migration 0072. Existing typed rows are validated without rewrite;
+  a misleading old row blocks migration for explicit review.
+
+- ADR-212: added opt-in exact-decimal amount, unit and currency metadata to
+  newly reviewed project facts via additive migration 0071. App and SQL
+  require matching value and literal source-quote tokens; the scoped report
+  exposes a source-stated typed field but still computes no financial total.
+
+- ADR-211: added a current-evidence, source-granted project fact report route
+  and validated external read client. It groups one reviewed page, flags
+  divergent previews and disputed rows, and refuses numeric aggregation or
+  investment-truth claims; no donor or source data changed.
+
+- ADR-210: compared the remaining three pinned FOS intelligence-report row
+  shapes on fictional data, with direct local DuckDB donor replay, a 1,000-row
+  repeat and corrected half-away rounding. No runtime report, verified balance,
+  live source or FileOS cutover.
+
+- Pin FOS-Master's coverage/timeline intelligence-report semantics in an
+  isolated fictional ADR-209 parity seed. Exact-hash local donor replay and
+  1,000-row comparison preserve its status counts and year-prefix behavior;
+  no certified freshness or investment total is enabled. ADR-210 later adds
+  the other three report row shapes without a runtime report.
+
+- Add a separate synthetic MasterBrain demo initializer/seed (ADR-208) that
+  bridges fictional Email into DataCore, publishes one fictional FileOS text
+  occurrence and exposes a cited cross-source project through the running
+  Brain API. Keep the older Email-only demo and its narrow token unchanged;
+  no real provider/root, worker authority or source effect is enabled.
+
+- Hold shared source-item and source-status row locks during private Knowledge
+  proposal review, including every linked project/entity citation behind a
+  proposed member role. Synthetic concurrent revocation tests cover direct
+  proposal evidence and the separate entity citation. This does not change
+  generic direct publication, Email exclusion-policy serialization or live
+  provider state.
+
+- Hold shared PostgreSQL locks on each checked source item and source-status
+  row through direct and proposal-reviewed fact/artifact publication. A
+  concurrent current-version or active-status update now waits until the
+  validation transaction commits; synthetic mid-review revocation tests
+  cover both paths. This does not serialize every Email exclusion change or
+  prove external provider freshness.
+
+- Extend the fictional Cedar Harbor Email/FileOS acceptance trial through
+  MasterBrain's current Markdown export, separate private fact/artifact-link
+  proposal APIs, explicit human approval, reviewed dossier reads, original
+  evidence drill-down and file-only assistant denial. No automatic import or
+  live-source approval is implied.
+
+- Add ADR-207's synthetic-only selected artifact-link Markdown proposal queue,
+  human-only stage/preview/atomic review routes and migration 0070. Separate
+  current artifact and cited-basis occurrences, full quotes and grants are
+  rechecked; approved rows use the transaction-bound reviewed link publisher.
+  Extend the populated logical-restore fixture with pending and approved
+  fictional batches. Hosted acceptance, live import and FileOS cutover remain
+  open.
+
+- Extend synthetic-only dossier import to selected, cited project-member roles
+  as private proposals (ADR-205). Keep the specific member and entity citation
+  IDs immutable and recheck their current evidence at preview and human
+  review; no automatic approval, role permission or live source.
 
 - Extended the disposable Cedar Harbor cross-source trial with a reviewed
   project dossier joining an appraisal event, Email/FileOS commitment,

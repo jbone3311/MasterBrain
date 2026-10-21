@@ -1,6 +1,7 @@
 """Closed, bounded request contracts for the source-neutral Brain API."""
 
 from typing import Literal
+from uuid import UUID
 
 from pydantic import Field, field_validator
 
@@ -29,6 +30,47 @@ class FileOSV2SearchPreviewRequest(ClosedModel):
         return value
 
 
+FileOSV2ReviewState = Literal[
+    "unchanged", "changed", "deferred_prior", "excluded_prior",
+    "error_covered_prior", "unobserved_prior", "absence_candidate",
+    "newly_hashed_prior", "unobserved_hashless_prior",
+]
+
+
+class FileOSV2LaterReviewRowsRequest(ClosedModel):
+    generation_id: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")
+    state: FileOSV2ReviewState | None = None
+    offset: int = Field(default=0, ge=0, le=20000, strict=True)
+    limit: int = Field(default=50, ge=1, le=100, strict=True)
+
+
+class FileOSV2LaterRowDecisionWrite(ClosedModel):
+    idempotency_key: UUID
+    locator: str = Field(min_length=1, max_length=4096)
+    state: FileOSV2ReviewState
+    prior_version_id: str | None = Field(default=None, max_length=128)
+    disposition: Literal[
+        "investigate", "dispute_classification",
+        "acknowledge_historical_observation",
+    ]
+
+
+class FileOSV2LaterRowDecisionsRequest(ClosedModel):
+    generation_id: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")
+    decisions: list[FileOSV2LaterRowDecisionWrite] = Field(min_length=1, max_length=100)
+
+
+class FileOSV2LaterRowDecisionHistoryRequest(ClosedModel):
+    generation_id: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")
+    locator: str = Field(min_length=1, max_length=4096)
+    offset: int = Field(default=0, ge=0, le=20000, strict=True)
+    limit: int = Field(default=25, ge=1, le=100, strict=True)
+
+
+class FileOSV2LaterReviewSummaryRequest(ClosedModel):
+    generation_id: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")
+
+
 class EmailFamilySearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     message_limit: int = Field(default=10, ge=1, le=25, strict=True)
@@ -38,6 +80,17 @@ class EmailFamilySearchRequest(ClosedModel):
 
 class EvidenceContentRequest(ClosedModel):
     max_chars: int = Field(default=4000, ge=1, le=16000, strict=True)
+
+
+class EmailXlsxInspectRequest(ClosedModel):
+    offset: int = Field(default=0, ge=0, le=200000, strict=True)
+    max_chars: int = Field(default=4000, ge=1, le=16000, strict=True)
+
+
+class EmailXlsxReviewRequest(ClosedModel):
+    expected_text_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    expected_sheet_count: int = Field(ge=1, le=20, strict=True)
+    expected_cell_count: int = Field(ge=1, le=20000, strict=True)
 
 
 class GroundedAnswerRequest(ClosedModel):

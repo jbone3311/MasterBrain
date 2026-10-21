@@ -10,6 +10,7 @@ import psycopg
 from psycopg import sql
 
 RUNTIME_SELECT = (
+    "knowledge_project_fact_predicates",
     "knowledge_entities",
     "knowledge_entity_aliases",
     "knowledge_project_aliases",
@@ -21,6 +22,12 @@ RUNTIME_SELECT = (
     "knowledge_project_artifact_receipts",
     "knowledge_project_facts",
     "knowledge_project_fact_receipts",
+    "knowledge_source_tier_reviews",
+    "knowledge_source_tier_fileos_replays",
+    "knowledge_source_tier_fileos_pdf_replays",
+    "knowledge_source_tier_fileos_xlsx_table_replays",
+    "knowledge_source_tier_email_replays",
+    "knowledge_source_tier_email_pdf_replays",
     "knowledge_events",
     "knowledge_commitments",
     "knowledge_corrections",
@@ -37,6 +44,15 @@ RUNTIME_SELECT = (
     "knowledge_proposal_evidence",
     "knowledge_proposal_decisions",
     "knowledge_proposal_review_receipts",
+    "knowledge_fact_proposal_batches",
+    "knowledge_fact_proposals",
+    "knowledge_fact_proposal_evidence",
+    "knowledge_fact_proposal_decisions",
+    "knowledge_fact_proposal_review_receipts",
+    "knowledge_artifact_proposal_batches",
+    "knowledge_artifact_proposals",
+    "knowledge_artifact_proposal_decisions",
+    "knowledge_artifact_proposal_review_receipts",
     "brain_sources",
     "brain_source_items",
     "brain_source_versions",
@@ -52,6 +68,10 @@ RUNTIME_SELECT = (
     "brain_parts",
     "brain_email_attachment_bridge_receipts",
     "brain_email_document_bridge_receipts",
+    "brain_email_xlsx_extraction_approvals",
+    "brain_email_xlsx_extraction_results",
+    "brain_email_xlsx_document_bridge_receipts",
+    "brain_email_xlsx_publication_reviews",
     "brain_archive_inventories",
     "brain_archive_members",
     "brain_archive_skips",
@@ -71,6 +91,14 @@ RUNTIME_SELECT = (
     "brain_fileos_v2_prepared_rows",
     "brain_fileos_v2_baseline_authorizations",
     "brain_fileos_v2_baseline_completions",
+    "brain_fileos_v2_later_observation_packets",
+    "brain_fileos_v2_later_coverage_closures",
+    "brain_fileos_v2_later_evidence_preparations",
+    "brain_fileos_v2_later_prepared_rows",
+    "brain_fileos_v2_later_document_attempts",
+    "brain_fileos_v2_later_document_attempt_items",
+    "brain_fileos_v2_later_run_completions",
+    "brain_fileos_v2_later_row_decisions",
     "brain_fileos_v2_document_attempts",
     "brain_fileos_v2_document_attempt_items",
     "brain_index_generations",
@@ -119,6 +147,12 @@ RUNTIME_INSERT = (
     "knowledge_project_artifact_receipts",
     "knowledge_project_facts",
     "knowledge_project_fact_receipts",
+    "knowledge_source_tier_reviews",
+    "knowledge_source_tier_fileos_replays",
+    "knowledge_source_tier_fileos_pdf_replays",
+    "knowledge_source_tier_fileos_xlsx_table_replays",
+    "knowledge_source_tier_email_replays",
+    "knowledge_source_tier_email_pdf_replays",
     "knowledge_events",
     "knowledge_commitments",
     "knowledge_corrections",
@@ -135,6 +169,15 @@ RUNTIME_INSERT = (
     "knowledge_proposal_evidence",
     "knowledge_proposal_decisions",
     "knowledge_proposal_review_receipts",
+    "knowledge_fact_proposal_batches",
+    "knowledge_fact_proposals",
+    "knowledge_fact_proposal_evidence",
+    "knowledge_fact_proposal_decisions",
+    "knowledge_fact_proposal_review_receipts",
+    "knowledge_artifact_proposal_batches",
+    "knowledge_artifact_proposals",
+    "knowledge_artifact_proposal_decisions",
+    "knowledge_artifact_proposal_review_receipts",
     "brain_sources",
     "brain_source_items",
     "brain_source_versions",
@@ -150,6 +193,10 @@ RUNTIME_INSERT = (
     "brain_parts",
     "brain_email_attachment_bridge_receipts",
     "brain_email_document_bridge_receipts",
+    "brain_email_xlsx_extraction_approvals",
+    "brain_email_xlsx_extraction_results",
+    "brain_email_xlsx_document_bridge_receipts",
+    "brain_email_xlsx_publication_reviews",
     "brain_archive_inventories",
     "brain_archive_members",
     "brain_archive_skips",
@@ -169,6 +216,14 @@ RUNTIME_INSERT = (
     "brain_fileos_v2_prepared_rows",
     "brain_fileos_v2_baseline_authorizations",
     "brain_fileos_v2_baseline_completions",
+    "brain_fileos_v2_later_observation_packets",
+    "brain_fileos_v2_later_coverage_closures",
+    "brain_fileos_v2_later_evidence_preparations",
+    "brain_fileos_v2_later_prepared_rows",
+    "brain_fileos_v2_later_document_attempts",
+    "brain_fileos_v2_later_document_attempt_items",
+    "brain_fileos_v2_later_run_completions",
+    "brain_fileos_v2_later_row_decisions",
     "brain_fileos_v2_document_attempts",
     "brain_fileos_v2_document_attempt_items",
     "brain_index_generations",
@@ -429,6 +484,16 @@ def grant_tenant_runtime(
         ):
             raise ValueError("previously bound runtime role cannot be reused")
         grant_runtime(conn, role)
+        if conn.execute(
+            "SELECT to_regprocedure('public.lock_email_pdf_replay_account(uuid,uuid)') "
+            "IS NOT NULL",
+        ).fetchone() == (True,):
+            conn.execute(
+                sql.SQL(
+                    "GRANT EXECUTE ON FUNCTION "
+                    "public.lock_email_pdf_replay_account(uuid,uuid) TO {}"
+                ).format(sql.Identifier(role))
+            )
         if not existing:
             conn.execute(
                 "INSERT INTO public.masterbrain_tenant_login_bindings(role_name,tenant_id) "

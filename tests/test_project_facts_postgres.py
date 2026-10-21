@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from uuid import uuid4
 
 import httpx
@@ -16,15 +18,18 @@ from fastapi.testclient import TestClient
 from email_brain.api import create_app
 from email_brain.auth import Credential, TokenRegistry
 from email_brain.store import Conflict, NotFound, Store
-from masterbrain.brain_client import BrainReadClient
+from masterbrain.brain_client import BrainClientError, BrainReadClient
+from masterbrain.fact_predicates import PROJECT_FACT_PREDICATES
 from masterbrain.knowledge import KnowledgeCore
 from masterbrain.knowledge_schema import (
     ProjectDossierRequest,
     ProjectFactPageRequest,
     ProjectFactWrite,
     ProjectWrite,
+    SourceTierReviewWrite,
 )
 from masterbrain.project_facts import ProjectFacts
+from masterbrain.source_tier_reviews import SourceTierReviews
 
 pytestmark = pytest.mark.postgres
 database, tenant = pg.database, pg.tenant
@@ -32,9 +37,10 @@ QUOTE = "Fictional Melron deal briefing"
 NOW = datetime(2026, 10, 14, tzinfo=UTC)
 
 
-def _source(store: Store, ctx: pg.TenantContext, account, key: str, cursor: str | None) -> str:
+def _source(store: Store, ctx: pg.TenantContext, account, key: str, cursor: str | None,
+            body: str = QUOTE) -> str:
     store.ingest_page(ctx, account, cursor, key, [
-        replace(pg.item(key, body=QUOTE), provider_id=key),
+        replace(pg.item(key, body=body), provider_id=key),
     ])
     with store.transaction(ctx) as conn:
         legacy_id = conn.execute(
@@ -69,12 +75,229 @@ def _body(project_id: str, evidence_id: str, *, quote: str = QUOTE,
           value: str = "One hundred fictional units",
           supersedes_id: str | None = None) -> ProjectFactWrite:
     return ProjectFactWrite(
-        kind="project_fact", project_id=project_id, predicate="capital.amount",
+        kind="project_fact", project_id=project_id, predicate="deal.note",
         value=value, value_type="text", evidence_ids=[evidence_id],
         quote_evidence_id=evidence_id, source_quote=quote,
         confidence=1.0, observed_at=NOW, reviewed=True,
         supersedes_id=supersedes_id,
     )
+
+
+def _tier_body(store: Store, ctx: pg.TenantContext, evidence_id: str) -> SourceTierReviewWrite:
+    with store.transaction(ctx) as conn:
+        row = conn.execute(
+            "SELECT e.source_version_id,e.sha256,d.id AS document_id,"
+            "d.body_sha256 FROM brain_evidence e "
+            "JOIN brain_normalized_documents d ON d.tenant_id=e.tenant_id "
+            "AND d.evidence_id=e.id WHERE e.id=%s AND strpos(d.body,%s)>0 "
+            "ORDER BY d.id LIMIT 1", (evidence_id, QUOTE),
+        ).fetchone()
+    assert row is not None
+    return SourceTierReviewWrite(
+        evidence_id=evidence_id, source_version_id=row["source_version_id"],
+        source_sha256=row["sha256"], document_id=row["document_id"],
+        document_sha256=row["body_sha256"], source_tier="T3",
+        authority_kind="internal_record", source_quote=QUOTE,
+    )
+
+
+def test_buried_source_tier_reviews_stay_reachable_and_counted(database, tenant):
+    store, _ = database
+    ctx, _, _, evidence_id = _prepared(store, tenant)
+    reviews = SourceTierReviews(store)
+    t3 = _tier_body(store, ctx, evidence_id)
+    oldest = reviews.publish(ctx, evidence_id, t3, uuid4())["object_id"]
+    t1 = SourceTierReviewWrite.model_validate({
+        **t3.model_dump(), "source_tier": "T1", "authority_kind": "signed_instrument",
+    })
+    for _ in range(26):
+        reviews.publish(ctx, evidence_id, t1, uuid4())
+    first = reviews.current_for_evidence(ctx, evidence_id)
+    assert len(first["reviews"]) == 25 and first["truncated"] is True
+    assert first["tier_counts"] == {"T1": 26, "T2": 0, "T3": 1}
+    assert first["next_cursor"] == first["reviews"][-1]["id"]
+    assert oldest not in {row["id"] for row in first["reviews"]}
+    second = reviews.current_for_evidence(ctx, evidence_id, after=first["next_cursor"])
+    assert [row["id"] for row in second["reviews"]][-1] == oldest
+    assert len(second["reviews"]) == 2 and second["next_cursor"] is None
+    assert second["truncated"] is False and second["tier_counts"] == first["tier_counts"]
+    for bad in ("stier_" + "0" * 32, "not-a-cursor"):
+        with pytest.raises(NotFound):
+            reviews.current_for_evidence(ctx, evidence_id, after=bad)
+    with BrainReadClient(
+        "https://brain.example", "fictional-token",
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=json.loads(
+            json.dumps(first, default=lambda value: value.isoformat())))),
+    ) as reader:
+        assert reader.source_tier_reviews(evidence_id)["next_cursor"] == first["next_cursor"]
+    for forged in (
+        {**first, "tier_counts": {"T1": 1, "T2": 0, "T3": 0}},
+        {**first, "next_cursor": None},
+    ):
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(lambda _, body=forged: httpx.Response(
+                200, json=json.loads(json.dumps(body, default=lambda value: value.isoformat())))),
+        ) as reader, pytest.raises(BrainClientError, match="invalid_response"):
+            reader.source_tier_reviews(evidence_id)
+
+
+def test_source_tier_review_is_current_source_bound_and_not_financial_truth(database, tenant):
+    store, admin = database
+    ctx, _, _, evidence_id = _prepared(store, tenant)
+    body = _tier_body(store, ctx, evidence_id)
+    reviews = SourceTierReviews(store)
+    key = uuid4()
+    created = reviews.publish(ctx, evidence_id, body, key)
+    assert created["changed"] is True
+    assert created["review_kind"] == "human_metadata_classification"
+    assert reviews.publish(ctx, evidence_id, body, key) == {
+        **created, "changed": False,
+    }
+    current = reviews.current_for_evidence(ctx, evidence_id)
+    assert len(current["reviews"]) == 1
+    assert current["reviews"][0]["source_tier"] == "T3"
+    assert "not_byte_attestation_or_financial_truth" in current["meaning"]
+    assert "source_quote" not in current["reviews"][0]
+    with pytest.raises(Conflict):
+        reviews.publish(ctx, evidence_id, body.model_copy(update={
+            "source_quote": QUOTE[:10],
+        }), key)
+    with pytest.raises(NotFound):
+        reviews.publish(ctx, evidence_id, body.model_copy(update={
+            "source_sha256": "0" * 64,
+        }), uuid4())
+    with pytest.raises(NotFound):
+        reviews.publish(replace(ctx, source_ids=frozenset()), evidence_id, body, uuid4())
+    assert reviews.current_for_evidence(
+        replace(ctx, source_ids=frozenset()), evidence_id,
+    )["reviews"] == []
+    with pytest.raises(ValueError):
+        SourceTierReviewWrite.model_validate({
+            **body.model_dump(), "source_tier": "T1",
+        })
+    with pytest.raises(ValueError):
+        SourceTierReviewWrite.model_validate({
+            **body.model_dump(), "source_quote": " \t ",
+        })
+    with pytest.raises(psycopg.errors.RaiseException, match="invalid source tier review basis"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_source_tier_reviews(tenant_id,id,evidence_id,"
+                "source_version_id,source_sha256,document_id,document_sha256,"
+                "source_tier,authority_kind,source_quote,reviewer_id,idempotency_key,"
+                "request_sha256) VALUES (%s,%s,%s,%s,%s,%s,%s,'T3','internal_record',"
+                "%s,%s,%s,%s)",
+                (ctx.tenant_id, "stier_" + "f" * 32, evidence_id,
+                 body.source_version_id, "0" * 64, body.document_id,
+                 body.document_sha256, QUOTE, ctx.actor_id, uuid4(), "1" * 64),
+            )
+    with pytest.raises(psycopg.errors.RaiseException, match="reviewer context mismatch"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_source_tier_reviews(tenant_id,id,evidence_id,"
+                "source_version_id,source_sha256,document_id,document_sha256,"
+                "source_tier,authority_kind,source_quote,reviewer_id,idempotency_key,"
+                "request_sha256) VALUES (%s,%s,%s,%s,%s,%s,%s,'T3','internal_record',"
+                "%s,%s,%s,%s)",
+                (ctx.tenant_id, "stier_" + "e" * 32, evidence_id,
+                 body.source_version_id, body.source_sha256, body.document_id,
+                 body.document_sha256, QUOTE, uuid4(), uuid4(), "1" * 64),
+            )
+    with psycopg.connect(admin) as conn:
+        with pytest.raises(psycopg.errors.RaiseException):
+            conn.execute(
+                "UPDATE knowledge_source_tier_reviews SET source_tier='T2' "
+                "WHERE tenant_id=%s AND id=%s",
+                (ctx.tenant_id, created["object_id"]),
+            )
+        conn.rollback()
+        conn.execute(
+            "UPDATE brain_sources SET status='paused' WHERE tenant_id=%s "
+            "AND id=(SELECT v.source_id FROM brain_evidence e "
+            "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+            "AND v.id=e.source_version_id WHERE e.id=%s)",
+            (ctx.tenant_id, evidence_id),
+        )
+    assert reviews.current_for_evidence(ctx, evidence_id)["reviews"] == []
+    with pytest.raises(NotFound):
+        reviews.publish(ctx, evidence_id, body, uuid4())
+
+
+def test_source_tier_api_requires_human_review_and_source_enrollment(database, tenant):
+    store, _ = database
+    ctx, _, _, evidence_id = _prepared(store, tenant)
+    body = _tier_body(store, ctx, evidence_id)
+    with store.transaction(ctx) as conn:
+        source_id = conn.execute(
+            "SELECT v.source_id FROM brain_evidence e "
+            "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+            "AND v.id=e.source_version_id WHERE e.id=%s", (evidence_id,),
+        ).fetchone()["source_id"]
+
+    def credential(token: str, scopes: set[str], kind: str, sources=None) -> Credential:
+        return Credential(
+            token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+            tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+            scopes=scopes, expires_at=datetime.now(UTC) + timedelta(hours=1),
+            client_kind=kind, source_ids=sources,
+        )
+
+    owner_token = "fictional-tier-owner-" + uuid4().hex
+    assistant_token = "fictional-tier-assistant-" + uuid4().hex
+    denied_token = "fictional-tier-denied-" + uuid4().hex
+    credentials = [
+        credential(owner_token, {
+            "knowledge.review", "knowledge.search", "brain.content.read",
+        }, "human"),
+        credential(assistant_token, {
+            "knowledge.search", "brain.content.read",
+        }, "assistant", {source_id}),
+        credential(denied_token, {"knowledge.search"}, "human"),
+    ]
+    path = f"/v1/knowledge/evidence/{evidence_id}/source-tier-reviews"
+    with TestClient(create_app(store, TokenRegistry(credentials))) as api:
+        response = api.post(
+            path, json=body.model_dump(mode="json"), headers={
+                "Authorization": "Bearer " + owner_token,
+                "idempotency-key": str(uuid4()),
+            },
+        )
+        assert response.status_code == 201, response.text
+        assert response.json()["review_kind"] == "human_metadata_classification"
+        assert api.post(
+            path, json=body.model_dump(mode="json"), headers={
+                "Authorization": "Bearer " + assistant_token,
+                "idempotency-key": str(uuid4()),
+            },
+        ).status_code == 403
+        visible = api.get(path, headers={"Authorization": "Bearer " + assistant_token})
+        assert visible.status_code == 200, visible.text
+        assert visible.headers["cache-control"] == "no-store"
+        assert len(visible.json()["reviews"]) == 1
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=visible.json())
+            ),
+        ) as reader:
+            assert reader.source_tier_reviews(evidence_id) == visible.json()
+        forged = {**visible.json(), "meaning": "verified_investment_holding"}
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=forged)
+            ),
+        ) as reader, pytest.raises(BrainClientError, match="invalid_response"):
+            reader.source_tier_reviews(evidence_id)
+        assert api.get(path, headers={
+            "Authorization": "Bearer " + denied_token,
+        }).status_code == 403
+        assert api.post(
+            path, json={**body.model_dump(mode="json"), "extra": "forged"},
+            headers={"Authorization": "Bearer " + owner_token,
+                     "idempotency-key": str(uuid4())},
+        ).status_code == 422
 
 
 def test_project_fact_schema_rejects_invalid_source_text():
@@ -84,6 +307,301 @@ def test_project_fact_schema_rejects_invalid_source_text():
         _body(project_id, evidence_id, value="invalid\x00value")
     with pytest.raises(ValueError):
         _body(project_id, evidence_id, quote="invalid\ud800quote")
+
+
+def test_predicate_catalog_api_and_external_client_show_database_authority(database, tenant):
+    store, _ = database
+    ctx, _, _, _ = _prepared(store, tenant)
+    token = "fictional-registry-" + uuid4().hex
+    credential = Credential(
+        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"knowledge.search"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="human",
+    )
+    assistant_token = "fictional-registry-assistant-" + uuid4().hex
+    denied_token = "fictional-registry-denied-" + uuid4().hex
+    assistant = Credential(
+        token_sha256=hashlib.sha256(assistant_token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"knowledge.search"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="assistant",
+        source_ids={"fictional_catalog_source"},
+    )
+    with pytest.raises(ValueError, match="source enrollment"):
+        Credential(
+            token_sha256=hashlib.sha256(uuid4().hex.encode()).hexdigest(),
+            tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+            scopes={"knowledge.search"},
+            expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="assistant",
+            source_ids=None,
+        )
+    denied = Credential(
+        token_sha256=hashlib.sha256(denied_token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"brain.content.read"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="human",
+    )
+    with TestClient(create_app(store, TokenRegistry([
+        credential, assistant, denied,
+    ]))) as api:
+        response = api.get(
+            "/v1/knowledge/fact-predicates",
+            headers={"Authorization": "Bearer " + token},
+        )
+        assert response.status_code == 200, response.text
+        assert response.headers["cache-control"] == "no-store"
+        catalog = response.json()
+        assert catalog["scope"] == "new_project_fact_writes_only"
+        assert catalog["historical_unregistered_rows_possible"] is True
+        assert catalog["alias_mapping"] == "none"
+        assert [(row["name"], row["status"]) for row in catalog["entries"]] == [
+            (name, "active") for name in sorted(PROJECT_FACT_PREDICATES)
+        ]
+        assert api.get(
+            "/v1/knowledge/fact-predicates",
+            headers={"Authorization": "Bearer " + assistant_token},
+        ).json() == catalog
+        assert api.get(
+            "/v1/knowledge/fact-predicates",
+            headers={"Authorization": "Bearer " + denied_token},
+        ).status_code == 403
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=catalog)
+            ),
+        ) as reader:
+            assert reader.project_fact_predicates() == catalog
+
+
+def test_predicate_catalog_fails_closed_when_running_code_disagrees_with_sql(
+    database, tenant, monkeypatch,
+):
+    store, _ = database
+    ctx, _, _, _ = _prepared(store, tenant)
+    monkeypatch.delitem(PROJECT_FACT_PREDICATES, "loi.price")
+    with pytest.raises(RuntimeError, match="code/database mismatch"):
+        ProjectFacts(store).predicate_catalog(ctx)
+
+
+def test_project_fact_registry_matches_sql_and_blocks_unregistered_direct_writes(
+    database, tenant,
+):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    existing = ProjectFacts(store).publish(
+        ctx, project_id, _body(project_id, evidence_id), uuid4(),
+    )
+    with psycopg.connect(admin) as conn:
+        rows = conn.execute(
+            "SELECT name,version,value_type,unit_code,description,status "
+            "FROM knowledge_project_fact_predicates ORDER BY name COLLATE \"C\""
+        ).fetchall()
+        assert rows == [
+            (name, spec.version, spec.value_type, spec.unit, spec.description, "active")
+            for name, spec in sorted(PROJECT_FACT_PREDICATES.items())
+        ]
+        version = conn.execute(
+            "SELECT predicate_registry_version FROM knowledge_project_facts "
+            "WHERE tenant_id=%s AND id=%s", (ctx.tenant_id, existing["object_id"]),
+        ).fetchone()
+        assert version == (1,)
+    with pytest.raises(psycopg.errors.RaiseException), psycopg.connect(admin) as conn:
+        conn.execute(
+            "UPDATE knowledge_project_fact_predicates SET description='forged' "
+            "WHERE name='deal.note' AND version=1"
+        )
+    for suffix, name in (("9", "unlisted.note"), ("8", "capital.amount")):
+        with pytest.raises(psycopg.errors.RaiseException, match="registered shape"):
+            with store.transaction(ctx) as conn:
+                conn.execute(
+                    "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+                    "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+                    "quote_evidence_id,source_quote,observed_at,reviewer_id) "
+                    "SELECT tenant_id,%s,project_id,%s,value,value_type,"
+                    "assertion_status,confidence,derivation,evidence_ids,"
+                    "quote_evidence_id,source_quote,observed_at,reviewer_id "
+                    "FROM knowledge_project_facts WHERE id=%s",
+                    ("pfact_" + suffix * 32, name, existing["object_id"]),
+                )
+
+
+def test_registry_change_preserves_exact_reviewed_idempotent_replay(
+    database, tenant, monkeypatch,
+):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    body = _body(project_id, evidence_id)
+    key = uuid4()
+    first = facts.publish(ctx, project_id, body, key)
+    monkeypatch.delitem(PROJECT_FACT_PREDICATES, "deal.note")
+    assert facts.publish(ctx, project_id, body, key) == {**first, "changed": False}
+    with pytest.raises(ValueError, match="registry review"):
+        facts.publish(ctx, project_id, body, uuid4())
+
+
+def test_retired_or_unregistered_predicate_fact_stays_correctable(
+    database, tenant, monkeypatch,
+):
+    store, admin = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    first = facts.publish(ctx, project_id, _body(project_id, evidence_id), uuid4())
+    second = facts.publish(
+        ctx, project_id, _body(project_id, evidence_id, value="Second fictional"), uuid4(),
+    )
+    monkeypatch.delitem(PROJECT_FACT_PREDICATES, "deal.note")
+    with pytest.raises(ValueError, match="registry review"):
+        facts.publish(ctx, project_id, _body(project_id, evidence_id, value="New chain"), uuid4())
+    retraction = ProjectFactWrite.model_validate({
+        **_body(project_id, evidence_id, supersedes_id=first["object_id"]).model_dump(),
+        "assertion_status": "retracted",
+    })
+    assert facts.publish(ctx, project_id, retraction, uuid4())["changed"] is True
+    copy = (
+        "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+        "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+        "quote_evidence_id,source_quote,observed_at,reviewer_id,supersedes_id) "
+        "SELECT tenant_id,%s,project_id,predicate,value,value_type,"
+        "'retracted',confidence,derivation,evidence_ids,"
+        "quote_evidence_id,source_quote,observed_at,reviewer_id,%s "
+        "FROM knowledge_project_facts WHERE id=%s"
+    )
+    with psycopg.connect(admin) as conn, conn.transaction(force_rollback=True):
+        conn.execute(
+            "INSERT INTO knowledge_project_fact_predicates"
+            "(name,version,value_type,unit_code,description,status) "
+            "VALUES ('deal.note',99,'text',NULL,'retired in a rolled-back test','deprecated')"
+        )
+        conn.execute(copy, ("pfact_" + "7" * 32, second["object_id"], second["object_id"]))
+        version = conn.execute(
+            "SELECT predicate_registry_version FROM knowledge_project_facts WHERE id=%s",
+            ("pfact_" + "7" * 32,),
+        ).fetchone()
+        assert version == (1,)
+        with pytest.raises(psycopg.errors.RaiseException, match="registered shape"):
+            with conn.transaction():
+                conn.execute(copy, ("pfact_" + "6" * 32, None, second["object_id"]))
+
+
+def test_project_fact_exact_measurement_stays_typed_only_in_report(database, tenant):
+    store, admin = database
+    ctx, account, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    legacy = facts.publish(ctx, project_id, _body(project_id, evidence_id), uuid4())
+    amount_quote = "Fictional amount 100.25 USD"
+    amount_evidence = _source(
+        store, ctx, account, "fictional-typed-fact-message",
+        "fictional-fact-message-1", body=amount_quote,
+    )
+    body = ProjectFactWrite.model_validate({
+        **_body(project_id, amount_evidence, value="100.25", quote=amount_quote).model_dump(),
+        "predicate": "capital.amount",
+        "value_type": "number",
+        "measurement": {"amount": "100.25", "unit": "currency", "currency": "USD"},
+    })
+    typed = facts.publish(ctx, project_id, body, uuid4())
+    report = facts.report(ctx, project_id, ProjectFactPageRequest())
+    by_id = {row["object_id"]: row for group in report["groups"] for row in group["facts"]}
+    assert by_id[legacy["object_id"]]["measurement"] is None
+    assert by_id[typed["object_id"]]["measurement"] == {
+        "amount": "100.25", "unit": "currency", "currency": "USD",
+        "meaning": "reviewed_source_stated_not_balance",
+    }
+    assert "measurement" not in facts.page(ctx, project_id, ProjectFactPageRequest())[
+        "results"
+    ][0]
+    assert report["numeric_aggregation"] == "none_units_currency_ownership_unverified"
+    token = "fictional-typed-fact-" + uuid4().hex
+    credential = Credential(
+        token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"knowledge.search"},
+        expires_at=datetime.now(UTC) + timedelta(hours=1), client_kind="human",
+    )
+    with TestClient(create_app(store, TokenRegistry([credential]))) as api:
+        response = api.get(
+            f"/v1/knowledge/projects/{project_id}/facts/report",
+            params={"limit": 10},
+            headers={"Authorization": "Bearer " + token},
+        )
+        assert response.status_code == 200, response.text
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=response.json())
+            ),
+        ) as reader:
+            assert any(
+                row["measurement"] is not None
+                for group in reader.project_fact_report(project_id, limit=10)["groups"]
+                for row in group["facts"]
+            )
+    with psycopg.connect(admin) as conn:
+        row = conn.execute(
+            "SELECT amount_decimal,unit_code,currency_code FROM knowledge_project_facts "
+            "WHERE tenant_id=%s AND id=%s", (ctx.tenant_id, typed["object_id"]),
+        ).fetchone()
+    assert row == (Decimal("100.25"), "currency", "USD")
+    with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+            "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+            "unit_code,currency_code) SELECT tenant_id,%s,project_id,predicate,"
+            "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+            "unit_code,'usd' FROM knowledge_project_facts WHERE tenant_id=%s AND id=%s",
+            ("pfact_" + "f" * 32, ctx.tenant_id, typed["object_id"]),
+        )
+    with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+        conn.execute(
+            "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+            "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+            "unit_code,currency_code) SELECT tenant_id,%s,project_id,predicate,"
+            "'200.00',value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,reviewer_id,200.00,"
+            "unit_code,currency_code FROM knowledge_project_facts "
+            "WHERE tenant_id=%s AND id=%s",
+            ("pfact_" + "e" * 32, ctx.tenant_id, typed["object_id"]),
+        )
+    for suffix, unit, currency in (("d", None, "USD"), ("c", "currency", None)):
+        expected = (psycopg.errors.RaiseException if unit is None
+                    else psycopg.errors.CheckViolation)
+        with pytest.raises(expected), psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+                "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+                "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+                "unit_code,currency_code) SELECT tenant_id,%s,project_id,predicate,"
+                "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+                "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+                "%s,%s FROM knowledge_project_facts WHERE tenant_id=%s AND id=%s",
+                ("pfact_" + suffix * 32, unit, currency, ctx.tenant_id, typed["object_id"]),
+            )
+    misleading = _source(
+        store, ctx, account, "fictional-measurement-fragments",
+        "fictional-typed-fact-message",
+        body="Fictional amount 1100.25 USD. Fictional amount 100.25 USDA.",
+    )
+    for suffix, quote in (("b", "Fictional amount 1100.25 USD"),
+                          ("a", "Fictional amount 100.25 USDA")):
+        with pytest.raises(psycopg.errors.CheckViolation), psycopg.connect(admin) as conn:
+            conn.execute(
+                "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+                "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+                "quote_evidence_id,source_quote,observed_at,reviewer_id,amount_decimal,"
+                "unit_code,currency_code) SELECT tenant_id,%s,project_id,predicate,"
+                "value,value_type,assertion_status,confidence,derivation,ARRAY[%s],"
+                "%s,%s,observed_at,reviewer_id,amount_decimal,"
+                "unit_code,currency_code FROM knowledge_project_facts "
+                "WHERE tenant_id=%s AND id=%s",
+                ("pfact_" + suffix * 32, misleading, misleading, quote,
+                 ctx.tenant_id, typed["object_id"]),
+            )
 
 
 def test_project_fact_markdown_byte_budget_preserves_paging(database, tenant):
@@ -182,6 +700,25 @@ def test_project_fact_exact_quote_replay_and_visible_successor(database, tenant)
     assert retained_dossier["facts_truncated"] is True
 
 
+def test_transactional_fact_publication_rolls_back_whole_review(database, tenant):
+    store, _ = database
+    ctx, _, project_id, evidence_id = _prepared(store, tenant)
+    facts = ProjectFacts(store)
+    first_key = uuid4()
+    with pytest.raises(ValueError, match="quote lacks"):
+        with store.transaction(ctx) as conn:
+            facts._publish_in_transaction(
+                conn, ctx, project_id, _body(project_id, evidence_id), first_key,
+            )
+            facts._publish_in_transaction(
+                conn, ctx, project_id,
+                _body(project_id, evidence_id, quote="invented"), uuid4(),
+            )
+    assert facts.page(ctx, project_id, ProjectFactPageRequest())["results"] == []
+    published = facts.publish(ctx, project_id, _body(project_id, evidence_id), first_key)
+    assert published["changed"] is True
+
+
 def test_project_fact_other_tenant_and_wrong_project_denied(database, tenant):
     store, _ = database
     ctx, _, project_id, evidence_id = _prepared(store, tenant)
@@ -236,6 +773,10 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
         visible["object_id"],
     ]
     assert restricted_page["next_cursor"] is None
+    restricted_report = facts.report(scoped, project_id, ProjectFactPageRequest(limit=1))
+    assert [row["object_id"] for group in restricted_report["groups"]
+            for row in group["facts"]] == [visible["object_id"]]
+    assert restricted_report["next_cursor"] is None
     restricted_export = facts.export_markdown(
         scoped, project_id, ProjectFactPageRequest(limit=1),
     )
@@ -252,6 +793,9 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
     assert restricted_dossier["facts_truncated"] is False
     unrestricted = facts.page(ctx, project_id, ProjectFactPageRequest(limit=1))
     assert unrestricted["next_cursor"] is not None
+    assert facts.report(ctx, project_id, ProjectFactPageRequest(limit=1))[
+        "groups"
+    ][0]["comparison_incomplete"] is True
     unrestricted_export = facts.export_markdown(
         ctx, project_id, ProjectFactPageRequest(limit=1),
     )
@@ -284,6 +828,9 @@ def test_project_fact_grants_exclusion_and_hidden_before_limit(database, tenant)
         visible["object_id"],
     ]
     assert after_exclusion["next_cursor"] is None
+    assert facts.report(ctx, project_id, ProjectFactPageRequest(limit=1))[
+        "next_cursor"
+    ] is None
     assert "Hidden fictional value" not in facts.export_markdown(
         ctx, project_id, ProjectFactPageRequest(limit=1),
     )["markdown"]
@@ -330,6 +877,7 @@ def test_project_fact_sql_guard_immutability_and_stale_evidence(database, tenant
     with pytest.raises(NotFound):
         facts.publish(ctx, project_id, _body(project_id, evidence_id), uuid4())
     assert facts.page(ctx, project_id, ProjectFactPageRequest())["results"] == []
+    assert facts.report(ctx, project_id, ProjectFactPageRequest())["groups"] == []
 
 
 def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
@@ -375,6 +923,32 @@ def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
         assert exported.headers["cache-control"] == "no-store"
         assert exported.json()["fact_count"] == 1
         assert evidence_id in exported.json()["markdown"]
+        report = api.get(path + "/report", params={"limit": 1})
+        assert report.status_code == 200, report.text
+        assert report.headers["cache-control"] == "no-store"
+        assert report.json()["groups"][0]["facts"][0]["object_id"] == (
+            created.json()["object_id"]
+        )
+        assert report.json()["numeric_aggregation"] == (
+            "none_units_currency_ownership_unverified"
+        )
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=report.json())
+            ),
+        ) as reader:
+            assert reader.project_fact_report(project_id, limit=1)["groups"][0][
+                "facts"
+            ][0]["object_id"] == created.json()["object_id"]
+        falsified = {**report.json(), "numeric_aggregation": "verified_investment_total"}
+        with BrainReadClient(
+            "https://brain.example", "fictional-token",
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=falsified)
+            ),
+        ) as reader, pytest.raises(BrainClientError, match="invalid_response"):
+            reader.project_fact_report(project_id, limit=1)
         with BrainReadClient(
             "https://brain.example", "fictional-token",
             transport=httpx.MockTransport(
@@ -386,6 +960,7 @@ def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
             ] == exported.json()["markdown"]
         assert api.get(path, params={"limit": 0}).status_code == 422
         assert api.get(path + "/markdown", params={"limit": 0}).status_code == 422
+        assert api.get(path + "/report", params={"limit": 0}).status_code == 422
         assert api.get(path, params={"after": "pfact_bad"}).status_code == 422
         assert api.post(
             path, json={**payload, "derivation": "inferred"},
@@ -393,6 +968,7 @@ def test_project_fact_api_scopes_closed_request_and_dossier(database, tenant):
         ).status_code == 422
     with client({"knowledge.review"}) as denied:
         assert denied.get(path).status_code == 403
+        assert denied.get(path + "/report").status_code == 403
     with client({"knowledge.search"}) as denied:
         assert denied.get(path + "/markdown").status_code == 403
     with client({"brain.content.read"}) as denied:
@@ -430,9 +1006,15 @@ def test_project_fact_markdown_assistant_enrollment_filters_before_export(databa
         response = allowed.get(f"/v1/knowledge/projects/{project_id}/facts/markdown")
         assert response.status_code == 200, response.text
         assert evidence_id in response.json()["markdown"]
+        report = allowed.get(f"/v1/knowledge/projects/{project_id}/facts/report")
+        assert report.status_code == 200, report.text
+        assert report.json()["groups"][0]["facts"][0]["quote_evidence_id"] == evidence_id
     with client({"fictional_other_source"}) as hidden:
         response = hidden.get(f"/v1/knowledge/projects/{project_id}/facts/markdown")
         assert response.status_code == 404
+        assert hidden.get(
+            f"/v1/knowledge/projects/{project_id}/facts/report"
+        ).status_code == 404
     with pytest.raises(ValueError):
         client(set())
 
@@ -505,3 +1087,98 @@ def test_project_fact_can_quote_fileos_but_requires_both_source_grants(
             _body(project_id, email_evidence, supersedes_id=created["object_id"]),
             uuid4(),
         )
+
+
+def test_conflicting_email_file_prices_remain_separate_and_source_scoped(
+    database, tenant, tmp_path,
+):
+    """A cited price disagreement is not a portfolio balance or a winning fact."""
+    store, _ = database
+    ctx, account, project_id, _ = _prepared(store, tenant)
+    email_quote = "Fictional Melron letter of intent price 200 USD."
+    email_evidence = _source(
+        store, ctx, account, "fictional-email-price", "fictional-fact-message-1",
+        body=email_quote,
+    )
+    file_quote = "Fictional Melron letter of intent price 250 USD."
+    root = tmp_path / "fictional-price-files"
+    root.mkdir()
+    (root / "letter-of-intent.txt").write_text(file_quote, encoding="utf-8")
+    manifest = pg.fileos_manifest(root, source_id="fictional_price_files")
+    core = pg.DataCoreStore(store)
+    core.import_fileos_snapshot(ctx, manifest, uuid4())
+    file_evidence = core.publish_text(
+        ctx, manifest["items"][0]["version_id"], file_quote,
+        code_revision="project-fact-conflict-fictional-v1",
+    ).evidence_id
+    facts = ProjectFacts(store)
+    for amount, evidence_id, quote in (
+        ("200", email_evidence, email_quote),
+        ("250", file_evidence, file_quote),
+    ):
+        facts.publish(
+            ctx, project_id,
+            ProjectFactWrite(
+                kind="project_fact", project_id=project_id,
+                predicate="loi.price", value=amount, value_type="number",
+                measurement={"amount": amount, "unit": "currency", "currency": "USD"},
+                evidence_ids=[evidence_id], quote_evidence_id=evidence_id,
+                source_quote=quote, confidence=1.0, observed_at=NOW,
+                reviewed=True,
+            ),
+            uuid4(),
+        )
+    full = facts.report(ctx, project_id, ProjectFactPageRequest())
+    assert len(full["groups"]) == 1
+    group = full["groups"][0]
+    assert group["predicate"] == "loi.price"
+    assert group["different_asserted_previews_on_page"] is True
+    assert group["comparison_incomplete"] is False
+    assert {row["quote_evidence_id"] for row in group["facts"]} == {
+        email_evidence, file_evidence,
+    }
+    assert {row["measurement"]["amount"] for row in group["facts"]} == {
+        "200", "250",
+    }
+    assert full["numeric_aggregation"] == "none_units_currency_ownership_unverified"
+    assert "total" not in full
+    with store.transaction(ctx) as conn:
+        email_source = conn.execute(
+            "SELECT v.source_id FROM brain_evidence e JOIN brain_source_versions v "
+            "ON v.tenant_id=e.tenant_id AND v.id=e.source_version_id WHERE e.id=%s",
+            (email_evidence,),
+        ).fetchone()["source_id"]
+    email_only = facts.report(
+        replace(ctx, source_ids=frozenset({email_source})),
+        project_id, ProjectFactPageRequest(),
+    )
+    assert len(email_only["groups"]) == 1
+    assert email_only["groups"][0]["different_asserted_previews_on_page"] is False
+    assert [row["quote_evidence_id"] for row in email_only["groups"][0]["facts"]] == [
+        email_evidence,
+    ]
+    assert file_evidence not in str(email_only)
+    owner_token = "fictional-conflict-owner-" + uuid4().hex
+    assistant_token = "fictional-conflict-email-reader-" + uuid4().hex
+    credentials = [
+        Credential(
+            token_sha256=hashlib.sha256(token.encode()).hexdigest(),
+            tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+            scopes={"knowledge.search"},
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            client_kind=kind, source_ids=sources,
+        )
+        for token, kind, sources in (
+            (owner_token, "human", None),
+            (assistant_token, "assistant", {email_source}),
+        )
+    ]
+    path = f"/v1/knowledge/projects/{project_id}/facts/report"
+    with TestClient(create_app(store, TokenRegistry(credentials))) as api:
+        owner = api.get(path, headers={"Authorization": "Bearer " + owner_token})
+        assert owner.status_code == 200, owner.text
+        assert owner.json()["groups"][0]["different_asserted_previews_on_page"] is True
+        scoped = api.get(path, headers={"Authorization": "Bearer " + assistant_token})
+        assert scoped.status_code == 200, scoped.text
+        assert scoped.json()["groups"][0]["different_asserted_previews_on_page"] is False
+        assert file_evidence not in scoped.text

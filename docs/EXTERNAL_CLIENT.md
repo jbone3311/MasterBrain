@@ -20,6 +20,8 @@ prompt nor a search result can choose an arbitrary URL. The client has only:
 | `answer(question)` | `POST /v1/brain/answers` | `brain.search`, `knowledge.search`, `brain.evidence.read`, `brain.content.read`; local exact-quote selection is the default, and the operator may disable it |
 | `timeline(start, end, ...)` | `GET /v1/knowledge/timeline` | `knowledge.search`; bounded reviewed-event occurrence window (ADR-160) |
 | `commitments_due(start, end, ...)` | `GET /v1/knowledge/commitments-due` | `knowledge.search`; bounded reviewed-commitment due window (ADR-161, merged synthetic read) |
+| `project_fact_report(project_id, ...)` | `GET /v1/knowledge/projects/{project_id}/facts/report` | `knowledge.search`; ADR-211 grouped one-page source-stated reviewed facts, ADR-212 validates optional exact-decimal unit/currency metadata, no money aggregation or certified balance |
+| `project_fact_predicates()` | `GET /v1/knowledge/fact-predicates` | `knowledge.search` and assistant source enrollment; ADR-215 bounded, latest-database-revision project-fact write vocabulary, not a fact source or alias/approval API |
 
 The server remains the authority for identity, tenant, scopes, source visibility
 and freshness. In the synthetic bootstrap path, an assistant must be enrolled
@@ -30,6 +32,10 @@ The current-search and extractive Ask responses include
 no visible grant, or `not_searched` for a focus-excluded kind. Empty hits from a
 registered source are not proof that the source has no relevant content; use
 `current_coverage()` for bridge/generation readiness and respect its paging.
+The client validates this map when supplied, including focus exclusions and
+human-versus-enrolled availability states. It refuses malformed metadata rather
+than passing it to an assistant. An older server may omit the map for
+compatibility; omission means **unknown**, never "registered" or "absent".
 ADR-133 adds two source-scoped status reads. ADR-134 adds the bounded answer
 read over the same current, separately authorized evidence; ADR-144 supplies
 a local deterministic default selector and retains explicit disablement.

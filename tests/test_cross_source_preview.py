@@ -23,7 +23,7 @@ from masterbrain.answers import QuoteSelection
 from masterbrain.brain_client import BrainClientError, BrainReadClient
 from masterbrain.datacore.persistence import DataCoreStore
 from masterbrain.knowledge import KnowledgeCore
-from masterbrain.knowledge_schema import EntityWrite
+from masterbrain.knowledge_schema import EntityWrite, ProjectArtifactLinkWrite, ProjectFactWrite
 
 # Reuse the repository's disposable-database preflight and least-privileged role.
 database = pg.database
@@ -800,6 +800,108 @@ def test_fictional_company_dossier_links_mail_file_fact_and_original_evidence(
         assert current.status_code == 200
         assert current.json()["layers"]["knowledge"] == []
         assert len(current.json()["layers"]["fileos"]) == 2
+
+
+@pytest.mark.postgres
+def test_fictional_dossier_fact_and_file_link_import_require_explicit_review(
+    preview, database,
+):
+    """The selected Markdown format can propose, but never self-publish, both kinds."""
+    store, _ = database
+    token = "fictional-dossier-import-" + uuid4().hex
+    reviewer = credential(
+        preview.context, token, READ_SCOPES | frozenset({"knowledge.review"}),
+    )
+    app = create_app(store, TokenRegistry([reviewer]))
+    path = f"/v1/knowledge/projects/{preview.project_id}/dossier"
+    with TestClient(app, base_url="http://127.0.0.1",
+                    headers={"Authorization": "Bearer " + token}) as owner:
+        before = owner.get(path).json()
+        assert len(before["facts"]) == len(before["artifacts"]) == 1
+        fact = before["facts"][0]
+        artifact = before["artifacts"][0]
+        evidence_id = fact["quote_evidence_id"]
+        assert artifact["artifact_evidence_id"] == evidence_id
+        exported = owner.get(path + "/markdown")
+        assert exported.status_code == 200, exported.text
+        claimed_fact = "pfact_" + "e" * 32
+        claimed_artifact = "partifact_" + "e" * 32
+        markdown = exported.json()["markdown"].replace(
+            fact["object_id"], claimed_fact,
+        ).replace(artifact["object_id"], claimed_artifact)
+        observed = datetime(2026, 9, 24, tzinfo=UTC)
+        fact_assertion = ProjectFactWrite(
+            kind="project_fact", project_id=preview.project_id,
+            predicate="loan.proposed_amount", value="$8,000,000",
+            evidence_ids=[evidence_id], quote_evidence_id=evidence_id,
+            source_quote="Proposed loan amount: $8,000,000.",
+            confidence=0.9, observed_at=observed, reviewed=True,
+        ).model_dump(mode="json")
+        fact_assertion.pop("reviewed")
+        artifact_assertion = ProjectArtifactLinkWrite(
+            artifact_evidence_id=evidence_id, basis_evidence_id=evidence_id,
+            relation="term_sheet", assertion_status="asserted",
+            source_quote="Cedar Harbor fictional loan term sheet.",
+            observed_at=observed,
+        ).model_dump(mode="json")
+        proposed = []
+        for kind, claim, assertion in (
+            ("fact", claimed_fact, fact_assertion),
+            ("artifact", claimed_artifact, artifact_assertion),
+        ):
+            route = f"/v1/knowledge/dossier-markdown/{kind}-proposal-batches"
+            staged = owner.post(
+                route,
+                json={"markdown": markdown, "selections": [
+                    {"claimed_id": claim, "assertion": assertion},
+                ]},
+                headers={"Idempotency-Key": str(uuid4())},
+            )
+            assert staged.status_code == 201, staged.text
+            batch_id = staged.json()["batch_id"]
+            previewed = owner.get(
+                f"/v1/knowledge/{kind}-proposal-batches/{batch_id}",
+            )
+            assert previewed.status_code == 200, previewed.text
+            assert previewed.json()["proposals"][0]["status"] == "proposed"
+            proposed.append((kind, staged.json(), previewed.json()))
+        pending = owner.get(path).json()
+        assert [item["object_id"] for item in pending["facts"]] == [fact["object_id"]]
+        assert [item["object_id"] for item in pending["artifacts"]] == [
+            artifact["object_id"],
+        ]
+        for kind, staged, previewed in proposed:
+            decision = owner.post(
+                f"/v1/knowledge/{kind}-proposal-batches/{staged['batch_id']}/review",
+                json={"batch_sha256": staged["batch_sha256"], "decisions": [{
+                    "proposal_id": previewed["proposals"][0]["proposal_id"],
+                    "decision": "approved",
+                }]},
+                headers={"Idempotency-Key": str(uuid4())},
+            )
+            assert decision.status_code == 200, decision.text
+            assert decision.json()["approved"] == 1
+        after = owner.get(path).json()
+        assert len(after["facts"]) == len(after["artifacts"]) == 2
+        assert {item["quote_evidence_id"] for item in after["facts"]} == {evidence_id}
+        assert {item["artifact_evidence_id"] for item in after["artifacts"]} == {
+            evidence_id,
+        }
+        assert claimed_fact not in {item["object_id"] for item in after["facts"]}
+        assert claimed_artifact not in {item["object_id"] for item in after["artifacts"]}
+        evidence = owner.post(
+            f"/v1/brain/evidence/{evidence_id}/content", json={"max_chars": 4000},
+        )
+        assert evidence.status_code == 200
+        assert "Cedar Harbor fictional loan term sheet." in evidence.text
+    file_only_token = "fictional-dossier-import-file-only-" + uuid4().hex
+    limited = create_app(store, TokenRegistry([
+        assistant_credential(preview, file_only_token, {"trial_files"}),
+    ]))
+    with TestClient(limited, base_url="http://127.0.0.1",
+                    headers={"Authorization": "Bearer " + file_only_token}) as scoped:
+        assert scoped.get(path).status_code == 404
+        assert scoped.get(path + "/markdown").status_code == 404
 
 
 @pytest.mark.postgres

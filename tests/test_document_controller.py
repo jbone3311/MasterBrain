@@ -379,6 +379,25 @@ def test_demo_generated_credentials_are_human_only_and_usable(tmp_path, monkeypa
     assert token not in capsys.readouterr().out
 
 
+def test_combined_demo_token_adds_reads_without_worker_or_effect_scopes(
+    tmp_path, monkeypatch, capsys,
+):
+    monkeypatch.setenv("EMAIL_BRAIN_RUNTIME_PASSWORD", secrets.token_urlsafe(32))
+    monkeypatch.setenv("EMAIL_BRAIN_ADMIN_DSN", "synthetic")
+    monkeypatch.setattr(cli.psycopg, "connect", MagicMock())
+    monkeypatch.setattr(cli, "grant_runtime", Mock())
+    cli.provision_demo(tmp_path.resolve(), masterbrain=True)
+    token = (tmp_path / "owner-token.txt").read_text()
+    principal = TokenRegistry.from_file(tmp_path / "credentials.json").authenticate(token)
+    assert principal is not None and principal.client_kind == "human"
+    assert {"brain.search", "brain.evidence.read", "brain.content.read",
+            "knowledge.search", "knowledge.review"} <= principal.context.scopes
+    assert not any(scope.startswith("brain.source.") or scope.startswith("brain.fileos.")
+                   or scope.endswith(".process") for scope in principal.context.scopes)
+    assert (tmp_path / "masterbrain-demo.marker").read_text() == cli._DEMO_REVISION + "\n"
+    assert token not in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("version", [None, VERSION])
 def test_serve_explicit_document_channel_stays_loopback(tmp_path, monkeypatch, version):
     _, _, creds, _ = document_files(tmp_path)

@@ -2,7 +2,8 @@
 
 Status: design review with a bounded synthetic-only export, ADR-200's
 candidate inventory parser, ADR-201's current-evidence inspection and
-ADR-202's project/event/commitment-only private proposal stage. This is not
+ADR-202/205's project/event/commitment/member private proposal stage and
+ADR-206/207's separate fact/artifact-link queues. This is not
 a complete round trip. Originally reviewed
 against `main` at `8d053d8` on 2026-10-14; ADR-182 later implements the
 project-alias slice. The [umbrella issue](https://github.com/jbone3311/MasterBrain/issues/174)
@@ -27,6 +28,13 @@ deterministic extraction and parsing precede any optional model judgment. No mod
 may authorize a write, certify a conflict, supply a fabricated quote, or turn
 excluded content into an indexed artifact.
 
+The owner selected MasterBrain's existing
+`masterbrain_project_dossier_markdown_v1` export as the Librarian import format.
+Importers must use that exact bounded format and its proposal-only review path;
+they must not invent a competing Markdown schema. This does not make the
+current export a complete, lossless round trip: missing publication fields
+still need explicit metadata and human approval.
+
 ## Issue-by-issue disposition
 
 | Issue | Verified baseline | Refined direction |
@@ -34,12 +42,12 @@ excluded content into an indexed artifact.
 | [#175](https://github.com/jbone3311/MasterBrain/issues/175) Project aliases | ADR-182 adds reviewed, evidence-linked project aliases and ambiguous, source-scoped candidate lookup. Older projects keep exact-title fallback. | A complete dossier is still missing. An alias names a project; it does not assert that a legal-entity record is the same object or auto-merge projects. |
 | [#176](https://github.com/jbone3311/MasterBrain/issues/176) Deal roles | ADR-183 adds reviewed, append-only person/organization-to-project role assertions with valid time, evidence, reviewer, supersession, corrections and source-grant-safe dossier/client/browser reads. | Registry validation and a computed current roster remain separate. Bounded role slugs are not permissions; unknown syntactically valid slugs remain possible until the registry exists. |
 | [#177](https://github.com/jbone3311/MasterBrain/issues/177) Derivation | Partial: ADR-195 project facts have a first-class `derivation`, currently constrained to `source_stated`; other assertion kinds do not have a common derivation contract. Confidence/status are not derivation. | Cover all relevant assertion kinds. Keep source-stated quotes mandatory. An inference without a direct quote needs typed links to reviewed basis assertions *and* their evidence, with transitive source-grant checks. Never put an assertion ID in `knowledge_evidence.evidence_id` or use `stance=context` as a substitute for a typed basis link. |
-| [#178](https://github.com/jbone3311/MasterBrain/issues/178) Proposal queue | ADR-186 adds a private source-stated Knowledge queue and atomic, explicit per-row human review. ADR-202 connects selected project/event/commitment Markdown rows with full-quote checks and a bound import digest. | Extend the typed queue to members, facts and artifact links only under separate basis contracts; add inference/basis handling in its own gate. No unreviewed proposal enters search, dossier or assistant retrieval. |
+| [#178](https://github.com/jbone3311/MasterBrain/issues/178) Proposal queue | ADR-186 adds a private source-stated Knowledge queue and atomic, explicit per-row human review. ADR-202/205 connect selected project/event/commitment/member Markdown rows with full-quote checks and a bound import digest. ADR-206/207 add separate synthetic project-fact and artifact-link queues; both remain on an open PR pending hosted gates. | Complete hosted/merged-main acceptance, then design inferred basis separately. No unreviewed proposal enters search, dossier or assistant retrieval. |
 | [#179](https://github.com/jbone3311/MasterBrain/issues/179) Amounts, owners, fuzzy dates | Partial: claims have a value type; commitments have one optional owner and one exact due instant. | Add exact decimal + unit/currency with validation, an evidence-linked multi-owner association, and raw due wording plus an optional reviewed window/timezone. Preserve `due_at` semantics. A fuzzy interval needs an explicit overlap query contract; do not silently change ADR-161's exact-time due view. |
-| [#180](https://github.com/jbone3311/MasterBrain/issues/180) Markdown dossier | ADR-162/183/194 return bounded JSON for an exact reviewed project. ADR-195/196 add source-stated facts and a fact-only export. ADR-197 adds a merged synthetic-only, bounded, fail-closed cited Markdown view across project, events, commitments, roles, related artifact occurrences and source-stated facts. | A full Librarian round trip still needs a proposal-only importer, owner-approved exchange format, typed inferred basis, richer file occurrence metadata and an explicit policy for projects exceeding one export bound. Every exported factual line needs a current authorized citation; inference must never invent a direct quote. Keep machine round-trip IDs in an authorized sidecar/manifest rather than an unbounded hidden YAML block in shareable prose. |
-| [#181](https://github.com/jbone3311/MasterBrain/issues/181) Spreadsheets | **Incorrectly marked missing.** FileOS already extracts bounded CSV text and isolated XLSX cached values (ADRs 049/053); archive XLSX is also supported. | The gap is structured table/cell locators and a separately authorized Email-attachment extraction route. Reuse the isolated parser; never evaluate formulas/macros or claim that absent cached values were extracted. Preserve per-source status and limits. |
+| [#180](https://github.com/jbone3311/MasterBrain/issues/180) Markdown dossier | ADR-162/183/194 return bounded JSON for an exact reviewed project. ADR-195/196 add source-stated facts and a fact-only export. ADR-197 adds a merged synthetic-only, bounded, fail-closed cited Markdown view across project, events, commitments, roles, related artifact occurrences and source-stated facts. The owner selected that export as the exchange format; ADR-200/201 and the selected proposal queues begin import safely. | A full Librarian round trip still needs the remaining proposal-only import coverage, typed inferred basis, richer file occurrence metadata and an explicit policy for projects exceeding one export bound. Every exported factual line needs a current authorized citation; inference must never invent a direct quote. Keep machine round-trip IDs in an authorized sidecar/manifest rather than an unbounded hidden YAML block in shareable prose. |
+| [#181](https://github.com/jbone3311/MasterBrain/issues/181) Spreadsheets | **Incorrectly marked missing.** FileOS already extracts bounded CSV text and isolated XLSX cached values (ADRs 049/053); archive XLSX is also supported. ADR-232 proves one exact retained fictional Email XLSX attachment without publication, ADR-233 pins donor tables and policy gaps, and ADR-234 adds a separate nonpublishing bounded row/cell worker. | The gap is persisted/reviewed cell citations, complete feature policy and a separately approved Email-attachment extraction/bridge before any receipt. Never evaluate formulas/macros or claim that absent cached values were extracted. Preserve per-source status and limits. |
 | [#182](https://github.com/jbone3311/MasterBrain/issues/182) Attachment index | Partial: ADR-065/migration 0021 create distinct child items, evidence and parent part links per Email attachment occurrence; ADR-193 adds a reviewed project link to one such evidence ID and ADR-194 shows it in the dossier under current grants. | Add richer occurrence/parent metadata reads. **Do not collapse same-hash occurrences into one artifact:** dedupe shared bytes/index work if safe, but retain every message/attachment occurrence and its provenance. |
-| [#183](https://github.com/jbone3311/MasterBrain/issues/183) Fact-name registry | Missing; claim predicates and event types are constrained slugs, not a controlled vocabulary. | Version a small vocabulary with aliases and typed/unit constraints. Begin in advisory/proposal mode so existing reviewed writes and history are not invalidated. Require an explicit compatibility/migration ADR before strict rejection. |
+| [#183](https://github.com/jbone3311/MasterBrain/issues/183) Fact-name registry | Partial: ADR-214/215 strictly check **new project facts** against a versioned code/SQL name/type/unit catalog after exact idempotent replay; latest deprecation now retires a name, and a scoped Brain API/client lists latest revisions. Existing fact rows keep original names and NULL registry version. Generic claims, events and roles remain free slugs. | An unknown name may enter the private fact proposal queue with `registry_status=unknown`, but approval is atomic and refused until a reviewed catalog migration exists. This is not an owner-approved vocabulary proposal queue or alias mapping. Complete those before real-source import; never infer equivalence from spelling. |
 | [#184](https://github.com/jbone3311/MasterBrain/issues/184) Exclusions | Partial: FileOS has an inventory/exclusion ledger (ADR-097). ADR-184 now filters an exact Email mailbox set before content fetch, and ADR-185 hides retained Brain/reviewed Knowledge reads for older excluded mail. | Sender/category rules, policy changes on used accounts, historical access, purge/retention and live-provider acceptance remain open. Never interpret a newly excluded FileOS path as a deletion. |
 | [#185](https://github.com/jbone3311/MasterBrain/issues/185) Freshness/conflicts | Partial: FileOS completion receipts and `contradicts` evidence stance exist, but no certified project-level flag. | Freshness must derive from completed source coverage and observed checkpoints, not merely “no new evidence for N days.” Contradiction detection may flag candidate collisions among source-visible reviewed leaves; it must preserve both claims and avoid declaring a winner. Owner judgment is separate. |
 | [#186](https://github.com/jbone3311/MasterBrain/issues/186) Code-first ADR | Principle exists in ADR-006 and current architecture but was not specific to Librarian exchange. | ADR-169 records the import/export boundary and is the first incorporated tranche. A static import check alone cannot prove no model influence; behavioral tests must prove the pipeline works with model access disabled. |
@@ -98,13 +106,23 @@ to stage selected project, event or commitment lines into ADR-186's private
 queue with explicit typed metadata omitted by the Markdown. The selected
 visible line must match exactly; the full quote must occur in its specifically
 cited current evidence at stage time; a digest binds the exact Markdown and
-selection to the immutable batch. No row is approved automatically. Members,
-source-stated project facts and artifact links still need their own staging
-contracts and are refused rather than silently dropped. Source `claimed_id`
+selection to the immutable batch. No row is approved automatically. At the
+ADR-202 checkpoint, members, source-stated project facts and artifact links
+were refused rather than silently dropped; ADR-205 now admits members only.
+Source `claimed_id`
 values select rows; they are not carried into approved MasterBrain IDs. A
 selected event or commitment therefore must reference a project that already
 exists locally. Import a project first, review it, then explicitly remap child
 rows to the new local project ID before staging them.
+
+[ADR-205](adr/205_dossier_member_proposal_staging.md) adds selected member
+rows. The typed sidecar supplies the full member quote and missing metadata;
+the existing local project and person/organization entity must remain
+currently citeable, and the displayed entity name, quote and separate citation
+must match exactly. Migration 0068 keeps the member and entity citation IDs
+on the private proposal for preview/review rechecks. The member's claimed ID
+is not the new publication ID. This does not import facts or artifact links,
+grant access via a role, or approve any selected row automatically.
 
 1. Existing foundations are ADR-169's code-first boundary, ADR-182/183's
    reviewed aliases and roles, ADR-186's private source-stated proposal queue,
@@ -116,14 +134,16 @@ rows to the new local project ID before staging them.
    Keep historical direct publications unverified until each displayed citation is checked
    against currently authorized evidence at export time. Do not add inferred
    fact publication through this slice.
-3. Specify a deterministic export format and build the fail-closed citation
-   verifier and bounded renderer. Golden fictional tests must cover duplicate
+3. Use the existing `masterbrain_project_dossier_markdown_v1` export as the
+   eventual importer contract; do not introduce a second Markdown dialect.
+   Keep its fail-closed citation verifier and bounded renderer. Golden fictional tests must cover duplicate
    attachment occurrences, revoked/excluded sources, unsupported old quotes,
    truncation and byte-stable output. The renderer is not a freshness or truth
    certificate.
-4. ADR-202 supplies the first owner-only, proposal-only stage for project,
-   event and commitment rows using ADR-200/201 as the parser and inspection
-   baseline. Extend this only with typed member/fact/artifact bases, explicit
+4. ADR-202/205 supply owner-only, proposal-only staging for project, event,
+   commitment and member rows using ADR-200/201 as the parser and inspection
+   baseline. ADR-206 adds a separate typed, source-stated fact queue. Extend
+   this only with typed artifact/inferred bases, explicit
    missing metadata and independent fictional acceptance. Zero reviewed rows
    may appear before approval; no model dependency or separately unauthorized
    live fetch is allowed.
@@ -131,8 +151,8 @@ rows to the new local project ID before staging them.
    grants before accepting an inferred proposal. Never encode assertion IDs as
    `knowledge_evidence.evidence_id` or weaken stated-quote requirements. Test
    cross-tenant/revoked basis, replay and direct unreviewed-write denial.
-6. In later independently gated slices, add a compatible advisory predicate
-   registry, typed amounts, multi-owner commitments, uncertain-date queries,
+6. In later independently gated slices, complete ADR-214's compatible
+   predicate proposal/alias registry, multi-owner commitments, uncertain-date queries,
    table/cell locators and Email-attachment extraction. Preserve existing
    exact due-window semantics and isolated CSV/XLSX parser constraints.
 7. Add coverage-derived freshness and candidate-conflict **flags**, then test

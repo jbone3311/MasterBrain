@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+from email_brain.cli import main as email_cli_main
 from masterbrain.archive_member_controller import (
     run_archive_document_batch_controller,
     run_archive_document_plan_controller,
@@ -32,8 +33,21 @@ from masterbrain.email_bridge_controller import (
     run_email_part_bridge_batch_controller,
     run_email_part_bridge_plan_controller,
 )
+from masterbrain.email_xlsx_extraction_controller import (
+    run_email_xlsx_extraction_controller,
+)
+from masterbrain.email_xlsx_publication_controller import (
+    run_email_xlsx_publication_controller,
+)
 from masterbrain.fileos_controller import run_fileos_controller
 from masterbrain.fileos_index_controller import run_fileos_index_controller
+from masterbrain.source_tier_email_controller import run_source_tier_email_controller
+from masterbrain.source_tier_email_pdf_controller import run_source_tier_email_pdf_controller
+from masterbrain.source_tier_fileos_controller import run_source_tier_fileos_controller
+from masterbrain.source_tier_fileos_pdf_controller import run_source_tier_fileos_pdf_controller
+from masterbrain.source_tier_fileos_xlsx_table_controller import (
+    run_source_tier_fileos_xlsx_table_controller,
+)
 
 
 def _json(value: Any) -> str:
@@ -91,6 +105,14 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("version", help="Show the MasterBrain manifest version")
 
+    demo = commands.add_parser("demo", help="Disposable fictional combined-source demo")
+    demo_commands = demo.add_subparsers(dest="demo_command", required=True)
+    demo_commands.add_parser("migrate", help="Migrate a fresh disposable database")
+    for action in ("init", "seed"):
+        demo_commands.add_parser(action).add_argument("--state-dir", type=Path, required=True)
+    demo_serve = demo_commands.add_parser("serve", help="Run the loopback-only demo API")
+    demo_serve.add_argument("--port", type=int, default=8080)
+
     datacore = commands.add_parser("datacore", help="Shared read-only DataCore commands")
     data_commands = datacore.add_subparsers(dest="data_command", required=True)
     hash_command = data_commands.add_parser("hash", help="Hash one file")
@@ -127,6 +149,28 @@ def build_parser() -> argparse.ArgumentParser:
     index.add_argument("--idempotency-key", type=UUID, required=True)
     index.add_argument("--check", action="store_true")
     index.add_argument("--tenant-bound-db", action="store_true")
+    tier_replay = file_commands.add_parser(
+        "replay-tier-text", help="Replay one reviewed FileOS text source with a worker"
+    )
+    tier_replay.add_argument("--config", type=Path, required=True)
+    tier_replay.add_argument("--review-id", required=True)
+    tier_replay.add_argument("--check", action="store_true")
+    tier_replay.add_argument("--tenant-bound-db", action="store_true")
+    pdf_tier_replay = file_commands.add_parser(
+        "replay-tier-pdf", help="Replay one reviewed FileOS PDF text layer with a worker"
+    )
+    pdf_tier_replay.add_argument("--config", type=Path, required=True)
+    pdf_tier_replay.add_argument("--review-id", required=True)
+    pdf_tier_replay.add_argument("--check", action="store_true")
+    pdf_tier_replay.add_argument("--tenant-bound-db", action="store_true")
+    xlsx_tier_replay = file_commands.add_parser(
+        "replay-tier-xlsx-tables",
+        help="Replay one reviewed FileOS XLSX row layout with a worker",
+    )
+    xlsx_tier_replay.add_argument("--config", type=Path, required=True)
+    xlsx_tier_replay.add_argument("--review-id", required=True)
+    xlsx_tier_replay.add_argument("--check", action="store_true")
+    xlsx_tier_replay.add_argument("--tenant-bound-db", action="store_true")
     archive_text = file_commands.add_parser(
         "archive-text", help="Publish one selected archive text member"
     )
@@ -187,6 +231,33 @@ def build_parser() -> argparse.ArgumentParser:
     bridge.add_argument("--evidence-id", type=UUID, required=True)
     bridge.add_argument("--idempotency-key", type=UUID, required=True)
     bridge.add_argument("--check", action="store_true")
+    email_tier_replay = email_commands.add_parser(
+        "replay-tier-text", help="Replay one reviewed retained Email text source with a worker"
+    )
+    email_tier_replay.add_argument("--config", type=Path, required=True)
+    email_tier_replay.add_argument("--review-id", required=True)
+    email_tier_replay.add_argument("--check", action="store_true")
+    email_pdf_tier_replay = email_commands.add_parser(
+        "replay-tier-pdf", help="Replay one reviewed retained Email PDF text layer"
+    )
+    email_pdf_tier_replay.add_argument("--config", type=Path, required=True)
+    email_pdf_tier_replay.add_argument("--review-id", required=True)
+    email_pdf_tier_replay.add_argument("--check", action="store_true")
+    email_xlsx_publish = email_commands.add_parser(
+        "publish-reviewed-xlsx", help="Publish one human-reviewed synthetic Email XLSX"
+    )
+    email_xlsx_publish.add_argument("--config", type=Path, required=True)
+    email_xlsx_publish.add_argument("--review-id", required=True)
+    email_xlsx_publish.add_argument("--idempotency-key", type=UUID, required=True)
+    email_xlsx_publish.add_argument("--check", action="store_true")
+    email_xlsx_publish.add_argument("--tenant-bound-db", action="store_true")
+    email_xlsx_extract = email_commands.add_parser(
+        "extract-approved-xlsx", help="Extract one exact-approved synthetic Email XLSX"
+    )
+    email_xlsx_extract.add_argument("--config", type=Path, required=True)
+    email_xlsx_extract.add_argument("--approval-id", required=True)
+    email_xlsx_extract.add_argument("--check", action="store_true")
+    email_xlsx_extract.add_argument("--tenant-bound-db", action="store_true")
     bridge_plan = email_commands.add_parser(
         "bridge-plan", help="Preview current Email versions for bridging"
     )
@@ -239,6 +310,8 @@ def build_parser() -> argparse.ArgumentParser:
         archive_batch,
         archive_document_batch,
         bridge,
+        email_tier_replay,
+        email_pdf_tier_replay,
         bridge_plan,
         bridge_batch,
         part_plan,
@@ -256,6 +329,15 @@ def main(argv: Sequence[str] | None = None) -> None:
     try:
         if args.command == "version":
             print("masterbrain-manifest-v1")
+        elif args.command == "demo":
+            if args.demo_command == "migrate":
+                email_cli_main(["migrate"])
+            elif args.demo_command == "init":
+                email_cli_main(["init-masterbrain-demo", "--state-dir", str(args.state_dir)])
+            elif args.demo_command == "seed":
+                email_cli_main(["seed-masterbrain-demo", "--state-dir", str(args.state_dir)])
+            else:
+                email_cli_main(["serve", "--port", str(args.port)])
         elif args.command == "datacore" and args.data_command == "hash":
             print(
                 _json({"algorithm": args.algorithm, "digest": file_hash(args.path, args.algorithm)})
@@ -305,6 +387,62 @@ def main(argv: Sequence[str] | None = None) -> None:
                     )
                 )
             )
+        elif args.command == "fileos" and args.file_command == "replay-tier-text":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_source_tier_fileos_controller(
+                args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "fileos" and args.file_command == "replay-tier-pdf":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_source_tier_fileos_pdf_controller(
+                args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "fileos" and args.file_command == "replay-tier-xlsx-tables":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_source_tier_fileos_xlsx_table_controller(
+                args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "email" and args.email_command == "replay-tier-text":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_source_tier_email_controller(
+                args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "email" and args.email_command == "replay-tier-pdf":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_source_tier_email_pdf_controller(
+                args.config, dsn, args.review_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "email" and args.email_command == "publish-reviewed-xlsx":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_email_xlsx_publication_controller(
+                args.config, dsn, args.review_id, args.idempotency_key,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
+        elif args.command == "email" and args.email_command == "extract-approved-xlsx":
+            dsn = os.environ.get("MASTERBRAIN_DSN")
+            if not dsn:
+                raise ValueError("MASTERBRAIN_DSN is required")
+            print(_json(run_email_xlsx_extraction_controller(
+                args.config, dsn, args.approval_id,
+                check=args.check, tenant_bound_db=args.tenant_bound_db,
+            )))
         elif args.command == "fileos" and args.file_command == "archive-text":
             dsn = os.environ.get("MASTERBRAIN_DSN")
             if not dsn:

@@ -28,7 +28,7 @@ later tranche identifies shared behavior.
 |---|---|---|---|
 | Entities/facts | `extract_facts.py`, `fact_db.py`, `fact_verify.py`, `extract_all_domains.py` | No complete known-answer suite found | Import as claims with evidence/confidence, not truth |
 | Statement holdings/transactions | `statement_extract.py`, `statement_line_items` and `statement_extraction_runs` schema; `CMD_INTELLIGENCE.md` | No dedicated checked-in statement recipe test module found; donor command records per-recipe operational outcomes | Keep each date/symbol/quantity/price/amount row together, preserve reconciliation status, and build synthetic golden cases before extraction |
-| Cross-domain reports | `reporting.py`, `report_data_collector.py` | No complete semantic suite found | Use as query/evaluation reference |
+| Cross-domain reports | `reporting.py` (five intelligence reports); `report_data_collector.py` is fleet metrics, not investment analysis | No complete donor semantic suite found; ADR-209/210 add exact-hash fictional replay for all five row shapes, including DuckDB-dependent entity/money reports | Use as query/evaluation reference; never treat donor money-fact sum as holdings |
 | Routing knowledge | `routing_engine.py`, `naming_classifier.py`, `spoke_config.py` | intake suites cover portions | Separate learned pattern from effect authority |
 | Freshness/lineage | `ssot_freshness.py`, `ssot_drift_check.py`, `source_registry`/`output_lineage` schema | Operational checks | Map to KnowledgeCore freshness and provenance |
 
@@ -73,6 +73,14 @@ be835390822f27a6a5103e667a3ebbf3b840dec8680653cdbfea5791a52ca29d  _SYSTEM/tools/
 e52ee7672121a609171a827eab086080dcea159ef987e21f0793e32528521cc9  _SYSTEM/tools/reporting.py
 c2f4c38c8a6bd783e726cebde1f555586d5675639aab2beb45c50128898feb8b  _SYSTEM/tools/fact_verify.py
 ```
+
+ADR-216 isolates the pinned `fact_verify.py` tier heuristics, numeric variants
+and status precedence in a pure compatibility module. Its fictional test runs
+the donor's own `confirm` against disposable SQLite and stress-compares 500
+numeric cases. This is **behavioral parity, not source-tier attestation**:
+donor `CONFIRMED` can mean one substring match while another source is
+unreadable or missing. No FOS database or source file is modified, and no
+MasterBrain claim-publication path imports the compatibility module.
 
 DC-004C archive audit adds:
 

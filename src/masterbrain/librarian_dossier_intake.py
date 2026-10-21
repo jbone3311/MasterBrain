@@ -21,9 +21,14 @@ from masterbrain.knowledge_schema import (
     CommitmentWrite,
     EventWrite,
     KnowledgeProposalStageRequest,
+    MemberWrite,
     ProjectWrite,
 )
-from masterbrain.project_dossier_markdown import _HEADER, _quote_label
+from masterbrain.project_dossier_markdown import (
+    _HEADER,
+    _quote_label,
+    _verified_assertion_citation,
+)
 from masterbrain.project_facts import _markdown_json_text
 
 _MAX_BYTES = 65_536
@@ -282,6 +287,47 @@ def _expected_selected_line(
     )
 
 
+def _expected_member_line(
+    store: Store, ctx: TenantContext, assertion: MemberWrite,
+    claimed_id: str, entity_citation: str, member_citation: str,
+    project_id: str,
+) -> str:
+    """Bind both displayed citations to one current local project/entity pair."""
+    if (assertion.project_id != project_id or assertion.supersedes_id is not None
+            or assertion.valid_from is not None or assertion.valid_to is not None):
+        raise ValueError("unsupported imported member fields")
+    allowed = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+    with store.transaction(ctx) as conn:
+        refs = conn.execute(
+            "SELECT e.name,e.entity_type,e.source_quote AS entity_quote,"
+            "p.source_quote AS project_quote FROM knowledge_entities e "
+            "JOIN knowledge_projects p ON p.tenant_id=e.tenant_id "
+            "WHERE e.tenant_id=%s AND e.id=%s AND p.id=%s",
+            (ctx.tenant_id, assertion.entity_id, project_id),
+        ).fetchone()
+        if refs is None or refs["entity_type"] not in {"person", "organization"}:
+            raise ValueError("imported member references are unavailable")
+        _verified_assertion_citation(
+            conn, ctx.tenant_id, allowed, "project", project_id,
+            refs["project_quote"],
+        )
+        actual_entity_citation = _verified_assertion_citation(
+            conn, ctx.tenant_id, allowed, "entity", assertion.entity_id,
+            refs["entity_quote"],
+        )
+        if actual_entity_citation != entity_citation:
+            raise ValueError("imported entity citation mismatch")
+    return (
+        f"- member `{claimed_id}`: {refs['entity_type']} "
+        f"{_markdown_json_text(refs['name'])} "
+        f"(entity `{assertion.entity_id}`, {_quote_label(refs['entity_quote'])}, "
+        f"citation `{entity_citation}`); reviewed role `{assertion.role}` "
+        f"({assertion.assertion_status}; derivation unspecified; "
+        f"{_quote_label(assertion.source_quote)}; "
+        f"citation `{member_citation}`)."
+    )
+
+
 @dataclass(slots=True)
 class DossierProposalImport:
     store: Store
@@ -295,37 +341,53 @@ class DossierProposalImport:
         seen: set[str] = set()
         payloads: list[dict[str, Any]] = []
         claims: list[tuple[str, str]] = []
+        entity_citations: list[str | None] = []
         for selected in body.selections:
             if selected.claimed_id in seen or selected.claimed_id not in by_id:
                 raise ValueError("invalid dossier selection")
             seen.add(selected.claimed_id)
             candidate = by_id[selected.claimed_id]
-            if candidate["kind"] not in {"project", "event", "commitment"}:
+            if candidate["kind"] not in {"project", "event", "commitment", "member"}:
                 raise ValueError("unsupported dossier selection")
             assertion, payload = _canonical(selected.assertion)
-            if not isinstance(assertion, (ProjectWrite, EventWrite, CommitmentWrite)):
+            if not isinstance(assertion, (
+                ProjectWrite, EventWrite, CommitmentWrite, MemberWrite,
+            )):
                 raise ValueError("unsupported dossier assertion")
             if assertion.kind != candidate["kind"]:
                 raise ValueError("dossier kind mismatch")
-            citation_id = candidate["claimed_citation_ids"][0]
-            expected = _expected_selected_line(
-                assertion, selected.claimed_id, citation_id,
-                inventory["claimed_project_id"],
-            )
+            citations = candidate["claimed_citation_ids"]
+            citation_id = citations[-1]
+            if isinstance(assertion, MemberWrite):
+                expected = _expected_member_line(
+                    self.store, ctx, assertion, selected.claimed_id,
+                    citations[0], citation_id, inventory["claimed_project_id"],
+                )
+                entity_citations.append(citations[0])
+            else:
+                expected = _expected_selected_line(
+                    assertion, selected.claimed_id, citation_id,
+                    inventory["claimed_project_id"],
+                )
+                entity_citations.append(None)
             if expected != candidate["untrusted_line"]:
                 raise ValueError("dossier row does not match proposed assertion")
             payloads.append(payload)
             claims.append((selected.claimed_id, citation_id))
-        context_sha = _sha({
+        context = {
             "format": inventory["format"],
             "markdown_sha256": hashlib.sha256(
                 body.markdown.encode("utf-8"),
             ).hexdigest(),
             "claims": claims,
-        })
+        }
+        if any(citation is not None for citation in entity_citations):
+            context["member_entity_citations"] = entity_citations
+        context_sha = _sha(context)
         result = KnowledgeProposalBatches(self.store).stage(
             ctx, KnowledgeProposalStageRequest(proposals=payloads),
             idempotency_key, import_context_sha256=context_sha,
             import_claims=claims,
+            import_entity_citations=entity_citations,
         )
         return {**result, "import_context_sha256": context_sha}

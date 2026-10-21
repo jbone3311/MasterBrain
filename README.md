@@ -14,8 +14,25 @@ checkpoint remains at `c0a531d`. The package, API and manifest share the
 
 Today, fictional data can flow through read-only Email and FileOS intake,
 shared DataCore extraction and indexing, reviewed KnowledgeCore records, and a
-scoped Brain API. The first-party `/brain` workspace and provider-neutral client
-can search current evidence, show exact source quotes, and drill down to the
+scoped Brain API. On the open development PR, one separately approved
+synthetic Email XLSX can be published as an occurrence-cited DataCore text
+document after a human-only digest/count review and separate worker
+publication (ADR-242), now reachable through a private, account-bound worker
+command (ADR-243); the server owns the bridge provenance revision (ADR-244).
+ADR-246 adds a first-party human screen to inspect and review an existing
+synthetic XLSX result. ADR-247 adds a separate human-only API approval of one
+current synthetic attachment using a server-pinned XLSX image; ADR-248 lets
+the owner select that attachment in the Email screen and explicitly approve
+it. ADR-249 supplies the separately scoped private exact-approval extraction
+command; neither browser approval nor review runs a worker or publishes the
+document. ADR-250 now tests that entire fictional owner/API → two private
+workers → cited retrieval sequence, including source-pause invalidation; its
+restricted processor is simulated, so actual-image and hosted gates remain.
+This is not live Fastmail, a cell-level citation or financial review. Local
+populated restore passed; actual-image and hosted CI gates remain open. The
+first-party `/brain` workspace and
+provider-neutral client can search current evidence, show exact source quotes,
+and drill down to the
 original; reviewed events, due commitments and project dossiers are separate
 read-only views. Reviewed project aliases can return multiple source-scoped
 deal candidates; they do not merge projects or select a current truth. The
@@ -29,6 +46,24 @@ Neither export is a complete Librarian import/export round trip, a source-
 freshness certificate, or a live-source test. The
 pinned FOS-Master donor remains untouched and its FileOS
 shadow comparison is nonpublishing.
+The development branch also has a private, synthetic-only FileOS v2 baseline
+and later-observation path (ADRs 251–261): a completed-baseline-bound scan,
+immutable observation packet, exact historical row-coverage closure and
+source-bound evidence for matching later hashed rows, followed by historical
+document attempts with exact row outcomes and one fresh, ready historical
+later-run receipt and a ready historical generation on the shared DataCore
+index. A human can now compare that named generation with active v1 using
+separate historical and current-result layers and explicit run review flags.
+An authorized human API caller can page the exact historical prior-row classifications,
+including possible-missing candidates, then record an append-only historical
+disposition and inspect corrections. A compact read-only summary hashes the
+exact latest decisions and shows unresolved rows and run flags; it is not a
+run-level approval. The decisions do not approve absence.
+This is **not** absence authority, a current FileOS read switch or
+FOS-Master replacement. The next gate is run-level signoff and rollback
+policy, followed by owner-reviewed live
+shadow and hosted validation. See [implementation status](docs/IMPLEMENTATION_STATUS.md)
+and [FileOS migration plan](docs/FOS_MIGRATION.md).
 
 Email and FileOS are independently optional: a tenant can register either,
 both or neither. Current-search and extractive Ask still respond when one is
@@ -37,6 +72,10 @@ registered source does not imply a live connector, current index or query match.
 
 This is a testable prototype, **not** a hosted service, live mailbox or folder
 enrollment, AI-written conversation, source-write API, or FileOS replacement.
+ADR-208 adds a separate [disposable combined-source demo](docs/LOCAL_DEVELOPMENT.md)
+that starts the real loopback API, bridges fictional Email, publishes one
+fictional FileOS text file and exposes a cited project. The older Email-only
+demo remains unchanged; neither is a private live pilot.
 The owner still needs to complete the
 [fictional cross-source browser trial](docs/CROSS_SOURCE_TRIAL.md). See
 [current functions](docs/CURRENT_FUNCTIONS.md), the
@@ -57,11 +96,15 @@ accounts. A real folder/date pilot is deferred and would require a new explicit
 owner authorization, disposable live acceptance and operational/retention
 decisions.
 The [Librarian Markdown interop review](docs/LIBRARIAN_INTEROP.md) now records
-the proposed import/export path and its twelve verified or corrected gaps;
-it is a design plan, not a working importer or exporter. ADR-186 adds a
-synthetic-only private queue for 1–50 source-stated Knowledge proposals and
-atomic explicit human decisions. It does not parse Librarian Markdown, accept
-inference without a source quote, or expose proposals to assistants.
+the twelve corrected gaps and the owner-selected exchange format. ADR-197
+exports a bounded cited project dossier; ADR-200/201 parse and inspect that
+format; ADR-202/205 can stage selected project, event, commitment and member
+rows as private proposals with exact current evidence checks. ADR-186's
+1–50-row queue requires explicit atomic human decisions. This is **not** a
+lossless round trip: ADR-206/207 separately stage selected source-stated project
+facts and artifact links for explicit human review on an open PR. Inference
+without a direct quote is unsupported, and proposals are never
+exposed to assistants or automatically approved.
 
 The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3311/MasterBrain).
 Its `main` branch requires full CI, strict-runtime and populated-restore checks
@@ -88,6 +131,13 @@ authorization hardening, not hosted assistant acceptance.
   check list under [Develop and verify](#develop-and-verify) below.
 
 ## Product shape
+
+MasterBrain remains **one product and one destination repository**. EmailBrain
+and **FOS Brain** are optional internal source capabilities, not competing
+products, databases or permanent GitHub forks. FOS Brain is the intended name
+for the FileOS capability after migration; FOS-Master remains the independent,
+working donor until its behavior and newer changes pass parity and cutover gates.
+The Brain API reports which source capabilities are enrolled and authorized.
 
 ```text
 Email sources ─┐
@@ -161,7 +211,8 @@ FileOS sources ┘       │              │                │
 | Pinned donor statement recipe comparison | Five fictional baselines: Streetbeat, low-confidence Fidelity, OCR bank, Morgan Stanley and Jefferies. Optional exact-hash FOS-Master replay; isolated from runtime and not verified holdings |
 | Private statement proposal ledger | Worker-only, additive exact-decimal rows for one current normalized Email/FileOS document; exact-head and merged-main PostgreSQL/restore gates passed; storage itself creates no reviewed holding or live source |
 | Owner statement proposal preview | Human-only, paged API read of current, source-rechecked unreviewed rows and bounded source quotes; the fictional browser trial now opens one proposed row on explicit click. No assistant access, approval, investment total or live source |
-| Private Knowledge proposal batch and review | Human-only, source-stated 1–50 rows with exact current evidence quotes; explicit per-row approval/rejection is atomic and idempotent. No Markdown parser, inferred claim, assistant proposal read or live source |
+| Private Knowledge proposal batch and review | Human-only, source-stated 1–50 rows with exact current evidence quotes; selected project/event/commitment/member Markdown rows stage in the generic queue, while facts and artifact links use separate private queues. Typed sidecars and atomic explicit decisions are required. No inferred claim, assistant proposal read or live source |
+| Private project-fact Markdown proposal batch | Separate synthetic-only fact queue and fact-specific receipt; exact selected line, full cited quote and current project/evidence bases are rechecked at stage, preview and explicit atomic human review. No automatic approval, artifact association, inferred fact or live source |
 | Progressive Brain API and grouped retained/current DataCore + KnowledgeCore search | Working shared prototype |
 | First-party read-only question workspace | Implemented prototype at `/brain`; grouped indexed evidence, not generated answers or live acceptance |
 | Certified external-AI clients and cited answer synthesis | Planned; neither is deployed or accepted |
@@ -199,6 +250,7 @@ roadmap item is not an implementation claim.
 - [Synthetic alpha test guide](docs/ALPHA_TESTING.md)
 - [Fictional cross-source browser trial](docs/CROSS_SOURCE_TRIAL.md)
 - [Shared DataCore/FileOS commands](docs/DATACORE_COMMANDS.md)
+- [Newer FOS-Master donor delta and proposed joint search visibility](docs/FOS_DONOR_DELTA_2026_10.md)
 - [Source and provenance contract](docs/SOURCE_PROVENANCE.md)
 - [DataCore persistence and lexical retrieval](docs/DATACORE_PERSISTENCE.md)
 - [FileOS read-only extraction](docs/FILEOS_EXTRACTION.md)

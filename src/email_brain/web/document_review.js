@@ -282,6 +282,7 @@ function renderDocumentSelection() {
 }
 function invalidateSearch() {
   searchVersion += 1; byId("results").replaceChildren(); clearDocumentSelection();
+  if (typeof resetXlsxReview === "function") resetXlsxReview(true);
   resetReader();
 }
 function searchContext() { return {version: searchVersion, session: sessionVersion, token: byId("token").value}; }
@@ -331,6 +332,21 @@ function renderMessageEvidence(target, evidence, hit, context) {
         documentSelection = {account: hit.account_id, evidence: evidence.id, receipt: part.id,
           rawHash: evidence.raw_sha256, part: part.part_id, partHash: part.sha256, filename: part.safe_filename};
         await loadDocuments();
+      };
+      item.append(select);
+    }
+    if (part.media_type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        && /\.xlsx$/i.test(part.safe_filename) && part.status === "deferred"
+        && ["isolated_extractor_required", "extraction_byte_limit"].includes(part.reason)) {
+      const select = node("button", "Select XLSX for approval");
+      select.onclick = () => {
+        if (!currentSearch(context)) return;
+        if (!sameId(byId("account-id").value.trim(), hit.account_id)) {
+          byId("account-id").value = hit.account_id; byId("account-id").oninput();
+        }
+        selectXlsxAttachment({account: hit.account_id, evidence: evidence.id,
+          receipt: part.id, filename: part.safe_filename, rawHash: evidence.raw_sha256,
+          part: part.part_id, partHash: part.sha256});
       };
       item.append(select);
     }

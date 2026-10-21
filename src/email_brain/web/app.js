@@ -38,10 +38,12 @@ function clearEvidence() {
   quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true;
   heldPages = []; heldRenderVersion += 1; resetProcessing(true);
   resetDocuments(true); invalidateSearch(); byId("include-documents").checked = false;
+  if (typeof resetXlsxReview === "function") resetXlsxReview(true);
 }
 async function api(path, method = "GET", body = undefined, extra = {}) {
   const version = sessionVersion, token = byId("token").value;
   const response = await fetch(path, {method, credentials: "omit", cache: "no-store",
+    redirect: "error", referrerPolicy: "no-referrer",
     headers: {"Authorization": `Bearer ${token}`, "Content-Type": "application/json", ...extra},
     body: body === undefined ? undefined : JSON.stringify(body)});
   const data = await response.json();
@@ -122,6 +124,7 @@ async function loadImport() {
 }
 byId("account-form").onsubmit = (event) => { event.preventDefault(); safely(loadImport); };
 byId("account-id").oninput = () => { resetReader(); importVersion += 1; heldRenderVersion += 1; heldPages = []; resetProcessing(true); resetDocuments(true); byId("import-health").replaceChildren(); byId("quarantine").replaceChildren();
+  if (typeof resetXlsxReview === "function") resetXlsxReview(true);
   quarantineAfter = null; quarantineAccount = null; byId("quarantine-more").hidden = true; };
 byId("quarantine-more").onclick = () => { if (quarantineAccount && quarantineAfter) safely(() => heldMessages(quarantineAccount, quarantineAfter)); };
 

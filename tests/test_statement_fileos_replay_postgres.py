@@ -14,7 +14,7 @@ import pytest
 import test_postgres as pg
 from test_statement_persistence_postgres import TEXT, worker
 
-import masterbrain.statement_fileos_replay as replay_module
+import masterbrain.datacore.current_fileos_text_replay as replay_module
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.contracts import stable_id

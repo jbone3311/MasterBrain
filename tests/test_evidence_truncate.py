@@ -265,6 +265,34 @@ def protected_database(
             "0065_reviewed_project_artifacts.sql",
             "0066_reviewed_project_facts.sql",
             "0067_dossier_import_batch_binding.sql",
+            "0068_dossier_proposal_citation_binding.sql",
+            "0069_private_project_fact_proposals.sql",
+            "0070_private_project_artifact_proposals.sql",
+            "0071_reviewed_project_fact_measurements.sql",
+            "0072_reviewed_project_fact_measurement_tokens.sql",
+            "0073_project_fact_predicate_registry.sql",
+            "0074_project_fact_predicate_latest_revision.sql",
+            "0075_reviewed_source_tier_classifications.sql",
+            "0076_source_tier_fileos_text_replay.sql",
+            "0077_source_tier_email_text_replay.sql",
+            "0078_source_tier_fileos_pdf_replay.sql",
+            "0079_source_tier_email_pdf_replay.sql",
+            "0080_email_pdf_replay_account_lock.sql",
+            "0081_source_tier_fileos_xlsx_table_replay.sql",
+            "0082_email_xlsx_extraction_approvals.sql",
+            "0083_email_xlsx_extraction_results.sql",
+            "0084_email_xlsx_document_bridge.sql",
+            "0085_email_xlsx_publication_reviews.sql",
+            "0086_email_xlsx_bridge_revision_guard.sql",
+            "0087_fileos_v2_later_observation_packets.sql",
+            "0088_fileos_v2_later_coverage_closures.sql",
+            "0089_fileos_v2_later_evidence_preparations.sql",
+            "0090_fileos_v2_later_document_attempts.sql",
+            "0091_fileos_v2_later_run_completions.sql",
+            "0092_fileos_v2_later_shared_index_generation.sql",
+            "0093_fileos_v2_later_row_decisions.sql",
+            "0094_project_fact_correction_keeps_shape.sql",
+            "0095_dossier_proposal_decision_binding.sql",
         ]
         assert _record_counts(admin_dsn, tenant_id) == before
         with psycopg.connect(admin_dsn) as conn:
@@ -287,13 +315,13 @@ def test_historical_owner_gap_reproduced_only_inside_rollback(
     assert _record_counts(dsn, tenant_id) == before
 
 
-def test_catalog_has_exact_82_plus_three_statement_guards(
+def test_catalog_has_exact_110_plus_three_statement_guards(
     protected_database: tuple[str, str, dict[str, UUID | int]],
 ) -> None:
     admin_dsn, _, _ = protected_database
     with psycopg.connect(admin_dsn) as conn:
         row_guarded = _guarded_tables(conn)
-        assert len(row_guarded) == 82
+        assert len(row_guarded) == 110
         assert not (row_guarded & SPECIAL)
         rows = conn.execute(
             "SELECT c.relname,t.tgname,t.tgenabled,t.tgisinternal,t.tgtype,"
@@ -302,7 +330,7 @@ def test_catalog_has_exact_82_plus_three_statement_guards(
             "JOIN pg_namespace n ON n.oid=c.relnamespace "
             "WHERE n.nspname='public' AND (t.tgtype & 32)=32"
         ).fetchall()
-    assert len(rows) == 85
+        assert len(rows) == 113
     assert {row[0] for row in rows} == row_guarded | SPECIAL
     assert all(
         name == "protected_no_truncate"
@@ -343,7 +371,7 @@ def test_every_protected_table_refuses_cascaded_truncate(
     before = _record_counts(admin_dsn, tenant_id)
     with psycopg.connect(admin_dsn) as conn:
         targets = sorted(_guarded_tables(conn) | SPECIAL)
-    assert len(targets) == 85
+    assert len(targets) == 113
     with psycopg.connect(admin_dsn, autocommit=True) as conn:
         for table in targets:
             with pytest.raises(psycopg.errors.RaiseException, match=REJECTION):

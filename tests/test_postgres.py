@@ -28,9 +28,11 @@ from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from psycopg.types.json import Jsonb
+from pydantic import ValidationError
 
 from email_brain.api import create_app
 from email_brain.auth import Credential, Principal, TokenRegistry
+from email_brain.blobs import EncryptedBlobStore
 from email_brain.connectors.fastmail import MAIL, FastmailReadClient
 from email_brain.domain.models import TenantContext
 from email_brain.migrate import grant_identity_lookup, grant_runtime, grant_tenant_runtime, migrate
@@ -46,7 +48,9 @@ from email_brain.synthetic_formats import docx_bytes, pdf_bytes, xlsx_bytes
 from masterbrain import archive_member_controller as archive_controller
 from masterbrain.brain_client import BrainReadClient
 from masterbrain.datacore import fileos_donor_transition as transition_module
+from masterbrain.datacore import fileos_v2_completed_preview as completed_preview_module
 from masterbrain.datacore import fileos_v2_document_publication as document_publication_module
+from masterbrain.datacore import fileos_v2_later_document_publication as later_document_module
 from masterbrain.datacore.archive_contract import ArchiveResult, ArchiveSkip, source_for
 from masterbrain.datacore.archive_member_contract import decode_result as decode_member_result
 from masterbrain.datacore.archive_member_contract import encode_request as encode_member_request
@@ -67,12 +71,28 @@ from masterbrain.datacore.fileos_donor_transition import (
 from masterbrain.datacore.fileos_transition_approval import FileOSV2TransitionReview
 from masterbrain.datacore.fileos_v2_authorization import FileOSV2BaselineAuthorizer
 from masterbrain.datacore.fileos_v2_baseline import FileOSV2BaselineVerifier
+from masterbrain.datacore.fileos_v2_completed_preview import FileOSV2CompletedPreviewer
 from masterbrain.datacore.fileos_v2_completion import FileOSV2BaselineCompleter
 from masterbrain.datacore.fileos_v2_document_publication import FileOSV2DocumentPublisher
 from masterbrain.datacore.fileos_v2_index_generation import (
     FileOSV2IndexBuilder,
     FileOSV2SearchReviewer,
 )
+from masterbrain.datacore.fileos_v2_later_coverage import FileOSV2LaterCoverageStore
+from masterbrain.datacore.fileos_v2_later_document_publication import (
+    OUTCOMES as LATER_DOCUMENT_OUTCOMES,
+)
+from masterbrain.datacore.fileos_v2_later_document_publication import (
+    FileOSV2LaterDocumentPublisher,
+)
+from masterbrain.datacore.fileos_v2_later_evidence import FileOSV2LaterEvidencePreparer
+from masterbrain.datacore.fileos_v2_later_index_generation import (
+    FileOSV2LaterIndexBuilder,
+    FileOSV2LaterSearchReviewer,
+)
+from masterbrain.datacore.fileos_v2_later_packets import FileOSV2LaterPacketStore
+from masterbrain.datacore.fileos_v2_later_row_decisions import FileOSV2LaterRowDecisions
+from masterbrain.datacore.fileos_v2_later_run_completion import FileOSV2LaterRunCompleter
 from masterbrain.datacore.fileos_v2_preparation import FileOSV2EvidencePreparer
 from masterbrain.datacore.image_ocr_contract import CONTRACT as IMAGE_OCR_CONTRACT
 from masterbrain.datacore.image_ocr_contract import ImageOcrResult
@@ -80,6 +100,7 @@ from masterbrain.datacore.image_ocr_contract import source_for as image_source_f
 from masterbrain.datacore.persistence import (
     ArchiveMemberTargetRecord,
     DataCoreStore,
+    _canonical_digest,
     fileos_inventory_policy_sha256,
 )
 from masterbrain.email_bridge_controller import (
@@ -109,6 +130,11 @@ from masterbrain.knowledge_schema import (
     ProjectWrite,
     RelationshipWrite,
     TimelineRequest,
+)
+from masterbrain.schemas import (
+    FileOSV2LaterReviewSummaryRequest,
+    FileOSV2LaterRowDecisionHistoryRequest,
+    FileOSV2LaterRowDecisionsRequest,
 )
 
 pytestmark = pytest.mark.postgres
@@ -919,6 +945,38 @@ def test_email_bridge_is_replayable_searchable_and_closed(
             "WHERE tenant_id=%s AND legacy_version_id=%s",
             (ctx.tenant_id, legacy),
         )
+
+
+def test_email_bridge_preserves_encrypted_mime_source_size(
+    database: tuple[Store, str], tenant: tuple[TenantContext, UUID], tmp_path: Path,
+) -> None:
+    store, _admin = database
+    ctx, account = tenant
+    backend = EncryptedBlobStore(
+        tmp_path / "fictional-ciphertext",
+        {(ctx.tenant_id, "test-key"): bytes(range(32))},
+        {ctx.tenant_id: "test-key"},
+    )
+    encrypted = Store(store.dsn, blobs=backend)
+    message = item(key="encrypted-bridge-1", body="Fictional encrypted bridge proof")
+    assert message.raw is not None
+    encrypted.ingest_page(ctx, account, None, "encrypted-bridge-page", [message])
+    legacy = encrypted.search(ctx, SearchRequest(query="encrypted bridge proof"))[0]["evidence_id"]
+    bridged = DataCoreStore(encrypted).bridge_current_email_version(
+        datacore_context(ctx), legacy, uuid4(), code_revision="encrypted-email-bridge-v1",
+    )
+    with encrypted.transaction(datacore_context(ctx)) as conn:
+        raw = conn.execute(
+            "SELECT raw_mime,raw_size FROM raw_objects WHERE account_id=%s", (account,),
+        ).fetchone()
+        version = conn.execute(
+            "SELECT size_bytes,sha256 FROM brain_source_versions WHERE id=%s",
+            (bridged.version_id,),
+        ).fetchone()
+    assert raw is not None and raw["raw_mime"] is None
+    assert raw["raw_size"] == version["size_bytes"] == len(message.raw)
+    assert version["sha256"] == hashlib.sha256(message.raw).hexdigest()
+    assert encrypted.load_raw(ctx, account, version["sha256"]) == message.raw
 
 
 def test_email_bridge_rejects_historical_and_hidden_versions(
@@ -4489,6 +4547,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
     with pytest.raises(NotFound):
         knowledge.get(other, "claim", second_claim.object_id)
 
+    # This long integration case can exceed five minutes under RLS/CI load.
     token = secrets.token_urlsafe(40)
     api = TestClient(
         create_app(
@@ -4509,7 +4568,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
                             "knowledge.changes.read",
                             "knowledge.review",
                         },
-                        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+                        expires_at=datetime.now(UTC) + timedelta(hours=1),
                         client_kind="human",
                     )
                 ]
@@ -4673,7 +4732,7 @@ def test_knowledgecore_all_objects_conflicts_history_api_rls_and_immutability(
         token_sha256=hashlib.sha256(assistant_token.encode()).hexdigest(),
         tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
         scopes={"brain.search", "knowledge.search"},
-        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
         client_kind="assistant", source_ids={"files_knowledge"},
     )])))
     assistant_reviewed = assistant_api.post(
@@ -7520,6 +7579,1001 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     assert private_baseline["latest_v1_matches"] is True
     assert private_baseline["current_read_active"] is False
     assert private_baseline["absence_authorized"] is False
+    later_add = tmp_path / "Later_add.txt"
+    later_add.write_bytes(b"synthetic later-only evidence")
+    later_junk = tmp_path / "~$draft.docx"
+    later_junk.write_bytes(b"synthetic excluded Office lock")
+    later_previewer = FileOSV2CompletedPreviewer(core)
+    later = later_previewer.preview(completion_worker, completion_id, tmp_path)
+    assert later.counts["unchanged"] == 2
+    assert later.counts["absence_candidate"] == 0
+    assert later.blockers == ()
+    assert later.publishable is False and later.absence_authorized is False
+    assert len(later.preview_sha256) == 64
+    later_packets = FileOSV2LaterPacketStore(core)
+    first_later_id = uuid4()
+    first_later = later_packets.record(
+        completion_worker, completion_id, first_later_id, tmp_path
+    )
+    assert first_later.recorded is True
+    assert first_later.classification_counts["unchanged"] == 2
+    assert first_later.publishable is False and first_later.absence_authorized is False
+    assert later_packets.inspect(ctx, first_later_id) == replace(first_later, recorded=False)
+    coverage_store = FileOSV2LaterCoverageStore(core)
+    closure_id = uuid4()
+    closure = coverage_store.seal(completion_worker, first_later_id, closure_id)
+    assert closure.recorded is True
+    assert closure.current_counts["hashed"] == 3
+    assert closure.prior_classification_counts["unchanged"] == 2
+    assert closure.publishable is False and closure.absence_authorized is False
+    assert coverage_store.inspect(ctx, closure_id) == replace(closure, recorded=False)
+    with store.transaction(ctx) as conn:
+        saved_closure = conn.execute(
+            "SELECT closure FROM brain_fileos_v2_later_coverage_closures WHERE id=%s",
+            (closure_id,),
+        ).fetchone()["closure"]
+        assert len(saved_closure["current_rows"]) == 4
+        assert len(saved_closure["prior_rows"]) == 2
+        assert {row["kind"] for row in saved_closure["current_rows"]} == {
+            "hashed", "excluded",
+        }
+    later_evidence = FileOSV2LaterEvidencePreparer(core)
+    later_preparation_id = uuid4()
+    later_add.write_bytes(b"synthetic later drift")
+    with pytest.raises(Conflict, match="source changed"):
+        later_evidence.prepare(worker, closure_id, later_preparation_id, tmp_path)
+    later_add.write_bytes(b"synthetic later-only evidence")
+    later_prepared = later_evidence.prepare(
+        worker, closure_id, later_preparation_id, tmp_path
+    )
+    assert later_prepared.recorded is True
+    assert later_prepared.hashed_count == 3
+    assert later_prepared.publishable is False
+    assert later_prepared.absence_authorized is False
+    assert later_evidence.inspect(ctx, later_preparation_id) == replace(
+        later_prepared, recorded=False
+    )
+    later_publisher = FileOSV2LaterDocumentPublisher(core)
+    later_publication_worker = Principal(
+        replace(worker.context, scopes=worker.context.scopes | frozenset({
+            "brain.fileos.transition.publish", "brain.document.publish",
+        })),
+        "worker",
+    )
+    later_attempt_id = uuid4()
+    later_add.write_bytes(b"synthetic publication drift")
+    with pytest.raises(Conflict, match="source changed"):
+        later_publisher.publish(
+            later_publication_worker, later_preparation_id, later_attempt_id,
+            tmp_path, code_revision="test-v2-later-documents",
+        )
+    later_add.write_bytes(b"synthetic later-only evidence")
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 later document attempt counts"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_document_attempts(tenant_id,id,"
+                "actor_id,preparation_id,closure_id,packet_id,completion_id,"
+                "source_id,root_binding_sha256,preparation_sha256,code_revision,"
+                "text_extractor_version,document_processor_version,counts,"
+                "ready,observed_at,attempt_sha256) "
+                "SELECT tenant_id,%s,%s,id,closure_id,packet_id,completion_id,"
+                "source_id,root_binding_sha256,preparation_sha256,'forged',"
+                "'forged',NULL,%s,true,clock_timestamp(),%s "
+                "FROM brain_fileos_v2_later_evidence_preparations WHERE id=%s",
+                (
+                    uuid4(), ctx.actor_id,
+                    Jsonb({outcome: 0 for outcome in LATER_DOCUMENT_OUTCOMES}),
+                    "0" * 64, later_preparation_id,
+                ),
+            )
+    original_later_extract = later_document_module.extract_source_version
+
+    def failed_later_add(root: Path, item: dict[str, Any]) -> ExtractionResult:
+        if item["locator"] == "Later_add.txt":
+            return ExtractionResult(item["version_id"], item["locator"], ExtractionStatus.FAILED)
+        return original_later_extract(root, item)
+
+    blocked_later_id = uuid4()
+    with monkeypatch.context() as patched:
+        patched.setattr(later_document_module, "extract_source_version", failed_later_add)
+        blocked_later = later_publisher.publish(
+            later_publication_worker, later_preparation_id, blocked_later_id,
+            tmp_path, code_revision="test-v2-later-documents",
+        )
+    assert blocked_later.ready is False
+    assert blocked_later.counts["failed"] == 1
+    assert blocked_later.counts["extracted"] == 2
+    assert blocked_later.counts["excluded_source"] == 1
+    assert later_publisher.publish(
+        later_publication_worker, later_preparation_id, blocked_later_id,
+        tmp_path, code_revision="test-v2-later-documents",
+    ) == replace(blocked_later, recorded=False)
+    later_attempt = later_publisher.publish(
+        later_publication_worker, later_preparation_id, later_attempt_id, tmp_path,
+        code_revision="test-v2-later-documents",
+    )
+    assert later_attempt.recorded is True
+    assert later_attempt.ready is True
+    assert later_attempt.counts["extracted"] == 3
+    assert later_attempt.counts["excluded_source"] == 1
+    assert later_attempt.counts["scan_error"] == 0
+    assert later_attempt.publishable is False and later_attempt.absence_authorized is False
+    assert later_publisher.inspect(ctx, later_attempt_id) == replace(
+        later_attempt, recorded=False
+    )
+    later_completer = FileOSV2LaterRunCompleter(core)
+    later_run_id = uuid4()
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_completer.complete(authorizing_human, later_attempt_id, later_run_id, tmp_path)
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_completer.complete(worker, later_attempt_id, later_run_id, tmp_path)
+    with pytest.raises(Conflict, match="basis requires review"):
+        later_completer.complete(
+            completion_worker, blocked_later_id, uuid4(), tmp_path
+        )
+    later_add.write_bytes(b"synthetic completion drift")
+    with pytest.raises(Conflict, match="source changed"):
+        later_completer.complete(
+            completion_worker, later_attempt_id, later_run_id, tmp_path
+        )
+    later_add.write_bytes(b"synthetic later-only evidence")
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 later run completion"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_run_completions(tenant_id,id,"
+                "actor_id,attempt_id,preparation_id,closure_id,packet_id,"
+                "baseline_completion_id,source_id,root_binding_sha256,"
+                "attempt_sha256,preparation_sha256,closure_sha256,packet_sha256,"
+                "processed_counts,classification_counts,review_flags,"
+                "observed_at,run_sha256) "
+                "SELECT a.tenant_id,%s,%s,a.id,p.id,p.closure_id,p.packet_id,"
+                "p.completion_id,p.source_id,p.root_binding_sha256,"
+                "a.attempt_sha256,p.preparation_sha256,c.closure_sha256,"
+                "p.packet_sha256,a.counts,q.packet->'preview'->'counts',"
+                "%s,clock_timestamp(),%s "
+                "FROM brain_fileos_v2_later_document_attempts a "
+                "JOIN brain_fileos_v2_later_evidence_preparations p "
+                "ON p.tenant_id=a.tenant_id AND p.id=a.preparation_id "
+                "JOIN brain_fileos_v2_later_coverage_closures c "
+                "ON c.tenant_id=p.tenant_id AND c.id=p.closure_id "
+                "JOIN brain_fileos_v2_later_observation_packets q "
+                "ON q.tenant_id=p.tenant_id AND q.id=p.packet_id WHERE a.id=%s",
+                (
+                    uuid4(), ctx.actor_id,
+                    Jsonb({"possible_absence": True, "mass_loss": False,
+                           "prior_coverage": False}),
+                    "0" * 64, later_attempt_id,
+                ),
+            )
+    later_run = later_completer.complete(
+        completion_worker, later_attempt_id, later_run_id, tmp_path
+    )
+    assert later_run.recorded is True
+    assert later_run.processed_counts == later_attempt.counts
+    assert later_run.classification_counts["unchanged"] == 2
+    assert later_run.review_flags == {
+        "possible_absence": False, "mass_loss": False, "prior_coverage": False,
+    }
+    assert later_run.publishable is False
+    assert later_run.current_read_active is False
+    assert later_run.absence_authorized is False
+    assert later_run.requires_review is True
+    assert later_completer.inspect(ctx, later_run_id) == replace(
+        later_run, recorded=False
+    )
+    assert later_completer.complete(
+        completion_worker, later_attempt_id, later_run_id, tmp_path
+    ) == replace(later_run, recorded=False)
+    later_indexer = FileOSV2LaterIndexBuilder(core)
+    later_index_worker = Principal(
+        replace(later_publication_worker.context, scopes=
+                later_publication_worker.context.scopes | frozenset({
+                    "brain.fileos.transition.index",
+                })),
+        "worker",
+    )
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_indexer.build(
+            authorizing_human, later_run_id, code_revision="test-v2-later-index"
+        )
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_indexer.build(
+            completion_worker, later_run_id, code_revision="test-v2-later-index"
+        )
+    later_generation = later_indexer.build(
+        later_index_worker, later_run_id, code_revision="test-v2-later-index"
+    )
+    assert later_generation.recorded is True
+    assert later_generation.item_count == 3
+    assert later_generation.document_count == 3
+    assert later_generation.chunk_count >= 3
+    assert later_generation.current_read_active is False
+    assert later_indexer.build(
+        later_index_worker, later_run_id, code_revision="test-v2-later-index"
+    ) == replace(later_generation, recorded=False)
+    later_search_reviewer = FileOSV2LaterSearchReviewer(core)
+    later_preview = later_search_reviewer.preview(
+        authorizing_human, source_id, later_generation.generation_id, "later-only"
+    )
+    assert later_preview.candidate_visibility == "historical_preview"
+    assert later_preview.active_v1_hits == ()
+    assert later_preview.review_flags == later_run.review_flags
+    assert {hit.locator for hit in later_preview.candidate_hits} == {
+        "Later_add.txt",
+    }
+    first_rows = later_search_reviewer.review_rows(
+        authorizing_human, source_id, later_generation.generation_id,
+        offset=0, limit=1,
+    )
+    assert first_rows.total_rows == 2
+    assert len(first_rows.rows) == 1
+    assert first_rows.next_offset == 1
+    assert first_rows.rows[0]["state"] == "unchanged"
+    second_rows = later_search_reviewer.review_rows(
+        authorizing_human, source_id, later_generation.generation_id,
+        offset=first_rows.next_offset, limit=1,
+    )
+    assert second_rows.total_rows == 2
+    assert second_rows.next_offset is None
+    assert len(second_rows.rows) == 1
+    assert second_rows.rows[0]["locator"] != first_rows.rows[0]["locator"]
+    assert first_rows.absence_authorized is False
+    assert first_rows.current_read_active is False
+    row_decisions = FileOSV2LaterRowDecisions(core)
+    first_summary_request = FileOSV2LaterReviewSummaryRequest.model_validate({
+        "generation_id": later_generation.generation_id,
+    })
+    first_summary = row_decisions.summary(
+        authorizing_human, source_id, first_summary_request
+    )
+    assert first_summary["total_prior_rows"] == 2
+    assert first_summary["required_row_decisions"] == 0
+    assert first_summary["row_decisions_complete"] is True
+    assert first_summary["run_signoff_recorded"] is False
+    batch_items = [
+        {
+            "idempotency_key": str(uuid4()),
+            "locator": row["locator"],
+            "state": row["state"],
+            "prior_version_id": row.get("prior_version_id"),
+            "disposition": "acknowledge_historical_observation",
+        }
+        for row in (first_rows.rows[0], second_rows.rows[0])
+    ]
+    batch_body = FileOSV2LaterRowDecisionsRequest.model_validate({
+        "generation_id": later_generation.generation_id,
+        "decisions": batch_items,
+    })
+    assert row_decisions.record(
+        authorizing_human, source_id, batch_body
+    )["recorded_count"] == 2
+    assert row_decisions.record(
+        authorizing_human, source_id, batch_body
+    )["replayed_count"] == 2
+    assert row_decisions.summary(
+        authorizing_human, source_id, first_summary_request
+    )["decision_snapshot_sha256"] != first_summary["decision_snapshot_sha256"]
+    invalid_batch = FileOSV2LaterRowDecisionsRequest.model_validate({
+        "generation_id": later_generation.generation_id,
+        "decisions": [
+            {**batch_items[0], "idempotency_key": str(uuid4())},
+            {**batch_items[1], "idempotency_key": str(uuid4()),
+             "locator": "not-in-the-closure.txt"},
+        ],
+    })
+    with pytest.raises(Conflict, match="row requires review"):
+        row_decisions.record(authorizing_human, source_id, invalid_batch)
+    with pytest.raises(AccessDenied, match="human FileOS later"):
+        row_decisions.record(later_index_worker, source_id, batch_body)
+    with pytest.raises(AccessDenied, match="human FileOS later"):
+        row_decisions.summary(later_index_worker, source_id, first_summary_request)
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_later_row_decisions "
+            "WHERE generation_id=%s", (later_generation.generation_id,),
+        ).fetchone()["n"] == 2
+    with pytest.raises(AccessDenied, match="human FileOS later"):
+        later_search_reviewer.review_rows(
+            later_index_worker, source_id, later_generation.generation_id,
+        )
+    with pytest.raises(NotFound):
+        later_search_reviewer.preview(
+            Principal(replace(authorizing_human.context,
+                              source_ids=frozenset({"other_files"})), "human"),
+            source_id, later_generation.generation_id, "later-only",
+        )
+    with pytest.raises(AccessDenied, match="human FileOS later"):
+        later_search_reviewer.preview(
+            later_index_worker, source_id, later_generation.generation_id,
+            "later-only",
+        )
+    later_review_token = "synthetic-fileos-v2-later-review-" + "x" * 32
+    later_review_credential = Credential(
+        token_sha256=hashlib.sha256(later_review_token.encode()).hexdigest(),
+        tenant_id=ctx.tenant_id, actor_id=ctx.actor_id,
+        scopes={"brain.fileos.transition.review", "brain.search",
+                "brain.evidence.read"},
+        client_kind="human",
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+    )
+    later_review_path = f"/v1/brain/sources/{source_id}/v2-later-search-preview"
+    later_rows_path = f"/v1/brain/sources/{source_id}/v2-later-review-rows"
+    later_decisions_path = f"/v1/brain/sources/{source_id}/v2-later-row-decisions"
+    later_summary_path = f"/v1/brain/sources/{source_id}/v2-later-review-summary"
+    later_history_path = (
+        f"/v1/brain/sources/{source_id}/v2-later-row-decision-history"
+    )
+    later_review_body = {
+        "generation_id": later_generation.generation_id,
+        "query": "later-only", "limit": 10,
+    }
+    with TestClient(create_app(store, TokenRegistry([later_review_credential]))) as client:
+        headers = {"Authorization": "Bearer " + later_review_token}
+        response = client.post(
+            later_review_path, json=later_review_body, headers=headers
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["run_id"] == str(later_run_id)
+        assert body["candidate_visibility"] == "historical_preview"
+        assert body["review_flags"] == later_run.review_flags
+        assert body["coverage"] == "historical_later_comparison_not_current_fileos"
+        assert body["layers"]["active_v1"] == []
+        assert {hit["locator"] for hit in body["layers"]["candidate_v2_later"]} == {
+            "Later_add.txt",
+        }
+        assert body["untrusted_content"] is True
+        row_response = client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id, "limit": 1},
+            headers=headers,
+        )
+        assert row_response.status_code == 200, row_response.text
+        row_body = row_response.json()
+        assert row_body["total_rows"] == 2
+        assert row_body["next_offset"] == 1
+        assert row_body["rows"][0]["locator"] == first_rows.rows[0]["locator"]
+        assert row_body["rows"][0]["latest_decision"]["disposition"] == (
+            "acknowledge_historical_observation"
+        )
+        assert row_body["absence_authorized"] is False
+        assert row_body["current_read_active"] is False
+        assert row_body["untrusted_content"] is True
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id,
+                  "state": "not_a_state"},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id,
+                  "limit": 0},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id,
+                  "unexpected": True},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": "index_generation_v2_later_" + "0" * 32},
+            headers=headers,
+        ).status_code == 404
+        assert client.post(
+            later_decisions_path,
+            json={"generation_id": later_generation.generation_id,
+                  "decisions": [batch_items[0],
+                                {**batch_items[0], "idempotency_key": str(uuid4())}]},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_review_path, json={**later_review_body, "limit": 0},
+            headers=headers,
+        ).status_code == 422
+        assert client.post(
+            later_review_path, json={**later_review_body, "unexpected": True},
+            headers=headers,
+        ).status_code == 422
+    class OtherSourceHumanAuthenticator:
+        def authenticate(self, _token: str) -> Principal:
+            return Principal(
+                replace(authorizing_human.context,
+                        source_ids=frozenset({"other_files"})), "human",
+            )
+
+    with TestClient(create_app(store, OtherSourceHumanAuthenticator())) as client:
+        assert client.post(
+            later_review_path, json=later_review_body,
+            headers={"Authorization": "Bearer " + later_review_token},
+        ).status_code == 404
+        assert client.post(
+            later_rows_path,
+            json={"generation_id": later_generation.generation_id},
+            headers={"Authorization": "Bearer " + later_review_token},
+        ).status_code == 404
+        assert client.post(
+            later_decisions_path, json=batch_body.model_dump(mode="json"),
+            headers={"Authorization": "Bearer " + later_review_token},
+        ).status_code == 404
+        assert client.post(
+            later_summary_path, json=first_summary_request.model_dump(mode="json"),
+            headers={"Authorization": "Bearer " + later_review_token},
+        ).status_code == 404
+        assert client.post(
+            later_history_path,
+            json={"generation_id": later_generation.generation_id,
+                  "locator": first_rows.rows[0]["locator"]},
+            headers={"Authorization": "Bearer " + later_review_token},
+        ).status_code == 404
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_index_generation_chunks "
+            "WHERE generation_id=%s AND text ILIKE '%%later-only%%'",
+            (later_generation.generation_id,),
+        ).fetchone()["n"] >= 1
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 later index basis"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,"
+                "run_actor_id,run_id,observed_at,plan_sha256,code_revision,"
+                "chunker_version,item_count,document_count,chunk_count,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts) "
+                "SELECT tenant_id,'forged_later_wrong_count',source_id,NULL,NULL,"
+                "observed_at,%s,code_revision,chunker_version,0,0,0,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts "
+                "FROM brain_index_generations WHERE id=%s",
+                ("1" * 64, later_generation.generation_id),
+            )
+    with pytest.raises(psycopg.Error, match="item membership is not exact"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,"
+                "run_actor_id,run_id,observed_at,plan_sha256,code_revision,"
+                "chunker_version,item_count,document_count,chunk_count,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts) "
+                "SELECT tenant_id,'forged_later_no_items',source_id,NULL,NULL,"
+                "observed_at,%s,code_revision,chunker_version,item_count,0,0,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts "
+                "FROM brain_index_generations WHERE id=%s",
+                ("2" * 64, later_generation.generation_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_receipts("
+                "tenant_id,generation_id,source_id) VALUES (%s,%s,%s)",
+                (ctx.tenant_id, "forged_later_no_items", source_id),
+            )
+    with pytest.raises(psycopg.Error, match="item membership is not exact"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_generations(tenant_id,id,source_id,"
+                "run_actor_id,run_id,observed_at,plan_sha256,code_revision,"
+                "chunker_version,item_count,document_count,chunk_count,basis_kind,"
+                "v2_later_run_id,v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts) "
+                "SELECT tenant_id,'forged_later_wrong_outcome',source_id,NULL,NULL,"
+                "observed_at,%s,code_revision,chunker_version,item_count,"
+                "document_count,chunk_count,basis_kind,v2_later_run_id,"
+                "v2_later_attempt_id,v2_later_run_sha256,"
+                "v2_later_attempt_sha256,v2_later_observation_counts "
+                "FROM brain_index_generations WHERE id=%s",
+                ("3" * 64, later_generation.generation_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_items(tenant_id,generation_id,"
+                "source_id,item_id,version_id,outcome,disposition,evidence_id,"
+                "document_id) SELECT tenant_id,'forged_later_wrong_outcome',source_id,"
+                "item_id,version_id,CASE WHEN item_id=(SELECT min(item_id) FROM "
+                "brain_index_generation_items WHERE generation_id=%s) THEN 'empty' "
+                "ELSE outcome END,disposition,evidence_id,document_id "
+                "FROM brain_index_generation_items WHERE generation_id=%s",
+                (later_generation.generation_id, later_generation.generation_id),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_chunks(tenant_id,generation_id,"
+                "source_id,document_id,id,ordinal,start_offset,end_offset,text,sha256) "
+                "SELECT tenant_id,'forged_later_wrong_outcome',source_id,document_id,"
+                "id,ordinal,start_offset,end_offset,text,sha256 "
+                "FROM brain_index_generation_chunks WHERE generation_id=%s",
+                (later_generation.generation_id,),
+            )
+            conn.execute(
+                "INSERT INTO brain_index_generation_receipts("
+                "tenant_id,generation_id,source_id) VALUES (%s,%s,%s)",
+                (ctx.tenant_id, "forged_later_wrong_outcome", source_id),
+            )
+    with pytest.raises(psycopg.Error, match="activation is not authorized"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_index_activations(tenant_id,actor_id,"
+                "idempotency_key,source_id,generation_id,previous_generation_id,"
+                "request_hash) VALUES (%s,%s,%s,%s,%s,NULL,%s)",
+                (ctx.tenant_id, ctx.actor_id, uuid4(), source_id,
+                 later_generation.generation_id, "0" * 64),
+            )
+    with pytest.raises(Conflict, match="already completed"):
+        later_completer.complete(
+            completion_worker, later_attempt_id, uuid4(), tmp_path
+        )
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_run_completions CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_run_completions "
+                "SET absence_authorized=true WHERE id=%s", (later_run_id,),
+            )
+    assert core.search_current_fileos(ctx, "later-only") == []
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_document_attempts CASCADE")
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_document_attempt_items CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_document_attempt_items "
+                "SET outcome='failed' WHERE attempt_id=%s", (later_attempt_id,),
+            )
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_evidence_preparations CASCADE")
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_prepared_rows CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_prepared_rows SET sha256=%s "
+                "WHERE preparation_id=%s", ("0" * 64, later_preparation_id),
+            )
+    with store.transaction(ctx) as conn:
+        later_row = conn.execute(
+            "SELECT i.current_version_id,v.id AS prepared_version_id,e.storage "
+            "FROM brain_fileos_v2_later_prepared_rows p "
+            "JOIN brain_source_items i ON i.tenant_id=p.tenant_id AND i.id=p.item_id "
+            "JOIN brain_source_versions v ON v.tenant_id=p.tenant_id "
+            "AND v.id=p.prepared_version_id "
+            "JOIN brain_evidence e ON e.tenant_id=p.tenant_id AND e.id=p.evidence_id "
+            "WHERE p.preparation_id=%s AND p.locator='Later_add.txt'",
+            (later_preparation_id,),
+        ).fetchone()
+        assert later_row is not None
+        assert later_row["current_version_id"] is None
+        assert later_row["prepared_version_id"] is not None
+        assert later_row["storage"] == "source_bound"
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_later_document_attempt_items "
+            "WHERE attempt_id=%s", (later_attempt_id,),
+        ).fetchone()["n"] == 4
+        assert conn.execute(
+            "SELECT outcome FROM brain_fileos_v2_later_document_attempt_items "
+            "WHERE attempt_id=%s AND locator='~$draft.docx'", (later_attempt_id,),
+        ).fetchone()["outcome"] == "excluded_source"
+    (tmp_path / "new.txt").unlink()
+    possible_absence = later_previewer.preview(completion_worker, completion_id, tmp_path)
+    assert possible_absence.counts["absence_candidate"] == 1
+    assert possible_absence.absence_authorized is False
+    assert possible_absence.preview_sha256 != later.preview_sha256
+    second_later_id = uuid4()
+    second_later = later_packets.record(
+        completion_worker, completion_id, second_later_id, tmp_path
+    )
+    assert second_later.classification_counts["absence_candidate"] == 1
+    assert second_later.absence_authorized is False
+    assert second_later.packet_sha256 != first_later.packet_sha256
+    second_closure_id, second_preparation_id = uuid4(), uuid4()
+    second_attempt_id, second_run_id = uuid4(), uuid4()
+    coverage_store.seal(completion_worker, second_later_id, second_closure_id)
+    later_evidence.prepare(worker, second_closure_id, second_preparation_id, tmp_path)
+    second_attempt = later_publisher.publish(
+        later_publication_worker, second_preparation_id, second_attempt_id,
+        tmp_path, code_revision="test-v2-later-documents",
+    )
+    assert second_attempt.ready is True
+    second_run = later_completer.complete(
+        completion_worker, second_attempt_id, second_run_id, tmp_path
+    )
+    assert second_run.review_flags["possible_absence"] is True
+    assert second_run.review_flags["mass_loss"] is False
+    assert second_run.absence_authorized is False
+    assert second_run.current_read_active is False
+    assert later_completer.inspect(ctx, second_run_id) == replace(
+        second_run, recorded=False
+    )
+    second_generation = later_indexer.build(
+        later_index_worker, second_run_id, code_revision="test-v2-later-index"
+    )
+    second_preview = later_search_reviewer.preview(
+        authorizing_human, source_id, second_generation.generation_id, "later-only"
+    )
+    assert second_preview.review_flags["possible_absence"] is True
+    assert second_preview.candidate_visibility == "historical_preview"
+    assert second_preview.active_v1_hits == ()
+    absence_rows = later_search_reviewer.review_rows(
+        authorizing_human, source_id, second_generation.generation_id,
+        state="absence_candidate",
+    )
+    assert absence_rows.classification_counts["absence_candidate"] == 1
+    assert absence_rows.total_rows == 1
+    assert absence_rows.rows[0]["locator"] == "new.txt"
+    assert absence_rows.rows[0]["state"] == "absence_candidate"
+    assert absence_rows.review_flags["possible_absence"] is True
+    assert absence_rows.absence_authorized is False
+    absence_summary_request = FileOSV2LaterReviewSummaryRequest.model_validate({
+        "generation_id": second_generation.generation_id,
+    })
+    unreviewed_summary = row_decisions.summary(
+        authorizing_human, source_id, absence_summary_request
+    )
+    assert unreviewed_summary["required_row_decisions"] == 1
+    assert unreviewed_summary["missing_required_rows"] == 1
+    assert unreviewed_summary["row_decisions_complete"] is False
+    assert unreviewed_summary["flag_acknowledgements_required"] == [
+        "possible_absence"
+    ]
+    decision_key = uuid4()
+    decision_payload = {
+        "generation_id": second_generation.generation_id,
+        "decisions": [{
+            "idempotency_key": str(decision_key),
+            "locator": absence_rows.rows[0]["locator"],
+            "state": absence_rows.rows[0]["state"],
+            "prior_version_id": absence_rows.rows[0].get("prior_version_id"),
+            "disposition": "investigate",
+        }],
+    }
+    decision_body = FileOSV2LaterRowDecisionsRequest.model_validate(decision_payload)
+    recorded_decision = row_decisions.record(
+        authorizing_human, source_id, decision_body
+    )
+    assert recorded_decision["recorded_count"] == 1
+    assert recorded_decision["replayed_count"] == 0
+    assert recorded_decision["absence_authorized"] is False
+    assert recorded_decision["current_read_active"] is False
+    assert recorded_decision["source_effect_authorized"] is False
+    investigated_summary = row_decisions.summary(
+        authorizing_human, source_id, absence_summary_request
+    )
+    assert investigated_summary["held_required_rows"] == 1
+    assert investigated_summary["row_decisions_complete"] is False
+    assert investigated_summary["decision_snapshot_sha256"] != (
+        unreviewed_summary["decision_snapshot_sha256"]
+    )
+    assert row_decisions.record(authorizing_human, source_id, decision_body)[
+        "replayed_count"
+    ] == 1
+    with pytest.raises(Conflict, match="idempotency key reused"):
+        row_decisions.record(
+            authorizing_human, source_id,
+            FileOSV2LaterRowDecisionsRequest.model_validate({
+                **decision_payload,
+                "decisions": [{**decision_payload["decisions"][0],
+                               "disposition": "dispute_classification"}],
+            }),
+        )
+    latest_absence = later_search_reviewer.review_rows(
+        authorizing_human, source_id, second_generation.generation_id,
+        state="absence_candidate",
+    )
+    assert latest_absence.rows[0]["latest_decision"]["disposition"] == "investigate"
+    correction_key = uuid4()
+    correction_payload = {
+        **decision_payload,
+        "decisions": [{**decision_payload["decisions"][0],
+                       "idempotency_key": str(correction_key),
+                       "disposition": "dispute_classification"}],
+    }
+    assert row_decisions.record(
+        authorizing_human, source_id,
+        FileOSV2LaterRowDecisionsRequest.model_validate(correction_payload),
+    )["recorded_count"] == 1
+    latest_absence = later_search_reviewer.review_rows(
+        authorizing_human, source_id, second_generation.generation_id,
+        state="absence_candidate",
+    )
+    assert latest_absence.rows[0]["latest_decision"]["disposition"] == (
+        "dispute_classification"
+    )
+    disputed_summary = row_decisions.summary(
+        authorizing_human, source_id, absence_summary_request
+    )
+    assert disputed_summary["held_required_rows"] == 1
+    assert disputed_summary["decision_snapshot_sha256"] != (
+        investigated_summary["decision_snapshot_sha256"]
+    )
+    history_body = FileOSV2LaterRowDecisionHistoryRequest.model_validate({
+        "generation_id": second_generation.generation_id,
+        "locator": "new.txt", "limit": 1,
+    })
+    decision_history = row_decisions.history(
+        authorizing_human, source_id, history_body
+    )
+    assert decision_history["total_decisions"] == 2
+    assert decision_history["decisions"][0]["disposition"] == (
+        "dispute_classification"
+    )
+    assert decision_history["next_offset"] == 1
+    assert row_decisions.history(
+        authorizing_human, source_id,
+        history_body.model_copy(update={"offset": 1}),
+    )["decisions"][0]["disposition"] == "investigate"
+    with pytest.raises(NotFound):
+        row_decisions.history(
+            authorizing_human, source_id,
+            history_body.model_copy(update={"locator": "not-in-closure.txt"}),
+        )
+    with pytest.raises(psycopg.Error, match="row is not in the closure"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_row_decisions(tenant_id,"
+                "reviewer_id,idempotency_key,source_id,generation_id,run_id,"
+                "run_sha256,closure_id,closure_sha256,locator,state,"
+                "prior_version_id,disposition) "
+                "SELECT tenant_id,reviewer_id,%s,source_id,generation_id,run_id,"
+                "run_sha256,closure_id,closure_sha256,locator,'changed',"
+                "prior_version_id,disposition "
+                "FROM brain_fileos_v2_later_row_decisions "
+                "WHERE reviewer_id=%s AND idempotency_key=%s",
+                (uuid4(), ctx.actor_id, decision_key),
+            )
+    with pytest.raises(psycopg.Error, match="reviewer context mismatch"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_row_decisions(tenant_id,"
+                "reviewer_id,idempotency_key,source_id,generation_id,run_id,"
+                "run_sha256,closure_id,closure_sha256,locator,state,"
+                "prior_version_id,disposition) "
+                "SELECT tenant_id,%s,%s,source_id,generation_id,run_id,"
+                "run_sha256,closure_id,closure_sha256,locator,state,"
+                "prior_version_id,disposition "
+                "FROM brain_fileos_v2_later_row_decisions "
+                "WHERE reviewer_id=%s AND idempotency_key=%s",
+                (uuid4(), uuid4(), ctx.actor_id, decision_key),
+            )
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_row_decisions SET disposition='investigate' "
+                "WHERE reviewer_id=%s AND idempotency_key=%s",
+                (ctx.actor_id, correction_key),
+            )
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_row_decisions")
+    with TestClient(create_app(store, TokenRegistry([later_review_credential]))) as client:
+        absence_response = client.post(
+            later_rows_path,
+            json={"generation_id": second_generation.generation_id,
+                  "state": "absence_candidate"},
+            headers={"Authorization": "Bearer " + later_review_token},
+        )
+        assert absence_response.status_code == 200, absence_response.text
+        absence_body = absence_response.json()
+        assert absence_body["rows"] == [latest_absence.rows[0]]
+        assert absence_body["review_flags"]["possible_absence"] is True
+        assert absence_body["absence_authorized"] is False
+        assert absence_body["current_read_active"] is False
+        assert absence_body["rows"][0]["latest_decision"]["disposition"] == (
+            "dispute_classification"
+        )
+        api_decision = client.post(
+            later_decisions_path,
+            json={
+                **decision_payload,
+                "decisions": [{**decision_payload["decisions"][0],
+                               "idempotency_key": str(uuid4()),
+                               "disposition": "acknowledge_historical_observation"}],
+            },
+            headers={"Authorization": "Bearer " + later_review_token},
+        )
+        assert api_decision.status_code == 201, api_decision.text
+        assert api_decision.json()["recorded_count"] == 1
+        assert api_decision.json()["absence_authorized"] is False
+        api_history = client.post(
+            later_history_path,
+            json={"generation_id": second_generation.generation_id,
+                  "locator": "new.txt", "limit": 1},
+            headers={"Authorization": "Bearer " + later_review_token},
+        )
+        assert api_history.status_code == 200, api_history.text
+        assert api_history.json()["total_decisions"] == 3
+        assert api_history.json()["decisions"][0]["disposition"] == (
+            "acknowledge_historical_observation"
+        )
+        assert api_history.json()["absence_authorized"] is False
+        assert api_history.json()["source_effect_authorized"] is False
+        api_summary = client.post(
+            later_summary_path,
+            json={"generation_id": second_generation.generation_id},
+            headers={"Authorization": "Bearer " + later_review_token},
+        )
+        assert api_summary.status_code == 200, api_summary.text
+        assert api_summary.json()["row_decisions_complete"] is True
+        assert api_summary.json()["flag_acknowledgements_required"] == [
+            "possible_absence"
+        ]
+        assert api_summary.json()["decision_snapshot_sha256"] != (
+            disputed_summary["decision_snapshot_sha256"]
+        )
+        assert api_summary.json()["run_signoff_recorded"] is False
+        assert api_summary.json()["absence_authorized"] is False
+        assert api_summary.json()["current_read_active"] is False
+    assert second_generation.current_read_active is False
+    assert core.search_current_fileos(ctx, "later-only") == []
+    third_later_id = uuid4()
+    third_later = later_packets.record(
+        completion_worker, completion_id, third_later_id, tmp_path
+    )
+    later_add.unlink()
+    later_junk.unlink()
+    forged_closure_id = uuid4()
+    forged_closure = saved_closure.copy()
+    forged_closure["packet_sha256"] = third_later.packet_sha256
+    forged_closure["observed_at"] = third_later.observed_at.isoformat()
+    with pytest.raises(psycopg.errors.CheckViolation):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_coverage_closures(tenant_id,id,"
+                "actor_id,packet_id,completion_id,source_id,packet_sha256,"
+                "observed_at,closure_sha256,closure) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    ctx.tenant_id, uuid4(), ctx.actor_id, third_later_id,
+                    completion_id, source_id, third_later.packet_sha256,
+                    third_later.observed_at, _canonical_digest(forged_closure),
+                    Jsonb({**forged_closure, "absence_authorized": True}),
+                ),
+            )
+    with store.transaction(ctx) as conn:
+        conn.execute(
+            "INSERT INTO brain_fileos_v2_later_coverage_closures(tenant_id,id,"
+            "actor_id,packet_id,completion_id,source_id,packet_sha256,"
+            "observed_at,closure_sha256,closure) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                ctx.tenant_id, forged_closure_id, ctx.actor_id, third_later_id,
+                completion_id, source_id, third_later.packet_sha256,
+                third_later.observed_at, _canonical_digest(forged_closure),
+                Jsonb(forged_closure),
+            ),
+        )
+    with pytest.raises(Conflict, match="coverage integrity requires review"):
+        coverage_store.inspect(ctx, forged_closure_id)
+    with pytest.raises(psycopg.Error, match="invalid FileOS v2 later prepared row count"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_evidence_preparations(tenant_id,id,"
+                "actor_id,closure_id,packet_id,completion_id,source_id,"
+                "root_binding_sha256,packet_sha256,closure_sha256,policy_sha256,"
+                "matched_rows_sha256,packet_observed_at,prepared_observed_at,"
+                "hashed_count,preparation_sha256) "
+                "SELECT c.tenant_id,%s,%s,c.id,c.packet_id,p.completion_id,c.source_id,"
+                "p.root_binding_sha256,p.packet_sha256,c.closure_sha256,%s,%s,"
+                "c.observed_at,clock_timestamp(),"
+                "(c.closure->'current_counts'->>'hashed')::integer,%s "
+                "FROM brain_fileos_v2_later_coverage_closures c "
+                "JOIN brain_fileos_v2_later_observation_packets p "
+                "ON p.tenant_id=c.tenant_id AND p.id=c.packet_id WHERE c.id=%s",
+                (uuid4(), ctx.actor_id, "0" * 64, "0" * 64, "0" * 64, forged_closure_id),
+            )
+    (tmp_path / "new.txt").write_bytes(b"synthetic donor-only proof")
+    assert later_packets.record(
+        completion_worker, completion_id, first_later_id, tmp_path
+    ) == replace(first_later, recorded=False)
+    assert coverage_store.seal(
+        completion_worker, first_later_id, closure_id
+    ) == replace(closure, recorded=False)
+    assert later_evidence.prepare(
+        worker, closure_id, later_preparation_id, tmp_path
+    ) == replace(later_prepared, recorded=False)
+    assert later_publisher.publish(
+        later_publication_worker, later_preparation_id, later_attempt_id, tmp_path,
+        code_revision="test-v2-later-documents",
+    ) == replace(later_attempt, recorded=False)
+    with pytest.raises(Conflict, match="already ready"):
+        later_publisher.publish(
+            later_publication_worker, later_preparation_id, uuid4(), tmp_path,
+            code_revision="test-v2-later-documents",
+        )
+    with pytest.raises(Conflict, match="integrity requires review"):
+        later_publisher.publish(
+            later_publication_worker, later_preparation_id, later_attempt_id, tmp_path,
+            code_revision="different-revision",
+        )
+    with pytest.raises(Conflict, match="identity changed"):
+        later_evidence.prepare(worker, closure_id, uuid4(), tmp_path)
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_evidence.prepare(authorizing_human, closure_id, uuid4(), tmp_path)
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_evidence.prepare(Principal(ctx, "worker"), closure_id, uuid4(), tmp_path)
+    with pytest.raises(NotFound):
+        later_evidence.inspect(ctx, uuid4())
+    with pytest.raises(Conflict, match="identity changed"):
+        coverage_store.seal(completion_worker, first_later_id, uuid4())
+    with pytest.raises(AccessDenied, match="worker required"):
+        coverage_store.seal(authorizing_human, first_later_id, uuid4())
+    with pytest.raises(AccessDenied, match="scope denied"):
+        coverage_store.seal(Principal(ctx, "worker"), first_later_id, uuid4())
+    with pytest.raises(NotFound):
+        coverage_store.inspect(ctx, uuid4())
+    with pytest.raises(Conflict, match="identity changed"):
+        later_packets.record(completion_worker, uuid4(), first_later_id, tmp_path)
+    with store.transaction(ctx) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_v2_later_observation_packets "
+            "WHERE completion_id=%s", (completion_id,),
+        ).fetchone()["n"] == 3
+        assert conn.execute(
+            "SELECT count(*) AS n FROM brain_fileos_absence_events WHERE source_id=%s",
+            (source_id,),
+        ).fetchone()["n"] == 0
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_observation_packets "
+                "(tenant_id,id,actor_id,completion_id,source_id,root_binding_sha256,"
+                "baseline_completion_sha256,observed_at,packet_sha256,packet) "
+                "SELECT tenant_id,%s,actor_id,completion_id,source_id,root_binding_sha256,"
+                "baseline_completion_sha256,observed_at,packet_sha256,"
+                "packet || '{\"absence_authorized\":true}'::jsonb "
+                "FROM brain_fileos_v2_later_observation_packets WHERE id=%s",
+                (uuid4(), first_later_id),
+            )
+    forged_later_id = uuid4()
+    with store.transaction(ctx) as conn:
+        conn.execute(
+            "INSERT INTO brain_fileos_v2_later_observation_packets "
+            "(tenant_id,id,actor_id,completion_id,source_id,root_binding_sha256,"
+            "baseline_completion_sha256,observed_at,packet_sha256,packet) "
+            "SELECT tenant_id,%s,actor_id,completion_id,source_id,root_binding_sha256,"
+            "baseline_completion_sha256,observed_at,packet_sha256,"
+            "packet || '{\"preview\":{\"forged\":true}}'::jsonb "
+            "FROM brain_fileos_v2_later_observation_packets WHERE id=%s",
+            (forged_later_id, first_later_id),
+        )
+    with pytest.raises(Conflict, match="integrity requires review"):
+        later_packets.inspect(ctx, forged_later_id)
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_observation_packets CASCADE")
+    with pytest.raises(psycopg.Error, match="protected record"):
+        with psycopg.connect(admin) as conn:
+            conn.execute("TRUNCATE brain_fileos_v2_later_coverage_closures CASCADE")
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_coverage_closures SET closure_sha256=%s "
+                "WHERE id=%s", ("0" * 64, closure_id),
+            )
+    with pytest.raises(psycopg.Error):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "UPDATE brain_fileos_v2_later_observation_packets "
+                "SET packet_sha256=%s WHERE id=%s", ("0" * 64, first_later_id),
+            )
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_packets.record(authorizing_human, completion_id, uuid4(), tmp_path)
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_packets.record(Principal(ctx, "worker"), completion_id, uuid4(), tmp_path)
+    with pytest.raises(NotFound):
+        later_packets.inspect(ctx, uuid4())
+    with monkeypatch.context() as patched:
+        patched.setattr(completed_preview_module, "_completion_sha", lambda *_: "0" * 64)
+        with pytest.raises(Conflict, match="completion integrity requires review"):
+            later_previewer.preview(completion_worker, completion_id, tmp_path)
+    with pytest.raises(NotFound):
+        later_previewer.preview(completion_worker, uuid4(), tmp_path)
+    with pytest.raises(AccessDenied, match="worker required"):
+        later_previewer.preview(authorizing_human, completion_id, tmp_path)
+    with pytest.raises(AccessDenied, match="scope denied"):
+        later_previewer.preview(Principal(ctx, "worker"), completion_id, tmp_path)
     with pytest.raises(AccessDenied, match="scope denied"):
         completer.inspect(replace(ctx, scopes=frozenset()), source_id)
     assert completer.complete(
@@ -7538,6 +8592,12 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
     (wrong_root / "changed.txt").write_bytes(changed.read_bytes())
     (wrong_root / "new.txt").write_bytes((tmp_path / "new.txt").read_bytes())
     with pytest.raises(Conflict, match="source requires review"):
+        later_previewer.preview(completion_worker, completion_id, wrong_root)
+    with pytest.raises(Conflict, match="source requires review"):
+        later_packets.record(completion_worker, completion_id, uuid4(), wrong_root)
+    with pytest.raises(Conflict, match="identity changed"):
+        later_evidence.prepare(worker, closure_id, later_preparation_id, wrong_root)
+    with pytest.raises(Conflict, match="source requires review"):
         preparer.prepare(worker, stage_id, approval_id, verification_id, preparation_id, wrong_root)
     with pytest.raises(Conflict, match="source requires review"):
         completer.complete(
@@ -7550,7 +8610,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "SELECT count(*) AS n FROM brain_source_versions WHERE source_id=%s",
                 (source_id,),
             ).fetchone()["n"]
-            == 3
+            == 4
         )
         assert (
             conn.execute(
@@ -7559,7 +8619,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "AND v.id=e.source_version_id WHERE v.source_id=%s",
                 (source_id,),
             ).fetchone()["n"]
-            == 3
+            == 4
         )
         mapped = conn.execute(
             "SELECT candidate_version_id,prepared_version_id FROM "
@@ -7608,7 +8668,7 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                 "SELECT count(*) AS n FROM brain_change_events WHERE source_id=%s",
                 (source_id,),
             ).fetchone()["n"]
-            == 1
+            == 4
         )
     assert core.fileos_freshness(ctx, source_id)["latest_complete_run"]["run_id"] == run_id
     with psycopg.connect(admin) as conn:
@@ -7915,6 +8975,12 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                                 "synthetic changed proof")
     with pytest.raises(NotFound):
         search_reviewer.preview(
+            Principal(replace(human.context,
+                              source_ids=frozenset({"files_wrong_source"})), "human"),
+            source_id, generation.generation_id, "synthetic changed proof",
+        )
+    with pytest.raises(NotFound):
+        search_reviewer.preview(
             Principal(replace(human.context, tenant_id=other_tenant,
                               actor_id=other_actor), "human"),
             source_id, generation.generation_id, "synthetic changed proof",
@@ -8083,6 +9149,10 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
         )
     assert completer.inspect(ctx, source_id)["latest_v1_matches"] is False
     with pytest.raises(Conflict, match="basis requires review"):
+        later_previewer.preview(completion_worker, completion_id, tmp_path)
+    with pytest.raises(Conflict, match="basis requires review"):
+        later_packets.record(completion_worker, completion_id, uuid4(), tmp_path)
+    with pytest.raises(Conflict, match="basis requires review"):
         search_reviewer.preview(human, source_id, generation.generation_id,
                                 "synthetic changed proof")
     with TestClient(create_app(store, TokenRegistry([review_credential]))) as client:
@@ -8132,6 +9202,29 @@ def test_fileos_v2_preparation_adds_evidence_without_current_publication(
                     stage_id, source_id, run_id, plan["plan_sha256"],
                     prepared.preparation_sha256, Jsonb(plan["acknowledged_counts"]),
                 ),
+            )
+    with pytest.raises(Conflict, match="basis requires review"):
+        row_decisions.record(
+            authorizing_human, source_id,
+            FileOSV2LaterRowDecisionsRequest.model_validate({
+                **decision_payload,
+                "decisions": [{**decision_payload["decisions"][0],
+                               "idempotency_key": str(uuid4())}],
+            }),
+        )
+    with pytest.raises(psycopg.Error, match="stale FileOS later row decision basis"):
+        with store.transaction(ctx) as conn:
+            conn.execute(
+                "INSERT INTO brain_fileos_v2_later_row_decisions(tenant_id,"
+                "reviewer_id,idempotency_key,source_id,generation_id,run_id,"
+                "run_sha256,closure_id,closure_sha256,locator,state,"
+                "prior_version_id,disposition) "
+                "SELECT tenant_id,reviewer_id,%s,source_id,generation_id,run_id,"
+                "run_sha256,closure_id,closure_sha256,locator,state,"
+                "prior_version_id,disposition "
+                "FROM brain_fileos_v2_later_row_decisions "
+                "WHERE reviewer_id=%s AND idempotency_key=%s",
+                (uuid4(), ctx.actor_id, decision_key),
             )
 
 
@@ -8490,6 +9583,110 @@ def test_fileos_v2_preparation_three_thousand_hashed_rows(
             "SELECT count(*) AS n FROM brain_fileos_v2_document_attempt_items "
             "WHERE attempt_id=%s AND document_id IS NOT NULL", (attempt.attempt_id,),
         ).fetchone()["n"] == 3000
+    later_packet_id, later_closure_id = uuid4(), uuid4()
+    later_preparation_id, later_attempt_id, later_run_id = uuid4(), uuid4(), uuid4()
+    completion_worker = Principal(
+        replace(worker.context, scopes=worker.context.scopes | frozenset({
+            "brain.fileos.transition.complete",
+        })), "worker",
+    )
+    later_packet = FileOSV2LaterPacketStore(core).record(
+        completion_worker, completed.completion_id, later_packet_id, tmp_path
+    )
+    assert later_packet.classification_counts["unchanged"] == 3000
+    FileOSV2LaterCoverageStore(core).seal(
+        completion_worker, later_packet_id, later_closure_id
+    )
+    later_prepared = FileOSV2LaterEvidencePreparer(core).prepare(
+        worker, later_closure_id, later_preparation_id, tmp_path
+    )
+    assert later_prepared.hashed_count == 3000
+    later_attempt = FileOSV2LaterDocumentPublisher(core).publish(
+        publication_worker, later_preparation_id, later_attempt_id, tmp_path,
+        code_revision="test-v2-later-publication-stress",
+    )
+    assert later_attempt.ready is True
+    assert later_attempt.counts["extracted"] == 3000
+    later_run = FileOSV2LaterRunCompleter(core).complete(
+        completion_worker, later_attempt_id, later_run_id, tmp_path
+    )
+    assert later_run.classification_counts["unchanged"] == 3000
+    later_generation = FileOSV2LaterIndexBuilder(core).build(
+        Principal(replace(publication_worker.context,
+                          scopes=publication_worker.context.scopes
+                          | frozenset({"brain.fileos.transition.index"})), "worker"),
+        later_run_id, code_revision="test-v2-later-index-stress",
+    )
+    assert (later_generation.item_count, later_generation.document_count,
+            later_generation.chunk_count) == (3000, 3000, 3000)
+    assert later_generation.current_read_active is False
+    review_page = FileOSV2LaterSearchReviewer(core).review_rows(
+        human, source_id, later_generation.generation_id, offset=2900, limit=100,
+    )
+    assert review_page.total_rows == 3000
+    assert len(review_page.rows) == 100
+    assert review_page.rows[0]["locator"] == "proof-2900.txt"
+    assert review_page.rows[-1]["locator"] == "proof-2999.txt"
+    assert all(row["state"] == "unchanged" for row in review_page.rows)
+    assert review_page.next_offset is None
+    assert review_page.classification_counts["unchanged"] == 3000
+    assert review_page.absence_authorized is False
+    assert review_page.current_read_active is False
+    decision_items = [
+        {
+            "idempotency_key": str(uuid4()),
+            "locator": row["locator"],
+            "state": row["state"],
+            "prior_version_id": row.get("prior_version_id"),
+            "disposition": "investigate",
+        }
+        for row in review_page.rows
+    ]
+    hundred = FileOSV2LaterRowDecisionsRequest.model_validate({
+        "generation_id": later_generation.generation_id,
+        "decisions": decision_items,
+    })
+    row_decisions = FileOSV2LaterRowDecisions(core)
+    assert row_decisions.record(human, source_id, hundred)["recorded_count"] == 100
+    assert row_decisions.record(human, source_id, hundred)["replayed_count"] == 100
+    with pytest.raises(ValidationError):
+        FileOSV2LaterRowDecisionsRequest.model_validate({
+            "generation_id": later_generation.generation_id,
+            "decisions": [*decision_items, {
+                **decision_items[0], "idempotency_key": str(uuid4()),
+            }],
+        })
+    decided_page = FileOSV2LaterSearchReviewer(core).review_rows(
+        human, source_id, later_generation.generation_id, offset=2900, limit=100,
+    )
+    assert len(decided_page.rows) == 100
+    assert all(
+        row["latest_decision"]["disposition"] == "investigate"
+        for row in decided_page.rows
+    )
+    assert decided_page.absence_authorized is False
+    assert decided_page.current_read_active is False
+    compact_summary = row_decisions.summary(
+        human, source_id,
+        FileOSV2LaterReviewSummaryRequest.model_validate({
+            "generation_id": later_generation.generation_id,
+        }),
+    )
+    assert compact_summary["total_prior_rows"] == 3000
+    assert compact_summary["required_row_decisions"] == 0
+    assert compact_summary["row_decisions_complete"] is True
+    assert len(compact_summary["decision_snapshot_sha256"]) == 64
+    assert compact_summary["run_signoff_recorded"] is False
+    assert compact_summary["absence_authorized"] is False
+    assert compact_summary["current_read_active"] is False
+    absent_page = FileOSV2LaterSearchReviewer(core).review_rows(
+        human, source_id, later_generation.generation_id,
+        state="absence_candidate", limit=100,
+    )
+    assert absent_page.total_rows == 0
+    assert absent_page.rows == ()
+    assert absent_page.next_offset is None
+    assert core.search_current_fileos(ctx, "fictional prepared evidence") == []
 
 
 def test_fileos_v2_staging_three_thousand_hashless_rows(

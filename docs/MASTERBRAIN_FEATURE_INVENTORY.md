@@ -1,6 +1,22 @@
 # MasterBrain Feature Inventory
 
-Updated 2026-10-06 through merged ADR-163, ADR-164 and the ADR-120 follow-up.
+ADR-244 makes the Email XLSX bridge provenance revision server-owned and
+SQL-guarded; reviewer-supplied code-revision claims are rejected. This does
+not turn extracted spreadsheet text into certified financial facts.
+
+ADR-243 adds a private, account-pinned, tenant-bound worker command for one
+ADR-242-reviewed synthetic Email XLSX text derivative. It does not authorize
+live mail, a first-party review screen or cell-level spreadsheet citations.
+
+ADR-242 update: human XLSX inspection and exact digest/count review now use
+two owner-only API calls; a separately scoped private worker publishes the
+reviewed text. Migration 0085 enforces the split. Existing ADR-241 feature
+rows below describe the resulting document, not a single combined credential.
+
+Updated 2026-10-15 through ADR-212's opt-in reviewed measurement. The current
+owner-selected Librarian exchange layout is MasterBrain's ADR-197 Markdown
+export; ADR-200/201 can inventory it, but this is not an automatic or lossless
+round trip.
 For ADR-163, merged-main restore passed, while
 full CI and the final strict gate were blocked before execution by hosted
 runner acquisition ([#158](https://github.com/jbone3311/MasterBrain/issues/158)).
@@ -22,6 +38,11 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Email | Gmail and Microsoft Graph read libraries | Offline-tested, not durable live connectors | Email adapter |
 | Email | IMAP injected-session reader | Contract-tested, not durable live connector | Email adapter |
 | Email | Raw MIME, headers, bodies, attachment receipts, calendar parts | Implemented | DataCore evidence/extraction |
+| Email | XLSX attachment text through shared isolated DataCore extractor | ADR-232/239/240/241 now take one exact synthetic attachment from approval through isolated extraction to a reviewed normalized document; actual-image and hosted gates remain open | Email adapter + DataCore |
+| Email | Human approval for one XLSX extraction attempt | ADR-239 synthetic-only immutable exact-occurrence approval; ADR-240 seals a private result, and ADR-241 requires a separate human digest/count-bound publication | Email adapter + DataCore |
+| Email | Isolated XLSX extraction result | ADR-240 one complete, exact-approved synthetic worker result in an immutable private table; ADR-241 can publish its text to currentness-gated Brain search, not cell-level citations or live mail | Email adapter + DataCore |
+| Email | Reviewed XLSX document derivative | ADR-241 synthetic-only occurrence receipt, deterministic chunks and provenance; generic and Email-family search gated on current source and grants; no first-party review UI, table index, financial attestation or live acceptance | DataCore + Brain API |
+| Email | XLSX physical row-layout proof | ADR-238 binds one retained attachment occurrence's bounded rows to existing text; synthetic-only, no approved extraction, cell API or live mail | Email adapter + DataCore |
 | Email | Owner search/read/review/recovery screens | Implemented prototype | Email UI + Brain API |
 | Email + FileOS | Fictional PostgreSQL-backed cross-source browser trial | Merged and hosted-test verified; interactive Mac acceptance pending | Brain API + local trial |
 | Email | Explicit current-evidence/part bridges, previews and sealed batches | Implemented; hosted SQL/restore green | DataCore operator |
@@ -35,13 +56,15 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | FileOS | Held-out-test and cross-domain dedupe protections | Donor only; required invariant | DataCore policy + effect broker |
 | FileOS | Intake classification/routing/preflight | Donor only | FileOS adapter + DataCore |
 | FileOS | PDF/DOCX/XLSX text/metadata extraction and indexing | Isolated shared tranche; hosted container/SQL gate green | DataCore |
+| FileOS | Donor XLSX tables and row semantics | ADR-233 pins donor behavior; ADR-234 adds a separate nonpublishing bounded row/cell worker whose ordinary and 1,000-row values match the donor. Formula, row-cap, encrypted and `.xlsm` policy differences remain; no indexed tables or reviewed cell citations | DataCore + FileOS adapter |
+| FileOS | Current XLSX row replay | ADR-235 confined digest-only re-read, ADR-236 reviewed immutable receipt and ADR-237 private exact command; no searchable table or live-root acceptance | DataCore + FileOS adapter |
 | FileOS | ZIP/TAR recursive inventory | Isolated hash-only worker and append-only manifest ledger; exact member reads, text/document derivatives, current text/document search and private batch operators implemented | DataCore |
 | FileOS | Archive-contained image OCR | Isolated worker, exact member composition, retained-history derivative, private one-member command and distinct current-only OCR search implemented; no automatic fan-out | DataCore + Brain API |
 | FileOS | Authenticated idempotent snapshot publication | Explicit one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Explicit index generation and rollback | Private one-shot command; hosted SQL/restore green | DataCore operator |
 | FileOS | Private v2 generation in shared index tables | Merged historical builder; exact-head/merged-main gates green; v2 activation and current reads refused | DataCore |
 | FileOS | Human-only historical v2 search comparison | Brain API route merged via PR #116 with exact-head/merged-main gates green; compares one ready v2 generation with active v1 under three scopes, without activation or cutover | DataCore + Brain API |
-| FileOS | Entity/fact extraction and cross-domain reports | Donor only | KnowledgeCore |
+| FileOS | Entity/fact extraction and cross-domain reports | Donor remains the runtime authority; ADR-209/210 compare all five row shapes in an isolated, nonpublishing synthetic harness. Authorized runtime integration and financial truth remain unported | KnowledgeCore |
 
 ## DataCore
 
@@ -67,6 +90,9 @@ passed operational, security, and user acceptance gates. Planned rows are not cl
 | Entities | People, organizations, places, accounts, artifacts; aliases | Reviewed append/read implemented |
 | Relationships | Typed, directional, temporal, evidence-backed | Reviewed append/read implemented |
 | Facts/claims | Assertion, value, confidence, reviewer, valid/observed time | Reviewed append/read implemented |
+| Project fact report | Source-granted current-evidence reviewed statements with citations and uncertainty | ADR-211 provides a bounded predicate-grouped API/client page with divergent-preview and incomplete-comparison flags; ADR-212 adds optional typed measurements and ADR-214 controls names of new facts, but no numeric total, ownership, complete dossier or hosted acceptance |
+| Typed project measurements | Exact decimal and unit/currency without a fabricated balance | ADR-212 permits optional quote-backed measurement on new reviewed facts; ADR-213 requires complete quote tokens, and ADR-214 binds new fact names to type/unit definitions. Old facts remain untyped or unregistered; no ownership, FX, complete registry, aggregation or hosted acceptance exists |
+| Project-fact vocabulary discovery | Let API clients know which new fact names are accepted | ADR-215 lists bounded latest database revisions and deprecations under a scoped, read-only API/client; old facts may be unregistered, and no alias or vocabulary-edit workflow exists |
 | Statement extraction proposals | Separate grouped, exact-decimal rows with evidence and explicit unreviewed state | ADR-172 private ledger and ADR-173 human-only paged source-quote preview on synthetic data; no owner approval, verified holding, other recipe, live source or investment dossier |
 | Events/timeline | Event time distinct from ingestion time | Reviewed event records and ADR-160 bounded occurrence timeline implemented; merged-main CI/restore passed. No cross-kind timeline or source freshness claim |
 | Projects | State and evidence; future members/milestones/decisions | Reviewed base record and ADR-162 compact exact-project dossier with separately bounded, source-aware linked events and commitments, including undated records, merged with exact-head and merged-main gates green. This is not a state reducer or live-currentness claim. |

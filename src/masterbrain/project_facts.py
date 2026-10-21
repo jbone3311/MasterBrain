@@ -14,6 +14,11 @@ from uuid import UUID
 from email_brain.domain.models import TenantContext
 from email_brain.store import AccessDenied, Conflict, NotFound, Store
 from masterbrain.datacore.contracts import stable_id
+from masterbrain.fact_predicates import (
+    PROJECT_FACT_PREDICATES,
+    registry_status_with_latest,
+    require_registered_fact,
+)
 from masterbrain.knowledge import _visible_assertion_sql
 from masterbrain.knowledge_schema import ProjectFactPageRequest, ProjectFactWrite
 
@@ -76,7 +81,8 @@ def visible_project_fact_rows(
     rows = conn.execute(
         _FACT_COMMON + "SELECT f.id,f.project_id,f.predicate,f.value,f.value_type,"
         "f.assertion_status,f.derivation,f.confidence,f.evidence_ids,"
-        "f.quote_evidence_id," + ("f.source_quote," if include_quote else "")
+        "f.quote_evidence_id,f.amount_decimal,f.unit_code,f.currency_code,"
+        + ("f.source_quote," if include_quote else "")
         + "f.observed_at,f.valid_from,f.valid_to,f.recorded_at "
         + _FACT_FROM + "WHERE f.project_id=%s AND f.recorded_at<=allowed.cutoff "
         "AND p.recorded_at<=allowed.cutoff AND " + _FACT_VISIBLE
@@ -106,6 +112,42 @@ def compact_project_fact(row: Any) -> dict[str, Any]:
         "valid_from": row["valid_from"],
         "valid_to": row["valid_to"],
         "recorded_at": row["recorded_at"],
+    }
+
+
+def _report_from_fact_page(page: dict[str, Any], *, after: str | None) -> dict[str, Any]:
+    """Group one authorized page; never infer a total or complete truth state."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in page["results"]:
+        grouped.setdefault(row["predicate"], []).append(row)
+    groups = []
+    for predicate, facts in sorted(grouped.items()):
+        asserted = [row for row in facts if row["assertion_status"] == "asserted"]
+        previews = {row["value_preview"] for row in asserted}
+        groups.append({
+            "predicate": predicate,
+            "facts": facts,
+            "different_asserted_previews_on_page": len(previews) > 1,
+            "comparison_incomplete": (
+                page["next_cursor"] is not None
+                or after is not None
+                or any(row["value_truncated"] for row in asserted)
+            ),
+            "has_disputed_or_retracted_on_page": any(
+                row["assertion_status"] != "asserted" for row in facts
+            ),
+        })
+    return {
+        "project_id": page["project_id"],
+        "groups": groups,
+        "next_cursor": page["next_cursor"],
+        "recorded_cutoff_at": page["recorded_cutoff_at"],
+        "limit": page["limit"],
+        "visibility": page["visibility"],
+        "coverage": "current_authorized_source_stated_reviewed_facts_page_only",
+        "numeric_aggregation": "none_units_currency_ownership_unverified",
+        "interpretation": "reviewed_source_statements_not_investment_truth",
+        "untrusted_content": True,
     }
 
 
@@ -187,21 +229,136 @@ def _read_fact_page(
 class ProjectFacts:
     store: Store
 
+    def predicate_catalog(self, ctx: TenantContext) -> dict[str, Any]:
+        """Expose the database's latest public vocabulary, never source content."""
+        self.store.require(ctx, "knowledge.search")
+        with self.store.transaction(ctx) as conn:
+            rows = conn.execute(
+                "SELECT name,version,value_type,unit_code,description,status FROM ("
+                "SELECT DISTINCT ON (name) name,version,value_type,unit_code,"
+                "description,status FROM knowledge_project_fact_predicates "
+                "ORDER BY name,version DESC) latest ORDER BY name COLLATE \"C\" LIMIT 101"
+            ).fetchall()
+            if len(rows) > 100:
+                raise RuntimeError("project fact predicate catalog exceeds response bound")
+            active = {row["name"]: row for row in rows if row["status"] == "active"}
+            if set(active) != set(PROJECT_FACT_PREDICATES) or any(
+                active[name]["version"] != spec.version
+                or active[name]["value_type"] != spec.value_type
+                or active[name]["unit_code"] != spec.unit
+                or active[name]["description"] != spec.description
+                for name, spec in PROJECT_FACT_PREDICATES.items()
+            ):
+                raise RuntimeError("project fact predicate code/database mismatch")
+            self.store.audit(
+                conn, ctx, "knowledge.fact_predicate_catalog_read", "registry", "project_fact",
+            )
+        return {
+            "scope": "new_project_fact_writes_only",
+            "registry_authority": "database_latest_revision",
+            "historical_unregistered_rows_possible": True,
+            "alias_mapping": "none",
+            "entries": [
+                {"name": row["name"], "version": row["version"],
+                 "value_type": row["value_type"], "unit": row["unit_code"],
+                 "description": row["description"], "status": row["status"]}
+                for row in rows
+            ],
+            "untrusted_content": True,
+        }
+
     def publish(
         self, ctx: TenantContext, project_id: str, body: ProjectFactWrite,
         idempotency_key: UUID,
     ) -> dict[str, Any]:
+        self._validate_publish(ctx, project_id, body, idempotency_key)
+        with self.store.transaction(ctx) as conn:
+            return self._publish_in_transaction(
+                conn, ctx, project_id, body, idempotency_key,
+            )
+
+    def _validate_publish(
+        self, ctx: TenantContext, project_id: str, body: ProjectFactWrite,
+        idempotency_key: UUID,
+    ) -> None:
+        self._validate_fact_inputs(ctx, project_id, body)
+        if not isinstance(idempotency_key, UUID):
+            raise ValueError("UUID idempotency key required")
+
+    def _validate_fact_inputs(
+        self, ctx: TenantContext, project_id: str, body: ProjectFactWrite,
+    ) -> None:
         self.store.require(ctx, "knowledge.review")
         self.store.require(ctx, "brain.content.read")
         if ctx.identity is not None and ctx.identity.client_kind != "human":
             raise AccessDenied("human identity required")
-        if not isinstance(idempotency_key, UUID):
-            raise ValueError("UUID idempotency key required")
         if not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id):
             raise NotFound()
         if not isinstance(body, ProjectFactWrite) or body.project_id != project_id:
             raise ValueError("project fact subject mismatch")
+
+    def _validate_basis_in_transaction(
+        self, conn: Any, ctx: TenantContext, project_id: str,
+        body: ProjectFactWrite,
+    ) -> None:
+        """Recheck the exact project and full quoted basis at every fact gate."""
+        self._validate_fact_inputs(ctx, project_id, body)
         allowed = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        project = conn.execute(
+            "WITH allowed AS (SELECT %s::text[] AS sources) "
+            "SELECT 1 FROM knowledge_projects p CROSS JOIN allowed "
+            "WHERE p.id=%s AND " + _visible_assertion_sql("p", "'project'", "p.id"),
+            (allowed, project_id),
+        ).fetchone()
+        if project is None:
+            raise NotFound()
+        matched: set[str] = set()
+        for evidence_id in body.evidence_ids:
+            row = conn.execute(
+                "SELECT e.id, EXISTS (SELECT 1 FROM brain_normalized_documents d "
+                "WHERE d.tenant_id=e.tenant_id AND d.evidence_id=e.id "
+                "AND position(%s IN d.body)>0) AS quote_matches "
+                "FROM brain_evidence e "
+                "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+                "AND v.id=e.source_version_id "
+                "JOIN brain_source_items i ON i.tenant_id=v.tenant_id "
+                "AND i.id=v.item_id AND i.source_id=v.source_id "
+                "JOIN brain_sources source ON source.tenant_id=i.tenant_id "
+                "AND source.id=i.source_id "
+                "WHERE e.id=%s AND i.current_version_id=v.id "
+                "AND source.status='active' "
+                "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
+                "AND (%s::text[] IS NULL OR source.id=ANY(%s::text[])) "
+                "FOR SHARE OF i,source",
+                (body.source_quote, evidence_id, allowed, allowed),
+            ).fetchone()
+            if row is None:
+                raise NotFound()
+            if row["quote_matches"]:
+                matched.add(evidence_id)
+        if body.quote_evidence_id not in matched:
+            raise ValueError("project fact quote lacks an exact source span")
+        if body.supersedes_id is not None:
+            prior_fact = conn.execute(
+                "WITH allowed AS (SELECT %s::text[] AS sources) "
+                "SELECT f.project_id,f.predicate,f.value_type,f.unit_code "
+                "FROM knowledge_project_facts f CROSS JOIN allowed "
+                "WHERE f.id=%s AND " + _fact_evidence_visible_sql("f"),
+                (allowed, body.supersedes_id),
+            ).fetchone()
+            if (prior_fact is None or prior_fact["project_id"] != project_id
+                or prior_fact["predicate"] != body.predicate
+                or prior_fact["value_type"] != body.value_type
+                or prior_fact["unit_code"]
+                != (body.measurement.unit if body.measurement else None)):
+                raise NotFound()
+
+    def _publish_in_transaction(
+        self, conn: Any, ctx: TenantContext, project_id: str,
+        body: ProjectFactWrite, idempotency_key: UUID,
+    ) -> dict[str, Any]:
+        """Publish under the caller's transaction for atomic human batch review."""
+        self._validate_publish(ctx, project_id, body, idempotency_key)
         payload = body.model_dump(mode="json")
         request_sha = hashlib.sha256(
             json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
@@ -209,83 +366,62 @@ class ProjectFacts:
         fact_id = stable_id(
             "pfact", str(ctx.tenant_id), str(ctx.actor_id), str(idempotency_key)
         )
-        with self.store.transaction(ctx) as conn:
-            conn.execute(
-                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
-                (f"{ctx.tenant_id}:pfact:{ctx.actor_id}:{idempotency_key}",),
+        conn.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+            (f"{ctx.tenant_id}:pfact:{ctx.actor_id}:{idempotency_key}",),
+        )
+        self._validate_basis_in_transaction(conn, ctx, project_id, body)
+        prior = conn.execute(
+            "SELECT request_sha256,fact_id FROM knowledge_project_fact_receipts "
+            "WHERE actor_id=%s AND idempotency_key=%s",
+            (ctx.actor_id, idempotency_key),
+        ).fetchone()
+        if prior is not None:
+            if prior["request_sha256"] != request_sha:
+                raise Conflict("project fact idempotency key reused")
+            return {"object_id": prior["fact_id"], "changed": False, "reviewed": True}
+        # ADR-265: the registry gates new fact chains. A correction or
+        # retraction keeps its prior's exact shape, already checked under the
+        # same lock, so a deprecated or unregistered predicate stays correctable.
+        if body.supersedes_id is None:
+            expected_spec = require_registered_fact(
+                body.predicate, body.value_type,
+                body.measurement.unit if body.measurement else None,
             )
-            project = conn.execute(
-                "WITH allowed AS (SELECT %s::text[] AS sources) "
-                "SELECT 1 FROM knowledge_projects p CROSS JOIN allowed "
-                "WHERE p.id=%s AND " + _visible_assertion_sql("p", "'project'", "p.id"),
-                (allowed, project_id),
+            latest_spec = conn.execute(
+                "SELECT version,status,value_type,unit_code "
+                "FROM knowledge_project_fact_predicates WHERE name=%s "
+                "ORDER BY version DESC LIMIT 1", (body.predicate,),
             ).fetchone()
-            if project is None:
-                raise NotFound()
-            matched: set[str] = set()
-            for evidence_id in body.evidence_ids:
-                row = conn.execute(
-                    "SELECT e.id, EXISTS (SELECT 1 FROM brain_normalized_documents d "
-                    "WHERE d.tenant_id=e.tenant_id AND d.evidence_id=e.id "
-                    "AND position(%s IN d.body)>0) AS quote_matches "
-                    "FROM brain_evidence e "
-                    "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
-                    "AND v.id=e.source_version_id "
-                    "JOIN brain_source_items i ON i.tenant_id=v.tenant_id "
-                    "AND i.id=v.item_id AND i.source_id=v.source_id "
-                    "JOIN brain_sources source ON source.tenant_id=i.tenant_id "
-                    "AND source.id=i.source_id "
-                    "WHERE e.id=%s AND i.current_version_id=v.id "
-                    "AND source.status='active' "
-                    "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
-                    "AND (%s::text[] IS NULL OR source.id=ANY(%s::text[]))",
-                    (body.source_quote, evidence_id, allowed, allowed),
-                ).fetchone()
-                if row is None:
-                    raise NotFound()
-                if row["quote_matches"]:
-                    matched.add(evidence_id)
-            if body.quote_evidence_id not in matched:
-                raise ValueError("project fact quote lacks an exact source span")
-            if body.supersedes_id is not None:
-                prior_fact = conn.execute(
-                    "WITH allowed AS (SELECT %s::text[] AS sources) "
-                    "SELECT f.project_id,f.predicate,f.value_type "
-                    "FROM knowledge_project_facts f CROSS JOIN allowed "
-                    "WHERE f.id=%s AND " + _fact_evidence_visible_sql("f"),
-                    (allowed, body.supersedes_id),
-                ).fetchone()
-                if (prior_fact is None or prior_fact["project_id"] != project_id
-                    or prior_fact["predicate"] != body.predicate
-                    or prior_fact["value_type"] != body.value_type):
-                    raise NotFound()
-            prior = conn.execute(
-                "SELECT request_sha256,fact_id FROM knowledge_project_fact_receipts "
-                "WHERE actor_id=%s AND idempotency_key=%s",
-                (ctx.actor_id, idempotency_key),
-            ).fetchone()
-            if prior is not None:
-                if prior["request_sha256"] != request_sha:
-                    raise Conflict("project fact idempotency key reused")
-                return {"object_id": prior["fact_id"], "changed": False, "reviewed": True}
-            conn.execute(
-                "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
-                "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
-                "quote_evidence_id,source_quote,observed_at,valid_from,valid_to,"
-                "supersedes_id,reviewer_id) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (ctx.tenant_id, fact_id, project_id, body.predicate, body.value,
-                 body.value_type, body.assertion_status, body.confidence,
-                 body.derivation, body.evidence_ids, body.quote_evidence_id,
-                 body.source_quote, body.observed_at, body.valid_from, body.valid_to,
-                 body.supersedes_id, ctx.actor_id),
+            status = registry_status_with_latest(
+                body.predicate, body.value_type,
+                body.measurement.unit if body.measurement else None, latest_spec,
             )
-            conn.execute(
-                "INSERT INTO knowledge_project_fact_receipts(tenant_id,actor_id,"
-                "idempotency_key,request_sha256,fact_id) VALUES (%s,%s,%s,%s,%s)",
-                (ctx.tenant_id, ctx.actor_id, idempotency_key, request_sha, fact_id),
-            )
-            self.store.audit(conn, ctx, "knowledge.project_fact_published", "pfact", fact_id)
+            if status != "active" or latest_spec["version"] != expected_spec.version:
+                raise ValueError(
+                    "project fact predicate registry review required: " + status
+                )
+        conn.execute(
+            "INSERT INTO knowledge_project_facts(tenant_id,id,project_id,predicate,"
+            "value,value_type,assertion_status,confidence,derivation,evidence_ids,"
+            "quote_evidence_id,source_quote,observed_at,valid_from,valid_to,"
+            "supersedes_id,reviewer_id,amount_decimal,unit_code,currency_code) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (ctx.tenant_id, fact_id, project_id, body.predicate, body.value,
+             body.value_type, body.assertion_status, body.confidence,
+             body.derivation, body.evidence_ids, body.quote_evidence_id,
+             body.source_quote, body.observed_at, body.valid_from, body.valid_to,
+             body.supersedes_id, ctx.actor_id,
+             body.measurement.amount if body.measurement else None,
+             body.measurement.unit if body.measurement else None,
+             body.measurement.currency if body.measurement else None),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_project_fact_receipts(tenant_id,actor_id,"
+            "idempotency_key,request_sha256,fact_id) VALUES (%s,%s,%s,%s,%s)",
+            (ctx.tenant_id, ctx.actor_id, idempotency_key, request_sha, fact_id),
+        )
+        self.store.audit(conn, ctx, "knowledge.project_fact_published", "pfact", fact_id)
         return {"object_id": fact_id, "changed": True, "reviewed": True}
 
     def page(
@@ -310,6 +446,39 @@ class ProjectFacts:
             "coverage": "current_authorized_source_stated_reviewed_facts",
             "untrusted_content": True,
         }
+
+    def report(
+        self, ctx: TenantContext, project_id: str, request: ProjectFactPageRequest,
+    ) -> dict[str, Any]:
+        """Group one current-authorized fact page without amount aggregation."""
+        self.store.require(ctx, "knowledge.search")
+        if (not isinstance(project_id, str) or not _PROJECT_ID.fullmatch(project_id)
+                or not isinstance(request, ProjectFactPageRequest)):
+            raise NotFound()
+        allowed = sorted(ctx.source_ids) if ctx.source_ids is not None else None
+        with self.store.transaction(ctx) as conn:
+            rows, cutoff = _read_fact_page(conn, allowed, project_id, request)
+            self.store.audit(conn, ctx, "knowledge.project_fact_report_read", "project")
+        visible = rows[:request.limit]
+        facts = []
+        for row in visible:
+            measurement = None
+            if row["amount_decimal"] is not None:
+                measurement = {
+                    "amount": row["value"], "unit": row["unit_code"],
+                    "currency": row["currency_code"],
+                    "meaning": "reviewed_source_stated_not_balance",
+                }
+            facts.append({**compact_project_fact(row), "measurement": measurement})
+        page = {
+            "project_id": project_id,
+            "results": facts,
+            "next_cursor": visible[-1]["id"] if len(rows) > request.limit and visible else None,
+            "recorded_cutoff_at": cutoff,
+            "limit": request.limit,
+            "visibility": request.visibility,
+        }
+        return _report_from_fact_page(page, after=request.after)
 
     def export_markdown(
         self, ctx: TenantContext, project_id: str, request: ProjectFactPageRequest,

@@ -1,5 +1,6 @@
 """Explicit real restricted-image PDF tests; not ordinary test discovery."""
 
+import hashlib
 import json
 import os
 import secrets
@@ -8,21 +9,34 @@ import sys
 from dataclasses import replace
 from uuid import uuid4
 
+import psycopg
 import pytest
 import test_postgres as pg
 from pdf_samples import mail_packet, variant
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 from test_document_controller import document_files
 from test_processing_controller import private_write
+from test_recovery_jobs import worker_principal
 
 from email_brain.attachments import receive_attachments
 from email_brain.auth import Principal
 from email_brain.blobs import EncryptedBlobStore
 from email_brain.document_jobs import POLICY, DocumentJobs
+from email_brain.migrate import grant_tenant_runtime
 from email_brain.pdf_contract import PdfUnavailable
 from email_brain.pdf_processor import DockerPdfProcessor
 from email_brain.schemas import SearchRequest
 from email_brain.store import Store
 from email_brain.synthetic_mailbox import project_events
+from masterbrain.datacore.email_pdf_derivation import (
+    EmailAttachmentPdfUnavailable,
+    prove_email_attachment_pdf_derivation,
+)
+from masterbrain.datacore.persistence import EMAIL_DOCUMENT_NORMALIZER_PREFIX, DataCoreStore
+from masterbrain.knowledge_schema import SourceTierReviewWrite
+from masterbrain.source_tier_email_pdf_replay import SourceTierEmailPdfReplayStore
+from masterbrain.source_tier_reviews import SourceTierReviews
 
 database, tenant = pg.database, pg.tenant
 
@@ -68,6 +82,34 @@ def test_actual_child_rejects_mismatched_part_before_pdf_read(processor):
     raw, source, _ = mail_packet(variant("text"))
     with pytest.raises(PdfUnavailable, match="^pdf_processing_unavailable$"):
         processor.extract(raw, part_path=source.part_path, part_sha256="a" * 64)
+
+
+def test_actual_image_proves_only_complete_retained_attachment_text(processor):
+    raw, source, _ = mail_packet(variant("text"))
+    extracted = processor.extract(
+        raw, part_path=source.part_path, part_sha256=source.part_sha256,
+    )
+    assert extracted.status == "extracted"
+    text = "\n".join(page.text for page in extracted.pages)
+    normalizer = (
+        f"{EMAIL_DOCUMENT_NORMALIZER_PREFIX}:{processor.processor_version}:{POLICY}"
+    )
+    proof = prove_email_attachment_pdf_derivation(
+        raw, raw_sha256=source.raw_sha256, raw_size_bytes=len(raw),
+        part_path=source.part_path, part_sha256=source.part_sha256,
+        text=text, text_sha256=hashlib.sha256(text.encode()).hexdigest(),
+        normalizer=normalizer, processor=processor,
+    )
+    assert proof.page_count == 1 and proof.raw_sha256 == source.raw_sha256
+    partial_raw, partial_source, _ = mail_packet(variant("partial"))
+    with pytest.raises(EmailAttachmentPdfUnavailable):
+        prove_email_attachment_pdf_derivation(
+            partial_raw, raw_sha256=partial_source.raw_sha256,
+            raw_size_bytes=len(partial_raw), part_path=partial_source.part_path,
+            part_sha256=partial_source.part_sha256, text=text,
+            text_sha256=hashlib.sha256(text.encode()).hexdigest(),
+            normalizer=normalizer, processor=processor,
+        )
 
 
 def test_existing_known_answer_mailbox_pdf_in_real_container(processor):
@@ -124,6 +166,107 @@ def test_actual_approved_document_to_sql_search_and_evidence(database, tenant, p
             ).fetchone()["opaque_cursor"]
             == "pdf-ready"
         )
+
+
+@pytest.mark.postgres
+def test_actual_image_seals_reviewed_email_pdf_receipt_without_source_effects(
+    database, tenant, processor,
+):
+    """Exercise ADR-229 with the actual pinned image rather than a fake pipe."""
+    store, admin = database
+    ctx, account = tenant
+    raw, _, _ = mail_packet(variant("text"))
+    store.ingest_page(ctx, account, None, "reviewed-pdf-ready", [replace(pg.item(), raw=raw)])
+    with store.transaction(ctx) as conn:
+        attachment = conn.execute(
+            "SELECT id,evidence_id FROM attachment_receipts WHERE account_id=%s",
+            (account,),
+        ).fetchone()
+    assert attachment is not None
+    jobs = DocumentJobs(store, processor.processor_version)
+    jobs.enqueue(
+        Principal(ctx, "human"), account, attachment["id"],
+        processor.processor_version, POLICY, uuid4(),
+    )
+    job_worker = worker_principal(admin, ctx)
+    job_worker = replace(
+        job_worker,
+        context=replace(
+            job_worker.context, scopes=frozenset({"email.document.process"}),
+        ),
+    )
+    completed = jobs.run_once(job_worker, account, processor)
+    assert completed is not None and completed["status"] == "completed"
+    assert completed["extraction_id"] is not None
+    core = DataCoreStore(store)
+    bridge_ctx = pg.datacore_context(ctx)
+    core.bridge_current_email_version(
+        bridge_ctx, attachment["evidence_id"], uuid4(),
+        code_revision="actual-email-pdf-tier-v1",
+    )
+    core.bridge_email_attachment(
+        bridge_ctx, attachment["id"], uuid4(),
+        code_revision="actual-email-pdf-tier-v1",
+    )
+    derived = core.bridge_email_document_extraction(
+        bridge_ctx, completed["extraction_id"], uuid4(),
+        code_revision="actual-email-pdf-tier-v1",
+    )
+    reviewer = replace(
+        ctx, scopes=ctx.scopes | frozenset({"knowledge.review", "brain.content.read"}),
+    )
+    with store.transaction(reviewer) as conn:
+        source = conn.execute(
+            "SELECT d.evidence_id,d.body_sha256,e.source_version_id,e.sha256 "
+            "FROM brain_normalized_documents d JOIN brain_evidence e "
+            "ON e.tenant_id=d.tenant_id AND e.id=d.evidence_id WHERE d.id=%s",
+            (derived.document_id,),
+        ).fetchone()
+    assert source is not None
+    review_id = SourceTierReviews(store).publish(
+        reviewer, source["evidence_id"], SourceTierReviewWrite(
+            evidence_id=source["evidence_id"], document_id=derived.document_id,
+            document_sha256=source["body_sha256"],
+            source_version_id=source["source_version_id"],
+            source_sha256=source["sha256"], source_tier="T3",
+            authority_kind="internal_record", source_quote="pdfonlyproof",
+        ), uuid4(),
+    )["object_id"]
+    worker = replace(
+        ctx, scopes=frozenset({"brain.document.publish", "email.evidence.read"}),
+    )
+    role = "test_actual_pdf_tier_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    with psycopg.connect(admin) as conn:
+        conn.execute(
+            sql.SQL("CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}").format(
+                sql.Identifier(role), sql.Literal(password),
+            ),
+        )
+        grant_tenant_runtime(conn, role, ctx.tenant_id)
+    bound_dsn = make_conninfo(admin, user=role, password=password)
+    bound_store = Store(bound_dsn, tenant_dsns={ctx.tenant_id: bound_dsn})
+    receipt = SourceTierEmailPdfReplayStore(bound_store, processor).record_current_pdf_replay(
+        worker, review_id, expected_account_id=account,
+    )
+    assert receipt == {
+        "review_id": review_id, "worker_observed_pdf_text_replay": True,
+        "source_effects": False, "financial_claim_approved": False,
+    }
+    with bound_store.transaction(worker) as conn:
+        saved = conn.execute(
+            "SELECT raw_sha256,normalizer,page_count FROM "
+            "knowledge_source_tier_email_pdf_replays WHERE review_id=%s",
+            (review_id,),
+        ).fetchone()
+        assert conn.execute("SELECT count(*) AS n FROM knowledge_claims").fetchone()["n"] == 0
+    assert saved is not None
+    assert saved["raw_sha256"] == hashlib.sha256(raw).hexdigest()
+    assert saved["normalizer"] == (
+        f"{EMAIL_DOCUMENT_NORMALIZER_PREFIX}:{processor.processor_version}:{POLICY}"
+    )
+    assert saved["page_count"] == 1
+    assert store.load_raw(ctx, account, saved["raw_sha256"]) == raw
 
 
 @pytest.mark.postgres

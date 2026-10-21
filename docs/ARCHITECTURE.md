@@ -3,6 +3,16 @@
 Updated 2026-09-21. This document defines the target boundaries and migration
 constraints. [Implementation status](IMPLEMENTATION_STATUS.md) separates working code
 from designs. Existing detailed Email documents describe the Email capability.
+EmailBrain and the future FOS Brain are optional capabilities inside this one
+MasterBrain codebase, sharing DataCore, KnowledgeCore, the Brain API and its
+identity model. Naming FOS Brain does not fork, rename or retire the separate
+FOS-Master donor; current donor changes require a refreshed inventory and
+parity corpus before adoption.
+ADR-208's disposable combined demo exercises these boundaries without live
+sources: Email ingestion is bridged into DataCore, one generated FileOS text
+file is independently snapshotted/published, and KnowledgeCore cites both in
+a synthetic project served by the Brain API. It is an integration fixture,
+not a substitute for donor parity, hosted identity or source cutover.
 
 ## Context and components
 
@@ -29,6 +39,39 @@ Gmail / Graph / IMAP / JMAP             Filesystem / Dropbox / OneDrive
 ```
 
 ## Boundary rules
+
+ADR-262 computes a read-only decision snapshot digest and compact unresolved
+counts over historical FileOS rows. This is a prerequisite for a separate
+run-level review ledger; it is not a current-source projection or authority
+transfer. Later corrections change the digest, so future signoff must bind to
+and recheck one exact snapshot.
+
+ADR-261 stores human historical classification decisions as append-only
+DataCore review metadata, separate from FileOS run, current-index and
+absence authority. The Brain API can show latest decision and history; it
+cannot turn one into a file operation or current-state assertion. Run-level
+signoff and any live/rollback transition require separate gates.
+
+ADR-260 pages exact immutable later-run prior-row classifications through a
+human-only Brain API view. It revalidates the closure and ADR-259 basis;
+classification of a possible-missing file is never absence authority. Owner
+adjudication, activation, rollback and donor cutover remain separate.
+
+ADR-259 adds a human-only, source-bound Brain API comparison of a ready
+historical later generation and active v1. It rechecks the completed run,
+root/v1 basis and active source; result layers are not a current-read or
+absence decision. The DataCore activation guard remains unchanged.
+
+ADR-258 extends the shared DataCore generation tables with an exact
+historical later-run basis. It indexes only source-bound, processed hashed
+rows and verified base chunks. The database denies activation; neither
+Brain API current search nor FileOS absence logic consumes this generation.
+
+ADR-257's later FileOS v2 run completion is a historical processing receipt:
+it binds a ready row-outcome ledger to a fresh, exact donor-policy observation
+and retains possible-absence/mass-loss review flags. No current-search,
+absence-event or source-effect path consumes it. Generation readiness,
+activation and rollback remain separate decisions.
 
 Source adapters discover changes, fetch source bytes/metadata, translate source
 identities, and—later—execute separately approved source effects. They do not own
@@ -111,6 +154,34 @@ its first implementation must remain private and SQL-fenced against activation.
 ADR-147 exposes only the existing human-scoped historical search comparison of
 one ready v2 generation with active v1 through a bounded Brain API route. That
 read path neither activates v2 nor changes FileOS current-state authority.
+ADR-251 adds an offline consecutive-observation policy preview for later v2
+runs. It distinguishes possible absence from hashless, deferred, excluded and
+error-covered membership, but is not bound to a completed baseline or allowed
+to publish absence/current state. A durable later-run transaction and rollback
+policy must be designed before any v2 read switch.
+ADR-252 binds that pure policy to the stored completed baseline: a private
+worker revalidates its stage, source lock, latest v1 basis and completion
+digest, scans the explicitly bound root again, and returns only an ephemeral
+count/digest summary. It does not persist the later observation or activate
+current v2 reads.
+ADR-253 adds a separate immutable, tenant-fenced private review packet for
+that later observation. Its SQL guard binds the exact completed baseline,
+current v1 basis, source and root at insert; private reads revalidate packet
+digest and classification. Replays are historical. This packet is not a
+completed later run and has no absence or current-read authority.
+ADR-254 derives and seals an exact private coverage closure from one validated
+packet: every current donor row and prior-row classification is counted and
+bound to the packet digest. It is a historical processing input, not a
+terminal processing ledger, completed later run or v2 activation.
+ADR-255 uses a fresh source-locked no-follow rescan to match that closure
+exactly, then reuses the baseline's policy-scoped source-version/evidence
+primitive for each hashed row. The private mapping is immutable; no current
+pointer, document, later-run completion or absence event changes.
+ADR-256 adds a separate private document attempt over that later evidence:
+recheck source before and after confined extraction, publish historical
+DataCore derivatives for successful hashes, and seal one outcome per accepted
+current row. It does not advance run freshness, authorize absence or activate
+a v2 current index. Scan-error observations still stop before preparation.
 Each new snapshot also accounts for excluded file and directory locators. Before
 absence inference, completion refuses any missing prior item covered by an
 exclusion or allowed no-follow symlink skip. Genuine removals remain eligible for
@@ -170,6 +241,11 @@ complete evidence set and verifies one exact quote in current normalized text;
 the dossier checks every direct source grant before the independent fact
 limit. A source-stated preview is still not a certified current fact or a
 Markdown citation. Inference requires a later typed basis-link design.
+Direct and selected-Markdown reviewed fact/artifact publication hold shared
+source-item and source-status row locks from their current-evidence check
+through commit. A concurrent current-pointer or active-status update cannot
+commit in that interval. This does not freeze external providers or every
+Email exclusion-policy transition.
 ADR-158's optional `unsuperseded` query is a source-grant-aware leaf of
 the reviewed supersession/correction graph. ADR-159 composes that projection
 into the grouped Brain current-search and Ask Knowledge layer while keeping

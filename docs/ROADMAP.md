@@ -1,11 +1,432 @@
 # MasterBrain Roadmap
 
+The current FOS-Master remote is 11 commits ahead of the `218d5cae` parity
+pin. [The reviewed donor delta](FOS_DONOR_DELTA_2026_10.md) identifies
+latest-working-file search, audited archive moves and a mass-phantom repoint
+guard as the relevant changes; it is **not** a new indexing engine.
+[ADR-263](adr/263_current_working_file_search_visibility_proposal.md)
+proposes a single Email/FOS Brain search experience with optional, explicit
+superseded-file visibility. This is not implemented yet. Preserve donor
+operation and the existing current-search semantics until source-bound policy,
+all-derived-layer filtering and synthetic parity pass.
+
+Product boundary: keep one MasterBrain repository/API/UI with optional internal
+EmailBrain and FOS Brain capabilities. FOS Brain is the planned FileOS-facing
+name inside MasterBrain, not a second permanent repository. Refresh the pinned
+FOS-Master donor inventory as its working code advances, then import only
+parity-proven behavior; do not rename or retire the donor on a roadmap date.
+
+ADR-262 now makes the exact latest historical row-decision snapshot visible
+as a compact digest with unresolved counts and explicit run flags. The next
+FileOS tranche is a separately authorized, immutable **historical run review**
+bound to that digest and explicit flag acknowledgements. It must refuse
+missing, held or disputed required rows and invalidate on any later
+correction. Even then, live shadow, rollback, hosted CI and owner acceptance
+precede any v2 current-read or donor cutover.
+
+[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) now has the
+first durable tranche: append-only, exact-row human historical decisions,
+latest-decision inspection and paged history. The 100-row service boundary
+and a two-cluster populated synthetic restore now pass locally. Next stress
+mixed coverage and mass-loss cases, settle owner wording, then design
+separately gated run-level signoff, fresh live shadow and bounded
+rollback. No row decision approves absence, current-read activation, file
+effects or FOS-Master cutover. Hosted exact-head checks remain required.
+
+ADR-260 makes the underlying historical FileOS prior-row classifications
+inspectable in bounded, source-bound pages, including possible-missing and
+coverage-ambiguous rows. ADR-261 adds exact historical row decisions; the
+next gate is a separate run-level owner signoff contract bound to one exact
+decision snapshot and fresh observation, followed
+by rollback-ready activation policy, owner-approved live shadow, hosted
+exact-head checks and independent review. Inspection alone changes no
+current read, absence event or donor runtime.
+
+ADR-259 now lets a human compare a named historical later FileOS generation
+with active v1 in separate bounded result layers. The next gate is a formal
+possible-absence/mass-loss review and rollback-ready activation policy;
+then owner-approved live shadow, hosted exact-head checks and independent
+review before any current v2 FileOS read or donor cutover. Historical search
+results and non-hits are not current or deletion authority.
+
+ADR-258 assembles the later-run hashes into a ready, historical generation
+on the shared DataCore index substrate, and ADR-259 adds its human-only
+comparison with active v1. The next product-facing step is explicit
+possible-absence/mass-loss review, rollback-ready activation
+policy, owner-approved live shadow and hosted gates. No generation is made
+current and FOS-Master remains the operational donor.
+
+ADR-257 now seals a completed **historical** later FileOS v2 run from one
+ready row-outcome attempt and a fresh matching source observation. Possible
+absence, mass-loss and ambiguous prior coverage remain explicit review flags;
+none authorizes current reads or deletion. Next assemble an exact shared
+index generation over the completed run, prove rollback semantics, then run
+owner-approved live shadow and hosted gates before any bounded activation.
+FOS-Master stays operational and unchanged.
+
+ADR-256 now publishes historical normalized documents and seals explicit
+outcomes for every current row of an accepted later FileOS v2 observation.
+Next design the completed later-run authority separately: blocked/error
+coverage, mass-loss and absence review, generation readiness and rollback.
+Then run owner-approved live shadow before any v2 current read or FOS-Master
+cutover. Historical document success alone is not source freshness.
+
+ADR-255 now prepares source-bound DataCore evidence for every exact later
+FileOS v2 hashed row after a matching fresh scan. Next publish historical
+normalized derivatives under exact prepared-version checks and seal terminal
+outcomes for **all** hashed/deferred/excluded/error rows. Only then design
+completed later-run freshness, rollback and owner-reviewed live shadow;
+current visibility, absence authority and donor cutover remain barred.
+
+ADR-254 now gives the later FileOS v2 observation an exact, sealed private
+row-coverage input. Next process current hashed versions against that exact
+closure, account for every hashed/deferred/excluded/error row with terminal
+outcomes, and define replay/rollback. Then perform reviewed live shadow before
+any current visibility, absence authority or donor cutover. Neither the
+packet nor the coverage closure is a completed later run.
+
+ADR-253 now persists a private, immutable later-observation packet for
+repeatable review of the FileOS v2 baseline comparison. The next tranche is
+an exact per-row later-run ledger: process/hash/defer/error coverage, terminal
+outcomes, safe replay and rollback, followed by owner-reviewed live shadow.
+Only after those gates may v2 current visibility and eventual FOS-Master
+cutover be considered. This packet alone cannot authorize absence or current.
+
+ADR-252 now binds the later FileOS v2 preview to an actual completed baseline
+and fresh root scan in a private worker transaction. Next build and verify an
+immutable, tenant-fenced later-run ledger with exact hashed/deferred/excluded/
+error coverage, then specify v2 current visibility, rollback and owner-approved
+live shadow. The current preview is ephemeral and cannot publish absence.
+
+ADR-251 supplies a tested, nonpublishing FileOS v2 later-observation
+classification: hashless, deferred, excluded and error-covered paths do not
+silently become absence. Next bind this policy to one actual completed v2
+baseline and fresh source scan under a tenant/source lock (now ADR-252), then
+design the immutable later-run ledger, current visibility and rollback separately.
+No v2 activation, live-root authorization or FOS-Master cutover follows.
+
+ADR-250 now proves one complete fictional Email XLSX round trip using real
+owner/API and separate tenant-bound worker-controller calls with a simulated
+restricted processor, then hides the derivative when its source is paused.
+Next run that path with the actual pinned image and browser, add broader
+failure/stress cases and an owner-friendly result queue, then meet hosted
+exact-head CI, restore, strict-runtime and independent-review gates before
+any narrow live-source pilot. FOS-Master remains unchanged.
+
+ADR-249 now makes exact-approved synthetic Email XLSX extraction callable
+through a separate account-pinned, tenant-bound private worker command. Its
+command-to-PostgreSQL simulation passes; the next dependent gate is the
+complete fictional first-party selection → approval → actual pinned-image
+extraction → human result review → separate publication → cited retrieval
+drill, followed by actual-browser, hosted restore, strict-runtime and
+independent review. The full fictional local PostgreSQL suite passed at the
+ADR-249 code state; actual-image and hosted gates remain. No live Fastmail or
+FileOS cutover.
+
+ADR-248 now lets the first-party Email screen select an eligible synthetic
+XLSX from inspected message evidence and explicitly create ADR-247's exact
+approval. ADR-249 adds the private exact-approval extraction command; next prove
+the complete synthetic workflow with the actual pinned image, then browser,
+hosted and independent-review gates. The screen never runs
+extraction or publication.
+
+ADR-247 now exposes the exact synthetic Email XLSX extraction approval through
+a human-only source-attached API, with its own server-pinned XLSX image version
+separate from PDF. ADR-248 connects an owner-selected attachment to a
+first-party approval control; ADR-249 supplies the private extraction command.
+Neither approval nor the existing review screen runs the worker or publishes.
+Actual-image, full exact-head PostgreSQL, hosted and browser gates remain open.
+
+ADR-246 adds a first-party, human-only screen for an already-approved
+synthetic XLSX extraction result. It validates every bounded page and the
+complete browser-computed text digest before submitting an exact review.
+ADR-249 now makes isolated extraction operable through a separately scoped
+private command; next run actual-browser, immutable-image
+and hosted gates. The screen does not publish, certify financial facts or
+authorize live Fastmail.
+
+ADR-245's native PostgreSQL dump/restore now verifies a populated fictional
+XLSX approval, result, human review, publication receipt and retrievable
+document. Next run the same seeded Docker restore on the exact head when
+hosted jobs can execute, plus immutable-image extraction and independent
+review. Native restore does not substitute for those gates.
+
+ADR-244 closes the reviewer-supplied XLSX code-provenance gap before any
+operator or live-source expansion. The server owns a semantic transform
+revision and migration 0086 enforces it; actual-image, hosted and restore
+gates still precede merge.
+
+ADR-243 adds an exact-review, account-pinned Email XLSX publication command
+with a tenant-bound worker login. Fictional command-to-PostgreSQL execution
+passes; the first-party review screen and actual-image/hosted/restore gates
+are still needed before this becomes an accepted operator workflow.
+
+Current correction: ADR-242 separates human XLSX inspection/review from
+worker-only document publication. Migration 0085 enforces an unexpired,
+exact-result human review for each new receipt; the human credential does not
+gain ingest/publication scopes. The first-party review screen, actual-image
+run, hosted exact-head CI, independent restore and live-source acceptance
+remain open. Librarian import continues to use the existing
+`masterbrain_project_dossier_markdown_v1` export; no new format is planned.
+
+ADR-241 now publishes one exact-approved, complete synthetic Email XLSX
+result as a reviewed DataCore document with deterministic chunks, provenance
+and an immutable occurrence receipt. Generic and Email-family retrieval are
+currentness-gated; the first-party review UI, cell-level citations and table
+index remain next steps. The actual-image case is collected but unexecuted
+locally. Hosted CI, populated restore and live-source acceptance remain open;
+FOS-Master stays untouched.
+
+ADR-240 now seals complete isolated text for one exact ADR-239 approved
+synthetic Email XLSX occurrence. ADR-241 adds its human-authorized DataCore
+document bridge. No cell-level spreadsheet claim or live-mail access follows;
+real-image, hosted CI and independent restore remain open.
+
+ADR-239 now supplies an immutable, human-only synthetic Email XLSX extraction
+approval distinct from the PDF jobs. ADR-240 implements the exact-approval
+worker and immutable private result; the occurrence-specific reviewed DataCore
+bridge follows in ADR-241.
+The approval alone publishes no text, and live Fastmail
+remains out of scope. Hosted CI is currently stopped before steps by the
+GitHub account payment/spending-limit gate.
+
+The pinned FOS XLSX baseline now has a 24-case sparse/multi-sheet value
+matrix and exact 2,000/2,001-row boundary contrast. It supports the bounded
+DataCore table path but does not close formula, `.xlsm`, financial citation or
+full FileOS parity gaps. Keep FOS-Master as the runtime authority until those
+and the hosted/restore gates are independently resolved.
+
+ADR-238 adds a synthetic-only retained Email XLSX row-layout proof: exact
+parent/part identity, the pinned table image, and the existing normalized
+text digest must agree. Next is a separate reviewed XLSX extraction and
+occurrence-specific Email bridge, followed by a tenant-fenced receipt and
+private command. This proof publishes no cells and grants no live-mail access.
+
+ADR-237 exposes ADR-236's reviewed XLSX layout receipt through an exact
+tenant-bound private command. Next run the actual immutable-image case,
+exact-head hosted CI and independent restore; then design reviewed cell-level
+citations and bounded table retrieval. No live root, financial assertion or
+FileOS cutover is authorized.
+
+ADR-236 now seals one synthetic, reviewed current FileOS XLSX table replay in
+an immutable tenant-fenced receipt after a final source and worker check.
+ADR-237 supplies the exact private command. The actual immutable-image and
+independent restore gates remain before reviewed cell-level citations or a
+bounded table read. No live root, financial assertion or FileOS cutover is enabled.
+
+ADR-235 adds a private, nonpublishing FileOS XLSX table replay over exact
+confined source bytes. A row-layout digest distinguishes physical coordinates
+that the indexed text digest cannot. ADR-236 now adds the current human-review
+receipt; ADR-237 supplies the private command. Actual-image and independent
+restore gates remain. No table publication, live root, financial claim or
+FileOS switch follows from this proof.
+
+ADR-234 adds a separate, source-bound XLSX worker that returns bounded physical
+rows and positional cell values, with sheet visibility and no fabricated
+headers. Its ordinary and 1,000-row values match the pinned FOS donor on the
+fictional corpus. Next run the new explicit actual-image gate, define reviewed
+cell-level provenance and feature coverage, then build the approved Email XLSX
+extraction/bridge. It is not yet a searchable table or financial evidence.
+
+ADR-233 pins the FOS-Master XLSX table output and verifies the ordinary
+overlap plus formula, row-cap, encrypted and `.xlsm` differences against
+DataCore on fictional bytes. Preserve the donor's useful table/row structure
+without importing its unsafe cached-formula or partial-truncation claims as
+complete evidence. A reviewed Email XLSX receipt cannot precede a separately
+approved extraction and occurrence-specific bridge; the PDF-only approval
+path is not a substitute. See [ADR-233](adr/233_pinned_fos_xlsx_table_baseline.md).
+
+ADR-232 proves one exact retained fictional Email XLSX attachment can be
+re-extracted through the existing shared, isolated DataCore document worker
+without publishing text. The proof retains parent Email occurrence identity
+and rejects incomplete/formula-dependent results. Next: approved XLSX extraction
+and an Email document bridge, then a tenant-fenced, review-bound digest receipt
+and private command; actual-image, hosted and independent restore checks follow.
+There is still no live Email spreadsheet bridge,
+cell locator, automatic index publication or certified financial statement.
+
+ADR-231 now serializes a reviewed Email PDF receipt with both the controlled
+Fastmail account transition and a direct privileged account-status update,
+without granting the worker account UPDATE. Completed document jobs are
+terminal/immutable. Next: actual-image execution, exact-head hosted CI,
+independent populated restore and separate live-provider acceptance. This
+fence does not authorize live mail, OCR or financial publication.
+
+ADR-230 adds the restricted, exact-account Email attachment PDF replay
+command with tenant-bound database login, pinned image, worker reauthentication
+and no-selected-MIME-read check mode. Fictional command-to-database receipt
+proof now passes. Next: actual immutable-image execution and hosted/restore
+gates; ADR-231 supplies the account transition fence. OCR, issuer
+proof and financial publication remain unavailable.
+
+ADR-229 now seals one current reviewed Email attachment PDF text-layer replay
+in a protected digest-only receipt. The next Email step is a tenant-bound,
+exact-account private command (ADR-230), then actual-image, hosted and
+independent restore gates. ADR-231 later supplies the account transition
+fence; OCR, sender/issuer proof and
+financial publication remain out of scope.
+
+ADR-228 adds the first nonpublishing Email attachment PDF replay proof from
+retained MIME through the pinned isolated Email PDF worker. The next Email
+tranche, ADR-229, binds it to one current, granted, nonexcluded reviewed
+attachment and stores an immutable tenant-fenced digest receipt. A narrow
+operator command and actual-image gate remain. The pure proof alone is
+not an issuer, OCR, financial or live-mail acceptance.
+
+ADR-227 exposes ADR-226's current reviewed FileOS PDF text-layer receipt as
+one exact, tenant-bound operator command. Its check mode reads no selected PDF
+or review row and does not construct the processor; fictional execution is
+tested. Next: actual immutable-image container, independent restore, the
+review-bound Email attachment PDF receipt, OCR/visual coverage and issuer/
+conflict policy.
+No live root, financial claim or FileOS cutover is authorized.
+
+ADR-226 now binds the confined FileOS PDF text-layer replay to one current
+human source-tier review and stores an immutable digest-only receipt after a
+second locked source and worker-authorization check. ADR-227 supplies the
+tenant-bound command; actual immutable-image container validation, independent
+restore, OCR/visual coverage and issuer-conflict policy before any financial
+claim or FileOS cutover. Synthetic-only owner authorization still applies.
+
+ADR-225 adds the first confined FileOS PDF text-layer replay primitive: exact
+source bytes are re-read and re-extracted through the pinned restricted
+document processor, with digest-only output and no database write. The next
+gate is a tenant-bound source-tier receipt with final database/currentness
+checks, real immutable-image container validation and independent restore;
+image-only/OCR, issuer and financial truth remain unresolved.
+
+ADR-224 now exposes the reviewed Email MIME replay as an exact authenticated
+operator command with a mandatory tenant-bound login and check mode that
+reads no selected MIME or review row. Fictional inline and encrypted paths
+are tested. ADR-228 adds a separate pure attachment/PDF byte proof; its
+review-bound receipt, issuer/conflict policy, independent restore and hosted
+gates remain. No live mailbox or financial claim.
+
+ADR-223 adds a point-in-time worker-observed Email MIME-to-text replay for a
+current reviewed direct-parser message, covering inline and encrypted retained
+bytes. ADR-224 now exposes it through a tenant-bound operator command; prove other
+parser/attachment/PDF derivations and resolve authority conflicts before any
+financial publication. No live mailbox or source-tier cutover is authorized.
+
+ADR-222 removes an encrypted-Email bridge blocker: source-version byte size
+now follows the storage-independent retained MIME size. ADR-223/224 provide
+the later direct-parser text replay and command; neither authorizes live mail.
+
+ADR-221 closes two XLSX false-success cases: uncached formulas and overlong
+cells now defer with no published text. Full sheet/cell/feature coverage,
+formula/display policy and source-tier attestation are still required before
+using spreadsheet-derived financial facts.
+
+ADR-220 closes one unsafe PDF outcome: a mixed text/no-text document is now
+deferred with no published text rather than labeled fully extracted. This is
+not a complete PDF/OCR proof; per-page coverage, OCR, spreadsheet fidelity
+and source-tier replay remain on the critical path to a financial claim.
+
+ADR-219 now exposes the ADR-218 FileOS text replay as one exact, authenticated
+operator command with a mandatory tenant-bound database login and no-source-
+read check mode. Fictional local execution and revocation rollback are tested;
+no live root has been used. Next: PDF/OCR and spreadsheet completeness,
+other Email attachment/PDF byte replay, issuer/conflict policy, independent restore and
+hosted gates before using a tier in any financial publication.
+
+ADR-218 now records a point-in-time, worker-observed FileOS **text** replay
+for an ADR-217 human tier review. The confined read and exact byte-to-text
+proof are shared DataCore machinery with the older statement-proposal replay.
+Next: PDF/OCR and spreadsheet coverage proofs, equivalent authorized Email
+bytes, issuer/conflict policy and a restricted operator command. Neither a
+stored replay nor a tier review is a verified investment claim or cutover.
+
+ADR-217 adds a human-reviewed, current-source tier classification route and
+append-only record; it is deliberately not an independent byte attestation.
+Next replay authorized source bytes and extraction coverage (PDF/OCR included),
+resolve conflicting authority reviews, and only then design financial-claim
+publication. The synthetic-only and no-FileOS-cutover gates remain in force.
+
+ADR-216 now pins the FOS fact-verifier's pure tier/variant/status behavior in
+fictional donor parity without treating donor `CONFIRMED` as a MasterBrain
+financial attestation. The next source-tier gate is an immutable, reviewed,
+version/hash-bound attestation with current grant and exclusion checks.
+ADR-215 makes latest-revision retirement effective and lets clients discover
+the actual SQL vocabulary. Next complete issue #183 with a human-reviewed
+vocabulary proposal/version process and explicit alias compatibility; the
+read-only catalog is not an edit workflow.
+
+ADR-214 now controls new project-fact predicate names and their value/unit
+shapes. Next complete issue #183 with owner-reviewed name proposals,
+unambiguous deprecated aliases and generic claim/event/role coverage, while
+preserving old facts and safe replay. Then add ownership/source-tier semantics
+and the known-answer cross-source company dossier before any financial total.
+
+ADR-213 closes a misleading substring-citation path in ADR-212's typed
+measurement field. The next product tranche remains a controlled fact-name
+registry, ownership/source-tier semantics and a known-answer cross-source
+company dossier. Exact-head hosted gates still must run before merge.
+
+ADR-211 now supplies the first authorized current-evidence project fact report
+through KnowledgeCore and the external client. The next financial/report step
+is a controlled predicate and ownership model on top of ADR-212's opt-in
+exact-decimal unit/currency fact field, followed by a known-answer fictional
+company dossier; no donor money sum is promoted
+to an investment balance. Hosted gates are still pending.
+
+ADR-209/210 compare all five FOS intelligence-report row shapes in isolated,
+synthetic, nonpublishing code. ADR-211 takes the first product projection from
+authorized current reviewed facts; it deliberately leaves amount units,
+currency, ownership and completeness unresolved. Next, design those typed
+contracts and run a known-answer fictional company dossier with denial and
+currentness tests. The donor's money-fact sum must never be reported as an
+investment balance. Hosted gates and FileOS cutover remain open.
+
+ADR-208 now supplies a separate disposable combined-source demo for the owner
+to run locally: fictional Email and FileOS evidence flows through DataCore,
+Brain search and a cited reviewed project dossier. The old Email-only demo
+remains intact. Next product gates are hosted exact-head acceptance, an owner
+walkthrough and held-out questions, then separately authorized live-source
+and named-assistant trials; this fixture is not a pilot or FOS-Master cutover.
+
+ADR-207 implements a separate synthetic-only, private selected artifact-link
+Markdown proposal queue and transaction-bound reviewed publication on an open
+PR. Stage, private preview and explicit atomic human review check the current
+project, exact artifact and separately cited basis occurrence, full quote and
+source grants. A local same-cluster populated logical restore passed; exact-head
+hosted CI, strict-runtime, independent-container restore and merged-main gates
+remain. Same-hash distinct occurrences and a 25-row mixed batch with
+late-fault rollback now pass locally; the current exporter permits at most
+25 artifact lines in one Markdown exchange. Next: hosted gates, then a
+separately designed paged exchange for overfull dossiers.
+Artifact IDs are evidence occurrences, not content hashes or automatic FileOS
+effects. FOS-Master remains untouched.
+
+ADR-206 now implements a **synthetic-only** selected source-stated
+project-fact Markdown proposal path on an open PR branch. Facts use separate
+private, atomic batch/decision tables because their reviewed publication
+receipt differs from ADR-186's generic Knowledge receipt. The exact exported
+fact line, typed sidecar, cited quote, current project and all direct evidence
+are checked at stage, private preview and explicit human review. Approval
+creates a new fact ID inside the batch transaction; rejection creates no fact.
+The local synthetic suite now covers a valid-but-wrong truncated quote
+citation, source-scope denial at all three gates and revocation between
+inspection and staging. A local same-cluster source-to-target logical
+dump/restore now preserves pending and approved batches and their private
+visibility; the independent-container hosted restore remains unverified.
+Next: obtain exact-head hosted CI/strict-runtime/restore and merged-main gates
+for ADR-206/207, then design typed inferred basis separately. This
+is not an automatic or lossless round trip, live-source gate or FOS-Master
+cutover.
+
+ADR-205 adds selected project-member roles to the synthetic Markdown-to-
+private-proposal path, with exact member/entity citation IDs retained and
+rechecked through human review. ADR-206/207 now provide the separate synthetic
+fact and artifact-link gates; inferred claims still need a typed basis model.
+This is not automatic dossier generation, a lossless round
+trip, live-source acceptance or FOS-Master cutover.
+
 ADR-204 proves a small, synthetic Cedar Harbor company dossier through the
 existing compact/Markdown API and external client: reviewed project, event,
 commitment, source-stated fact and linked FileOS artifact with original evidence.
 It is a known-answer integration case, not automatic knowledge generation or
 source freshness. Next: owner walkthrough, held-out cross-source questions,
-approval-gated Markdown import of members/facts/artifact links, then explicit
+the synthetic fact/artifact approval round-trip trial, then explicit
 live-source and financial source-tier gates. The owner chose MasterBrain's
 current Markdown export as the Librarian import format; do not invent missing
 full quotes or observation metadata from that lossy export.
@@ -21,8 +442,10 @@ ADR-202 supplies the first synthetic-only Markdown-to-private-proposal stage:
 an owner may select project, event and commitment rows from the current export
 format, provide missing typed metadata, and hold them for explicit ADR-186
 human review. It binds exact Markdown/selection context to the immutable batch
-and rechecks full quotes on specifically cited current evidence. Member,
-project-fact and artifact-link staging, inference/basis links, full-fidelity
+and rechecks full quotes on specifically cited current evidence. ADR-205 later
+adds member staging; ADR-206 now adds a separate selected source-stated
+project-fact queue; ADR-207 later adds separate artifact-link staging.
+Inference/basis links, full-fidelity
 round trip and live-source acceptance remain separate gates.
 
 ADR-201 adds an owner-only current-evidence inspection of the selected
@@ -263,7 +686,7 @@ Each lane must pass its own acceptance gate before the next dependent step:
 | Hosted read-only pilot ([#94](https://github.com/jbone3311/MasterBrain/issues/94), [#3](https://github.com/jbone3311/MasterBrain/issues/3)) | Deferred by the owner's synthetic-only decision. Continue fictional/disposable scope and exclusion proof; seek new explicit authorization and region, budget, retention, identity and exact-source decisions before any private pilot | No live source, hosted identity, recovery or operations acceptance exists |
 | FileOS migration ([migration plan](FOS_MIGRATION.md)) | Review the six recorded donor-policy differences and fault/platform cases, then run an owner-authorized read-only shadow on a bounded root | No v2 current publication, FileOS effect, donor cutover or retirement is approved |
 | FOS intelligence ([preservation assessment](LIVE_ALPHA_AND_FOS_PRESERVATION.md)) | Extend the nine isolated recipe baselines to report composition and Schwab's unsupported eras; prove credit-line PDF-to-text completeness, harden ADR-189's private FileOS text replay into a separately attested worker/source tier, then design owner review/publication and other-format proofs for the statement ledger | No donor-equivalent investment dossier, owner-approved statement row or verified holdings claim exists yet |
-| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds a private source-stated proposal queue and atomic human per-row review; ADR-197/200/201 add cited Markdown export, inventory and current-preview inspection; ADR-202 stages selected project/event/commitment rows as private proposals with full cited-quote checks and explicit omitted metadata | Member/fact/artifact staging, inferred proposal path, automatic dossier generation and full round trip remain open; overfull/uncitable exports refuse, and live-source acceptance remains a prerequisite |
+| Librarian interoperability ([review](LIBRARIAN_INTEROP.md), [#174](https://github.com/jbone3311/MasterBrain/issues/174)) | ADR-186 adds private source-stated proposals; ADR-197/200/201 add cited Markdown export, inventory and inspection; ADR-202/205 stage selected project/event/commitment/member rows; ADR-206/207 add separate selected fact/artifact-link staging and explicit atomic human review on an open PR | Hosted/merged-main gates for both new routes, inferred proposals, automatic dossier generation and full round trip remain open; overfull/uncitable exports refuse, and live-source acceptance requires separate approval |
 | Reviewed actions ([#93](https://github.com/jbone3311/MasterBrain/issues/93)) | Specify typed propose/preview/approve/execute contracts and reversible first actions | The existing Brain API stays read-only until separate grants, safety tests and approval exist |
 
 The donor remains pinned at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`

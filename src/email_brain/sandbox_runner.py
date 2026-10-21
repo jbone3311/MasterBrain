@@ -41,6 +41,7 @@ from masterbrain.datacore.document_contract import MAX_OUTPUT_BYTES as DOCUMENT_
 from masterbrain.datacore.document_contract import MAX_REQUEST_BYTES as DOCUMENT_REQUEST_BYTES
 from masterbrain.datacore.image_ocr_contract import MAX_OUTPUT_BYTES as IMAGE_OCR_OUTPUT_BYTES
 from masterbrain.datacore.image_ocr_contract import MAX_REQUEST_BYTES as IMAGE_OCR_REQUEST_BYTES
+from masterbrain.datacore.xlsx_tables import MAX_OUTPUT_BYTES as XLSX_TABLE_OUTPUT_BYTES
 
 _IMAGE = re.compile(r"sha256:[a-f0-9]{64}\Z", re.ASCII)
 _CONTAINER = re.compile(r"[a-f0-9]{64}\Z", re.ASCII)
@@ -112,6 +113,12 @@ _DOCUMENT_PROFILE = _Profile(
     ("-I", "-B", "-m", "masterbrain.datacore.document_worker"),
     DOCUMENT_REQUEST_BYTES,
     DOCUMENT_OUTPUT_BYTES,
+)
+_XLSX_TABLE_PROFILE = _Profile(
+    "xlsx-tables",
+    ("-I", "-B", "-m", "masterbrain.datacore.xlsx_tables_worker"),
+    DOCUMENT_REQUEST_BYTES,
+    XLSX_TABLE_OUTPUT_BYTES,
 )
 _ARCHIVE_PROFILE = _Profile(
     "archive",
@@ -239,6 +246,7 @@ class _DockerPipe:
                 _MIME_PROFILE,
                 _PDF_PROFILE,
                 _DOCUMENT_PROFILE,
+                _XLSX_TABLE_PROFILE,
                 _ARCHIVE_PROFILE,
                 _ARCHIVE_MEMBER_PROFILE,
                 _IMAGE_OCR_PROFILE,

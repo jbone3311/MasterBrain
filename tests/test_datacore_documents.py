@@ -113,6 +113,88 @@ def test_contract_rejects_source_tampering_unknown_fields_and_bad_results() -> N
         source_for(raw, expected.version_id, "../memo.docx", expected.sha256, WORD_TYPE)
 
 
+def test_mixed_text_and_image_only_pdf_defers_instead_of_claiming_complete(
+    tmp_path: Path,
+) -> None:
+    from pypdf import PdfReader, PdfWriter
+
+    text_page = pdf_bytes(("fictional statement total 100",))
+    image_page = pdf_bytes(rgb=bytes([255, 255, 255]) * (64 * 32))
+    writer = PdfWriter()
+    writer.append(PdfReader(BytesIO(text_page)))
+    writer.append(PdfReader(BytesIO(image_page)))
+    output = BytesIO()
+    writer.write(output)
+    raw = output.getvalue()
+    expected = source(raw, "mixed-statement.pdf", PDF_TYPE)
+
+    result = decode_result(
+        process_request(encode_request(raw, expected.version_id, expected.locator,
+                                       expected.sha256, PDF_TYPE)),
+        expected,
+    )
+    assert (result.status, result.reason, result.text) == (
+        "deferred", "pages_without_text", "",
+    )
+    assert result.metadata.page_count == 2
+
+    path = tmp_path / "mixed-statement.pdf"
+    path.write_bytes(raw)
+    item = snapshot_tree(
+        tmp_path, source_id="files_documents", observed_at=datetime(2026, 10, 15, tzinfo=UTC)
+    )["items"][0]
+    extraction = extract_document_source_version(tmp_path, item, DirectSyntheticProcessor())
+    assert (extraction.status, extraction.error_code, extraction.text) == (
+        ExtractionStatus.DEFERRED, "pages_without_text", "",
+    )
+    assert path.read_bytes() == raw
+
+
+def test_entirely_image_only_pdf_remains_deferred() -> None:
+    raw = pdf_bytes(rgb=bytes([255, 255, 255]) * (64 * 32))
+    result = extract_document(raw, source(raw, "scan.pdf", PDF_TYPE))
+    assert (result.status, result.reason, result.text) == ("deferred", "empty_document", "")
+    assert result.metadata.page_count == 1
+
+
+@pytest.mark.parametrize(
+    "second_cell,reason",
+    [("=1+2", "unsupported_features"), ("Z" * 1_001, "text_limit")],
+    ids=("uncached-formula", "overlong-cell"),
+)
+def test_xlsx_must_not_publish_when_formula_or_cell_would_be_omitted(
+    second_cell: str, reason: str, tmp_path: Path,
+) -> None:
+    from openpyxl import Workbook
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet["A1"] = "fictional source line"
+    sheet["B1"] = second_cell
+    output = BytesIO()
+    workbook.save(output)
+    workbook.close()
+    raw = output.getvalue()
+    expected = source(raw, "statement.xlsx", SHEET_TYPE)
+    result = decode_result(
+        process_request(encode_request(raw, expected.version_id, expected.locator,
+                                       expected.sha256, SHEET_TYPE)),
+        expected,
+    )
+    assert (result.status, result.reason, result.text) == ("deferred", reason, "")
+
+    path = tmp_path / "statement.xlsx"
+    path.write_bytes(raw)
+    item = snapshot_tree(
+        tmp_path, source_id="files_documents", observed_at=datetime(2026, 10, 15, tzinfo=UTC)
+    )["items"][0]
+    extracted = extract_document_source_version(tmp_path, item, DirectSyntheticProcessor())
+    assert (extracted.status, extracted.error_code, extracted.text) == (
+        ExtractionStatus.DEFERRED, reason, "",
+    )
+    assert path.read_bytes() == raw
+
+
 def test_contract_accepts_deterministic_archive_member_version_identity() -> None:
     raw = docx_bytes("archive member identity")
     digest = hashlib.sha256(raw).hexdigest()

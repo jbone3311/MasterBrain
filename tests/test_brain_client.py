@@ -28,6 +28,47 @@ ARTIFACT_LINK = "partifact_" + "1" * 32
 PROJECT_FACT = "pfact_" + "2" * 32
 
 
+def test_project_fact_catalog_client_rejects_forged_or_malformed_vocabulary() -> None:
+    payload = {
+        "scope": "new_project_fact_writes_only",
+        "registry_authority": "database_latest_revision",
+        "historical_unregistered_rows_possible": True,
+        "alias_mapping": "none",
+        "entries": [{
+            "name": "loi.price", "version": 1, "value_type": "number",
+            "unit": "currency", "description": "Fictional source-stated price.",
+            "status": "active",
+        }],
+        "untrusted_content": True,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1/knowledge/fact-predicates"
+        return httpx.Response(200, json=payload)
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler),
+    ) as client:
+        assert client.project_fact_predicates()["entries"][0]["name"] == "loi.price"
+        for change in (
+            {"scope": "all_facts"}, {"historical_unregistered_rows_possible": False},
+            {"alias_mapping": "automatic"}, {"untrusted_content": False},
+            {"entries": []},
+            {"entries": [{**payload["entries"][0], "version": True}]},
+            {"entries": [{**payload["entries"][0], "value_type": "text",
+                          "unit": "shares"}]},
+            {"entries": [{**payload["entries"][0], "unit": []}]},
+            {"entries": [{**payload["entries"][0], "status": []}]},
+            {"entries": [{**payload["entries"][0], "name": "bad name"}]},
+            {"entries": payload["entries"] * 2},
+        ):
+            saved = {key: payload[key] for key in change}
+            payload.update(change)
+            with pytest.raises(BrainClientError, match="invalid_response"):
+                client.project_fact_predicates()
+            payload.update(saved)
+
+
 def test_project_facts_client_validates_source_stated_page() -> None:
     fact = dossier_result()["facts"][0]
     payload = {
@@ -509,6 +550,58 @@ def answer_result() -> dict[str, object]:
                      "answer_context_truncated": False},
         "untrusted_content": True,
     }
+
+
+@pytest.mark.parametrize("route", ["search", "answer"])
+def test_source_availability_client_rejects_malformed_or_focus_widening_metadata(
+    route: str,
+) -> None:
+    result = current_result() if route == "search" else answer_result()
+    result["coverage"] = {
+        "complete": False,
+        "source_focus": "fileos",
+        "source_access": "enrolled_sources_only",
+        "source_availability": {"email": "not_searched", "fileos": "registered"},
+    }
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=result)
+
+    with BrainReadClient(
+        "https://brain.example", "token", transport=httpx.MockTransport(handler),
+    ) as client:
+        read = client.current_search if route == "search" else client.answer
+        assert read("fictional question", source_focus="fileos")["coverage"][
+            "source_availability"
+        ]["email"] == "not_searched"
+        result["coverage"]["source_availability"]["fileos"] = "not_available"
+        assert read("fictional question", source_focus="fileos")["coverage"][
+            "source_availability"
+        ]["fileos"] == "not_available"
+        result["coverage"]["source_availability"]["fileos"] = "registered"
+        for availability in (
+            None,
+            {},
+            {"email": "not_searched"},
+            {"email": "not_searched", "fileos": "registered", "hidden": "registered"},
+            {"email": "registered", "fileos": "registered"},
+            {"email": "not_searched", "fileos": "not_searched"},
+            {"email": "not_searched", "fileos": "connected"},
+            {"email": "not_searched", "fileos": "not_registered"},
+            {"email": "not_searched", "fileos": True},
+        ):
+            result["coverage"]["source_availability"] = availability
+            with pytest.raises(BrainClientError, match="invalid_response"):
+                read("fictional question", source_focus="fileos")
+
+
+def test_source_availability_client_keeps_legacy_omission_unknown() -> None:
+    with BrainReadClient(
+        "https://brain.example", "token",
+        transport=httpx.MockTransport(lambda _request: httpx.Response(200, json=current_result())),
+    ) as client:
+        coverage = client.current_search("fictional question")["coverage"]
+    assert "source_availability" not in coverage
 
 
 def test_answer_client_uses_same_read_only_origin_and_validates_response() -> None:

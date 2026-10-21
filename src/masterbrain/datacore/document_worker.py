@@ -40,6 +40,10 @@ class _EncryptedPdf(Exception):
     pass
 
 
+class _CellTextLimit(Exception):
+    pass
+
+
 def _safe_property(value: object) -> str | None:
     if value is None:
         return None
@@ -145,6 +149,7 @@ def _extract_pdf(raw: bytes, source: DocumentSource) -> DocumentResult:
                 return _outcome(source, "deferred", "page_limit")
             parts: list[str] = []
             stream_bytes = 0
+            pages_without_text = False
             for number, page in enumerate(reader.pages, 1):
                 if any(key in page for key in ("/AA", "/Annots", "/AF")):
                     return _outcome(source, "deferred", "unsupported_features")
@@ -157,6 +162,8 @@ def _extract_pdf(raw: bytes, source: DocumentSource) -> DocumentResult:
                 text.encode("utf-8", errors="strict")
                 if text:
                     parts.append(f"[Page {number}]\n{text}")
+                else:
+                    pages_without_text = True
             joined = "\n\n".join(parts).strip()
             metadata: Any = reader.metadata or {}
             result_metadata = DocumentMetadata(
@@ -166,6 +173,8 @@ def _extract_pdf(raw: bytes, source: DocumentSource) -> DocumentResult:
             )
             if not joined:
                 return _outcome(source, "deferred", "empty_document", metadata=result_metadata)
+            if pages_without_text:
+                return _outcome(source, "deferred", "pages_without_text", metadata=result_metadata)
             if len(joined) > MAX_TEXT_CHARS:
                 return _outcome(source, "deferred", "text_limit", metadata=result_metadata)
             return _outcome(
@@ -231,7 +240,9 @@ def _cell_text(value: object) -> str:
         return ""
     text = str(value).replace("\x00", "").strip()
     text.encode("utf-8", errors="strict")
-    return text[:1_000]
+    if len(text) > 1_000:
+        raise _CellTextLimit()
+    return text
 
 
 def _extract_xlsx(raw: bytes, source: DocumentSource) -> DocumentResult:
@@ -241,7 +252,9 @@ def _extract_xlsx(raw: bytes, source: DocumentSource) -> DocumentResult:
     try:
         from openpyxl import load_workbook  # type: ignore[import-untyped]
 
-        workbook = load_workbook(BytesIO(raw), read_only=True, data_only=True, keep_links=False)
+        # Keep formula cells visible. data_only=True silently turns an uncached
+        # formula into None, which would falsely certify an incomplete sheet.
+        workbook = load_workbook(BytesIO(raw), read_only=True, data_only=False, keep_links=False)
         try:
             if len(workbook.sheetnames) > MAX_SHEETS:
                 return _outcome(source, "deferred", "structure_limit")
@@ -254,11 +267,30 @@ def _extract_xlsx(raw: bytes, source: DocumentSource) -> DocumentResult:
                     isinstance(max_column, int) and max_column > MAX_COLUMNS
                 ):
                     return _outcome(source, "deferred", "structure_limit")
+                # Read-only iteration is bounded by the declared <dimension>; a
+                # writer that understates it would hide cells (and formulas)
+                # from an extraction still reported complete. Measure the real
+                # extent and recheck it; a truthful dimension reads identically.
+                sheet.reset_dimensions()
+                if next(sheet.iter_rows(min_row=1, min_col=1), None) is not None:
+                    sheet.calculate_dimension(force=True)  # fails on an empty sheet
+                max_row, max_column = sheet.max_row, sheet.max_column
+                if (isinstance(max_row, int) and max_row > MAX_ROWS_PER_SHEET) or (
+                    isinstance(max_column, int) and max_column > MAX_COLUMNS
+                ):
+                    return _outcome(source, "deferred", "structure_limit")
                 rows: list[str] = []
-                for row_number, row in enumerate(sheet.iter_rows(values_only=True), 1):
+                for row_number, row in enumerate(
+                    sheet.iter_rows(min_row=1, min_col=1, values_only=False), 1,
+                ):
                     if row_number > MAX_ROWS_PER_SHEET or len(row) > MAX_COLUMNS:
                         return _outcome(source, "deferred", "structure_limit")
-                    values = [_cell_text(value) for value in row]
+                    if any(cell.data_type == "f" for cell in row):
+                        return _outcome(source, "deferred", "unsupported_features")
+                    try:
+                        values = [_cell_text(cell.value) for cell in row]
+                    except _CellTextLimit:
+                        return _outcome(source, "deferred", "text_limit")
                     cell_count += len(values)
                     if cell_count > MAX_CELLS:
                         return _outcome(source, "deferred", "structure_limit")

@@ -1,5 +1,105 @@
 # MasterBrain Data Model
 
+Migration 0092 adds `v2_later` as a third, exact basis on the existing
+`brain_index_generations` parent. It references one immutable ADR-257 run
+and ready attempt; the shared item/chunk/receipt children require every
+hashed attempt row and exact normalized-document chunk. Hashless, excluded
+and possible-absence observations remain in the run/coverage ledgers.
+The new activation trigger rejects every `v2_later` generation. Existing
+v1 and baseline-v2 basis constraints remain disjoint (ADR-258).
+
+Migration 0091 adds immutable `brain_fileos_v2_later_run_completions`.
+Composite keys bind one ready document attempt, preparation, closure and
+observation packet; one completion is permitted per packet. The source-lock
+guard rechecks the latest v1/root basis, closed outcome and classification
+counts, and derived possible-absence/mass-loss/coverage flags. SQL fixes
+nonpublishing, noncurrent, no-absence and review-required status. This is a
+historical completion, not a shared index activation or freshness authority
+for current FileOS search (ADR-257).
+
+Migration 0090 adds immutable `brain_fileos_v2_later_document_attempts` and
+`brain_fileos_v2_later_document_attempt_items`. A composite FK binds one
+attempt to an exact ADR-255 preparation; blocked attempts may be retried,
+but a partial unique index permits only one ready attempt. Item FKs bind hashed outcomes to
+prepared versions and extracted documents to the same evidence. A deferred
+SQL guard checks every current closure row and exact outcome counts. Fixed
+false publication/absence flags, forced tenant RLS/login fence, source-lock
+and protected truncation apply. This is historical processing, not itself a
+v2 completed-run or active-index table (ADR-256).
+
+Migration 0089 adds private, immutable
+`brain_fileos_v2_later_evidence_preparations` and
+`brain_fileos_v2_later_prepared_rows`. Composite packet/closure FKs,
+source-lock and a deferred exact-row check bind every sealed hashed row to
+one policy-scoped `brain_source_version` and `brain_evidence` pair. Both
+tables force tenant RLS/login fencing and deny update, delete and truncate.
+No source-item current pointer or completed-run table references them
+(ADR-255).
+
+Migration 0088 adds immutable `brain_fileos_v2_later_coverage_closures`:
+one bounded JSON row per ADR-253 packet, exact composite packet FK, forced
+tenant RLS/login fence, fixed nonpublishing/no-absence flags and protected
+truncation. The worker stores a sorted projection of each current candidate
+row and prior classification; private inspection recomputes the whole
+projection and canonical digest. It does not hold processing outcomes or
+advance source freshness (ADR-254).
+
+Migration 0093 adds append-only `brain_fileos_v2_later_row_decisions` keyed by
+tenant, reviewer and idempotency UUID. Each event binds one source, ready
+historical generation, run/digest, closure/digest, exact prior locator/state/
+version and controlled disposition. Forced tenant RLS, a tenant-login fence,
+source-locked insertion guards and mutation/truncate denial protect it.
+Corrections append events; historical row inspection projects the latest.
+This table is not an absence ledger, source-effect queue or current index
+(ADR-261).
+
+ADR-262 derives a nonpersisted `decision_snapshot_sha256` from one exact
+historical generation/run/closure, its prior classifications, review flags
+and latest decision identities. It is a read-only review cursor for a future
+run-level ledger, not an approval row or current-source state.
+
+Migration 0087 adds append-only `brain_fileos_v2_later_observation_packets`
+under forced tenant RLS and the tenant-login fence. Each row has an exact
+composite FK to one completed v2 baseline, private source/root and observation
+identity, a capped closed JSON candidate plus ADR-251 preview, and a canonical
+digest. SQL fixes `publishable=false`, `absence_authorized=false`, and
+`requires_review=true`, source-locks insertion against the latest v1 basis,
+and refuses update, delete and truncate. Private inspection revalidates the
+canonical digest and recomputes the classification. The table is not a v2
+later-run completion, absence ledger or active-current index (ADR-253).
+
+Migration 0086 adds insert guards for the semantic
+`email-xlsx-document-bridge-v2` revision on new Email XLSX publication reviews
+and receipts. The revision is set by server code, not human input; it is not
+a commit hash. Earlier immutable rows remain unchanged, but this bridge
+refuses to publish a review with another revision (ADR-244).
+
+Migration 0085 adds immutable, tenant-fenced
+`brain_email_xlsx_publication_reviews` rows binding one human owner, exact
+synthetic approval/result digest and counts, and a one-hour expiry. New 0084
+bridge receipts must reference such a current review and are inserted by a
+separately scoped worker; the SQL guard rechecks reviewer, approver, worker,
+source, document body and chunks. A nullable review reference preserves
+pre-0085 receipts, not permission to create new unreviewed ones. ADR-242
+supersedes ADR-241's single-principal authorization model.
+
+Migration 0084 adds one immutable, tenant-fenced
+`brain_email_xlsx_document_bridge_receipts` row per human-authorized synthetic
+Email XLSX result. It binds the exact approval/result, reviewer/idempotency,
+attachment occurrence, DataCore evidence/document, normalizer, text digest,
+chunk count and code revision. The normalized document and deterministic
+chunks cite the existing attachment occurrence. A SQL insert guard checks the
+current source, result/body identity and actual chunk count; a separate
+currentness predicate gates Brain retrieval after publication. It stores no
+new MIME or verified cell coordinates. ADR-241 defines the boundary.
+
+Migration 0081 adds an append-only, tenant-fenced
+`knowledge_source_tier_fileos_xlsx_table_replays` row keyed by one human
+source-tier review. It binds the current FileOS evidence/document/version,
+source/text SHA-256s, root binding, exact image-version pair and bounded
+sheet/row/cell counts to a row-layout SHA-256. It stores no cell values or
+currentness claim; ADR-237 exposes only an exact private worker command.
+
 This document combines implemented source-neutral tables with the remaining target
 model. Migrations `0015` through `0021` implement the first DataCore,
 KnowledgeCore and FileOS completion/freshness slices; names not identified as
@@ -85,6 +185,97 @@ explicit, not inferred from filename.
 
 ## KnowledgeCore
 
+Migration `0075_reviewed_source_tier_classifications.sql` adds immutable,
+tenant-scoped human reviews of one current source evidence version. Each row
+pins the stored source hash, normalized-document hash, exact quote, controlled
+T1/T2/T3 authority kind, reviewer and idempotency key. SQL and API checks
+reject stale/paused/excluded or mismatched source/document bases; reads
+recheck current grants before returning bounded history. This classifies
+document authority, **not** independently retrieved bytes, extraction
+completeness, corroborated value or ownership
+([ADR-217](adr/217_current_source_tier_review.md)).
+
+Migration `0076_source_tier_fileos_text_replay.sql` adds one immutable,
+tenant-scoped point-in-time worker replay receipt per reviewed tier. It binds
+the review to the same current FileOS evidence, source version and text
+document, source/text digest, byte count, normalizer and physical-root digest.
+The SQL guard repeats those identity/currentness checks; DataCore's shared
+confined reader must independently re-read the file and reproduce the exact
+text before the receipt can be written. This supports only bounded built-in
+text extraction, not PDF/OCR completeness or ongoing on-disk freshness
+([ADR-218](adr/218_source_tier_fileos_text_replay.md)).
+
+Migration `0077_source_tier_email_text_replay.sql` adds a parallel immutable,
+tenant-scoped point-in-time receipt for one current reviewed **Email message**.
+It binds the review, bridged DataCore evidence/document, legacy Email version,
+account, source/text hashes and byte count, direct MIME parser and normalizer.
+The SQL guard checks the current active source/account, bridge and message;
+the worker must separately load retained MIME (inline or authenticated
+encrypted), rehash it, re-run the pinned parser and compare the whole
+normalized text before inserting. Only bounded direct-parser messages are
+covered; the receipt contains no MIME/body and is not an issuer or financial
+attestation ([ADR-223](adr/223_retained_email_text_replay.md)).
+
+Migration `0078_source_tier_fileos_pdf_replay.sql` adds a separate immutable,
+tenant-fenced point-in-time receipt for a current reviewed FileOS **PDF**. It
+pins source/text digests, byte count, root binding, exact isolated-processor
+normalizer and bounded page count. The worker must re-read the confined source
+and reproduce the entire published text; the SQL trigger rechecks current
+review/source/document identity but cannot itself prove the processor ran.
+The receipt is text-layer derivation only, not OCR, visual completeness,
+issuer authenticity or financial truth
+([ADR-225](adr/225_confined_fileos_pdf_derivation_replay.md),
+[ADR-226](adr/226_reviewed_fileos_pdf_replay_receipt.md)).
+
+ADR-228 adds only a pure, nonpublishing Email attachment PDF text-layer proof:
+one retained parent MIME hash/size, one MIME part path/hash, the entire bridged
+text digest, exact image/policy normalizer and page count. That pure primitive
+introduced no table or receipt. It preserves each attachment occurrence's
+parent identity and cannot assert current review or financial truth.
+
+Migration `0079_source_tier_email_pdf_replay.sql` / ADR-229 now adds the
+separate append-only receipt for one current reviewed Email **attachment** PDF.
+It binds the child source/evidence/document and approved extraction to the
+specific parent Email version/account and retained MIME hash/size, part
+path/hash/size, complete text digest, image/policy normalizer, result digest
+and page count. The worker reproduces the bytes-to-text transform before a
+final current/grant/authorization check; SQL repeats the current identity
+join and enforces forced RLS, tenant-login fencing and no row mutation or
+truncate. This is not OCR, sender/issuer authenticity or financial truth.
+The ADR-228 paragraph above describes the pure primitive alone.
+
+Migration `0080_email_pdf_replay_account_lock.sql` / ADR-231 adds no source or
+content table. Its directly granted, tenant-bound definer function locks one
+account row during the final Email PDF replay transaction. The previously
+completed document job remains terminal/immutable under its existing trigger;
+the receipt remains a point-in-time record, not a durable active-account flag.
+
+Migration `0073_project_fact_predicate_registry.sql` adds a versioned,
+immutable global catalog for **new** reviewed project-fact names. A SQL insert
+guard and the publication boundary require the active name/value-type/unit shape and
+stamp the selected registry version on new rows. Historical rows retain NULL
+and their original names; no historical fact is reclassified. This first
+catalog does not yet govern generic claims, events or roles, or supply an
+owner-reviewed unknown-name proposal path
+([ADR-214](adr/214_project_fact_predicate_catalog.md)).
+Migration 0074 makes the newest revision authoritative even when deprecated;
+the read-only Brain API lists those latest revisions, not a reconstructed
+older active state
+([ADR-215](adr/215_project_fact_catalog_discovery_and_retirement.md)).
+
+Migration `0071_reviewed_project_fact_measurements.sql` adds nullable,
+immutable exact-decimal `amount_decimal`, `unit_code` and `currency_code` to
+reviewed project facts. The opt-in typed write requires a matching canonical
+decimal `value` and amount/unit tokens in the current exact source quote;
+direct SQL shape checks repeat those constraints. Migration 0072 tightens
+both application and SQL quote matching to complete lexical tokens and
+validates existing typed rows without rewriting them. Historical untyped
+rows keep NULLs. The current-source fact report alone exposes the typed
+object, never an investment sum; ownership and FX remain open, while the
+first reviewed-project predicate catalog now constrains new names
+([ADR-212](adr/212_exact_project_fact_measurement.md),
+[ADR-213](adr/213_project_fact_measurement_quote_tokens.md)).
+
 Migration `0064_private_statement_fileos_replay.sql` adds one append-only
 `knowledge_statement_fileos_replays` row per proposal. Its tenant-composite
 links and SQL basis guard bind the existing proposal/document/evidence/current
@@ -110,6 +301,39 @@ inferred claims or reviewed search material. ADR-202's additive
 NULL and their original payload digest. A Markdown-imported project, event or
 commitment batch binds the exact file and selected claim IDs/citations to its
 typed payload digest. No raw Markdown or source path is stored in this column.
+ADR-205's `0068_dossier_proposal_citation_binding.sql` adds two nullable,
+tenant-FK-bound evidence IDs on each proposal: the selected row's quote basis
+and (only for imported members) its displayed entity citation. New imports
+recheck these IDs at private preview and human review as well as staging;
+historical and generic batches retain NULL and their original contract.
+The migration's insert guard also refuses a new import-context proposal if
+its selected quote citation is absent or outside its direct evidence set, or
+if an imported member lacks its separate entity citation. Generic batches
+cannot smuggle imported citation columns. Historical ADR-202 rows are not
+rewritten or retroactively rejected.
+
+Migration `0069_private_project_fact_proposals.sql` adds a **separate**
+ADR-206 fact batch, ordered proposal/evidence rows, explicit per-row decisions
+and one atomic review receipt. The generic ADR-186 decision FK still points
+only to `knowledge_receipts`; an approved fact decision instead binds the
+reviewer's `knowledge_project_fact_receipts` row and resulting fact ID. The
+batch binds an exact Markdown/selection context digest to canonical typed
+payloads. SQL requires the selected quote evidence to match the payload and
+its evidence array; deferred closure checks row/evidence/decision counts.
+All five tables are forced-RLS, tenant-login-fenced, immutable and protected
+from TRUNCATE. They are private unreviewed storage, not fact search or a
+source-freshness certificate. No raw Markdown is stored.
+
+Migration `0070_private_project_artifact_proposals.sql` adds a separate
+ADR-207 private artifact-link batch, ordered proposals, explicit per-row
+decisions and an atomic review receipt. Each proposal retains the exact
+artifact evidence occurrence and independently cited basis occurrence, plus
+canonical typed payload and import-context digest, not raw Markdown.
+Approval binds a reviewed `knowledge_project_artifact_receipts` row and its
+new link ID; rejection has no link. Forced RLS, tenant-login fencing,
+tenant-composite keys, immutable/protected-truncate tables and deferred
+whole-batch closure preserve the separate proof. These rows are not an
+automatic current-file roster, inferred association or FileOS source effect.
 
 Migration `0057_private_statement_proposals.sql` implements ADR-172's separate
 append-only `knowledge_statement_proposals`, ordered
@@ -221,10 +445,10 @@ store inferred basis links, unit/currency semantics or export-ready quotes.
 The [Librarian interoperability review](LIBRARIAN_INTEROP.md) and
 [ADR-169](adr/169_code_first_librarian_interop.md) define proposed additions.
 ADR-202 now supplies a narrow project/event/commitment Markdown proposal route;
+ADR-205 adds members, and ADR-206 adds a separate project-fact queue;
 the remaining unimplemented additions are inferred-derivation/basis links,
-typed monetary units and uncertain due
-windows, expanded project-artifact dossier presentation and a compatible
-fact-name registry.
+uncertain due windows, expanded project-artifact dossier presentation and
+the owner-reviewed proposal/alias workflow for fact-name registry changes.
 New basis links must preserve transitive source grants. Existing Email attachment
 occurrences remain distinct even when their content hashes match. Project
 aliases, reviewed members, artifact links and source-stated project facts are

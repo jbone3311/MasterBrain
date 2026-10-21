@@ -22,8 +22,10 @@ from masterbrain.knowledge_schema import (
     KnowledgeAssertion,
     KnowledgeProposalReviewRequest,
     KnowledgeProposalStageRequest,
+    MemberWrite,
     ProjectWrite,
 )
+from masterbrain.project_dossier_markdown import _verified_assertion_citation
 
 _ASSERTION: TypeAdapter[KnowledgeAssertion] = TypeAdapter(KnowledgeAssertion)
 _BATCH_ID = re.compile(r"^kbatch_[a-f0-9]{32}$")
@@ -32,6 +34,7 @@ _IMPORT_TABLES = {
     "project": "knowledge_projects",
     "event": "knowledge_events",
     "commitment": "knowledge_commitments",
+    "member": "knowledge_project_members",
 }
 
 
@@ -62,9 +65,41 @@ class KnowledgeProposalBatches:
             raise AccessDenied("human identity required")
 
     @staticmethod
+    def _lock_linked_citation_basis(
+        conn: Any, ctx: TenantContext, allowed: list[str] | None,
+        kind: str, object_id: str,
+    ) -> None:
+        """Hold every linked source item/status stable through proposal publication."""
+        linked = conn.execute(
+            "SELECT evidence_id FROM knowledge_evidence "
+            "WHERE tenant_id=%s AND target_kind=%s AND target_id=%s",
+            (ctx.tenant_id, kind, object_id),
+        ).fetchall()
+        ids = {row["evidence_id"] for row in linked}
+        if not ids:
+            raise Conflict("uncitable reviewed assertion")
+        locked = conn.execute(
+            "SELECT e.id FROM brain_evidence e "
+            "JOIN brain_source_versions v ON v.tenant_id=e.tenant_id "
+            "AND v.id=e.source_version_id "
+            "JOIN brain_source_items i ON i.tenant_id=v.tenant_id "
+            "AND i.id=v.item_id AND i.source_id=v.source_id "
+            "JOIN brain_sources s ON s.tenant_id=i.tenant_id AND s.id=i.source_id "
+            "WHERE e.tenant_id=%s AND e.id=ANY(%s) "
+            "AND i.current_version_id=v.id AND s.status='active' "
+            "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
+            "AND (%s::text[] IS NULL OR s.id=ANY(%s::text[])) "
+            "FOR SHARE OF i,s",
+            (ctx.tenant_id, list(ids), allowed, allowed),
+        ).fetchall()
+        if {row["id"] for row in locked} != ids:
+            raise Conflict("uncitable reviewed assertion")
+
+    @staticmethod
     def _visible_basis(
         conn: Any, ctx: TenantContext, assertion: KnowledgeAssertion,
         required_quote_evidence_id: str | None = None,
+        required_entity_citation_id: str | None = None,
     ) -> None:
         """All evidence must be current, granted and unexcluded; quote exact in one."""
         evidence_ids = list(assertion.evidence_ids)
@@ -81,7 +116,8 @@ class KnowledgeProposalBatches:
             "JOIN brain_sources s ON s.tenant_id=i.tenant_id AND s.id=i.source_id "
             "WHERE e.id=ANY(%s) AND i.current_version_id=v.id AND s.status='active' "
             "AND NOT public.brain_email_evidence_is_excluded(e.tenant_id,e.id) "
-            "AND (%s::text[] IS NULL OR s.id=ANY(%s::text[]))",
+            "AND (%s::text[] IS NULL OR s.id=ANY(%s::text[])) "
+            "FOR SHARE OF i,s",
             (assertion.source_quote, evidence_ids, allowed, allowed),
         ).fetchall()
         if {row["id"] for row in rows} != set(evidence_ids):
@@ -103,11 +139,43 @@ class KnowledgeProposalBatches:
                 ).fetchone()
                 if not matched or not matched["matched"]:
                     raise ValueError("proposal alias quote lacks an exact source span")
+        if isinstance(assertion, MemberWrite):
+            references = conn.execute(
+                "SELECT p.source_quote AS project_quote,e.source_quote AS entity_quote,"
+                "e.entity_type FROM knowledge_projects p "
+                "JOIN knowledge_entities e ON e.tenant_id=p.tenant_id "
+                "WHERE p.tenant_id=%s AND p.id=%s AND e.id=%s",
+                (ctx.tenant_id, assertion.project_id, assertion.entity_id),
+            ).fetchone()
+            if references is None or references["entity_type"] not in {
+                "person", "organization",
+            }:
+                raise NotFound()
+            for kind, object_id in (
+                ("project", assertion.project_id), ("entity", assertion.entity_id),
+            ):
+                KnowledgeProposalBatches._lock_linked_citation_basis(
+                    conn, ctx, allowed, kind, object_id,
+                )
+            _verified_assertion_citation(
+                conn, ctx.tenant_id, allowed, "project", assertion.project_id,
+                references["project_quote"],
+            )
+            entity_citation = _verified_assertion_citation(
+                conn, ctx.tenant_id, allowed, "entity", assertion.entity_id,
+                references["entity_quote"],
+            )
+            if (required_entity_citation_id is not None
+                    and entity_citation != required_entity_citation_id):
+                raise ValueError("imported member entity citation changed")
+        elif required_entity_citation_id is not None:
+            raise ValueError("entity citation requires a member proposal")
 
     def stage(
         self, ctx: TenantContext, body: KnowledgeProposalStageRequest,
         idempotency_key: UUID, *, import_context_sha256: str | None = None,
         import_claims: list[tuple[str, str]] | None = None,
+        import_entity_citations: list[str | None] | None = None,
     ) -> dict[str, Any]:
         self.store.require(ctx, "knowledge.review")
         self._human(ctx)
@@ -122,7 +190,24 @@ class KnowledgeProposalBatches:
             or len(import_claims) != len(body.proposals)
         ):
             raise ValueError("invalid import binding")
+        if import_entity_citations is not None and (
+            import_claims is None
+            or not isinstance(import_entity_citations, list)
+            or len(import_entity_citations) != len(body.proposals)
+            or any(
+                citation is not None and (
+                    not isinstance(citation, str)
+                    or re.fullmatch(r"evidence_[a-f0-9]{32}", citation) is None
+                )
+                for citation in import_entity_citations
+            )
+        ):
+            raise ValueError("invalid imported entity citations")
         parsed = [_canonical(raw) for raw in body.proposals]
+        entity_citations = (
+            import_entity_citations if import_entity_citations is not None
+            else [None] * len(parsed)
+        )
         payloads = [payload for _, payload in parsed]
         request_sha = (
             _sha(payloads) if import_context_sha256 is None
@@ -153,6 +238,7 @@ class KnowledgeProposalBatches:
                         "row_count": len(parsed), "changed": False, "reviewed": False}
             for ordinal, (assertion, _) in enumerate(parsed):
                 claimed_id = citation_id = table = None
+                entity_citation_id = entity_citations[ordinal]
                 if import_claims is not None:
                     claimed_id, citation_id = import_claims[ordinal]
                     table = _IMPORT_TABLES.get(assertion.kind)
@@ -161,7 +247,15 @@ class KnowledgeProposalBatches:
                                 rf"^{assertion.kind}_[a-f0-9]{{32}}", claimed_id,
                             )):
                         raise ValueError("invalid imported proposal claim")
-                self._visible_basis(conn, ctx, assertion, citation_id)
+                if (entity_citation_id is not None
+                        and not isinstance(assertion, MemberWrite)):
+                    raise ValueError("entity citation requires a member proposal")
+                if isinstance(assertion, MemberWrite) and import_claims is not None \
+                        and entity_citation_id is None:
+                    raise ValueError("imported member needs its entity citation")
+                self._visible_basis(
+                    conn, ctx, assertion, citation_id, entity_citation_id,
+                )
                 if table is not None and claimed_id is not None:
                     existing = conn.execute(
                         f"SELECT 1 FROM public.{table} "
@@ -189,10 +283,13 @@ class KnowledgeProposalBatches:
                 proposal_id = stable_id("kproposal", batch_id, str(ordinal))
                 conn.execute(
                     "INSERT INTO knowledge_proposals(tenant_id,id,batch_id,ordinal,"
-                    "payload,payload_sha256,evidence_count) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                    "payload,payload_sha256,evidence_count,import_quote_evidence_id,"
+                    "import_entity_citation_id) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                     (ctx.tenant_id, proposal_id, batch_id, ordinal,
-                     Jsonb(payload), _sha(payload), len(assertion.evidence_ids)),
+                     Jsonb(payload), _sha(payload), len(assertion.evidence_ids),
+                     import_claims[ordinal][1] if import_claims is not None else None,
+                     entity_citations[ordinal]),
                 )
                 for position, evidence_id in enumerate(assertion.evidence_ids):
                     conn.execute(
@@ -217,6 +314,7 @@ class KnowledgeProposalBatches:
             raise NotFound()
         rows = conn.execute(
             "SELECT p.id,p.ordinal,p.payload,p.payload_sha256,p.evidence_count,"
+            "p.import_quote_evidence_id,p.import_entity_citation_id,"
             "d.decision,d.reason,d.object_kind,d.object_id "
             "FROM knowledge_proposals p LEFT JOIN knowledge_proposal_decisions d "
             "ON d.tenant_id=p.tenant_id AND d.proposal_id=p.id "
@@ -240,7 +338,10 @@ class KnowledgeProposalBatches:
             ).fetchall()
             if [item["evidence_id"] for item in evidence_rows] != list(assertion.evidence_ids):
                 raise Conflict("proposal evidence mismatch")
-            KnowledgeProposalBatches._visible_basis(conn, ctx, assertion)
+            KnowledgeProposalBatches._visible_basis(
+                conn, ctx, assertion, row["import_quote_evidence_id"],
+                row["import_entity_citation_id"],
+            )
             payloads.append(payload)
         expected_sha = (
             _sha(payloads) if header["import_context_sha256"] is None

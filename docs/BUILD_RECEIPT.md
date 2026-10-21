@@ -1,6 +1,1721 @@
 # Build and validation receipt
 
-Updated 2026-10-15 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+Updated 2026-10-20 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
+
+## ADR-266 review fixes — local checkpoint
+
+Pages source-tier reviews with a cursor and all-page tier counts, approves an
+imported dossier claim once, and binds fact-proposal approvals to the exact
+published fact and current reviewer (migration 0095). The three new
+PostgreSQL regression tests failed on the pre-fix code.
+
+On a fresh disposable PostgreSQL 17.11 `en_US.UTF-8` database (macOS ICU), the
+complete Python 3.11.13 suite passed **3,814 / 71 skipped / zero failed** in
+9m43s with **698/699 PostgreSQL-marked tests executed**. Ruff, strict mypy
+(151 source files), first-party Node **179/179**, offline docs and diff check
+passed. Hosted exact-head CI is the remaining gate.
+
+## ADR-265 review fixes — exact-code checkpoint `c4faadc`
+
+Fixes three independent-review findings and the first hosted full-suite failure
+(collation). Each regression test was run against the unfixed `8753c57` code and
+failed for the intended reason (`prepared row identity`; `registry review:
+unknown`; understated XLSX dimension extracted as complete).
+
+On a fresh disposable PostgreSQL 17.11 database created with `en_US.UTF-8`
+collation (macOS ICU, not glibc), the complete Python 3.11.13 suite passed
+**3,811 / 71 skipped / zero failed** in 10m46s, with **695/696
+PostgreSQL-marked tests executed**. The nine FileOS v2/later PostgreSQL tests
+passed separately (5m58s). Ruff, strict mypy (151 source files), first-party
+Node **178/178**, offline docs (381 files/1,987 paths) and diff check passed.
+The 71 skips include the pinned-donor parity tests, which expect the donor at
+`../FOS-Master` (absent on this host). Hosted exact-head CI is the remaining
+gate; it now starts jobs.
+
+## Newer FOS-Master donor review — documentation checkpoint
+
+Compared the unchanged local parity pin `218d5cae` with FOS-Master remote
+`main` at `eb774fc` (11 newer commits). Reviewed the archive-aware FTS,
+hybrid/filename search, safe archive move, mass-phantom repoint guard and
+the other report/session changes; see the [delta inventory](FOS_DONOR_DELTA_2026_10.md)
+and proposed [ADR-263](adr/263_current_working_file_search_visibility_proposal.md).
+In a detached temporary checkout of `eb774fc`, selected fictional
+content-search, FTS, safe-file-operation and archive tests passed **38/38**
+in 0.30s. The repoint self-test was **not run** because its setup opens the
+donor's operational SQLite schema. No real domain files or donor database
+were read, no donor working-tree files were changed, and no MasterBrain search
+runtime was altered. The old exact donor pin remains the active parity basis.
+Offline docs passed **365 Markdown files / 1,879 links and fragments**.
+
+## Historical FileOS review snapshot — ADR-262 unmerged branch
+
+The human-only historical review summary now binds one ready later FileOS
+generation to its exact run, immutable closure, review flags and latest
+append-only row decisions. It returns a canonical digest and compact counts
+for acknowledged, held and missing required historical row decisions. A
+correction changes the digest. The response explicitly grants no run signoff,
+absence authority, current-read switch or source effect. This remains a
+synthetic-only review aid, not permission to cut over FOS-Master.
+
+On a fresh disposable PostgreSQL 17.11 database, the complete Python 3.14
+suite passed **3,861 / 19 skipped / zero failed** in **18m00s**;
+**694/695 PostgreSQL-marked tests executed**. The five new pure snapshot
+cases and focused real-PostgreSQL/API lifecycle passed separately. Ruff,
+strict mypy (151 source files), first-party Node **185/185**, offline docs,
+structural gate, diff check and offline wheel build passed. The long local
+commit in the 3,000-file stress path is a performance signal, not a throughput
+SLA. Hosted exact-head CI remains blocked before jobs start by the account's
+Actions billing annotation; it is not counted as a pass.
+
+## Historical FileOS decision scale and populated restore — test checkpoint
+
+The complete fictional 3,000-file later FileOS pipeline now records a final
+100-row historical decision batch, replays the same 100 exact keys, rejects a
+101-row request and reads back 100 latest dispositions without changing
+current search or absence authority. The focused PostgreSQL 17.11 test passed
+**1/1 in 3m36s**. This is a 100-row service and schema boundary, not a 100-row
+HTTP payload guarantee: the Brain API's separate 32 KiB body cap still applies.
+
+The resulting fictional database was dumped and restored into a **second,
+empty, disposable PostgreSQL 17.11 cluster** with `--single-transaction`,
+`--exit-on-error`, `--no-owner` and `--no-acl`. The repository-defined marker
+roles had to be bootstrapped first; the first attempt failed atomically and
+left zero public tables, and the retry succeeded. Source and restore each
+held exactly 100 distinct decision keys and locators with the same ordered
+content digest `d8571d8c7a2cc9c0614e95169ce5d273`. Restored storage still
+had forced RLS and three enabled guard triggers; a direct update was denied
+by the append-only trigger. A restored login bound to the owning fictional
+tenant saw 100 decisions; an unrelated tenant-bound login saw zero even after
+forging the owner's tenant session setting. This is local synthetic restore
+evidence, not hosted restore, a complete backup SLA, owner
+signoff or live FileOS acceptance. Ruff, strict mypy (150 source files),
+documentation links and diff whitespace passed after the test change.
+
+## Historical FileOS row decisions — ADR-261 unmerged branch
+
+Migration 0093 and `FileOSV2LaterRowDecisions` now store human-only,
+append-only, exact historical row dispositions against a ready later-run
+generation and closure. The first tranche tests atomic batch replay,
+correction by a new event, latest-decision and bounded history reads,
+possible-absence labeling, source/worker denial, stale-v1 refusal, forged
+SQL rows/reviewer and mutation/truncation refusal. An unrecognized or
+changed-source row is rejected; current FileOS search and absence authority
+remain unchanged. The pinned FOS-Master donor remains clean and unmodified.
+
+The exact working-tree Python 3.14 suite on disposable loopback PostgreSQL
+17.11 passed **3,856 / 19 skipped / zero failed** in **11m21s**;
+**694/695 PostgreSQL-marked tests executed**. The one PostgreSQL-marked
+skip is Docker-backed. Focused migration/recovery/protected-table checks
+passed **41/41** and the later FileOS lifecycle/API test passed **1/1**.
+Node passed **185/185**; Ruff, strict mypy (150 source files), offline docs
+(362 Markdown files / 1,865 links/fragments before the final wording edit),
+structural gate, diff whitespace and offline wheel build passed. The wheel
+includes the new module. The full suite took three minutes longer than the
+previous 8m21s receipt; the large synthetic database commit was CPU-active
+without a lock blocker, so this is a performance signal, not an SLA.
+
+Two initial partial full runs found a **local virtual-environment packaging
+issue**, not a product assertion: a child test process could not import the
+repo package, including with `python -I`. Installing the freshly built
+offline wheel into only this checkout's virtual environment fixed both
+focused subprocess tests; the clean full run above used that wheel and
+`PYTHONPATH=src`. Those interrupted partial runs are not counted as passes.
+Hosted exact-head CI, actual-image execution, run-level owner signoff,
+fresh live shadow, rollback, current-v2 activation and donor cutover remain
+open. No real mail, files or provider tokens were used.
+
+At pushed code head `199e677`, all **12 hosted check runs failed before
+starting**. The exact-head `gate` annotation says recent account payments
+failed or the spending limit needs increasing. This is a hosted billing
+block, not a Python, PostgreSQL or JavaScript test failure. PR #245 remains
+open and must not be merged on local-only evidence.
+
+## Later FileOS classification scale gate and proposed owner decision
+
+The ADR-260 historical row-review API now has direct fictional 3,000-row
+stress coverage in the existing full later FileOS generation path. The
+focused test passes its final 100-row page, exact first/last locator,
+classification totals, empty absence filter and no-current/no-absence
+flags in 3m42s for the **whole** generation pipeline; this is not an API
+latency SLA. The full Python 3.14 / loopback PostgreSQL 17.11 suite on the
+same test revision passed **3,856 / 19 skipped / zero failed** in 8m21s;
+**694/695 PostgreSQL-marked tests executed**. Node passed **185/185**;
+Ruff, strict mypy (149 source files), offline docs (362 Markdown files /
+1,860 paths and fragments), diff whitespace and offline wheel build passed.
+
+At head `653828d`, [ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md)
+was still a proposed, **unimplemented** append-only owner-decision contract.
+The newer tranche above implements historical row decisions only. It does
+not implement run-level signoff, absence approval, v2 activation, file
+effect, live shadow or donor cutover. Hosted exact-head CI is separate.
+
+## Human historical later FileOS row inspection — current unmerged branch
+
+ADR-260 adds a bounded, human-only view of the immutable prior-row
+classifications behind one ready historical later FileOS generation. It
+reuses the ADR-259 source/run/root guard and independently revalidates the
+ADR-254 closure. A fictional PostgreSQL/API lifecycle test pages unchanged
+rows, filters one exact possible-absence row from a second generation,
+rejects worker/ungranted/wrong-generation/invalid requests, and confirms
+`absence_authorized=false`, `current_read_active=false` and unchanged current
+search. An explicit source-ID join and reviewer check were added before the
+final full run; an earlier partial run was interrupted for that hardening,
+not counted as acceptance.
+
+The complete fictional Python 3.14 suite then passed on disposable
+PostgreSQL 17.11 bound only to **127.0.0.1**: **3,856 passed, 19 skipped,
+zero failed** in 8m44s; **694/695 PostgreSQL-marked tests executed**. The
+single PostgreSQL-marked skip is the Docker-backed trial launcher. The
+first-party Node suite passed **185/185**; Ruff, strict mypy (149 source
+files), offline docs (361 Markdown files / 1,857 paths and fragments),
+diff whitespace, repository structural gate and offline wheel build passed.
+The unchanged pinned FOS-Master checkout remains the donor; the full suite
+includes its fictional parity corpus. This is local synthetic evidence,
+not hosted CI, an actual isolated image, owner adjudication, live shadow,
+activation, rollback or donor-cutover acceptance.
+
+## Human historical later FileOS comparison — current unmerged branch
+
+ADR-259 adds a source-bound human-only comparison of a named ready historical
+later FileOS generation with the source's active v1 lexical view. It returns
+separate bounded layers and the completed run's review flags, including
+possible absence, without changing current reads, absence events or source
+files. The existing baseline-v2 preview now rejects an ungranted or paused
+source. Fictional PostgreSQL lifecycle/API coverage includes a later-only
+file, a second possible-absence generation, worker and source-grant denial,
+closed inputs and unchanged current search. The focused lifecycle test passed.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,856 passed, 19 skipped, zero failed**
+in 8m44s; **694/695 PostgreSQL-marked tests executed**. The single
+PostgreSQL-marked skip is the Docker-backed trial launcher. The first-party
+Node suite passed **185/185**; Ruff, strict mypy (149 source files), offline
+docs (360 Markdown files / 1,852 paths and fragments), diff whitespace,
+repository structural gate and offline wheel build passed. The wheel includes
+the reviewer and API. The pinned FOS-Master donor checkout is still clean at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`; the full suite includes its
+synthetic parity corpus. This is local fictional evidence, not hosted CI,
+actual-image, live-source, rollback, activation or donor-cutover acceptance.
+
+## Historical later FileOS v2 shared index — current unmerged branch
+
+ADR-258 and migration 0092 add a distinct `v2_later` basis to the existing
+DataCore generation/item/chunk/receipt tables. A scoped worker builds only
+the exact hashed rows of a ready ADR-257 historical run; SQL rejects forged
+or missing membership and activation. A full fictional 3,000-hash later
+packet → coverage → evidence → documents → run → generation stress case
+passed, with 3,000 exact indexed documents/chunks and no current FileOS
+search result. The first stress run exposed a timeout in the inherited v1
+receipt-count query; the migration now routes later generations through the
+indexed v2 counting path while retaining a separate exact-membership guard.
+An unrelated long KnowledgeCore fixture's five-minute fictional credentials
+expired under the slower combined run; only that test fixture's two token
+windows were lengthened. Product credential expiry is unchanged.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,856 passed, 19 skipped, zero failed**
+in 14m19s; **694/695 PostgreSQL-marked tests executed**. The sole
+PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (149 source files), offline docs (359 Markdown
+files / 1,848 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the later-index builder. The unchanged pinned
+FOS-Master 3,000-file shadow matched **3,004** ordinary/replay/changed/
+candidate/metadata rows with six explicit policy differences. This is
+local fictional evidence, not hosted exact-head, actual-image, live root,
+rollback, activation or donor-cutover acceptance. The combined-suite
+duration is a performance signal for future profiling, not a live SLA.
+
+## Historical later FileOS v2 run completion — current unmerged branch
+
+ADR-257 and migration 0091 bind one ready ADR-256 row-outcome attempt to a
+fresh, exact donor-policy source observation and append a historical later-run
+receipt. It records separate possible-absence, mass-loss and prior-coverage
+review flags while SQL fixes nonpublishing, noncurrent, no-absence status.
+Fictional PostgreSQL lifecycle tests prove blocked-attempt and source-drift
+refusal, direct-SQL forged-flag refusal, clean and possible-absence receipts,
+replay, one completion per packet and mutation/truncation denial. Migration,
+recovery and protected-table checks passed **41/41**. The pinned, unchanged
+FOS-Master 3,000-file shadow matched **3,004** ordinary/replay/changed/
+candidate/metadata rows; six known policy differences remain explicit.
+
+The complete fictional Python 3.14 suite passed on fresh disposable
+PostgreSQL 17.11 bound only to **127.0.0.1**: **3,856 passed, 19 skipped,
+zero failed** in 6m58s; **694/695 PostgreSQL-marked tests executed**. The
+sole PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (148 source files), offline docs (358 Markdown
+files / 1,844 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the new completer. An earlier run against a
+reused disposable database was interrupted after its migration checksum
+correctly rejected an in-flight SQL edit; the fresh exact-source rerun above
+is the acceptance result. No actual-image, hosted exact-head, live root,
+activation, rollback or FOS-Master cutover is claimed.
+
+## Historical later FileOS v2 document attempt — current unmerged branch
+
+ADR-256 and migration 0090 extract exact later hashed evidence into
+historical normalized DataCore documents, then seal one outcome per current
+observation row. The fictional PostgreSQL lifecycle and migration/protected-
+table checks passed **22/22**. A later-only text file produced a historical
+document, an excluded Office lock file received `excluded_source`, drift and
+direct-SQL incomplete attempts were refused, a simulated failed extraction
+sealed a blocked attempt and a clean retry sealed the sole ready attempt,
+replay/immutability held, and
+current FileOS search, current pointers, freshness and absence remained
+unchanged. The pinned, unchanged FOS-Master 3,000-file synthetic shadow
+matched **3,004** ordinary/replay/changed/candidate rows, with six known
+policy differences still explicit.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,855 passed, 19 skipped, zero failed**
+in 6m55s; **694/695 PostgreSQL-marked tests executed**. The sole
+PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (147 source files), offline docs (357 Markdown
+files / 1,840 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the new publisher. This is local fictional
+evidence, not hosted exact-head, actual-image, live-root or cutover acceptance.
+Scan-error observations cannot yet enter the preparation path; this attempt
+is not a completed later FileOS run.
+
+## Source-bound later FileOS v2 hash evidence — current unmerged branch
+
+ADR-255 and migration 0089 prepare historical DataCore source versions and
+source-bound evidence for each hashed row in an exact ADR-254 closure. A
+fresh, locked, confined rescan must match the sealed donor observation; a
+later-only fictional file receives a policy-scoped evidence version while
+its current pointer stays null. Focused PostgreSQL lifecycle and migration
+guards passed **22/22**, including source drift, wrong-root replay, direct-
+SQL omission, scope, mutation and truncation refusal. The baseline evidence
+helper was refactored for reuse without changing its result.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,855 passed, 19 skipped, zero failed**
+in 7m02s; **694/695 PostgreSQL-marked tests executed**. The sole
+PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (146 source files), offline docs (356 Markdown
+files / 1,836 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the new later-evidence module. This is local
+fictional evidence, not hosted exact-head, actual-image, live-root or
+cutover acceptance. No normalized later document or completed later run is
+claimed.
+
+## Exact FileOS v2 later-row coverage closure — current unmerged branch
+
+ADR-254 and migration 0088 add one immutable, tenant-fenced historical
+coverage closure per validated ADR-253 packet. It deterministically seals
+every current donor row and prior-row classification, but it has no document
+processing outcome, completed later-run, absence or current-read authority.
+The focused fictional PostgreSQL lifecycle and migration/truncation checks
+passed **22/22**, including direct-SQL forged absence refusal, forged row
+projection detection, replay, scope and mutation guards. Two pure fictional
+coverage tests passed, including 3,000 hashed rows.
+
+The complete fictional Python 3.14 suite passed on disposable PostgreSQL
+17.11 bound only to **127.0.0.1**: **3,855 passed, 19 skipped, zero failed**
+in 8m25s; **694/695 PostgreSQL-marked tests executed**. The one
+PostgreSQL-marked skip is the Docker-backed trial launcher. Node passed
+**178/178**; Ruff, strict mypy (145 source files), offline docs (355 Markdown
+files / 1,831 paths and fragments), diff whitespace and offline wheel build
+passed. The wheel includes the new coverage module. This is local fictional
+evidence, not hosted exact-head, actual-image, live-root or cutover acceptance.
+
+## Durable FileOS v2 later-observation packet — current unmerged branch
+
+ADR-253 and migration 0087 add a nonpublishing, source-locked, immutable
+review packet bound to the exact completed baseline. A focused fictional
+PostgreSQL 17.11 lifecycle test passed on disposable 127.0.0.1-only storage:
+record/read/replay, multiple observations including a possible missing-file
+row, root/scope/unknown/stale-v1 refusal, direct-SQL forged authority refusal,
+forged classification detection and mutation/truncate denial. The packet
+cannot authorize absence, a completed later run or current FileOS reads.
+The first full run found three stale test expectations: the protected-table
+and truncate-guard counts, and the exact migration inventory. After updating
+those fixtures, the affected PostgreSQL tests passed **21/21**, and a clean
+full fictional Python 3.14 / PostgreSQL 17.11 loopback rerun passed **3,853
+passed, 19 skipped, zero failed** in 12m44s; **694/695 PostgreSQL-marked tests
+executed**. The one PostgreSQL-marked skip remains the Docker-backed trial
+launcher. Node passed **178/178**; Ruff, strict mypy (144 source files), docs
+(354 Markdown files / 1,825 paths and fragments), whitespace and offline wheel
+build passed. The new private packet module is packaged. This is local
+fictional evidence, not hosted exact-head, live-root or cutover acceptance.
+
+## Completed-baseline-bound FileOS v2 preview — current unmerged branch
+
+ADR-252 adds a private worker-only later-observation preview against the
+existing completed FileOS v2 baseline. One focused fictional PostgreSQL 17.11
+lifecycle test passed on a fresh disposable socket-only cluster: exact clean
+preview, one missing-file candidate without absence authority, wrong-root and
+scope refusal, unknown or corrupted completion refusal, and refusal after a
+newer v1 completion. The cluster was stopped.
+The response contains only counts, fixed blockers and an ephemeral digest;
+there is no later-run insert, source mutation or current-read switch. Hosted
+exact-head, live-root and rollback gates remain open.
+
+The complete fictional Python 3.14 suite then passed against a fresh
+PostgreSQL 17.11 **127.0.0.1-only** disposable database: **3,853 passed,
+19 skipped, zero failed** in 6m13s; **694/695 PostgreSQL-marked tests
+executed**. The sole PostgreSQL-marked skip is the Docker-backed trial
+launcher, not a pass. A preceding Unix-socket-only full attempt had 28 setup
+errors in combined-demo/OIDC fixtures that explicitly require a loopback TCP
+host, plus one related failure; two representative cases passed after the
+configuration correction, and the full clean loopback rerun passed. Both
+temporary databases and the cluster were stopped and removed. The first-party
+Node suite passed **178/178**; Ruff, strict mypy (143 source files), offline
+documentation links (353 Markdown files / 1,820 local paths and fragments),
+diff whitespace and an offline wheel build passed. The wheel includes the new
+private preview module. This is local fictional evidence, not hosted CI,
+actual-image, live-root or cutover acceptance.
+
+## Consecutive FileOS v2 observation preview — current unmerged branch
+
+ADR-251 adds a pure, nonpublishing later-observation classifier. Twelve fictional
+tests passed for changed/new/missing rows, symlink-directory and unrelated
+coverage errors, hashless-to-hashed transitions, dataless deferral,
+nonregular-file exclusion, a donor-equivalent 10-of-20 mass-loss blocker,
+incomplete prior coverage, source/root/policy/time mismatches and forged row
+identity, plus a 3,000-row unchanged stress case. Ruff and strict mypy over
+142 source files passed; an offline wheel build included the new module. The
+preview neither consults a completed database
+baseline nor writes an absence event, current index or source file;
+the later-run database and rollback gates are still open.
+
+## Exact-source donor parity gate — current unmerged branch
+
+The older DataCore dedupe/extraction parity command now refuses a dirty
+FOS-Master checkout and verifies the exact SHA-256 of both pinned donor source
+files before importing them, then rechecks provenance after comparison. A
+clean, different donor commit requires an
+explicit exploratory override and cannot be labeled pinned parity. Three
+fictional provenance tests passed, including edited-source and dirty-checkout
+refusals. The real unchanged pinned donor then passed the fixture comparison
+and a 3,000-file stress comparison of hash/name/both dedupe, pair hashes and
+text/HTML/CSV/DOCX/XLSX extraction. This hardens the comparison instrument;
+it does not change FileOS runtime behavior or satisfy live shadow/cutover.
+
+## Pinned FileOS donor recheck — current unmerged branch
+
+At product-code head `d593ad6`, the synthetic donor-policy shadow was rerun
+against the unchanged FOS-Master checkout at
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`, with the maximum 9,994
+stress files. The donor and DataCore agreed on 9,998 ordinary, replay,
+changed-file, metadata-only and candidate rows, with **zero unexplained
+membership differences**. The 10,000-row prior-v1 transition still reports
+the same six known policy gaps and remains nonpublishing. The focused policy
+tests passed **24**, with one filesystem-conditional skip and the separate
+maximum-capacity case deselected because the direct maximum run covered it.
+The existing Librarian format choice was also rechecked: MasterBrain's own
+verified dossier Markdown remains the intake format (ADR-197/200), and its
+bounded parser tests passed **12/12**. This is synthetic verification only;
+it does not close live FileOS shadow, platform, rollback, or cutover gates.
+
+## Fictional XLSX alpha round trip — current unmerged branch
+
+ADR-250 adds one real disposable PostgreSQL 17.11 integration test exercising
+owner Email search/evidence, exact source approval, two distinct tenant-bound
+worker actors/logins, sealed extraction, human result inspection and review,
+separate publication, current Email-family search, cited content and source-
+pause denial. The real API inspection/review JSON also passed through the
+first-party Node UI contract. The focused test passed **1/1** on a fresh
+socket-only cluster, which was stopped and removed. The restricted processor
+was simulated; no actual Docker image, live account, personal data or real
+browser was used. This does not replace the broader local suite or hosted
+exact-head, restore, image, browser and independent-review gates.
+Ruff, strict mypy (141 source files), the first-party Node suite (178/178),
+offline documentation links (351 Markdown files / 1,813 paths and fragments)
+and diff whitespace checks passed. No product-source files changed after the
+full 3,837-pass local PostgreSQL suite recorded below; ADR-250 adds the
+independently executed integration test.
+
+## Private synthetic XLSX extraction command — current unmerged branch
+
+ADR-249 adds an exact-approved, account-pinned, tenant-bound worker command.
+Eleven controller unit cases passed. Two focused tests executed on a fresh
+socket-only disposable PostgreSQL 17.11 cluster: one command-to-database
+seal/replay with a distinct worker identity and different-account refusal,
+and one direct service account-pin/authorization case. The cluster was stopped
+and removed. The restricted processor was simulated, not an actual image.
+Ruff and strict mypy (141 source files) passed. Actual pinned-image, hosted CI
+and end-to-end first-party/browser gates remain open. The complete fictional
+Python 3.14 suite then passed at this code state
+on a fresh disposable PostgreSQL 17.11 TCP-loopback cluster: **3,837 passed,
+19 skipped, zero failed** in 10m19s; **693/694 PostgreSQL-marked tests
+executed**. The single PostgreSQL-marked skip is the Docker-backed trial
+launcher; it is not counted as a pass. The cluster was confirmed stopped and
+removed. Check mode made no selected-result read or write; no live source was used.
+The first-party Node suite passed **178/178**; offline documentation links
+passed over **350 Markdown files / 1,812 local paths and fragments**. An
+offline wheel build included the new private controller. Docker was not
+available locally, so no actual-image execution is claimed.
+
+## First-party synthetic XLSX source approval — current unmerged branch
+
+ADR-248 links an eligible, inspected Email attachment occurrence to ADR-247's
+human-only approval route. Four focused DOM tests cover explicit approval,
+uncertain same-key retry, stale credential/account refusal and result-input
+changes during an in-flight request; the full first-party Node suite passed
+**178/178**. The server API test on disposable
+PostgreSQL is recorded below. The broader Python 3.14 local run passed
+**3,137 / 707 skipped** in 4m33s; **4/693 PostgreSQL-marked executed** and
+689 skipped without a test DSN. The fixed static asset route passed 1/1,
+Ruff and strict mypy (140 source files) passed, and offline links passed over
+349 Markdown files / 1,811 local paths and fragments. Source selection alone
+does not write, and the browser cannot run the worker or publish. Full exact-head PostgreSQL,
+actual-browser/accessibility, pinned-image and hosted gates remain open.
+
+## Synthetic XLSX source-attached approval API — current unmerged branch
+
+ADR-247 exposes the existing exact-attachment, human-only synthetic XLSX
+approval through an API route with a distinct server-owned processor pin.
+One focused real PostgreSQL 17.11 test passed on a fresh socket-only disposable
+cluster, including idempotent replay, missing pin/key/receipt and assistant
+denial; the cluster was stopped and removed. At this source checkpoint, the
+broad Python 3.14 local run passed **3,137 / 707 skipped** in 1m59s, with
+**4/693 PostgreSQL-marked executed** and 689 skipped without a test DSN.
+The first-party Node suite passed **174/174**; Ruff, strict mypy over 140
+source files, and offline documentation links (348 Markdown files, 1,810
+paths/fragments) passed. An offline wheel build succeeded. The skipped
+PostgreSQL tests are not passes. This is not worker extraction, publication,
+a complete exact-head PostgreSQL suite or a live-source result.
+
+## First-party synthetic XLSX result review — current unmerged branch
+
+ADR-246 adds a browser-only human review screen for an existing synthetic XLSX
+approval ID. It requires all bounded result pages and a browser-computed
+full-text SHA-256 match before an explicit digest/count-bound review request.
+It displays and rechecks the original attachment filename, account, parent
+Email evidence, part path and part digest across pages.
+It neither creates the original approval nor runs a worker or publishes a
+document. Seven focused DOM cases and the full **174/174** first-party Node
+suite passed. The static asset route passed **1/1** offline test, and one
+fictional PostgreSQL/API-to-UI response-shape test executed and passed on a
+fresh disposable cluster. Ruff passed, and strict mypy passed over 140 source
+files. This is not an actual-browser/accessibility, immutable-image, hosted
+CI or complete workflow result. The full **3,823-pass** PostgreSQL suite below
+belongs to the preceding `0c64f8b` code head, before ADR-246 UI files.
+The broader Python 3.14 local rerun at this UI checkpoint passed **3,137,
+zero failed, 706 skipped** in 1m44s against the freshly built and installed
+`masterbrain-0.2.0a2` wheel. It executed **4/692
+PostgreSQL-marked tests**; 688 skipped without a test DSN and are not counted
+as passes. The modified XLSX API-to-UI integration test separately executed
+against a fresh disposable PostgreSQL 17.11 cluster and passed **1/1**.
+
+## Native synthetic logical restore — current unmerged branch
+
+At exact code head `0c64f8b`, the full fictional local suite passed on Python
+3.14 and one fresh disposable loopback-only PostgreSQL 17.11 cluster:
+**3,823 passed, 19 skipped, zero failed** in 7m44s; **691/692
+PostgreSQL-marked tests executed**. The newly added XLSX restore-seed test
+executed. The owned cluster was confirmed stopped and removed. Strict mypy
+passed across 140 source files. The one skipped PostgreSQL-marked test and
+18 other skips remain skips, not passes. Hosted exact-head CI and immutable
+document-image execution remain unverified.
+
+ADR-245 adds an opt-in, fresh-cluster-only PostgreSQL 17 native restore drill
+using the existing fictional seed and verification routines. On local
+PostgreSQL **17.11**, it passed across two separate loopback-only clusters:
+**120 public tables, 424 rows, five encrypted external objects and two
+tenants**; content hashes and RLS/tenant isolation matched. The seed now also
+contains a fictional approved XLSX, result, human review and published
+DataCore document/receipt; the restored document remained retrievable. The
+temporary clusters were confirmed stopped and removed. Three offline safety
+tests passed before this seed extension; the new PostgreSQL fixture test is
+collected but skipped when no `EMAIL_BRAIN_TEST_ADMIN_DSN` is supplied. The
+real native drill executed the same seed and verification against two fresh
+clusters. The fixture inserts deterministic extraction output directly, so
+this is not isolated-worker or immutable-image execution. The hosted Docker
+restore remains unexecuted on this head.
+
+The Python 3.14 local full-suite rerun passed **3,136 tests, zero failed,
+706 skipped** in 1m44s after installing this checkout into the local test
+environment; **4/692 PostgreSQL-marked tests executed**, with 688 skipped
+because no `EMAIL_BRAIN_TEST_ADMIN_DSN` was supplied. These skips are not
+passes. The separate real native restore drill above executed against two
+fresh PostgreSQL clusters. The prior Python 3.11 full-suite receipt with
+disposable PostgreSQL remains the 3,819-pass checkpoint at `a82b75e`.
+
+Exact head `d58969d` [CI](https://github.com/jbone3311/MasterBrain/actions/runs/38810565861)
+and [hosted restore](https://github.com/jbone3311/MasterBrain/actions/runs/38810565863)
+failed before any job step. The CI annotation reports failed account payments
+or a spending-limit increase; it is not a code-test result.
+
+## Server-owned Email XLSX bridge provenance — current unmerged branch
+
+ADR-244 and migration 0086 remove the human-supplied code-revision claim.
+The server records `email-xlsx-document-bridge-v2`; new direct-SQL review
+and receipt inserts with another value are rejected, while older immutable
+rows remain untouched. The focused bridge, command, migration, recovery and
+protected-table run passed **47/47**, including **44/44 PostgreSQL-marked**.
+Ruff and strict mypy over 140 source files passed; the actual-image suite
+collected but did not execute locally. The full local synthetic suite then
+passed **3,819 tests, 19 skipped, zero failed** in 5m25s on locked Python
+3.11.13 and disposable loopback-only PostgreSQL 17.11;
+**690/691 PostgreSQL-marked tests executed**. Browser tests passed
+**167/167**, and the pinned FOS XLSX parity suite passed **32/32** with donor
+commit and source SHA-256 verified. Documentation links (345 Markdown files,
+1,806 paths/fragments), structural gate and whitespace check passed. Hosted
+exact-head CI, actual-image execution and independent populated restore remain
+open for this correction.
+
+## Restricted Email XLSX publication command — current unmerged branch
+
+ADR-243 adds a tenant-bound, account-pinned private worker command for one
+ADR-242 review. Unit tests passed **12/12**. The command-to-PostgreSQL and
+adjacent bridge tests passed **6/6**, all PostgreSQL-marked executed, using
+a separate worker actor and tenant-bound login. It checked without selected
+result access, rejected a wrong account, published, idempotently replayed and
+returned cited text through Email-family search. Ruff and strict mypy over
+140 source files passed at this checkpoint. The complete local synthetic
+suite then passed **3,819 tests, 19 skipped, zero failed** in 5m30s on locked
+Python 3.11.13 and disposable loopback-only PostgreSQL 17.11;
+**690/691 PostgreSQL-marked tests executed**. Documentation links
+(344 Markdown files, 1,802 paths/fragments), structural gate and whitespace
+check passed. Actual-image command execution, hosted exact-head CI and
+independent populated restore remain open for ADR-243.
+
+## Human/worker Email XLSX role correction — current unmerged branch
+
+ADR-242 and migration 0085 resolve the token-registry mismatch in ADR-241.
+A human can inspect bounded untrusted result text and seal its digest/counts
+through two owner-only API routes; a separate worker publishes the exact
+reviewed result. New SQL receipts require an unexpired human review. The
+focused fictional PostgreSQL suite passed **16/16** (16/16 marked executed).
+The complete local synthetic suite then passed **3,806 tests, 19 skipped,
+zero failed** in 5m57s on locked Python 3.11.13 and disposable loopback-only
+PostgreSQL 17.11; **689/690 PostgreSQL-marked tests executed**. Browser tests
+passed **167/167**. Ruff, strict mypy over 139 source files, the documentation
+link check (343 Markdown files, 1,796 local paths/fragments), structural gate
+and whitespace check passed. The actual-image case collected but did not run.
+Hosted exact-head CI and independent populated restore remain open. The
+3,805-pass figure below is the *prior* 0084 checkpoint.
+
+## Reviewed synthetic Email XLSX DataCore document bridge — current branch
+
+ADR-241 and migration 0084 add a distinct human digest/count-bound bridge
+from an exact ADR-240 result to the existing attachment evidence, normalized
+text, deterministic chunks and provenance. Generic Brain, evidence-content
+and Email-family reads check the bridge's current synthetic source; a paused
+source or a disallowed source grant hides the derivative. Fictional
+approval/worker/bridge, historical populated-upgrade, recovery and protected-
+truncation checks passed **56/56**, including **53/53 PostgreSQL-marked**.
+Initial focused failures exposed unescaped SQL LIKE placeholders and older
+truncate assertions that omitted the new FK child; both were corrected, with
+no runtime grant or guard relaxed. A forged chunk-count insertion is refused
+by the SQL basis guard. The explicit actual-image container suite now includes
+approval → real isolated extraction → human-bound publication → Email-family
+search, but it is collected, not executed locally because Docker is absent.
+Full-suite, hosted exact-head CI and independent restore gates remain open.
+Repository-wide Ruff, strict mypy over 139 source files, documentation links
+(342 Markdown files, 1,792 local paths/fragments), structural gate and diff
+whitespace check passed.
+
+The complete synthetic suite then passed **3,805 tests, 19 skipped, zero
+failed** in 5m08s on locked Python 3.11.13 and disposable loopback-only
+PostgreSQL 17.11. **688/689 PostgreSQL-marked tests executed**; the skip is
+not counted as a pass. This does not execute the actual immutable image,
+hosted exact-head CI or independent populated restore.
+
+## Email XLSX pre-read and replay authorization — current branch
+
+ADR-240's worker now takes the account lock before source-row locks and checks
+approver/worker ownership and the caller authorization hook before loading raw
+MIME or returning a cached result. Fictional revocation/replay, approval,
+historical migration, recovery and protected-truncation tests passed **52/52**
+on disposable loopback PostgreSQL 17.11; **49/49 PostgreSQL-marked** executed.
+An actual-image approval-to-result test was added to the explicit container
+suite and **collected** (11 tests total, four PostgreSQL-marked), not executed:
+Docker is unavailable locally and GitHub's runner/billing gate persists.
+This checkpoint changes no publication or live-source permission.
+
+The complete synthetic suite then passed **3,801 tests, 19 skipped, zero
+failed** in 5m55s on locked Python 3.11.13 and disposable loopback-only
+PostgreSQL 17.11. **684/685 PostgreSQL-marked tests executed**; one skip is
+not a pass. Repository-wide Ruff, strict mypy (138 source files), docs links
+(341 Markdown files, 1,786 local paths/fragments), structural gate and diff
+whitespace check passed. Actual-image execution, hosted exact-head CI and
+independent restore are still open.
+
+## Isolated result for approved synthetic Email XLSX — current branch
+
+ADR-240 adds migration 0083 and an exact-approval worker that loads one
+retained MIME, verifies the XLSX part and runs the pinned isolated DataCore
+document processor. Only complete bounded text is sealed in a private,
+immutable tenant-fenced row; no Brain document/index or live source is touched.
+The fictional worker/approval, historical populated-upgrade, migration-
+integrity and protected-truncation run passed **50/50**, including **47/47
+PostgreSQL-marked** tests executed. A first focused run exposed an attempted
+runtime row lock on the intentionally ungrantable `mail_accounts` table and
+then on the immutable approval table; those locks were removed without
+broadening database grants. A forged-digest test was corrected to use a
+second legitimate approval so it exercises the text-digest CHECK rather than
+only the approval-basis trigger. Real immutable-image and hosted/restore
+gates remain open.
+
+The complete local synthetic suite on locked Python 3.11.13 and disposable
+loopback-only PostgreSQL 17.11 then passed **3,799 tests, 19 skipped, zero
+failed** in 6m09s. **682/683 PostgreSQL-marked tests executed**; the skip is
+not counted as a pass. The first broad attempt was sandboxed without loopback
+permission and failed to connect to the disposable database; it was stopped
+and rerun with loopback access, with no code or database-grant change. Ruff,
+strict mypy over 138 source files, documentation links (341 Markdown files,
+1,786 local paths/fragments), the structural gate and diff whitespace check
+passed. This is not actual-image, hosted CI or independent restore evidence.
+
+## Separate synthetic Email XLSX extraction approval — current branch
+
+ADR-239 adds an immutable, one-hour human approval for one exact current,
+bridged synthetic Email XLSX occurrence. It stores no MIME or extracted text;
+PDF jobs and bridges are untouched. A fresh disposable PostgreSQL 17 cluster
+bound to `127.0.0.1` ran the approval, historical populated-upgrade,
+migration-integrity and protected-truncation suites: **45 passed**, with
+**42/42 PostgreSQL-marked tests executed** and none skipped. The SQL guard
+refused a directly forged parent hash, while UPDATE, DELETE and TRUNCATE
+guards prevented rewriting the approval. An initial test expected NotFound
+for an unowned account; the service correctly returns AccessDenied and the
+test was corrected. A second fresh test database was used after revising the
+not-yet-committed migration, preserving checksum integrity. No worker result,
+document bridge, live account, actual-image or hosted gate is claimed.
+
+The complete local synthetic Python suite then passed **3,794 tests, 19
+skipped, zero failed** in 6m55s on locked Python 3.11.13 and disposable
+loopback-only PostgreSQL 17.11. **677/678 PostgreSQL-marked tests executed**;
+one was skipped and is not counted as a pass. This run is not a Docker-image,
+hosted CI, independent restore or live-source acceptance.
+
+## Exact-head hosted gate diagnostic — current branch
+
+At `afb7cb8638027abc7ea75c05159c00fe810aed0b`, [CI run
+38796983905](https://github.com/jbone3311/MasterBrain/actions/runs/38796983905)
+ended in three seconds before any job step. Its `gate` check annotation says:
+"The job was not started because recent account payments have failed or your
+spending limit needs to be increased." The restore, strict-runtime and
+benchmark workflows on the same head also failed before running steps. This
+is a GitHub account billing/spending-limit runner gate, not a code test result.
+The owner must resolve it in GitHub Billing & plans; then rerun every exact-
+head check and the actual-image/restore gates before any merge. No billing
+settings or live data were changed by this task.
+At `d6b4e28befa9b87377f2d64cc67d2ae0e5fdc20c`, [CI run
+38799248207](https://github.com/jbone3311/MasterBrain/actions/runs/38799248207)
+again failed with no job steps and the same explicit billing annotation.
+
+## Expanded pinned FOS XLSX stress corpus — current branch
+
+The exact pinned FOS-Master `extract_xlsx` function was replayed, without
+running donor configuration or source effects, against a deterministic
+24-case authored sparse/multi-sheet corpus. The 2,000-row boundary and
+2,001-row refusal/truncation contrast were also checked. The pinned-donor
+module passed **32/32** locally. This is value overlap and explicit policy-gap
+evidence, not complete FileOS or financial parity. The separate donor checkout
+remained unchanged.
+
+## Retained Email XLSX physical-row proof — current branch
+
+ADR-238 adds a private, nonpublishing proof for one exact retained Email
+attachment. It reuses the ADR-232 MIME selector and ADR-234 isolated table
+worker, checks the same pinned image and indexed text digest, and returns only
+parent/part identity, a physical row-layout digest and bounded counts. The
+fictional Email/FileOS XLSX proof, table and pinned-donor suite passed
+**48/48** locally. Repository-wide Ruff, strict mypy over 136 source files,
+documentation links (339 Markdown files, 1,775 local paths/fragments), the
+structural gate and diff whitespace check passed. No PostgreSQL-marked test
+was in this focused run; the earlier full synthetic/SQL receipt below remains
+the last broad database validation. Fake transport is not an actual-image run.
+No Email XLSX review receipt, bridge, published cell API, live mail or
+financial claim follows from this proof. Exact-head hosted CI and independent
+restore remain open.
+
+An explicit actual-image case was then added to the document-container suite:
+it re-extracts one fictional retained MIME attachment through the pinned text
+and table workers and requires exact parent/part/text identity. The suite
+collected **10 tests** (three PostgreSQL-marked) but none executed in that
+collection run. Docker is unavailable locally, so no real-image pass is
+claimed. The adjacent fake-transport XLSX/donor suite remained **48/48**.
+
+## Full local synthetic gate after migration-list repair — current branch
+
+The first attempted full run used a Unix-socket-only disposable PostgreSQL
+connection. The cross-source trial correctly refused it because its safety
+preflight permits only loopback TCP. That run also exposed migration 0081
+missing from two historical populated-upgrade expectations and a protected-
+table count. Those tests were updated; no runtime authorization or database
+guard was relaxed. The repaired upgrade/trial subset passed 35/35.
+
+A fresh disposable PostgreSQL 17.11 cluster bound **only to 127.0.0.1** and
+locked Python 3.11.13 then ran the complete discovered Python suite without
+CI-mode Docker enforcement: **3,754 passed, 19 skipped, zero failed** in
+7m55s. Of 674 PostgreSQL-marked tests, **673 executed and one skipped**;
+skips are not passes. All six first-party Node browser suites passed
+**167/167**. Repository-wide Ruff, strict mypy over 135 source files,
+documentation links (338 Markdown files, 1,771 local paths/fragments), the
+structural deployment gate and diff whitespace check passed. The actual
+immutable-image, hosted exact-head, independent restore and live-source gates
+remain open. This local result does not authorize merging or FileOS cutover.
+
+## Restricted reviewed FileOS XLSX replay command — current branch
+
+ADR-237 adds one exact-review, exact-source `masterbrain fileos
+replay-tier-xlsx-tables` command. Check mode authenticates and verifies the
+tenant-bound login/root without reading the selected workbook or constructing
+a processor. Execution reruns ADR-236 and returns no cell content or financial
+claim. Fictional controller and command-to-disposable-PostgreSQL tests passed
+**18/18**, including four PostgreSQL-marked tests with none skipped. Ruff and
+strict mypy passed over 135 source files. The explicit document-container
+suite now collects an actual-image reviewed XLSX receipt case, but Docker is
+unavailable locally; collection is not execution. Hosted exact-head and
+independent restore gates remain open; no live root or FOS cutover occurred.
+
+The final adjacent FileOS PDF/XLSX, CLI, migration and controller run passed
+**64/64**, including 16 PostgreSQL-marked tests (none skipped). Repository-
+wide Ruff, strict mypy over 135 source files, documentation links (338
+Markdown files, 1,770 local paths/fragments), structural deployment and diff
+whitespace gates passed. This is not an exact-head full suite or real-image run.
+
+## Reviewed FileOS XLSX table receipt — current branch
+
+ADR-236 adds migration 0081 and a worker-only store for one human-reviewed,
+current FileOS workbook. The exact-byte/table proof is rerun through the same
+pinned image; the final source/item lock and worker callback precede a
+content-free, immutable row-layout receipt. On locked Python 3.11.13 and a
+fresh disposable Unix-socket PostgreSQL 17.11, the focused replay and
+migration-integrity suites passed **11/11** (11 PostgreSQL-marked executed,
+none skipped). Ruff and strict focused mypy passed. No Docker image was run;
+ADR-237 subsequently adds the command; no table publication, live root,
+financial claim or donor cutover is enabled. Exact-head hosted and independent
+restore gates remain open.
+
+The expanded adjacent FileOS PDF/XLSX and migration regression run passed
+**35/35**, including 15 PostgreSQL-marked tests (none skipped). Repository-
+wide Ruff and strict mypy over 134 source files, documentation links (337
+Markdown files, 1,763 local paths/fragments), and diff whitespace passed.
+
+## Confined FileOS XLSX table replay — current branch
+
+ADR-235 adds a private, nonpublishing exact-byte re-read of one fictional
+FileOS workbook through the no-follow root boundary. The same pinned image
+as its indexed document yields bounded table rows; the replay checks the
+source and indexed-text SHA-256s and returns a separate digest of physical
+sheet/row layout without returning cell contents. Fictional tests verify
+changed/symlinked sources, formula refusal, wrong root/image/text, no source
+mutation, and identical text with different row positions versus different
+ZIP metadata with identical layout. The adjacent FileOS XLSX/table/donor/PDF
+suites passed **39 tests** on locked Python 3.11.13; Ruff, focused mypy and
+documentation checks passed. An actual-image replay was added to the explicit
+container gate but not run locally (Docker unavailable). ADR-236 subsequently
+adds the database review receipt, and ADR-237 adds the command. There is no
+table API, live root or FOS cutover; the donor was not modified.
+
+## Full local synthetic gate at code commit `5165a03` — not hosted acceptance
+
+On locked Python 3.11.13 and a fresh, disposable loopback PostgreSQL 17.11
+cluster, a forced `CI=1` full `pytest -q` run finished with **3,726 passed,
+18 skipped, one failed** in 8m52s. All **670 PostgreSQL-marked tests** were
+collected and executed; none skipped. The single failure was
+`test_actual_disposable_docker_launcher`, which intentionally fails in CI mode
+when Docker is unavailable on this Mac. It did not expose a code or database
+regression, but the full CI gate is **not green** and no actual container image
+was tested. Seven browser test files passed **167/167**. Repository-wide Ruff
+and mypy (132 source files), the structural deployment gate and documentation
+link check passed. The temporary PostgreSQL cluster was stopped and its
+synthetic-only directory removed after the run. Hosted exact-head workflows
+remain blocked before job steps by GitHub account payment/spending limits;
+independent image/restore and release gates are still open.
+
+## Bounded XLSX physical rows and cells — current branch
+
+An additive pure guard now re-renders projected cell values into the exact
+existing DataCore indexed-text layout and checks the known body SHA-256. Tests
+cover ordinary and hidden sheets, altered values, formula deferral and the
+separator-inclusive 200,000-character boundary; a regression test shows that
+moving a physical row without changing values does **not** change this digest.
+It is a value/order binding, not independent row-coordinate attestation.
+The expanded adjacent suite passed **115 tests** on lockfile Python 3.11.13;
+Ruff and focused mypy passed. Actual-image, current-source and reviewed receipt
+gates remain open.
+
+ADR-234 adds a separate source-bound `sandbox-xlsx-tables-v1` worker and
+immutable-image caller without changing the existing indexed XLSX text. It
+returns bounded physical row numbers, positional cell values and labeled
+hidden sheets. The pinned FOS donor's ordinary table rows and 1,000-row tail
+values match; formulas or changed bytes yield no partial rows. Strict child
+response validation refuses forged source identity, malformed counts and
+malformed row positions. At the initial worker checkpoint, focused worker,
+donor, Email proof, document and sandbox suites passed **112 tests** on lockfile
+Python 3.11.13; Ruff, focused mypy and documentation links passed.
+An actual-image case was added to the explicit container suite but did not run
+locally because Docker is unavailable. Nothing is persisted, indexed,
+reviewed or exposed by Brain API; this is not complete workbook or financial
+parity, and the FOS-Master donor remains unchanged.
+
+## Pinned donor XLSX table baseline — current branch
+
+The unchanged FOS-Master checkout at `218d5caec2f20b9047fd3eb8e027dc671acf0c15`
+supplied an exact-SHA-verified `doc_extract.py` `extract_xlsx` AST replay on
+fictional workbooks. Ordinary tables and 1,000-row tail values overlap with
+DataCore's text projection, but structured donor tables are not yet in DataCore.
+Uncached formula, row-truncation, OLE2-encrypted and `.xlsm` cases are retained
+as explicit policy/feature differences, not hidden in normalization. The new
+comparison plus adjacent Email/DataCore suites passed **32 tests** on lockfile
+Python 3.11.13; Ruff passed. Hosted runs without the optional donor checkout
+execute the portable DataCore golden and skip exact donor replay. No live
+workbook, donor edit, source publication or FileOS cutover occurred.
+
+## Exact retained Email XLSX through shared DataCore — current branch
+
+ADR-232 adds a nonpublishing proof for one retained fictional XLSX attachment.
+It rechecks parent MIME and attachment occurrence digests, then runs the same
+restricted DataCore workbook extractor used for FileOS. Synthetic tests prove
+the source-bound result, distinct parent identities for duplicate attachment
+bytes, changed-basis refusal and uncached-formula deferral. The adjacent Email
+XLSX/PDF proof, DataCore document and processor suites passed **38 tests** on
+both lockfile Python 3.11.13 and local Python 3.14; Ruff, focused mypy and
+documentation link checks passed. Docker
+was simulated for the caller, so
+this is not an actual-image test, review-bound receipt, Email search bridge,
+live account or financial acceptance. FOS-Master was not modified.
+
+## External assistant source-availability response guard — current branch
+
+The read-only reference client now validates ADR-168's optional Email/FileOS
+`coverage.source_availability` map on both current-search and extractive Ask.
+It rejects malformed keys/states, a focus-excluded kind presented as searched,
+and human-versus-enrolled state contradictions. A legacy server omitting the
+map remains compatible, but the omission is unknown availability, never proof
+of registration or absence. Fictional client, service and answer suites passed
+**177 tests** locally on Python 3.14, and Ruff and whitespace checks passed.
+This is a response-contract guard, not hosted assistant integration or a
+live-source connectivity/readiness proof.
+
+## Cross-source price disagreement without a fabricated balance — current branch
+
+A new fictional PostgreSQL/API case publishes two separate reviewed `loi.price`
+statements for the same project: 200 USD from current Email evidence and 250
+USD from a current FileOS text file. Each amount and currency are exact quote
+tokens in its own original evidence. The owner report keeps both rows and flags
+`different_asserted_previews_on_page=true`, with `numeric_aggregation=none`;
+it neither selects a winner nor emits a total. A source-enrolled Email-only
+assistant sees only the Email row, no FileOS evidence ID and no false conflict
+flag. On locked Python 3.11.13 and disposable PostgreSQL 17.11, the adjacent
+fact/cross-source/report suites passed **51 tests, one Docker-dependent skip**.
+This is a synthetic contradiction and grant-boundary proof, not ownership,
+source-byte attestation, reconciliation, financial advice or a complete
+investment dossier.
+
+## Maximum pinned-donor FileOS inventory shadow — current branch
+
+The clean, unchanged FOS-Master donor checkout was verified at commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15`. The nonpublishing shadow
+comparator ran with the maximum **9,994 synthetic stress files**, yielding
+9,998 exact ordinary path/size/SHA matches on initial scan, replay, changed
+file, metadata-only scan and both candidate modes. The transition accounted
+for 10,000 prior rows, reported the same six known policy gaps and refused
+their promotion; no unexplained membership difference appeared. The new
+repeatable maximum-capacity test and surrounding donor shadow module passed
+**25 tests, one filesystem-dependent skip** on locked Python 3.11.13. The
+donor was only loaded in an isolated, in-memory SQLite comparison; no live
+root, donor database, current FileOS policy or source effect was changed.
+This does not satisfy owner-approved policy differences, live shadow, image,
+restore or FileOS cutover gates.
+
+## Branded combined-source owner command smoke — current branch
+
+On a fresh disposable PostgreSQL 17.11 database and lockfile Python 3.11.13,
+the actual `masterbrain demo migrate`, `init`, `seed`, replayed `seed`, and
+loopback `serve` commands all succeeded. The second seed added zero Email
+events and returned the same project ID. An authenticated real HTTP request to
+`/v1/brain/current-search` for `briefing` returned one Email and one FileOS
+hit and reported both sources registered. Email-only and FileOS-only focus each
+returned one hit and marked the other source `not_searched`. The project
+dossier returned one event, proposed commitment with null due date, artifact
+link and fact, and no member. Exporting its Markdown and sending it to the
+owner-only inspection route verified citation spans while leaving
+`proposal_ready=false`. The test harness now exercises the branded seed route
+directly; demo/CLI tests passed **44/44** on the same disposable cluster.
+The server was stopped before cleanup. This is a fictional local API proof,
+not provider, assistant identity, actual-image, hosted, restore or live-data
+acceptance. No real credentials or source roots were used.
+
+## Exact-current-head local validation — 0c320a5
+
+Fresh lockfile-resolved Python 3.11.13 and fresh disposable PostgreSQL
+17.11 passed the complete discovered Python suite: **3,693 passed, 19
+skipped** (667/668 PostgreSQL-marked executed). The six browser suites passed
+**167/167**. Ruff, strict mypy over 128 source files, the 332-Markdown /
+1,737-local-reference docs check, diff check and the structural deployment
+gate passed. This is a local gate on the pushed ADR-231 code, not a successful
+actual-image, hosted exact-head or independent Docker restore result. No
+live data was used; FOS-Master remained unchanged.
+
+## Email PDF account transition fence — ADR-231
+
+Migration 0080 adds a directly granted tenant-bound function that locks only
+one account row `FOR SHARE`, after the worker takes the established account
+advisory lock. The completed document job remains terminal/immutable. Two
+fictional race orderings and wrong/shared-login cases passed on PostgreSQL
+17.11 / Python 3.14.7; all **10/10** Email PDF receipt/private-command
+PostgreSQL cases and **41/41** migration/integrity/recovery cases passed.
+The full core PostgreSQL module passed **110/110**. Ruff, mypy over 128 source
+files, docs (332 Markdown / 1,737 local paths/fragments) and diff check passed.
+The explicit real-image and exact-head hosted/independent restore gates have
+not run. No live-provider or financial acceptance follows from these races.
+
+## Restricted Email PDF replay command — ADR-230
+
+The private exact-review CLI now binds one active account, a two-scope worker,
+tenant-bound database login and immutable Email PDF image. Check mode reads
+no selected MIME/PDF or review row and constructs no processor or blob store.
+Fictional controller/CLI tests passed **15/15**, with the existing Email text
+command tests **14/14**; one fictional command-to-PostgreSQL test passed
+with a tenant-bound receipt and shared/owner login refusal. Ruff and focused
+mypy passed. No actual-container, hosted or independent restore result is claimed.
+The combined clean Python 3.11 / disposable PostgreSQL 17.11 focused run
+passed **36/36**, including all 7 PostgreSQL-marked cases. Full Ruff, mypy
+over 128 source files, docs (331 Markdown / 1,732 local paths/fragments),
+diff check and 17-test PDF-container collection passed. An earlier broad
+Python 3.14 non-PostgreSQL run passed 3,023 tests with three environment
+failures; each of those three passed in the clean 3.11 rerun after installing
+the checkout and allowing the disposable local PostgreSQL launcher. This
+checkpoint has not rerun the complete suite under one clean environment.
+The explicit PDF-container suite collects 17 tests including a reviewed Email
+PDF receipt through the actual image; collection is not a passing image result.
+The earlier full Python 3.11 suite below predates this command.
+
+## Reviewed Email attachment PDF receipt — ADR-229
+
+Follow-up occurrence gate: a new fictional two-message case uses identical
+retained MIME and PDF hashes yet verifies distinct message, attachment,
+evidence and review-bound receipt identities. All **6/6** focused ADR-229
+PostgreSQL tests passed locally on PostgreSQL 17.11 / Python 3.14.7. The
+full locked Python 3.11 suite below predates this test-only addition.
+
+Migration 0079 and a worker-only store now seal one current, human-reviewed
+Email attachment's approved PDF text-layer derivation from its exact retained
+parent MIME. The immutable, forced-RLS, tenant-login-fenced row carries only
+source/part/text/result digests, identities and page count. Fictional
+PostgreSQL tests passed **5/5** for exact replay, SQL forgery and immutable
+guards, wrong account/source grant, paused/deleted/excluded source and final worker
+authorization rollback. ADR-230 adds a private operator command with a
+fictional command-to-database test; actual image, hosted exact-head and
+independent restore gates are **not** verified. Account/job status
+is rechecked but not row-locked; no live or financial claim is authorized.
+
+A fresh locked Python 3.11 environment against disposable PostgreSQL 17.11
+passed the final full suite: **3,672 passed, 19 skipped** (662/663
+PostgreSQL-marked executed), including the new exclusion case. Browser tests
+passed **167/167**; Ruff, mypy over 127 source files,
+docs (330 Markdown / 1,725 local paths/fragments) and the post-suite
+structural deployment gate passed. The first full run exposed migration-list
+and protected-table-count expectations ending at 0078; the 17 affected
+migration/guard tests passed after those inventories were updated, followed
+by the full green rerun. No actual immutable-image container was used.
+
+## Retained Email PDF attachment derivation — ADR-228
+
+A pure DataCore proof now compares one retained parent MIME, selected PDF part,
+complete extracted page text and exact image/policy normalizer using the
+existing isolated Email PDF worker. Fictional tests passed **13/13** locally,
+including two pages, changed MIME/part, distinct same-hash occurrences and
+partial/image-only/encrypted refusal. The explicit PDF-container suite now
+collects an actual-image complete/partial proof but has not run on this Mac
+or hosted CI. This has not written or verified any database receipt, contacted
+live mail or made a financial claim. ADR-229 later adds the separate current
+reviewed-attachment receipt; ADR-230 later adds a private command, while
+real-image execution remains.
+
+At this checkpoint, a fresh locked Python 3.11 environment and disposable
+PostgreSQL 17.11 passed the full suite: **3,667 passed, 19 skipped**
+(657/658 PostgreSQL-marked executed). Browser tests passed **167/167**; Ruff,
+mypy over 126 source files, docs (329 Markdown / 1,720 local paths/fragments)
+and the post-suite structural deployment gate passed. The actual-image Email
+PDF proof and hosted/restore jobs are still unexecuted gates, not passes.
+
+## Real-image PDF replay gate prepared — pending container execution
+
+The explicit `tests/container_document_checks.py` suite now includes a
+reviewed FileOS PDF replay through its **actual pinned** document image and
+protected PostgreSQL receipt, with source bytes and modification time checked
+for no effect. The ordinary simulated fixture accepts the CI image digest so
+the same text/normalizer basis can be replayed. The new container test
+**collected** locally but was not executed: this Mac has no container runtime,
+and exact-head hosted jobs are prevented from starting by the account payment/
+spending-limit restriction. Do not count this as a passed real-image gate.
+
+Against a fresh locked Python 3.11 environment and disposable PostgreSQL
+17.11, the non-container suite passed **3,654 tests, 19 skipped** (657/658
+PostgreSQL-marked executed), including the focused PDF command/replay tests
+**18/18**. The browser suite passed **167/167**; Ruff, mypy over 125 source
+files, docs (328 Markdown / 1,716 local paths/fragments) and the post-suite
+structural deployment gate passed. A preflight run in a stale local Python
+3.14 environment produced four subprocess import failures because the local
+editable package path was not loaded; all four passed in the fresh locked
+environment and the full rerun was green. The failed preflight was an
+environment artifact, not a successful test run.
+
+## Tenant-bound FileOS PDF replay command — ADR-227
+
+The private command authenticates an exact document-only worker, pins source
+and immutable image syntax, refuses shared/owner database logins and can
+preflight without reading the selected PDF, review row or Docker processor.
+Execution reauthenticates inside ADR-226's final transaction and returns a
+digest-only result. Focused fictional unit and command-to-PostgreSQL tests
+passed **18/18** using a simulated restricted processor; source bytes were
+unchanged. The full disposable PostgreSQL 17.11 / Python 3.11 suite passed
+**3,654 tests, 19 skipped** (657/658 PostgreSQL-marked executed). Browser
+tests passed **167/167**; Ruff, mypy over 125 source files, docs (328 Markdown,
+1,716 local paths/fragments) and the post-suite structural deployment gate
+passed. The standalone gate's first unprivileged local-launcher attempt hit a
+permission refusal; the exact launcher test passed when rerun with the same
+system permissions as the successful full suite. Real-image container,
+hosted exact-head and independent restore gates remain open. No live root or
+financial publication was used.
+
+## Reviewed FileOS PDF replay receipt — ADR-226
+
+Migration 0078 and a worker-only store now seal one immutable digest-only
+receipt after confined PDF re-extraction and final locked currentness/worker
+authorization checks. Three fictional PostgreSQL integration tests passed
+against local PostgreSQL 17.11 using the simulated restricted processor pipe,
+including idempotence, changed bytes, version race, SQL trigger, cross-tenant
+denial and no financial claim. The full disposable PostgreSQL 17.11 / Python
+3.11 run passed **3,639 tests, 19 skipped** (656/657 PostgreSQL-marked
+executed). Ruff, mypy over 124 source files and documentation checks over
+327 Markdown files and 1,700 local paths/fragments passed. This does not prove a real container or PDF
+visual completeness, and no operator command or live root has been used.
+Independent restore and hosted exact-head gates remain open.
+
+## Confined FileOS PDF derivation primitive — ADR-225
+
+The nonpublishing helper reopens one confined, source-hash-bound PDF and
+requires its exact text to be reproduced by the image-pinned restricted
+document processor. It reports only source/text digests, byte count,
+normalizer and page count. Eight fictional unit tests passed using the
+existing simulated restricted-pipe contract. The full non-PostgreSQL suite in
+a clean disposable Python 3.11 environment passed **2,983 tests, 18 skipped**;
+654 PostgreSQL-marked tests were deselected. Ruff, mypy over 123 source files,
+and the documentation inventory (326 Markdown files, 1,694 local links) passed.
+The preexisting checkout virtual environment has stale duplicate package
+metadata and caused four subprocess-import failures on the first run; the
+clean environment removed that test-environment artifact without changing
+product code. This is not a database receipt, real Docker execution, OCR,
+visual completeness, issuer proof, financial publication or live FileOS
+acceptance. Hosted exact-head and independent restore remain open.
+
+## Tenant-bound Email replay command — ADR-224
+
+`masterbrain email replay-tier-text` now checks or executes one reviewed
+direct-parser Email replay under a private exact two-scope worker token and a
+DBA-enrolled tenant-bound PostgreSQL login. The closed config binds one
+account. Check mode validates the active account and optional existing private
+blob root/key manifest but does not read the selected MIME or review row or
+write a receipt. Execution supports inline and authenticated encrypted
+retained MIME, rechecks credentials inside the final transaction, returns no
+source text, and makes no source change. Fictional command-to-database tests
+refuse shared and owner DSNs, wrong account and wrong scope. Underlying
+ADR-223 faults cover ciphertext changes, stale source and revocation rollback.
+
+Focused command/replay tests passed **21/21**. The full disposable PostgreSQL
+17.11 / Python 3.14 suite passed **3,628 tests, 19 skipped** (653/654
+PostgreSQL-marked executed). Ruff, mypy over 122 source files, documentation
+links (325 Markdown files, 1,691 local paths/fragments) and diff whitespace
+passed. No live account or FOS-Master change. Hosted exact-head CI and
+independent restore remain required before merge. No issuer authenticity,
+attachment/PDF completeness or financial publication is claimed.
+
+## Retained Email byte/text replay — ADR-223
+
+Migration 0077 records one immutable digest-only worker-observed replay for a
+current reviewed direct-parser Email message. The worker reads authorized
+retained MIME (inline or authenticated encrypted), checks the MIME digest and
+size, re-runs `stdlib-mime-v5`, refuses truncated text, and compares the whole
+`email-message-v1` DataCore projection and digest. A final locked transaction
+rechecks current source, bridge, message, grants, exclusion and optional
+authorization before insertion. Fictional faults include changed ciphertext,
+stale message, between-read update and final revocation; no source or Knowledge
+claim is modified.
+
+Focused tests passed **14/14**. A first full run exposed outdated exact
+migration inventories and protected-table counts, which were corrected; the
+final full disposable PostgreSQL 17.11 / Python 3.14 suite passed **3,613
+tests, 19 skipped** (651/652 PostgreSQL-marked executed). Ruff, mypy over
+121 source files, documentation links (324 Markdown files, 1,691 local
+paths/fragments), and diff whitespace passed. No live account or FOS-Master
+change. ADR-224 now supplies a tenant-bound operator command; hosted exact-head
+CI and independent restore remain open before merge. This receipt is not
+sender authenticity, attachment/PDF completeness or financial approval.
+
+## Encrypted Email source size — ADR-222
+
+A fictional encrypted retained-MIME test first reproduced a `NULL`
+source-version size when bridging Email into DataCore. The bridge now uses
+PostgreSQL's generated `raw_size`, valid for inline and encrypted storage.
+The regression checks the exact raw SHA-256 and byte size, authorized blob
+recovery, and unchanged inline bridge behavior. Focused encrypted/inline
+bridge tests passed **2/2**. The full disposable PostgreSQL 17.11 / Python
+3.14 suite passed **3,599 tests, 19 skipped** (645/646 PostgreSQL-marked
+executed). Ruff, mypy over 119 source files and documentation links passed.
+No live account or source was used; FOS-Master was not changed. Hosted exact-
+head and independent restore remain required before merge. This is source
+identity repair, not independently replayed Email bytes or financial truth.
+
+## Formula/overlong-cell XLSX deferral — ADR-221
+
+The restricted DataCore XLSX worker now reads formula cells visibly and
+defers any formula-bearing workbook instead of silently dropping an uncached
+formula. A cell over 1,000 normalized characters also defers instead of
+being truncated. Fictional mixed-row closed-contract and source-version tests
+pass with no published text and no source mutation; bounded plain XLSX still
+extracts. Focused document tests passed **15/15**; the exact-current local
+no-DSN suite passed **2,957 tests, 660 skipped** (642 PostgreSQL-marked
+skipped). Ruff, mypy over 119 source files, documentation checks (322
+Markdown files, 1,690 local links), and diff whitespace passed. Docker is
+unavailable locally. Database, container, hosted exact-head and independent
+restore gates remain open. No formula evaluation, complete spreadsheet
+coverage, financial attestation or FileOS cutover is claimed.
+
+## Mixed-page PDF deferral — ADR-220
+
+The restricted DataCore PDF worker no longer publishes text from a multi-page
+document when any page yields no text. A fictional two-page text/image-only PDF
+now returns `deferred/pages_without_text` with an empty body and page count;
+the source-version path also defers and leaves the file unchanged. An entirely
+image-only PDF remains `deferred/empty_document`. Focused tests passed 13/13.
+The exact-current local no-DSN suite passed **2,955 tests, 660 skipped**;
+642 PostgreSQL-marked tests were skipped, so this is not a PostgreSQL gate.
+Ruff, mypy over 119 source files, docs (321 Markdown files, 1,690 local links)
+and diff whitespace passed. Docker is unavailable locally. Hosted exact-head,
+container and independent restore checks remain open. This correction does
+not establish complete PDF/OCR extraction or authorize a financial claim.
+
+## Restricted FileOS tier-text replay command — ADR-219
+
+`masterbrain fileos replay-tier-text` now targets exactly one reviewed tier and
+one configured FileOS source. A private credential/token pair grants only
+`brain.document.publish`; both check and execution require a DBA-enrolled
+tenant-bound PostgreSQL login. Check mode authenticates and verifies config,
+login and root identity without reading the selected file or writing a
+receipt. Execution reauthenticates inside the final locked transaction.
+Fictional end-to-end tests reject shared/owner DSNs and a mismatched source,
+prove source bytes remain unchanged, and show revocation before insertion
+rolls back. Failures are scrubbed. No live source was accessed.
+
+The exact-current local PostgreSQL 17.11 / Python 3.14 suite passed **3,594
+tests, 19 skipped** (644 of 645 PostgreSQL-marked executed; one intentional
+skip). Six browser suites passed **167/167**. Ruff, mypy over 119 source files,
+documentation links (320 Markdown files, 1,690 paths/fragments) and diff
+whitespace passed. Hosted exact-head and independent restore remain open;
+GitHub billing/spending-limit status must be checked on this head before
+merging. This command does not prove PDF/OCR or spreadsheet completeness,
+replay Email bytes, approve a financial claim or authorize FileOS cutover.
+
+## Shared FileOS text replay for reviewed tiers — ADR-218
+
+Migration 0076 and an internal worker-scoped operation add one immutable,
+point-in-time FileOS text replay receipt per human source-tier review. The
+confined read plus exact source-byte/text derivation now live in DataCore and
+are shared with the older statement replay. No API/CLI executor, unattended
+live root, PDF/OCR completeness, Email-byte replay or financial-claim approval
+was added. FOS-Master was not modified.
+
+Fictional focused tests cover BOM/CRLF normalization, source/text digests,
+wrong root, changed file, symlink, source-version race, source grants,
+concurrent idempotence, direct-SQL basis guard, protected table and unchanged
+statement replay. Migration/recovery/protected-table focus passed **41/41**.
+The full disposable PostgreSQL 17.11 / Python 3.14 suite passed **3,580
+tests, 19 skipped** (642 of 643 PostgreSQL-marked executed; one intentional
+skip). Six browser suites passed **167/167**. Ruff, mypy over 118 source files,
+documentation links (319 Markdown files, 1,690 paths/fragments) and diff
+whitespace passed. Hosted exact-head and independent restore remain open;
+GitHub's account payment/spending-limit failure has prevented hosted jobs
+from starting on prior heads and must be checked again on this head.
+
+## Current-source human tier review — ADR-217
+
+Migration 0075, the human-only POST/read-only source-scoped GET routes and the
+strict provider-neutral read client add an append-only T1/T2/T3 document-
+authority review tied to one current evidence/source version, stored SHA-256,
+normalized-document digest and exact quote. The SQL trigger independently
+checks current active unexcluded basis and reviewer context; the API also
+checks source grants. Fictional tests cover idempotency, unauthorized and
+assistant writes, granted assistant reads, stale/paused-source filtering,
+hash/quote mismatch, direct-SQL bypass, immutable rows and forged external
+client meaning. This is **not** independent original-byte verification or
+financial-claim approval, and FOS-Master is untouched.
+
+On the finalized migration and client code, the fresh disposable PostgreSQL
+17.11 / Python 3.14 suite passed **3,576 tests, 19 skipped**; 638 of 639
+PostgreSQL-marked cases executed (one intentional skip). Six browser suites
+passed **167/167**. Ruff, mypy on the changed Python modules, documentation
+link inventory and diff whitespace passed. Independent-container restore and
+hosted exact-head gates remain open. GitHub Actions jobs on this PR are not
+starting because the account reports failed payments or a spending limit;
+that is not a code test result and does not authorize merge.
+
+## Latest predicate revision and Brain API discovery — ADR-215
+
+Migration 0074 corrects the SQL guard to select the latest project-fact
+predicate revision even when it is deprecated. A fictional later-deprecated
+`loi.price` row blocks a direct new insert; the older active row cannot be
+revived. Publication compares the same latest database revision with the
+checked-in code after exact idempotent replay. The new scoped, no-store
+`GET /v1/knowledge/fact-predicates` route and strict external client return
+the latest bounded database catalog, including deprecations and an explicit
+historical-unregistered warning. It refuses code/SQL drift rather than
+advertising a name the runtime cannot publish. Fictional tests cover human and enrolled
+assistant access, missing-scope denial, malformed/forged client responses,
+private proposal status and migration/recovery/restore paths. The targeted
+suite passed **196/196**, including all **64** PostgreSQL-marked cases.
+The code/SQL drift refusal and latest-deprecation cases then passed in a
+three-test PostgreSQL focus run after the final consistency check.
+
+The exact-current full local Python 3.14/PostgreSQL 17.11 suite passed
+**3,563 tests, 19 skipped** (636 of 637 PostgreSQL-marked cases executed).
+Browser tests passed **167/167**. The repository quality gate passed
+**2,930 tests, 652 skipped** (three PostgreSQL-marked cases executed).
+Ruff, strict mypy (113 source files), documentation links (316 Markdown
+files, 1,688 local paths/fragments) and diff whitespace passed. Optional
+DuckDB donor replays still skip in the locked venv; independent-container
+logical restore is unavailable locally without Docker. Hosted exact-head and
+merged-main gates remain required. No owner-editable vocabulary, alias
+mapping, live-source acceptance, investment total or FOS-Master cutover is
+claimed.
+
+## New reviewed project-fact predicate catalog — ADR-214
+
+Migration 0073 seeds five versioned predicate definitions and enforces the
+latest active name/value-type/unit shape on every new fact insert, including
+direct SQL. The publication boundary checks the same catalog only after
+an exact idempotency receipt; a test compares every code definition with
+the SQL rows. Historical facts are not rewritten.
+The first focused run caught guard-order and protected-table count changes;
+those test expectations were updated without relaxing either guard. A later
+compatibility correction moved publication validation after exact idempotent
+receipt lookup, retained private staging of unknown names, labelled preview
+status, and refused approval atomically. The revised targeted pure suite
+passed **24/24**; project-fact/proposal, restore and migration/recovery tests
+passed **96/96** (all 62 PostgreSQL-marked cases executed). The exact-current
+full local Python 3.14/PostgreSQL 17.11 suite passed **3,558 tests, 19
+skipped** (633 of 634 PostgreSQL-marked cases executed). Browser tests passed
+**167/167**. The repository quality gate passed **2,928 tests, 649 skipped**
+(three PostgreSQL-marked cases executed). Ruff, strict mypy (113 source files),
+docs links (315 Markdown files, 1,680 local paths/fragments) and diff
+whitespace passed. Optional DuckDB donor replays skip in the locked venv;
+independent-container logical restore is unavailable locally without Docker.
+Hosted exact-head and merged-main gates remain required. No generic
+claim/event/role registry, alias mapping or dedicated vocabulary proposal
+queue is claimed.
+
+## Complete measurement quote tokens — ADR-213
+
+Migration 0072 replaces ADR-212's literal-substring SQL check with complete
+lexical amount and unit/currency tokens; the Python write model uses the same
+boundary rule. Misleading fictional quotes with `100.25` inside `1100.25`
+or `USD` inside `USDA` are refused. A valid `($100.25), in USD;` quote passes.
+The direct-SQL test uses current fictional normalized evidence containing the
+misleading text, so the existing source-basis trigger does not mask the new
+constraint. The targeted pure/PostgreSQL/migration/recovery set passed
+**67/67**, including all **48** PostgreSQL-marked cases. Existing typed rows
+are validated transactionally on upgrade; no row is rewritten or discarded.
+The exact-current full local Python 3.14/PostgreSQL 17.11 suite passed
+**3,552 tests, 19 skipped** (630 of 631 PostgreSQL-marked cases executed).
+Browser tests passed **167/167**. The repository quality gate passed
+**2,925 tests, 646 skipped** (three PostgreSQL-marked cases executed). Its
+first sandboxed run could not start a disposable PostgreSQL child process;
+the single test and then the full gate passed with the required local process
+permission. Ruff, strict mypy (112 source files), documentation links (314
+Markdown files, 1,672 local paths/fragments) and diff whitespace passed.
+The optional DuckDB donor replays still skip in the locked environment.
+Local Docker is unavailable, so the independent-container logical restore
+gate is not verified. Hosted exact-head and merged-main gates remain required.
+
+## Opt-in reviewed exact-decimal measurement — ADR-212
+
+Migration 0071 adds nullable, immutable `amount_decimal`, `unit_code` and
+`currency_code` to reviewed project facts. Fictional tests publish one typed
+exact-decimal currency fact from a separate current Email quote, keep a
+legacy fact untyped, read both through the source-scoped report and external
+client, and reject malformed, NULL currency/unit or missing amount tokens
+through direct SQL inserts. The NULL tests caught and corrected a PostgreSQL
+three-valued `CHECK` edge case before the migration was committed. Pure model
+cases refuse floats, exponent syntax, mismatched values and unsupported
+unit/currency shapes. The populated restore seed now
+includes typed facts in both pending and approved private proposal paths;
+targeted upgrade/restore suites passed **52/52**. This verifies the local
+fixture and schema upgrade, not an independent-container logical restore.
+
+After fixing exact migration-list expectations and preserving the original
+Librarian quote fixture, the exact-current full local Python 3.14/PostgreSQL
+17.11 suite passed **3,545 tests, 19 skipped** (630 of 631 PostgreSQL-marked
+cases executed). Browser tests passed **167/167**. The local deployment gate
+passed **2,918 tests, 646 skipped** (three PostgreSQL-marked cases executed);
+the ten optional DuckDB donor replays still skip in the locked environment.
+Ruff, strict mypy (113 source files), docs links (313 Markdown files, 1,667
+paths/fragments) and diff whitespace passed. Local Docker is unavailable,
+so the independent container restore gate is not locally verified. Hosted
+exact-head and merged-main gates remain required. This is not a verified
+holding, FX conversion, owner allocation, aggregate balance, live-source
+pilot or FileOS cutover.
+
+## Current-evidence project fact report — ADR-211
+
+The new read-only `/v1/knowledge/projects/{project_id}/facts/report` route
+groups one existing current-authorized, reviewed fact page by predicate. It
+returns each source-stated compact fact and its evidence IDs, flags divergent
+asserted previews and disputed/retracted rows, and marks page/truncation
+limits. It explicitly performs no numeric aggregation. The external read
+client checks the closed envelope and rejects a forged investment-total label.
+Fictional PostgreSQL tests prove hidden-before-limit source grants, assistant
+allow/deny, stale-version refusal, closed query limits and no-store responses.
+Focused report/fact suites passed **12/12**, including all ten PostgreSQL-
+marked cases; pure grouping tests passed **2/2** within that set.
+
+The exact-current full local Python 3.14/PostgreSQL 17.11 suite passed
+**3,535 tests, 19 skipped** (629 of 630 PostgreSQL-marked cases executed).
+The ten optional DuckDB donor-replay tests still skip in the locked project
+environment; the prior ADR-210 direct local donor run remains separately
+recorded below. Browser tests passed **167/167**; Ruff, strict mypy (113
+source files), documentation links (312 Markdown files, 1,658 paths/fragments)
+and diff whitespace passed. The separate local deployment gate passed **2,909
+tests, 645 skipped** (three PostgreSQL-marked cases executed), not a substitute
+for the full database suite. Hosted exact-head and merged-main gates remain
+required. No live source, financial total or FOS-Master change occurred.
+
+## Remaining isolated FOS report row shapes — ADR-210
+
+The exact pinned read-only donor `reporting.py` from ADR-209 now also anchors
+`top_entities`, `entity_crossdomain` and `dollars_by_domain` comparisons.
+The global local Python 3.14 environment with DuckDB 1.5.4 and its SQLite
+extension ran **20/20** focused fictional tests, including all five donor
+functions at the pinned source hash, null/duplicate/filter/rounding goldens
+and repeated 1,000-row entity/money cases. The first donor replay caught a
+Python ties-to-even versus DuckDB half-away average mismatch; the candidate
+was corrected and rechecked. Unordered distinct-domain strings and equal-rank
+row order are presentation-normalized; the donor wall clock is omitted.
+
+The exact-current full local Python 3.14/PostgreSQL 17.11 suite in the locked
+project environment passed **3,533 tests, 19 skipped** (629 of 630
+PostgreSQL-marked cases executed). Its optional DuckDB replay tests skip
+because DuckDB is not a product dependency; explicit goldens still execute.
+Browser tests passed **167/167**. The separate deployment gate passed **2,907
+tests, 645 skipped** (three PostgreSQL-marked cases executed); it does not
+replace the full database suite. Ruff, strict mypy (113 source files), docs
+links and diff whitespace passed. No live database, Brain API report, verified
+holding or FOS-Master cutover follows. Hosted exact-head and merged-main gates
+remain required.
+
+## Isolated FOS intelligence-report baseline — ADR-209
+
+Pinned read-only FOS-Master `_SYSTEM/tools/reporting.py` at commit
+`218d5caec2f20b9047fd3eb8e027dc671acf0c15` and SHA-256
+`e52ee7672121a609171a827eab086080dcea159ef987e21f0793e32528521cc9`.
+The first pure, nonpublishing MasterBrain comparison covers only the donor's
+coverage and timeline row semantics. Eight focused fictional tests passed,
+including direct execution of the exact pinned donor functions against SQLite,
+filtered/empty/status/date goldens, and a repeated 1,000-row comparison. The
+donor's wall-clock `generated_at` is excluded. This is not an API report,
+freshness certificate, verified investment total, or FOS cutover.
+
+The exact-current local Python 3.14/PostgreSQL 17.11 full suite passed
+**3,531 tests, nine skipped** (629 of 630 PostgreSQL-marked cases executed).
+Browser tests passed **167/167**. Ruff, strict mypy (113 source files),
+documentation links (310 Markdown files, 1,645 paths/fragments) and diff
+whitespace checks passed. The local deployment gate passed **2,905 tests,
+635 skipped** (three PostgreSQL-marked cases executed); missing donor checkout
+there skips the direct replay, so hosted goldens alone do not prove donor
+parity. Hosted exact-head and merged-main gates remain required.
+
+## Branded disposable combined-source demo — ADR-208
+
+The old Email-only `init-demo`/`seed-demo` path was first run on a fresh
+disposable local PostgreSQL 17.11 cluster: migration, least-privilege runtime
+role, three fictional emails, loopback `serve`, authenticated `/readyz` and
+`/v1/search` succeeded. Its unchanged owner token returned **403** from
+`/v1/brain/search`, confirming that path did not demonstrate MasterBrain.
+
+The new combined demo was then run from a second fresh disposable cluster:
+all migrations, `init-masterbrain-demo`, `seed-masterbrain-demo`, and the real
+loopback API succeeded. `/v1/brain/search` returned both a fictional Email
+source and `files_demo` for `fictional`; the cited project dossier Markdown
+route returned 200 and a FileOS evidence citation. A second seed returned
+zero new Email events and the same project ID. The branded `masterbrain demo
+seed` entry point replayed the same fixture successfully. No provider, user
+root, external model or source effect was contacted. Both smoke clusters and
+the subsequent final-regression cluster, with their generated fictional
+credentials and logs, were stopped and removed.
+
+The final focused CLI/demo/controller tests passed **113/113**, including a
+wrong-account refusal before any Email event. The exact-current full Python
+3.14/PostgreSQL 17.11 suite passed **3,523 tests, nine skipped** (629 of 630
+PostgreSQL-marked cases executed). Browser tests passed **167/167**;
+Ruff, strict mypy (112 source files), docs links (309 Markdown files, 1,640
+paths/fragments) and diff whitespace checks passed. The local deployment gate
+passed **2,897 tests, 635 skipped** (three PostgreSQL-marked cases executed);
+it is not the full database proof. Hosted exact-head and merged-main gates
+remain required; this is not a live or hosted pilot.
+
+## Private Knowledge proposal review source-state fence
+
+ADR-186/205 now hold shared PostgreSQL locks on all direct proposal evidence
+source-item/current-pointer and source-status rows through stage, preview and
+review transactions. For a proposed project member, the review also locks
+every direct citation basis behind the separately linked project and entity.
+Two fictional concurrency tests try to revoke a current pointer and pause a
+source after validation but before approval; both updates time out on the
+held lock and approval commits. The complete focused Knowledge proposal and
+Markdown importer suites passed **26/26** on disposable local PostgreSQL
+17.11. The exact-current full Python 3.14/PostgreSQL 17.11 suite passed
+**3,515 tests, nine skipped** (626 of 627 PostgreSQL-marked cases executed).
+Ruff, strict mypy (112 files), docs links (308 Markdown files, 1,638 paths and
+fragments), browser **167/167**, and diff whitespace checks passed. The local
+deployment gate passed **2,891 tests, 633 skipped** (only two PostgreSQL-
+marked cases executed), so it is not the full database proof. Hosted
+exact-head CI and merged-main acceptance remain unverified. The code checkpoint
+`0e821c1` [gate run 38732469839](https://github.com/jbone3311/MasterBrain/actions/runs/38732469839)
+reported failure with **zero executed steps**; its GitHub annotation says
+recent account payments failed or the spending limit needs increasing. This
+is not a code-test result, and the PR must not bypass hosted gates. These
+locks do not freeze Email exclusion-policy edits or external provider state;
+generic direct Knowledge publication is unchanged. All inputs were fictional.
+
+## Fact and artifact source-row transaction fence
+
+ADR-206/207 direct and proposal-reviewed publication now holds PostgreSQL
+shared locks on each checked source item and source-status row until commit.
+Two fictional tests attempt a concurrent current-version nullification and
+source pause during human review; each update times out on the held lock, and
+the approval commits against the checked source. Both complete private
+proposal suites passed **22/22** on a disposable local PostgreSQL 17.11
+database; direct project-fact and project-artifact regressions passed
+**19/19**. This fence does not prove serialization of every Email exclusion
+policy change or external provider state. A fresh local Python
+3.14/PostgreSQL 17.11 full run passed **3,513 tests, nine skipped** (624 of
+625 PostgreSQL-marked cases executed). Browser **167/167**, Ruff, strict mypy
+(112 files), docs links (308 Markdown files, 1,638 paths/fragments) and diff
+whitespace checks passed. The deployment gate passed **2,891 tests, 631
+skipped** (only two PostgreSQL-marked cases executed); it is not the full
+database proof. Hosted exact-head gates remain
+unverified; prior receipts do not attest this change.
+
+## Fictional cross-source dossier export-to-review acceptance
+
+The Cedar Harbor synthetic Email/FileOS trial now exercises the actual Brain
+API across one owner workflow: export the current cited Markdown, select a
+FileOS-backed project fact and artifact link with explicit typed sidecars,
+stage each in its separate private queue, verify neither appears in the
+dossier before review, approve each with a human credential, then read both
+reviewed results and drill down to the original FileOS evidence. A file-only
+assistant still cannot read the Email-and-FileOS project dossier. This is a
+synthetic acceptance path for the existing format and routes, not automatic
+import, lossless round trip, live provider trial or financial truth claim.
+The complete cross-source suite passed **31 tests, one skipped** (20 of 21
+PostgreSQL-marked cases executed). A fresh local Python 3.14/PostgreSQL 17.11
+full run passed **3,511 tests, nine skipped** (622 of 623 PostgreSQL-marked
+cases executed). Ruff, strict mypy (112 files), browser 167/167 and docs
+links passed. The deployment gate passed **2,891 tests, 629 skipped** with
+local PostgreSQL permission (only two PostgreSQL-marked cases executed); it
+does not replace the full database run. Hosted exact-head gates
+remain required. GitHub's exact-head CI for prior
+commit `eff2b67` ([run 38728904161](https://github.com/jbone3311/MasterBrain/actions/runs/38728904161))
+failed with zero executed steps; its check annotation says recent account
+payments failed or the spending limit needs increasing. That is a runner
+start/billing block, not a passing or failing code-test verdict. No branch
+protection bypass or merge is authorized by local success.
+
+## Selected project-artifact Markdown proposals — ADR-207
+
+Migration 0070 and `ArtifactProposalBatches` add a separate private,
+synthetic-only 1–50-row queue for selected `artifact link` lines in the
+owner-selected MasterBrain dossier format. A closed sidecar supplies the full
+basis quote and observation time omitted from Markdown. Stage, owner-only
+preview and explicit atomic human review recheck the current project,
+artifact evidence occurrence and independently cited quote-basis occurrence
+under current grants. Approved rows use the same transaction-bound ADR-193
+publisher as direct reviewed links; rejected rows publish none. The forced-RLS
+tenant-fenced schema binds immutable import context, decisions and exact
+reviewed publication receipts. No raw Markdown is stored.
+
+The fresh local PostgreSQL 17.11 focused migration, security, API, atomic
+rollback and restore-fixture suites passed **50/50** after the final SQL
+approval guard. A fresh same-cluster source-to-target `pg_dump`/`pg_restore`
+preserved pending and approved fictional batches, whole-public-table snapshots,
+reviewed link visibility and cross-tenant refusal. Ruff, strict mypy (112
+files), 167/167 browser tests and documentation links (308 Markdown files,
+1,638 paths/fragments) passed. The deployment gate passed 2,891 tests with
+626 skipped; it executes only two PostgreSQL-marked tests and is not full
+PostgreSQL acceptance. The exact-current fresh-database full local Python
+3.14/PostgreSQL 17.11 suite passed **3,508 tests, nine skipped** (619 of 620
+PostgreSQL-marked tests executed). Hosted exact-head
+CI, strict-runtime, independent-container restore and merged-main gates remain
+unverified because GitHub jobs currently fail before any steps. No live source,
+automatic approval, FileOS effect or FOS-Master change occurred.
+
+Follow-up synthetic stress on the same ADR-207 branch adds two PostgreSQL
+tests: two independent Email evidence occurrences with the same SHA-256 remain
+distinct throughout proposal staging and approval; a 25-row mixed
+approve/reject batch rolls back all decisions and links on its last approval
+fault, then succeeds on retry. The focused artifact suite passed **11/11** on
+a fresh local PostgreSQL 17.11 database. The Markdown exporter currently caps
+artifact rows at 25, so this is its largest single-export artifact batch,
+even though the private queue schema permits 1–50 rows. Full-suite and hosted
+results for this follow-up are recorded separately: the exact-current fresh
+Python 3.14/PostgreSQL 17.11 full suite passed **3,510 tests, nine skipped**
+(621 of 622 PostgreSQL-marked tests executed). Ruff, strict mypy (112 files),
+browser 167/167 and docs links passed. A sandboxed deployment-gate attempt
+failed only when its disposable local PostgreSQL launcher raised
+`PermissionError`; rerun with local PostgreSQL permission passed **2,891
+tests, 628 skipped** (only two PostgreSQL-marked tests executed). This gate
+does not replace the full database run.
+The prior 3,508-test receipt belongs to commit `4d205bc`, not to this
+follow-up head.
+
+## Project-artifact batch-publication prerequisite — ADR-207
+
+ADR-207 now specifies a separate selected artifact-link proposal queue because
+ADR-193 approvals have their own publication receipt. The first prerequisite
+refactors only the existing direct reviewed artifact publisher to accept a
+caller-bound transaction and return the currently verified artifact source
+kind. The direct API retains its current authorization, exact project, two
+separate evidence/currentness and basis-quote checks, idempotency and audit.
+A fictional transaction test proves a bad second link rolls back the first
+link and its receipt; the artifact suite passed **9/9**. The fresh full local
+Python 3.14/PostgreSQL 17.11 run passed **3,499 tests, nine skipped** (610 of
+611 PostgreSQL-marked tests executed). Ruff and strict mypy (110 source
+files) passed; browser suites passed **167/167**, docs links passed (308
+Markdown files, 1,632 paths/fragments), and the deployment gate passed
+(2,891 passed, 617 skipped). That gate skips most PostgreSQL tests and is
+not the full-suite substitute. No artifact proposal schema or
+stage/preview/review route is implemented by this prerequisite. Exact-head
+hosted CI, strict-runtime,
+logical restore and independent merged-main gates remain unverified; no
+live source or FOS-Master change occurred.
+
+## Populated project-fact proposal restore fixture — ADR-206
+
+The synthetic logical-restore drill now seeds one pending and one explicitly
+approved private fact batch across two tenants. Its whole-public-table
+snapshot comparison includes migration 0069's proposal, citation, decision,
+review and fact-receipt rows; restored verification checks the proposal
+status/object link, visible reviewed facts and cross-tenant preview refusal.
+An isolated local PostgreSQL 17.11 source-to-target **database** `pg_dump`/
+`pg_restore` probe passed with equal public-table snapshots and both states
+readable under the restored runtime role. A second fresh local pair also
+passed the drill's full `verify_restored` authorization, data and isolation
+checks after logical restore. Both pairs used one disposable local
+cluster with two databases, **not** the independent-container hosted restore
+gate. The repeatable seed test and adjacent fact suite passed **41/41**; the
+fresh full Python 3.14/PostgreSQL run passed **3,498 tests, nine skipped**
+(609 of 610 PostgreSQL-marked tests executed). Ruff and strict mypy passed
+(111 files when including the drill); browser suites passed **167/167**,
+documentation links passed (307 Markdown files, 1,631 paths/fragments), and
+the repository deployment gate passed (2,891 passed, 616 skipped). The
+deployment gate skips most PostgreSQL tests and is not the full-run proof.
+The hosted exact-head logical restore, strict-runtime, CI and merged-main
+gates are still required. No live source
+or FOS-Master change was made.
+
+## Project-fact citation and revocation hardening — ADR-206
+
+The fictional fact-import suite now proves that a second current source with
+the same bounded Markdown quote prefix but a different full quote cannot be
+substituted as the fact citation. It also proves source-scope denial at
+stage/preview/review and a source-currentness change between Markdown
+inspection and transactional staging. The focused fact suite passed **9/9**.
+The full local Python 3.14/PostgreSQL 17.11 run on a fresh disposable
+loopback database passed **3,497 tests, nine skipped** (608 of 609
+PostgreSQL-marked tests executed). Ruff and strict mypy (110 source files)
+passed; six browser suites passed **167/167**, the docs checker passed (307
+Markdown files, 1,631 paths/fragments), and the repository deployment gate
+passed (2,891 passed, 615 skipped). The deployment gate skips most PostgreSQL
+tests and is not substituted for the full run. The first broad run used a Unix-socket-only temporary server that
+the cross-source fixture explicitly rejects; it was not counted as a pass.
+The successful rerun used the required loopback address. The deployment
+gate's first sandboxed attempt also failed when its isolated local launcher
+could not start; its permitted rerun passed. This test-only
+checkpoint does not change live sources or FOS-Master. Hosted exact-head,
+strict-runtime, logical restore and merged-main checks remain unverified.
+
+## Selected project-fact Markdown proposals — ADR-206
+
+Migration 0069 and the human-only Brain API now stage selected source-stated
+project-fact lines into a separate immutable private batch, preview them under
+current source/project grants and require explicit atomic per-row decisions.
+Approval uses the validated project-fact publisher inside the batch transaction;
+rejection produces no reviewed fact. Claimed IDs are selection markers. The
+fictional stage/review/API/SQL and existing fact/import/migration/recovery/
+protected-truncate suites passed **73/73** after the five new tables were
+included in the catalog guards. The exact local Python 3.14/PostgreSQL 17.11
+full gate on a fresh disposable database passed **3,494 tests, nine skipped**
+(605 of 606 PostgreSQL-marked tests executed). Six browser suites passed
+**167/167**; Ruff, strict mypy (110 source files), docs links (307 Markdown
+files, 1,631 paths/fragments), diff check and the repository deployment
+quality gate passed. The deployment gate skips most PostgreSQL tests and is
+not a substitute for the full run. Exact-head hosted CI, strict-runtime,
+logical restore and independent merged-main gates remain unverified. No live
+source or FOS-Master change is claimed.
+
+## Project-fact transactional publication prerequisite — ADR-206
+
+The existing direct, reviewed project-fact write now calls its same validated
+publication logic inside an explicit caller-supplied transaction. A fictional
+two-fact test proves that a bad second quote rolls back the first fact and its
+idempotency receipt; the unchanged direct route remains covered by its prior
+tests. This enables a later atomic fact-batch review but does **not** create
+fact proposal storage, stage/preview/review routes or Markdown fact import.
+The exact local Python 3.14/PostgreSQL 17.11 full gate on a fresh disposable
+database passed **3,488 tests, nine skipped** (599 of 600 PostgreSQL-marked
+tests executed). The focused fact/import suites passed **27/27**. Six browser
+suites passed **167/167**; Ruff, strict mypy (109 source files), docs links
+(307 Markdown files, 1,624 paths/fragments), diff check and the repository
+deployment quality gate passed. The deployment gate skips most PostgreSQL
+tests and is not substituted for the full run. Hosted exact-head and
+merged-main gates remain unverified while GitHub Actions cannot start jobs
+because of the account billing/spending-limit block. FOS-Master and live
+sources were not changed.
+
+## Project-fact Markdown proposal boundary — ADR-206 (design only)
+
+ADR-206 records the next synthetic-only selected-fact importer contract and
+its required acceptance tests. **No fact-stage route, fact proposal table or
+fact approval path was implemented in that design checkpoint.** The existing
+fact selection remains fail-closed. The exact local Python 3.14/PostgreSQL 17.11
+full gate on a fresh disposable database passed **3,487 tests, nine skipped**
+(598 of 599 PostgreSQL-marked tests executed). Six browser suites passed
+**167/167**; Ruff, strict mypy (109 source files), docs links (307 Markdown
+files, 1,624 paths/fragments), diff check and the repository deployment
+quality gate passed. The deployment gate alone skips most PostgreSQL tests
+and is not counted as the full run. Initial local reruns failed because macOS
+marked the editable package's `.pth` file hidden, so subprocess imports were
+skipped; a subsequent non-editable install used an older cached wheel. A
+forced rebuild from this branch and a fresh database produced the passing
+full result. These were local packaging-state failures, not a product-code
+change. Hosted exact-head/merged-main gates remain unverified because of the
+GitHub Actions billing/spending-limit block. No live source or FOS-Master
+change was made.
+
+## Selected dossier-member proposals — ADR-205
+
+The existing human-only Markdown route now stages a selected reviewed-role
+line only as an unreviewed private `MemberWrite` proposal. It requires an
+existing local project and person/organization entity, exact visible-line
+match, two current source citations and full typed sidecar fields. Migration
+0068 retains the selected member and entity citation IDs for rechecks during
+private preview and explicit atomic human review. Approval issues a new local
+member ID; roles never grant access. Fictional PostgreSQL tests cover private
+stage/replay/review, actual HTTP stage/preview, valid-but-wrong entity citation,
+revocation before stage and after stage, mixed-batch rollback, generic-batch
+compatibility and migration/recovery. The three adjacent proposal/inspection
+suites passed **21/21** before the last added cases; the migration/recovery/
+protected-truncate suites passed **40/40**. Four further direct-SQL cases verify
+that new imported rows cannot omit their quote or member-entity citation,
+cite evidence outside the proposal, or smuggle import citations into a generic
+batch. The exact final local Python 3.14/PostgreSQL 17.11 full gate passed
+**3,487 tests, nine skipped** (598 of 599 PostgreSQL-marked tests executed).
+Six browser suites passed **167/167**;
+Ruff, strict mypy (109 source files), documentation links (306 Markdown files,
+1,623 paths/fragments) and diff checks passed. An earlier run on the repeatedly
+reused test database failed at PostgreSQL `GRANT` with `row is too big` after
+many per-module test roles accumulated; it was not counted as a pass. The
+final run used a fresh explicitly named disposable test database and passed.
+Hosted exact-head/merged-main gates remain to be recorded; the latest prior
+GitHub Actions attempt could not start because of account billing/spending
+limits, not a test failure. No live source,
+inference, FileOS effect or FOS-Master change was made.
 
 ## Fictional cross-source project dossier — ADR-204
 

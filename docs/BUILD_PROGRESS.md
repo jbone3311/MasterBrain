@@ -1,5 +1,224 @@
 # MasterBrain Build Progress
 
+## Exact-current-head local gate (2026-10-15, commit 0c320a5)
+
+A fresh lockfile-resolved Python 3.11.13 environment and new disposable
+PostgreSQL 17.11 database passed the complete discovered Python suite:
+**3,693 passed, 19 skipped**; 667 of 668 PostgreSQL-marked tests executed
+(one skipped). All six browser suites passed **167/167**. Ruff, mypy over 128
+source files, docs links (332 Markdown / 1,737 local paths/fragments), diff
+check and the repository structural deployment gate passed. This validates
+the current account-fence head locally, not its actual container images,
+hosted exact-head CI or independent Docker restore. GitHub jobs are still
+stopped before starting by the payment/spending-limit restriction.
+
+## Email PDF account transition fence (2026-10-15, ADR-231, open PR)
+
+Migration 0080 gives only tenant-bound worker logins a narrow function that
+locks their exact active account row without granting account UPDATE. The
+reviewed Email PDF worker takes the controlled transition's advisory lock
+first, then the account row lock before the final review/currentness query.
+Two fictional PostgreSQL races passed: controlled disconnect first refuses
+without a receipt; replay first commits while a direct privileged status
+update waits. Tenant/login refusal and the existing ten receipt/command
+PostgreSQL cases passed; migration/protected-record/recovery suites passed
+41/41, and the full core PostgreSQL module passed 110/110. Ruff, mypy over
+128 source files and docs links passed. Hosted, real-container and
+independent restore remain pending.
+
+## Restricted Email PDF replay command (2026-10-15, ADR-230, open PR)
+
+`masterbrain email replay-tier-pdf` now checks or executes one exact reviewed
+attachment under a private account/image config, two-scope worker identity and
+mandatory tenant-bound database login. Check mode validates without opening
+selected MIME/PDF or constructing the processor. Fictional controller/CLI
+tests pass 15/15, including inactive account, invalid image/config, missing
+scopes and unbound login refusal; the existing Email text command tests pass
+14/14. One fictional command-to-PostgreSQL test passed with receipt publication
+and shared/owner login refusal. Actual-image, hosted and independent restore
+gates remain. No live mail or financial claim.
+The combined clean Python 3.11 / PostgreSQL 17.11 command-and-receipt run
+passed **36/36**, with all 7 PostgreSQL-marked cases executed. A broader
+Python 3.14 non-PostgreSQL pass had 3,023 passes and three local environment
+failures; all three failures passed when rerun under the clean supported 3.11
+environment with its disposable launcher. This is not a fresh full-suite pass.
+The explicit PDF-container suite now collects a reviewed Email PDF receipt
+through the actual pinned image and database, but no such image ran locally or
+on hosted CI. This is a pending gate, not a passing test.
+
+## Reviewed Email attachment PDF receipt (2026-10-15, ADR-229, open PR)
+
+An additional fictional PostgreSQL regression now proves identical PDF/MIME
+bytes in two distinct provider messages require two independent source-tier
+reviews and append-only replay receipts. All six ADR-229 focused PostgreSQL
+tests passed locally on PostgreSQL 17.11 and Python 3.14.7; this follow-up has
+not rerun the full locked Python 3.11 suite or hosted/restore gates.
+
+Migration 0079 and a worker-only store now bind a current reviewed attachment
+document, approved extraction and exact retained parent MIME to ADR-228's
+complete isolated text-layer proof. The receipt is append-only, tenant-fenced
+and digest-only. Fictional PostgreSQL tests passed 5/5 for receipt/replay,
+immutable/forgery guards, account/source/exclusion refusal and final authorization
+rollback. ADR-230 adds a private command; no actual immutable-image run, live mail, OCR or financial
+claim is enabled; ADR-231 later adds account transition serialization while
+completed jobs remain terminal/immutable.
+After migration-inventory repair, the full disposable PostgreSQL 17.11 /
+Python 3.11 suite passed 3,672 tests with 19 skipped, including the exclusion
+case. Browser tests passed
+167/167 and static/docs/structural gates passed. Hosted and independent
+restore checks remain open.
+
+## Retained Email PDF attachment derivation (2026-10-15, ADR-228, open PR)
+
+An isolated PDF worker can now re-extract one explicit attachment from its
+retained parent MIME and compare the complete bridged text without publishing
+anything. Fictional two-page, duplicate-content/different-parent, changed
+MIME/part, wrong image/text and incomplete-PDF tests passed locally (13/13).
+The pure proof has no database/current-review receipt or private command. A
+real-image CI test is wired but not executed while hosted jobs cannot start;
+Email attachment evidence remains occurrence-specific;
+live mail, OCR, issuer and financial acceptance remain closed.
+
+## Actual-image FileOS PDF receipt gate prepared (2026-10-15, open PR)
+
+The existing dedicated document-container CI suite now contains a fictional
+reviewed FileOS PDF replay through the actual pinned image and PostgreSQL
+receipt, checking unchanged source bytes and modification time. Its synthetic
+basis helper accepts the CI image digest without changing the ordinary simulated
+tests. Local collection and Ruff pass; no container runtime is installed here.
+The real-image result is **pending**, not passed, because hosted jobs have not
+started under the account payment/spending-limit restriction. This does not
+clear independent restore, live-source, OCR or financial-truth gates.
+
+## Tenant-bound FileOS PDF replay command (2026-10-15, ADR-227, open PR)
+
+`masterbrain fileos replay-tier-pdf` now checks or executes exactly one
+reviewed PDF under a closed source/root/image config, document-only worker
+token and DBA-bound tenant login. Check mode does not select or read the PDF,
+construct the processor or write a receipt. Fictional unit and command-to-
+PostgreSQL tests passed 18/18, including shared/owner DSN refusal, source-ID
+binding and unchanged source bytes. The full disposable PostgreSQL 17.11 /
+Python 3.11 suite passed 3,654 tests with 19 skipped (657/658 PostgreSQL-
+marked executed). Browser tests passed 167/167; Ruff, mypy, docs and the
+post-suite structural deployment gate passed. No live source or actual
+immutable-image container was used; hosted/restore gates remain.
+
+## Reviewed FileOS PDF replay receipt (2026-10-15, ADR-226, open PR)
+
+One worker operation now binds ADR-225's confined PDF/text proof to an exact
+current human source-tier review, source grant, exclusion state and pinned
+processor image. Migration 0078 adds an immutable, tenant-fenced digest-only
+receipt. Three fictional PostgreSQL tests pass: exact/idempotent replay,
+changed source and grant/worker refusal, between-read version race, trigger
+guard and no Knowledge claim. The full disposable PostgreSQL 17.11 / Python
+3.11 suite passed 3,639 tests with 19 skipped (656/657 PostgreSQL-marked
+executed); Ruff, mypy and documentation links passed. The operator command, real container run,
+independent restore, OCR and issuer policy remain open.
+
+## Confined FileOS PDF derivation primitive (2026-10-15, ADR-225, open PR)
+
+DataCore can now reopen one fictional PDF through a no-follow confined reader,
+re-run the exact restricted document processor/image identity and compare its
+entire published text. The result is digest-only and nonpublishing. Eight
+focused tests passed using the simulated restricted-pipe harness, including
+changed/symlinked bytes, wrong hashes, image-only deferral and invented text.
+In a fresh disposable Python 3.11 environment the full non-PostgreSQL suite
+passed 2,983 tests with 18 skipped; 654 PostgreSQL-marked tests were deselected.
+Ruff, mypy and documentation links passed. A database receipt, real container execution, OCR,
+issuer policy and live-source authority remain separate gates.
+
+## Tenant-bound Email tier replay command (2026-10-15, ADR-224, open PR)
+
+`masterbrain email replay-tier-text` now targets exactly one reviewed Email
+under an account-bound, two-scope worker token and tenant-bound database login.
+Check mode validates private config, active account and optional encrypted
+storage without reading selected MIME or writing a receipt. Fictional inline
+and encrypted command-to-database tests reject shared/owner DSNs; actual
+execution keeps retained bytes unchanged. Focused command/replay tests passed
+21/21; the full disposable PostgreSQL 17.11 / Python 3.14 suite passed 3,628
+with 19 skipped (653/654 PostgreSQL-marked executed). Ruff, mypy and docs
+passed. No live account, financial claim or FileOS cutover is authorized.
+
+## Retained Email byte/text replay (2026-10-15, ADR-223, open PR)
+
+A worker-only operation now reads one current reviewed Email's retained MIME,
+including authenticated encrypted storage, and recomputes the exact
+`email-message-v1` DataCore text under `stdlib-mime-v5`. Migration 0077 records
+an immutable digest-only point-in-time receipt. Fictional tests cover inline
+and encrypted success, changed ciphertext, stale version, source grants,
+revocation and a between-read message update. Other parser modes and
+attachments remain unsupported; no live account was touched. After exact
+migration inventories and protected-table counts were updated, the full
+disposable PostgreSQL 17.11 / Python 3.14 suite passed 3,613 with 19 skipped
+(651/652 PostgreSQL-marked executed); Ruff, mypy and docs passed.
+
+## Encrypted Email bridge size (2026-10-15, ADR-222, open PR)
+
+A fictional encrypted-MIME PostgreSQL regression reproduced a null source-
+version size at bridge time. DataCore now reads the generated retained-object
+byte size, preserving the source hash and size for inline and encrypted
+storage. The focused encrypted/inline tests passed 2/2. The full disposable
+PostgreSQL 17.11 / Python 3.14 suite passed 3,599 with 19 skipped (645/646
+PostgreSQL-marked executed); Ruff, mypy and docs passed. This is not the
+planned independent Email-byte replay or live-mail authorization.
+
+## Spreadsheet omission guard (2026-10-15, ADR-221, open PR)
+
+Two authored fictional XLSX cases proved false extraction success: an
+uncached formula disappeared and an overlong cell was truncated. The worker
+now defers both with no published text. Source-version tests verify matching
+deferred outcomes and unchanged files; bounded non-formula XLSX remains
+extractable. Focused document tests passed 15/15; the full no-DSN local suite
+passed 2,957 with 660 skipped (642 PostgreSQL-marked skipped). Ruff, mypy
+and documentation checks passed. Formula evaluation and full feature coverage
+are not claimed. Database, container and hosted gates remain open.
+
+## Mixed-page PDF completeness guard (2026-10-15, ADR-220, open PR)
+
+DataCore's restricted PDF worker now defers a mixed text/image-only PDF with
+no published text instead of silently dropping the no-text page while claiming
+success. A fictional two-page PDF passes the closed worker contract with an
+explicit two-page count; source-version extraction also defers without changing
+the file. Focused tests passed 13/13; the full no-DSN local suite passed 2,955
+with 660 skipped (642 PostgreSQL-marked skipped). Ruff, mypy and documentation
+checks passed. This is a safety correction, not OCR or complete PDF/source-tier
+attestation. Database, hosted and container gates remain required.
+
+## Tenant-bound FileOS tier replay command (2026-10-15, ADR-219, open PR)
+
+A document-publish-only worker can now preflight or replay exactly one
+reviewed FileOS text source with `masterbrain fileos replay-tier-text`.
+Tenant-bound database login is mandatory; a synthetic end-to-end test
+refuses shared and owner DSNs, and revocation inside the final transaction
+leaves no receipt. The full disposable-PostgreSQL suite passed 3,594 tests,
+19 skipped (644/645 PostgreSQL-marked executed), browser 167/167, and
+Ruff/mypy/docs passed. No live root was used. PDF/OCR, spreadsheets,
+Email-byte parity, issuer/conflict policy and financial publication remain.
+
+## Shared FileOS text replay (2026-10-15, ADR-218, open PR)
+
+DataCore now owns one confined read and byte-to-text derivation proof shared
+by historical statement proposals and current human source-tier reviews.
+Migration 0076 records an immutable, current-source-bound, point-in-time
+worker replay receipt. Fictional faults include changed bytes, wrong root,
+symlink and source-version race; the original statement replay still passes.
+Full disposable-PostgreSQL tests passed 3,580 with 19 skipped (642/643
+PostgreSQL-marked executed), browser 167/167, Ruff/mypy/docs passed. No
+live root, public worker command, PDF/OCR completeness, Email-byte replay,
+investment approval or FileOS cutover is claimed.
+
+## Current-source tier review (2026-10-15, ADR-217, open PR)
+
+Human review can now classify a current, granted evidence document as T1, T2
+or T3 under a controlled authority kind and exact quote. The append-only SQL
+record pins source and normalized-text hashes; reads remove stale, paused,
+excluded or ungranted evidence before limiting. A strict external client
+preserves the "not byte-attested or financial truth" meaning. The finalized
+fresh-disposable-PostgreSQL suite passed 3,576 tests, 19 skipped (638 of 639
+PostgreSQL-marked executed); six browser suites passed 167/167. FOS-Master is
+unchanged. Trusted byte replay, PDF/OCR coverage, issuer review policy,
+financial publication, hosted CI and merge remain open.
+
 ## Exact pinned-donor Linux parity fixture (2026-10-06)
 
 The pinned scanner and its classifier now have byte-for-byte, hash-checked

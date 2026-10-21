@@ -16,6 +16,10 @@ migration ledger below.
 ## Donor inventory
 
 The detailed file/test catalog is [FOS_TOOL_INVENTORY.md](FOS_TOOL_INVENTORY.md).
+The later 11-commit donor delta through `eb774fc` is separately reviewed in
+[FOS_DONOR_DELTA_2026_10.md](FOS_DONOR_DELTA_2026_10.md). It does not silently
+replace the pinned `218d5cae` golden baseline. Its archive-aware search
+behavior has a proposed, nonimplementing [ADR-263](adr/263_current_working_file_search_visibility_proposal.md).
 
 | Candidate group | Representative donor files | Tests | Destination | Risk / decision |
 |---|---|---|---|---|
@@ -54,6 +58,31 @@ Golden fixtures are synthetic and contain no private FileOS data.
 
 | Tranche | Donor baseline | MasterBrain location | Parity | Status |
 |---|---|---|---|---|
+| DC-002AF historical review snapshot | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_review_snapshot.py`, Brain API, ADR-262 | Pure clean/mixed/mass-loss/correction/forgery cases and fictional PostgreSQL/API readback; full local and hosted gates separate | Read-only digest and unresolved counts, not run signoff, absence approval, v2 current read or donor cutover |
+| DC-002AE historical row decisions | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_row_decisions.py`, migration 0093, Brain API, ADR-261 | Fictional exact-row atomic replay/correction/history, forged SQL, worker/source denial and stale-v1 refusal; 100-row/3,000-file service stress and two-cluster populated local restore pass; hosted gates separate | Human review metadata only; no run signoff, absence approval, current search, file effect, live shadow or donor cutover |
+| DC-002AD human later classification inspection | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_index_generation.py`, Brain API, ADR-260 | Fictional exact prior-row paging, possible-absence candidate, worker/source-grant and closed-input checks; 3,000-row final-page and empty-filter stress pass | Historical and nonactivating; ADR-261 adds row decisions, while run signoff, rollback, live shadow, hosted gates and cutover remain open |
+| DC-002AC human later search comparison | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_index_generation.py`, Brain API, ADR-259 | Fictional human/worker, source-grant, second-run review-flag and unchanged-current-search checks | Historical and nonactivating; ADR-260/261 add classification inspection and row decisions, while run signoff, rollback, live shadow, hosted gates and cutover remain open |
+| DC-002AB later shared generation | Pinned FOS-Master `218d5cae`; donor unchanged | `fileos_v2_later_index_generation.py`, migration 0092, ADR-258 | Fictional exact ready-run/hashed-item/chunk assembly, forged SQL and activation refusal; 3,000-file later stress and full local suite pass | Historical and nonactivating; human comparison now ADR-259, while live shadow, rollback, hosted gates and cutover remain open |
+| DC-002AA historical later-run completion | Pinned FOS-Master `218d5cae` donor scanner/policy; donor unchanged | `fileos_v2_later_run_completion.py`, migration 0091, ADR-257 | Fictional clean/possible-absence run, ready-attempt and fresh-scan binding, SQL forgery/immutability checks; local full suite 3,856 passed/19 skipped; 3,004-row donor shadow unchanged | Historical only; generation assembly, rollback, owner-approved live shadow, hosted gates, current reads and cutover remain open |
+| EB-006I first-party XLSX result review | ADR-242–244 synthetic exact result/review bridge; FOS-Master unchanged | `web/xlsx_review.js`, Email owner screen, ADR-246 | Bounded pages, browser-computed full-text SHA-256, exact human review, stale-session/refusal tests and fictional API-to-UI shape pass | Existing approval ID required; no browser worker power, approval queue, actual-browser/image/hosted gate, live mail or cutover |
+| EB-006H server-owned XLSX bridge provenance | ADR-242/243 synthetic review and worker command; FOS-Master unchanged | `email_xlsx_document_bridge.py`, migration 0086, ADR-244 | API rejects caller code revisions; SQL rejects forged new reviews/receipts; exact-result publication and retrieval remain; populated fictional XLSX restore and local full PostgreSQL suite passed at `0c64f8b` | Semantic transform revision, not Git commit; actual-image/hosted and live-source gates open |
+| EB-006G restricted reviewed Email XLSX command | ADR-239–242 exact synthetic source/result/review; FOS-Master unchanged | `email_xlsx_publication_controller.py`, CLI, ADR-243 | Distinct worker actor, account pin, tenant-bound login, check/refusal/publication/replay/Search pass on fictional PostgreSQL | No live mail, review screen, actual-image execution, FileOS cutover or financial claim |
+| EB-006F split human review and worker publication | ADR-239/240 result and ADR-241 document bridge; FOS-Master unchanged | `email_xlsx_document_bridge.py`, migration 0085, ADR-242 | Human-only bounded inspect/review, worker-only publication, immutable SQL review and source-grant/currentness tests | Exact text-level bridge only; hosted/image/restore and live-source gates open |
+| EB-006E reviewed Email XLSX document bridge | ADR-239/240 exact synthetic approval and immutable result; FileOS donor unchanged | `email_xlsx_document_bridge.py`, migration 0084, ADR-241 | Fictional approval → worker result → reviewed normalized document/chunks/provenance → currentness-gated search, plus forgery and revocation tests | Text-level occurrence bridge only; actual-image/hosted/restore, review UI, cell-level tables, live mail and financial parity remain open |
+| DC-004G restricted XLSX replay operator | ADR-233 pinned FOS table baseline, ADR-236 reviewed receipt; donor unchanged | `source_tier_fileos_xlsx_table_controller.py`, CLI, ADR-237 | Fictional private config/check, exact source, tenant-bound login and command-to-database receipt pass | No actual-image run, table API, live root, financial claim or cutover |
+| EB-006B retained Email XLSX row-layout proof | ADR-232 exact-MIME/part derivation and ADR-234 isolated table worker; donor unchanged | `datacore/email_xlsx_table_derivation.py`, ADR-238 | Fictional occurrence-bound parent/part/text/image checks, blank-row layout distinction and fail-closed faults | Pure digest-only proof; no review receipt, Email XLSX bridge, indexed cells, actual-image run or live mail |
+| EB-006C separate Email XLSX extraction approval | ADR-232/238 exact occurrence proof; PDF jobs/bridge remain PDF-only; donor unchanged | `email_xlsx_approvals.py`, migration 0082, ADR-239 | Human-only, synthetic exact-parent/part/image approval, tenant fence, direct SQL forgery/immutability and populated upgrade tests | This tranche is approval only; ADR-240 adds a private result and ADR-241 separately adds a reviewed document bridge. No live account or financial claim |
+| EB-006D isolated Email XLSX result | ADR-239 separate exact approval, shared pinned DataCore document image; donor unchanged | `email_xlsx_results.py`, migration 0083, ADR-240 | Fictional exact retained-MIME re-extraction, final source/worker checks, immutable text/digest and formula/forgery refusal | Worker result itself is private and nonpublishing; ADR-241 separately bridges it. Actual-image, live mail and financial claims remain open |
+| DC-004F reviewed FileOS XLSX table receipt | ADR-233 pinned FOS table baseline and ADR-235 confined replay; donor unchanged | `source_tier_fileos_xlsx_table_replay.py`, migration 0081, ADR-236 | Fictional current human review, source/version race, grant and immutable SQL receipt tested on disposable PostgreSQL | Digest-only worker observation; no command, actual-image execution, cell publication, live root or cutover |
+| DC-004E confined current XLSX table replay | ADR-233 pinned FOS table baseline; existing DataCore no-follow root and document normalizer | `datacore/current_fileos_xlsx_table_replay.py`, ADR-235 | Fictional exact source/text digest, source-root/image binding, row-layout digest and changed/symlink/formula refusal | Pure nonpublishing worker proof, with reviewed receipt in DC-004F; actual-image case collected but locally unrun, no API, live root or cutover |
+| DC-004D bounded XLSX row/cell projection | FOS-Master `218d5cae` donor XLSX AST replay and ADR-233 gap baseline | `datacore/xlsx_tables.py`, `xlsx_tables_worker.py`, `xlsx_tables_processor.py`, ADR-234 | Fictional ordinary and 1,000-row row-value parity with donor; physical row positions and sheet visibility retained; formulas fail closed | Separate nonpublishing isolated worker; actual-image gate collected but locally unrun, no persistence, Brain API, financial attestation or FileOS cutover |
+| DC-004C XLSX table/gap baseline | FOS-Master `218d5cae`, `doc_extract.py` SHA-256 `746932e5ce033a9b8f8bd7155a88dfbb6d1c57a9916aea2230e6afbe1a3ab269` | `tests/test_xlsx_donor_parity.py`, ADR-233 | Fictional ordinary, 1,000-row and 24 sparse/multi-sheet case value overlap; exact 2,000/2,001-row boundary; explicit table-shape, formula, row-cap, encrypted and `.xlsm` divergences | Nonpublishing exact-donor replay when donor checkout exists; portable DataCore golden in CI; not full workbook/financial parity or a cutover |
+| EB-006A retained Email XLSX derivation | Existing shared DataCore `bounded_xlsx_v1` worker extracted for FileOS; FOS-Master donor unchanged | `datacore/email_xlsx_derivation.py`, ADR-232 | Fictional exact parent/part byte proof invokes the same isolated document processor; uncached formulas defer, repeated attachment bytes keep distinct parent identities | Pure nonpublishing proof only; no review receipt, Email bridge/index, actual-image run, live provider or financial claim |
+| KC-001N authorized project-fact report and typed field | Donor reporting semantics remain a reference, not a runtime schema | `project_facts.py`, migrations 0066/0071, ADR-211/212 | Fictional grant/currentness/API/client and exact-decimal SQL tests; deliberately no donor money-sum parity claim | First read-only product projection only; no ownership, verified investment balance, live source or donor cutover |
+| KC-001O controlled names for new reviewed project facts | FOS report names are reference semantics, never copied as certified facts | `fact_predicates.py`, migration 0073, ADR-214 | Fictional code/SQL catalog parity, unknown/type/unit refusal and retained historical rows | First project-fact catalog only; no generic claim/event/role registry, aliases, ownership, total or donor cutover |
+| KC-001P latest predicate retirement and read discovery | Donor reporting names still carry no MasterBrain truth authority | migration 0074, `project_facts.py`, `brain_client.py`, ADR-215 | Fictional later-deprecated SQL rejection and scoped API/client catalog checks | Source-content-free orientation only; no vocabulary edit, owner allocation, total or donor cutover |
+| KC-001M entity/money report baseline | Same pinned `reporting.py` and SHA-256 as KC-001L | `report_recipe_parity.py`, ADR-210 | Fictional goldens plus local DuckDB/SQLite exact-donor replay for top entities, cross-domain spread and raw money facts, including 1,000-row repeat and rounding divergence fix | Isolated nonpublishing comparison only; no authorized runtime, verified holdings or cutover |
+| KC-001L report coverage/timeline baseline | FOS-Master `218d5cae`, `_SYSTEM/tools/reporting.py` SHA-256 `e52ee7672121a609171a827eab086080dcea159ef987e21f0793e32528521cc9` | `report_recipe_parity.py`, ADR-209 | Explicit fictional goldens, exact-hash donor AST replay for both reports and 1,000-row repeat; wall-clock field excluded | Isolated nonpublishing comparison; ADR-210 follows with entity/money rows; no source-grant-aware runtime report, verified holding or cutover |
 | KC-001G private FileOS text replay receipt | Current DataCore no-follow `fileos-text-v1` path; FOS-Master donor untouched | `statement_fileos_replay.py`, migration 0064, ADR-189 | Fictional exact/current FileOS bytes, wrong root, changed text, symlink, source-version race, tenant/grant/SQL refusal and replay | Private worker-observed receipt only; not exposed as a verified holding, no PDF/OCR/Email proof or live cutover |
 | KC-001F narrow source-text replay | Existing `fileos-text-v1` DataCore transform; donor unchanged | `statement_derivation.py`, ADR-188 | Fictional exact-byte/hash/text replay and fail-closed mismatches for bounded text/Markdown/HTML/CSV | Pure proof primitive only; no authorized source reacquisition, proposal binding, PDF/OCR/Email proof, live source or cutover |
 | KC-001D owner proposal preview | ADR-170/171 first Streetbeat recipe and ADR-172 ledger, donor untouched | `statement_persistence.py` reader, human-only Knowledge route, ADR-173 | Fictional Email/FileOS source/hash/span recheck, paging, assistant refusal, stale/grant denial | Owner API inspection of unreviewed proposals only; no approval, investment dossier, live source or cutover |
@@ -66,7 +95,7 @@ Golden fixtures are synthetic and contain no private FileOS data.
 | KC-001I Wells Fargo brokerage recipe baseline | Same pinned donor commit/file/hash; donor checkout unchanged | `statement_recipe_parity.py`, ADR-198 | Seven fictional goldens for cash, acquired lots, page-break deduplication, over-six-lot summaries, zero fallback and incomplete tails; optional exact-hash AST replay and 1,000-row stress | Isolated, nonpublishing comparison only; no typed brokerage proposal, verified holding, live statement or cutover |
 | KC-001J Wells Fargo credit-line recipe baseline | Same pinned donor commit/file/hash; donor checkout unchanged | `statement_recipe_parity.py`, ADR-199 | Nine fictional goldens for both text layouts, opposite debt signs, linked-bank exclusion, unexpected labels, page/header noise, optional fields and incomplete text; exact-hash AST replay and 1,000-row stress | Isolated supplied-text comparison only; no source-PDF derivation proof, typed loan proposal, verified balance or cutover |
 | KC-001K Charles Schwab brokerage recipe baseline | Same pinned donor commit/file/hash; donor checkout unchanged | `statement_recipe_parity.py`, ADR-203 | Nine fictional old-template/failure-era goldens, exact-hash AST replay and 1,000-row stress; Cash-and-Bank-Sweep, symbols, accounting signs and empty redesigned/scanned input | Isolated supplied-text comparison only; no PDF/OCR derivation proof, typed proposal, verified holding or cutover |
-| DC-001 read-only hashing/dedupe | FOS-Master `218d5cae`, `_SYSTEM/tools/dedup_tool.py` | `src/masterbrain/datacore/dedup.py` | `scripts/datacore_parity.py`; hash/name/both synthetic corpus | Complete; 3,000-file parity and hosted gate green |
+| DC-001 read-only hashing/dedupe | FOS-Master `218d5cae`, `_SYSTEM/tools/dedup_tool.py` and `doc_extract.py` with exact source hashes | `src/masterbrain/datacore/dedup.py` | `scripts/datacore_parity.py`; clean-checkout/hash attestation, hash/name/both synthetic corpus | Runtime extraction is complete; 3,000-file parity reran locally on 2026-10-15 with exact donor bytes. Current-branch hosted gate remains unavailable; live cutover is not proved |
 | DC-002 contracts/snapshot foundation | FOS inventory/index behavior reviewed; new source-neutral contract | `contracts.py`, `fileos.py`, `masterbrain` CLI | contract/fault/symlink/no-mutation tests; donor exclusion/hash behavior | Complete; hosted gate green |
 | DC-002B FileOS inventory classifier | FOS-Master `218d5cae`, `junk_filter.py` SHA-256 `12110b1b...` | `fileos_junk_filter.py` | comment-stripped donor hash; donor self-test and 3,000 synthetic path classifications/pruning | Extracted; local parity and hosted CI/restore green; snapshot integration pending |
 | DC-002C scanner-vs-snapshot shadow | FOS-Master `218d5cae`, `scan_domains.py` SHA-256 `bf4a9bb...` | `scripts/fileos_inventory_shadow.py` | 3,000 fictional files, exact common SHA/size, six explicit policy gaps, replay/change/removal, no-hash/rehash, mass-prune guard and symlink boundary | Synthetic shadow and hosted CI green; inventory-policy integration pending |
@@ -181,9 +210,13 @@ acceptance still need separate work. None of these changes proves FileOS cutover
 
 ## Proposed next tranches
 
-The latest local pinned-donor comparison on 2026-10-03 passed at both 3,000
-stress files and the 9,994-stress-file maximum (10,000 prior v1 rows), with
-zero unexplained membership differences; 44 focused donor tests passed.
+The local pinned-donor comparison on 2026-10-03 passed at both 3,000 stress
+files and the 9,994-stress-file maximum (10,000 prior v1 rows), with zero
+unexplained membership differences; 44 focused donor tests passed. A
+2026-10-15 direct recheck at the 9,994-file maximum against the unchanged
+pinned donor again found zero unexplained membership differences across 9,998
+ordinary, replay, changed, metadata-only and candidate rows. It retained the
+six known transition policy gaps; see the [current receipt](BUILD_RECEIPT.md).
 The merged PR #164 filename probe adds a pinned-donor cross-directory case/Unicode
 corpus and conditional same-directory sibling probes. The former passed on
 this Mac; the latter could not run on its collision-folding filesystem. A
@@ -216,6 +249,44 @@ known policy gaps, real cloud placeholders, permission faults, live platform/nam
 behavior, owner-authorized live shadow, later v2 current/absence semantics and
 rollback still require review. No v2 activation or FOS-Master change is
 authorized by this result; see the [exact receipt](BUILD_RECEIPT.md).
+ADR-251 adds a pure, synthetic-only consecutive donor-observation preview for
+the later-run policy question. It separates possible absence from hashless,
+deferred, excluded and error-covered paths, but is not connected to an actual
+completed v2 baseline and cannot create absence or current-read authority.
+ADR-252 now binds that policy preview to the real completed v2 baseline under
+the private source lock and a fresh synthetic root scan. Only an ephemeral
+count/digest summary returns; the immutable later-run ledger, absence/current
+semantics, live shadow and rollback are still open.
+ADR-253 retains the next synthetic observation as an immutable private review
+packet linked to that same completed baseline. It can be replayed and inspected
+without rescanning, but is explicitly not a per-row completed later-run ledger.
+Absence, v2 current reads, live shadow, rollback and donor cutover remain gated.
+ADR-254 projects that historical packet into a separately sealed, exact-row
+coverage closure for future processing. It accounts for current donor rows and
+prior classifications but does not process hashed evidence or complete a later
+run. All current/absence/cutover gates remain unchanged.
+ADR-255 now prepares policy-scoped, source-bound DataCore evidence for those
+sealed hashed rows only after an exact fresh donor-policy rescan. A new later-
+only file is represented without becoming current. Document publication,
+terminal processing of all rows, completed later-run semantics, rollback,
+live shadow and cutover remain separate gates.
+ADR-256 now processes accepted later hashed rows into historical normalized
+documents and seals one explicit outcome per current row. Deferred/excluded
+rows are accounted without fabricated content; scan errors still block at
+preparation. The attempt is not a completed later run, current index or
+absence authority. FOS-Master remains unchanged.
+ADR-257 now completes one historical later run only after a ready attempt
+and a fresh matching source scan. The immutable receipt retains possible-
+absence, mass-loss and prior-coverage review flags but grants no current
+index, absence-event, source-effect or cutover authority. Next assemble an
+exact generation, prove rollback, and run owner-approved live shadow.
+ADR-258 now assembles an exact later-run shared DataCore generation and
+checks its hashed item and chunk membership in SQL. It cannot be activated;
+ADR-259 now adds the human historical comparison with separate result layers
+and run review flags; it changes no current read or donor source. The next
+step, ADR-260, exposes exact historical prior-row classifications for bounded
+human inspection. The remaining gates are explicit owner adjudication,
+rollback-ready policy, live shadow and hosted validation.
 
 1. **DC-002 donor inventory policy:** review the isolated shadow profile,
    source-bound candidate, completed-baseline preview and staged v2 rows, then

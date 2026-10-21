@@ -540,6 +540,23 @@ def test_live_pinned_donor_policy_parity() -> None:
     assert result["transition_policy_gaps"] == 6
 
 
+def test_live_pinned_donor_policy_parity_at_v1_capacity() -> None:
+    """The maximum allowed transition corpus must still match the pinned donor."""
+    repo = Path(__file__).resolve().parents[2] / "FOS-Master"
+    if not repo.is_dir():
+        pytest.skip("pinned donor checkout is not present on this runner")
+    result = _comparator_module().run_shadow(repo, 9994)
+    for key in (
+        "ordinary_matches", "replay_matches", "changed_matches",
+        "metadata_only_matches", "candidate_hashed_matches",
+        "candidate_metadata_only_matches",
+    ):
+        assert result[key] == 9998
+    assert result["transition_prior_matches"] == 10000
+    assert result["transition_policy_gaps"] == 6
+    assert result["known_membership_differences"] == 0
+
+
 def test_transition_stress_bound_fails_before_donor_load(tmp_path: Path) -> None:
     module = _comparator_module()
     with pytest.raises(ValueError, match="v1 manifest capacity"):

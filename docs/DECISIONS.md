@@ -1,5 +1,15 @@
 # Architecture Decisions
 
+[ADR-266](adr/266_reachable_tier_reviews_and_single_dossier_approval.md)
+pages source-tier reviews with a cursor and all-page tier counts, approves an
+imported dossier claim once, and binds fact-proposal approvals to the exact
+published fact and current reviewer (migration 0095).
+
+[ADR-265](adr/265_review_fixes_collation_xlsx_extent_fact_correction.md)
+compares SQL-read locators in byte order, reads an XLSX sheet's true extent
+rather than its declared dimension, and keeps reviewed facts under retired or
+unregistered predicates correctable (migration 0094).
+
 [ADR-264](adr/264_draft_pr_ci_cost_gate.md) makes draft PR pushes use a small
 static/browser feedback job while keeping the three existing stable required
 check names red until a ready PR's full PostgreSQL/container, restore and
@@ -7,6 +17,272 @@ strict-runtime jobs pass on the exact candidate. Superseded PR restore and
 benchmark runs are canceled. PR #259's hosted draft and ready runs on the same
 head matched the intended behavior under the effective branch rule; a hosted
 failed-full-job case and measured savings remain open.
+
+[ADR-262](adr/262_historical_fileos_review_snapshot.md) adds a compact,
+human-only digest of exact historical FileOS row decisions, unresolved counts
+and pending run flags. It is a read-only prerequisite for, not a substitute
+for, separately reviewed run-level signoff or v2 activation.
+
+[ADR-261](adr/261_later_fileos_owner_adjudication_proposal.md) implements
+append-only, exact-row historical human decisions, latest readback and bounded
+history. Run-level signoff and activation remain proposals. Acknowledging an
+observation is not absence authority, activation or a file effect.
+
+[ADR-260](adr/260_human_later_fileos_classification_review.md) exposes
+deterministically paged prior-row classifications of one ready historical
+later FileOS generation to a scoped human reviewer. Possible-missing rows
+remain discrepancies, not approved absences or current FileOS state.
+
+[ADR-259](adr/259_human_later_fileos_search_comparison.md) adds a human-only,
+source-bound, read-only comparison of a ready historical later FileOS v2
+generation with active v1. It exposes run review flags but grants no current
+read, absence or activation authority.
+
+[ADR-258](adr/258_fileos_v2_later_shared_index_generation.md) puts one
+historical later FileOS v2 run into the shared DataCore generation tables.
+Only exact hashed rows and base chunks may be indexed. SQL refuses activation;
+read comparison, live shadow, rollback and donor cutover remain separate.
+
+[ADR-257](adr/257_fileos_v2_historical_later_run_completion.md) seals one
+historical later FileOS v2 run only after a ready per-row document attempt and
+fresh matching source scan. It records possible-absence/mass-loss/coverage
+review flags but changes no current read, absence event or donor runtime.
+
+[ADR-256](adr/256_fileos_v2_later_document_attempt.md) processes the exact
+later FileOS v2 hashed evidence into historical normalized documents and
+seals an outcome for each accepted current row. It does not complete a later
+run, infer absence or change current FileOS reads.
+
+[ADR-255](adr/255_fileos_v2_later_hashed_evidence.md) re-scans one exact
+ADR-254 closure under the source lock and prepares policy-scoped,
+source-bound DataCore evidence for its hashed rows. It does not publish
+documents, complete a later run or change current FileOS state.
+
+[ADR-254](adr/254_fileos_v2_later_coverage_closure.md) seals exact current
+observation rows and prior classifications from one validated ADR-253 packet
+into a private, immutable coverage closure. It has no processing outcome,
+absence or current-read authority.
+
+[ADR-253](adr/253_fileos_v2_later_observation_packet.md) records an immutable,
+private, source-locked later FileOS v2 observation against one exact completed
+baseline. It is a review packet only: no completed later run, absence authority,
+current-read activation or donor cutover.
+
+[ADR-252](adr/252_fileos_v2_completed_baseline_preview.md) binds ADR-251's
+later-observation policy preview to one exact, completed, owner-authorized
+FileOS v2 baseline under the tenant/source lock. It returns only counts,
+blockers and an ephemeral digest; no later run or absence/current authority.
+
+[ADR-251](adr/251_fileos_v2_consecutive_observation_preview.md) adds a
+read-only, nonpublishing comparison of two closed FileOS donor-policy
+observations. It distinguishes a possible absence from deferred, excluded,
+error-covered and hashless prior rows but never authorizes an absence event,
+current v2 read or FOS-Master cutover.
+
+[ADR-250](adr/250_fictional_xlsx_alpha_round_trip.md) treats the synthetic
+Email XLSX path as one round-trip contract from owner evidence selection
+through two separately scoped workers to cited retrieval and source-pause
+invalidation. Its processor is simulated; actual-image/live acceptance stays
+separate.
+
+[ADR-249](adr/249_private_synthetic_email_xlsx_extraction_command.md) exposes
+one exact synthetic XLSX approval to an account-pinned, tenant-bound private
+worker command. Check mode reads no selected MIME; extraction, human review and
+publication remain distinct scoped actions.
+
+[ADR-248](adr/248_first_party_synthetic_xlsx_source_approval.md) connects
+inspected Email attachment evidence to explicit, human-only synthetic XLSX
+extraction approval. Selection, approval, extraction, review and publication
+remain distinct actions with separate scopes.
+
+[ADR-247](adr/247_synthetic_email_xlsx_approval_api.md) exposes exact
+synthetic Email XLSX extraction approval through a human-only API with a
+server-pinned XLSX processor independent of PDF processing. It does not run
+extraction, publish or admit live mail.
+
+[ADR-246](adr/246_first_party_synthetic_xlsx_result_review.md) adds a
+first-party human screen for an existing fictional XLSX result. It verifies
+all displayed pages against the sealed digest before explicit review, while
+the browser never gains worker publication power.
+
+[ADR-245](adr/245_native_synthetic_restore_drill.md) adds a separate,
+synthetic-only native PostgreSQL 17 dump/restore proof for Docker-less local
+hosts. Its fictional seed now proves populated XLSX review/receipt restore and
+post-restore retrieval locally; it does not replace the hosted Docker or
+isolated-worker gates.
+
+[ADR-244](adr/244_server_owned_email_xlsx_bridge_revision.md) makes the XLSX
+bridge's transform revision server-owned. Human reviewers bind an exact result,
+not a code version; migration 0086 rejects newly forged review/receipt
+revisions without rewriting older rows.
+
+[ADR-243](adr/243_restricted_email_xlsx_publication_command.md) exposes one
+ADR-242 review through a private, account-pinned, tenant-bound worker command.
+Check mode reads no selected result; execution publishes only the reviewed
+synthetic text and has no Email source effect.
+
+[ADR-242](adr/242_split_email_xlsx_review_and_worker_publication.md) corrects
+ADR-241's role mismatch: a human inspects and seals one exact synthetic XLSX
+result; a separately scoped worker publishes it. Migration 0085 requires
+the review on every new bridge receipt.
+
+[ADR-241](adr/241_reviewed_synthetic_email_xlsx_document_bridge.md) binds a
+complete synthetic Email XLSX worker result to an explicitly human-authorized
+DataCore document and the original attachment occurrence. Currentness gates
+generic and Email-family retrieval; cell citations, live mail and FileOS
+cutover remain open.
+
+[ADR-240](adr/240_synthetic_email_xlsx_worker_result.md) consumes one current
+synthetic-only XLSX approval through the pinned isolated DataCore worker and
+seals complete text in an immutable private result. It does not index or
+publish a Brain document.
+
+[ADR-239](adr/239_synthetic_email_xlsx_extraction_approval.md) creates a
+separate human, synthetic-only approval for one exact retained Email XLSX
+occurrence. It grants no PDF job, extraction result, bridge or live access.
+
+[ADR-238](adr/238_retained_email_xlsx_row_layout.md) binds one retained
+Email XLSX occurrence's bounded physical rows to its existing indexed text
+digest without publishing values, approving extraction or accessing live mail.
+
+[ADR-237](adr/237_restricted_fileos_xlsx_table_replay_command.md) exposes
+one reviewed FileOS XLSX table replay through a private exact-source,
+tenant-bound command with a no-selected-workbook-read check mode.
+
+[ADR-236](adr/236_reviewed_fileos_xlsx_table_replay_receipt.md) binds one
+current, human-reviewed FileOS XLSX to a tenant-fenced, immutable digest-only
+row-layout receipt. It does not publish cell values or approve financial facts.
+
+[ADR-235](adr/235_confined_fileos_xlsx_table_replay.md) re-reads one exact
+FileOS XLSX through a no-follow root, binds rows to existing indexed text and
+records a content-free layout digest without publishing or changing the file.
+
+[ADR-234](adr/234_bounded_xlsx_cell_projection.md) adds a separate, bounded
+source-bound XLSX row/cell worker with a strict isolated pipe contract. It
+does not alter indexed text or publish spreadsheet values.
+
+[ADR-233](adr/233_pinned_fos_xlsx_table_baseline.md) pins an isolated
+FOS-Master XLSX table baseline and records the precise DataCore table, formula,
+truncation, encrypted-workbook and `.xlsm` differences before any cutover.
+
+[ADR-232](adr/232_retained_email_xlsx_derivation.md) proves one exact retained
+Email XLSX attachment can reuse the isolated shared DataCore parser without
+publishing text or granting live-mail authority.
+
+[ADR-231](adr/231_email_pdf_replay_account_transition_fence.md) serializes the
+reviewed Email PDF receipt with controlled and direct account-status updates
+using a tenant-bound worker function; completed document jobs stay immutable.
+
+[ADR-230](adr/230_restricted_email_pdf_tier_replay_command.md) exposes one
+reviewed Email attachment PDF text-layer replay through a private, exact-account,
+tenant-bound worker command with no selected MIME read in check mode.
+
+[ADR-229](adr/229_reviewed_email_attachment_pdf_replay_receipt.md) binds one
+current reviewed Email PDF attachment to a retained-MIME replay and immutable
+digest-only receipt. It is not an operator command or financial attestation.
+
+[ADR-228](adr/228_retained_email_attachment_pdf_derivation.md) adds a
+nonpublishing exact retained-MIME/part and isolated Email PDF text-layer proof.
+It is not a reviewed receipt, live mail or financial attestation.
+
+[ADR-227](adr/227_restricted_fileos_pdf_tier_replay_command.md) exposes one
+reviewed FileOS PDF text-layer replay through an exact, tenant-bound private
+command with a no-selected-PDF-read check mode. Synthetic execution does not
+authorize a live root, financial claim or FileOS cutover.
+
+[ADR-226](adr/226_reviewed_fileos_pdf_replay_receipt.md) binds the confined
+PDF derivation to one current human tier review and an immutable digest-only
+receipt. The receipt is not OCR, issuer proof or financial truth.
+
+[ADR-225](adr/225_confined_fileos_pdf_derivation_replay.md) adds a
+nonpublishing, exact-byte FileOS PDF text-layer replay through the pinned
+restricted processor. Image-only and changed sources fail closed.
+
+[ADR-224](adr/224_restricted_email_tier_replay_command.md) exposes one
+reviewed retained-Email text replay through a tenant-bound, exact-account
+operator command with no selected MIME read in check mode.
+
+[ADR-223](adr/223_retained_email_text_replay.md) proves one direct-parser
+Email text projection from current retained MIME (inline or encrypted) and
+stores a point-in-time digest receipt, not sender authenticity.
+
+[ADR-222](adr/222_encrypted_email_bridge_source_size.md) binds bridged
+encrypted Email versions to their actual retained MIME byte size.
+
+[ADR-221](adr/221_xlsx_formula_and_cell_deferral.md) defers formula-bearing
+or overlong-cell XLSX instead of publishing incomplete-looking text.
+
+[ADR-220](adr/220_pdf_missing_page_deferral.md) defers mixed text/no-text PDFs
+instead of treating partial page coverage as complete extraction.
+
+[ADR-219](adr/219_restricted_source_tier_replay_command.md) exposes the
+bounded FileOS text replay through one tenant-bound worker command.
+
+[ADR-218](adr/218_source_tier_fileos_text_replay.md) binds confined FileOS
+text bytes to one current human source-tier review and digest-only receipt.
+
+[ADR-217](adr/217_current_source_tier_review.md) stores a human source-tier
+classification of current evidence without calling it byte attestation.
+
+[ADR-216](adr/216_fos_fact_verifier_parity_and_attestation_boundary.md) pins
+donor fact-verifier semantics in isolated fictional parity, not verified
+financial claims.
+
+[ADR-215](adr/215_project_fact_catalog_discovery_and_retirement.md) makes the
+database's latest predicate revision authoritative, including deprecation,
+and exposes a bounded read-only Brain API catalog with strict client checks.
+
+[ADR-214](adr/214_project_fact_predicate_catalog.md) pins a versioned
+checked-in predicate vocabulary for new reviewed project facts. Publication
+code and SQL guard the name/type/unit shape; legacy rows are not reclassified.
+Issue #183's aliases and private vocabulary proposals remain open.
+
+[ADR-213](adr/213_project_fact_measurement_quote_tokens.md) refuses partial
+amount and unit/currency matches in source-stated measurement quotes at both
+application and SQL boundaries. Existing typed rows are checked during the
+additive migration, without a silent rewrite.
+
+[ADR-212](adr/212_exact_project_fact_measurement.md) adds opt-in exact-decimal
+unit/currency metadata to newly reviewed project facts. Existing values stay
+untyped; the report labels measurements as source-stated and still refuses
+numeric totals.
+
+[ADR-211](adr/211_current_project_fact_report.md) exposes a first source-
+granted, current-evidence project fact report from reviewed KnowledgeCore rows.
+It groups one bounded page with citation IDs and uncertainty flags, never a
+numeric investment total.
+
+[ADR-210](adr/210_fos_entity_money_report_baseline.md) compares the remaining
+three FOS intelligence-report row shapes on fictional data. Duplicate entity
+mentions, distinct-domain spread and DuckDB money rounding are pinned, but
+the numeric sum is expressly not an investment balance or runtime API.
+
+[ADR-209](adr/209_fos_report_baseline.md) pins the first isolated, synthetic
+FOS intelligence-report comparison: coverage and timeline only, with donor
+source hash and no runtime, financial-truth or cutover claim.
+
+[ADR-208](adr/208_synthetic_masterbrain_demo.md) adds a disposable, branded
+combined Email/FileOS demo and cited project fixture. It leaves live sources,
+hosted identity, automatic interpretation and FOS-Master untouched.
+
+[ADR-207](adr/207_project_artifact_markdown_proposal_boundary.md) specifies
+separate private selected artifact-link proposals because their approved
+receipt differs from generic Knowledge and project-fact receipts. Its
+transaction-bound publisher and separate synthetic-only stage/preview/human-
+review queue are implemented on an open PR. Local tests do not imply hosted
+acceptance, live import or FileOS cutover.
+
+[ADR-206](adr/206_project_fact_markdown_proposal_boundary.md) adds a
+synthetic-only, private project-fact Markdown proposal path with explicit
+human batch decisions and a fact-specific publication receipt. It remains on
+an open PR pending hosted gates, not a live-source or automatic-import claim.
+Artifact links and inferred facts remain separate decisions.
+
+[ADR-205](adr/205_dossier_member_proposal_staging.md) admits selected,
+two-citation project-member Markdown rows only into the private proposal
+queue. Existing local project/entity bases and exact cited evidence are
+rechecked through human review; approval issues a new local member ID and
+never grants permissions.
 
 [ADR-204](adr/204_fictional_cross_source_project_dossier_acceptance.md)
 extends only the disposable cross-source trial with one coherent, reviewed

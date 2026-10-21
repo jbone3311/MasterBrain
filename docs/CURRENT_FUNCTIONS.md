@@ -1,6 +1,53 @@
 # Current MasterBrain functions
 
-Updated 2026-10-14; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
+ADR-262 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-review-summary`
+for a compact digest and counts of the exact latest historical row decisions.
+It separates missing, held and acknowledged ambiguous rows and names run
+flags needing later acknowledgement. It records no run-level signoff and
+grants no current, absence or file authority.
+
+ADR-261 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-row-decisions`
+for append-only exact historical classification decisions and
+`POST /v1/brain/sources/{source_id}/v2-later-row-decision-history` for bounded
+readback. `v2-later-review-rows` now includes the latest decision per row.
+These routes require FileOS transition review, Brain search and evidence-read
+scopes plus a source grant. They cannot confirm absence, activate current
+search, modify a source or replace FOS-Master.
+
+ADR-260 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-review-rows`
+to page the immutable prior-row classifications of a named historical later
+generation, optionally filtered by state. Possible-missing rows are visible
+for review, not approved as absences; the route is read-only.
+
+ADR-259 adds human-only `POST /v1/brain/sources/{source_id}/v2-later-search-preview`
+for a named ready historical later FileOS generation. It shows active-v1 and
+historical candidate hits in separate bounded layers with completed-run
+review flags. It is read-only and cannot establish current state or absence.
+
+ADR-258 adds a private, synthetic-only builder for a ready historical
+`v2_later` generation in the shared DataCore index. It can be built/replayed
+with a scoped worker, but SQL prohibits activation; only ADR-259's human
+historical comparison uses it. Current search and live-source acceptance
+remain open.
+
+ADR-257 adds a private, synthetic-only historical FileOS v2 later-run
+completion library. A scoped worker supplies an exact ready ADR-256 attempt
+and source root; a fresh matching scan seals one tenant-fenced receipt per
+packet with explicit review flags. It has no CLI or public API yet and grants
+no current-read, absence-event or source-effect authority.
+
+ADR-247 adds a human-only, source-attached synthetic XLSX extraction approval
+API when `serve --xlsx-document-processor-version` is configured. ADR-248 adds
+an explicit selection/approval control beside eligible inspected Email evidence.
+ADR-249 adds the separate private `extract-approved-xlsx` command. ADR-246's
+Email owner screen can inspect all pages of an existing
+synthetic XLSX extraction result and explicitly review its browser-verified
+complete text digest/counts. The human cannot claim the server's bridge code
+revision or publish; the private worker records that guarded revision.
+ADR-250 tests the entire fictional API/worker/retrieval sequence with a
+simulated isolated processor and source-pause denial.
+
+Updated 2026-10-16; use the [build receipt](BUILD_RECEIPT.md) for exact-commit
 verification. “Available” below means executable in this repository with
 synthetic/disposable inputs; it does **not** mean hosted, connected to real accounts,
 approved for private data, or production accepted. The exact-commit gates are in
@@ -11,6 +58,8 @@ approved for private data, or production accepted. The exact-commit gates are in
 
 | Function | Working path | Boundary |
 |---|---|---|
+| Publish one fictional approved Email XLSX as cited text | First-party inspected attachment selection and explicit `POST /v1/accounts/{account_id}/attachments/{receipt_id}/xlsx-approvals` with a server-pinned XLSX processor → private `masterbrain email extract-approved-xlsx --tenant-bound-db` worker → first-party human inspection and exact digest/count review of the saved result → separate `masterbrain email publish-reviewed-xlsx --tenant-bound-db` worker; then existing Brain/Email-family search | Synthetic-only path on an open PR. A disposable integration test proves the owner/API → two-worker → cited-retrieval sequence with a simulated restricted processor and source-pause denial. Human credentials cannot extract or publish, and the browser runs neither worker. No public worker endpoint, cell-level citation, live Fastmail or financial approval. Actual-image, browser and hosted gates remain open. |
+| Replay one fictional reviewed FileOS XLSX row layout | `masterbrain fileos replay-tier-xlsx-tables --tenant-bound-db --check`, then the exact selected review without `--check` | Private worker-only, same pinned image as the indexed document; stores only a tenant-fenced digest/count receipt. It does not publish cells, certify financial facts, modify files, or authorize a live root. The actual-image and hosted gates remain open. |
 | Search fictional Email and FileOS together or explicitly focus one source kind | [cross-source browser trial](CROSS_SOURCE_TRIAL.md) and `POST /v1/brain/current-search` | Real PostgreSQL and Brain API, fictional data; plain-text excerpts, grouped layers with separate ranks and partial coverage. All-source Knowledge matches use ADR-159's verified unsuperseded review-chain leaves; focused calls skip knowledge and report `not_searched`. No generated answer. |
 | Ask for verified source quotes and reviewed matches | `POST /v1/brain/answers`, `BrainReadClient.answer`, and `/brain` | A local deterministic selector returns exact current-source excerpts from at most 8,192 UTF-8 bytes of passage text and flags shortened context. Returned quote plus reviewed-match text has a separate 8,192-UTF-8-byte ceiling with visible output truncation; reviewed KnowledgeCore matches and evidence links appear only under All focus. Ask removes fixed question boilerplate before lexical retrieval. Neither reviewed text nor source quotes are freeform synthesis. Explicitly disabling selection returns 503 and grouped-search fallback. |
 | Open a result and verify its source | `GET /v1/brain/evidence/{id}` then separately scoped `POST /v1/brain/evidence/{id}/content` | Bounded content with opaque provenance; original Email downloads require the distinct human reader permission. |
@@ -20,12 +69,13 @@ approved for private data, or production accepted. The exact-commit gates are in
 | Run a legacy Email worker with a tenant-bound database login | Add `--tenant-bound-db` to `email-brain sync-read`, `process-jobs` or `process-documents`, for check and execution | The authenticated worker tenant selects the only SQL login. ADR-110's read-only Fastmail worker uses anchored listing, bounded metadata batches and held oversized mail; provider-read opt-in, exact worker scopes and approved-processing gates remain separate. No hosted/live-source acceptance is implied. |
 | Run a synthetic scoped Fastmail read | Use private `email-brain sync-read` version-2 config with one exact UTC mailbox/date `read_scope` matching an administrator-pinned unused account; optionally set sorted `excluded_mailbox_ids` | ADR-178 checks the SQL pin before provider I/O, uses ADR-176's filtered inventory worker and preserves ADR-177's lease/cursor fence. ADR-184 suppresses mixed private-mailbox membership before any byte lookup and hides an older current projection without purging history; ADR-185 also hides its retained Brain and reviewed Knowledge reads. Fictional HTTPS/disposable PostgreSQL only; no live-provider acceptance. Version 1 remains account-wide. |
 | Check, enroll or disconnect a private pinned Fastmail source locally | `email-brain fastmail-source --config <private-file> --check`, then `--enroll` or `--disconnect` with exact account, scope and full-binding confirmations | ADR-179 requires a human-only management credential and current owner membership, creates only a new pinned row or disconnects the exact row, and makes no provider request. No real mailbox has been enrolled or accepted; disconnect does not revoke its token or delete/hide retained evidence. |
-| Search reviewed knowledge | `POST /v1/knowledge/search`, `GET /v1/knowledge/{kind}/{id}`, `GET /v1/knowledge/projects/{project_id}/dossier`, event timeline and due commitments | Human-reviewed, evidence-linked assertions. Search defaults to retained history; explicit `unsuperseded` returns source-authorized review-chain leaves. ADR-162's merged dossier includes separately bounded linked events and commitments, including undated links; exact-head and merged-main gates passed. No valid-time truth, automatic resolution or model-generated synthesis. |
-| Stage and decide fictional Knowledge proposals | `POST /v1/knowledge/proposal-batches`, `GET /v1/knowledge/proposal-batches/{batch_id}`, then `POST /v1/knowledge/proposal-batches/{batch_id}/review` | ADR-186 human-only 1–50 source-stated rows with current granted evidence and exact quotes. Preview requires content scope; every row needs an explicit approve/reject choice in one atomic transaction. Unreviewed rows stay outside search; no Markdown import, inference or live source. |
+| Search reviewed knowledge and export a cited project | `POST /v1/knowledge/search`, `GET /v1/knowledge/{kind}/{id}`, `GET /v1/knowledge/projects/{project_id}/dossier` or `/markdown`, event timeline and due commitments | Human-reviewed, evidence-linked assertions. The bounded project dossier includes events, commitments, people/roles, related artifacts and source-stated facts; the Markdown export rechecks every displayed citation. ADR-211 adds a separately bounded current-source project fact report grouped by predicate without summing money; ADR-212 permits optional quote-backed decimal/unit metadata on new reviewed facts, ADR-213 requires complete quote tokens, and ADR-214 controls new project-fact names/types/units. No complete registry, valid-time truth, automatic resolution, source-freshness certificate or model-generated synthesis. |
+| Discover supported new project-fact names | `GET /v1/knowledge/fact-predicates`, `BrainReadClient.project_fact_predicates()` | ADR-215 returns the latest database revision/status for each bounded project-fact name, including deprecations. Read-only and untrusted; historical facts, generic claims/events/roles, aliases and vocabulary approval remain separate. |
+| Stage and decide fictional Knowledge proposals | `POST /v1/knowledge/proposal-batches` or the selected `POST /v1/knowledge/dossier-markdown/proposal-batches`, private preview and explicit human review | ADR-186/202/205 human-only 1–50 source-stated project/event/commitment/member rows with current granted evidence and exact quotes. Separate ADR-206 fact and ADR-207 artifact-link proposal routes now stage selected dossier rows and require typed missing fields and atomic per-row human decisions. No inference, assistant proposal read, automatic approval or live source. |
 | Resolve a reviewed deal name to project candidates | `GET /v1/knowledge/projects/resolve`, `BrainReadClient.resolve_project_alias` | ADR-182 returns all visible matches up to a bounded limit, with ambiguity/truncation labels and alias evidence. New project aliases require human review; old projects retain exact-title fallback. No automatic merge or current-project truth. |
 | Inspect one proposed statement extraction | **Open proposed row** in the fictional [browser trial](CROSS_SOURCE_TRIAL.md), or `GET /v1/knowledge/statement-proposals/{proposal_id}` with `after` and `limit` | The trial uses one synthetic current FileOS document and fetches only on click. API is human-only, requires both Knowledge read and Brain content read. At most 25 exact-decimal rows and 300 characters of source quote per row; current source/grant/digests rechecked. Unreviewed proposal only, not a holding, approval or assistant route. |
 | Seal a private fictional FileOS statement text replay | `StatementFileOSReplayStore.record_current_text_replay` in a worker with one exact source root and proposal ID | Uses a no-follow bounded read, checks current source and root before and after, and writes an append-only tenant-fenced receipt. No CLI/API route, public verified flag, reviewed holding, Email/PDF/OCR proof or live-source acceptance. |
-| Compare six fictional donor statement recipes | Run the isolated statement parity tests, optionally pointing `FOS_MASTER_STATEMENT_EXTRACT` at the exact pinned donor source file | Streetbeat, Fidelity, OCR bank, Morgan Stanley, Jefferies and Wells Fargo savings have fictional goldens and 1,000-row stress. Only Streetbeat has a separate typed private proposal path; no recipe output is a verified investment or live intake feature. |
+| Compare nine fictional donor statement recipes | Run the isolated statement parity tests, optionally pointing `FOS_MASTER_STATEMENT_EXTRACT` at the exact pinned donor source file | Streetbeat, Fidelity, OCR bank, Morgan Stanley, Jefferies, Wells Fargo savings/brokerage/credit-line and old-template Charles Schwab have fictional goldens and repeatability checks. Only Streetbeat has a separate typed private proposal path; no recipe output is a verified investment or live intake feature. |
 | Open a reviewed project in the first-party workspace | Explicit **Open reviewed project** on a project match in `/brain` Ask or Search only | ADR-163 merged through PR #156 after exact-head full CI, strict-runtime and restore passed. Merged-main restore passed; full CI and final strict gate were blocked before execution by hosted runners (#158). It reuses the scoped ADR-162 read with fixed five-item linked lists, validates the response, and offers separately authorized evidence controls. Focus/token/session changes clear stale reads. No automatic project fetch or live project state. |
 | Browse a reviewed schedule in the first-party workspace | Explicit UTC date window, then **Events** or **Commitments due** in `/brain` | ADR-164 merged through PR #159 after exact-head and merged-main full CI, strict-runtime and restore passed. It reuses ADR-160/161's scoped APIs with ten-item pages, cutoff/cursor continuation, direct evidence controls and complete response validation. Focus/date/token/session changes clear stale pages. Undated rows, live status and source freshness are not asserted. |
 | Review Email evidence | Legacy `/v1/search`, selected-message reader, quarantine/retry, approved PDF jobs, narrow virtual sender rules, and travel/bill memory | Human/operator compatibility prototype, not an assistant entrance (ADR-149); no provider send, move or delete. |
@@ -116,7 +166,7 @@ tools or API routes.
 | `masterbrain datacore` | `hash`, `compare`, `duplicates` | Read-only local hash/dedupe; pinned FOS-Master parity covers the adopted generic behavior. |
 | `masterbrain fileos` | `snapshot`; explicit `publish` and `index`; selected archive `archive-text`, `archive-document`, `archive-image`; text/document preview and sealed-batch commands | Snapshot reads source files; publication/indexing write only authorized MasterBrain records. Private configuration, exact scopes, idempotency and check mode are required. No source file effects or watcher. |
 | `masterbrain email` | One-message/attachment/approved-document bridges; cursor-bounded message/part plans and sealed batches | Explicit migration of current eligible evidence into shared DataCore. It does not ingest from a provider, change mailbox state or automatically bridge an account. |
-| `email-brain` compatibility CLI | Local synthetic seed, administrator migration, loopback service and bounded Email worker/processing commands | Retained Email capability, not the final product name or a production deployment command. Unapplied 0008/0009 populated heap rewrites refuse by default under ADR-148; a named maintenance override is not an online upgrade. |
+| `masterbrain demo` and `email-brain` compatibility CLI | `masterbrain demo migrate/init/seed/serve` starts a disposable combined-source alpha; the internal Email CLI retains its Email-only and combined aliases, administrator migration, loopback service and bounded worker/processing commands | The combined fixture exercises fictional Email bridge, FileOS text and a cited project but grants no worker/source effect to its owner token. Neither path is a production deployment command. Unapplied 0008/0009 populated heap rewrites refuse by default under ADR-148; a named maintenance override is not an online upgrade. |
 
 DBA-only Python helpers `grant_tenant_runtime(conn, role, tenant_id)` and
 `grant_identity_lookup(conn, role)` provision distinct data and exact-lookup

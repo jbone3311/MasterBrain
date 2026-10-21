@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from datetime import timedelta
 from typing import Annotated, Any, Literal, Self
@@ -19,10 +20,46 @@ ProjectArtifactIdentity = Annotated[str, Field(pattern=r"^partifact_[a-f0-9]{32}
 ProjectFactIdentity = Annotated[str, Field(pattern=r"^pfact_[a-f0-9]{32}$")]
 EntityIdentity = Annotated[str, Field(pattern=r"^entity_[a-f0-9]{32}$")]
 Predicate = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,99}$")]
+SourceVersionIdentity = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")]
+DocumentIdentity = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]{0,127}$")]
+Sha256 = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 KnowledgeKind = Literal[
     "entity", "relationship", "claim", "event", "project", "commitment", "member", "correction"
 ]
 KnowledgeVisibility = Literal["retained", "unsuperseded"]
+
+
+class SourceTierReviewWrite(ClosedModel):
+    """Human classification of one current evidence version, not byte attestation."""
+
+    evidence_id: EvidenceIdentity
+    source_version_id: SourceVersionIdentity
+    source_sha256: Sha256
+    document_id: DocumentIdentity
+    document_sha256: Sha256
+    source_tier: Literal["T1", "T2", "T3"]
+    authority_kind: Literal[
+        "signed_instrument", "regulatory_filing", "issuer_statement",
+        "administrator_statement", "internal_record", "other",
+    ]
+    source_quote: str = Field(min_length=1, max_length=2000)
+
+    @model_validator(mode="after")
+    def review_shape(self) -> Self:
+        allowed = {
+            "T1": {"signed_instrument", "regulatory_filing"},
+            "T2": {"issuer_statement", "administrator_statement"},
+            "T3": {"internal_record", "other"},
+        }
+        if self.authority_kind not in allowed[self.source_tier]:
+            raise ValueError("source tier and authority kind disagree")
+        if not self.source_quote.strip() or "\x00" in self.source_quote:
+            raise ValueError("invalid source quote")
+        try:
+            self.source_quote.encode("utf-8", errors="strict")
+        except UnicodeError:
+            raise ValueError("invalid source quote") from None
+        return self
 
 
 class AssertionBase(ClosedModel):
@@ -260,6 +297,64 @@ class KnowledgeProposalReviewRequest(ClosedModel):
         return values
 
 
+class FactProposalDecision(ClosedModel):
+    proposal_id: Annotated[str, Field(pattern=r"^kfproposal_[a-f0-9]{32}$")]
+    decision: Literal["approved", "rejected"]
+    reason: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def reason_contract(self) -> Self:
+        if self.decision == "approved" and self.reason is not None:
+            raise ValueError("approval does not take a reason")
+        if self.decision == "rejected" and (
+            self.reason is None or not self.reason.strip()
+        ):
+            raise ValueError("rejection requires a reason")
+        return self
+
+
+class FactProposalReviewRequest(ClosedModel):
+    batch_sha256: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    decisions: list[FactProposalDecision] = Field(min_length=1, max_length=50)
+
+    @field_validator("decisions")
+    @classmethod
+    def unique_rows(cls, values: list[FactProposalDecision]) -> list[FactProposalDecision]:
+        if len({item.proposal_id for item in values}) != len(values):
+            raise ValueError("duplicate fact proposal decision")
+        return values
+
+
+class ArtifactProposalDecision(ClosedModel):
+    proposal_id: Annotated[str, Field(pattern=r"^kaproposal_[a-f0-9]{32}$")]
+    decision: Literal["approved", "rejected"]
+    reason: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def reason_contract(self) -> Self:
+        if self.decision == "approved" and self.reason is not None:
+            raise ValueError("approval does not take a reason")
+        if self.decision == "rejected" and (
+            self.reason is None or not self.reason.strip()
+        ):
+            raise ValueError("rejection requires a reason")
+        return self
+
+
+class ArtifactProposalReviewRequest(ClosedModel):
+    batch_sha256: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    decisions: list[ArtifactProposalDecision] = Field(min_length=1, max_length=50)
+
+    @field_validator("decisions")
+    @classmethod
+    def unique_rows(
+        cls, values: list[ArtifactProposalDecision],
+    ) -> list[ArtifactProposalDecision]:
+        if len({item.proposal_id for item in values}) != len(values):
+            raise ValueError("duplicate artifact proposal decision")
+        return values
+
+
 class KnowledgeSearchRequest(ClosedModel):
     query: str = Field(min_length=1, max_length=500)
     limit: int = Field(default=10, ge=1, le=50, strict=True)
@@ -331,6 +426,33 @@ class ProjectDossierRequest(ClosedModel):
         return value
 
 
+_CANONICAL_AMOUNT = re.compile(r"^-?(?:0|[1-9][0-9]{0,21})(?:\.[0-9]{1,8})?$")
+
+
+def _quoted_measurement_token(quote: str, token: str, *, amount: bool) -> bool:
+    """Require a complete lexical token, not digits/letters inside another token."""
+    before = r"(?<![\w.\-])" if amount else r"(?<!\w)"
+    after = r"(?![\w.])" if amount else r"(?!\w)"
+    return re.search(before + re.escape(token) + after, quote) is not None
+
+
+class ProjectFactMeasurement(ClosedModel):
+    amount: str
+    unit: Literal["currency", "shares", "percent", "count"]
+    currency: str | None = None
+
+    @model_validator(mode="after")
+    def closed_measurement(self) -> Self:
+        if not _CANONICAL_AMOUNT.fullmatch(self.amount):
+            raise ValueError("amount must be an exact canonical decimal string")
+        if self.unit == "currency":
+            if self.currency is None or not re.fullmatch(r"[A-Z]{3}", self.currency):
+                raise ValueError("currency amount requires a three-letter code")
+        elif self.currency is not None:
+            raise ValueError("noncurrency unit cannot carry a currency code")
+        return self
+
+
 class ProjectFactWrite(AssertionBase):
     kind: Literal["project_fact"]
     project_id: ProjectIdentity
@@ -340,6 +462,7 @@ class ProjectFactWrite(AssertionBase):
     assertion_status: Literal["asserted", "disputed", "retracted"] = "asserted"
     derivation: Literal["source_stated"] = "source_stated"
     quote_evidence_id: EvidenceIdentity
+    measurement: ProjectFactMeasurement | None = None
 
     @model_validator(mode="after")
     def quote_basis(self) -> Self:
@@ -349,6 +472,23 @@ class ProjectFactWrite(AssertionBase):
             raise ValueError("project fact text contains NUL")
         self.source_quote.encode("utf-8", errors="strict")
         self.value.encode("utf-8", errors="strict")
+        if self.measurement is not None and (
+            self.value_type != "number" or self.value != self.measurement.amount
+        ):
+            raise ValueError("typed measurement requires matching canonical number value")
+        if self.measurement is not None:
+            token = (
+                self.measurement.currency if self.measurement.unit == "currency"
+                else self.measurement.unit
+            )
+            if (token is None
+                    or not _quoted_measurement_token(
+                        self.source_quote, self.measurement.amount, amount=True,
+                    )
+                    or not _quoted_measurement_token(
+                        self.source_quote, token, amount=False,
+                    )):
+                raise ValueError("typed amount and unit must be complete quote tokens")
         return self
 
 
