@@ -23,6 +23,8 @@ selection/approval/history/cancellation and cited pages; live acceptance is pend
 
 ## Reading paths
 
+- **Ideas and lessons:** [concepts and institutional knowledge](concepts/README.md); explanatory rationale with links to canonical contracts and decisions.
+
 - **MasterBrain foundation:** [product contract](../PRODUCT.md), [feature inventory](MASTERBRAIN_FEATURE_INVENTORY.md), [architecture](ARCHITECTURE.md), [data model](DATA_MODEL.md), [Brain API](BRAIN_API.md), [FOS migration](FOS_MIGRATION.md), and [roadmap](ROADMAP.md).
 - **Next live-alpha decision:** [Fastmail pilot, FOS intelligence preservation and private database/API shape](LIVE_ALPHA_AND_FOS_PRESERVATION.md).
 - **Librarian file exchange:** [twelve-gap review and staged gates](LIBRARIAN_INTEROP.md),
