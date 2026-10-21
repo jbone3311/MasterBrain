@@ -2,6 +2,23 @@
 
 Updated 2026-10-20 UTC. Product: `jbone3311/MasterBrain`, verified **private**.
 
+## ADR-265 review fixes — exact-code checkpoint `c4faadc`
+
+Fixes three independent-review findings and the first hosted full-suite failure
+(collation). Each regression test was run against the unfixed `8753c57` code and
+failed for the intended reason (`prepared row identity`; `registry review:
+unknown`; understated XLSX dimension extracted as complete).
+
+On a fresh disposable PostgreSQL 17.11 database created with `en_US.UTF-8`
+collation (macOS ICU, not glibc), the complete Python 3.11.13 suite passed
+**3,811 / 71 skipped / zero failed** in 10m46s, with **695/696
+PostgreSQL-marked tests executed**. The nine FileOS v2/later PostgreSQL tests
+passed separately (5m58s). Ruff, strict mypy (151 source files), first-party
+Node **178/178**, offline docs (381 files/1,987 paths) and diff check passed.
+The 71 skips include the pinned-donor parity tests, which expect the donor at
+`../FOS-Master` (absent on this host). Hosted exact-head CI is the remaining
+gate; it now starts jobs.
+
 ## Newer FOS-Master donor review — documentation checkpoint
 
 Compared the unchanged local parity pin `218d5cae` with FOS-Master remote
