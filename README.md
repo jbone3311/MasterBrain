@@ -164,6 +164,9 @@ roadmap item is not an implementation claim.
 
 ## Documentation map
 
+- [Concepts and institutional knowledge](docs/concepts/README.md)
+- [Documentation ownership and maintenance](docs/DOCUMENTATION_STANDARD.md)
+
 - [Product contract](PRODUCT.md)
 - [Repository rename and branch consolidation](docs/REPOSITORY_CONSOLIDATION.md)
 - [Current callable functions and limits](docs/CURRENT_FUNCTIONS.md)

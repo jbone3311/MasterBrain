@@ -25,6 +25,12 @@ parity before refactoring behavior.
 
 ## Make one independently verifiable increment
 
+For exploratory work, use the [concepts guide](docs/concepts/README.md) to preserve
+lessons and alternatives, then follow the existing PRD/contract/ADR process.
+Concepts are not specifications or implementation claims. The
+[documentation standard](docs/DOCUMENTATION_STANDARD.md#concepts-discussions-and-decisions)
+explains when a future RFC convention would be useful; none is introduced now.
+
 1. Choose an existing [backlog ID](docs/BACKLOG.md). State the user outcome,
    included work and explicit exclusions in the GitHub build issue.
 2. Read security, architecture, data model, decisions and the applicable contract.
