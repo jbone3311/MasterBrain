@@ -1,0 +1,18 @@
+{
+  "_what_this_is": "The Product half of the Factory's standalone_check.py (D-14). The engine is the whole installable project: pyproject.toml at the repo root builds the masterbrain + email_brain wheel.",
+  "_provenance": "Written 2026-10-21 for WO-2026-10-21-1 item 5. source='.' because the buildable unit is the repo root (pyproject.toml); modules are the public package entry points; dependencies come from the wheel's own metadata, so `requirements` is empty. The probe hashes a temp file through masterbrain.datacore.dedup.file_hash and checks it against hashlib - a real computation with no repo, database or network underneath.",
+  "engine": {
+    "source": ".",
+    "import_name": "masterbrain",
+    "modules": [
+      "cli",
+      "schemas",
+      "knowledge_schema",
+      "datacore",
+      "datacore.dedup",
+      "runtime"
+    ],
+    "requirements": [],
+    "compute_probe": "import hashlib, os, tempfile\nfrom masterbrain.datacore.dedup import file_hash\nfd, p = tempfile.mkstemp()\nos.write(fd, b'masterbrain')\nos.close(fd)\nassert file_hash(p) == hashlib.sha256(b'masterbrain').hexdigest()\n"
+  }
+}
