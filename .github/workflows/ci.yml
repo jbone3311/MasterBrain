@@ -27,7 +27,7 @@ jobs:
       - run: uv sync --locked --extra dev
       - run: uv run ruff check .
       - run: uv run mypy src
-      - run: uv run python scripts/deployment_gate.py --structural-only
+      - run: uv run python scripts/repo_file_gate.py --structural-only
       - run: uv run python scripts/check_docs.py
       - run: node --test tests/web_brain.test.cjs
   full:
@@ -76,7 +76,7 @@ jobs:
       - run: node --test tests/web_brain.test.cjs
       # The preceding pytest step is required and stops the job on failure.
       # Keep the gate's standalone default exhaustive without running it twice here.
-      - run: uv run python scripts/deployment_gate.py --structural-only
+      - run: uv run python scripts/repo_file_gate.py --structural-only
       - run: uv run python scripts/check_docs.py
       - run: docker build -t email-brain-ci .
       - run: docker run --rm email-brain-ci --help

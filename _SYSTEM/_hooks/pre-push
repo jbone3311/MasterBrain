@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# MasterBrain pre-push — scan the lines being pushed for credentials (WO-2026-10-21-1 item 8).
+# The repo has a live GitHub remote; without a push-time scan a key committed with --no-verify,
+# or on a machine without the pre-commit wired, would leave the machine. Fail-closed: a range it
+# cannot read is a refusal, never a pass. Prints how many added lines it examined.
+set -uo pipefail
+zero=0000000000000000000000000000000000000000
+total=0; hits=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue                      # a branch delete pushes no content
+  if [ "$remote_sha" = "$zero" ]; then
+    range="$(git merge-base "$local_sha" origin/main 2>/dev/null || true)"
+    range="${range:+$range..}$local_sha"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  added="$(git log -p --no-color --format= "$range" -- . ':(exclude)tests/fixtures' 2>/dev/null)" || {
+    echo "✗ pre-push: could not read $range — refusing (fail-closed)"; exit 1; }
+  lines="$(printf '%s\n' "$added" | grep -E '^\+[^+]' || true)"
+  total=$((total + $(printf '%s' "$lines" | grep -c '' || true)))
+  found="$(printf '%s\n' "$lines" | grep -nE -e '-----BEGIN [A-Z ]*PRIVATE KEY-----|AGE-SECRET-KEY-1[0-9A-Z]+|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36,}|sk-(ant-|proj-)?[A-Za-z0-9_-]{24,}|xox[baprs]-[A-Za-z0-9-]{10,}' | head -5 || true)"
+  [ -n "$found" ] && hits="$hits\n  $remote_ref: $(printf '%s' "$found" | cut -c1-60 | tr '\n' ' ')"
+done
+if [ -n "$hits" ]; then
+  printf "✗ pre-push: %d added line(s) examined — credential-shaped content:%b\n" "$total" "$hits"
+  echo "  Remove it from the commits (rewrite before pushing) and rotate the credential."
+  exit 1
+fi
+echo "✓ pre-push: $total added line(s) examined — no credential-shaped content"

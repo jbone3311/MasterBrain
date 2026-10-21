@@ -1,0 +1,32 @@
+{
+  "_what_this_is": "The Product half of the Factory's domain_vocab_ratchet.py (D-14). PRODUCT.md's layer rule: source adapters own provider-specific discovery, cursors and fetches; KnowledgeCore, the Brain API and DataCore's shared substrate stay source-agnostic. The files below claim to be provider-free; each carries the provider-vocabulary count it has today as a ceiling, and a file that GAINS provider vocabulary fails.",
+  "_provenance": "Written 2026-10-21 for WO-2026-10-21-1 item 5. MasterBrain has no JSON domain schema to harvest, so the vocabulary is declared: the mail-provider and protocol names the adapters (src/email_brain/connectors, fastmail_enrollment) own. Ceilings measured with `domain_vocab_ratchet.py scan` the same day; lower them with `baseline`, never raise without --allow-raise and a reason.",
+  "vocabulary": {
+    "sources": [],
+    "harvest": [],
+    "extra_terms": [
+      "imap",
+      "jmap",
+      "gmail",
+      "fastmail",
+      "outlook",
+      "smtp",
+      "mailbox",
+      "exchange online",
+      "microsoft graph"
+    ],
+    "false_friends": [],
+    "min_term_length": 3
+  },
+  "ceilings": {
+    "src/masterbrain/knowledge.py": 0,
+    "src/masterbrain/knowledge_schema.py": 0,
+    "src/masterbrain/knowledge_proposals.py": 0,
+    "src/masterbrain/schemas.py": 0,
+    "src/masterbrain/answers.py": 0,
+    "src/masterbrain/brain_client.py": 0,
+    "src/masterbrain/datacore/dedup.py": 0,
+    "src/masterbrain/datacore/extraction.py": 0,
+    "src/masterbrain/datacore/contracts.py": 0
+  }
+}

@@ -43,7 +43,7 @@ node --test tests/web_session.test.cjs tests/web_processing.test.cjs tests/web_d
 node --test tests/web_reader.test.cjs
 node --test tests/web_memory.test.cjs
 node --test tests/web_brain.test.cjs
-uv run python scripts/deployment_gate.py
+uv run python scripts/repo_file_gate.py
 uv run python scripts/check_docs.py
 ```
 

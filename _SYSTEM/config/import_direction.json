@@ -1,0 +1,15 @@
+{
+  "_what_this_is": "The Product half of the Factory's import_direction_check.py (D-14: mechanism up, baseline down). Shipped code under src/ may import the packaged engine (masterbrain, email_brain) and nothing from the internal script tree.",
+  "_provenance": "Written 2026-10-21 for WO-2026-10-21-1 item 5 from pyproject.toml: [tool.setuptools.packages.find] where=src, packages email_brain + masterbrain; scripts/ holds internal tooling (parity, restore drill, docs check). `violations` is the measured baseline, rewritten by `import_direction_check.py baseline`, never by hand.",
+  "allowed_packages": [
+    "masterbrain",
+    "email_brain"
+  ],
+  "internal_roots": [
+    "scripts"
+  ],
+  "shipped_roots": [
+    "src"
+  ],
+  "violations": {}
+}

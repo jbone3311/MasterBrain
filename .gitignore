@@ -27,3 +27,20 @@ htmlcov/
 data/
 backups/
 secrets/
+
+# Factory development-session layer (WO-2026-10-21-1 item 4). Session handshake files the bind
+# writes, the private tier (live DBs, keys — never in git), and SQLite sidecars.
+_SYSTEM/_MEMORY/_ACTIVE_SESSION.json
+_SYSTEM/_MEMORY/_SESSION_INTENT.json
+_SYSTEM/_PRIVATE/
+*-wal
+*-shm
+# Claude Code: track only the shared session config and the two Factory hooks; session state,
+# local settings and worktrees stay out. git never descends into an excluded directory, so the
+# directory is opened with `.claude/*` and the tracked files are re-included one by one.
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+.claude/hooks/*
+!.claude/hooks/cw_scope_guard.py
+!.claude/hooks/cc_mark_wrap.sh

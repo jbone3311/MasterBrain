@@ -1,0 +1,90 @@
+{
+  "_what_this_is": "This Product's capability registry (G14.3, STD-CAPABILITY-REGISTRY-001): every external capability its code reaches for, the key it needs, and whether using it sends data off this machine. Written 2026-10-21 for the Factory development layer.",
+  "_scanned": "src/ (email_brain + masterbrain), compose.yaml, .env.example — by hand, 2026-10-21",
+  "capabilities": [
+    {
+      "capability": "db:postgresql",
+      "install_method": "system-package",
+      "install_command": "docker compose up -d postgres  # compose.yaml: image postgres:17",
+      "detect": {
+        "kind": "which",
+        "binary": "psql"
+      },
+      "license": "PostgreSQL License",
+      "upstream": "https://www.postgresql.org/",
+      "requires_key": "MASTERBRAIN_DSN",
+      "local_or_api": "local",
+      "quiet_by_default": true,
+      "sends_data_to_third_party": false,
+      "notes": "The system of record. MASTERBRAIN_DSN (src/masterbrain) and EMAIL_BRAIN_DSN (src/email_brain/cli.py) name the same local server; a DSN carries a password, so it lives outside the checkout (.env.example says so). Tests need a disposable email_brain_test* database (README)."
+    },
+    {
+      "capability": "mail:fastmail_jmap",
+      "install_method": "hosted-api",
+      "install_command": "https://app.fastmail.com/settings/security/tokens",
+      "detect": {
+        "kind": "http",
+        "url": "https://api.fastmail.com/jmap/session"
+      },
+      "license": "NONE",
+      "upstream": "https://www.fastmail.com/dev/",
+      "requires_key": "EMAIL_BRAIN_CREDENTIALS_FILE",
+      "local_or_api": "api",
+      "quiet_by_default": true,
+      "sends_data_to_third_party": false,
+      "notes": "src/email_brain/connectors/fastmail.py. Reads the owner's own mailbox: mail flows FROM the provider, only the token goes to it. Any change to the mailbox is an approved, auditable command, never a model-generated write (PRODUCT.md)."
+    },
+    {
+      "capability": "mail:gmail_api",
+      "install_method": "hosted-api",
+      "install_command": "https://console.cloud.google.com/apis/library/gmail.googleapis.com",
+      "detect": {
+        "kind": "http",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me"
+      },
+      "license": "NONE",
+      "upstream": "https://developers.google.com/gmail/api",
+      "requires_key": "EMAIL_BRAIN_CREDENTIALS_FILE",
+      "local_or_api": "api",
+      "quiet_by_default": true,
+      "sends_data_to_third_party": false,
+      "notes": "src/email_brain/connectors/gmail.py; OAuth credentials file, outside the checkout."
+    },
+    {
+      "capability": "mail:microsoft_graph",
+      "install_method": "hosted-api",
+      "install_command": "https://entra.microsoft.com/ (app registration with Mail.Read)",
+      "detect": {
+        "kind": "http",
+        "url": "https://graph.microsoft.com"
+      },
+      "license": "NONE",
+      "upstream": "https://learn.microsoft.com/graph/api/resources/mail-api-overview",
+      "requires_key": "EMAIL_BRAIN_CREDENTIALS_FILE",
+      "local_or_api": "api",
+      "quiet_by_default": true,
+      "sends_data_to_third_party": false,
+      "notes": "src/email_brain/connectors/graph.py; signs in via login.microsoftonline.com."
+    },
+    {
+      "capability": "ocr:tesseract",
+      "install_method": "system-package",
+      "install_command": "brew install tesseract  # the worker pins tesseract 5.5.0 and a pytesseract version",
+      "detect": {
+        "kind": "which",
+        "binary": "tesseract"
+      },
+      "license": "Apache-2.0",
+      "upstream": "https://github.com/tesseract-ocr/tesseract",
+      "requires_key": false,
+      "local_or_api": "local",
+      "quiet_by_default": true,
+      "sends_data_to_third_party": false,
+      "notes": "src/masterbrain/datacore/image_ocr_worker.py refuses any tesseract other than 5.5.0, so OCR output is reproducible across machines."
+    }
+  ],
+  "internal_env": {
+    "CW_BINDING_TOKEN": "(the Factory's declaration) the Factory/Product session-binding token (SESSION_CONTRACT.md §2) — internal plumbing, not an external capability"
+  },
+  "_how_this_differs_from_the_draft": "The Factory draft scanned only _SYSTEM/tools (1 file, the import helper) and returned zero rows — a scan of the wrong tree, not an absence. Every row below was read from src/: the connectors under src/email_brain/connectors/, the DSN reads in src/email_brain/cli.py and src/masterbrain, compose.yaml, and src/masterbrain/datacore/image_ocr_worker.py."
+}
