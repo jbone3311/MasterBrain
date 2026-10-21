@@ -4,9 +4,9 @@
 static/browser feedback job while keeping the three existing stable required
 check names red until a ready PR's full PostgreSQL/container, restore and
 strict-runtime jobs pass on the exact candidate. Superseded PR restore and
-benchmark runs are canceled. PR #259's first hosted draft run and effective
-branch protection agree with the intended draft behavior; ready-PR/full-run
-verification and measured savings remain open.
+benchmark runs are canceled. PR #259's hosted draft and ready runs on the same
+head matched the intended behavior under the effective branch rule; a hosted
+failed-full-job case and measured savings remain open.
 
 [ADR-204](adr/204_fictional_cross_source_project_dossier_acceptance.md)
 extends only the disposable cross-source trial with one coherent, reviewed

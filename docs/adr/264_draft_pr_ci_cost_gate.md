@@ -31,7 +31,11 @@ gate; this ADR does not repair billing or claim a measured cost reduction.
   and GitHub's effective branch rule is verified. A manual `workflow_dispatch`
   run is diagnostic and does not replace PR checks.
 - All four workflows cancel superseded in-progress PR runs. Main runs are not
-  canceled. Do not use commit-message CI skipping, path filters on required
+  canceled. The restore drill and benchmark, which had no concurrency group
+  before this ADR, key non-PR runs by `github.run_id`, so a queued main or
+  manual run is never replaced by a newer one. `ci` and `strict-runtime` keep
+  their pre-existing per-ref groups; GitHub may replace a *queued* main run
+  there under rapid merges, which predates this ADR and is not changed by it. Do not use commit-message CI skipping, path filters on required
   workflows, or manual green status to bypass a failed exact-head check.
 - A separate future ADR may adopt merge queue and `merge_group` after checking
   repository settings; this change does not assume a queue exists or alter
@@ -52,9 +56,11 @@ one hosted ready transition with exact SHA and effective protection. PR #259's
 first hosted draft run on `8573e62` proved feedback succeeded, all heavy jobs
 were skipped, and all three required aggregates failed intentionally. The
 effective `main` branch rule was read from GitHub and still requires those
-three checks with administrator enforcement. A ready transition and actual
-billed-minute comparison remain unverified. Confirm a ready candidate with a failed full job
-cannot merge. If any required check is missing or unexpectedly green, keep PRs
+three checks with administrator enforcement. The ready transition on the
+same head `04f4ec0` then ran full CI, populated restore, strict runtime and the
+FileOS benchmark, and all three required aggregates succeeded. Still unverified:
+a hosted ready candidate with a failed full job (the aggregate logic requires
+`success` exactly, so it should stay red) and any billed-minute comparison. If any required check is missing or unexpectedly green, keep PRs
 unmerged and revert the workflow change in a reviewed PR; do not remove the
 required contexts or administer a silent bypass. Compare actual billed runner
 minutes before/after over a similar push cadence before claiming savings.
