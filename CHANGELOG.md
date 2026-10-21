@@ -1,5 +1,10 @@
 # Changelog
 
+- Add an explanatory `docs/concepts` institutional-knowledge layer and connect
+  repository navigation, contributor guidance and documentation ownership. Preserve
+  canonical PRD/architecture/ADR authority and dated research; describe future RFC
+  triggers without creating an RFC system. Documentation only.
+
 - Add a compact, human-only historical FileOS review summary that hashes the
   exact latest row-decision snapshot and counts unresolved coverage without
   recording run signoff or changing current FileOS state (ADR-262).
