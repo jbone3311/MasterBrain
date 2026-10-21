@@ -25,6 +25,15 @@ parity before refactoring behavior.
 
 ## Make one independently verifiable increment
 
+Open work-in-progress PRs as **drafts**. Draft pushes run only bounded static,
+documentation and browser feedback; their three required aggregate checks are
+intentionally red. Before asking to merge, run the relevant full local
+synthetic suite, mark the PR ready for review, and wait for full CI, populated
+restore and strict-runtime checks on the exact final candidate. Any later
+commit to a ready PR reruns those checks. Do not merge on a draft feedback
+pass, old-head result, skipped job, or manual dispatch. See
+[ADR-264](docs/adr/264_draft_pr_ci_cost_gate.md) for the cost/safety tradeoff.
+
 For exploratory work, use the [concepts guide](docs/concepts/README.md) to preserve
 lessons and alternatives, then follow the existing PRD/contract/ADR process.
 Concepts are not specifications or implementation claims. The

@@ -5,6 +5,14 @@ compares SQL-read locators in byte order, reads an XLSX sheet's true extent
 rather than its declared dimension, and keeps reviewed facts under retired or
 unregistered predicates correctable (migration 0094).
 
+[ADR-264](adr/264_draft_pr_ci_cost_gate.md) makes draft PR pushes use a small
+static/browser feedback job while keeping the three existing stable required
+check names red until a ready PR's full PostgreSQL/container, restore and
+strict-runtime jobs pass on the exact candidate. Superseded PR restore and
+benchmark runs are canceled. PR #259's hosted draft and ready runs on the same
+head matched the intended behavior under the effective branch rule; a hosted
+failed-full-job case and measured savings remain open.
+
 [ADR-262](adr/262_historical_fileos_review_snapshot.md) adds a compact,
 human-only digest of exact historical FileOS row decisions, unresolved counts
 and pending run flags. It is a read-only prerequisite for, not a substitute

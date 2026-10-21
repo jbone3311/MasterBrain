@@ -3,14 +3,20 @@ name: Synthetic PostgreSQL restore drill
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches: [main]
 
 permissions:
   contents: read
 
+concurrency:
+  group: restore-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  logical-restore:
+  restore-full:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -24,3 +30,19 @@ jobs:
       - name: Real PostgreSQL 17 synthetic dump and restore
         run: uv run python scripts/restore_drill.py --run-disposable
       # No dump upload, database credentials, external accounts or cloud secrets.
+  logical-restore:
+    if: ${{ always() }}
+    needs: [restore-full]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require a non-draft exact-head restore
+        env:
+          IS_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft }}
+          RESTORE_RESULT: ${{ needs.restore-full.result }}
+        run: |
+          if [ "$IS_DRAFT" = true ]; then
+            echo "A draft cannot satisfy the required restore check."
+            exit 1
+          fi
+          test "$RESTORE_RESULT" = success

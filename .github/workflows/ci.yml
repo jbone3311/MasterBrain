@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches: [main]
 
@@ -13,7 +14,24 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  gate:
+  draft-feedback:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked --extra dev
+      - run: uv run ruff check .
+      - run: uv run mypy src
+      - run: uv run python scripts/deployment_gate.py --structural-only
+      - run: uv run python scripts/check_docs.py
+      - run: node --test tests/web_brain.test.cjs
+  full:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     services:
@@ -116,3 +134,19 @@ jobs:
           MASTERBRAIN_ARCHIVE_IMAGE_ID="$archive_image_id" \
             MASTERBRAIN_IMAGE_OCR_IMAGE_ID="$image_ocr_id" \
             uv run pytest -q tests/container_archive_image_ocr_checks.py
+  gate:
+    if: ${{ always() }}
+    needs: [draft-feedback, full]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require a non-draft exact-head full run
+        env:
+          IS_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft }}
+          FULL_RESULT: ${{ needs.full.result }}
+        run: |
+          if [ "$IS_DRAFT" = true ]; then
+            echo "Draft feedback is not a merge gate; mark the PR ready for review to run full CI."
+            exit 1
+          fi
+          test "$FULL_RESULT" = success

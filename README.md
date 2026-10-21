@@ -110,6 +110,9 @@ The GitHub repository is now [`jbone3311/MasterBrain`](https://github.com/jbone3
 Its `main` branch requires full CI, strict-runtime and populated-restore checks
 on PRs, including for administrators (ADR-153); this is not a production-release
 or live-source approval.
+Draft PRs now use cheaper feedback while their required aggregate checks stay
+red; marking a PR ready runs the full exact-head checks
+([ADR-264](docs/adr/264_draft_pr_ci_cost_gate.md)).
 The internal `email_brain` package remains for compatibility and identifies the
 original Email capability, not the final product. New source-neutral code enters
 through `masterbrain.datacore`, `masterbrain.knowledge`, and the Brain API
