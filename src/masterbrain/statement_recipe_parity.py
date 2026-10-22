@@ -185,7 +185,7 @@ def reconcile_fidelity(
     return expected, actual
 
 
-# OCR-only OCR bank statement recipe. Keep donor row grouping and year
+# OCR-only bank statement recipe. Keep donor row grouping and year
 # assignment exactly: an amount may be on a separate OCR line, and December
 # rows in a January statement belong to the preceding year.
 _JLB_BOILERPLATE = re.compile(

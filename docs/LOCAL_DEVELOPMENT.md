@@ -39,8 +39,8 @@ Load these variables privately, then from the checkout:
 uv sync --locked --extra dev
 docker compose up -d postgres
 uv run email-brain migrate
-uv run email-brain init-demo --state-dir "~/Library/Application Support/MasterBrain"
-uv run email-brain seed-demo --state-dir "~/Library/Application Support/MasterBrain"
+uv run email-brain init-demo --state-dir "$HOME/Library/Application Support/MasterBrain"
+uv run email-brain seed-demo --state-dir "$HOME/Library/Application Support/MasterBrain"
 uv run email-brain serve
 ```
 
@@ -49,8 +49,8 @@ entry point with the same private environment variables on a fresh database:
 
 ```sh
 uv run masterbrain demo migrate
-uv run masterbrain demo init --state-dir "~/Library/Application Support/MasterBrain"
-uv run masterbrain demo seed --state-dir "~/Library/Application Support/MasterBrain"
+uv run masterbrain demo init --state-dir "$HOME/Library/Application Support/MasterBrain"
+uv run masterbrain demo seed --state-dir "$HOME/Library/Application Support/MasterBrain"
 uv run masterbrain demo serve
 ```
 
@@ -115,7 +115,7 @@ For a larger fictional inbox, use this **instead of** `seed-demo` on a fresh
 initialized synthetic account:
 
 ```sh
-uv run email-brain seed-corpus --state-dir "~/Library/Application Support/MasterBrain" --count 256
+uv run email-brain seed-corpus --state-dir "$HOME/Library/Application Support/MasterBrain" --count 256
 ```
 
 Includes projects, receipts, meetings, newsletters, multilingual mail, untrusted

@@ -15,14 +15,14 @@ import pytest
 from masterbrain.statement_recipe_parity import (
     parse_fidelity,
     parse_jefferies,
-    parse_ocr_bank,
     parse_morgan_stanley,
+    parse_ocr_bank,
     parse_streetbeat,
     parse_wells_fargo_savings,
     reconcile_fidelity,
     reconcile_jefferies,
-    reconcile_ocr_bank,
     reconcile_morgan_stanley,
+    reconcile_ocr_bank,
     reconcile_streetbeat,
     reconcile_wells_fargo_savings,
 )
@@ -546,6 +546,21 @@ def test_jefferies_pinned_golden(name: str) -> None:
     )
 
 
+_DONOR_BANK_NAME = re.compile(r"^_(parse|reconcile)_\w+_bank$")
+
+
+def _ocr_bank_tagged(parse: Any) -> Any:
+    """Rewrite the donor's account-named extraction tag to the neutral one."""
+    def wrapped(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        summary, items = parse(text)
+        for item in items:
+            item["extraction_method"] = re.sub(
+                r"^regex:\w+_bank\(ocr\)$", "regex:ocr_bank(ocr)", item["extraction_method"]
+            )
+        return summary, items
+    return wrapped
+
+
 def _donor_functions(path: Path) -> tuple[Any, ...]:
     """Run only pure pinned recipe AST nodes, never donor module imports or DB code."""
     source = path.read_bytes()
@@ -570,6 +585,9 @@ def _donor_functions(path: Path) -> tuple[Any, ...]:
     })
     nodes = []
     for node in ast.parse(source, filename=str(path)).body:
+        # The donor names its OCR bank recipe after the account; map it to ours.
+        if isinstance(node, ast.FunctionDef):
+            node.name = _DONOR_BANK_NAME.sub(r"_\1_ocr_bank", node.name)
         if isinstance(node, ast.FunctionDef) and node.name in functions:
             nodes.append(node)
         elif isinstance(node, ast.Assign) and any(
@@ -581,7 +599,7 @@ def _donor_functions(path: Path) -> tuple[Any, ...]:
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), namespace)
     return (namespace["_parse_streetbeat"], namespace["_reconcile_streetbeat"],
             namespace["_parse_fidelity"], namespace["_reconcile_fidelity"],
-            namespace["_parse_ocr_bank"], namespace["_reconcile_ocr_bank"],
+            _ocr_bank_tagged(namespace["_parse_ocr_bank"]), namespace["_reconcile_ocr_bank"],
             namespace["_parse_morgan_stanley"], namespace["_reconcile_morgan_stanley"],
             namespace["_parse_jefferies"], namespace["_reconcile_jefferies"],
             namespace["_parse_wells_fargo_savings"],
