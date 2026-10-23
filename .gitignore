@@ -44,3 +44,4 @@ _SYSTEM/_PRIVATE/
 .claude/hooks/*
 !.claude/hooks/cw_scope_guard.py
 !.claude/hooks/cc_mark_wrap.sh
+!.claude/hooks/cc_session_banner.sh
