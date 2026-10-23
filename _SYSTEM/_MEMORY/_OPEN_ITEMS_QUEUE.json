@@ -1,6 +1,57 @@
 {
   "schema_version": "1.0",
-  "generated": "2026-10-21",
-  "items": [],
+  "generated": "2026-10-23",
+  "items": [
+    {
+      "status": "open",
+      "created": "2026-10-23",
+      "source": "PR #245 independent review / merge",
+      "id": "MB-001",
+      "title": "ADR: separation of human duties across XLSX approval, review and publication",
+      "scope": "architectural",
+      "complexity": "moderate",
+      "why": "Only token kind and scopes are separated; one actor can approve, extract, review and publish (review finding, ADR-265 'not decided')."
+    },
+    {
+      "status": "open",
+      "created": "2026-10-23",
+      "source": "PR #245 independent review / merge",
+      "id": "MB-002",
+      "title": "ADR: revocation of an unexpired Email XLSX approval or review",
+      "scope": "spoke",
+      "complexity": "moderate",
+      "why": "Approval and review rows are immutable for their hour with no cancel route, unlike the PDF path; no ADR records the difference."
+    },
+    {
+      "status": "open",
+      "created": "2026-10-23",
+      "source": "PR #245 independent review / merge",
+      "id": "MB-003",
+      "title": "ADR: should an idempotent XLSX publish replay return its receipt after expiry",
+      "scope": "touch",
+      "complexity": "moderate",
+      "why": "Currentness is checked before the receipt lookup, so a retried successful publish after expiry returns Conflict; changing it trades retry safety against post-revocation reads."
+    },
+    {
+      "status": "open",
+      "created": "2026-10-23",
+      "source": "PR #245 independent review / merge",
+      "id": "MB-004",
+      "title": "Run the immutable-image XLSX worker and browser accessibility gates",
+      "scope": "spoke",
+      "complexity": "unknown",
+      "why": "PR #245 listed both as merge gates; the owner waived them at merge (2026-10-21). Neither has run."
+    },
+    {
+      "status": "open",
+      "created": "2026-10-23",
+      "source": "PR #245 independent review / merge",
+      "id": "MB-005",
+      "title": "Make donor-parity tests find the pinned donor checkout",
+      "scope": "touch",
+      "complexity": "trivial",
+      "why": "Tests look for a sibling named FOS-Master; on the owner's machine the clone has a different folder name, so ~31 parity tests always skip (a scan that examined nothing)."
+    }
+  ],
   "_note": "The single queue of deferred committed work for development sessions (Rule 29). Product backlog that lives in GitHub issues or docs/ is not copied here; an item lands here when a session defers work it committed to."
 }
