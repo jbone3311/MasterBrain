@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated": "2026-10-23",
+  "generated": "2026-10-25",
   "items": [
     {
       "status": "open",
@@ -51,6 +51,22 @@
       "scope": "touch",
       "complexity": "trivial",
       "why": "Tests look for a sibling named FOS-Master; on the owner's machine the clone has a different folder name, so ~31 parity tests always skip (a scan that examined nothing)."
+    },
+    {
+      "id": "MB-006",
+      "status": "open",
+      "created": "2026-10-25",
+      "source": "Owner goal 2026-10-25: MasterBrain functioning with the Factory, git set up to match",
+      "title": "Finish the Factory game plan from the Product side (GAMEPLAN \u00a712 Phase 6-7)",
+      "scope": "spoke",
+      "complexity": "moderate",
+      "why": "Measured 2026-10-25: bind --check 0 BLOCK, boundary 3/3, WARN only (optional START/END hooks, pack). Remaining Product steps: bind this session, measure deployment gate + isolation check + full pytest with denominators, run the P1-P2 residue sweep, commit the bind record in system_config.json. Factory-session steps F4 (compat_status), F5 (review 5 candidates), F6 (register active) are the Factory's.",
+      "owner_questions": [
+        "Restore branch protection on the public repo (require gate, logical-restore, strict-runtime-gate; enforce for admins)? Recommended: yes.",
+        "Is another session still using this folder's binding (bound 2026-10-22)? If not, rebind here; if so, use a separate worktree.",
+        "Delete merged remote branches (chore/session-lessons-2026-10-23 and this one once merged)?",
+        "Archive MasterBrain-private on GitHub as the read-only history copy? Recommended: yes."
+      ]
     }
   ],
   "_note": "The single queue of deferred committed work for development sessions (Rule 29). Product backlog that lives in GitHub issues or docs/ is not copied here; an item lands here when a session defers work it committed to."
