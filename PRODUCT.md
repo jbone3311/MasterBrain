@@ -84,3 +84,18 @@ representative cross-source query set with correct evidence; survive worker cras
 and stale cursors; demonstrate isolation and least privilege; restore from backup;
 and show FileOS output parity with the pinned FOS-Master baseline. Detailed gates are
 in [release acceptance](docs/RELEASE_ACCEPTANCE.md).
+
+## On-Demand Loading Rules
+
+For Factory-bound development sessions only; the deployed application reads none of
+these. Load each when its moment comes, not at launch.
+
+- Working the queue (`Q: Next`, `Q: Queue`) or wrapping (`Q: End`): `_SYSTEM/_MEMORY/_OPEN_ITEMS_QUEUE.json`.
+- Recording a lesson at wrap: `_SYSTEM/_MEMORY/_LESSONS_LOG.md`.
+- Proposing something upward (`Q: Factory …`): `_SYSTEM/_MEMORY/_FACTORY_CANDIDATES.jsonl`.
+- Granting or reviewing a standards exception: `_SYSTEM/config/EXCEPTIONS.json`.
+- Checking the Product's development config or last verified Factory commit: `_SYSTEM/config/system_config.json`.
+- Before changing behavior: this contract, [security](docs/SECURITY.md),
+  [architecture](docs/ARCHITECTURE.md), [data model](docs/DATA_MODEL.md),
+  [decisions](docs/DECISIONS.md) and the relevant source or [API](docs/BRAIN_API.md)
+  document; migration work also reads [FOS migration](docs/FOS_MIGRATION.md).
