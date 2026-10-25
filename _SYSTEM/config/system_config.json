@@ -15,5 +15,6 @@
     "lineage_tracking": false
   },
   "_note_features": "Neither the spoke-state queue DB nor the lineage DB exists here; the open-items queue is the JSON file in _SYSTEM/_MEMORY/.",
-  "factory_contract_version": 2
+  "factory_contract_version": 2,
+  "last_verified_factory_commit": "a74bb9fb3e361ca481fe2a74629c02492fa47677"
 }

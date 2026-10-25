@@ -18,7 +18,7 @@
       "source": "PR #245 independent review / merge",
       "id": "MB-002",
       "title": "ADR: revocation of an unexpired Email XLSX approval or review",
-      "scope": "spoke",
+      "scope": "product",
       "complexity": "moderate",
       "why": "Approval and review rows are immutable for their hour with no cancel route, unlike the PDF path; no ADR records the difference."
     },
@@ -38,7 +38,7 @@
       "source": "PR #245 independent review / merge",
       "id": "MB-004",
       "title": "Run the immutable-image XLSX worker and browser accessibility gates",
-      "scope": "spoke",
+      "scope": "product",
       "complexity": "unknown",
       "why": "PR #245 listed both as merge gates; the owner waived them at merge (2026-10-21). Neither has run."
     },
@@ -58,7 +58,7 @@
       "created": "2026-10-25",
       "source": "Owner goal 2026-10-25: MasterBrain functioning with the Factory, git set up to match",
       "title": "Finish the Factory game plan from the Product side (GAMEPLAN \u00a712 Phase 6-7)",
-      "scope": "spoke",
+      "scope": "product",
       "complexity": "moderate",
       "why": "Measured 2026-10-25: bind --check 0 BLOCK, boundary 3/3, WARN only (optional START/END hooks, pack). Remaining Product steps: bind this session, measure deployment gate + isolation check + full pytest with denominators, run the P1-P2 residue sweep, commit the bind record in system_config.json. Factory-session steps F4 (compat_status), F5 (review 5 candidates), F6 (register active) are the Factory's.",
       "owner_questions": [
