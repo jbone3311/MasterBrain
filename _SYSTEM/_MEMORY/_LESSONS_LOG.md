@@ -46,3 +46,31 @@ operating lessons. Candidates worth sharing beyond this Product are staged in
 - **What we learned:** a writer-supplied size hint is untrusted input; "complete" must be measured.
 - **What changed:** ADR-265 resets the dimension, measures the real extent, rechecks bounds and
   iterates from A1. Recorded as an intentional difference from the donor.
+
+## L-MB-005 — A history scrub is undone by the next commit unless the identity changes too (2026-10-22)
+
+- **What happened:** after the history rewrite removed the owner's personal email from every
+  commit, the fresh public clone still inherited a global git identity carrying that email.
+- **What we learned:** scrubbing history fixes the past only; the committer identity is the leak
+  that keeps happening.
+- **What changed:** the working checkout has a repo-local noreply `user.email`. The global
+  identity still needs changing on every machine and clone that commits here.
+
+## L-MB-006 — Reusing a GitHub repo name kills the rename redirect (2026-10-22)
+
+- **What happened:** to publish the scrubbed history under the old name, the original repo was
+  renamed to `MasterBrain-private` and a new public repo took `MasterBrain`.
+- **What we learned:** once a new repo owns the old name, GitHub's redirect stops, so any clone
+  still pointing at the old URL would push unscrubbed history into the public repo.
+- **What changed:** every local remote was repointed right after the rename and before the new
+  repo existed, then checked with `git remote -v`.
+
+## L-MB-007 — A fresh clone without dev extras runs a global pytest (2026-10-22)
+
+- **What happened:** after `uv sync` in a fresh clone, `uv run pytest` reported 178 collection
+  errors. pytest is a `dev` extra, so the venv had none and the shell used a global pytest that
+  could not import the project.
+- **What we learned:** in a fresh checkout, a sudden wall of collection errors usually means the
+  environment is wrong, not the code.
+- **What changed:** use `uv sync --all-extras` for a working checkout, and check
+  `uv run which pytest` points into `.venv` before believing a red suite.
